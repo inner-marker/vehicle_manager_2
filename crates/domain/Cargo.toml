@@ -1,0 +1,13 @@
+[package]
+name = "domain"
+description = "Pure domain logic: types, validation, sync commands, HLC. No I/O; compiles to WASM."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,91 @@
+# Workspace root. Member crates opt into the shared lint set with:
+#
+#   [lints]
+#   workspace = true
+
+[workspace]
+resolver = "3"                           # Rust 2024 edition resolver
+# Dependencies flow one way: domain <- storage <- server <- app
+members = [
+    "crates/domain",   # pure logic; no I/O; compiles to WASM
+    "crates/storage",  # SQLite/sqlx, migrations, row <-> domain conversion; native only
+    "crates/server",   # sync engine, auth, integrity, admin ops (library); native only
+    "crates/app",      # Dioxus UI (web/desktop/mobile) + thin server functions
+]
+
+[workspace.package]
+version = "0.1.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
+edition = "2024"
+license = "MIT OR Apache-2.0"   # standard Rust dual license; crates inherit with `license.workspace = true`
+rust-version = "1.95"           # matches rust-toolchain.toml
+
+# ---------------------------------------------------------------------------
+# Shared dependency versions. Crates opt in with `name.workspace = true`.
+# ---------------------------------------------------------------------------
+[workspace.dependencies]
+# Internal crates (dependency direction: domain <- storage <- server <- app)
+domain = { path = "crates/domain" }
+storage = { path = "crates/storage" }
+server = { path = "crates/server" }
+
+# External crates
+dioxus = "=0.7.10"              # exact pin: must match the installed Dioxus CLI (`dx --version`)
+
+# ---------------------------------------------------------------------------
+# Rustc lints
+# ---------------------------------------------------------------------------
+[workspace.lints.rust]
+unsafe_code = "forbid"               # no unsafe anywhere; cannot be overridden locally
+missing_docs = "warn"                # every public item needs a /// doc comment (CI denies warnings)
+unreachable_pub = "warn"             # keep `pub` honest: use pub(crate) when not exported
+rust_2018_idioms = { level = "warn", priority = -1 }  # idiom group; priority lets later lints override
+unused_qualifications = "warn"       # no redundant path prefixes
+
+# ---------------------------------------------------------------------------
+# Clippy lints
+# ---------------------------------------------------------------------------
+[workspace.lints.clippy]
+# --- Lint groups (priority -1 so individual entries below take precedence) ---
+all = { level = "warn", priority = -1 }        # clippy's default set
+pedantic = { level = "warn", priority = -1 }   # stricter style and correctness checks
+
+# --- Pedantic lints that are too noisy for this project ---
+module_name_repetitions = "allow"   # e.g. `meter::MeterReading` is fine
+must_use_candidate = "allow"        # would demand #[must_use] on most getters
+
+# --- No crashing in production code (allowed in tests via clippy.toml) ---
+unwrap_used = "deny"                # handle or propagate errors instead
+expect_used = "deny"                # same; expect() is still a panic
+panic = "deny"                      # no explicit panics
+todo = "deny"                       # unfinished code can't merge
+unimplemented = "deny"              # same
+unreachable = "warn"                # require a comment/justification via #[expect]
+
+# --- Output and debugging: use `tracing` instead ---
+dbg_macro = "deny"
+print_stdout = "warn"
+print_stderr = "warn"
+
+# --- Documentation (pedantic already enables these; listed to make intent explicit) ---
+missing_errors_doc = "warn"         # `# Errors` section on fallible public fns
+missing_panics_doc = "warn"         # `# Panics` section if a fn can panic
+doc_markdown = "warn"               # backticks around code identifiers in docs
+
+# --- Lint suppression must be justified ---
+# #[allow] is permitted sparingly, but every #[allow] and #[expect] must carry `reason = "..."`.
+# (AGENTS.md also requires a justifying comment; reviewers check that part.)
+allow_attributes_without_reason = "warn"
+
+# --- Numeric safety: important for the integer <-> uom f64 boundary ---
+# (pedantic enables cast_possible_truncation, cast_sign_loss, cast_precision_loss, float_cmp)
+float_cmp_const = "warn"            # no exact equality on float constants
+lossy_float_literal = "warn"        # float literals that can't be represented exactly
+
+# --- Readability / anti-spaghetti ---
+cognitive_complexity = "warn"       # threshold set in clippy.toml
+too_many_lines = "warn"             # threshold set in clippy.toml
+redundant_clone = "warn"            # avoid needless allocations
+clone_on_ref_ptr = "warn"           # write Arc::clone(&x), not x.clone(), for clarity
+str_to_string = "warn"              # consistent: use .to_owned()
+large_enum_variant = "warn"         # keeps command/event enums lean
+wildcard_enum_match_arm = "warn"    # `_ =>` hides new enum variants (matters for commands)

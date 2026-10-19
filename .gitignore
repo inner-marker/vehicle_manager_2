@@ -1,0 +1,16 @@
+# Build output (includes Dioxus CLI output under target/dx)
+/target
+
+# macOS
+.DS_Store
+
+# Local development databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Personal Claude Code settings (shared settings live in .claude/settings.json)
+.claude/settings.local.json

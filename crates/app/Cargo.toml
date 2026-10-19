@@ -1,0 +1,27 @@
+[package]
+name = "app"
+description = "Dioxus UI for web, desktop, and mobile, plus thin server functions and the server entry point."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+domain.workspace = true
+dioxus = { workspace = true, features = ["fullstack"] }
+
+# Native-only crates, enabled only by the `server` feature so the web (WASM)
+# build never pulls in sqlx.
+storage = { workspace = true, optional = true }
+server = { workspace = true, optional = true }
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
+server = ["dioxus/server", "dep:storage", "dep:server"]
+
+[lints]
+workspace = true

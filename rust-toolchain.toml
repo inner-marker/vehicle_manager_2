@@ -1,0 +1,8 @@
+# Pins the exact compiler for every developer machine, agent, and CI run.
+[toolchain]
+channel = "1.95.0"
+components = ["clippy", "rustfmt"]
+targets = [
+    "wasm32-unknown-unknown",    # web UI
+    "aarch64-unknown-linux-gnu", # NAS server (arm64 Docker image)
+]

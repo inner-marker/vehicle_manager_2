@@ -1,0 +1,15 @@
+[package]
+name = "server"
+description = "Server library: sync engine, auth and permission enforcement, integrity checks, admin operations. Native only."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+domain.workspace = true
+storage.workspace = true
+
+[lints]
+workspace = true
