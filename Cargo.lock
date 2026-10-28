@@ -62,8 +62,15 @@ version = "0.1.0"
 dependencies = [
  "dioxus",
  "domain",
+ "serde",
+ "serde_json",
  "server",
  "storage",
+ "tempfile",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-wasm",
+ "web-time",
 ]
 
 [[package]]

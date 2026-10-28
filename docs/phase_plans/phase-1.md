@@ -28,8 +28,8 @@
 | 3 | ✅ | `feat(domain): passed-in clock and test support` | `UnixMillis` and the `Clock` trait in `domain::time`; `domain::test_support` (feature `test-support`) with `ManualClock`; builders grow with Phase 2 types | none |
 | 3a | ✅ | `chore: allow read-only gh pr commands for agents` | Narrow the `gh pr:*` deny rule in `.claude/settings.json` to the write subcommands (incl. `checkout`, which changes the local branch), so `gh pr list/view/diff/checks/status` work | none |
 | 3b | ✅ | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
-| 3c | 🔨 | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
-| 4 | ⬜ | `feat: debug log foundation` | `tracing` setup, in-memory ring buffer (~5,000 entries), size-capped rotating log file, JSON-lines export format. The viewer UI comes in step 6 | `tracing`, `tracing-subscriber`, a size-rotation crate *or* a custom writer (options compared in the step plan) |
+| 3c | ☑️ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
+| 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
 | 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the step plan) |
 | 6 | ⬜ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
 | 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
@@ -137,3 +137,64 @@
 **Tests:** `UnixMillis` ordering (including before 1970) and its millisecond round-trip; `ManualClock` set, advance, moving backward, and saturation; doctests on `UnixMillis` and `Clock`.
 
 **Manual verification:** none needed.
+
+### Step 4: `feat: debug log foundation`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton` · Options compared in chat; chosen: own rotating writer, JSON-lines files, `Targets` filter*
+
+**Where things go**
+- `domain::log_area`: the log area names (`app`, `ui`, `sync`, `database`, `auth`) as `&str` constants. They're used as the tracing `target`, so every crate logs with `tracing::debug!(target: log_area::SYNC, ...)` and the viewer can filter by area. They're plain constants with no I/O, so they belong in the lowest crate.
+- `crates/app/src/logging/` (one setup for every target, because the server binary is `app` with the `server` feature):
+  - `entry.rs`: `LogEntry` holds time (`UnixMillis`), level, area, message, and fields. It serializes to and from one JSON line.
+  - `capture.rs`: one tracing layer that builds a `LogEntry` per event and hands it to the ring buffer and, if one is configured, the file sink. Entries are built once and shared.
+  - `ring_buffer.rs`: a fixed-capacity buffer (5,000 entries; the oldest are evicted first) behind a lock, with a cloneable handle for the viewer and export.
+  - `rotating_file.rs` *(native only)*:
+    - Writes the active file `current.jsonl`. When the next line would pass `max_file_bytes`, it renames the file to `log-<unix-ms>.jsonl` and starts a new one.
+    - Cleanup runs at startup and after each rotation. It deletes the oldest rotated files beyond `max_files`, and any rotated file older than `max_age` (30 days).
+    - File age comes from the timestamp in the file name, not the file system, so tests use `ManualClock` and no extra crate.
+    - Per-platform policies are named constants: server 10 × 10 MB, desktop 5 × 10 MB, mobile 3 × 2 MB.
+    - A write failure can't be logged through `tracing` (it would recurse), so it increments a failure counter that the diagnostics screen can show later.
+  - `control.rs`: the runtime level switch. It's a `Targets` filter (default `info` for every area) behind `tracing-subscriber`'s `reload` handle, with `set_area_level` and `reset`. Not persisted, so it resets to the default on restart.
+  - `export.rs`:
+    - Filters entries by time range, minimum level, and areas.
+    - Renders them as JSON lines or plain text, behind a header.
+    - The header has the app version and platform now. API version and device ID are added when those exist (step 7, Phase 3).
+  - `clock.rs`: `SystemClock`, the first real `domain::time::Clock`, via `web-time` so the same code works on web and native.
+  - `mod.rs`: `init()` installs the subscriber **before** `dioxus::launch`, so Dioxus's own logger steps aside. It adds console output: `fmt` to the terminal on native, `tracing-wasm` to the browser devtools on web. It returns a `LogHandles` value (ring buffer and level control) that the UI gets through context in step 6.
+- `crates/app/src/main.rs`: calls `logging::init()` first and logs one `info` startup line (area `app`).
+
+**Deferred, with reasons**
+- **Wiring the file sink:** the log directory comes from the platform data folder (desktop, M4) or the container volume (server, M3). Step 4 implements and tests the writer; it gets wired in when those paths exist.
+- **"Last crash" file:** it also needs the log directory, so it comes with that same wiring.
+- **No `non_blocking` writer:** writing directly keeps the last lines before a crash on disk.
+
+**Dependencies** (all already in `Cargo.lock` through Dioxus, so nothing new is downloaded):
+- `tracing`;
+- `tracing-subscriber` (`std`, `registry`, `fmt`, `ansi`; no `env-filter`);
+- `tracing-wasm` (wasm32 only);
+- `web-time`;
+- `serde` (`derive`);
+- `serde_json`;
+- dev-only: `tempfile`.
+
+**Tests** (unit tests next to the code, using `ManualClock`, with a fresh temp directory per test)
+- `ring_buffer_evicts_oldest_entries_beyond_capacity`, `capture_records_level_area_message_and_fields`
+- `log_entry_round_trips_through_a_json_line`
+- `rotating_file_rotates_before_exceeding_max_file_bytes`, `rotating_file_keeps_at_most_max_files`, `rotating_file_deletes_rotated_files_older_than_max_age`, `rotating_file_resumes_current_file_size_after_restart`
+- `area_level_change_takes_effect_and_reset_restores_default`
+- `export_filters_by_time_range_level_and_area`; a snapshot-style check of the plain-text and JSON-lines renderings, including the header
+
+**Verification**
+- The usual self-review commands, plus `cargo check -p app --target wasm32-unknown-unknown`. The web-build guard must still pass, because the rotating writer is `cfg(not(wasm32))`.
+- A manual smoke test: `dx serve` shows the startup line in the terminal and the browser console. This is too small to need a `docs/test-plans/` file.
+
+**Changes from the plan, found during implementation**
+- **`app` is now a library plus a thin binary** (`src/lib.rs` + `src/main.rs`). Without the library, items the UI won't use until step 6 (export, rotating file, level control) would fail the `dead_code` lint. The binary has `doc = false` to avoid a rustdoc output-name collision.
+- **`domain::time_utils::format_utc_iso8601`** was added (exact integer calendar math, no new crate), so plain-text exports show readable UTC times. This is the first entry in `time_utils.rs`.
+- **The `ansi` feature was dropped from `tracing-subscriber`**, because it would have added `nu-ansi-term`, the one crate not already in `Cargo.lock`. Terminal output is uncolored. Adding it back is a one-word change if you want colors.
+- **Extra tests:**
+  - oversized lines, same-millisecond rotations, rotated-file name parsing;
+  - `area_level` reporting, log-level ordering, the JSON shape;
+  - log area name rules.
+- **AGENTS.md §6:** always log with a `domain::log_area` target.
+
+**Result:** 43 tests pass (22 `app`, 16 `domain`, 5 doctests). Clippy (native and wasm32), docs, the WASM guard, the `server` feature build, and `cargo deny` are all clean.

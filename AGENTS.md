@@ -100,7 +100,7 @@ If a helper doesn't fit an existing module, propose a new `xxx_utils.rs` in your
 - Descriptive names; no abbreviations beyond the common ones (`id`, `db`, `hlc`).
 - **Errors:** `thiserror` enums in the library crates (`domain`, `storage`, `server`); propagate with `?`.
 - **No `unwrap()`, `expect()`, or `panic!()` outside tests.** Handle the error or return it.
-- **Logging:** `tracing` only; never `println!` / `eprintln!` / `dbg!`.
+- **Logging:** `tracing` only; never `println!` / `eprintln!` / `dbg!`. Always pass an area from `domain::log_area` as the target (e.g. `tracing::debug!(target: log_area::SYNC, ...)`), so the log viewer can filter by area and its level can be raised at runtime.
 - **Lint overrides (`#[allow(...)]` / `#[expect(...)]`) are a last resort.** Fix the code first. Override only when it is strictly necessary or there is a genuinely good reason (e.g. a false positive, generated or macro code, a deliberate and documented trade-off).
   - **Every override has a justifying comment** directly above it explaining *why* the lint is wrong here or why fixing it is worse, plus a `reason = "..."` in the attribute. Clippy enforces the `reason`; reviewers check the comment.
   - **Prefer `#[expect]` over `#[allow]`:** `expect` errors once the lint stops firing, so stale overrides don't linger. Use `#[allow]` when `expect` doesn't fit, e.g. a lint that fires only on some platforms or `cfg` combinations.
