@@ -12,6 +12,7 @@ The code must stay **human-readable and human-maintainable**, even though most o
 - **`docs/ideas-to-discuss.md`** lists ideas that are **not decided.** Never implement anything from it; if a task touches one of those ideas, point it out and ask.
 - **`docs/decisions.md`** records settled decisions (SQLite everywhere, HLC ordering, table per event type, etc.). Do not re-open a recorded decision; if you think one is wrong, say so and stop.
 - For any task larger than a small fix, **write a short plan and wait for approval** before writing code.
+- **`docs/phase_plans/`** holds the agreed plan for each roadmap phase (`phase-N.md`), so the human can follow along. Once a phase plan, or the detailed plan for one of its PRs, is agreed, **save it there** and keep its status column current as work progresses.
 - **Before starting work on a roadmap phase,** check that phase's section in "Open Questions by Phase" in `docs/plan.md`. If any question is unresolved, **ask the user and stop** until it's answered. Then record the answer in `docs/decisions.md`, update the plan, and remove the question from the list.
 - Don't answer open questions yourself by picking a default. If a question blocks only part of a task, say which part and continue with the rest.
 
