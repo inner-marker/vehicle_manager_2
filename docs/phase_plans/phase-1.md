@@ -13,7 +13,7 @@
 - The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 - Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer.
 
 ---
 
@@ -30,8 +30,8 @@
 | 3b | ✅ | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
 | 3c | ☑️ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
 | 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
-| 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the step plan) |
-| 6 | ⬜ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
+| 5 | ☑️ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
+| 6 | 📝 | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
 | 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
@@ -198,3 +198,115 @@
 - **AGENTS.md §6:** always log with a `domain::log_area` target.
 
 **Result:** 43 tests pass (22 `app`, 16 `domain`, 5 doctests). Clippy (native and wasm32), docs, the WASM guard, the `server` feature build, and `cargo deny` are all clean.
+
+### Step 5: `feat: translation layer`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton` · Options compared in chat. Chosen: `fluent-bundle` with our own wrapper (A), in `domain`, bidi isolation off*
+
+**Where things go**
+- `crates/domain/locales/en-US/app.ftl`: the English catalog, embedded at compile time with `include_str!`. There's no file I/O, so `domain` stays WASM-safe.
+- `crates/domain/src/i18n/`:
+  - `message_id.rs`: `MessageId`, a typed message ID. A small `define_messages!` macro declares each constant **and** the `ALL` list in one place, so neither can be forgotten.
+    - First messages: the navigation labels from plan §5 UI direction that step 6 needs (Garage, Due & squawks, Messages, Timeline, Reports, Vehicles, Settings, Diagnostics).
+    - Also one plural example (`open-squawk-count`) to prove plurals work.
+  - `translator.rs`: `Translator` wraps a thread-safe `fluent_bundle` bundle.
+    - `Translator::english()` returns a shared instance, built once on first use with `std::sync::LazyLock`, so no extra crate is needed.
+    - `tr(id)` and `tr_with(id, &[("count", MessageArg::from(3))])` return the text.
+    - Our own `MessageArg` type keeps Fluent types out of callers, so the engine could be swapped later.
+  - Bidi isolation marks are off.
+  - **Missing message** (only possible if the consistency test is skipped): `tr` returns the message ID itself, e.g. `nav-garage`. It never panics, so a gap is visible on screen.
+- `crates/domain/src/lib.rs`: `pub mod i18n;`.
+- `docs/decisions.md` #022: translation is Fluent through `fluent-bundle` in `domain::i18n`, with typed message IDs and a consistency test. Message IDs are kebab-case and grouped by prefix (`nav-`, `error-`, ...).
+- `AGENTS.md` §3: says where the translation layer lives and how to add a message (`.ftl` entry plus a `define_messages!` line).
+
+**Not in this step:** choosing the language per user or device, and switching language while running (the Phase 2 display-preferences question); locale formatting of dates, numbers, and units (Phase 2); any UI wiring (step 6).
+
+**Dependencies:** `fluent-bundle` 0.16 and `unic-langid` 0.9, both Apache-2.0 OR MIT. They bring in `fluent-syntax`, `intl-memoizer`, `intl_pluralrules`, `self_cell`, and a few other small crates, checked with `cargo deny`.
+
+**Tests** (in `domain`, written first)
+- `every_message_id_exists_in_english_catalog`
+- `every_english_message_has_a_message_id`: parses the `.ftl` file and compares its IDs with `ALL`.
+- `english_catalog_parses_without_errors`
+- `tr_returns_english_text`
+- `tr_with_substitutes_arguments_without_isolation_marks`
+- `plural_message_picks_one_and_other_forms`
+- `missing_message_falls_back_to_its_id`
+
+**Verification:** the usual self-review commands, plus `cargo check -p domain --target wasm32-unknown-unknown` and `cargo deny check`. There's no UI yet, so nothing to verify manually.
+
+**Changes from the plan, found during implementation**
+- **`MessageArg` also converts from `i32`,** so plain integer literals (`MessageArg::from(2)`) work without a type suffix.
+- **Loading errors are a hand-written `CatalogError` enum** (invalid language, syntax, duplicates), because `thiserror` isn't a `domain` dependency yet.
+- **One extra test,** `invalid_catalogs_are_rejected_with_a_reason`.
+- **New crates in `Cargo.lock`:** `fluent-bundle`, `fluent-langneg`, `fluent-syntax`, `intl-memoizer`, `intl_pluralrules`, `self_cell`, `type-map`, `unic-langid`, `unic-langid-impl`. `cargo deny` passes.
+
+**Result:** 52 tests pass (24 `domain`, 22 `app`, 6 doctests). Clippy (native and wasm32), docs, and `cargo deny` are clean.
+
+### Step 6: `feat(app): skeleton UI and navigation`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton`*
+
+**Scope agreed in chat**
+- Screens are the sidebar entries from plan §5, plus **+ Log** (log event) and a placeholder **vehicle detail** screen.
+- The theme choice is held **in memory only** for now; saving it per device comes with local storage later. The plan's Phase 2 "UI/UX" open question about finalizing the design stays open: this step is placeholders, not final design.
+
+**Routes** (`crates/app/src/ui/routes.rs`, Dioxus router, already in `Cargo.lock`)
+
+| Path | Screen | Nav |
+|---|---|---|
+| `/` | Garage (vehicle list placeholder) | sidebar, bottom tab |
+| `/due` | Due & squawks | sidebar, bottom tab |
+| `/messages` | Messages | sidebar, bottom tab |
+| `/timeline` | Timeline | sidebar |
+| `/reports` | Reports | sidebar |
+| `/vehicles` | Vehicles | sidebar |
+| `/vehicles/:asset_id` | Vehicle detail placeholder (`asset_id` per the terminology rule) | — |
+| `/log` | Log event placeholder | **+ Log** button / floating button |
+| `/settings` | Settings | sidebar |
+| `/diagnostics` | Diagnostics: basic log viewer | sidebar |
+| anything else | Not found | — |
+
+**Layout** (`ui/shell.rs`): one adaptive shell (decision #011), switched by CSS media queries.
+- Wide (≥ 1024 px): full sidebar.
+- Medium (640–1023 px): icon-only sidebar.
+- Narrow (< 640 px): ☰ menu, bottom tabs (Garage, Due, Messages), and a floating **+ Log** button.
+- The top bar has the page title, a **sync status placeholder**, and the theme toggle. On narrow screens the toggle moves into the ☰ menu.
+- The mode chip (Driver ▾) waits until users exist (Phase 2).
+
+**Theme** (`ui/theme.rs`): `ThemeChoice { Light, Dark, System }`, default **Dark** (decision #012).
+- Held in a context signal and applied as `data-theme` on the root element.
+- `System` follows `prefers-color-scheme` in CSS.
+
+**Styling:** one plain CSS file, `crates/app/assets/main.css`, loaded with `asset!` + `document::Stylesheet`. CSS custom properties hold the colors for each theme, and media queries handle the three layouts. Minimal styling: readable and garage-friendly (large tap targets), not final design.
+
+**Icons:** a handful of **Lucide** SVG icons (ISC license) copied into `crates/app/assets/icons/`, with their license file. They're needed for the icon-only sidebar.
+
+**Log viewer** (`ui/screens/diagnostics.rs`):
+- `main.rs` passes the logging handles to the UI with `LaunchBuilder::with_context`.
+- The screen lists entries newest first, with a minimum-level filter, an area filter, and a **Refresh** button.
+- Entries load **after the page mounts**. With fullstack, the server renders the page first, then the browser takes it over (hydration). Each side has its own log buffer, so rendering entries during that first server render would cause a hydration mismatch. The browser's own log is the one to show; the server log is Admin-only later (plan §5).
+- Filtering reuses `ExportFilter`.
+- Copy/export, search, auto-scroll, and live auto-refresh come later in Phase 1 or Phase 2. They need clipboard, download, and timer support per platform.
+
+**Text:** every label goes through `domain::i18n`. New messages:
+- screen titles and placeholder text (`screen-*`, `placeholder-coming-soon`);
+- `action-log`, `action-refresh`, `menu-open`, `menu-close`, `sync-status-unknown`;
+- `theme-light`, `theme-dark`, `theme-system`;
+- log viewer labels, plus translated **area names and level names** (`log-area-*`, `log-level-*`), because these appear on screen.
+
+No app display name anywhere; it isn't decided.
+
+**Module layout:** `crates/app/src/ui/` contains `mod.rs` (`App` root), `routes.rs`, `shell.rs`, `nav.rs` (nav items: route, message, icon, where shown), `theme.rs`, and `screens/` (one file per screen). `main.rs` stays thin.
+
+**Dependencies:** the `dioxus` `router` feature only. It's already in `Cargo.lock`, so there are no new crates. Lucide is copied files, not a crate.
+
+**Tests** (logic, no browser)
+- `every_route_round_trips_through_its_path`
+- `unknown_paths_route_to_not_found`
+- `every_nav_item_has_a_route_message_and_icon`
+- `bottom_tabs_are_garage_due_and_messages`
+- `theme_defaults_to_dark`, `theme_choice_maps_to_data_theme_attribute`
+- `log_viewer_filters_by_level_and_area_newest_first`
+- `every_log_area_has_a_translated_label`
+
+**Manual test plan:** `docs/test-plans/skeleton-ui.md`. It covers navigation, each layout at its width, the theme toggle, the log viewer, and what to capture if a step fails (the `ui` area at `debug`).
+
+**Verification:** the usual self-review commands, the WASM build and its guard, then your manual run of `dx serve`.

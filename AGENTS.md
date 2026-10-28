@@ -55,7 +55,7 @@ Hard rules:
 - **Terminology:** the tracked thing is an **`Asset`** in code, tables, commands, and APIs (`asset_id`); the UI says "vehicle" (or the kind's own word). Never introduce `Vehicle` types or `vehicle_id` fields.
 - **No hard-coded asset-kind logic.** Behavior that differs by kind comes from **asset profiles** (data), not `if kind == ...` checks scattered through the code.
 - **Keep core and specialty code apart:** generic concepts in the core of `domain`; ground-vehicle specifics (fuel economy, towing) in their own module.
-- **All user-facing text goes through the translation layer.** No hard-coded UI strings, error messages shown to users, or report text.
+- **All user-facing text goes through the translation layer** (`domain::i18n`, decision #022). No hard-coded UI strings, error messages shown to users, or report text. To add a message, add it to `crates/domain/locales/en-US/app.ftl` **and** add one line to `define_messages!` in `crates/domain/src/i18n/message_id.rs`; then use `Translator::english().tr(messages::...)`.
 - **No `unsafe` code.**
 - **App identity comes from one place:** the bundle ID, internal app ID, and data-folder name are constants in `domain`'s identity module. Read them from there; never hard-code copies.
 - **Never derive file paths, data directories, keychain entries, or other storage locations from the display name.** The display name may change; storage locations must not.

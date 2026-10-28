@@ -154,3 +154,19 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Standalone PRs are only for things outside a milestone: urgent fixes and Dependabot updates.
 - **Why:** CI on GitHub takes time to run, and a PR per small step multiplied that wait. The milestone PR still gets the full checks, the PR title check, and the human's review of the whole milestone. Merge commits keep the per-step changelog entries that squashing would collapse.
 - **Trade-off:** commit messages on the branch aren't checked by CI (only the PR title is). Agents draft every commit message as a Conventional Commit.
+
+### 022. Translation layer: `fluent-bundle` in `domain::i18n`, with typed message IDs
+*Decided: 2026-10-28 · Plan: §5 Extensibility groundwork · Phase plan: phase-1.md step 5*
+
+- **Decision:**
+  - All user-facing text comes from Fluent catalogs (`crates/domain/locales/<language>/*.ftl`), embedded at compile time and looked up through `domain::i18n::Translator`.
+  - The engine is `fluent-bundle` plus `unic-langid`, behind our own small wrapper (`MessageArg`, fallback to the message ID).
+  - Code refers to messages only through `MessageId` constants declared with `define_messages!`. Tests check that the constants and the English file match in both directions.
+  - Message IDs are kebab-case and grouped by prefix (`nav-`, `error-`, ...).
+  - Bidi isolation marks are off until a right-to-left language is added.
+- **Why:**
+  - It lives in `domain` so every crate can produce user-facing text, including server-side reports and exports later.
+  - `fluent-bundle` is the official, lightest Fluent engine and works on WASM.
+  - Typed IDs plus the consistency test catch typos and missing messages without the heavier compile-time macro crates (`i18n-embed-fl`).
+  - `dioxus-i18n` was rejected because it would tie translation to the UI crate.
+- **Not decided here:** choosing the language per user or device, and switching language at runtime (the Phase 2 display-preferences question); locale formatting of dates, numbers, and units (Phase 2).

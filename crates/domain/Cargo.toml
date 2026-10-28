@@ -8,6 +8,8 @@ rust-version.workspace = true
 publish = false
 
 [dependencies]
+fluent-bundle.workspace = true
+unic-langid.workspace = true
 
 [features]
 # Shared test helpers (`domain::test_support`). Enable only in other crates'
