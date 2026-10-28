@@ -125,7 +125,7 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 - **Where tests go:** unit tests in a `#[cfg(test)] mod tests` block in the same file; integration tests in the crate's `tests/` folder; `# Examples` in doc comments must compile and run.
 - **Per crate:** `domain` uses pure unit tests; `storage` uses a fresh temporary SQLite database per test; `server` uses integration tests with real sync round-trips; `app` has component logic tests plus a few end-to-end web tests.
 - **Deterministic:** code in `domain` never reads the real clock, random numbers, or location directly; they are passed in. Tests never depend on the current time.
-- **Use the shared test data builders** to set up assets, meters, intervals, history, and users. Extend them rather than writing one-off setup code.
+- **Use the shared test data builders** in `domain::test_support` to set up assets, meters, intervals, history, and users (and `ManualClock` for time). Extend them rather than writing one-off setup code. Other crates enable them only in `[dev-dependencies]` with `domain = { workspace = true, features = ["test-support"] }`.
 - Use **property-based tests** for invariants (HLC monotonic, unit conversion round-trips, command idempotency) and **snapshot tests** for generated output (reports, user-facing messages).
 - Sync changes need **sync scenario tests**; schema changes need a **migration fixture test**.
 - No network access and no shared state between tests.

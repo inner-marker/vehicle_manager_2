@@ -6,3 +6,7 @@
 //! random numbers, or location directly; callers pass those in.
 
 pub mod identity;
+pub mod time;
+
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_support;

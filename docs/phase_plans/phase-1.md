@@ -21,8 +21,9 @@
 |---|---|---|---|---|
 | 0 | ✅ | *(initial commit)* Setting up workspace | Four-crate workspace, pinned toolchain, lints, `domain::identity`, docs reorganized, decision log | `dioxus =0.7.10` |
 | 1 | ✅ | `docs: record Phase 1 sequencing decisions` | Decisions #017–#019; Phase 1 roadmap and Extensibility row updated; this file; AGENTS.md rule for `docs/phase_plans/` | none |
-| 2 | 👀 | `ci: add fast checks, PR-to-main gate, and Dependabot` | **Fast checks:** fmt, clippy, test, Conventional PR title check. **PR-to-`main` gate:** those plus `cargo doc`, `cargo-deny`, Linux/Windows/macOS build matrix, WASM build. `deny.toml`. Dependabot targeting `dev`. Docker and migration-fixture jobs are added once those exist | CI actions only, pinned to commit SHAs |
-| 3 | ⬜ | `feat(domain): passed-in clock and test support` | Domain code takes "now" as a parameter, never reads the clock; `time_utils.rs`; shared `test_support` scaffold (builders grow with Phase 2 types) | none |
+| 2 | ✅ | `ci: add fast checks, PR-to-main gate, and Dependabot` | **Fast checks:** fmt, clippy, test, Conventional PR title check. **PR-to-`main` gate:** those plus `cargo doc`, `cargo-deny`, Linux/Windows/macOS build matrix, WASM build. `deny.toml`. Dependabot targeting `dev`. Docker and migration-fixture jobs are added once those exist | CI actions only, pinned to commit SHAs |
+| 3 | 👀 | `feat(domain): passed-in clock and test support` | `UnixMillis` and the `Clock` trait in `domain::time`; `domain::test_support` (feature `test-support`) with `ManualClock`; builders grow with Phase 2 types | none |
+| 3a | ⬜ | `chore: allow read-only gh pr commands for agents` | Narrow the `gh pr:*` deny rule in `.claude/settings.json` to the write subcommands, so `gh pr list/view` work | none |
 | 4 | ⬜ | `feat: debug log foundation` | `tracing` setup, in-memory ring buffer (~5,000 entries), size-capped rotating log file, JSON-lines export format. The viewer UI comes in PR 6 | `tracing`, `tracing-subscriber`, a size-rotation crate *or* a custom writer (options compared in the PR plan) |
 | 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the PR plan) |
 | 6 | ⬜ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
@@ -89,3 +90,28 @@ Milestone mapping: PRs 1–6 and 8 are milestone 1 (local skeleton), PR 7 is mil
    - The `main` jobs may fail until `main` has `deny.toml`, because it's added in this PR.
 5. Insights → Dependency graph → Dependabot shows both ecosystems. Update PRs target `dev`.
 6. The **Main gate** gets its first real run at the first `dev` → `main` PR.
+
+### PR 3: `feat(domain): passed-in clock and test support`
+*Approved 2026-10-28 · Branch: `feat/domain-clock`*
+
+**Goal:** establish the rule that `domain` never reads the real clock before any time-dependent logic exists, and give every crate one place for test helpers.
+
+**Changes**
+1. `crates/domain/src/time.rs`:
+   - **`UnixMillis(i64)`** is a UTC instant in epoch milliseconds (decision #008). It's `Copy` and ordered, with `from_millis`, `as_millis`, and `EPOCH`.
+   - **`trait Clock { fn now(&self) -> UnixMillis; }`**.
+   - Domain functions take `now: UnixMillis` where they can, and `&impl Clock` when they need to read the time repeatedly.
+   - Real-clock implementations live outside `domain` (native `SystemTime`; web `Date.now()`, since `SystemTime::now` panics on WASM). They're added when first needed (PR 4 or 7).
+2. `crates/domain/src/test_support.rs`:
+   - Compiled for `domain`'s tests or with the `test-support` feature, which other crates enable only in `[dev-dependencies]`. No new crate, so decision #003 holds.
+   - First helper: `ManualClock` (`new`, `set`, `advance`). It uses an atomic, so it can be shared with the code under test.
+3. `domain/Cargo.toml`: adds the `test-support = []` feature.
+4. `AGENTS.md` §7: says where the shared builders live and how to enable them.
+
+**Changes from the approved plan**
+- No `time_utils.rs` yet; it's created with its first helper.
+- No empty `tests/` folders.
+
+**Tests:** `UnixMillis` ordering (including before 1970) and its millisecond round-trip; `ManualClock` set, advance, moving backward, and saturation; doctests on `UnixMillis` and `Clock`.
+
+**Manual verification:** none needed.

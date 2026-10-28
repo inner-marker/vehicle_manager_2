@@ -9,5 +9,10 @@ publish = false
 
 [dependencies]
 
+[features]
+# Shared test helpers (`domain::test_support`). Enable only in other crates'
+# [dev-dependencies], never in normal dependencies.
+test-support = []
+
 [lints]
 workspace = true
