@@ -1685,7 +1685,11 @@ Every agent change is reviewed as a diff before merging.
 
 ## 9. Roadmap
 
+*Each phase's agreed work plan (PR sequence, status, and detailed PR plans) lives in `docs/phase_plans/` and is linked from that phase below.*
+
 ### Phase 1: Walking skeleton
+
+**Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md)
 
 **Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the desktop app is the final milestone.
 

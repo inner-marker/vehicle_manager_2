@@ -3,9 +3,10 @@
 name: PR title
 
 on:
-  # pull_request_target runs in the base repo's context so title edits re-trigger it.
-  # Safe here: this workflow never checks out or runs code from the PR.
-  pull_request_target:
+  # Plain pull_request, not pull_request_target: GitHub runs pull_request_target
+  # workflows only from the default branch (main), so the check never ran on PRs into dev.
+  # `edited` re-runs the check when the title changes.
+  pull_request:
     types: [opened, reopened, edited, synchronize]
     branches: [dev, main]
 
