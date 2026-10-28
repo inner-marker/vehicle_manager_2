@@ -136,3 +136,9 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 
 - **Decision:** the Phase 1 test server functions (ping, server version/time) move out of milestone 1 and into milestone 2, delivered together with the auth middleware stub (hardcoded test credential) and the version handshake.
 - **Why:** AGENTS.md requires every server function to go through auth middleware with no exceptions. This ordering means no unauthenticated server function ever exists, even briefly.
+
+### 020. Dependency license policy: permissive licenses plus MPL-2.0
+*Decided: 2026-10-28 · Plan: §8 CI/CD pipelines (cargo-deny)*
+
+- **Decision:** `deny.toml` allows permissive licenses (MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, BSL-1.0, CC0, Unlicense, NCSA, CDLA-Permissive-2.0) and **MPL-2.0**. Any other license fails the PR-to-`main` gate until reviewed.
+- **Why:** MPL-2.0 is a weak, file-level copyleft that only requires sharing changes to the MPL-licensed files themselves, and it's compatible with shipping under MIT OR Apache-2.0. It comes in through Dioxus (`cssparser`, `selectors`, `dtoa-short`, `option-ext`), so it can't be avoided without dropping Dioxus.

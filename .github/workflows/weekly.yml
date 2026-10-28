@@ -1,0 +1,48 @@
+# Weekly: catch newly published vulnerabilities and breakage even when no code changed.
+# Scheduled workflows run from the default branch, so each long-lived branch is checked out explicitly.
+name: Weekly checks
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  advisories:
+    name: Advisories (${{ matrix.branch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [main, dev]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.branch }}
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check
+          command-arguments: advisories
+          arguments: --all-features
+
+  test:
+    name: Tests (${{ matrix.branch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [main, dev]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.branch }}
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: weekly-${{ matrix.branch }}
+      - run: cargo test --workspace
