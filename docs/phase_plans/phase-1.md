@@ -6,40 +6,61 @@
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
 
-**How this file works**
-- Each row is one focused PR into `dev`, squash-merged with a Conventional Commit title (decision #017).
-- Before each PR starts, the agent writes a detailed plan, waits for approval, then adds it under "PR details" below.
-- The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · 👀 in review · ✅ merged.
+**How this file works** (decision #021)
+- Each **milestone** has one branch (`milestone/p1-mN-<slug>`) and **one PR into `dev`** when the milestone is finished. That PR is merged with a **merge commit**.
+- Each **step** is one Conventional Commit on the milestone branch, made by the human from the commands the agent drafts.
+- Before each step starts, the agent writes a detailed plan, waits for approval, then adds it under "Step details" below.
+- The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
+- Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #017 merge strategy, #018 translation layer in Phase 1, #019 auth before any server function.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone.
 
 ---
 
-## PR sequence
+## Milestone 1: Local skeleton
+*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: not opened yet*
 
-| # | Status | PR title | Contents | New dependencies (need approval) |
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
 | 0 | ✅ | *(initial commit)* Setting up workspace | Four-crate workspace, pinned toolchain, lints, `domain::identity`, docs reorganized, decision log | `dioxus =0.7.10` |
 | 1 | ✅ | `docs: record Phase 1 sequencing decisions` | Decisions #017–#019; Phase 1 roadmap and Extensibility row updated; this file; AGENTS.md rule for `docs/phase_plans/` | none |
 | 2 | ✅ | `ci: add fast checks, PR-to-main gate, and Dependabot` | **Fast checks:** fmt, clippy, test, Conventional PR title check. **PR-to-`main` gate:** those plus `cargo doc`, `cargo-deny`, Linux/Windows/macOS build matrix, WASM build. `deny.toml`. Dependabot targeting `dev`. Docker and migration-fixture jobs are added once those exist | CI actions only, pinned to commit SHAs |
 | 3 | ✅ | `feat(domain): passed-in clock and test support` | `UnixMillis` and the `Clock` trait in `domain::time`; `domain::test_support` (feature `test-support`) with `ManualClock`; builders grow with Phase 2 types | none |
 | 3a | ✅ | `chore: allow read-only gh pr commands for agents` | Narrow the `gh pr:*` deny rule in `.claude/settings.json` to the write subcommands (incl. `checkout`, which changes the local branch), so `gh pr list/view/diff/checks/status` work | none |
-| 3b | 👀 | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
-| 4 | ⬜ | `feat: debug log foundation` | `tracing` setup, in-memory ring buffer (~5,000 entries), size-capped rotating log file, JSON-lines export format. The viewer UI comes in PR 6 | `tracing`, `tracing-subscriber`, a size-rotation crate *or* a custom writer (options compared in the PR plan) |
-| 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the PR plan) |
+| 3b | ✅ | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
+| 3c | 🔨 | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
+| 4 | ⬜ | `feat: debug log foundation` | `tracing` setup, in-memory ring buffer (~5,000 entries), size-capped rotating log file, JSON-lines export format. The viewer UI comes in step 6 | `tracing`, `tracing-subscriber`, a size-rotation crate *or* a custom writer (options compared in the step plan) |
+| 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the step plan) |
 | 6 | ⬜ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
-| 7 | ⬜ | `feat: auth middleware, handshake, and test server functions` | Auth middleware with a hardcoded test credential; API version handshake; ping and server version/time behind auth; pass/fail shown in the web UI | likely `axum`, `serde`, `thiserror` |
 | 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
-| 9 | ⬜ | Milestone 3: web UI on the NAS | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
-| 10 | ⬜ | Milestone 4: Linux desktop over Tailscale | Desktop app with a configurable server address; passes version and auth checks against the NAS; manual test plan | — |
 
-Milestone mapping: PRs 1–6 and 8 are milestone 1 (local skeleton), PR 7 is milestone 2, PR 9 is milestone 3, PR 10 is milestone 4.
+## Milestone 2: Auth stub, handshake & test server functions
+*Branch: `milestone/p1-m2-auth-handshake`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 7 | ⬜ | `feat: auth middleware, handshake, and test server functions` | Auth middleware with a hardcoded test credential; API version handshake; ping and server version/time behind auth; pass/fail shown in the web UI | likely `axum`, `serde`, `thiserror` |
+
+## Milestone 3: Web UI on the NAS
+*Branch: `milestone/p1-m3-nas-web`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 9 | ⬜ | *(steps planned when the milestone starts)* | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
+
+## Milestone 4: Linux desktop over Tailscale
+*Branch: `milestone/p1-m4-desktop`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 10 | ⬜ | *(steps planned when the milestone starts)* | Desktop app with a configurable server address; passes version and auth checks against the NAS; manual test plan | — |
+
 
 ---
 
-## PR details
+## Step details
 
-*Detailed plans are added here as each PR is planned and approved.*
+*Detailed plans are added here as each step is planned and approved. Steps 2 and 3 were standalone PRs.*
 
 ### PR 2: `ci: add fast checks, PR-to-main gate, and Dependabot`
 *Approved 2026-10-28 · Branch: `ci/fast-checks`*

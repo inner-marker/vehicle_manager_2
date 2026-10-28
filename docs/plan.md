@@ -1532,7 +1532,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 - **Long-lived branches:**
   - **`main`:** released, stable code. Release tags live here.
   - **`dev`:** integration branch for work in progress.
-- **Feature branches:** all work (human or agent) happens on short-lived branches cut from `dev`, merged into `dev` by pull request, then **deleted once merged** (GitHub's auto-delete setting).
+- **Milestone branches:** all work (human or agent) happens on one branch per roadmap milestone, cut from `dev` (`milestone/p<phase>-m<n>-<slug>`). Each step is a Conventional Commit on that branch. **One pull request per milestone**, merged into `dev` with a merge commit, then the branch is **deleted** (GitHub's auto-delete setting). Standalone branches are only for work outside a milestone, such as urgent fixes. See `docs/decisions.md` #021.
 - **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`.
 
 **Branch protection**
@@ -1541,7 +1541,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
   - All "PR to `main`" checks must pass, and the branch must be up to date before merging.
   - Merged with a merge commit (not squash), so `dev` history stays intact.
 - **`dev`:**
-  - Changes through pull requests from feature branches; no force-pushes or deletion.
+  - Changes through pull requests from milestone branches; no force-pushes or deletion.
   - The fast checks must pass before merging.
 - **The human is always in the loop for git:** agents never run git or GitHub write operations (commit, push, merge, rebase, tag, branch changes, opening or merging PRs, creating releases). Agents may use read-only git (`status`, `diff`, `log`) and **draft the exact commands, commit messages, and PR descriptions** for the human to review and run.
 - **Enforced in agent tool settings where possible,** not just in `AGENTS.md`: e.g. deny rules for `git commit`, `git push`, and `gh pr` commands in Claude Code's project settings.
@@ -1562,7 +1562,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 
 Three main workflows, plus scheduled and maintenance jobs. Workflow files live in `.github/workflows/`.
 
-**1. Fast checks: push to `dev`, and PRs into `dev`**
+**1. Fast checks: PRs into `dev`** (not re-run on the push after merging; see `docs/decisions.md` #021)
 - Goal: feedback within a few minutes.
 - Runs on Linux only.
 - Jobs:

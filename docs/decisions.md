@@ -117,7 +117,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the bundle ID must be settled before the first release package, and can't change once installs exist. The internal ID and data folder stay neutral so the display name can change freely.
 
 ### 017. Merge strategy: squash into `dev`, merge commit into `main`
-*Decided: 2026-10-28 · Plan: §8 Repository & branches*
+*Decided: 2026-10-28 · Plan: §8 Repository & branches · **Superseded by #021***
 
 - **Decision:**
   - Feature PRs into `dev` are **squash-merged**, and the squash commit message is the PR title.
@@ -142,3 +142,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 
 - **Decision:** `deny.toml` allows permissive licenses (MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0, BSL-1.0, CC0, Unlicense, NCSA, CDLA-Permissive-2.0) and **MPL-2.0**. Any other license fails the PR-to-`main` gate until reviewed.
 - **Why:** MPL-2.0 is a weak, file-level copyleft that only requires sharing changes to the MPL-licensed files themselves, and it's compatible with shipping under MIT OR Apache-2.0. It comes in through Dioxus (`cssparser`, `selectors`, `dtoa-short`, `option-ext`), so it can't be avoided without dropping Dioxus.
+
+### 021. One PR per milestone, merged with a merge commit
+*Decided: 2026-10-28 · Plan: §8 Repository & branches, CI/CD pipelines · Supersedes #017*
+
+- **Decision:**
+  - Work is done on one **milestone branch** per roadmap milestone (`milestone/p<phase>-m<n>-<slug>`, cut from `dev`). Each planned step is one **Conventional Commit** on that branch.
+  - **One PR into `dev` per milestone**, opened when the milestone is finished and merged with a **merge commit**, so every step's commit stays in `dev` history for git-cliff.
+  - `dev` → `main` release PRs still use a merge commit.
+  - Fast checks run on **PRs into `dev`** only, not again on the push to `dev` after merging.
+  - Standalone PRs are only for things outside a milestone: urgent fixes and Dependabot updates.
+- **Why:** CI on GitHub takes time to run, and a PR per small step multiplied that wait. The milestone PR still gets the full checks, the PR title check, and the human's review of the whole milestone. Merge commits keep the per-step changelog entries that squashing would collapse.
+- **Trade-off:** commit messages on the branch aren't checked by CI (only the PR title is). Agents draft every commit message as a Conventional Commit.
