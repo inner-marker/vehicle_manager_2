@@ -115,3 +115,24 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Data-folder name: `vehiclemanager`
   - All three are constants in `domain::identity`. The display name is still undecided.
 - **Why:** the bundle ID must be settled before the first release package, and can't change once installs exist. The internal ID and data folder stay neutral so the display name can change freely.
+
+### 017. Merge strategy: squash into `dev`, merge commit into `main`
+*Decided: 2026-10-28 · Plan: §8 Repository & branches*
+
+- **Decision:**
+  - Feature PRs into `dev` are **squash-merged**, and the squash commit message is the PR title.
+  - `dev` → `main` release PRs use a **merge commit**, so `dev` history stays intact.
+  - Rebase merging is disabled on GitHub.
+- **Why:** each feature lands as one Conventional Commit, the PR title the PR check already validates, and that gives git-cliff a clean changelog. Merge commits on `main` keep release history traceable to `dev`.
+
+### 018. Translation layer moves into Phase 1
+*Decided: 2026-10-28 · Plan: §9 Roadmap (Phase 1), §5 Extensibility groundwork*
+
+- **Decision:** a minimal Fluent-based translation layer (English only) is built in Phase 1, **before** the skeleton UI. Locale formatting of dates, numbers, and units stays in Phase 2, when those values first appear in the UI.
+- **Why:** AGENTS.md forbids hard-coded user-facing text, and the Phase 1 skeleton screens need text. Building the layer first means no hard-coded strings ever exist to be cleaned up later.
+
+### 019. Auth middleware ships with or before the first server function
+*Decided: 2026-10-28 · Plan: §9 Roadmap (Phase 1)*
+
+- **Decision:** the Phase 1 test server functions (ping, server version/time) move out of milestone 1 and into milestone 2, delivered together with the auth middleware stub (hardcoded test credential) and the version handshake.
+- **Why:** AGENTS.md requires every server function to go through auth middleware with no exceptions. This ordering means no unauthenticated server function ever exists, even briefly.
