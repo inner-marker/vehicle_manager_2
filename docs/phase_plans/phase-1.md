@@ -31,7 +31,7 @@
 | 3c | ☑️ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
 | 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
 | 5 | ☑️ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
-| 6 | 📝 | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
+| 6 | ☑️ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
 | 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
@@ -310,3 +310,19 @@ No app display name anywhere; it isn't decided.
 **Manual test plan:** `docs/test-plans/skeleton-ui.md`. It covers navigation, each layout at its width, the theme toggle, the log viewer, and what to capture if a step fails (the `ui` area at `debug`).
 
 **Verification:** the usual self-review commands, the WASM build and its guard, then your manual run of `dx serve`.
+
+**Changes from the plan, found during implementation**
+- **One lint override, used three times.** `#[expect(unused_qualifications)]` sits on `Shell`, `ThemeToggle`, and `Diagnostics`, each with a justifying comment. `rsx!` expands event handlers into fully qualified `dioxus_elements::events::on*` calls. The prelude glob imports those same functions, so rustc flags the macro's own paths.
+  - Explicit imports instead of the glob were tried. The macros also need `dioxus_core` and `dioxus_signals` in scope, so that approach would depend on Dioxus internals.
+  - `#[expect]` errors once a Dioxus update fixes this, so the overrides can't go stale.
+- **Simple placeholder screens share one file**, `screens/placeholders.rs`, instead of one file per screen; Diagnostics has its own file. Ten near-identical files would only add noise.
+- **Timeline uses Lucide `list`**, because `history` isn't in the Lucide repo.
+- **`LogLevel::ALL`** was added in `logging::entry`. Field formatting moved into the shared `logging::format_fields`, used by both the plain-text export and the viewer, so it isn't duplicated.
+- **The time column is labeled "Time (UTC)",** because locale and time-zone formatting is Phase 2.
+
+**Result**
+- 62 tests pass (32 `app`, 24 `domain`, 6 doctests).
+- Clippy is clean for native, wasm32, `server`, and `desktop`. Docs, the WASM guard, and `cargo deny` are also clean.
+- `dx build --platform web` succeeds, with the server and client built and `main.css` bundled.
+- A local smoke run of the built server returned 200 with the right title for `/`, `/due`, `/vehicles/abc123`, `/diagnostics`, and an unknown path. `data-theme="dark"` was set and icons were inlined.
+- **Manual test plan:** `docs/test-plans/skeleton-ui.md`.

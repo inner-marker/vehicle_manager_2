@@ -19,7 +19,7 @@ doc = false             # avoids a rustdoc output collision with the `app` libra
 
 [dependencies]
 domain.workspace = true
-dioxus = { workspace = true, features = ["fullstack"] }
+dioxus = { workspace = true, features = ["fullstack", "router"] }
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true

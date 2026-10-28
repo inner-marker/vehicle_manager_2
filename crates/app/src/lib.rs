@@ -5,3 +5,4 @@
 //! its modules unit-testable and lets later code use them before the UI does.
 
 pub mod logging;
+pub mod ui;

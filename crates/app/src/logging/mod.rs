@@ -28,7 +28,7 @@ pub use clock::SystemClock;
 pub use control::{DEFAULT_LEVEL, LevelControl, default_levels};
 use domain::log_area;
 pub use entry::{LogEntry, LogLevel};
-pub use export::{ExportFilter, ExportHeader, to_json_lines, to_plain_text};
+pub use export::{ExportFilter, ExportHeader, format_fields, to_json_lines, to_plain_text};
 pub use ring_buffer::{RING_BUFFER_CAPACITY, RingBuffer};
 #[cfg(not(target_arch = "wasm32"))]
 pub use rotating_file::{FileLogPolicy, FileSink, RotatingFile};

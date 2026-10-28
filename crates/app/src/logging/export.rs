@@ -126,17 +126,31 @@ fn plain_text_line(entry: &LogEntry) -> String {
         entry.area,
         entry.message
     );
-    for (name, value) in &entry.fields {
+    let fields = format_fields(entry);
+    if !fields.is_empty() {
         line.push(' ');
-        line.push_str(name);
-        line.push('=');
-        // Strings print bare (no JSON quotes); numbers and booleans print as JSON does.
-        match value.as_str() {
-            Some(text) => line.push_str(text),
-            None => line.push_str(&value.to_string()),
-        }
+        line.push_str(&fields);
     }
     line
+}
+
+/// An entry's fields as `name=value` pairs separated by spaces (empty if none),
+/// as shown in plain-text exports and the log viewer.
+pub fn format_fields(entry: &LogEntry) -> String {
+    let mut text = String::new();
+    for (name, value) in &entry.fields {
+        if !text.is_empty() {
+            text.push(' ');
+        }
+        text.push_str(name);
+        text.push('=');
+        // Strings print bare (no JSON quotes); numbers and booleans print as JSON does.
+        match value.as_str() {
+            Some(string) => text.push_str(string),
+            None => text.push_str(&value.to_string()),
+        }
+    }
+    text
 }
 
 #[cfg(test)]

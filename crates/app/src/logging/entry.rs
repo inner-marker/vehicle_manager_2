@@ -27,6 +27,15 @@ pub enum LogLevel {
 }
 
 impl LogLevel {
+    /// Every level, most severe first (the order the log viewer offers them).
+    pub const ALL: [Self; 5] = [
+        Self::Error,
+        Self::Warn,
+        Self::Info,
+        Self::Debug,
+        Self::Trace,
+    ];
+
     /// The level's name as shown in logs and exports, e.g. `"WARN"`.
     pub const fn as_str(self) -> &'static str {
         match self {

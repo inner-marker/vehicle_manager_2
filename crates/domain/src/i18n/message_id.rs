@@ -58,4 +58,78 @@ define_messages! {
     NAV_DIAGNOSTICS => "nav-diagnostics",
     /// "N open squawks"; takes `count` (number).
     OPEN_SQUAWK_COUNT => "open-squawk-count",
+
+    /// Screen title: one vehicle's overview.
+    SCREEN_VEHICLE_DETAIL => "screen-vehicle-detail",
+    /// Vehicle detail: which vehicle is shown; takes `id` (text).
+    VEHICLE_DETAIL_ID => "vehicle-detail-id",
+    /// Screen title: logging a new event.
+    SCREEN_LOG_EVENT => "screen-log-event",
+    /// Screen title: no screen at this address.
+    SCREEN_NOT_FOUND => "screen-not-found",
+    /// Not-found screen: link back to the home screen.
+    NOT_FOUND_BACK => "not-found-back",
+    /// Placeholder body for screens not built yet.
+    PLACEHOLDER_COMING_SOON => "placeholder-coming-soon",
+
+    /// Button: start logging an event (fuel-up, reading, squawk, maintenance).
+    ACTION_LOG => "action-log",
+    /// Button: reload what's shown.
+    ACTION_REFRESH => "action-refresh",
+    /// Button label for screen readers: open the navigation menu.
+    MENU_OPEN => "menu-open",
+    /// Button label for screen readers: close the navigation menu.
+    MENU_CLOSE => "menu-close",
+    /// Top bar: sync status before sync exists.
+    SYNC_STATUS_UNKNOWN => "sync-status-unknown",
+
+    /// Theme switcher label.
+    THEME_LABEL => "theme-label",
+    /// Theme option: light.
+    THEME_LIGHT => "theme-light",
+    /// Theme option: dark.
+    THEME_DARK => "theme-dark",
+    /// Theme option: follow the operating system.
+    THEME_SYSTEM => "theme-system",
+
+    /// Log viewer: minimum level filter label.
+    LOG_VIEWER_MIN_LEVEL => "log-viewer-min-level",
+    /// Log viewer: area filter label.
+    LOG_VIEWER_AREA => "log-viewer-area",
+    /// Log viewer: area filter option for every area.
+    LOG_VIEWER_ALL_AREAS => "log-viewer-all-areas",
+    /// Log viewer: column heading for the entry time.
+    LOG_VIEWER_TIME => "log-viewer-time",
+    /// Log viewer: column heading for the level.
+    LOG_VIEWER_LEVEL => "log-viewer-level",
+    /// Log viewer: column heading for the message.
+    LOG_VIEWER_MESSAGE => "log-viewer-message",
+    /// Log viewer: how many entries are shown; takes `count` (number).
+    LOG_VIEWER_ENTRY_COUNT => "log-viewer-entry-count",
+    /// Log viewer: nothing matches the filters.
+    LOG_VIEWER_EMPTY => "log-viewer-empty",
+    /// Log viewer: logging didn't start, so there is nothing to show.
+    LOG_VIEWER_UNAVAILABLE => "log-viewer-unavailable",
+
+    /// Log area name: app lifecycle.
+    LOG_AREA_APP => "log-area-app",
+    /// Log area name: user interface.
+    LOG_AREA_UI => "log-area-ui",
+    /// Log area name: sync.
+    LOG_AREA_SYNC => "log-area-sync",
+    /// Log area name: database.
+    LOG_AREA_DATABASE => "log-area-database",
+    /// Log area name: authentication and permissions.
+    LOG_AREA_AUTH => "log-area-auth",
+
+    /// Log level name: error.
+    LOG_LEVEL_ERROR => "log-level-error",
+    /// Log level name: warning.
+    LOG_LEVEL_WARN => "log-level-warn",
+    /// Log level name: info.
+    LOG_LEVEL_INFO => "log-level-info",
+    /// Log level name: debug.
+    LOG_LEVEL_DEBUG => "log-level-debug",
+    /// Log level name: trace.
+    LOG_LEVEL_TRACE => "log-level-trace",
 }
