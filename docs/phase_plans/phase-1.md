@@ -13,12 +13,12 @@
 - The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 - Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository.
 
 ---
 
 ## Milestone 1: Local skeleton
-*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: ready to open (steps 3c–8)*
+*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: **#1, merged 2026-10-29** (merge commit, steps 3c–8)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
@@ -28,11 +28,11 @@
 | 3 | ✅ | `feat(domain): passed-in clock and test support` | `UnixMillis` and the `Clock` trait in `domain::time`; `domain::test_support` (feature `test-support`) with `ManualClock`; builders grow with Phase 2 types | none |
 | 3a | ✅ | `chore: allow read-only gh pr commands for agents` | Narrow the `gh pr:*` deny rule in `.claude/settings.json` to the write subcommands (incl. `checkout`, which changes the local branch), so `gh pr list/view/diff/checks/status` work | none |
 | 3b | ✅ | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
-| 3c | ☑️ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
-| 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
-| 5 | ☑️ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
-| 6 | ☑️ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
-| 8 | ☑️ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
+| 3c | ✅ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
+| 4 | ✅ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
+| 5 | ✅ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
+| 6 | ✅ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
+| 8 | ✅ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
 *Branch: `milestone/p1-m2-auth-handshake`*

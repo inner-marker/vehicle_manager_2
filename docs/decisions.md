@@ -170,3 +170,19 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Typed IDs plus the consistency test catch typos and missing messages without the heavier compile-time macro crates (`i18n-embed-fl`).
   - `dioxus-i18n` was rejected because it would tie translation to the UI crate.
 - **Not decided here:** choosing the language per user or device, and switching language at runtime (the Phase 2 display-preferences question); locale formatting of dates, numbers, and units (Phase 2).
+
+### 023. The repository is public during development
+*Decided: 2026-10-29 · Plan: §8 Repository & branches, §7 Getting the image onto the NAS · Amends the plan's "private until ready to publish"*
+
+- **Decision:**
+  - `inner-marker/vehicle_manager_2` is public now, while still in development. It was always intended as FOSS (MIT OR Apache-2.0, decision #014).
+  - Before going public, the history was rewritten so that every commit uses the project's dedicated contact address. The repo was then recreated, which also removed GitHub's hidden PR references to the old commits.
+  - Release images go to **GHCR**. The plan's "private repo: attach a `docker save` file to the release" stage no longer applies; manual `docker save`/`load` stays available for development builds before a release exists.
+  - **amd64** joins the image before the first image is published to GHCR, instead of "before the repo goes public". Exact tags and timing are settled when milestone 3 is planned.
+- **Why:**
+  - GitHub Actions jobs on the private repo were refused for billing. Public repos run on standard GitHub-hosted runners at no cost, including the macOS and Windows builds in the main gate.
+  - Branch protection and rulesets, secret scanning with push protection, and code scanning are available on public repos.
+- **Kept as-is:** the name in the MIT copyright line, the bundle ID, and the example data in the plan and UI sketches. They were reviewed before going public and judged fine.
+- **Follow-ups:**
+  - branch protection for `main` and `dev` (plan §8);
+  - secret scanning and push protection turned on in repository settings.

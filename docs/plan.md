@@ -1437,16 +1437,16 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 - **Primary NAS:** Synology, running Docker (Container Manager) and the Tailscale package.
 - **Architectures:** images will support both **arm64** and **x86_64 (amd64)**.
   - **Early builds: arm64 only,** matching the Synology target.
-  - amd64 is added later (at the latest before the repo goes public), as a multi-arch image under one tag.
+  - amd64 is added later (at the latest before the first image is published to GHCR), as a multi-arch image under one tag. *(Originally "before the repo goes public"; the repo went public early, see `docs/decisions.md` #023.)*
 - **Verify before milestone 3:** confirm the Synology model's CPU architecture and that Container Manager supports it (DSM's Info Center shows the CPU).
 - **Building arm64 efficiently:** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
 
 ### Getting the image onto the NAS
 
-- **Early development (private repo): manual loading.**
+- **Development builds (before a release exists): manual loading.**
   - Build the image and export it to a file (`docker save`).
   - Copy it to the NAS and import it (`docker load`, or Container Manager's image import).
-- **Once the repo is public:** the release workflow publishes multi-arch images to **GHCR**, and the NAS pulls them directly.
+- **Releases:** the release workflow publishes images to **GHCR** (the repo is public, `docs/decisions.md` #023), and the NAS pulls them directly. Exact image tags and when amd64 joins are settled when milestone 3 is planned.
 
 ### Building the app image
 
@@ -1528,7 +1528,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 
 ### Repository & branches
 
-- **Hosted on GitHub;** CI/CD runs on **GitHub Actions.** The repo can stay private until ready to publish.
+- **Hosted on GitHub** as a **public** repository (FOSS under MIT OR Apache-2.0, public during development; `docs/decisions.md` #023). CI/CD runs on **GitHub Actions.**
 - **Long-lived branches:**
   - **`main`:** released, stable code. Release tags live here.
   - **`dev`:** integration branch for work in progress.
@@ -1588,8 +1588,7 @@ Three main workflows, plus scheduled and maintenance jobs. Workflow files live i
 - **Builds release artifacts:**
   - Desktop apps: Linux (`.deb` and `.rpm`, built on an LTS base; see Linux desktop packaging), Windows, macOS
   - Server: Docker image.
-    - **Early (private repo):** arm64 image exported as a file (`docker save`) and attached to the release, for manual loading on the NAS.
-    - **Once public:** multi-arch (arm64 + amd64) image **published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`.
+    - **Published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`: arm64 first, multi-arch (arm64 + amd64) before the first published image at the latest (see Target NAS & image architectures). *(The earlier "private repo: attach a `docker save` file to the release" stage no longer applies; the repo is public, `docs/decisions.md` #023.)*
   - Web UI bundle (included in the server image)
   - *(Phase 4)* Android and iOS builds, with signing keys from GitHub secrets
   - *(Post-MVP)* plain server binaries/installers
