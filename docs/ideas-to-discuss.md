@@ -88,3 +88,12 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 ## Other ideas
 
 *(Add new ideas here as they come up.)*
+
+### 10. Desktop app remembers its window size 🟡
+*Raised by the human, 2026-10-29, during the milestone 4 desktop test · Suggested phase: undecided (whenever desktop settings grow, or Phase 6 Polish)*
+
+- The desktop app's `settings.json` (in the data folder, `app::settings`) should remember the **window size** between launches, and probably its position.
+- **To discuss:**
+  - size only, or position and maximized state too, and what happens when the saved position is on a monitor that's no longer connected;
+  - when to save (on resize, debounced, or on close);
+  - whether it belongs in the layered settings model (idea 7) as a device-only setting.

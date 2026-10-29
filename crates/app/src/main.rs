@@ -37,8 +37,24 @@ fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
     }
 }
 
-/// Client logging: console and in-app viewer. Desktop log files come with milestone 4.
-#[cfg(not(feature = "server"))]
+/// Desktop logging: rotating log files and the crash file in the data folder's `logs/`
+/// (`app::data_folder`), plus the console and in-app viewer.
+#[cfg(all(feature = "desktop", not(feature = "server")))]
+fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
+    let Some(data_folder) = app::data_folder::platform_data_folder() else {
+        let handles = logging::init()?;
+        // Logged only now, once the subscriber exists to record it.
+        tracing::warn!(target: log_area::APP, "no data folder on this platform; not writing log files");
+        return Ok(handles);
+    };
+    logging::init_with_log_dir(
+        &data_folder.join(logging::LOG_DIR_NAME),
+        logging::FileLogPolicy::DESKTOP,
+    )
+}
+
+/// Web and mobile logging: console and in-app viewer. Mobile log files come with Phase 4.
+#[cfg(not(any(feature = "server", feature = "desktop")))]
 fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
     logging::init()
 }
@@ -70,10 +86,34 @@ fn launch(log_handles: Option<LogHandles>) {
 /// Web, desktop, and mobile clients.
 #[cfg(not(feature = "server"))]
 fn launch(log_handles: Option<LogHandles>) {
+    #[cfg(feature = "desktop")]
+    use_saved_server_address();
+
     let mut launcher = dioxus::LaunchBuilder::new();
     // The log viewer reads the handles from context.
     if let Some(log_handles) = log_handles {
         launcher = launcher.with_context(log_handles);
     }
     launcher.launch(app::ui::App);
+}
+
+/// Points server functions at the saved server address (`app::settings`), if there is
+/// one. Must run before launching: Dioxus keeps the first address it's given for the
+/// whole run, and otherwise uses the local development server, `http://127.0.0.1:8080`
+/// (decision #027).
+#[cfg(all(feature = "desktop", not(feature = "server")))]
+fn use_saved_server_address() {
+    let saved = app::data_folder::platform_data_folder()
+        .and_then(|data_folder| app::settings::saved_server_address(&data_folder));
+    match saved {
+        Some(address) => {
+            tracing::info!(target: log_area::APP, address = address.as_str(), "using the saved server address");
+            // Dioxus needs a `&'static str`; this runs once per process, so leaking one
+            // short string is the intended use.
+            dioxus::prelude::dioxus_fullstack::set_server_url(address.as_str().to_owned().leak());
+        }
+        None => {
+            tracing::debug!(target: log_area::APP, "no saved server address; using the development server");
+        }
+    }
 }

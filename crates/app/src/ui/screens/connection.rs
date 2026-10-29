@@ -192,6 +192,7 @@ pub(crate) fn ConnectionPanel() -> Element {
     rsx! {
         section { class: "connection",
             h2 { {tr(messages::CONNECTION_TITLE)} }
+            ServerAddressField {}
             div { class: "connection-controls",
                 label {
                     {tr(messages::CONNECTION_CREDENTIAL)}
@@ -223,6 +224,93 @@ pub(crate) fn ConnectionPanel() -> Element {
             }
         }
     }
+}
+
+/// The result of pressing "Save address": a message, and whether it's a problem.
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct SaveStatus {
+    message: MessageId,
+    is_problem: bool,
+}
+
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+impl SaveStatus {
+    fn from_result(
+        result: &Result<domain::server_address::ServerAddress, crate::settings::SaveAddressError>,
+    ) -> Self {
+        use crate::settings::SaveAddressError;
+
+        let (message, is_problem) = match result {
+            Ok(_) => (messages::CONNECTION_ADDRESS_SAVED, false),
+            Err(SaveAddressError::Invalid(error)) => (error.message(), true),
+            Err(SaveAddressError::NoDataFolder | SaveAddressError::Io(_)) => {
+                (messages::CONNECTION_ADDRESS_SAVE_FAILED, true)
+            }
+        };
+        Self {
+            message,
+            is_problem,
+        }
+    }
+}
+
+/// Desktop: the server address field. Shows the address this run uses, and saves a new
+/// one for the next launch (Dioxus can't change it while running; decision #027).
+// rsx! expands event handlers to fully qualified `dioxus_elements::events::on*` calls,
+// and the prelude glob also imports those functions, so rustc flags the macro's own
+// paths. Not fixable in our code (explicit imports would depend on Dioxus internals).
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ServerAddressField() -> Element {
+    use dioxus::prelude::dioxus_fullstack::get_server_url;
+
+    let in_use = get_server_url();
+    let mut address = use_signal(|| in_use.to_owned());
+    let mut status = use_signal(|| None::<SaveStatus>);
+
+    rsx! {
+        div { class: "connection-controls server-address",
+            label {
+                {tr(messages::CONNECTION_SERVER_ADDRESS)}
+                input {
+                    r#type: "url",
+                    autocomplete: "off",
+                    spellcheck: "false",
+                    value: address(),
+                    oninput: move |event| address.set(event.value()),
+                }
+            }
+            button {
+                class: "run-checks",
+                onclick: move |_| {
+                    let data_folder = crate::data_folder::platform_data_folder();
+                    let result = crate::settings::save_server_address(data_folder.as_deref(), &address());
+                    if let Err(error) = &result {
+                        tracing::warn!(target: log_area::APP, ?error, "server address not saved");
+                    }
+                    status.set(Some(SaveStatus::from_result(&result)));
+                },
+                {tr(messages::CONNECTION_SAVE_ADDRESS)}
+            }
+        }
+        p { class: "check-detail", {tr_with(messages::CONNECTION_ADDRESS_IN_USE, &[("address", MessageArg::from(in_use))])} }
+        if let Some(status) = status() {
+            p { class: if status.is_problem { "check-problem" } else { "check-detail" }, {tr(status.message)} }
+        }
+    }
+}
+
+/// Web and mobile: no address field. The web app always talks to the server it was
+/// loaded from; mobile gets its own setting in Phase 4.
+#[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+#[component]
+fn ServerAddressField() -> Element {
+    rsx! {}
 }
 
 /// The pass/fail rows and details of a finished run.

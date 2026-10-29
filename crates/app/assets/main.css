@@ -313,6 +313,10 @@ select,
     font: inherit;
 }
 
+.server-address input {
+    min-width: 22em;
+}
+
 .run-checks {
     padding: 0 16px;
     border: none;

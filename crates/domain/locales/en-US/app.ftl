@@ -98,6 +98,22 @@ connection-server-info = Server app { $app_version }, API { $api_version } (acce
 connection-round-trip = Round trip: { $millis } ms
 connection-unreachable = Couldn't reach the server.
 connection-unexpected = The server sent an unexpected response.
+connection-server-address = Server address
+connection-save-address = Save address
+# $address (text): the server address this run of the app uses.
+connection-address-in-use = Using { $address }
+connection-address-saved = Saved. Restart the app to use the new address.
+connection-address-save-failed = Couldn't save the address. See the log below for details.
+
+## Server address rules (desktop)
+
+server-address-empty = Enter the server's address.
+server-address-unsupported-scheme = The address must start with https:// (or http:// for this computer).
+server-address-insecure-remote = Use https:// for a server on another device. http:// is only for this computer.
+server-address-missing-host = Add the server's name after https://.
+server-address-invalid-host = The server name can only have letters, numbers, dots, and hyphens.
+server-address-invalid-port = The port must be a number from 1 to 65535.
+server-address-extra-parts = Enter only the server's address, without a path, query, or login.
 
 ## Why the server refused a request
 
