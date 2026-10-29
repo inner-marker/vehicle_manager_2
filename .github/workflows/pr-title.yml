@@ -1,0 +1,35 @@
+# Checks that PR titles are Conventional Commits. With one PR per milestone (decisions.md #021),
+# the title becomes the merge commit's summary of the milestone in `dev` history.
+name: PR title
+
+on:
+  # Plain pull_request, not pull_request_target: GitHub runs pull_request_target
+  # workflows only from the default branch (main), so the check never ran on PRs into dev.
+  # `edited` re-runs the check when the title changes.
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+    branches: [dev, main]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional-title:
+    name: Conventional Commit title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Keep in sync with the type list in AGENTS.md §8a.
+          types: |
+            feat
+            fix
+            docs
+            refactor
+            test
+            chore
+            ci
+            build
+            perf

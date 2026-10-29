@@ -1,0 +1,46 @@
+# The server on the NAS, as a Container Manager "Project" (docs/deploying-nas.md).
+#
+# Copy this file to the Project folder (e.g. /volume1/docker/vehicle_manager/) next to
+# a `.env` file made from `.env.example`. Settings that differ per NAS, and the
+# credential, live in `.env`, which is never committed.
+#
+# Variable names must match domain::identity::env_var_name(...);
+# crates/app/tests/deploy_config.rs checks them.
+
+# Same as the Container Manager Project name. Without it, `docker compose` over SSH names
+# the project after the folder (`vehicle_manager`) and refuses to touch the Project's
+# container ("container name already in use").
+name: vehiclemanager
+
+services:
+  vehiclemanager:
+    image: ghcr.io/inner-marker/vehicle_manager_2:${VEHICLEMANAGER_IMAGE_TAG:-dev}
+    container_name: vehiclemanager
+    restart: unless-stopped
+
+    # Run as the NAS's own `vehiclemanager` user, so it owns the files in ./data.
+    user: "${VEHICLEMANAGER_UID:?set VEHICLEMANAGER_UID in .env}:${VEHICLEMANAGER_GID:?set VEHICLEMANAGER_GID in .env}"
+
+    # Published to the NAS's loopback only: nothing on the LAN can reach it. Tailscale
+    # (`tailscale serve` on the NAS) is the only way in, over HTTPS (plan §6, §7).
+    ports:
+      - "127.0.0.1:${VEHICLEMANAGER_HOST_PORT:-8410}:8080"
+
+    environment:
+      # Empty or missing means the server refuses every API request (decisions.md #024).
+      VEHICLEMANAGER_TEST_CREDENTIAL: ${VEHICLEMANAGER_TEST_CREDENTIAL:-}
+
+    # The data folder: logs now, the database from Phase 2. Must be a local NAS
+    # volume, never a network share (decisions.md #002).
+    volumes:
+      - ./data:/data
+
+    # Hardening: nothing in the container is writable except /data and a small /tmp;
+    # no Linux capabilities; no privilege escalation.
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

@@ -30,6 +30,25 @@ server = { path = "crates/server" }
 
 # External crates
 dioxus = "=0.7.10"              # exact pin: must match the installed Dioxus CLI (`dx --version`)
+# Server-side HTTP: auth middleware in `server` (phase-1.md step 7). Same versions Dioxus uses.
+axum = { version = "0.8.9", default-features = false }
+dirs = "6.0.0"                   # per-user data folder on desktop; already used by dioxus-desktop
+fluent-bundle = "0.16.0"        # translation engine (Project Fluent); see decisions.md #022
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+subtle = "2.6.1"                # constant-time credential comparison
+tower = { version = "0.5.3", default-features = false }
+tracing = "0.1.44"
+# No env-filter: per-area levels use the lighter `Targets` filter. No ansi: colored
+# terminal output would add nu-ansi-term (phase-1.md step 4).
+tracing-subscriber = { version = "0.3.23", default-features = false, features = ["std", "registry", "fmt"] }
+tracing-wasm = "0.2.1"          # browser devtools console output (web only)
+unic-langid = "0.9.6"           # language identifiers (e.g. en-US) for fluent-bundle
+web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's panics there)
+
+# Dev-only
+http-body-util = "0.1.5"        # reading response bodies in middleware tests
+tempfile = "3.27.0"
 
 # ---------------------------------------------------------------------------
 # Rustc lints

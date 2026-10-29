@@ -7,14 +7,44 @@ license.workspace = true
 rust-version.workspace = true
 publish = false
 
+# Library: everything testable (logging, later UI components and server functions).
+# Binary: the thin entry point that `dx` builds and launches.
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+doc = false             # avoids a rustdoc output collision with the `app` library
+
 [dependencies]
 domain.workspace = true
-dioxus = { workspace = true, features = ["fullstack"] }
+dioxus = { workspace = true, features = ["fullstack", "router"] }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+web-time.workspace = true
 
 # Native-only crates, enabled only by the `server` feature so the web (WASM)
 # build never pulls in sqlx.
 storage = { workspace = true, optional = true }
 server = { workspace = true, optional = true }
+
+# Native-only (the web app has no files): finds the desktop data folder. Not tied to
+# the `desktop` feature, so its tests run in the default native test build.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dirs.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tracing-wasm.workspace = true
+
+[dev-dependencies]
+domain = { workspace = true, features = ["test-support"] }
+tempfile.workspace = true
+# Server-feature tests: drive the real router (async runtime + oneshot requests).
+tokio = { version = "1", features = ["macros", "rt"] }
+tower = { workspace = true, features = ["util"] }
 
 [features]
 default = ["web"]

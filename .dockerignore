@@ -1,0 +1,21 @@
+# Keep the image build context small and free of local state.
+# Build output (rebuilt inside the image) and the Dioxus CLI's output
+target/
+dist/
+
+# Version control and editor/agent settings
+.git/
+.github/
+.claude/
+.DS_Store
+
+# Local data that must never end up in an image
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.jsonl
+.env
+deploy/.env

@@ -162,7 +162,7 @@ A Cargo workspace with four crates. Dependencies flow **one way only**, which pr
 
 **Migrations** live with the `storage` crate and are embedded with `sqlx::migrate!`.
 
-**Toolchain pinning:** `rust-toolchain.toml` pins an exact stable Rust version, the components (`clippy`, `rustfmt`), and the targets (e.g. `wasm32-unknown-unknown`, `aarch64-unknown-linux-gnu`). Every developer machine, agent, and CI run uses the same compiler.
+**Toolchain pinning:** `rust-toolchain.toml` pins an exact stable Rust version, the components (`clippy`, `rustfmt`), and the targets (e.g. `wasm32-unknown-unknown`, `x86_64-unknown-linux-gnu`). Every developer machine, agent, and CI run uses the same compiler.
 
 ### App identity: name vs. bundle ID
 
@@ -1048,7 +1048,7 @@ Decisions that keep the app easy to extend (new asset kinds, aircraft, integrati
 |---|---|---|
 | **Generic `Asset` with kind and parent** | See Terminology and Asset; components are child assets | Phase 2 |
 | **Data-driven asset profiles** | See Asset profiles | Phase 2 |
-| **Translations and localization from day one** | All user-facing text goes through a translation layer (e.g. Fluent), even with English only; dates, numbers, and units formatted by locale | Phase 2 (in place before most UI text exists) |
+| **Translations and localization from day one** | All user-facing text goes through a translation layer (e.g. Fluent), even with English only; dates, numbers, and units formatted by locale | Translation layer: Phase 1 (before the skeleton UI); locale formatting of dates, numbers, and units: Phase 2 (when those values first appear) |
 | **Currency on every cost** | Integer minor units plus ISO currency code | Phase 2 |
 | **Time: UTC instant + event time zone** | Every event stores the exact moment in UTC plus the IANA time zone where it happened; local times display correctly after travel, and aviation (which logs in UTC) fits later | Phase 2 |
 | **Custom field definitions** | Typed, validated, reportable custom fields | Phase 2 |
@@ -1434,19 +1434,19 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 
 ### Target NAS & image architectures
 
-- **Primary NAS:** Synology, running Docker (Container Manager) and the Tailscale package.
-- **Architectures:** images will support both **arm64** and **x86_64 (amd64)**.
-  - **Early builds: arm64 only,** matching the Synology target.
-  - amd64 is added later (at the latest before the repo goes public), as a multi-arch image under one tag.
-- **Verify before milestone 3:** confirm the Synology model's CPU architecture and that Container Manager supports it (DSM's Info Center shows the CPU).
-- **Building arm64 efficiently:** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
+- **Primary NAS:** Synology **DS1019+** (Intel Celeron J3455, 4 cores, 8 GB RAM, x86_64) on **DSM 7.4.1**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
+- **Architectures:** images will support both **x86_64 (amd64)** and **arm64**.
+  - **First images: amd64 only,** matching the NAS. GitHub's standard Linux runners are amd64, so CI builds them natively, with no cross-compiling or emulation.
+  - **arm64 later**, for other always-on hosts such as a Raspberry Pi (see Hosting options), as a multi-arch image under one tag.
+- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the J3455 has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
+- **Building arm64 efficiently (later):** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
 
 ### Getting the image onto the NAS
 
-- **Early development (private repo): manual loading.**
+- **Development builds (before a release exists): manual loading.**
   - Build the image and export it to a file (`docker save`).
   - Copy it to the NAS and import it (`docker load`, or Container Manager's image import).
-- **Once the repo is public:** the release workflow publishes multi-arch images to **GHCR**, and the NAS pulls them directly.
+- **Releases:** the release workflow publishes images to **GHCR** (the repo is public, `docs/decisions.md` #023), and the NAS pulls them directly. Exact image tags and when amd64 joins are settled when milestone 3 is planned.
 
 ### Building the app image
 
@@ -1528,12 +1528,12 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 
 ### Repository & branches
 
-- **Hosted on GitHub;** CI/CD runs on **GitHub Actions.** The repo can stay private until ready to publish.
+- **Hosted on GitHub** as a **public** repository (FOSS under MIT OR Apache-2.0, public during development; `docs/decisions.md` #023). CI/CD runs on **GitHub Actions.**
 - **Long-lived branches:**
   - **`main`:** released, stable code. Release tags live here.
-  - **`dev`:** integration branch for work in progress.
-- **Feature branches:** all work (human or agent) happens on short-lived branches cut from `dev`, merged into `dev` by pull request, then **deleted once merged** (GitHub's auto-delete setting).
-- **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`.
+  - **`dev`:** integration branch for work in progress, and the repository's **default branch** on GitHub (`docs/decisions.md` #026).
+- **Milestone branches:** all work (human or agent) happens on one branch per roadmap milestone, cut from `dev` (`milestone/p<phase>-m<n>-<slug>`). Each step is a Conventional Commit on that branch. **One pull request per milestone**, merged into `dev` with a merge commit, then the branch is **deleted** (GitHub's auto-delete setting). Standalone branches are only for work outside a milestone, such as urgent fixes. See `docs/decisions.md` #021.
+- **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`. Step-by-step checklist: `docs/releasing.md`.
 
 **Branch protection**
 - **`main`:**
@@ -1541,7 +1541,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
   - All "PR to `main`" checks must pass, and the branch must be up to date before merging.
   - Merged with a merge commit (not squash), so `dev` history stays intact.
 - **`dev`:**
-  - Changes through pull requests from feature branches; no force-pushes or deletion.
+  - Changes through pull requests from milestone branches; no force-pushes or deletion.
   - The fast checks must pass before merging.
 - **The human is always in the loop for git:** agents never run git or GitHub write operations (commit, push, merge, rebase, tag, branch changes, opening or merging PRs, creating releases). Agents may use read-only git (`status`, `diff`, `log`) and **draft the exact commands, commit messages, and PR descriptions** for the human to review and run.
 - **Enforced in agent tool settings where possible,** not just in `AGENTS.md`: e.g. deny rules for `git commit`, `git push`, and `gh pr` commands in Claude Code's project settings.
@@ -1562,7 +1562,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 
 Three main workflows, plus scheduled and maintenance jobs. Workflow files live in `.github/workflows/`.
 
-**1. Fast checks: push to `dev`, and PRs into `dev`**
+**1. Fast checks: PRs into `dev`** (not re-run on the push after merging; see `docs/decisions.md` #021)
 - Goal: feedback within a few minutes.
 - Runs on Linux only.
 - Jobs:
@@ -1588,8 +1588,7 @@ Three main workflows, plus scheduled and maintenance jobs. Workflow files live i
 - **Builds release artifacts:**
   - Desktop apps: Linux (`.deb` and `.rpm`, built on an LTS base; see Linux desktop packaging), Windows, macOS
   - Server: Docker image.
-    - **Early (private repo):** arm64 image exported as a file (`docker save`) and attached to the release, for manual loading on the NAS.
-    - **Once public:** multi-arch (arm64 + amd64) image **published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`.
+    - **Published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`: amd64 first (the NAS), multi-arch (amd64 + arm64) later (see Target NAS & image architectures, `docs/decisions.md` #025). *(The earlier "private repo: attach a `docker save` file to the release" stage no longer applies; the repo is public, `docs/decisions.md` #023.)*
   - Web UI bundle (included in the server image)
   - *(Phase 4)* Android and iOS builds, with signing keys from GitHub secrets
   - *(Post-MVP)* plain server binaries/installers
@@ -1685,7 +1684,11 @@ Every agent change is reviewed as a diff before merging.
 
 ## 9. Roadmap
 
+*Each phase's agreed work plan (PR sequence, status, and detailed PR plans) lives in `docs/phase_plans/` and is linked from that phase below.*
+
 ### Phase 1: Walking skeleton
+
+**Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md) · **Complete:** exit criteria met 2026-10-29; released as `v0.1.0`
 
 **Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the desktop app is the final milestone.
 
@@ -1698,21 +1701,22 @@ Every agent change is reviewed as a diff before merging.
    - Test infrastructure: per-crate test layout, the shared test data builders module, and a passed-in clock for `domain` (see Testing strategy).
    - Workspace lint configuration, `clippy.toml`, `AGENTS.md`, branch protection, and the fast-check and PR-to-`main` workflows in place **before** the first feature code.
    - Release workflow, `git-cliff` changelog, and Dependabot set up by the end of Phase 1, so the first tagged release (e.g. `v0.1.0`) exercises the whole pipeline.
+   - **Translation layer** (Fluent, English only) in place **before** the skeleton UI, so no hard-coded UI text ever exists (see `docs/decisions.md` #018).
    - Skeleton UI with navigation and placeholder screens: vehicle list, vehicle detail, log event, what's due.
-   - Test server functions (ping, server version/time).
    - Everything running locally with `dx serve`.
-2. **Handshake & auth stub**
+2. **Auth stub, handshake & test server functions**
+   - **Auth middleware** requires credentials on every server function from day one, using a hardcoded test credential for now. It ships **with or before the first server function,** so no unauthenticated server function ever exists (see `docs/decisions.md` #019).
    - **Version handshake:** client sends its API version; the server rejects incompatible versions. This is the foundation for the versioned sync contract.
-   - **Auth middleware** requires credentials on every server function from day one, using a hardcoded test credential for now.
+   - Test server functions (ping, server version/time), behind the auth middleware.
    - The web UI shows pass/fail for both checks.
 3. **Web UI on the NAS**
    - Server built into a Docker image and deployed on the NAS.
    - Published via `tailscale serve`.
    - Another tailnet device opens the web UI over HTTPS, and the test calls succeed.
 4. **Desktop over Tailscale (Phase 1 complete)**
-   - **Linux is the first desktop platform** (WebKitGTK-based); Windows and macOS follow.
-   - During development the desktop app runs directly via the Dioxus CLI; packaging (below) is set up in the release workflow.
-   - Desktop app with a **configurable server address** in settings.
+   - **macOS is the first desktop platform** for the first runs; Linux (WebKitGTK-based) and Windows follow (`docs/decisions.md` #027).
+   - During development the desktop app runs directly via the Dioxus CLI; packaging (see Linux desktop packaging) is set up in the release workflow with the first release.
+   - Desktop app with a **configurable server address** in settings, applied at launch.
    - Connects to the NAS over Tailscale and passes the version and auth checks.
 
 **Throughout Phase 1:** the **debug log** (tracing ring buffer, rotating file, and a basic in-app log viewer), so every later milestone can be debugged from inside the apps.
@@ -1723,7 +1727,7 @@ Every agent change is reviewed as a diff before merging.
 
 Each phase has open questions in section 10 that must be resolved before work on that phase starts.
 
-- **Phase 2: Data model & server storage.** Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot to a second NAS disk. **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; translation layer; currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
+- **Phase 2: Data model & server storage.** Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot to a second NAS disk. **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 - **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
 - **Phase 4: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder.
 - **Phase 5: Maintenance intelligence.** What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
@@ -1768,6 +1772,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Geocoder dataset:** which GeoNames city threshold (places of 500, 1,000, or 5,000+ people) and boundary detail, balancing accuracy against size; which crate (if any) to use.
 - **Map picker:** a map needs map tiles, which usually come from an online service (e.g. OpenStreetMap, with usage limits). Online-only map picking, or skip the map and use saved places plus manual entry? (The post-MVP event map needs the same tile source, so the two could be decided together.)
 - **Geocoding on device vs. server:** confirm the bundled dataset size is acceptable for phones.
+- **Nightly snapshot disk:** the NAS (DS1019+) has **one storage pool** (4 data disks + 1 parity), so there is no separate disk for the "different NAS disk" snapshot rule (§6 Data integrity). Options: a USB disk on the NAS, Hyper Backup to another device, or accept same-pool snapshots until offsite backups (post-MVP).
 
 ### Phase 3: Local-first & sync
 

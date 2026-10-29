@@ -1,0 +1,108 @@
+# Full gate for PRs into `main` (releases): everything in the fast checks, plus docs,
+# dependency policy, a cross-platform build matrix, the web (WASM) build, and the
+# CHANGELOG entry for this version, and the server Docker image builds (not pushed).
+# Also re-run by the release workflow. Migration-fixture checks are added in Phase 2.
+name: Main gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+concurrency:
+  group: main-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fast-checks:
+    name: Fast checks
+    uses: ./.github/workflows/fast-checks.yml
+
+  docs:
+    name: Docs build cleanly
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: docs
+      - run: cargo doc --workspace --no-deps
+
+  cargo-deny:
+    name: Dependency policy (cargo-deny)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check
+          arguments: --all-features
+
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: build
+      - run: cargo build --workspace
+
+  web:
+    name: Web (WASM) build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: wasm
+      - name: Check domain and app for wasm32
+        run: |
+          cargo check -p domain --target wasm32-unknown-unknown
+          cargo check -p app --target wasm32-unknown-unknown
+      # AGENTS.md: the web build must never depend on storage, server, or sqlx.
+      # `cargo tree --prefix none` prints one crate per line, so a match at line start
+      # means one of those crates is in the web dependency graph.
+      - name: Web build has no native-only crates
+        run: |
+          if cargo tree -p app --target wasm32-unknown-unknown -e normal --prefix none \
+              | grep -E '^(storage|server|sqlx[a-z_-]*) v'; then
+            echo "::error::The web (WASM) build depends on a native-only crate (listed above)."
+            exit 1
+          fi
+
+  changelog:
+    name: CHANGELOG has this version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: changelog
+      - name: Release script tests
+        run: scripts/release/test.sh
+      # Release prep regenerates CHANGELOG.md with git-cliff on dev (docs/releasing.md);
+      # this fails if that step was missed for the version in Cargo.toml.
+      - name: CHANGELOG.md has notes for the Cargo.toml version
+        run: scripts/release/check-changelog.sh
+
+  # The Docker image must build; only the dev-image and release workflows push it.
+  docker-image:
+    name: Server image builds
+    uses: ./.github/workflows/server-image.yml
+    with:
+      push: false
+      tags: |
+        type=raw,value=main-gate-check

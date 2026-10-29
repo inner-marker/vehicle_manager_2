@@ -1,0 +1,40 @@
+# Weekly dependency update PRs into `dev`. Updating existing dependencies is routine;
+# adding a new dependency still needs approval (AGENTS.md §8).
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build       # -> "build(deps): ..."
+      include: scope
+    groups:
+      # One PR for all semver-compatible updates; major bumps get their own PRs.
+      cargo-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/setup-rust
+    target-branch: dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci          # -> "ci(deps): ..."
+      include: scope
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Base images in the Dockerfile (rust, debian). Pinned tags get bump PRs into dev.
+  - package-ecosystem: docker
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build       # -> "build(deps): ..."
+      include: scope

@@ -1,0 +1,563 @@
+/*
+ * The app's only stylesheet: theme colors and the adaptive layout (decision #011).
+ *
+ * Themes: `data-theme` on `.app` is light | dark | system (default dark, decision #012).
+ * Layouts (one set of components, switched here):
+ *   wide   >= 1024px  full sidebar, + Log in the top bar
+ *   medium 640-1023px icon-only sidebar
+ *   narrow < 640px    menu overlay, bottom tabs, floating + Log button
+ * Placeholder styling for the walking skeleton, not final design.
+ */
+
+/* ---------- Theme colors ---------- */
+
+.app[data-theme="dark"] {
+    --bg: #14171c;
+    --surface: #1d2128;
+    --surface-raised: #262b34;
+    --text: #e8eaed;
+    --text-muted: #9aa1ab;
+    --border: #333a45;
+    --accent: #5aa9ff;
+    --accent-text: #0b1420;
+    --error: #ff6b6b;
+    --warn: #f5b942;
+    color-scheme: dark;
+}
+
+.app[data-theme="light"],
+.app[data-theme="system"] {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-raised: #eef0f3;
+    --text: #1b1f24;
+    --text-muted: #5b6470;
+    --border: #d6dae0;
+    --accent: #1f6fd1;
+    --accent-text: #ffffff;
+    --error: #c62828;
+    --warn: #a86400;
+    color-scheme: light;
+}
+
+/* System follows the OS. These repeat the dark values above (CSS can't share them). */
+@media (prefers-color-scheme: dark) {
+    .app[data-theme="system"] {
+        --bg: #14171c;
+        --surface: #1d2128;
+        --surface-raised: #262b34;
+        --text: #e8eaed;
+        --text-muted: #9aa1ab;
+        --border: #333a45;
+        --accent: #5aa9ff;
+        --accent-text: #0b1420;
+        --error: #ff6b6b;
+        --warn: #f5b942;
+        color-scheme: dark;
+    }
+}
+
+/* ---------- Base ---------- */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.app {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+/* Garage-friendly: big enough to hit with gloves or greasy fingers. */
+button,
+select,
+.sidebar-link,
+.bottom-tab,
+.log-button {
+    min-height: 44px;
+}
+
+.icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* ---------- Shell ---------- */
+
+.shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 8px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-nav hr {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 8px 0;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: var(--text-muted);
+}
+
+.sidebar-link:hover {
+    background: var(--surface-raised);
+    color: var(--text);
+}
+
+.sidebar-link.active {
+    background: var(--surface-raised);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.menu-close,
+.menu-open,
+.sidebar-theme,
+.bottom-tabs,
+.fab,
+.scrim {
+    display: none;
+}
+
+.main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.page-title {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.log-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+.placeholder {
+    color: var(--text-muted);
+}
+
+.detail-id {
+    font-family: ui-monospace, monospace;
+}
+
+.not-found-back {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+/* ---------- Theme toggle ---------- */
+
+.theme-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.theme-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.theme-option[aria-pressed="true"] {
+    background: var(--surface-raised);
+    color: var(--accent);
+}
+
+/* Show the focus ring for keyboard users only, not after a tap or click. */
+.theme-option:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* The top-bar toggle shows icons only, to save space; labels stay as tooltips. */
+.topbar-theme .theme-option-label {
+    display: none;
+}
+
+/* In the menu: three equal columns spanning the menu, each label under its icon,
+   so all three fit even on the narrowest phones. */
+.sidebar-theme .theme-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+}
+
+.sidebar-theme .theme-option {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 0;
+    font-size: 0.75rem;
+}
+
+/* ---------- Connection panel (Diagnostics) ---------- */
+
+.connection {
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.connection h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+
+.connection-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.connection-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.connection-controls input {
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+}
+
+.server-address input {
+    min-width: 22em;
+}
+
+.run-checks {
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.run-checks:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.check-results {
+    display: grid;
+    grid-template-columns: max-content auto;
+    gap: 4px 16px;
+    margin: 16px 0 8px;
+}
+
+.check-results dt {
+    color: var(--text-muted);
+}
+
+.check-results dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.check-pass {
+    color: var(--accent);
+}
+
+.check-fail,
+.check-problem {
+    color: var(--error);
+}
+
+.check-not-checked,
+.check-detail {
+    color: var(--text-muted);
+}
+
+.check-problem,
+.check-detail {
+    margin: 4px 0;
+}
+
+/* ---------- Log viewer ---------- */
+
+.log-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.log-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.log-controls select,
+.refresh {
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.log-count {
+    color: var(--text-muted);
+}
+
+.log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.log-table th,
+.log-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.log-time,
+.log-fields {
+    font-family: ui-monospace, monospace;
+    color: var(--text-muted);
+}
+
+.log-time {
+    white-space: nowrap;
+}
+
+.level-ERROR td {
+    color: var(--error);
+}
+
+.level-WARN td {
+    color: var(--warn);
+}
+
+/* ---------- Medium: icon-only sidebar ---------- */
+
+@media (max-width: 1023px) {
+    .sidebar {
+        width: 64px;
+        align-items: center;
+    }
+
+    .sidebar-link {
+        justify-content: center;
+        padding: 0;
+        width: 48px;
+    }
+
+    .sidebar-label {
+        display: none;
+    }
+}
+
+/* ---------- Narrow: menu overlay, bottom tabs, floating + Log ---------- */
+
+@media (max-width: 639px) {
+    .sidebar {
+        display: none;
+    }
+
+    /* The open menu: a full-height overlay with labels and the theme toggle. */
+    .sidebar.open {
+        display: flex;
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 20;
+        width: 260px;
+        align-items: stretch;
+    }
+
+    .sidebar.open .sidebar-link {
+        justify-content: flex-start;
+        padding: 0 12px;
+        width: auto;
+    }
+
+    .sidebar.open .sidebar-label,
+    .sidebar.open .sidebar-theme,
+    .sidebar.open .menu-close {
+        display: flex;
+    }
+
+    .menu-close {
+        align-self: flex-end;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: rgb(0 0 0 / 50%);
+    }
+
+    .menu-open {
+        display: inline-flex;
+        align-items: center;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .topbar {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .topbar-theme,
+    .log-button,
+    .sync-status-label {
+        display: none;
+    }
+
+    .content {
+        padding: 16px 12px 96px; /* room for the bottom tabs and floating button */
+    }
+
+    .bottom-tabs {
+        display: flex;
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 5;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+    }
+
+    .bottom-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 6px 0;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .bottom-tab.active {
+        color: var(--accent);
+    }
+
+    .fab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        right: 16px;
+        bottom: 76px;
+        z-index: 6;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--accent-text);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+    }
+}

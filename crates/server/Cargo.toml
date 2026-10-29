@@ -10,6 +10,17 @@ publish = false
 [dependencies]
 domain.workspace = true
 storage.workspace = true
+axum.workspace = true
+serde_json.workspace = true
+subtle.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+serde_json.workspace = true
+# Async test runtime only; the server's runtime comes from Dioxus.
+tokio = { version = "1", features = ["macros", "rt"] }
+tower = { workspace = true, features = ["util"] }
 
 [lints]
 workspace = true

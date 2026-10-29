@@ -1,0 +1,53 @@
+# Fast checks: feedback within a few minutes on every PR into `dev` (one per milestone).
+# Not re-run on the push to `dev` after merging: GitHub already tested the merge result
+# on the PR (decisions.md #021). Also called by the PR-to-main gate, so these checks are
+# defined once.
+name: Fast checks
+
+on:
+  pull_request:
+    branches: [dev]
+  workflow_call:
+
+# Cancel a run when a newer commit arrives on the same branch or PR.
+concurrency:
+  group: fast-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: Format and clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: lint
+      - name: Check formatting
+        run: cargo fmt --all --check
+      - name: Clippy (all lints as errors)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      # The server build compiles code the default (web) build doesn't: server functions'
+      # bodies, the auth layer wiring, and the auth coverage tests.
+      - name: Clippy, server build
+        run: cargo clippy -p app --all-targets --no-default-features --features server -- -D warnings
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: test
+      - name: Run tests
+        run: cargo test --workspace
+      # Proves every server function is under /api/ and refuses unauthenticated requests.
+      - name: Run tests, server build (auth coverage)
+        run: cargo test -p app --no-default-features --features server
