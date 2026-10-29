@@ -49,7 +49,7 @@
 |---|---|---|---|---|
 | 9a | ☑️ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
 | 9b | ☑️ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
-| 9c | ⬜ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
+| 9c | ☑️ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
 | 9d | ⬜ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
 | 9e | ⬜ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
 
@@ -573,3 +573,21 @@ No app display name anywhere; it isn't decided.
   - with a data dir, `logs/current.jsonl` is created and filled;
   - with a read-only one, pages still load and a `WARN` names the folder and the OS error.
   - The panic hook itself wasn't triggered end to end (there's no safe way to make the real binary panic); its report formatting is unit-tested.
+
+**Step 9c: done, with notes**
+- **`Dockerfile`:** `rust:1.95.0-trixie` build stage, with `cargo install --locked dioxus-cli@0.7.10` in its own layer, then `dx bundle --platform web --release --out-dir /out` with registry and `target/` cache mounts. The `debian:trixie-slim` runtime holds `/app/server` and `/app/public`, sets `IP=0.0.0.0`, `PORT=8080`, `VEHICLEMANAGER_DATA_DIR=/data`, and runs as `USER 10001:10001`. There's no `HEALTHCHECK`: it would need `curl` in the image. Container Manager's restart policy covers crashes.
+- **`deploy/compose.yaml`:**
+  - `user` is required from `.env` (`${…:?}`), so a missing value is a clear error;
+  - the port is `127.0.0.1` only;
+  - `./data:/data`;
+  - `read_only`, a 16 MB `/tmp` tmpfs, `cap_drop: ALL`, and `no-new-privileges`.
+- **`deploy/.env.example`:** the credential is left **empty** rather than a placeholder, so an unedited copy fails closed (503) instead of accepting a known value.
+- **New `crates/app/tests/deploy_config.rs` (6 tests)** keeps the deploy files in step with the code:
+  - the data-dir and credential variable names match `env_var_name`;
+  - `./data` is mounted at `/data`;
+  - every published port is `127.0.0.1`;
+  - neither the image nor the container runs as root;
+  - `.env.example`'s credential is empty.
+- **Also:** `.gitignore` ignores `.env` and `deploy/.env`, and Dependabot watches the Dockerfile's base images.
+- **`docs/deploying-nas.md`:** one-time setup, image tags, updating, rollback, and troubleshooting.
+- **Not yet verified:** no real image build (there's no Docker on the dev Mac). The first build runs in CI in step 9d. The Dockerfile follows the bundle layout verified locally (`server` + `public/`).
