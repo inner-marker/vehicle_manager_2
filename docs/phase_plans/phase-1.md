@@ -50,8 +50,8 @@
 | 9a | ☑️ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
 | 9b | ☑️ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
 | 9c | ☑️ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
-| 9d | ⬜ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
-| 9e | ⬜ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
+| 9d | ☑️ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
+| 9e | ☑️ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
 
 ## Milestone 4: Linux desktop over Tailscale
 *Branch: `milestone/p1-m4-desktop`*
@@ -591,3 +591,30 @@ No app display name anywhere; it isn't decided.
 - **Also:** `.gitignore` ignores `.env` and `deploy/.env`, and Dependabot watches the Dockerfile's base images.
 - **`docs/deploying-nas.md`:** one-time setup, image tags, updating, rollback, and troubleshooting.
 - **Not yet verified:** no real image build (there's no Docker on the dev Mac). The first build runs in CI in step 9d. The Dockerfile follows the bundle layout verified locally (`server` + `public/`).
+
+
+**Step 9d: done, with notes**
+- **One reusable workflow, `server-image.yml`,** builds linux/amd64 with buildx and the GitHub Actions cache, and adds OCI labels that link the package to the repo. It requests **no permissions itself**, because a reusable workflow can't ask for more than its caller grants. The publishers grant `packages: write`, and the main gate's build-only check grants nothing extra.
+- **`dev-image.yml` triggers on push to `dev` or `milestone/**`** when code, the Dockerfile, deploy files, or the image workflows change, and also on "Run workflow".
+  - **Changed from the plan:** "Run workflow" alone can't start a branch's first build, because GitHub only offers it for workflow files on the default branch.
+  - Tags are `type=ref,event=branch` (`:dev`, `:milestone-p1-m3-nas-web`) plus `:sha-<commit>`.
+- **The default branch is now `dev`** (decision #026, plan §8), so `workflow_dispatch` and `schedule` workflows run without waiting for a release.
+- **`release.yml`** publishes `:<version>` and `:latest` after the gate. The GitHub Release waits for the image.
+- **`main-gate.yml`** builds the image without pushing.
+- **First real build (2026-10-29):** about 15 minutes, successful.
+  - An anonymous pull from GHCR works (the package is public).
+  - The image index holds linux/amd64 plus buildx's provenance attestation.
+  - Tags: `milestone-p1-m3-nas-web`, `sha-354aa4a`.
+
+**Step 9e: written**
+- `docs/test-plans/nas-web.md` has 16 steps:
+  - Project creation and the container log;
+  - log files and their owner;
+  - loopback `curl`, then `tailscale serve`;
+  - HTTPS with a valid certificate from another tailnet device and a phone;
+  - wrong and right credentials;
+  - not reachable from the LAN;
+  - surviving a stop/start and a NAS restart;
+  - the update and rollback flows.
+- **Uses the milestone branch's files and image tag,** since milestone 3 isn't merged yet.
+- **Status:** waiting for the human's NAS run.
