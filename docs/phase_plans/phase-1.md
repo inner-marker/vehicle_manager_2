@@ -47,8 +47,8 @@
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 9a | 📝 | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
-| 9b | ⬜ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
+| 9a | ☑️ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
+| 9b | ☑️ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
 | 9c | ⬜ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
 | 9d | ⬜ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
 | 9e | ⬜ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
@@ -560,3 +560,16 @@ No app display name anywhere; it isn't decided.
 - Also what to capture if a step fails.
 
 **Not in this milestone:** arm64 images; the database and its volume use (Phase 2); snapshots (Phase 2, the new open question); offsite backups; the desktop app (milestone 4).
+
+**Step 9b: done, with notes**
+- **New `domain::identity::env_var_name`:** `VEHICLEMANAGER_DATA_DIR` and `VEHICLEMANAGER_TEST_CREDENTIAL` are both named through it, and `server::auth` now uses it, so the naming rule lives in one place.
+- **`logging::init()` is unchanged for clients.** The new native `init_with_log_dir(dir, policy)` adds the file sink and crash file. If the folder isn't usable, it warns and continues without file logs.
+- **The crash file** is `logging::crash`: a panic hook writes `last-crash.txt` (time, version, panic text, backtrace), then runs the previous hook.
+- **Tests (6 new):**
+  - `env_var_names_share_the_app_id_prefix`, `data_dir_env_var_comes_from_app_id`;
+  - `file_sink_writes_captured_events_to_the_log_dir`, `unusable_log_dir_is_an_error_not_a_panic`;
+  - `crash_report_has_time_version_panic_and_backtrace`, `crash_file_is_outside_the_log_rotation`.
+- **Smoke run of the built server:**
+  - with a data dir, `logs/current.jsonl` is created and filled;
+  - with a read-only one, pages still load and a `WARN` names the folder and the OS error.
+  - The panic hook itself wasn't triggered end to end (there's no safe way to make the real binary panic); its report formatting is unit-tested.

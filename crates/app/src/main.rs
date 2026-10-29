@@ -5,10 +5,11 @@
 
 use app::logging::{self, LogHandles};
 use domain::log_area;
+use tracing::subscriber::SetGlobalDefaultError;
 
 fn main() {
     // Logging must start before launching, so Dioxus's own logger sees ours and steps aside.
-    let log_handles = match logging::init() {
+    let log_handles = match start_logging() {
         Ok(log_handles) => Some(log_handles),
         // Another subscriber got there first; it still receives our events.
         Err(error) => {
@@ -19,6 +20,27 @@ fn main() {
     tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), "app starting");
 
     launch(log_handles);
+}
+
+/// Server logging: with `VEHICLEMANAGER_DATA_DIR` set (the Docker image sets `/data`),
+/// rotating log files and the crash file go to its `logs/` folder; otherwise
+/// (e.g. `dx serve`) the console and in-app viewer only.
+#[cfg(feature = "server")]
+fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
+    let data_dir_var = domain::identity::env_var_name(logging::DATA_DIR_ENV_NAME);
+    match std::env::var_os(data_dir_var) {
+        Some(data_dir) => {
+            let log_dir = std::path::Path::new(&data_dir).join(logging::LOG_DIR_NAME);
+            logging::init_with_log_dir(&log_dir, logging::FileLogPolicy::SERVER)
+        }
+        None => logging::init(),
+    }
+}
+
+/// Client logging: console and in-app viewer. Desktop log files come with milestone 4.
+#[cfg(not(feature = "server"))]
+fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
+    logging::init()
 }
 
 /// The server: the Dioxus app (pages, assets, server functions) behind the auth layer,

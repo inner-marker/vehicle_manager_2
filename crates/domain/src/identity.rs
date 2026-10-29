@@ -34,6 +34,23 @@ pub const APP_ID: &str = "vehiclemanager";
 /// A single path segment; platform code joins it onto the OS data directory.
 pub const DATA_DIR_NAME: &str = "vehiclemanager";
 
+/// The name of one of the app's environment variables: the app ID in capitals, an
+/// underscore, then `name` (e.g. `env_var_name("DATA_DIR")` is `VEHICLEMANAGER_DATA_DIR`).
+///
+/// Every environment variable the app reads is named through this, so all of them
+/// share one prefix that comes from [`APP_ID`], never from the display name.
+///
+/// # Examples
+///
+/// ```
+/// use domain::identity::env_var_name;
+///
+/// assert_eq!(env_var_name("TEST_CREDENTIAL"), "VEHICLEMANAGER_TEST_CREDENTIAL");
+/// ```
+pub fn env_var_name(name: &str) -> String {
+    format!("{}_{name}", APP_ID.to_ascii_uppercase())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -56,6 +73,12 @@ mod tests {
                 "segment {segment:?} must be lowercase ASCII letters or digits"
             );
         }
+    }
+
+    #[test]
+    fn env_var_names_share_the_app_id_prefix() {
+        assert_eq!(env_var_name("DATA_DIR"), "VEHICLEMANAGER_DATA_DIR");
+        assert!(env_var_name("X").starts_with(&APP_ID.to_ascii_uppercase()));
     }
 
     #[test]
