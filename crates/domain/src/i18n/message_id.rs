@@ -160,6 +160,31 @@ define_messages! {
     CONNECTION_UNREACHABLE => "connection-unreachable",
     /// Connection panel: the server answered with something unexpected.
     CONNECTION_UNEXPECTED => "connection-unexpected",
+    /// Connection panel (desktop): label of the server address field.
+    CONNECTION_SERVER_ADDRESS => "connection-server-address",
+    /// Connection panel (desktop): button that saves the server address.
+    CONNECTION_SAVE_ADDRESS => "connection-save-address",
+    /// Connection panel (desktop): the address this run uses; takes `address` (text).
+    CONNECTION_ADDRESS_IN_USE => "connection-address-in-use",
+    /// Connection panel (desktop): the address was saved and applies after a restart.
+    CONNECTION_ADDRESS_SAVED => "connection-address-saved",
+    /// Connection panel (desktop): the settings file couldn't be written.
+    CONNECTION_ADDRESS_SAVE_FAILED => "connection-address-save-failed",
+
+    /// Server address rule: nothing was entered.
+    SERVER_ADDRESS_EMPTY => "server-address-empty",
+    /// Server address rule: must start with https:// (or http:// for this computer).
+    SERVER_ADDRESS_UNSUPPORTED_SCHEME => "server-address-unsupported-scheme",
+    /// Server address rule: http:// is only for this computer.
+    SERVER_ADDRESS_INSECURE_REMOTE => "server-address-insecure-remote",
+    /// Server address rule: no server name.
+    SERVER_ADDRESS_MISSING_HOST => "server-address-missing-host",
+    /// Server address rule: the server name has characters it can't have.
+    SERVER_ADDRESS_INVALID_HOST => "server-address-invalid-host",
+    /// Server address rule: the port isn't 1–65535.
+    SERVER_ADDRESS_INVALID_PORT => "server-address-invalid-port",
+    /// Server address rule: a path, query, or login after the server name.
+    SERVER_ADDRESS_EXTRA_PARTS => "server-address-extra-parts",
 
     /// Refusal reason: no credential was sent.
     API_ERROR_MISSING_CREDENTIAL => "api-error-missing-credential",

@@ -62,7 +62,7 @@
 |---|---|---|---|---|
 | 10.0 | ☑️ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
 | 10a | ☑️ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
-| 10b | ⬜ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
+| 10b | ☑️ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
 | 10c | ⬜ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
 
 
@@ -658,6 +658,14 @@ No app display name anywhere; it isn't decided.
 - The credential stays memory-only (#024, #027).
 - **Tests:** address rules (accepted, rejected, normalized); settings round-trip; missing and corrupt files fall back to "not set" (temp directory).
 - New messages go in `app.ftl` and `define_messages!`.
+
+**Step 10b: written**
+- `domain::server_address`: `ServerAddress::parse` (normalizes; `https://`, or `http://` for `localhost`, `127.0.0.0/8`, `[::1]`) and `ServerAddressError` with a translated message per rule.
+- `app::settings` (native): `Settings { server_address }` in `settings.json`, unknown fields ignored; `load`, `save` (temp file + rename), `saved_server_address`, `save_server_address`.
+- `main.rs`: with the `desktop` feature, `use_saved_server_address()` calls `set_server_url` before launch.
+- Connection panel: on desktop, a server address field, "Using <address>", and the save result. Web and mobile render nothing there.
+- 12 new messages in `app.ftl` and `define_messages!`.
+- **New lint override:** `#[expect(unused_qualifications)]` on `ServerAddressField`, the same rsx! false positive as the other panels.
 
 **10c: manual test plan** (`docs/test-plans/desktop-macos.md`)
 - Run with `dx serve --platform desktop` on the Mac, with Tailscale connected.

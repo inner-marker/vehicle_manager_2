@@ -8,4 +8,6 @@ pub mod api;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
 pub mod logging;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod settings;
 pub mod ui;

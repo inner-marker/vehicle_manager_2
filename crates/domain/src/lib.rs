@@ -9,6 +9,7 @@ pub mod api;
 pub mod i18n;
 pub mod identity;
 pub mod log_area;
+pub mod server_address;
 pub mod time;
 pub mod time_utils;
 
