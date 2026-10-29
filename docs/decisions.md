@@ -240,3 +240,58 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Dioxus 0.7.10 stores the server address once per process (`set_server_url` is a `OnceLock`, and Dioxus falls back to `http://127.0.0.1:8080` if it's unset), so it can't change while the app runs.
   - Phase 2 logins replace the test credential, so saving it now would add a keychain dependency for nothing.
   - The exit criterion doesn't need packages, and packaging belongs with the release pipeline it runs in.
+
+### 028. Login: username and password with session cookies; first Admin by one-time setup code
+*Decided: 2026-10-29 · Plan: §6 Security (Application), §10 Phase 2 open questions · Replaces the Phase 1 test credential (#024)*
+
+- **Decision:**
+  - **Sign-in is a username and password.** Passwords are hashed with **argon2** on the server. Login attempts are rate-limited.
+  - **The web UI gets a session cookie** after login: `HttpOnly`, `Secure`, `SameSite=Strict`. The auth middleware accepts it on every `/api/` request.
+  - **Native apps** (desktop now, mobile later) sign in with the same username and password until Phase 3 pairing issues per-device tokens.
+  - **First Admin:** while the server has no users, it writes a **one-time setup code** to its log at every startup. The first visitor enters the code, then chooses the Admin's username and password. The code stops working once an Admin exists.
+  - **Passkeys are later,** not in Phase 2.
+- **Why:**
+  - A password is enough behind Tailscale (only approved devices can reach the server), and works the same in every browser and in the native apps.
+  - The setup code means only someone who can read the server's log (NAS access) can claim Admin, so another tailnet device can't get there first.
+  - Passkeys need extra browser and platform work for little gain on a private tailnet.
+
+### 029. Display preferences: per user, with server-wide defaults; each setting its own record
+*Decided: 2026-10-29 · Plan: §10 Phase 2 open questions; ideas-to-discuss.md idea 7 (in part)*
+
+- **Decision:**
+  - **Units** (distance, volume, and the rest, chosen separately, so miles with litres is allowed), **default currency**, **language**, and **date format** have **server-wide defaults** set by the Admin.
+  - **Each user can override any of them.** A user's choices follow them to every device they sign in on.
+  - **Not per device.** The theme stays the only device-only setting.
+  - **Each setting is its own record** (one per user per setting, and one per server default), stamped with the **HLC** of the change. Changes go through commands like every other write. Two devices changing settings offline then merge by **last-write-wins per setting**: a newer change to one setting doesn't undo an older change to a different one.
+  - Display only: stored values stay metric integers and currency codes (§3, AGENTS.md).
+- **Why:**
+  - One household default saves every user setting things up, while still allowing a personal choice.
+  - A record per setting makes #004 (last-write-wins per record, by HLC) work per setting, without a new merge rule. The HLC is the "timestamp": it follows real time, but stays ordered even when device clocks disagree.
+  - Per-device units would show the same person different numbers on phone and laptop.
+- **Idea 7 (layered settings):** this sets two layers, server and user. Whether device and asset layers are needed is still open.
+
+### 030. Phase 2 asset kinds and profiles; trip computer readings on fuel-ups
+*Decided: 2026-10-29 · Plan: §3 Asset profiles, Custom fields, §10 Phase 2 open questions*
+
+- **Decision: six kinds ship in Phase 2,** each as a profile (seed data, never `if kind == ...`):
+
+  | Kind | Default meters | Event types | Extra sections |
+  |---|---|---|---|
+  | Car | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Truck | Odometer | Fuel, maintenance, repair, reading | Fuel economy, towing and hauling |
+  | Motorcycle | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Trailer | none (odometer optional) | Maintenance, repair, reading | none |
+  | Generator | Run hours | Fuel, maintenance, repair, reading | none |
+  | Other equipment | none (add any) | Maintenance, repair, reading | none |
+
+  - Identifier types: VIN or serial number, and license plate.
+  - Expected documents: title, registration, and insurance for cars, trucks, motorcycles, and trailers.
+  - A fuel-up requires the odometer (run hours for the generator).
+  - Boats, aircraft, and components are later; the model already allows them.
+- **Decision: groundwork for trip computer readings** (what the vehicle's own display reports at a fill-up):
+  - **Quantity types for custom fields:** besides text, number, date, yes/no, and choice list, a custom field can be a **distance**, **duration** (entered and shown as `HH:MM:SS`), **volume**, or **fuel economy**. Values are stored as integers in base units (meters, seconds, milliliters, meters per liter) and displayed in the user's units (#029).
+  - **Profiles can ship custom field definitions** per event type, which the user can turn off or extend. Car, truck, and motorcycle fuel-ups ship with **trip time** (duration) and **trip EV distance** (distance; for hybrids, off by default), and the user can add more (e.g. trip distance, average speed).
+  - **Vehicle-reported fuel economy is a real, optional column** on the fuel-up details, not a custom field, because the app compares it with its own calculated fuel economy, and the plan's rule is that anything the app computes on gets a real column (§3 Custom fields).
+- **Why:**
+  - These six cover the household's vehicles and equipment, and "other equipment" catches anything else without a new profile.
+  - Trip computer values vary by vehicle, so most belong in defined custom fields; the one the app calculates with gets a column, so comparisons are plain SQL.

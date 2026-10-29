@@ -67,6 +67,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 
 - A single settings system with layers: **server → group → user → device → asset;** more specific settings override broader ones.
 - Would also answer the open Phase 2 question about display preferences (units, currency, language, date format).
+- **Partly decided (#029):** display preferences use two layers, server defaults and per-user overrides, one record per setting with last-write-wins by HLC.
 - **To discuss:** which settings live at which layers by default.
 
 ### 8. Notes format 🟡

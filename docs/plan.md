@@ -228,7 +228,7 @@ Holds only information that doesn't change over time:
 ### Asset profiles
 
 Each asset kind has a **profile** that defines its defaults, as **data, not hard-coded logic:**
-- Default meters (e.g. car: odometer; generator: run hours)
+- Default meters (e.g. car: odometer; generator: run hours) · Phase 2 kinds: car, truck, motorcycle, trailer, generator, other equipment (#030)
 - Which event types apply (e.g. fuel-ups for cars, not trailers)
 - Default required readings per event type
 - Identifier types offered (VIN, plate, serial, …)
@@ -396,7 +396,8 @@ The core abstraction is a single **event** type covering everything that happens
 - In Rust, an `EventKind` enum has one variant per type; the table layout only affects the row layer.
 
 **Custom fields: defined fields, values in a small JSON `extras` column**
-- Users can add custom fields (e.g. "tire brand" on a repair), but each is first **defined:** name, type (text, number, date, yes/no, choice list), unit (via `uom`, for numbers), and which asset kinds and event types it applies to.
+- Users can add custom fields (e.g. "tire brand" on a repair), but each is first **defined:** name, type (text, number, date, yes/no, choice list, or a quantity: distance, duration as `HH:MM:SS`, volume, fuel economy), unit (via `uom`, for numbers), and which asset kinds and event types it applies to.
+- **Profiles can ship custom field definitions,** e.g. trip time and trip EV distance on fuel-ups for trip computer readings (`docs/decisions.md` #030).
 - Values are stored in the event's optional **`extras` JSON column,** keyed by the field definition's ID, and **validated against the definition.**
 - Defined fields can be shown, filtered, and included in reports and exports, rather than being free-form blobs.
 - Core app fields **never** go in `extras`; anything the app computes on or validates gets a real column.
@@ -1368,7 +1369,8 @@ Dioxus provides no encryption or authentication on its own; server functions are
 **Application**
 - **Two credential types, one auth middleware:**
   - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
-  - **Web UI:** browsers have no keychain, so the web UI uses a login that sets an **HttpOnly, Secure session cookie**.
+  - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
+  - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
 - **Auth enforced in middleware**, so no server function can be left unprotected by accident.
 - **Rate limiting** on auth and pairing endpoints (e.g. `tower_governor`).
 - **Server-side input validation** and parameterized queries (e.g. sqlx).
@@ -1759,9 +1761,6 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 ### Phase 2: Data model & server storage
 
-- **Login and first-Admin setup:** how users authenticate to the web UI (password, passkeys?), and how the first Admin is created on a fresh server.
-- **Display preferences:** units (mi/km, gal/L), default currency, language, and date format: per user, per device, or per server?
-- **Initial asset kinds and profiles:** which kinds ship in the MVP (e.g. car, truck, motorcycle, trailer, generator) and their default meters and event types.
 - **Interval and service-bundle templates:** defined per vehicle only, or as shared templates (e.g. "F-150 factory schedule") applied to vehicles?
 - **Towing and hauling percentages:** confirm both are 0–100 percentages like highway/city, rather than yes/no flags.
 - **Repair events:** do repairs need their own detail table (e.g. diagnosis, parts, labor), or do they reuse the maintenance task structure?
