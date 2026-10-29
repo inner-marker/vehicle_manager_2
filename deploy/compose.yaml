@@ -7,6 +7,11 @@
 # Variable names must match domain::identity::env_var_name(...);
 # crates/app/tests/deploy_config.rs checks them.
 
+# Same as the Container Manager Project name. Without it, `docker compose` over SSH names
+# the project after the folder (`vehicle_manager`) and refuses to touch the Project's
+# container ("container name already in use").
+name: vehiclemanager
+
 services:
   vehiclemanager:
     image: ghcr.io/inner-marker/vehicle_manager_2:${VEHICLEMANAGER_IMAGE_TAG:-dev}

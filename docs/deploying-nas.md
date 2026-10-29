@@ -57,7 +57,7 @@ In `.env`, check `VEHICLEMANAGER_UID=1030`, `VEHICLEMANAGER_GID=100` and `VEHICL
 
 ### 5. Create the Project (Container Manager)
 - Go to Container Manager → **Project** → **Create**.
-  - **Project name:** `vehiclemanager`
+  - **Project name:** `vehiclemanager` (must match the `name:` line in `compose.yaml`)
   - **Path:** `/docker/vehicle_manager`
   - **Source:** *Use existing docker-compose.yml*. It should find `compose.yaml`. If your Container Manager version only looks for `docker-compose.yml`, rename the file to that.
 - Skip the web portal (Web Station) option.
@@ -114,4 +114,5 @@ Set `VEHICLEMANAGER_IMAGE_TAG=sha-<commit>` in `.env` to a known-good build (the
 
 - **"Permission denied" writing logs:** `data/` isn't writable by `vehiclemanager`. Redo setup step 1's permissions. The server keeps running without file logs and says so in its log.
 - **Container exits at once with "set VEHICLEMANAGER_UID in .env":** `.env` is missing those lines, or isn't in the Project folder.
+- **`docker compose up` says "container name "/vehiclemanager" is already in use":** the `compose.yaml` in the Project folder is an old copy without the `name: vehiclemanager` line. Download it again (setup step 4), or add `-p vehiclemanager` to both update commands.
 - **Pulls fail with "denied":** the GHCR package is still private (setup step 2).

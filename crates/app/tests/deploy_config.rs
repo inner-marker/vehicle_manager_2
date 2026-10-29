@@ -6,7 +6,7 @@
 //! settings (loopback-only port, non-root user).
 
 use app::logging::DATA_DIR_ENV_NAME;
-use domain::identity::env_var_name;
+use domain::identity::{APP_ID, env_var_name};
 
 const DOCKERFILE: &str = include_str!("../../../Dockerfile");
 const COMPOSE: &str = include_str!("../../../deploy/compose.yaml");
@@ -58,6 +58,21 @@ fn compose_publishes_the_port_on_loopback_only() {
             "port not loopback-only: {line}"
         );
     }
+}
+
+#[test]
+fn compose_project_and_container_are_named_after_the_app_id() {
+    // The project name must match the Container Manager Project (docs/deploying-nas.md),
+    // so `docker compose` over SSH updates that Project's container instead of clashing
+    // with it.
+    assert!(
+        COMPOSE.contains(&format!("\nname: {APP_ID}\n")),
+        "compose.yaml must set the project name to {APP_ID}"
+    );
+    assert!(
+        COMPOSE.contains(&format!("container_name: {APP_ID}\n")),
+        "compose.yaml must name the container {APP_ID}"
+    );
 }
 
 #[test]
