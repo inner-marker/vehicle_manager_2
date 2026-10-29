@@ -4,7 +4,7 @@
 
 **Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the desktop app (macOS first, decision #027) is the last milestone.
 
-**Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
+**Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly. **Met 2026-10-29** (milestone 3 and 4 test runs).
 
 **How this file works** (decision #021)
 - Each **milestone** has one branch (`milestone/p1-mN-<slug>`) and **one PR into `dev`** when the milestone is finished. That PR is merged with a **merge commit**.
@@ -64,6 +64,7 @@
 | 10a | ☑️ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
 | 10b | ☑️ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
 | 10c | ☑️ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
+| 10d | ☑️ | `docs: record the macOS test run` | Test plan passed; Phase 1 exit criteria met; window-size idea noted | none |
 
 
 ---
@@ -675,7 +676,9 @@ No app display name anywhere; it isn't decided.
 - `docs/test-plans/desktop-macos.md` has 16 steps: data folder and logs; address rules in the UI; save, restart, and "Using"; wrong and right credential against the NAS; the address surviving a restart while the credential doesn't; Tailscale off → "Couldn't reach the server."; a corrupt `settings.json`; the credential absent from logs and settings.
 - An incompatible API version can't be produced from the UI; the plan points to the automated tests and the milestone 2 `curl` checks.
 - Found while writing it: `dx serve` may give the local development server a port other than 8080, so the plan says "the local development server" rather than a fixed address.
-- **Status:** waiting for the human's run on the Mac.
+- **Passed on the Mac, 2026-10-29:** all 16 steps, against the NAS over Tailscale.
+- **Phase 1 exit criteria: met.** The web UI (milestone 3, `docs/test-plans/nas-web.md`) and the macOS desktop app (this milestone) both reach the server on the NAS over Tailscale and show the handshake result; a wrong credential is rejected cleanly on both. An incompatible version is rejected by the server (automated tests, and milestone 2's `curl` checks).
+- **Raised during the run:** the desktop app should remember its window size in `settings.json`. Noted as idea 10 in `docs/ideas-to-discuss.md`, not scheduled.
 
 **Verification:** the usual self-review commands, plus `cargo clippy -p app --features desktop --all-targets -- -D warnings` and `cargo check -p app --target wasm32-unknown-unknown` (the web build must not pull in `dirs` or the settings file code).
 

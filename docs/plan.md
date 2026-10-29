@@ -1688,7 +1688,7 @@ Every agent change is reviewed as a diff before merging.
 
 ### Phase 1: Walking skeleton
 
-**Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md)
+**Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md) · **Exit criteria met 2026-10-29**
 
 **Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the desktop app is the final milestone.
 
