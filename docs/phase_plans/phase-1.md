@@ -52,6 +52,8 @@
 | 9c | ☑️ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
 | 9d | ☑️ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
 | 9e | ☑️ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
+| 9f | ☑️ | `fix: name the compose project so docker compose matches the NAS Project` | `name: vehiclemanager` in `deploy/compose.yaml`, so `docker compose` over SSH updates the Container Manager Project's container; test pins it to `APP_ID`; troubleshooting entry | none |
+| 9g | ☑️ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
 
 ## Milestone 4: Linux desktop over Tailscale
 *Branch: `milestone/p1-m4-desktop`*
@@ -617,4 +619,12 @@ No app display name anywhere; it isn't decided.
   - surviving a stop/start and a NAS restart;
   - the update and rollback flows.
 - **Uses the milestone branch's files and image tag,** since milestone 3 isn't merged yet.
-- **Status:** waiting for the human's NAS run.
+- **Passed on the NAS, 2026-10-29:** all 16 steps, after the step 9f fix.
+  - `tailscale serve` on port 443 worked, so the 8443 fallback wasn't needed.
+  - Step 15 first failed with "container name already in use": `docker compose` over SSH named the project after the folder (`vehicle_manager`), not the Project (`vehiclemanager`). Fixed in step 9f.
+- **Phase 1 exit criteria, web half: met.** The web UI loads over HTTPS from other tailnet devices (laptop and phone), and the handshake passes with the right credential and is rejected cleanly with a wrong one. The desktop half is milestone 4.
+
+**Step 9f: written**
+- `deploy/compose.yaml` sets `name: vehiclemanager`, matching the Container Manager Project name.
+- `crates/app/tests/deploy_config.rs`: `compose_project_and_container_are_named_after_the_app_id`.
+- `docs/deploying-nas.md`: the Project name must match `name:`; a troubleshooting entry for the conflict error.
