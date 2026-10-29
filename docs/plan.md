@@ -1533,7 +1533,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
   - **`main`:** released, stable code. Release tags live here.
   - **`dev`:** integration branch for work in progress.
 - **Milestone branches:** all work (human or agent) happens on one branch per roadmap milestone, cut from `dev` (`milestone/p<phase>-m<n>-<slug>`). Each step is a Conventional Commit on that branch. **One pull request per milestone**, merged into `dev` with a merge commit, then the branch is **deleted** (GitHub's auto-delete setting). Standalone branches are only for work outside a milestone, such as urgent fixes. See `docs/decisions.md` #021.
-- **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`.
+- **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`. Step-by-step checklist: `docs/releasing.md`.
 
 **Branch protection**
 - **`main`:**

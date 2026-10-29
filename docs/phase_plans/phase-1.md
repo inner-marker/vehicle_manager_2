@@ -18,7 +18,7 @@
 ---
 
 ## Milestone 1: Local skeleton
-*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: not opened yet*
+*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: ready to open (steps 3c–8)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
@@ -32,7 +32,7 @@
 | 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
 | 5 | ☑️ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
 | 6 | ☑️ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
-| 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
+| 8 | ☑️ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
 *Branch: `milestone/p1-m2-auth-handshake`*
@@ -325,4 +325,60 @@ No app display name anywhere; it isn't decided.
 - Clippy is clean for native, wasm32, `server`, and `desktop`. Docs, the WASM guard, and `cargo deny` are also clean.
 - `dx build --platform web` succeeds, with the server and client built and `main.css` bundled.
 - A local smoke run of the built server returned 200 with the right title for `/`, `/due`, `/vehicles/abc123`, `/diagnostics`, and an unknown path. `data-theme="dark"` was set and icons were inlined.
-- **Manual test plan:** `docs/test-plans/skeleton-ui.md`.
+- **Manual test plan:** `docs/test-plans/skeleton-ui.md`. **Passed on web, 2026-10-29**, after the narrow-menu theme toggle fix.
+
+### Step 8: `ci: release workflow and git-cliff`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton`*
+
+**Goal:** the release pipeline exists before the first tag, so `v0.1.0` at the end of Phase 1 exercises it (plan §8 CI/CD). Build artifacts are added by the milestones that create them: the Docker image in M3, desktop packages in M4.
+
+**Files**
+1. `cliff.toml` (git-cliff 2.x config):
+   - Groups: Breaking changes, Features, Fixes, Performance, Refactoring, Documentation, Tests, Build, CI, Chores, Dependencies (`build(deps)` / `ci(deps)` from Dependabot).
+   - Skips merge commits and non-Conventional commits. That includes the initial "Setting up workspace." commit and the milestone PR merge commits, whose steps are listed individually.
+   - Links commits and PRs to `github.com/inner-marker/vehicle_manager_2`.
+2. `.github/workflows/release.yml`: runs on tags `v*.*.*`.
+   - **Guards:** the tag must equal `v` + the workspace version, read with `cargo metadata` and `jq`. The tagged commit must be on `main`.
+   - **Gate:** reuses the main gate as a reusable workflow, so it gets a `workflow_call` trigger.
+   - **Release notes:** this version's section, taken from the **committed** `CHANGELOG.md` (the reviewed text), not regenerated.
+   - **Release:** created with the preinstalled `gh` CLI (`gh release create`). The token gets `contents: write` in this job only.
+   - **Artifacts:** none yet. The checksums step comes with the first artifact.
+3. `.github/workflows/main-gate.yml`:
+   - Adds `workflow_call`.
+   - New job: `CHANGELOG.md` must have a `## [x.y.z]` section for the `Cargo.toml` version.
+4. `scripts/release/` (small shell scripts, so CI and local runs share them):
+   - `check-version-tag.sh`
+   - `changelog-section.sh <version>`: prints one version's notes and fails if they're missing.
+   - `check-changelog.sh`
+5. `docs/releasing.md`: the human's release checklist:
+   - bump the version on `dev`;
+   - `git cliff --tag vX.Y.Z -o CHANGELOG.md`, review, commit;
+   - PR `dev` → `main` (merge commit);
+   - tag on `main`, push the tag.
+   - Also how to install git-cliff locally.
+6. **`AGENTS.md` §9:** the scripts get a `shellcheck`-clean requirement if `shellcheck` is available. Otherwise nothing changes.
+
+**Tests**
+- The scripts are run locally against fixture files: a matching and a mismatched tag, a changelog with and without the section.
+- `git cliff --unreleased` is run locally to check grouping and skipping on our real history.
+- The workflows are only proven on GitHub. The first real run is the `v0.1.0` release at the end of Phase 1, with a checklist in `docs/releasing.md`.
+
+**Dependencies:** none in the code.
+- Tools: `git-cliff` 2.14 (MIT/Apache) for release prep on your machine. Install with `cargo binstall git-cliff`. CI doesn't need it, because notes come from the committed changelog.
+- No new third-party actions.
+
+**Changes from the plan, found during implementation**
+- **`scripts/release/` has five scripts, not three:**
+  - `workspace-version.sh` holds the version lookup in one place, shared by the other scripts;
+  - `test.sh` runs 12 tests against `scripts/release/fixtures/CHANGELOG.md`. The main gate's changelog job runs it.
+- **Group names in `cliff.toml` use zero-padded sort keys** (`<!-- 01 -->`). Plain numbers sorted "Dependencies" (10) before "Fixes" (2).
+- **No AGENTS.md shellcheck rule,** because `shellcheck` isn't installed. AGENTS.md §9 instead lists `scripts/release/test.sh` for changes to the release scripts.
+- **Grouping was checked with `git cliff --with-commit`** (injected test messages), because the agent deny rules rightly block `git commit`, even in a scratch repo.
+- **`docs/plan.md` §8** now links to `docs/releasing.md`.
+
+**Verification:**
+- `git cliff --unreleased` on the real history groups every Conventional Commit and skips the initial commit and the PR #1 merge.
+- With injected messages: breaking changes come first, Dependabot `build(deps)` and `ci(deps)` go under Dependencies, and merge and unconventional messages are skipped.
+- A `git cliff --tag v0.1.0` output round-trips through `changelog-section.sh` and `check-changelog.sh`.
+- All workflow YAML parses.
+- The workflows are proven on GitHub at the `v0.1.0` release; the checklist is in `docs/releasing.md`.

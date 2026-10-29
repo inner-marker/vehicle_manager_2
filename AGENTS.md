@@ -186,6 +186,7 @@ cargo clippy --workspace --all-targets -- -D warnings # all lints as errors
 cargo test --workspace                                # all tests
 cargo doc --workspace --no-deps                       # docs build cleanly
 cargo deny check                                      # advisories, licenses, sources (when dependencies change)
+scripts/release/test.sh                               # release scripts (when scripts/release/ changes)
 ```
 
 Then confirm:

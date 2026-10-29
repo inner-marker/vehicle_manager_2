@@ -1,11 +1,13 @@
 # Full gate for PRs into `main` (releases): everything in the fast checks, plus docs,
-# dependency policy, a cross-platform build matrix, and the web (WASM) build.
-# Docker image, migration-fixture, and CHANGELOG checks are added once those exist.
+# dependency policy, a cross-platform build matrix, the web (WASM) build, and the
+# CHANGELOG entry for this version. Also re-run by the release workflow.
+# Docker image and migration-fixture checks are added once those exist.
 name: Main gate
 
 on:
   pull_request:
     branches: [main]
+  workflow_call:
 
 concurrency:
   group: main-gate-${{ github.ref }}
@@ -80,3 +82,18 @@ jobs:
             echo "::error::The web (WASM) build depends on a native-only crate (listed above)."
             exit 1
           fi
+
+  changelog:
+    name: CHANGELOG has this version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: changelog
+      - name: Release script tests
+        run: scripts/release/test.sh
+      # Release prep regenerates CHANGELOG.md with git-cliff on dev (docs/releasing.md);
+      # this fails if that step was missed for the version in Cargo.toml.
+      - name: CHANGELOG.md has notes for the Cargo.toml version
+        run: scripts/release/check-changelog.sh
