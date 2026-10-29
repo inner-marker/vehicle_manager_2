@@ -85,4 +85,5 @@ The first release proves the pipeline. After it, confirm:
 - [ ] The guards job passed, and a deliberately wrong tag (e.g. `v0.0.0-test` on a branch) fails it. Delete that tag afterwards.
 - [ ] The Main gate ran inside the Release workflow and passed.
 - [ ] The GitHub Release `v0.1.0` exists, with notes matching the `## [0.1.0]` section of `CHANGELOG.md`.
-- [ ] **Weekly checks** can now be started from Actions → "Run workflow". Scheduled and manual workflows only run once they're on `main`.
+- [ ] The server image was published as `:0.1.0` and `:latest` (GitHub → Packages → `vehicle_manager_2`).
+- [ ] **Weekly checks** can be started from Actions → "Run workflow". (Since decision #026 made `dev` the default branch, scheduled and manual workflows run from `dev` and no longer wait for `main`.)

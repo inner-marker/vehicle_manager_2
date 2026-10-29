@@ -6,6 +6,8 @@
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly. **Met 2026-10-29** (milestone 3 and 4 test runs).
 
+**Status: complete.** All four milestones are in `dev` (PRs #1–#4). Released as `v0.1.0`, the first release, which also tests the release pipeline (`docs/releasing.md`).
+
 **How this file works** (decision #021)
 - Each **milestone** has one branch (`milestone/p1-mN-<slug>`) and **one PR into `dev`** when the milestone is finished. That PR is merged with a **merge commit**.
 - Each **step** is one Conventional Commit on the milestone branch, made by the human from the commands the agent drafts.
@@ -56,15 +58,15 @@
 | 9g | ✅ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
 
 ## Milestone 4: Desktop over Tailscale (macOS first)
-*Branch: `milestone/p1-m4-desktop` · Milestone PR: not opened yet*
+*Branch: `milestone/p1-m4-desktop` · Milestone PR: **#4, merged 2026-10-29** (merge commit, steps 10.0–10d)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 10.0 | ☑️ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
-| 10a | ☑️ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
-| 10b | ☑️ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
-| 10c | ☑️ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
-| 10d | ☑️ | `docs: record the macOS test run` | Test plan passed; Phase 1 exit criteria met; window-size idea noted | none |
+| 10.0 | ✅ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
+| 10a | ✅ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
+| 10b | ✅ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
+| 10c | ✅ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
+| 10d | ✅ | `docs: record the macOS test run` | Test plan passed; Phase 1 exit criteria met; window-size idea noted | none |
 
 
 ---
