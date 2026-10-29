@@ -201,3 +201,27 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
   - Failing closed means a misconfigured server can't be open by accident.
 - **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.
+
+### 025. First server image is linux/amd64; arm64 later
+*Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
+
+- **Decision:**
+  - The NAS is a Synology **DS1019+**: Intel Celeron J3455 (x86_64), 8 GB RAM, DSM 7.4.1, with Container Manager and Tailscale installed.
+  - Server images start **amd64-only**. **arm64 is kept for later**, for hosts such as a Raspberry Pi, as a multi-arch image under one tag.
+  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the J3455 has no AVX.
+  - `rust-toolchain.toml` pins `x86_64-unknown-linux-gnu` instead of `aarch64-unknown-linux-gnu`.
+- **Why:**
+  - The plan assumed an ARM Synology. The real CPU, checked in DSM's Info Center before milestone 3 as the plan required, is x86_64, so an arm64-only image wouldn't run.
+  - amd64 also builds natively on GitHub's standard runners, without cross-compiling or emulation.
+
+### 026. `dev` is the repository's default branch; milestone branches get their own images
+*Decided: 2026-10-29 · Plan: §8 Repository & branches, CI/CD pipelines · Phase plan: phase-1.md step 9d*
+
+- **Decision:**
+  - The GitHub default branch is **`dev`**. `main` keeps its role: released code only, changed only by release PRs from `dev`, with tags `vX.Y.Z` on `main`.
+  - Development server images are built when code, the Dockerfile, or the deploy files change on `dev` or a `milestone/**` branch. Each is tagged by branch (`:dev`, `:milestone-<name>`) and commit (`:sha-<commit>`), so a milestone can be tested on the NAS before its PR without moving `:dev`.
+- **Why:**
+  - GitHub runs `workflow_dispatch`, `schedule`, and `pull_request_target` workflows only from the default branch. With `main` as default, none of them could run until the first release.
+  - PRs now default to targeting `dev`, which is where every milestone PR goes.
+  - `workflow_dispatch` still needs the workflow file *on* `dev`, so the push trigger is what lets a milestone branch get an image before it's merged.
+- **Unaffected:** tag-triggered releases, which run the workflow from the tagged commit, and the branch rules in plan §8.

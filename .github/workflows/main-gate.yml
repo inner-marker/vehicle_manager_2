@@ -1,7 +1,7 @@
 # Full gate for PRs into `main` (releases): everything in the fast checks, plus docs,
 # dependency policy, a cross-platform build matrix, the web (WASM) build, and the
-# CHANGELOG entry for this version. Also re-run by the release workflow.
-# Docker image and migration-fixture checks are added once those exist.
+# CHANGELOG entry for this version, and the server Docker image builds (not pushed).
+# Also re-run by the release workflow. Migration-fixture checks are added in Phase 2.
 name: Main gate
 
 on:
@@ -97,3 +97,12 @@ jobs:
       # this fails if that step was missed for the version in Cargo.toml.
       - name: CHANGELOG.md has notes for the Cargo.toml version
         run: scripts/release/check-changelog.sh
+
+  # The Docker image must build; only the dev-image and release workflows push it.
+  docker-image:
+    name: Server image builds
+    uses: ./.github/workflows/server-image.yml
+    with:
+      push: false
+      tags: |
+        type=raw,value=main-gate-check

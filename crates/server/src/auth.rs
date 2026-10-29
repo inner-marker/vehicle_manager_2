@@ -28,21 +28,20 @@ use axum::response::Response;
 use domain::api::{
     API_PATH_PREFIX, API_VERSION_HEADER, ApiError, check_client_api_version, parse_api_version,
 };
-use domain::identity::APP_ID;
+use domain::identity::env_var_name;
 use domain::log_area;
 use subtle::ConstantTimeEq;
 
-/// Suffix of the environment variable holding the test credential. The full name is
-/// the app ID in capitals plus this, e.g. `VEHICLEMANAGER_TEST_CREDENTIAL`; it comes
-/// from `domain::identity`, never from the display name (AGENTS.md).
-const CREDENTIAL_ENV_SUFFIX: &str = "_TEST_CREDENTIAL";
+/// The environment variable holding the test credential, without the app prefix
+/// (`domain::identity::env_var_name` turns it into `VEHICLEMANAGER_TEST_CREDENTIAL`).
+const CREDENTIAL_ENV_NAME: &str = "TEST_CREDENTIAL";
 
 /// The prefix of an `Authorization` header carrying a bearer credential.
 const BEARER_PREFIX: &str = "Bearer ";
 
 /// The name of the environment variable the server reads its credential from.
 pub fn credential_env_var() -> String {
-    format!("{}{CREDENTIAL_ENV_SUFFIX}", APP_ID.to_uppercase())
+    env_var_name(CREDENTIAL_ENV_NAME)
 }
 
 /// What the auth gate accepts. Cheap to clone; shared by every request.
@@ -348,7 +347,6 @@ mod tests {
     #[test]
     fn credential_env_var_name_comes_from_app_id() {
         assert_eq!(credential_env_var(), "VEHICLEMANAGER_TEST_CREDENTIAL");
-        assert!(credential_env_var().starts_with(&APP_ID.to_uppercase()));
     }
 
     #[test]

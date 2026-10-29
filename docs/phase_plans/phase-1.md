@@ -13,7 +13,7 @@
 - The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 - Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository, #024 test credential, #025 amd64 server image.
 
 ---
 
@@ -35,19 +35,25 @@
 | 8 | ✅ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
-*Branch: `milestone/p1-m2-auth-handshake`*
+*Branch: `milestone/p1-m2-auth-handshake` · Milestone PR: **#2, merged 2026-10-29** (merge commit, steps 7.0–7)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
 | 7.0 | ✅ | `docs: record making the repository public` | Decision #023; plan §7/§8 wording; milestone 1 marked merged | none |
-| 7 | ☑️ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
+| 7 | ✅ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
 
 ## Milestone 3: Web UI on the NAS
-*Branch: `milestone/p1-m3-nas-web`*
+*Branch: `milestone/p1-m3-nas-web` · Milestone PR: not opened yet*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 9 | ⬜ | *(steps planned when the milestone starts)* | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
+| 9a | ☑️ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
+| 9b | ☑️ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
+| 9c | ☑️ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
+| 9d | ☑️ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
+| 9e | ☑️ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
+| 9f | ☑️ | `fix: name the compose project so docker compose matches the NAS Project` | `name: vehiclemanager` in `deploy/compose.yaml`, so `docker compose` over SSH updates the Container Manager Project's container; test pins it to `APP_ID`; troubleshooting entry | none |
+| 9g | ☑️ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
 
 ## Milestone 4: Linux desktop over Tailscale
 *Branch: `milestone/p1-m4-desktop`*
@@ -484,3 +490,141 @@ No app display name anywhere; it isn't decided.
   - with the variable unset, every API request got `503 auth-not-configured` while pages loaded.
   - The log shows only the variable's *name*.
 - **Manual test plan:** `docs/test-plans/auth-handshake.md`.
+
+
+### Milestone 3 plan (steps 9a–9e): web UI on the NAS
+*Planned 2026-10-29 · Branch: `milestone/p1-m3-nas-web` · Choices agreed in chat*
+
+**Target:** Synology DS1019+ (Intel J3455, x86_64), DSM 7.4.1, Container Manager and Tailscale installed, MagicDNS and HTTPS certificates enabled (decision #025).
+
+**On the NAS** (human-made; the docs describe it, nothing here creates it):
+
+```
+/volume1/docker/vehicle_manager/   Container Manager Project folder
+├── compose.yaml                   copy of deploy/compose.yaml
+├── .env                           credential, host port, user/group IDs (never in git)
+└── data/                          mounted as /data; owned by DSM user vehiclemanager (1030:100)
+    └── logs/                      rotating JSON-lines logs + last-crash.txt
+```
+
+**9b: logs to the data directory** (`crates/app`)
+- With the `server` feature, `VEHICLEMANAGER_DATA_DIR` (the name is built from `domain::identity::APP_ID`) adds a `FileSink` writing to `<dir>/logs` with `FileLogPolicy::SERVER` (10 × 10 MB, 30 days).
+- If the variable is unset (local `dx serve`), logs go to the console and ring buffer only.
+- If the folder isn't writable, the server logs a warning and continues without file logs. It never refuses to start over logging.
+- **Crash file:** a panic hook writes `<dir>/logs/last-crash.txt` (time, message, location), then runs the default hook.
+  - Our code doesn't panic, but dependencies can.
+  - The file sits outside the rotation, so the record survives the restart (plan §5).
+- **Tests:**
+  - the environment variable name comes from the app ID;
+  - the file sink gets attached and receives entries;
+  - the crash report text is formatted correctly (a pure function);
+  - an unwritable folder falls back to no file logs.
+
+**9c: the image and compose file**
+- **`Dockerfile`** (multi-stage):
+  1. **Build stage:** `rust:1.95-trixie`. Install `dioxus-cli` 0.7.10 with `cargo install --locked` (its own cached layer). Copy the source and run `dx bundle --platform web --release --out-dir /out` (output verified: `server` + `public/`). BuildKit cache mounts hold the cargo registry and `target/`.
+  2. **Runtime stage:** `debian:trixie-slim` plus `ca-certificates`.
+     - `/app/server` and `/app/public/` sit side by side; the server finds `public/` next to its binary.
+     - `IP=0.0.0.0`, `PORT=8080`, `VEHICLEMANAGER_DATA_DIR=/data`.
+     - Default `USER 10001` (non-root). The compose file overrides it with the NAS user.
+- Builds keep the **default x86-64 baseline**, never `target-cpu=native` (#025).
+- **`.dockerignore`:** `target/`, `.git/`, `.claude/`, and local databases and logs.
+- **`deploy/compose.yaml`:**
+  - image `ghcr.io/inner-marker/vehicle_manager_2:${VEHICLEMANAGER_IMAGE_TAG:-dev}`;
+  - `user: "${VEHICLEMANAGER_UID}:${VEHICLEMANAGER_GID}"`;
+  - port `127.0.0.1:${VEHICLEMANAGER_HOST_PORT:-8410}:8080`, **loopback only**;
+  - `./data:/data`;
+  - the credential from `.env`;
+  - `restart: unless-stopped`;
+  - hardening: `read_only: true` with a `/tmp` tmpfs, `cap_drop: [ALL]`, `no-new-privileges`.
+- **`deploy/.env.example`:** every variable with comments (UID 1030, GID 100, port 8410, tag `dev`), and a placeholder credential the server would reject as the example value.
+- **`docs/deploying-nas.md`:** one-time NAS setup (folder, permissions, Project, `.env`, `tailscale serve`), updating (pull and recreate), rollback (pin `:sha-…`), and reading logs.
+- **Dependabot:** adds the `docker` ecosystem for the Dockerfile's base images.
+
+**9d: publishing to GHCR**
+- **`.github/workflows/image.yml`:**
+  - Runs on push to `dev`, and manually ("Run workflow") on any branch.
+  - Builds `linux/amd64` with buildx, using the GitHub Actions cache.
+  - Pushes `ghcr.io/inner-marker/vehicle_manager_2:dev` and `:sha-<short>`.
+  - `permissions: packages: write` only in that job.
+- **The release workflow** builds and pushes `:<version>` and `:latest` after the gate. The plan's "Docker image build (not published)" PR-to-main check becomes the main gate building the image without pushing it.
+- **GHCR packages start private.** The deploy doc includes the one-time step to make the package public, so the NAS can pull without logging in.
+
+**9e: manual test plan** (`docs/test-plans/nas-web.md`)
+- Set up the Project.
+- `tailscale serve --bg --https=443 http://127.0.0.1:8410`, using the Synology package's CLI over SSH, with a fallback HTTPS port if 443 is taken.
+- **Checks:**
+  - from another tailnet device: open `https://<nas>.<tailnet>.ts.net`;
+  - Diagnostics → Run checks passes with the right credential and fails with a wrong one;
+  - logs appear in `data/logs`;
+  - the container restarts after a NAS reboot;
+  - the port isn't reachable from the LAN (`http://<nas-lan-ip>:8410` fails).
+- Also what to capture if a step fails.
+
+**Not in this milestone:** arm64 images; the database and its volume use (Phase 2); snapshots (Phase 2, the new open question); offsite backups; the desktop app (milestone 4).
+
+**Step 9b: done, with notes**
+- **New `domain::identity::env_var_name`:** `VEHICLEMANAGER_DATA_DIR` and `VEHICLEMANAGER_TEST_CREDENTIAL` are both named through it, and `server::auth` now uses it, so the naming rule lives in one place.
+- **`logging::init()` is unchanged for clients.** The new native `init_with_log_dir(dir, policy)` adds the file sink and crash file. If the folder isn't usable, it warns and continues without file logs.
+- **The crash file** is `logging::crash`: a panic hook writes `last-crash.txt` (time, version, panic text, backtrace), then runs the previous hook.
+- **Tests (6 new):**
+  - `env_var_names_share_the_app_id_prefix`, `data_dir_env_var_comes_from_app_id`;
+  - `file_sink_writes_captured_events_to_the_log_dir`, `unusable_log_dir_is_an_error_not_a_panic`;
+  - `crash_report_has_time_version_panic_and_backtrace`, `crash_file_is_outside_the_log_rotation`.
+- **Smoke run of the built server:**
+  - with a data dir, `logs/current.jsonl` is created and filled;
+  - with a read-only one, pages still load and a `WARN` names the folder and the OS error.
+  - The panic hook itself wasn't triggered end to end (there's no safe way to make the real binary panic); its report formatting is unit-tested.
+
+**Step 9c: done, with notes**
+- **`Dockerfile`:** `rust:1.95.0-trixie` build stage, with `cargo install --locked dioxus-cli@0.7.10` in its own layer, then `dx bundle --platform web --release --out-dir /out` with registry and `target/` cache mounts. The `debian:trixie-slim` runtime holds `/app/server` and `/app/public`, sets `IP=0.0.0.0`, `PORT=8080`, `VEHICLEMANAGER_DATA_DIR=/data`, and runs as `USER 10001:10001`. There's no `HEALTHCHECK`: it would need `curl` in the image. Container Manager's restart policy covers crashes.
+- **`deploy/compose.yaml`:**
+  - `user` is required from `.env` (`${…:?}`), so a missing value is a clear error;
+  - the port is `127.0.0.1` only;
+  - `./data:/data`;
+  - `read_only`, a 16 MB `/tmp` tmpfs, `cap_drop: ALL`, and `no-new-privileges`.
+- **`deploy/.env.example`:** the credential is left **empty** rather than a placeholder, so an unedited copy fails closed (503) instead of accepting a known value.
+- **New `crates/app/tests/deploy_config.rs` (6 tests)** keeps the deploy files in step with the code:
+  - the data-dir and credential variable names match `env_var_name`;
+  - `./data` is mounted at `/data`;
+  - every published port is `127.0.0.1`;
+  - neither the image nor the container runs as root;
+  - `.env.example`'s credential is empty.
+- **Also:** `.gitignore` ignores `.env` and `deploy/.env`, and Dependabot watches the Dockerfile's base images.
+- **`docs/deploying-nas.md`:** one-time setup, image tags, updating, rollback, and troubleshooting.
+- **Not yet verified:** no real image build (there's no Docker on the dev Mac). The first build runs in CI in step 9d. The Dockerfile follows the bundle layout verified locally (`server` + `public/`).
+
+
+**Step 9d: done, with notes**
+- **One reusable workflow, `server-image.yml`,** builds linux/amd64 with buildx and the GitHub Actions cache, and adds OCI labels that link the package to the repo. It requests **no permissions itself**, because a reusable workflow can't ask for more than its caller grants. The publishers grant `packages: write`, and the main gate's build-only check grants nothing extra.
+- **`dev-image.yml` triggers on push to `dev` or `milestone/**`** when code, the Dockerfile, deploy files, or the image workflows change, and also on "Run workflow".
+  - **Changed from the plan:** "Run workflow" alone can't start a branch's first build, because GitHub only offers it for workflow files on the default branch.
+  - Tags are `type=ref,event=branch` (`:dev`, `:milestone-p1-m3-nas-web`) plus `:sha-<commit>`.
+- **The default branch is now `dev`** (decision #026, plan §8), so `workflow_dispatch` and `schedule` workflows run without waiting for a release.
+- **`release.yml`** publishes `:<version>` and `:latest` after the gate. The GitHub Release waits for the image.
+- **`main-gate.yml`** builds the image without pushing.
+- **First real build (2026-10-29):** about 15 minutes, successful.
+  - An anonymous pull from GHCR works (the package is public).
+  - The image index holds linux/amd64 plus buildx's provenance attestation.
+  - Tags: `milestone-p1-m3-nas-web`, `sha-354aa4a`.
+
+**Step 9e: written**
+- `docs/test-plans/nas-web.md` has 16 steps:
+  - Project creation and the container log;
+  - log files and their owner;
+  - loopback `curl`, then `tailscale serve`;
+  - HTTPS with a valid certificate from another tailnet device and a phone;
+  - wrong and right credentials;
+  - not reachable from the LAN;
+  - surviving a stop/start and a NAS restart;
+  - the update and rollback flows.
+- **Uses the milestone branch's files and image tag,** since milestone 3 isn't merged yet.
+- **Passed on the NAS, 2026-10-29:** all 16 steps, after the step 9f fix.
+  - `tailscale serve` on port 443 worked, so the 8443 fallback wasn't needed.
+  - Step 15 first failed with "container name already in use": `docker compose` over SSH named the project after the folder (`vehicle_manager`), not the Project (`vehiclemanager`). Fixed in step 9f.
+- **Phase 1 exit criteria, web half: met.** The web UI loads over HTTPS from other tailnet devices (laptop and phone), and the handshake passes with the right credential and is rejected cleanly with a wrong one. The desktop half is milestone 4.
+
+**Step 9f: written**
+- `deploy/compose.yaml` sets `name: vehiclemanager`, matching the Container Manager Project name.
+- `crates/app/tests/deploy_config.rs`: `compose_project_and_container_are_named_after_the_app_id`.
+- `docs/deploying-nas.md`: the Project name must match `name:`; a troubleshooting entry for the conflict error.

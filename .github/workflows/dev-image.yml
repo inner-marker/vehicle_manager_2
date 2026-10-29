@@ -1,0 +1,48 @@
+# Development images for the NAS (docs/deploying-nas.md). Builds when code, the
+# Dockerfile, or the deploy files change on `dev` or a milestone branch, and on demand
+# ("Run workflow", which GitHub offers only once this file is on the default branch, `dev`).
+# Publishes ghcr.io/inner-marker/vehicle_manager_2 with:
+#   :dev                         newest build of `dev` (what the NAS normally pulls)
+#   :milestone-<phase>-<m>-...   newest build of a milestone branch, to try it on the NAS
+#                                before its PR (e.g. :milestone-p1-m3-nas-web)
+#   :sha-<commit>                this exact build (pin or roll back)
+name: Server image
+
+on:
+  push:
+    branches: [dev, "milestone/**"]
+    # Docs-only pushes don't change the image, and a build takes several minutes.
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "deploy/**"
+      - ".github/workflows/dev-image.yml"
+      - ".github/workflows/server-image.yml"
+  workflow_dispatch:
+
+# A newer push replaces an image build still in progress for the same branch.
+concurrency:
+  group: dev-image-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish development image
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/server-image.yml
+    with:
+      push: true
+      # The branch name as a tag ("/" becomes "-"): `dev` on dev, the milestone's name on
+      # a milestone branch; plus the commit.
+      tags: |
+        type=ref,event=branch
+        type=sha,prefix=sha-,format=short
