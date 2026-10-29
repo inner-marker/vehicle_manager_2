@@ -7,14 +7,36 @@ license.workspace = true
 rust-version.workspace = true
 publish = false
 
+# Library: everything testable (logging, later UI components and server functions).
+# Binary: the thin entry point that `dx` builds and launches.
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+doc = false             # avoids a rustdoc output collision with the `app` library
+
 [dependencies]
 domain.workspace = true
-dioxus = { workspace = true, features = ["fullstack"] }
+dioxus = { workspace = true, features = ["fullstack", "router"] }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+web-time.workspace = true
 
 # Native-only crates, enabled only by the `server` feature so the web (WASM)
 # build never pulls in sqlx.
 storage = { workspace = true, optional = true }
 server = { workspace = true, optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tracing-wasm.workspace = true
+
+[dev-dependencies]
+domain = { workspace = true, features = ["test-support"] }
+tempfile.workspace = true
 
 [features]
 default = ["web"]

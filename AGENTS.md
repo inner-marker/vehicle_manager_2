@@ -55,7 +55,7 @@ Hard rules:
 - **Terminology:** the tracked thing is an **`Asset`** in code, tables, commands, and APIs (`asset_id`); the UI says "vehicle" (or the kind's own word). Never introduce `Vehicle` types or `vehicle_id` fields.
 - **No hard-coded asset-kind logic.** Behavior that differs by kind comes from **asset profiles** (data), not `if kind == ...` checks scattered through the code.
 - **Keep core and specialty code apart:** generic concepts in the core of `domain`; ground-vehicle specifics (fuel economy, towing) in their own module.
-- **All user-facing text goes through the translation layer.** No hard-coded UI strings, error messages shown to users, or report text.
+- **All user-facing text goes through the translation layer** (`domain::i18n`, decision #022). No hard-coded UI strings, error messages shown to users, or report text. To add a message, add it to `crates/domain/locales/en-US/app.ftl` **and** add one line to `define_messages!` in `crates/domain/src/i18n/message_id.rs`; then use `Translator::english().tr(messages::...)`.
 - **No `unsafe` code.**
 - **App identity comes from one place:** the bundle ID, internal app ID, and data-folder name are constants in `domain`'s identity module. Read them from there; never hard-code copies.
 - **Never derive file paths, data directories, keychain entries, or other storage locations from the display name.** The display name may change; storage locations must not.
@@ -100,7 +100,7 @@ If a helper doesn't fit an existing module, propose a new `xxx_utils.rs` in your
 - Descriptive names; no abbreviations beyond the common ones (`id`, `db`, `hlc`).
 - **Errors:** `thiserror` enums in the library crates (`domain`, `storage`, `server`); propagate with `?`.
 - **No `unwrap()`, `expect()`, or `panic!()` outside tests.** Handle the error or return it.
-- **Logging:** `tracing` only; never `println!` / `eprintln!` / `dbg!`.
+- **Logging:** `tracing` only; never `println!` / `eprintln!` / `dbg!`. Always pass an area from `domain::log_area` as the target (e.g. `tracing::debug!(target: log_area::SYNC, ...)`), so the log viewer can filter by area and its level can be raised at runtime.
 - **Lint overrides (`#[allow(...)]` / `#[expect(...)]`) are a last resort.** Fix the code first. Override only when it is strictly necessary or there is a genuinely good reason (e.g. a false positive, generated or macro code, a deliberate and documented trade-off).
   - **Every override has a justifying comment** directly above it explaining *why* the lint is wrong here or why fixing it is worse, plus a `reason = "..."` in the attribute. Clippy enforces the `reason`; reviewers check the comment.
   - **Prefer `#[expect]` over `#[allow]`:** `expect` errors once the lint stops firing, so stale overrides don't linger. Use `#[allow]` when `expect` doesn't fit, e.g. a lint that fires only on some platforms or `cfg` combinations.
@@ -162,14 +162,15 @@ Add **useful `tracing` messages** at debug level in new code paths (never loggin
 - **Instead, draft the commands** for the human to run when your work is ready, in a code block, for example:
 
   ```sh
-  git switch -c feat/meter-readings dev        # new feature branch from dev
-  git add crates/domain/src/meter.rs           # stage only the files this change touched
+  git switch -c milestone/p2-m1-meters dev     # milestone branch from dev (once per milestone)
+  git add crates/domain/src/meter.rs           # stage only the files this step touched
   git commit -m "feat: add meter reading validation"
-  git push -u origin feat/meter-readings       # then open a PR into dev
+  git push                                     # back up the branch; no PR until the milestone is done
   ```
 
-  Also draft the **PR title and description** for the human to paste.
-- Work is always done on a **feature branch cut from `dev`** (e.g. `feat/meter-readings`, `fix/hlc-overflow`), never directly on `main` or `dev`. If the current branch is `main` or `dev`, say so and draft the command to create a feature branch before making changes.
+- **One PR per milestone** (decision #021). Work happens on a **milestone branch cut from `dev`**, named `milestone/p<phase>-m<n>-<slug>`. Each planned step is **one Conventional Commit** on that branch. When the milestone is finished, draft the **PR title and description** for the human to paste. The PR is merged into `dev` with a **merge commit**, not a squash.
+  - Standalone branches and PRs (e.g. `fix/hlc-overflow`) are only for work outside a milestone, such as urgent fixes.
+- Never work directly on `main` or `dev`. If the current branch is `main` or `dev`, say so and draft the command to create or switch to the milestone branch before making changes.
 - **Conventional Commits** for every commit message and PR title: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `ci:`, `build:`, `perf:`. Mark breaking changes with `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer. The changelog is generated from these messages, so write them for a reader.
 - **Don't edit `CHANGELOG.md` by hand;** it is generated by `git-cliff` during release preparation.
 - **Don't change the version** in `Cargo.toml` or create tags unless the task is explicitly release preparation.
@@ -185,6 +186,7 @@ cargo clippy --workspace --all-targets -- -D warnings # all lints as errors
 cargo test --workspace                                # all tests
 cargo doc --workspace --no-deps                       # docs build cleanly
 cargo deny check                                      # advisories, licenses, sources (when dependencies change)
+scripts/release/test.sh                               # release scripts (when scripts/release/ changes)
 ```
 
 Then confirm:

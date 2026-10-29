@@ -1,20 +1,22 @@
 //! Entry point for every target: the web UI, desktop and mobile apps, and
 //! (with the `server` feature) the fullstack server.
 //!
-//! UI components never touch the database and never contain business rules;
-//! those live in `domain`, `storage`, and `server`.
+//! Kept thin: the app's modules live in the `app` library (`lib.rs`).
 
-use dioxus::prelude::*;
+use app::logging;
+use dioxus::LaunchBuilder;
+use domain::log_area;
 
 fn main() {
-    launch(App);
-}
+    // Logging must start before `launch`, so Dioxus's own logger sees ours and steps aside.
+    let mut launcher = LaunchBuilder::new();
+    match logging::init() {
+        // The log viewer reads the handles from context.
+        Ok(log_handles) => launcher = launcher.with_context(log_handles),
+        // Another subscriber got there first; it still receives our events.
+        Err(error) => tracing::warn!(target: log_area::APP, %error, "debug log not installed"),
+    }
+    tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), "app starting");
 
-/// Root component.
-///
-/// Intentionally empty for now: the skeleton screens arrive in Phase 1, and all
-/// user-facing text must go through the translation layer (Phase 2).
-#[component]
-fn App() -> Element {
-    rsx! {}
+    launcher.launch(app::ui::App);
 }

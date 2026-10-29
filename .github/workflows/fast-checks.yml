@@ -1,10 +1,10 @@
-# Fast checks: feedback within a few minutes on every change heading into `dev`.
-# Also called by the PR-to-main gate, so these checks are defined once.
+# Fast checks: feedback within a few minutes on every PR into `dev` (one per milestone).
+# Not re-run on the push to `dev` after merging: GitHub already tested the merge result
+# on the PR (decisions.md #021). Also called by the PR-to-main gate, so these checks are
+# defined once.
 name: Fast checks
 
 on:
-  push:
-    branches: [dev]
   pull_request:
     branches: [dev]
   workflow_call:

@@ -6,40 +6,61 @@
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
 
-**How this file works**
-- Each row is one focused PR into `dev`, squash-merged with a Conventional Commit title (decision #017).
-- Before each PR starts, the agent writes a detailed plan, waits for approval, then adds it under "PR details" below.
-- The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · 👀 in review · ✅ merged.
+**How this file works** (decision #021)
+- Each **milestone** has one branch (`milestone/p1-mN-<slug>`) and **one PR into `dev`** when the milestone is finished. That PR is merged with a **merge commit**.
+- Each **step** is one Conventional Commit on the milestone branch, made by the human from the commands the agent drafts.
+- Before each step starts, the agent writes a detailed plan, waits for approval, then adds it under "Step details" below.
+- The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
+- Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #017 merge strategy, #018 translation layer in Phase 1, #019 auth before any server function.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer.
 
 ---
 
-## PR sequence
+## Milestone 1: Local skeleton
+*Branch: `milestone/p1-m1-local-skeleton` · Milestone PR: ready to open (steps 3c–8)*
 
-| # | Status | PR title | Contents | New dependencies (need approval) |
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
 | 0 | ✅ | *(initial commit)* Setting up workspace | Four-crate workspace, pinned toolchain, lints, `domain::identity`, docs reorganized, decision log | `dioxus =0.7.10` |
 | 1 | ✅ | `docs: record Phase 1 sequencing decisions` | Decisions #017–#019; Phase 1 roadmap and Extensibility row updated; this file; AGENTS.md rule for `docs/phase_plans/` | none |
 | 2 | ✅ | `ci: add fast checks, PR-to-main gate, and Dependabot` | **Fast checks:** fmt, clippy, test, Conventional PR title check. **PR-to-`main` gate:** those plus `cargo doc`, `cargo-deny`, Linux/Windows/macOS build matrix, WASM build. `deny.toml`. Dependabot targeting `dev`. Docker and migration-fixture jobs are added once those exist | CI actions only, pinned to commit SHAs |
 | 3 | ✅ | `feat(domain): passed-in clock and test support` | `UnixMillis` and the `Clock` trait in `domain::time`; `domain::test_support` (feature `test-support`) with `ManualClock`; builders grow with Phase 2 types | none |
 | 3a | ✅ | `chore: allow read-only gh pr commands for agents` | Narrow the `gh pr:*` deny rule in `.claude/settings.json` to the write subcommands (incl. `checkout`, which changes the local branch), so `gh pr list/view/diff/checks/status` work | none |
-| 3b | 👀 | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
-| 4 | ⬜ | `feat: debug log foundation` | `tracing` setup, in-memory ring buffer (~5,000 entries), size-capped rotating log file, JSON-lines export format. The viewer UI comes in PR 6 | `tracing`, `tracing-subscriber`, a size-rotation crate *or* a custom writer (options compared in the PR plan) |
-| 5 | ⬜ | `feat: translation layer` | Fluent-based, English only, usable from every target including WASM | e.g. `fluent-bundle`, `unic-langid` (specifics in the PR plan) |
-| 6 | ⬜ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
-| 7 | ⬜ | `feat: auth middleware, handshake, and test server functions` | Auth middleware with a hardcoded test credential; API version handshake; ping and server version/time behind auth; pass/fail shown in the web UI | likely `axum`, `serde`, `thiserror` |
-| 8 | ⬜ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
-| 9 | ⬜ | Milestone 3: web UI on the NAS | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
-| 10 | ⬜ | Milestone 4: Linux desktop over Tailscale | Desktop app with a configurable server address; passes version and auth checks against the NAS; manual test plan | — |
+| 3b | ✅ | `fix(ci): run the PR title check on pull_request` | `pull_request_target` workflows only run from the default branch (`main`), so the title check never ran on PRs 2–3. Switch to `pull_request` (opened, edited, synchronize, reopened). Weekly checks start running once `main` has them (first release). Also: `docs/plan.md` links to phase plans, and AGENTS.md requires that link for new phase plans | none |
+| 3c | ☑️ | `docs: switch to one PR per milestone` | Decision #021 (supersedes #017); AGENTS.md §8a, `docs/plan.md` §8, and this file updated; fast checks no longer re-run on pushes to `dev` | none |
+| 4 | ☑️ | `feat: debug log foundation` | Capture layer feeding a ring buffer (5,000 entries) and a size-, count- and age-capped JSON-lines file writer; runtime level control; console output; export renderers. File wiring and crash file arrive with M3/M4 paths. Viewer UI in step 6 | `tracing`, `tracing-subscriber`, `tracing-wasm` (web), `web-time`, `serde`, `serde_json`; dev: `tempfile` (all already in `Cargo.lock`) |
+| 5 | ☑️ | `feat: translation layer` | `domain::i18n` on `fluent-bundle`: embedded `en-US` catalog, `MessageId` constants with a consistency test, args and plurals, bidi isolation off. Seeded with the navigation labels step 6 needs | `fluent-bundle`, `unic-langid` |
+| 6 | ☑️ | `feat(app): skeleton UI and navigation` | Placeholder screens (vehicle list, vehicle detail, log event, what's due, basic log viewer); adaptive wide/medium/narrow layout; Light/Dark/System theme, default Dark | `dioxus` `router` feature |
+| 8 | ☑️ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
-Milestone mapping: PRs 1–6 and 8 are milestone 1 (local skeleton), PR 7 is milestone 2, PR 9 is milestone 3, PR 10 is milestone 4.
+## Milestone 2: Auth stub, handshake & test server functions
+*Branch: `milestone/p1-m2-auth-handshake`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 7 | ⬜ | `feat: auth middleware, handshake, and test server functions` | Auth middleware with a hardcoded test credential; API version handshake; ping and server version/time behind auth; pass/fail shown in the web UI | likely `axum`, `serde`, `thiserror` |
+
+## Milestone 3: Web UI on the NAS
+*Branch: `milestone/p1-m3-nas-web`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 9 | ⬜ | *(steps planned when the milestone starts)* | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
+
+## Milestone 4: Linux desktop over Tailscale
+*Branch: `milestone/p1-m4-desktop`*
+
+| Step | Status | Commit title | Contents | New dependencies (need approval) |
+|---|---|---|---|---|
+| 10 | ⬜ | *(steps planned when the milestone starts)* | Desktop app with a configurable server address; passes version and auth checks against the NAS; manual test plan | — |
+
 
 ---
 
-## PR details
+## Step details
 
-*Detailed plans are added here as each PR is planned and approved.*
+*Detailed plans are added here as each step is planned and approved. Steps 2 and 3 were standalone PRs.*
 
 ### PR 2: `ci: add fast checks, PR-to-main gate, and Dependabot`
 *Approved 2026-10-28 · Branch: `ci/fast-checks`*
@@ -116,3 +137,248 @@ Milestone mapping: PRs 1–6 and 8 are milestone 1 (local skeleton), PR 7 is mil
 **Tests:** `UnixMillis` ordering (including before 1970) and its millisecond round-trip; `ManualClock` set, advance, moving backward, and saturation; doctests on `UnixMillis` and `Clock`.
 
 **Manual verification:** none needed.
+
+### Step 4: `feat: debug log foundation`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton` · Options compared in chat; chosen: own rotating writer, JSON-lines files, `Targets` filter*
+
+**Where things go**
+- `domain::log_area`: the log area names (`app`, `ui`, `sync`, `database`, `auth`) as `&str` constants. They're used as the tracing `target`, so every crate logs with `tracing::debug!(target: log_area::SYNC, ...)` and the viewer can filter by area. They're plain constants with no I/O, so they belong in the lowest crate.
+- `crates/app/src/logging/` (one setup for every target, because the server binary is `app` with the `server` feature):
+  - `entry.rs`: `LogEntry` holds time (`UnixMillis`), level, area, message, and fields. It serializes to and from one JSON line.
+  - `capture.rs`: one tracing layer that builds a `LogEntry` per event and hands it to the ring buffer and, if one is configured, the file sink. Entries are built once and shared.
+  - `ring_buffer.rs`: a fixed-capacity buffer (5,000 entries; the oldest are evicted first) behind a lock, with a cloneable handle for the viewer and export.
+  - `rotating_file.rs` *(native only)*:
+    - Writes the active file `current.jsonl`. When the next line would pass `max_file_bytes`, it renames the file to `log-<unix-ms>.jsonl` and starts a new one.
+    - Cleanup runs at startup and after each rotation. It deletes the oldest rotated files beyond `max_files`, and any rotated file older than `max_age` (30 days).
+    - File age comes from the timestamp in the file name, not the file system, so tests use `ManualClock` and no extra crate.
+    - Per-platform policies are named constants: server 10 × 10 MB, desktop 5 × 10 MB, mobile 3 × 2 MB.
+    - A write failure can't be logged through `tracing` (it would recurse), so it increments a failure counter that the diagnostics screen can show later.
+  - `control.rs`: the runtime level switch. It's a `Targets` filter (default `info` for every area) behind `tracing-subscriber`'s `reload` handle, with `set_area_level` and `reset`. Not persisted, so it resets to the default on restart.
+  - `export.rs`:
+    - Filters entries by time range, minimum level, and areas.
+    - Renders them as JSON lines or plain text, behind a header.
+    - The header has the app version and platform now. API version and device ID are added when those exist (step 7, Phase 3).
+  - `clock.rs`: `SystemClock`, the first real `domain::time::Clock`, via `web-time` so the same code works on web and native.
+  - `mod.rs`: `init()` installs the subscriber **before** `dioxus::launch`, so Dioxus's own logger steps aside. It adds console output: `fmt` to the terminal on native, `tracing-wasm` to the browser devtools on web. It returns a `LogHandles` value (ring buffer and level control) that the UI gets through context in step 6.
+- `crates/app/src/main.rs`: calls `logging::init()` first and logs one `info` startup line (area `app`).
+
+**Deferred, with reasons**
+- **Wiring the file sink:** the log directory comes from the platform data folder (desktop, M4) or the container volume (server, M3). Step 4 implements and tests the writer; it gets wired in when those paths exist.
+- **"Last crash" file:** it also needs the log directory, so it comes with that same wiring.
+- **No `non_blocking` writer:** writing directly keeps the last lines before a crash on disk.
+
+**Dependencies** (all already in `Cargo.lock` through Dioxus, so nothing new is downloaded):
+- `tracing`;
+- `tracing-subscriber` (`std`, `registry`, `fmt`, `ansi`; no `env-filter`);
+- `tracing-wasm` (wasm32 only);
+- `web-time`;
+- `serde` (`derive`);
+- `serde_json`;
+- dev-only: `tempfile`.
+
+**Tests** (unit tests next to the code, using `ManualClock`, with a fresh temp directory per test)
+- `ring_buffer_evicts_oldest_entries_beyond_capacity`, `capture_records_level_area_message_and_fields`
+- `log_entry_round_trips_through_a_json_line`
+- `rotating_file_rotates_before_exceeding_max_file_bytes`, `rotating_file_keeps_at_most_max_files`, `rotating_file_deletes_rotated_files_older_than_max_age`, `rotating_file_resumes_current_file_size_after_restart`
+- `area_level_change_takes_effect_and_reset_restores_default`
+- `export_filters_by_time_range_level_and_area`; a snapshot-style check of the plain-text and JSON-lines renderings, including the header
+
+**Verification**
+- The usual self-review commands, plus `cargo check -p app --target wasm32-unknown-unknown`. The web-build guard must still pass, because the rotating writer is `cfg(not(wasm32))`.
+- A manual smoke test: `dx serve` shows the startup line in the terminal and the browser console. This is too small to need a `docs/test-plans/` file.
+
+**Changes from the plan, found during implementation**
+- **`app` is now a library plus a thin binary** (`src/lib.rs` + `src/main.rs`). Without the library, items the UI won't use until step 6 (export, rotating file, level control) would fail the `dead_code` lint. The binary has `doc = false` to avoid a rustdoc output-name collision.
+- **`domain::time_utils::format_utc_iso8601`** was added (exact integer calendar math, no new crate), so plain-text exports show readable UTC times. This is the first entry in `time_utils.rs`.
+- **The `ansi` feature was dropped from `tracing-subscriber`**, because it would have added `nu-ansi-term`, the one crate not already in `Cargo.lock`. Terminal output is uncolored. Adding it back is a one-word change if you want colors.
+- **Extra tests:**
+  - oversized lines, same-millisecond rotations, rotated-file name parsing;
+  - `area_level` reporting, log-level ordering, the JSON shape;
+  - log area name rules.
+- **AGENTS.md §6:** always log with a `domain::log_area` target.
+
+**Result:** 43 tests pass (22 `app`, 16 `domain`, 5 doctests). Clippy (native and wasm32), docs, the WASM guard, the `server` feature build, and `cargo deny` are all clean.
+
+### Step 5: `feat: translation layer`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton` · Options compared in chat. Chosen: `fluent-bundle` with our own wrapper (A), in `domain`, bidi isolation off*
+
+**Where things go**
+- `crates/domain/locales/en-US/app.ftl`: the English catalog, embedded at compile time with `include_str!`. There's no file I/O, so `domain` stays WASM-safe.
+- `crates/domain/src/i18n/`:
+  - `message_id.rs`: `MessageId`, a typed message ID. A small `define_messages!` macro declares each constant **and** the `ALL` list in one place, so neither can be forgotten.
+    - First messages: the navigation labels from plan §5 UI direction that step 6 needs (Garage, Due & squawks, Messages, Timeline, Reports, Vehicles, Settings, Diagnostics).
+    - Also one plural example (`open-squawk-count`) to prove plurals work.
+  - `translator.rs`: `Translator` wraps a thread-safe `fluent_bundle` bundle.
+    - `Translator::english()` returns a shared instance, built once on first use with `std::sync::LazyLock`, so no extra crate is needed.
+    - `tr(id)` and `tr_with(id, &[("count", MessageArg::from(3))])` return the text.
+    - Our own `MessageArg` type keeps Fluent types out of callers, so the engine could be swapped later.
+  - Bidi isolation marks are off.
+  - **Missing message** (only possible if the consistency test is skipped): `tr` returns the message ID itself, e.g. `nav-garage`. It never panics, so a gap is visible on screen.
+- `crates/domain/src/lib.rs`: `pub mod i18n;`.
+- `docs/decisions.md` #022: translation is Fluent through `fluent-bundle` in `domain::i18n`, with typed message IDs and a consistency test. Message IDs are kebab-case and grouped by prefix (`nav-`, `error-`, ...).
+- `AGENTS.md` §3: says where the translation layer lives and how to add a message (`.ftl` entry plus a `define_messages!` line).
+
+**Not in this step:** choosing the language per user or device, and switching language while running (the Phase 2 display-preferences question); locale formatting of dates, numbers, and units (Phase 2); any UI wiring (step 6).
+
+**Dependencies:** `fluent-bundle` 0.16 and `unic-langid` 0.9, both Apache-2.0 OR MIT. They bring in `fluent-syntax`, `intl-memoizer`, `intl_pluralrules`, `self_cell`, and a few other small crates, checked with `cargo deny`.
+
+**Tests** (in `domain`, written first)
+- `every_message_id_exists_in_english_catalog`
+- `every_english_message_has_a_message_id`: parses the `.ftl` file and compares its IDs with `ALL`.
+- `english_catalog_parses_without_errors`
+- `tr_returns_english_text`
+- `tr_with_substitutes_arguments_without_isolation_marks`
+- `plural_message_picks_one_and_other_forms`
+- `missing_message_falls_back_to_its_id`
+
+**Verification:** the usual self-review commands, plus `cargo check -p domain --target wasm32-unknown-unknown` and `cargo deny check`. There's no UI yet, so nothing to verify manually.
+
+**Changes from the plan, found during implementation**
+- **`MessageArg` also converts from `i32`,** so plain integer literals (`MessageArg::from(2)`) work without a type suffix.
+- **Loading errors are a hand-written `CatalogError` enum** (invalid language, syntax, duplicates), because `thiserror` isn't a `domain` dependency yet.
+- **One extra test,** `invalid_catalogs_are_rejected_with_a_reason`.
+- **New crates in `Cargo.lock`:** `fluent-bundle`, `fluent-langneg`, `fluent-syntax`, `intl-memoizer`, `intl_pluralrules`, `self_cell`, `type-map`, `unic-langid`, `unic-langid-impl`. `cargo deny` passes.
+
+**Result:** 52 tests pass (24 `domain`, 22 `app`, 6 doctests). Clippy (native and wasm32), docs, and `cargo deny` are clean.
+
+### Step 6: `feat(app): skeleton UI and navigation`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton`*
+
+**Scope agreed in chat**
+- Screens are the sidebar entries from plan §5, plus **+ Log** (log event) and a placeholder **vehicle detail** screen.
+- The theme choice is held **in memory only** for now; saving it per device comes with local storage later. The plan's Phase 2 "UI/UX" open question about finalizing the design stays open: this step is placeholders, not final design.
+
+**Routes** (`crates/app/src/ui/routes.rs`, Dioxus router, already in `Cargo.lock`)
+
+| Path | Screen | Nav |
+|---|---|---|
+| `/` | Garage (vehicle list placeholder) | sidebar, bottom tab |
+| `/due` | Due & squawks | sidebar, bottom tab |
+| `/messages` | Messages | sidebar, bottom tab |
+| `/timeline` | Timeline | sidebar |
+| `/reports` | Reports | sidebar |
+| `/vehicles` | Vehicles | sidebar |
+| `/vehicles/:asset_id` | Vehicle detail placeholder (`asset_id` per the terminology rule) | — |
+| `/log` | Log event placeholder | **+ Log** button / floating button |
+| `/settings` | Settings | sidebar |
+| `/diagnostics` | Diagnostics: basic log viewer | sidebar |
+| anything else | Not found | — |
+
+**Layout** (`ui/shell.rs`): one adaptive shell (decision #011), switched by CSS media queries.
+- Wide (≥ 1024 px): full sidebar.
+- Medium (640–1023 px): icon-only sidebar.
+- Narrow (< 640 px): ☰ menu, bottom tabs (Garage, Due, Messages), and a floating **+ Log** button.
+- The top bar has the page title, a **sync status placeholder**, and the theme toggle. On narrow screens the toggle moves into the ☰ menu.
+- The mode chip (Driver ▾) waits until users exist (Phase 2).
+
+**Theme** (`ui/theme.rs`): `ThemeChoice { Light, Dark, System }`, default **Dark** (decision #012).
+- Held in a context signal and applied as `data-theme` on the root element.
+- `System` follows `prefers-color-scheme` in CSS.
+
+**Styling:** one plain CSS file, `crates/app/assets/main.css`, loaded with `asset!` + `document::Stylesheet`. CSS custom properties hold the colors for each theme, and media queries handle the three layouts. Minimal styling: readable and garage-friendly (large tap targets), not final design.
+
+**Icons:** a handful of **Lucide** SVG icons (ISC license) copied into `crates/app/assets/icons/`, with their license file. They're needed for the icon-only sidebar.
+
+**Log viewer** (`ui/screens/diagnostics.rs`):
+- `main.rs` passes the logging handles to the UI with `LaunchBuilder::with_context`.
+- The screen lists entries newest first, with a minimum-level filter, an area filter, and a **Refresh** button.
+- Entries load **after the page mounts**. With fullstack, the server renders the page first, then the browser takes it over (hydration). Each side has its own log buffer, so rendering entries during that first server render would cause a hydration mismatch. The browser's own log is the one to show; the server log is Admin-only later (plan §5).
+- Filtering reuses `ExportFilter`.
+- Copy/export, search, auto-scroll, and live auto-refresh come later in Phase 1 or Phase 2. They need clipboard, download, and timer support per platform.
+
+**Text:** every label goes through `domain::i18n`. New messages:
+- screen titles and placeholder text (`screen-*`, `placeholder-coming-soon`);
+- `action-log`, `action-refresh`, `menu-open`, `menu-close`, `sync-status-unknown`;
+- `theme-light`, `theme-dark`, `theme-system`;
+- log viewer labels, plus translated **area names and level names** (`log-area-*`, `log-level-*`), because these appear on screen.
+
+No app display name anywhere; it isn't decided.
+
+**Module layout:** `crates/app/src/ui/` contains `mod.rs` (`App` root), `routes.rs`, `shell.rs`, `nav.rs` (nav items: route, message, icon, where shown), `theme.rs`, and `screens/` (one file per screen). `main.rs` stays thin.
+
+**Dependencies:** the `dioxus` `router` feature only. It's already in `Cargo.lock`, so there are no new crates. Lucide is copied files, not a crate.
+
+**Tests** (logic, no browser)
+- `every_route_round_trips_through_its_path`
+- `unknown_paths_route_to_not_found`
+- `every_nav_item_has_a_route_message_and_icon`
+- `bottom_tabs_are_garage_due_and_messages`
+- `theme_defaults_to_dark`, `theme_choice_maps_to_data_theme_attribute`
+- `log_viewer_filters_by_level_and_area_newest_first`
+- `every_log_area_has_a_translated_label`
+
+**Manual test plan:** `docs/test-plans/skeleton-ui.md`. It covers navigation, each layout at its width, the theme toggle, the log viewer, and what to capture if a step fails (the `ui` area at `debug`).
+
+**Verification:** the usual self-review commands, the WASM build and its guard, then your manual run of `dx serve`.
+
+**Changes from the plan, found during implementation**
+- **One lint override, used three times.** `#[expect(unused_qualifications)]` sits on `Shell`, `ThemeToggle`, and `Diagnostics`, each with a justifying comment. `rsx!` expands event handlers into fully qualified `dioxus_elements::events::on*` calls. The prelude glob imports those same functions, so rustc flags the macro's own paths.
+  - Explicit imports instead of the glob were tried. The macros also need `dioxus_core` and `dioxus_signals` in scope, so that approach would depend on Dioxus internals.
+  - `#[expect]` errors once a Dioxus update fixes this, so the overrides can't go stale.
+- **Simple placeholder screens share one file**, `screens/placeholders.rs`, instead of one file per screen; Diagnostics has its own file. Ten near-identical files would only add noise.
+- **Timeline uses Lucide `list`**, because `history` isn't in the Lucide repo.
+- **`LogLevel::ALL`** was added in `logging::entry`. Field formatting moved into the shared `logging::format_fields`, used by both the plain-text export and the viewer, so it isn't duplicated.
+- **The time column is labeled "Time (UTC)",** because locale and time-zone formatting is Phase 2.
+
+**Result**
+- 62 tests pass (32 `app`, 24 `domain`, 6 doctests).
+- Clippy is clean for native, wasm32, `server`, and `desktop`. Docs, the WASM guard, and `cargo deny` are also clean.
+- `dx build --platform web` succeeds, with the server and client built and `main.css` bundled.
+- A local smoke run of the built server returned 200 with the right title for `/`, `/due`, `/vehicles/abc123`, `/diagnostics`, and an unknown path. `data-theme="dark"` was set and icons were inlined.
+- **Manual test plan:** `docs/test-plans/skeleton-ui.md`. **Passed on web, 2026-10-29**, after the narrow-menu theme toggle fix.
+
+### Step 8: `ci: release workflow and git-cliff`
+*Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton`*
+
+**Goal:** the release pipeline exists before the first tag, so `v0.1.0` at the end of Phase 1 exercises it (plan §8 CI/CD). Build artifacts are added by the milestones that create them: the Docker image in M3, desktop packages in M4.
+
+**Files**
+1. `cliff.toml` (git-cliff 2.x config):
+   - Groups: Breaking changes, Features, Fixes, Performance, Refactoring, Documentation, Tests, Build, CI, Chores, Dependencies (`build(deps)` / `ci(deps)` from Dependabot).
+   - Skips merge commits and non-Conventional commits. That includes the initial "Setting up workspace." commit and the milestone PR merge commits, whose steps are listed individually.
+   - Links commits and PRs to `github.com/inner-marker/vehicle_manager_2`.
+2. `.github/workflows/release.yml`: runs on tags `v*.*.*`.
+   - **Guards:** the tag must equal `v` + the workspace version, read with `cargo metadata` and `jq`. The tagged commit must be on `main`.
+   - **Gate:** reuses the main gate as a reusable workflow, so it gets a `workflow_call` trigger.
+   - **Release notes:** this version's section, taken from the **committed** `CHANGELOG.md` (the reviewed text), not regenerated.
+   - **Release:** created with the preinstalled `gh` CLI (`gh release create`). The token gets `contents: write` in this job only.
+   - **Artifacts:** none yet. The checksums step comes with the first artifact.
+3. `.github/workflows/main-gate.yml`:
+   - Adds `workflow_call`.
+   - New job: `CHANGELOG.md` must have a `## [x.y.z]` section for the `Cargo.toml` version.
+4. `scripts/release/` (small shell scripts, so CI and local runs share them):
+   - `check-version-tag.sh`
+   - `changelog-section.sh <version>`: prints one version's notes and fails if they're missing.
+   - `check-changelog.sh`
+5. `docs/releasing.md`: the human's release checklist:
+   - bump the version on `dev`;
+   - `git cliff --tag vX.Y.Z -o CHANGELOG.md`, review, commit;
+   - PR `dev` → `main` (merge commit);
+   - tag on `main`, push the tag.
+   - Also how to install git-cliff locally.
+6. **`AGENTS.md` §9:** the scripts get a `shellcheck`-clean requirement if `shellcheck` is available. Otherwise nothing changes.
+
+**Tests**
+- The scripts are run locally against fixture files: a matching and a mismatched tag, a changelog with and without the section.
+- `git cliff --unreleased` is run locally to check grouping and skipping on our real history.
+- The workflows are only proven on GitHub. The first real run is the `v0.1.0` release at the end of Phase 1, with a checklist in `docs/releasing.md`.
+
+**Dependencies:** none in the code.
+- Tools: `git-cliff` 2.14 (MIT/Apache) for release prep on your machine. Install with `cargo binstall git-cliff`. CI doesn't need it, because notes come from the committed changelog.
+- No new third-party actions.
+
+**Changes from the plan, found during implementation**
+- **`scripts/release/` has five scripts, not three:**
+  - `workspace-version.sh` holds the version lookup in one place, shared by the other scripts;
+  - `test.sh` runs 12 tests against `scripts/release/fixtures/CHANGELOG.md`. The main gate's changelog job runs it.
+- **Group names in `cliff.toml` use zero-padded sort keys** (`<!-- 01 -->`). Plain numbers sorted "Dependencies" (10) before "Fixes" (2).
+- **No AGENTS.md shellcheck rule,** because `shellcheck` isn't installed. AGENTS.md §9 instead lists `scripts/release/test.sh` for changes to the release scripts.
+- **Grouping was checked with `git cliff --with-commit`** (injected test messages), because the agent deny rules rightly block `git commit`, even in a scratch repo.
+- **`docs/plan.md` §8** now links to `docs/releasing.md`.
+
+**Verification:**
+- `git cliff --unreleased` on the real history groups every Conventional Commit and skips the initial commit and the PR #1 merge.
+- With injected messages: breaking changes come first, Dependabot `build(deps)` and `ci(deps)` go under Dependencies, and merge and unconventional messages are skipped.
+- A `git cliff --tag v0.1.0` output round-trips through `changelog-section.sh` and `check-changelog.sh`.
+- All workflow YAML parses.
+- The workflows are proven on GitHub at the `v0.1.0` release; the checklist is in `docs/releasing.md`.

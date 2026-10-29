@@ -1,5 +1,5 @@
-# Checks that PR titles are Conventional Commits. Feature PRs are squash-merged with the
-# PR title as the commit message (decisions.md #017), and git-cliff builds the changelog from it.
+# Checks that PR titles are Conventional Commits. With one PR per milestone (decisions.md #021),
+# the title becomes the merge commit's summary of the milestone in `dev` history.
 name: PR title
 
 on:

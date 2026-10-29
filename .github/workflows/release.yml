@@ -1,0 +1,74 @@
+# Release: runs when a version tag (vX.Y.Z) is pushed on `main` (plan §8 CI/CD, item 3).
+#
+# 1. Guards: the tag matches the Cargo.toml version, the tagged commit is on `main`,
+#    and CHANGELOG.md has notes for this version.
+# 2. Re-runs the full PR-to-main gate on the tagged commit.
+# 3. Creates the GitHub Release, with this version's CHANGELOG.md section as its notes.
+#
+# Build artifacts arrive with the milestones that create them: the server Docker image
+# (Phase 1 milestone 3) and desktop packages (milestone 4), each with checksums.
+# The human pushes the tag (docs/releasing.md); agents never do.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# One release run per tag; never cancel a release part-way.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  guards:
+    name: Release guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history, to check the commit is on main
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: release
+      - name: Tag matches the Cargo.toml version
+        run: scripts/release/check-version-tag.sh "$GITHUB_REF_NAME"
+      - name: Tagged commit is on main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME points at a commit that isn't on main. Releases are tagged on main only."
+            exit 1
+          fi
+      - name: CHANGELOG.md has notes for this version
+        run: scripts/release/check-changelog.sh
+
+  gate:
+    name: Main gate
+    needs: guards
+    uses: ./.github/workflows/main-gate.yml
+
+  release:
+    name: Create GitHub Release
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the only job that may create releases
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Release notes from CHANGELOG.md
+        run: scripts/release/changelog-section.sh "${GITHUB_REF_NAME#v}" > release-notes.md
+      # The preinstalled GitHub CLI, so no third-party action gets write access.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            --verify-tag
