@@ -3,20 +3,55 @@
 //!
 //! Kept thin: the app's modules live in the `app` library (`lib.rs`).
 
-use app::logging;
-use dioxus::LaunchBuilder;
+use app::logging::{self, LogHandles};
 use domain::log_area;
 
 fn main() {
-    // Logging must start before `launch`, so Dioxus's own logger sees ours and steps aside.
-    let mut launcher = LaunchBuilder::new();
-    match logging::init() {
-        // The log viewer reads the handles from context.
-        Ok(log_handles) => launcher = launcher.with_context(log_handles),
+    // Logging must start before launching, so Dioxus's own logger sees ours and steps aside.
+    let log_handles = match logging::init() {
+        Ok(log_handles) => Some(log_handles),
         // Another subscriber got there first; it still receives our events.
-        Err(error) => tracing::warn!(target: log_area::APP, %error, "debug log not installed"),
-    }
+        Err(error) => {
+            tracing::warn!(target: log_area::APP, %error, "debug log not installed");
+            None
+        }
+    };
     tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), "app starting");
 
+    launch(log_handles);
+}
+
+/// The server: the Dioxus app (pages, assets, server functions) behind the auth layer,
+/// which guards every `/api/` path (`server::auth`).
+#[cfg(feature = "server")]
+fn launch(log_handles: Option<LogHandles>) {
+    use dioxus::prelude::dioxus_server::axum::Router;
+    use dioxus::prelude::{DioxusRouterExt, ServeConfig};
+
+    let auth = server::auth::AuthConfig::from_env();
+    // Called again on every hot reload in development, so it rebuilds the router each time.
+    dioxus::serve(move || {
+        let log_handles = log_handles.clone();
+        let auth = auth.clone();
+        async move {
+            let mut config = ServeConfig::new();
+            // The log viewer reads the handles from context.
+            if let Some(log_handles) = log_handles {
+                config = config.context(log_handles);
+            }
+            let app = Router::new().serve_dioxus_application(config, app::ui::App);
+            Ok(server::auth::protect(app, auth))
+        }
+    })
+}
+
+/// Web, desktop, and mobile clients.
+#[cfg(not(feature = "server"))]
+fn launch(log_handles: Option<LogHandles>) {
+    let mut launcher = dioxus::LaunchBuilder::new();
+    // The log viewer reads the handles from context.
+    if let Some(log_handles) = log_handles {
+        launcher = launcher.with_context(log_handles);
+    }
     launcher.launch(app::ui::App);
 }

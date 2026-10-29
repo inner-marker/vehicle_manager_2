@@ -48,7 +48,7 @@ Crate rules:
 
 Hard rules:
 - **All writes go through commands.** No direct database writes from UI or server handlers.
-- **Every server function goes through the auth middleware.** No exceptions.
+- **Every server function goes through the auth middleware.** No exceptions. Concretely: every server function lives under `/api/` (the auth layer in `server::auth` guards that whole prefix, and a test enforces it), and **server functions are never called during server-side rendering**: on the server such a call runs in-process and skips the auth layer. Call them from event handlers or effects.
 - **Quantities are integers in the database** (meters, seconds, milliliters) and `uom` types in the domain.
 - **Money is integer minor units plus an ISO currency code.** Never assume dollars or two decimal places.
 - **Times are a UTC instant plus the IANA time zone where the event happened.** Never store local times without a zone.

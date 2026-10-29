@@ -1,4 +1,4 @@
-//! Diagnostics: the basic in-app log viewer (plan §5 Debug log).
+//! Diagnostics: the connection test panel and the basic in-app log viewer (plan §5 Debug log).
 //!
 //! Shows this device's own log (the ring buffer), newest first, filtered by minimum
 //! level and area. Entries load **after the screen mounts**: with fullstack, the
@@ -13,6 +13,7 @@ use domain::time_utils::format_utc_iso8601;
 
 use crate::logging::{ExportFilter, LogEntry, LogHandles, LogLevel, format_fields};
 use crate::ui::icons::{Icon, IconView};
+use crate::ui::screens::ConnectionPanel;
 use crate::ui::{tr, tr_with};
 
 /// The log viewer screen.
@@ -39,7 +40,10 @@ pub(crate) fn Diagnostics() -> Element {
     });
 
     let Some(handles) = handles else {
-        return rsx! { p { class: "placeholder", {tr(messages::LOG_VIEWER_UNAVAILABLE)} } };
+        return rsx! {
+            ConnectionPanel {}
+            p { class: "placeholder", {tr(messages::LOG_VIEWER_UNAVAILABLE)} }
+        };
     };
 
     let visible = visible_entries(&entries.read(), min_level(), area().as_deref());
@@ -52,6 +56,7 @@ pub(crate) fn Diagnostics() -> Element {
     );
 
     rsx! {
+        ConnectionPanel {}
         div { class: "log-controls",
             label {
                 {tr(messages::LOG_VIEWER_MIN_LEVEL)}

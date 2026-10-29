@@ -9,12 +9,16 @@ publish = false
 
 [dependencies]
 fluent-bundle.workspace = true
+serde.workspace = true
 unic-langid.workspace = true
 
 [features]
 # Shared test helpers (`domain::test_support`). Enable only in other crates'
 # [dev-dependencies], never in normal dependencies.
 test-support = []
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true

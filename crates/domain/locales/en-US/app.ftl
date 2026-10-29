@@ -80,3 +80,31 @@ log-level-warn = Warning
 log-level-info = Info
 log-level-debug = Debug
 log-level-trace = Trace
+
+## Connection test (Diagnostics)
+
+connection-title = Connection
+connection-credential = Test credential
+connection-run-checks = Run checks
+connection-running = Checking…
+connection-version-check = API version
+connection-auth-check = Credential
+connection-pass = Pass
+connection-fail = Fail
+connection-not-checked = Not checked
+# $app_version (text), $api_version and $min_api_version (numbers): what the server reported.
+connection-server-info = Server app { $app_version }, API { $api_version } (accepts { $min_api_version }–{ $api_version })
+# $millis (number): ping round-trip time.
+connection-round-trip = Round trip: { $millis } ms
+connection-unreachable = Couldn't reach the server.
+connection-unexpected = The server sent an unexpected response.
+
+## Why the server refused a request
+
+api-error-missing-credential = No credential was sent.
+api-error-invalid-credential = The server didn't accept this credential.
+api-error-auth-not-configured = The server has no credential configured, so it refuses every request.
+api-error-missing-api-version = The app didn't send its API version.
+api-error-malformed-api-version = The server couldn't read the app's API version.
+api-error-client-too-old = This app is too old for the server. Update the app.
+api-error-client-too-new = This app is newer than the server. Update the server first.

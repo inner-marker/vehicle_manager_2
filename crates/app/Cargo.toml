@@ -37,6 +37,9 @@ tracing-wasm.workspace = true
 [dev-dependencies]
 domain = { workspace = true, features = ["test-support"] }
 tempfile.workspace = true
+# Server-feature tests: drive the real router (async runtime + oneshot requests).
+tokio = { version = "1", features = ["macros", "rt"] }
+tower = { workspace = true, features = ["util"] }
 
 [features]
 default = ["web"]

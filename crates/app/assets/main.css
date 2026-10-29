@@ -275,6 +275,94 @@ select,
     font-size: 0.75rem;
 }
 
+/* ---------- Connection panel (Diagnostics) ---------- */
+
+.connection {
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.connection h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+
+.connection-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.connection-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.connection-controls input {
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+}
+
+.run-checks {
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.run-checks:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.check-results {
+    display: grid;
+    grid-template-columns: max-content auto;
+    gap: 4px 16px;
+    margin: 16px 0 8px;
+}
+
+.check-results dt {
+    color: var(--text-muted);
+}
+
+.check-results dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.check-pass {
+    color: var(--accent);
+}
+
+.check-fail,
+.check-problem {
+    color: var(--error);
+}
+
+.check-not-checked,
+.check-detail {
+    color: var(--text-muted);
+}
+
+.check-problem,
+.check-detail {
+    margin: 4px 0;
+}
+
 /* ---------- Log viewer ---------- */
 
 .log-controls {

@@ -132,4 +132,47 @@ define_messages! {
     LOG_LEVEL_DEBUG => "log-level-debug",
     /// Log level name: trace.
     LOG_LEVEL_TRACE => "log-level-trace",
+
+    /// Diagnostics: heading of the connection test panel.
+    CONNECTION_TITLE => "connection-title",
+    /// Connection panel: label of the credential field.
+    CONNECTION_CREDENTIAL => "connection-credential",
+    /// Connection panel: button that runs the version and credential checks.
+    CONNECTION_RUN_CHECKS => "connection-run-checks",
+    /// Connection panel: shown while the checks run.
+    CONNECTION_RUNNING => "connection-running",
+    /// Connection panel: name of the API version check.
+    CONNECTION_VERSION_CHECK => "connection-version-check",
+    /// Connection panel: name of the credential check.
+    CONNECTION_AUTH_CHECK => "connection-auth-check",
+    /// Connection panel: a check passed.
+    CONNECTION_PASS => "connection-pass",
+    /// Connection panel: a check failed.
+    CONNECTION_FAIL => "connection-fail",
+    /// Connection panel: a check hasn't run (yet, or because an earlier one failed).
+    CONNECTION_NOT_CHECKED => "connection-not-checked",
+    /// Connection panel: what the server reported; takes `app_version` (text),
+    /// `api_version` and `min_api_version` (numbers).
+    CONNECTION_SERVER_INFO => "connection-server-info",
+    /// Connection panel: ping time; takes `millis` (number).
+    CONNECTION_ROUND_TRIP => "connection-round-trip",
+    /// Connection panel: the request never got an answer from the server.
+    CONNECTION_UNREACHABLE => "connection-unreachable",
+    /// Connection panel: the server answered with something unexpected.
+    CONNECTION_UNEXPECTED => "connection-unexpected",
+
+    /// Refusal reason: no credential was sent.
+    API_ERROR_MISSING_CREDENTIAL => "api-error-missing-credential",
+    /// Refusal reason: the credential was wrong.
+    API_ERROR_INVALID_CREDENTIAL => "api-error-invalid-credential",
+    /// Refusal reason: the server has no credential configured.
+    API_ERROR_AUTH_NOT_CONFIGURED => "api-error-auth-not-configured",
+    /// Refusal reason: the app sent no API version.
+    API_ERROR_MISSING_API_VERSION => "api-error-missing-api-version",
+    /// Refusal reason: the API version couldn't be read.
+    API_ERROR_MALFORMED_API_VERSION => "api-error-malformed-api-version",
+    /// Refusal reason: the app is older than the server supports.
+    API_ERROR_CLIENT_TOO_OLD => "api-error-client-too-old",
+    /// Refusal reason: the app is newer than the server.
+    API_ERROR_CLIENT_TOO_NEW => "api-error-client-too-new",
 }
