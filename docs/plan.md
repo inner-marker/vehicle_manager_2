@@ -1531,7 +1531,7 @@ A **`[workspace.lints]`** section in the root `Cargo.toml` applies one strict li
 - **Hosted on GitHub** as a **public** repository (FOSS under MIT OR Apache-2.0, public during development; `docs/decisions.md` #023). CI/CD runs on **GitHub Actions.**
 - **Long-lived branches:**
   - **`main`:** released, stable code. Release tags live here.
-  - **`dev`:** integration branch for work in progress.
+  - **`dev`:** integration branch for work in progress, and the repository's **default branch** on GitHub (`docs/decisions.md` #026).
 - **Milestone branches:** all work (human or agent) happens on one branch per roadmap milestone, cut from `dev` (`milestone/p<phase>-m<n>-<slug>`). Each step is a Conventional Commit on that branch. **One pull request per milestone**, merged into `dev` with a merge commit, then the branch is **deleted** (GitHub's auto-delete setting). Standalone branches are only for work outside a milestone, such as urgent fixes. See `docs/decisions.md` #021.
 - **Releases:** `dev` is merged into `main` by pull request, then a version tag is pushed on `main`. Step-by-step checklist: `docs/releasing.md`.
 

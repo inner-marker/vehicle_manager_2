@@ -5,8 +5,10 @@
 # 2. Re-runs the full PR-to-main gate on the tagged commit.
 # 3. Creates the GitHub Release, with this version's CHANGELOG.md section as its notes.
 #
-# Build artifacts arrive with the milestones that create them: the server Docker image
-# (Phase 1 milestone 3) and desktop packages (milestone 4), each with checksums.
+# 4. Publishes the server image to GHCR as ghcr.io/inner-marker/vehicle_manager_2:<version>
+#    and :latest (linux/amd64, decisions.md #025).
+#
+# Desktop packages arrive with Phase 1 milestone 4, with checksums.
 # The human pushes the tag (docs/releasing.md); agents never do.
 name: Release
 
@@ -53,9 +55,24 @@ jobs:
     needs: guards
     uses: ./.github/workflows/main-gate.yml
 
+  # The server image for this version, after the gate passed. The release job waits
+  # for it, so a GitHub Release never exists without its image.
+  image:
+    name: Publish release image
+    needs: gate
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/server-image.yml
+    with:
+      push: true
+      tags: |
+        type=semver,pattern={{version}}
+        type=raw,value=latest
+
   release:
     name: Create GitHub Release
-    needs: gate
+    needs: [gate, image]
     runs-on: ubuntu-latest
     permissions:
       contents: write # the only job that may create releases
