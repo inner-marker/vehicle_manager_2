@@ -186,3 +186,18 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Follow-ups:**
   - branch protection for `main` and `dev` (plan §8);
   - secret scanning and push protection turned on in repository settings.
+
+### 024. Phase 1 test credential: from an environment variable, fail closed
+*Decided: 2026-10-29 · Plan: §9 Roadmap, Phase 1 milestone 2 · Phase plan: phase-1.md step 7 · Replaces the plan's "hardcoded test credential"*
+
+- **Decision:**
+  - The server reads the single Phase 1 test credential from `VEHICLEMANAGER_TEST_CREDENTIAL`. The name is built from `domain::identity::APP_ID`, never the display name. The credential is never in the repository.
+  - If the variable is unset or blank, the server refuses **every** API request with `503 auth-not-configured`. Pages and assets still load.
+  - Clients send it as `Authorization: Bearer <credential>`, with `x-api-version` on every request. On the web, it's typed into the Diagnostics "Connection" panel and kept in memory only.
+  - One Axum layer in `server::auth` guards every path under `/api/`: credential first (constant-time compare), then API version. Refusals are `401`, `400`, `426`, or `503`, with an `ApiError` reason code the UI translates.
+  - A test proves every registered server function is under `/api/` and refuses unauthenticated requests.
+- **Why:**
+  - The repository is public (#023), and milestone 3 puts this server on the NAS, so a hardcoded credential would protect nothing.
+  - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
+  - Failing closed means a misconfigured server can't be open by accident.
+- **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.

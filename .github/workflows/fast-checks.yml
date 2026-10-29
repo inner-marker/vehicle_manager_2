@@ -33,6 +33,10 @@ jobs:
         run: cargo fmt --all --check
       - name: Clippy (all lints as errors)
         run: cargo clippy --workspace --all-targets -- -D warnings
+      # The server build compiles code the default (web) build doesn't: server functions'
+      # bodies, the auth layer wiring, and the auth coverage tests.
+      - name: Clippy, server build
+        run: cargo clippy -p app --all-targets --no-default-features --features server -- -D warnings
 
   test:
     name: Tests
@@ -44,3 +48,6 @@ jobs:
           cache-key: test
       - name: Run tests
         run: cargo test --workspace
+      # Proves every server function is under /api/ and refuses unauthenticated requests.
+      - name: Run tests, server build (auth coverage)
+        run: cargo test -p app --no-default-features --features server

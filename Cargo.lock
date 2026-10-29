@@ -67,6 +67,8 @@ dependencies = [
  "server",
  "storage",
  "tempfile",
+ "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
  "tracing-wasm",
@@ -1766,6 +1768,8 @@ name = "domain"
 version = "0.1.0"
 dependencies = [
  "fluent-bundle",
+ "serde",
+ "serde_json",
  "unic-langid",
 ]
 
@@ -5087,8 +5091,15 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "domain",
+ "http-body-util",
+ "serde_json",
  "storage",
+ "subtle",
+ "tokio",
+ "tower",
+ "tracing",
 ]
 
 [[package]]

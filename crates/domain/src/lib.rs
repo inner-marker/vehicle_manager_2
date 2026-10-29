@@ -5,6 +5,7 @@
 //! compiles to WebAssembly for the web UI. It never reads the real clock,
 //! random numbers, or location directly; callers pass those in.
 
+pub mod api;
 pub mod i18n;
 pub mod identity;
 pub mod log_area;

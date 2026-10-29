@@ -39,7 +39,8 @@
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 7 | ⬜ | `feat: auth middleware, handshake, and test server functions` | Auth middleware with a hardcoded test credential; API version handshake; ping and server version/time behind auth; pass/fail shown in the web UI | likely `axum`, `serde`, `thiserror` |
+| 7.0 | ✅ | `docs: record making the repository public` | Decision #023; plan §7/§8 wording; milestone 1 marked merged | none |
+| 7 | ☑️ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
 
 ## Milestone 3: Web UI on the NAS
 *Branch: `milestone/p1-m3-nas-web`*
@@ -382,3 +383,104 @@ No app display name anywhere; it isn't decided.
 - A `git cliff --tag v0.1.0` output round-trips through `changelog-section.sh` and `check-changelog.sh`.
 - All workflow YAML parses.
 - The workflows are proven on GitHub at the `v0.1.0` release; the checklist is in `docs/releasing.md`.
+
+### Step 7: `feat: auth middleware, handshake, and test server functions`
+*Planned 2026-10-29 · Branch: `milestone/p1-m2-auth-handshake`*
+
+**Choices made in chat (Dioxus 0.7.10 source checked)**
+- **One router-level auth layer on `/api/*`, plus a coverage test.** It's default-deny: every server function is covered automatically. A test walks `ServerFunction::collect()` to prove it.
+- **The credential comes from an environment variable, never from the repo** (decision #024). On the web, it's typed into the Diagnostics "Connection" panel. A missing variable means every request is refused (fail closed).
+- **Version handshake:** the API version travels in a header on every request and is checked by the same layer. A `handshake` server function reports server info.
+
+**Where things go**
+- **`domain::api`** (new module; pure, WASM-safe):
+  - `API_VERSION: u32 = 1` and `MIN_SUPPORTED_API_VERSION: u32 = 1`. These are separate from the app version (plan §8).
+  - Header names: `x-api-version`, plus the standard `Authorization: Bearer <credential>`.
+  - `check_api_version(client) -> Result<(), ApiError>`: the compatibility rule, shared by server and client.
+  - `ApiError` reason codes (serde, kebab-case): `missing-credential`, `invalid-credential`, `auth-not-configured`, `missing-api-version`, `malformed-api-version`, `client-too-old`, `client-too-new`. Each maps to an HTTP status and a `domain::i18n` message, so the UI never shows server text.
+  - `Handshake { app_version, api_version, min_supported_api_version, server_time_ms }`.
+- **`server::auth`** (new module):
+  - `AuthConfig::from_env()` reads `VEHICLEMANAGER_TEST_CREDENTIAL`. The name is built from `domain::identity::APP_ID`, never from the display name, and a test checks that.
+  - `require_auth` is an Axum 0.8 middleware (`middleware::from_fn_with_state`). For any path under `/api/`, it:
+    1. checks the credential in constant time (`subtle`);
+    2. checks the API version;
+    3. otherwise returns the JSON `ApiError`: **401** for a missing or invalid credential, **503** if auth isn't configured, **400** for a missing, malformed, or too-new version, **426** if the client is too old.
+  - Auth is checked first, so unauthenticated callers learn nothing about versions.
+  - Paths outside `/api/` (pages, assets) pass through, so the UI loads.
+  - `debug` logs on `log_area::AUTH` say *why* a request was refused, never the credential. `warn` at startup if the variable isn't set.
+- **`app`:**
+  - `src/api.rs` holds the server functions under `/api/v1/`: `ping() -> Pong { server_time_ms }` and `handshake() -> Handshake`. They're thin: they only build the response, with the time from `SystemClock`.
+  - `main.rs` (`server` feature): `dioxus::serve` with `Router::new().serve_dioxus_application(ServeConfig::new().context(log_handles), App)`, then `.layer(require_auth)`. Other targets keep `LaunchBuilder` as today.
+  - Diagnostics gets a **Connection** panel above the log viewer:
+    - a credential field (password input, held in memory only);
+    - a **Run checks** button. It sets the headers with `set_request_headers`, calls `handshake` and then `ping`, and shows **pass/fail** for *version* and *auth*, the server's app and API version, and the round-trip time;
+    - checks run only on click, never during server rendering (the SSR caveat above);
+    - all labels and reasons go through `domain::i18n`.
+- **Docs:**
+  - decision #024 (credential source and fail-closed rule);
+  - an AGENTS.md rule: "never call server functions during SSR; every server function lives under `/api/`";
+  - `docs/test-plans/auth-handshake.md`.
+
+**Dependencies:**
+- `server`: `axum` 0.8, `tower` 0.5, `subtle` 2.6, and `serde`/`serde_json` (already in the workspace).
+- `domain`: `serde` (derive), for `Handshake` and `ApiError`.
+- Dev-only: `tower` (`ServiceExt::oneshot`) and `http-body-util`.
+- All are already in `Cargo.lock`, so nothing new is downloaded.
+
+**Not in this step:**
+- Rate limiting (`tower_governor`, plan §6), web login, session cookies, and device tokens (Phase 2 and 3).
+- Showing the mode or user.
+- The handshake's health and database-ID fields (Phase 2 and 3).
+- Feature negotiation (`docs/ideas-to-discuss.md` #2, undecided).
+
+**Tests**
+- `domain`:
+  - `api_version_check_accepts_supported_range`
+  - `client_older_than_minimum_is_too_old`
+  - `client_newer_than_server_is_too_new`
+  - `every_api_error_has_a_status_and_message`
+- `server` (tower `oneshot` on a test router):
+  - `request_without_credential_is_401`
+  - `wrong_credential_is_401`
+  - `unconfigured_auth_refuses_every_api_request`
+  - `missing_or_malformed_version_is_400`
+  - `old_client_is_426`
+  - `newer_client_is_400`
+  - `valid_request_reaches_the_handler`
+  - `non_api_paths_pass_through`
+  - `credential_env_var_name_comes_from_app_id`
+- `app` (`server` feature):
+  - `every_server_function_is_under_api_prefix`
+  - `every_server_function_rejects_unauthenticated_requests`, which builds the real router and calls each collected function.
+
+**Verification:**
+- The usual self-review commands, clippy for every feature set, the WASM guard, and `dx build --platform web`.
+- A local run with `curl` covering the right, wrong, and missing credential and old, new, and missing version headers.
+- Your manual test plan in the browser.
+
+**Changes from the plan, found during implementation**
+- **Lint override `#[cfg_attr(feature = "server", expect(clippy::unused_async))]`** on `ping` and `handshake`, each with a justifying comment.
+  - Server functions must be async, and these two don't await anything yet. The lint fires on the server-side wrapper `#[get]` generates, so the expectation applies to the server build only.
+  - Once a body awaits something, the `expect` errors, so it can't go stale.
+- **The panel uses the existing `#[expect(unused_qualifications)]` rsx! override** (the same false positive as step 6).
+- **Server functions are `pub(crate)`,** because they're only called inside the crate. With `pub`, `unreachable_pub` flagged the generated wrapper.
+- **Imports used only in server-function bodies are declared inside the bodies.** `#[get]` keeps bodies in the server build only, so top-level imports would be unused on web.
+- **The refusal body matches Dioxus's `ErrorPayload` shape** (`{"message","code","data"}`). Clients then receive `ServerFnError::ServerError { code, details: Some("<reason>") }`, and the panel reads the reason from `details`.
+- **The coverage test uses `serve_api_application`** (server functions plus the render fallback, no built web assets), so it runs in a plain `cargo test`.
+- **Fast checks now also run clippy and the tests for the `server` build** (`--no-default-features --features server`). Otherwise CI would never run the auth coverage tests.
+- **Extra dev-only dependency: `tokio`** (`macros`, `rt`) in `server` and `app`, as the async test runtime. It's already in `Cargo.lock` through Dioxus, so `Cargo.lock` gains no new packages. It wasn't in the approved list, so it's **flagged for review**.
+- **Extra tests:**
+  - `non_bearer_authorization_is_401`, `credential_is_checked_before_version`, `refusals_use_the_dioxus_error_payload_shape`;
+  - `debug_output_never_contains_the_credential`, `api_version_header_parses_whole_numbers_only`, `api_errors_serialize_as_kebab_case_codes`, `only_credential_problems_count_as_auth_failures`;
+  - Connection panel tests: outcome mapping, request headers, and a message for every problem.
+
+**Result**
+- **Tests:** 88 pass on the default build (37 `app`, 31 `domain`, 13 `server`, 7 doctests); the `server` build passes 39 `app` tests, including both coverage tests.
+- **Builds:** clippy is clean for native, wasm32, `server`, and `desktop`. Docs, the WASM guard, and `cargo deny` are clean, and `dx build --platform web` succeeds.
+- **curl smoke run of the built server:**
+  - every refusal case returned the documented status and reason;
+  - an unknown `/api/` path was refused before routing;
+  - a valid handshake and ping returned 200;
+  - with the variable unset, every API request got `503 auth-not-configured` while pages loaded.
+  - The log shows only the variable's *name*.
+- **Manual test plan:** `docs/test-plans/auth-handshake.md`.
