@@ -225,3 +225,18 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - PRs now default to targeting `dev`, which is where every milestone PR goes.
   - `workflow_dispatch` still needs the workflow file *on* `dev`, so the push trigger is what lets a milestone branch get an image before it's merged.
 - **Unaffected:** tag-triggered releases, which run the workflow from the tagged commit, and the branch rules in plan §8.
+
+### 027. First desktop platform is macOS; server address set at launch; credential in memory
+*Decided: 2026-10-29 · Plan: §9 Roadmap, Phase 1 milestone 4 · Phase plan: phase-1.md milestone 4 · Reverses the plan's "Linux first"*
+
+- **Decision:**
+  - **macOS is the first desktop platform** for Phase 1's first runs. Linux (WebKitGTK) and Windows follow; all three still build in the PR-to-`main` gate.
+  - **The server address is a desktop setting**, saved in `settings.json` in the platform data folder (from `domain::identity::DATA_DIR_NAME`) and **applied at launch**. A changed address takes effect after a restart, and the app says so.
+  - Accepted addresses: `https://`, or `http://` only for a loopback host (local `dx serve`).
+  - **The desktop credential is typed in and kept in memory only**, as on the web (#024). No keychain.
+  - **Desktop packages** (`.deb`, `.rpm`, and the macOS bundle) are set up with the first release, not in milestone 4. During development the app runs with `dx serve --platform desktop`.
+- **Why:**
+  - The human develops on a Mac, so macOS gives the quickest first end-to-end runs. The exit criterion needs "the desktop app", not a particular OS.
+  - Dioxus 0.7.10 stores the server address once per process (`set_server_url` is a `OnceLock`, and Dioxus falls back to `http://127.0.0.1:8080` if it's unset), so it can't change while the app runs.
+  - Phase 2 logins replace the test credential, so saving it now would add a keychain dependency for nothing.
+  - The exit criterion doesn't need packages, and packaging belongs with the release pipeline it runs in.

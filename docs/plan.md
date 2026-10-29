@@ -1714,9 +1714,9 @@ Every agent change is reviewed as a diff before merging.
    - Published via `tailscale serve`.
    - Another tailnet device opens the web UI over HTTPS, and the test calls succeed.
 4. **Desktop over Tailscale (Phase 1 complete)**
-   - **Linux is the first desktop platform** (WebKitGTK-based); Windows and macOS follow.
-   - During development the desktop app runs directly via the Dioxus CLI; packaging (below) is set up in the release workflow.
-   - Desktop app with a **configurable server address** in settings.
+   - **macOS is the first desktop platform** for the first runs; Linux (WebKitGTK-based) and Windows follow (`docs/decisions.md` #027).
+   - During development the desktop app runs directly via the Dioxus CLI; packaging (see Linux desktop packaging) is set up in the release workflow with the first release.
+   - Desktop app with a **configurable server address** in settings, applied at launch.
    - Connects to the NAS over Tailscale and passes the version and auth checks.
 
 **Throughout Phase 1:** the **debug log** (tracing ring buffer, rotating file, and a basic in-app log viewer), so every later milestone can be debugged from inside the apps.

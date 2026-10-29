@@ -2,7 +2,7 @@
 
 *Agreed 2026-10-28 · Roadmap: `docs/plan.md` §9 Phase 1 · Open questions: none*
 
-**Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the Linux desktop app is the last milestone.
+**Goal:** prove the full pipeline end to end, across separate devices and a separate server, before building real features. The web UI served from the NAS comes first; the desktop app (macOS first, decision #027) is the last milestone.
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
 
@@ -13,7 +13,7 @@
 - The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 - Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository, #024 test credential, #025 amd64 server image.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository, #024 test credential, #025 amd64 server image, #026 `dev` as default branch, #027 macOS desktop first.
 
 ---
 
@@ -43,24 +43,27 @@
 | 7 | ✅ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
 
 ## Milestone 3: Web UI on the NAS
-*Branch: `milestone/p1-m3-nas-web` · Milestone PR: not opened yet*
+*Branch: `milestone/p1-m3-nas-web` · Milestone PR: **#3, merged 2026-10-29** (merge commit, steps 9a–9g)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 9a | ☑️ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
-| 9b | ☑️ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
-| 9c | ☑️ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
-| 9d | ☑️ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
-| 9e | ☑️ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
-| 9f | ☑️ | `fix: name the compose project so docker compose matches the NAS Project` | `name: vehiclemanager` in `deploy/compose.yaml`, so `docker compose` over SSH updates the Container Manager Project's container; test pins it to `APP_ID`; troubleshooting entry | none |
-| 9g | ☑️ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
+| 9a | ✅ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
+| 9b | ✅ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
+| 9c | ✅ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
+| 9d | ✅ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
+| 9e | ✅ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
+| 9f | ✅ | `fix: name the compose project so docker compose matches the NAS Project` | `name: vehiclemanager` in `deploy/compose.yaml`, so `docker compose` over SSH updates the Container Manager Project's container; test pins it to `APP_ID`; troubleshooting entry | none |
+| 9g | ✅ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
 
-## Milestone 4: Linux desktop over Tailscale
-*Branch: `milestone/p1-m4-desktop`*
+## Milestone 4: Desktop over Tailscale (macOS first)
+*Branch: `milestone/p1-m4-desktop` · Milestone PR: not opened yet*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 10 | ⬜ | *(steps planned when the milestone starts)* | Desktop app with a configurable server address; passes version and auth checks against the NAS; manual test plan | — |
+| 10.0 | ☑️ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
+| 10a | ⬜ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
+| 10b | ⬜ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
+| 10c | ⬜ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
 
 
 ---
@@ -628,3 +631,34 @@ No app display name anywhere; it isn't decided.
 - `deploy/compose.yaml` sets `name: vehiclemanager`, matching the Container Manager Project name.
 - `crates/app/tests/deploy_config.rs`: `compose_project_and_container_are_named_after_the_app_id`.
 - `docs/deploying-nas.md`: the Project name must match `name:`; a troubleshooting entry for the conflict error.
+
+### Milestone 4 plan (steps 10.0–10c): desktop over Tailscale, macOS first
+*Planned 2026-10-29 · Branch: `milestone/p1-m4-desktop` · Approved in chat, with macOS instead of Linux for the first runs (decision #027)*
+
+**Goal:** finish Phase 1. The desktop app on the Mac reaches the NAS at `https://<nas>.<tailnet>.ts.net`, passes the handshake with the right credential, and is rejected cleanly with a wrong one.
+
+**The constraint that shapes it:** in Dioxus 0.7.10, `set_server_url` stores the address in a `OnceLock`, once per process. If it's unset at launch, Dioxus uses `http://127.0.0.1:8080` (`DIOXUS_DEVSERVER_IP`/`PORT`). So the app reads the saved address **before** launching, and a changed address applies after a restart. Requests go through Dioxus's `reqwest` with `rustls` and the webpki roots, which trust the Tailscale (Let's Encrypt) certificate; macOS App Transport Security doesn't apply, because the requests don't come from the webview.
+
+**10a: desktop data folder and log files** (`crates/app`, `desktop` feature)
+- The data folder is `dirs::data_dir()` joined with `domain::identity::DATA_DIR_NAME`: `~/Library/Application Support/vehiclemanager` on macOS, `~/.local/share/vehiclemanager` on Linux. Never the display name.
+- Logs go to `<data folder>/logs` with `FileLogPolicy::DESKTOP`, plus the crash file, reusing the server's wiring from step 9b.
+- If the folder can't be found or created, the app logs a warning and runs without file logs.
+- **Tests:** the folder path ends in `DATA_DIR_NAME`; an unwritable folder falls back to no file logs.
+
+**10b: server address setting** (`domain`, `crates/app`)
+- **Rules in `domain`** (no I/O): trim; `https://` with a host; or `http://` only for `localhost`, `127.0.0.1`, or `[::1]`; no path, query, or fragment beyond `/`; a trailing `/` is dropped. Errors are translated messages.
+- **`settings.json`** in the data folder holds the address. A missing, unreadable, or invalid file means "not set", with a warning in the log; the app still starts.
+- **Before launch:** if an address is saved, `set_server_url` gets it. If not, Dioxus's default stays (local `dx serve`).
+- **UI:** on desktop, the Diagnostics Connection panel gets a server address field showing the address in use. Saving shows "Saved. Restart the app to use the new address." Wrong addresses show the rule they break. The web build doesn't show the field (it always uses its own origin).
+- The credential stays memory-only (#024, #027).
+- **Tests:** address rules (accepted, rejected, normalized); settings round-trip; missing and corrupt files fall back to "not set" (temp directory).
+- New messages go in `app.ftl` and `define_messages!`.
+
+**10c: manual test plan** (`docs/test-plans/desktop-macos.md`)
+- Run with `dx serve --platform desktop` on the Mac, with Tailscale connected.
+- **Checks:** set the address to the NAS's `ts.net` address, restart, and the panel shows it; wrong credential → Fail with "The server didn't accept this credential"; right credential → both Pass with the server version; an unreachable address → "Unreachable"; an `http://` non-loopback address is refused; logs appear in the data folder; the credential appears nowhere in them or in `settings.json`.
+
+**Verification:** the usual self-review commands, plus `cargo clippy -p app --features desktop --all-targets -- -D warnings` and `cargo check -p app --target wasm32-unknown-unknown` (the web build must not pull in `dirs` or the settings file code).
+
+**Not in this milestone:** Linux and Windows runs, desktop packages, and saving the credential (#027).
+
