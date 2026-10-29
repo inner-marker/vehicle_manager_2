@@ -37,8 +37,24 @@ fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
     }
 }
 
-/// Client logging: console and in-app viewer. Desktop log files come with milestone 4.
-#[cfg(not(feature = "server"))]
+/// Desktop logging: rotating log files and the crash file in the data folder's `logs/`
+/// (`app::data_folder`), plus the console and in-app viewer.
+#[cfg(all(feature = "desktop", not(feature = "server")))]
+fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
+    let Some(data_folder) = app::data_folder::platform_data_folder() else {
+        let handles = logging::init()?;
+        // Logged only now, once the subscriber exists to record it.
+        tracing::warn!(target: log_area::APP, "no data folder on this platform; not writing log files");
+        return Ok(handles);
+    };
+    logging::init_with_log_dir(
+        &data_folder.join(logging::LOG_DIR_NAME),
+        logging::FileLogPolicy::DESKTOP,
+    )
+}
+
+/// Web and mobile logging: console and in-app viewer. Mobile log files come with Phase 4.
+#[cfg(not(any(feature = "server", feature = "desktop")))]
 fn start_logging() -> Result<LogHandles, SetGlobalDefaultError> {
     logging::init()
 }

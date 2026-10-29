@@ -61,7 +61,7 @@
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
 | 10.0 | ☑️ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
-| 10a | ⬜ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
+| 10a | ☑️ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
 | 10b | ⬜ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
 | 10c | ⬜ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
 
@@ -644,6 +644,11 @@ No app display name anywhere; it isn't decided.
 - Logs go to `<data folder>/logs` with `FileLogPolicy::DESKTOP`, plus the crash file, reusing the server's wiring from step 9b.
 - If the folder can't be found or created, the app logs a warning and runs without file logs.
 - **Tests:** the folder path ends in `DATA_DIR_NAME`; an unwritable folder falls back to no file logs.
+
+**Step 10a: written**
+- `app::data_folder`: `platform_data_folder()` (`dirs::data_dir()` + `DATA_DIR_NAME`) and the pure `data_folder_in(base)`.
+- `main.rs`: with the `desktop` feature, logs go to `<data folder>/logs` with `FileLogPolicy::DESKTOP` and the crash file, through the same `logging::init_with_log_dir` as the server. With no data folder, a warning and console-only logs.
+- **Change from the plan:** `dirs` is a dependency of every **native** build (`cfg(not(target_arch = "wasm32"))`), not only the `desktop` feature. Its tests then run in the default `cargo test`, which CI runs; CI can't build the `desktop` feature on Linux without WebKitGTK. The web build still doesn't include it (`cargo tree --target wasm32-unknown-unknown -i dirs` is empty). The server image now compiles `dirs` too, unused.
 
 **10b: server address setting** (`domain`, `crates/app`)
 - **Rules in `domain`** (no I/O): trim; `https://` with a host; or `http://` only for `localhost`, `127.0.0.1`, or `[::1]`; no path, query, or fragment beyond `/`; a trailing `/` is dropped. Errors are translated messages.

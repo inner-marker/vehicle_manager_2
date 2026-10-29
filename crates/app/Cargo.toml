@@ -31,6 +31,11 @@ web-time.workspace = true
 storage = { workspace = true, optional = true }
 server = { workspace = true, optional = true }
 
+# Native-only (the web app has no files): finds the desktop data folder. Not tied to
+# the `desktop` feature, so its tests run in the default native test build.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dirs.workspace = true
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tracing-wasm.workspace = true
 
