@@ -13,7 +13,7 @@
 - The status column is kept current: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 - Steps 0–3b were merged as individual PRs, before decision #021.
 
-**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository.
+**Decisions shaping this phase:** #016 app identity, #018 translation layer in Phase 1, #019 auth before any server function, #020 license policy, #021 one PR per milestone, #022 translation layer, #023 public repository, #024 test credential, #025 amd64 server image.
 
 ---
 
@@ -35,19 +35,23 @@
 | 8 | ✅ | `ci: release workflow and git-cliff` | `cliff.toml`; tag-triggered release workflow with version/tag guards; CHANGELOG entry check in the PR-to-`main` gate | — |
 
 ## Milestone 2: Auth stub, handshake & test server functions
-*Branch: `milestone/p1-m2-auth-handshake`*
+*Branch: `milestone/p1-m2-auth-handshake` · Milestone PR: **#2, merged 2026-10-29** (merge commit, steps 7.0–7)*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
 | 7.0 | ✅ | `docs: record making the repository public` | Decision #023; plan §7/§8 wording; milestone 1 marked merged | none |
-| 7 | ☑️ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
+| 7 | ✅ | `feat: auth middleware, handshake, and test server functions` | One auth + API-version layer on `/api/*` (credential from an env var, decision #024); `ping` and `handshake` server functions; Diagnostics "Connection" panel with pass/fail | `axum`, `tower`, `subtle` (server); `serde` (domain); dev: `tower`, `http-body-util` (all already in `Cargo.lock`) |
 
 ## Milestone 3: Web UI on the NAS
-*Branch: `milestone/p1-m3-nas-web`*
+*Branch: `milestone/p1-m3-nas-web` · Milestone PR: not opened yet*
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 9 | ⬜ | *(steps planned when the milestone starts)* | Docker image (arm64), compose file, loopback-only port, `tailscale serve`; manual test plan in `docs/test-plans/` | — |
+| 9a | 📝 | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
+| 9b | ⬜ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
+| 9c | ⬜ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
+| 9d | ⬜ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
+| 9e | ⬜ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
 
 ## Milestone 4: Linux desktop over Tailscale
 *Branch: `milestone/p1-m4-desktop`*
@@ -484,3 +488,75 @@ No app display name anywhere; it isn't decided.
   - with the variable unset, every API request got `503 auth-not-configured` while pages loaded.
   - The log shows only the variable's *name*.
 - **Manual test plan:** `docs/test-plans/auth-handshake.md`.
+
+
+### Milestone 3 plan (steps 9a–9e): web UI on the NAS
+*Planned 2026-10-29 · Branch: `milestone/p1-m3-nas-web` · Choices agreed in chat*
+
+**Target:** Synology DS1019+ (Intel J3455, x86_64), DSM 7.4.1, Container Manager and Tailscale installed, MagicDNS and HTTPS certificates enabled (decision #025).
+
+**On the NAS** (human-made; the docs describe it, nothing here creates it):
+
+```
+/volume1/docker/vehicle_manager/   Container Manager Project folder
+├── compose.yaml                   copy of deploy/compose.yaml
+├── .env                           credential, host port, user/group IDs (never in git)
+└── data/                          mounted as /data; owned by DSM user vehiclemanager (1030:100)
+    └── logs/                      rotating JSON-lines logs + last-crash.txt
+```
+
+**9b: logs to the data directory** (`crates/app`)
+- With the `server` feature, `VEHICLEMANAGER_DATA_DIR` (the name is built from `domain::identity::APP_ID`) adds a `FileSink` writing to `<dir>/logs` with `FileLogPolicy::SERVER` (10 × 10 MB, 30 days).
+- If the variable is unset (local `dx serve`), logs go to the console and ring buffer only.
+- If the folder isn't writable, the server logs a warning and continues without file logs. It never refuses to start over logging.
+- **Crash file:** a panic hook writes `<dir>/logs/last-crash.txt` (time, message, location), then runs the default hook.
+  - Our code doesn't panic, but dependencies can.
+  - The file sits outside the rotation, so the record survives the restart (plan §5).
+- **Tests:**
+  - the environment variable name comes from the app ID;
+  - the file sink gets attached and receives entries;
+  - the crash report text is formatted correctly (a pure function);
+  - an unwritable folder falls back to no file logs.
+
+**9c: the image and compose file**
+- **`Dockerfile`** (multi-stage):
+  1. **Build stage:** `rust:1.95-trixie`. Install `dioxus-cli` 0.7.10 with `cargo install --locked` (its own cached layer). Copy the source and run `dx bundle --platform web --release --out-dir /out` (output verified: `server` + `public/`). BuildKit cache mounts hold the cargo registry and `target/`.
+  2. **Runtime stage:** `debian:trixie-slim` plus `ca-certificates`.
+     - `/app/server` and `/app/public/` sit side by side; the server finds `public/` next to its binary.
+     - `IP=0.0.0.0`, `PORT=8080`, `VEHICLEMANAGER_DATA_DIR=/data`.
+     - Default `USER 10001` (non-root). The compose file overrides it with the NAS user.
+- Builds keep the **default x86-64 baseline**, never `target-cpu=native` (#025).
+- **`.dockerignore`:** `target/`, `.git/`, `.claude/`, and local databases and logs.
+- **`deploy/compose.yaml`:**
+  - image `ghcr.io/inner-marker/vehicle_manager_2:${VEHICLEMANAGER_IMAGE_TAG:-dev}`;
+  - `user: "${VEHICLEMANAGER_UID}:${VEHICLEMANAGER_GID}"`;
+  - port `127.0.0.1:${VEHICLEMANAGER_HOST_PORT:-8410}:8080`, **loopback only**;
+  - `./data:/data`;
+  - the credential from `.env`;
+  - `restart: unless-stopped`;
+  - hardening: `read_only: true` with a `/tmp` tmpfs, `cap_drop: [ALL]`, `no-new-privileges`.
+- **`deploy/.env.example`:** every variable with comments (UID 1030, GID 100, port 8410, tag `dev`), and a placeholder credential the server would reject as the example value.
+- **`docs/deploying-nas.md`:** one-time NAS setup (folder, permissions, Project, `.env`, `tailscale serve`), updating (pull and recreate), rollback (pin `:sha-…`), and reading logs.
+- **Dependabot:** adds the `docker` ecosystem for the Dockerfile's base images.
+
+**9d: publishing to GHCR**
+- **`.github/workflows/image.yml`:**
+  - Runs on push to `dev`, and manually ("Run workflow") on any branch.
+  - Builds `linux/amd64` with buildx, using the GitHub Actions cache.
+  - Pushes `ghcr.io/inner-marker/vehicle_manager_2:dev` and `:sha-<short>`.
+  - `permissions: packages: write` only in that job.
+- **The release workflow** builds and pushes `:<version>` and `:latest` after the gate. The plan's "Docker image build (not published)" PR-to-main check becomes the main gate building the image without pushing it.
+- **GHCR packages start private.** The deploy doc includes the one-time step to make the package public, so the NAS can pull without logging in.
+
+**9e: manual test plan** (`docs/test-plans/nas-web.md`)
+- Set up the Project.
+- `tailscale serve --bg --https=443 http://127.0.0.1:8410`, using the Synology package's CLI over SSH, with a fallback HTTPS port if 443 is taken.
+- **Checks:**
+  - from another tailnet device: open `https://<nas>.<tailnet>.ts.net`;
+  - Diagnostics → Run checks passes with the right credential and fails with a wrong one;
+  - logs appear in `data/logs`;
+  - the container restarts after a NAS reboot;
+  - the port isn't reachable from the LAN (`http://<nas-lan-ip>:8410` fails).
+- Also what to capture if a step fails.
+
+**Not in this milestone:** arm64 images; the database and its volume use (Phase 2); snapshots (Phase 2, the new open question); offsite backups; the desktop app (milestone 4).

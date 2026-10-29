@@ -201,3 +201,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
   - Failing closed means a misconfigured server can't be open by accident.
 - **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.
+
+### 025. First server image is linux/amd64; arm64 later
+*Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
+
+- **Decision:**
+  - The NAS is a Synology **DS1019+**: Intel Celeron J3455 (x86_64), 8 GB RAM, DSM 7.4.1, with Container Manager and Tailscale installed.
+  - Server images start **amd64-only**. **arm64 is kept for later**, for hosts such as a Raspberry Pi, as a multi-arch image under one tag.
+  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the J3455 has no AVX.
+  - `rust-toolchain.toml` pins `x86_64-unknown-linux-gnu` instead of `aarch64-unknown-linux-gnu`.
+- **Why:**
+  - The plan assumed an ARM Synology. The real CPU, checked in DSM's Info Center before milestone 3 as the plan required, is x86_64, so an arm64-only image wouldn't run.
+  - amd64 also builds natively on GitHub's standard runners, without cross-compiling or emulation.

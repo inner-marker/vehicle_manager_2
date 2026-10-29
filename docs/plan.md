@@ -162,7 +162,7 @@ A Cargo workspace with four crates. Dependencies flow **one way only**, which pr
 
 **Migrations** live with the `storage` crate and are embedded with `sqlx::migrate!`.
 
-**Toolchain pinning:** `rust-toolchain.toml` pins an exact stable Rust version, the components (`clippy`, `rustfmt`), and the targets (e.g. `wasm32-unknown-unknown`, `aarch64-unknown-linux-gnu`). Every developer machine, agent, and CI run uses the same compiler.
+**Toolchain pinning:** `rust-toolchain.toml` pins an exact stable Rust version, the components (`clippy`, `rustfmt`), and the targets (e.g. `wasm32-unknown-unknown`, `x86_64-unknown-linux-gnu`). Every developer machine, agent, and CI run uses the same compiler.
 
 ### App identity: name vs. bundle ID
 
@@ -1434,12 +1434,12 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 
 ### Target NAS & image architectures
 
-- **Primary NAS:** Synology, running Docker (Container Manager) and the Tailscale package.
-- **Architectures:** images will support both **arm64** and **x86_64 (amd64)**.
-  - **Early builds: arm64 only,** matching the Synology target.
-  - amd64 is added later (at the latest before the first image is published to GHCR), as a multi-arch image under one tag. *(Originally "before the repo goes public"; the repo went public early, see `docs/decisions.md` #023.)*
-- **Verify before milestone 3:** confirm the Synology model's CPU architecture and that Container Manager supports it (DSM's Info Center shows the CPU).
-- **Building arm64 efficiently:** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
+- **Primary NAS:** Synology **DS1019+** (Intel Celeron J3455, 4 cores, 8 GB RAM, x86_64) on **DSM 7.4.1**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
+- **Architectures:** images will support both **x86_64 (amd64)** and **arm64**.
+  - **First images: amd64 only,** matching the NAS. GitHub's standard Linux runners are amd64, so CI builds them natively, with no cross-compiling or emulation.
+  - **arm64 later**, for other always-on hosts such as a Raspberry Pi (see Hosting options), as a multi-arch image under one tag.
+- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the J3455 has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
+- **Building arm64 efficiently (later):** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
 
 ### Getting the image onto the NAS
 
@@ -1588,7 +1588,7 @@ Three main workflows, plus scheduled and maintenance jobs. Workflow files live i
 - **Builds release artifacts:**
   - Desktop apps: Linux (`.deb` and `.rpm`, built on an LTS base; see Linux desktop packaging), Windows, macOS
   - Server: Docker image.
-    - **Published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`: arm64 first, multi-arch (arm64 + amd64) before the first published image at the latest (see Target NAS & image architectures). *(The earlier "private repo: attach a `docker save` file to the release" stage no longer applies; the repo is public, `docs/decisions.md` #023.)*
+    - **Published to GitHub Container Registry (GHCR)**, tagged with the version and `latest`: amd64 first (the NAS), multi-arch (amd64 + arm64) later (see Target NAS & image architectures, `docs/decisions.md` #025). *(The earlier "private repo: attach a `docker save` file to the release" stage no longer applies; the repo is public, `docs/decisions.md` #023.)*
   - Web UI bundle (included in the server image)
   - *(Phase 4)* Android and iOS builds, with signing keys from GitHub secrets
   - *(Post-MVP)* plain server binaries/installers
@@ -1772,6 +1772,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Geocoder dataset:** which GeoNames city threshold (places of 500, 1,000, or 5,000+ people) and boundary detail, balancing accuracy against size; which crate (if any) to use.
 - **Map picker:** a map needs map tiles, which usually come from an online service (e.g. OpenStreetMap, with usage limits). Online-only map picking, or skip the map and use saved places plus manual entry? (The post-MVP event map needs the same tile source, so the two could be decided together.)
 - **Geocoding on device vs. server:** confirm the bundled dataset size is acceptable for phones.
+- **Nightly snapshot disk:** the NAS (DS1019+) has **one storage pool** (4 data disks + 1 parity), so there is no separate disk for the "different NAS disk" snapshot rule (§6 Data integrity). Options: a USB disk on the NAS, Hyper Backup to another device, or accept same-pool snapshots until offsite backups (post-MVP).
 
 ### Phase 3: Local-first & sync
 
