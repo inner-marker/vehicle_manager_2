@@ -9,6 +9,7 @@
 pub mod convert;
 pub mod database;
 mod error;
+mod integrity;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
 pub use error::StorageError;

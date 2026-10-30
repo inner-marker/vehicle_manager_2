@@ -67,11 +67,15 @@ fn launch(log_handles: Option<LogHandles>) {
     use dioxus::prelude::{DioxusRouterExt, ServeConfig};
 
     let auth = server::auth::AuthConfig::from_env();
+    let database_dir = server_database_dir();
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {
         let log_handles = log_handles.clone();
         let auth = auth.clone();
+        let database_dir = database_dir.clone();
         async move {
+            // Opens and checks the database once; later calls (hot reloads) reuse it.
+            server::startup::start(&database_dir, &logging::SystemClock).await;
             let mut config = ServeConfig::new();
             // The log viewer reads the handles from context.
             if let Some(log_handles) = log_handles {
@@ -82,6 +86,25 @@ fn launch(log_handles: Option<LogHandles>) {
         }
     })
 }
+
+/// Where the server keeps its database: `VEHICLEMANAGER_DATA_DIR` (the Docker image
+/// sets `/data`), or `dev-data/` in the working directory for local `dx serve`
+/// (git-ignored).
+#[cfg(feature = "server")]
+fn server_database_dir() -> std::path::PathBuf {
+    let data_dir_var = domain::identity::env_var_name(logging::DATA_DIR_ENV_NAME);
+    std::env::var_os(&data_dir_var).map_or_else(
+        || {
+            tracing::warn!(target: log_area::DATABASE, env_var = %data_dir_var, "data directory not set; using dev-data/ for local development");
+            std::path::PathBuf::from(DEV_DATA_DIR)
+        },
+        std::path::PathBuf::from,
+    )
+}
+
+/// The local development data folder, used when `VEHICLEMANAGER_DATA_DIR` isn't set.
+#[cfg(feature = "server")]
+const DEV_DATA_DIR: &str = "dev-data";
 
 /// Web, desktop, and mobile clients.
 #[cfg(not(feature = "server"))]

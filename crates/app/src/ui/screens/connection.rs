@@ -52,6 +52,8 @@ pub(crate) enum Problem {
     Unreachable,
     /// An answer we couldn't interpret.
     Unexpected,
+    /// The server answered, but reports a problem with its database.
+    ServerUnhealthy,
 }
 
 impl Problem {
@@ -60,6 +62,7 @@ impl Problem {
             Self::Refused(error) => error.message(),
             Self::Unreachable => messages::CONNECTION_UNREACHABLE,
             Self::Unexpected => messages::CONNECTION_UNEXPECTED,
+            Self::ServerUnhealthy => messages::CONNECTION_SERVER_UNHEALTHY,
         }
     }
 }
@@ -69,6 +72,8 @@ impl Problem {
 pub(crate) struct CheckOutcome {
     pub(crate) auth: CheckState,
     pub(crate) version: CheckState,
+    /// The server's own health, from the handshake; not checked if the handshake failed.
+    pub(crate) health: CheckState,
     pub(crate) problem: Option<Problem>,
     pub(crate) server: Option<Handshake>,
     pub(crate) round_trip_ms: Option<i64>,
@@ -79,6 +84,7 @@ impl CheckOutcome {
         Self {
             auth,
             version,
+            health: CheckState::NotChecked,
             problem: Some(problem),
             server: None,
             round_trip_ms: None,
@@ -164,12 +170,25 @@ async fn run_checks(credential: &str) -> CheckOutcome {
         Ok(_) => Some(SystemClock.now().as_millis().saturating_sub(started)),
         Err(error) => return outcome_from_error(&error),
     };
-    tracing::debug!(target: log_area::AUTH, ?round_trip_ms, server_api = server.api_version, "connection checks passed");
+    tracing::debug!(target: log_area::AUTH, ?round_trip_ms, server_api = server.api_version, healthy = server.healthy, "connection checks passed");
+    outcome_from_handshake(server, round_trip_ms)
+}
 
+/// Both checks passed: the result now depends on the server's own health.
+pub(crate) fn outcome_from_handshake(
+    server: Handshake,
+    round_trip_ms: Option<i64>,
+) -> CheckOutcome {
+    let (health, problem) = if server.healthy {
+        (CheckState::Pass, None)
+    } else {
+        (CheckState::Fail, Some(Problem::ServerUnhealthy))
+    };
     CheckOutcome {
         auth: CheckState::Pass,
         version: CheckState::Pass,
-        problem: None,
+        health,
+        problem,
         server: Some(server),
         round_trip_ms,
     }
@@ -322,6 +341,8 @@ fn CheckResults(result: CheckOutcome) -> Element {
             dd { class: result.version.class(), {tr(result.version.label())} }
             dt { {tr(messages::CONNECTION_AUTH_CHECK)} }
             dd { class: result.auth.class(), {tr(result.auth.label())} }
+            dt { {tr(messages::CONNECTION_HEALTH_CHECK)} }
+            dd { class: result.health.class(), {tr(result.health.label())} }
         }
         if let Some(problem) = result.problem {
             p { class: "check-problem", {tr(problem.message())} }
@@ -396,6 +417,37 @@ mod tests {
         );
     }
 
+    fn handshake(healthy: bool) -> Handshake {
+        Handshake {
+            app_version: "0.1.0".to_owned(),
+            api_version: API_VERSION,
+            min_supported_api_version: API_VERSION,
+            server_time_ms: 0,
+            healthy,
+        }
+    }
+
+    #[test]
+    fn a_healthy_server_passes_every_check() {
+        let outcome = outcome_from_handshake(handshake(true), Some(12));
+        assert_eq!(outcome.health, CheckState::Pass);
+        assert_eq!(outcome.problem, None);
+    }
+
+    #[test]
+    fn an_unhealthy_server_fails_the_health_check_with_its_reason() {
+        let outcome = outcome_from_handshake(handshake(false), Some(12));
+        assert_eq!(outcome.auth, CheckState::Pass);
+        assert_eq!(outcome.health, CheckState::Fail);
+        assert_eq!(outcome.problem, Some(Problem::ServerUnhealthy));
+    }
+
+    #[test]
+    fn a_refused_handshake_leaves_health_unchecked() {
+        let outcome = outcome_from_error(&refused(ApiError::InvalidCredential));
+        assert_eq!(outcome.health, CheckState::NotChecked);
+    }
+
     #[test]
     fn requests_carry_api_version_and_bearer_credential() {
         let headers = request_headers("  secret  ");
@@ -414,10 +466,11 @@ mod tests {
     #[test]
     fn every_problem_has_a_translated_message() {
         let english = domain::i18n::Translator::english();
-        let problems = ApiError::ALL
-            .into_iter()
-            .map(Problem::Refused)
-            .chain([Problem::Unreachable, Problem::Unexpected]);
+        let problems = ApiError::ALL.into_iter().map(Problem::Refused).chain([
+            Problem::Unreachable,
+            Problem::Unexpected,
+            Problem::ServerUnhealthy,
+        ]);
         for problem in problems {
             assert!(english.has(problem.message()), "{problem:?}");
         }

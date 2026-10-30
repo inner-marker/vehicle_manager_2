@@ -160,6 +160,10 @@ define_messages! {
     CONNECTION_UNREACHABLE => "connection-unreachable",
     /// Connection panel: the server answered with something unexpected.
     CONNECTION_UNEXPECTED => "connection-unexpected",
+    /// Connection panel: name of the server health check.
+    CONNECTION_HEALTH_CHECK => "connection-health-check",
+    /// Connection panel: the server reports a problem with its database.
+    CONNECTION_SERVER_UNHEALTHY => "connection-server-unhealthy",
     /// Connection panel (desktop): label of the server address field.
     CONNECTION_SERVER_ADDRESS => "connection-server-address",
     /// Connection panel (desktop): button that saves the server address.

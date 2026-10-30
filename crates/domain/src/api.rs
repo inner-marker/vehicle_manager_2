@@ -150,6 +150,15 @@ pub struct Handshake {
     pub min_supported_api_version: u32,
     /// The server's clock, as Unix epoch milliseconds (UTC).
     pub server_time_ms: i64,
+    /// Whether the server's database is open and passed its last check. An unhealthy
+    /// server refuses changes. Missing from servers before Phase 2, which counts as healthy.
+    #[serde(default = "healthy_by_default")]
+    pub healthy: bool,
+}
+
+/// Servers from before the `healthy` field had no health check, so treat them as healthy.
+const fn healthy_by_default() -> bool {
+    true
 }
 
 /// The server's reply to a ping.
@@ -161,6 +170,13 @@ pub struct Pong {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn handshakes_from_older_servers_count_as_healthy() {
+        let older = r#"{"app_version":"0.1.0","api_version":1,"min_supported_api_version":1,"server_time_ms":0}"#;
+        let handshake: Handshake = serde_json::from_str(older).unwrap();
+        assert!(handshake.healthy);
+    }
+
     use super::*;
     use crate::i18n::Translator;
 
