@@ -14,16 +14,8 @@ Ideas that have been raised but **not yet discussed or decided.** Nothing here i
 
 Proposed to keep early phases from blocking later growth. Each is cheap now and expensive to retrofit.
 
-### 1. Don't let old app versions erase new data 🟡
-*Suggested phase: Phase 2 (important)*
-
-- **Risk:** a device running an older app version edits a record. If its sync command sends the whole record as it understands it, the server overwrites fields the old version doesn't know about, **silently deleting newer data.**
-- **Proposal:**
-  - Sync commands carry **only the fields that changed** (field-level updates), not whole records.
-  - Clients **preserve unknown fields** they receive instead of dropping them.
-  - An app that receives an **unknown event type** shows "Unsupported record. Update the app to view" rather than failing.
-- **Why now:** this protects the "multiple app versions at once" requirement, and the command format is very hard to change after release.
-- **To discuss:** how field-level updates interact with last-write-wins (per-field HLC vs. per-record HLC).
+### 1. Don't let old app versions erase new data ✅
+*Decided 2026-10-29: `docs/decisions.md` #043 (field-level commands, last-write-wins per field, unknown fields and types kept).*
 
 ### 2. Feature negotiation in the handshake 🟡
 *Suggested phase: Phase 1 (extends the existing version handshake)*
@@ -48,12 +40,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - Unlocks **importers from other apps** (spreadsheets, other maintenance apps) as a later feature.
 - **To discuss:** format choice (e.g. JSON with a published schema), and how it's versioned alongside the sync command format.
 
-### 5. Time-ordered IDs (UUIDv7) 🟡
-*Suggested phase: Phase 2*
-
-- Still generated on the device, but **sorted by creation time** (UUIDv7 instead of random UUIDv4), which makes SQLite indexes faster and records easier to debug.
-- **Optional:** human-friendly record numbers for paperwork (e.g. "Entry 2026-0042"), assigned by the server when an event finalizes, since devices can't safely number records while offline.
-- **To discuss:** whether human-friendly numbers are wanted, and per asset or global.
+### 5. Time-ordered IDs (UUIDv7) ✅
+*Decided 2026-10-29: `docs/decisions.md` #042 (UUIDv7 now; human-friendly record numbers later, with reports or logbooks).*
 
 ### 6. Groups ("garages" or "hangars") 🟡
 *Suggested phase: Phase 2 or 3, before multi-user permissions see heavy use*
@@ -77,12 +65,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - Affects storage, search, and how notes render in PDF and Word reports; changing later means converting every existing note.
 - **Suggestion:** a Markdown subset.
 
-### 9. One background job system on the server 🟡
-*Suggested phase: Phase 2 (when nightly snapshots arrive)*
-
-- Nightly snapshots, overdue-return and document-expiration checks, re-geocoding, integrity checks, and later reference data refreshes all run through **one scheduler,** with a status page and logging.
-- Avoids several ad-hoc timers.
-- **To discuss:** where job status is shown (Admin mode in the web UI, message center for failures).
+### 9. One background job system on the server ✅
+*Decided 2026-10-29: `docs/decisions.md` #044.*
 
 ---
 
