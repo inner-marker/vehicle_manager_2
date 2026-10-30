@@ -31,20 +31,20 @@
 
 ## 3. Checklist
 
-| # | Step | Expected result |
-|---|---|---|
-| 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 30 vehiclemanager` | Lines `database open` with `created=true schema_before=0 schema_now=1` and a `database_id=…`, then `database integrity check passed` and `scheduled jobs started` with `snapshot_dir=/data/snapshots`. **Write down the database ID.** No `ERROR` lines. |
-| 2 | `ls -ln data/` | `vehiclemanager.sqlite` (and `-wal`, `-shm`) owned by `1030 100`. `logs/` as before. No `snapshots/` yet (it's made at the first snapshot). |
-| 3 | On the second device: Diagnostics → enter the credential → **Run checks** | API version, Credential, and **Server health** all **Pass**. |
-| 4 | `sudo docker compose restart`, then the log again | `database open` with **`created=false`** and the **same database ID** as step 1; `database integrity check passed`. |
-| 5 | **Update flow:** `sudo docker compose pull && sudo docker compose up -d`, then the log | Same database ID, `created=false`, `schema_before=1 schema_now=1`. `ls data/backups` says it doesn't exist (no upgrade, so no backup). |
-| 6 | `sudo docker logs vehiclemanager 2>&1 \| grep -i credential` | Only `API credential configured`. **The credential itself appears nowhere.** |
-| 7 | **The next morning** (after 07:00 UTC): `ls -l data/snapshots/` and `sudo docker logs vehiclemanager 2>&1 \| grep nightly-snapshot` | One `snapshot-<date>T070000Z.sqlite`, a few dozen KB. A `job finished job="nightly-snapshot"` line whose message says `wrote /data/snapshots/…; removed 0 older`. |
-| 8 | `sudo docker logs vehiclemanager 2>&1 \| grep quick-check` | At least one `job finished job="quick-check"` line with `no problems`, about an hour apart if several. |
-| 9 | **Restore drill:** follow `docs/deploying-nas.md` → "Restoring a snapshot", with the snapshot from step 7 | After `docker compose start`: `database open` with `created=false`, the **same database ID** as step 1, `database integrity check passed`. Diagnostics → Server health **Pass**. Then delete `data/replaced/`. |
-| 10 | **Damaged-database drill** (safe: there's no real data). Stop, keep a copy, replace the database with garbage, start: see the commands below | The log shows `can't open the database; refusing all changes` with "file is not a database". The container stays **Running** and the web UI still loads. Diagnostics → **Server health: Fail** with "The server has a problem with its database…". |
-| 11 | **Recover from the drill:** put the copy back (commands below) and start | `database integrity check passed`, same database ID; Server health **Pass**. |
-| 12 | *(Optional, needs another overnight run)* Set `VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots` in `.env` (nothing is mounted there), `sudo docker compose up -d`, wait past 07:00 UTC, check the log; then empty the setting again and `up -d` | A `job skipped job="nightly-snapshot"` line: "snapshot folder /snapshots is missing (not mounted?)". No new file in `data/snapshots/`. The server stays healthy. |
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 30 vehiclemanager` | Lines `database open` with `created=true schema_before=0 schema_now=1` and a `database_id=…`, then `database integrity check passed` and `scheduled jobs started` with `snapshot_dir=/data/snapshots`. **Write down the database ID.** No `ERROR` lines. |
+| [ ] | 2 | `ls -ln data/` | `vehiclemanager.sqlite` (and `-wal`, `-shm`) owned by `1030 100`. `logs/` as before. No `snapshots/` yet (it's made at the first snapshot). |
+| [ ] | 3 | On the second device: Diagnostics → enter the credential → **Run checks** | API version, Credential, and **Server health** all **Pass**. |
+| [ ] | 4 | `sudo docker compose restart`, then the log again | `database open` with **`created=false`** and the **same database ID** as step 1; `database integrity check passed`. |
+| [ ] | 5 | **Update flow:** `sudo docker compose pull && sudo docker compose up -d`, then the log | Same database ID, `created=false`, `schema_before=1 schema_now=1`. `ls data/backups` says it doesn't exist (no upgrade, so no backup). |
+| [ ] | 6 | `sudo docker logs vehiclemanager 2>&1 \| grep -i credential` | Only `API credential configured`. **The credential itself appears nowhere.** |
+| [ ] | 7 | **The next morning** (after 07:00 UTC): `ls -l data/snapshots/` and `sudo docker logs vehiclemanager 2>&1 \| grep nightly-snapshot` | One `snapshot-<date>T070000Z.sqlite`, a few dozen KB. A `job finished job="nightly-snapshot"` line whose message says `wrote /data/snapshots/…; removed 0 older`. |
+| [ ] | 8 | `sudo docker logs vehiclemanager 2>&1 \| grep quick-check` | At least one `job finished job="quick-check"` line with `no problems`, about an hour apart if several. |
+| [ ] | 9 | **Restore drill:** follow `docs/deploying-nas.md` → "Restoring a snapshot", with the snapshot from step 7 | After `docker compose start`: `database open` with `created=false`, the **same database ID** as step 1, `database integrity check passed`. Diagnostics → Server health **Pass**. Then delete `data/replaced/`. |
+| [ ] | 10 | **Damaged-database drill** (safe: there's no real data). Stop, keep a copy, replace the database with garbage, start: see the commands below | The log shows `can't open the database; refusing all changes` with "file is not a database". The container stays **Running** and the web UI still loads. Diagnostics → **Server health: Fail** with "The server has a problem with its database…". |
+| [ ] | 11 | **Recover from the drill:** put the copy back (commands below) and start | `database integrity check passed`, same database ID; Server health **Pass**. |
+| [ ] | 12 | *(Optional, needs another overnight run)* Set `VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots` in `.env` (nothing is mounted there), `sudo docker compose up -d`, wait past 07:00 UTC, check the log; then empty the setting again and `up -d` | A `job skipped job="nightly-snapshot"` line: "snapshot folder /snapshots is missing (not mounted?)". No new file in `data/snapshots/`. The server stays healthy. |
 
 **Step 10 commands** (over SSH, in the Project folder). The `-wal` and `-shm` files go too: in WAL mode, recent changes live there, and SQLite would use them to repair the main file.
 
