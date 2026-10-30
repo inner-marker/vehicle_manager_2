@@ -1,8 +1,9 @@
 //! Server functions: the app's HTTP API, all under `/api/` (`domain::api::API_PATH_PREFIX`).
 //!
 //! Every function here is guarded by the auth layer from `server::auth`, which checks
-//! the credential and API version before the body runs; a test proves no function
-//! escapes it. Keep these thin: authenticate (done by the layer), call into
+//! the signed-in session and API version before the body runs; only the few public paths
+//! (`server::auth::PUBLIC_API_PATHS`) work without a session. Tests prove no other
+//! function escapes it. Keep these thin: authenticate (done by the layer), call into
 //! `server`/`domain`, respond (AGENTS.md §3).
 //!
 //! **Never call a server function during server-side rendering.** On the server such
@@ -22,8 +23,8 @@ use domain::api::{
 ///
 /// # Errors
 ///
-/// Refused by the auth layer (401 / 400 / 426 / 503 with an `ApiError` reason) if the
-/// credential or API version is wrong; otherwise never fails.
+/// Refused by the auth layer (401 / 400 / 426 / 503 with an `ApiError` reason) without a
+/// valid session or with a wrong API version; otherwise never fails.
 #[get("/api/v1/ping")]
 // Server functions must be async; these two don't await anything yet. The lint fires
 // on the server-side wrapper `#[get]` generates, so it applies to the server build only.
@@ -430,7 +431,11 @@ mod tests {
             Router::<FullstackState>::new().serve_api_application(ServeConfig::new(), App);
         let guarded = ::server::auth::protect(
             server_functions,
-            ::server::auth::AuthConfig::with_credential("test-only"),
+            // A session source with no database: nothing can be signed in.
+            ::server::auth::AuthConfig::new(::server::auth::SessionSource::new(
+                || None,
+                std::sync::Arc::new(crate::logging::SystemClock),
+            )),
         );
 
         let protected = ServerFunction::collect()
@@ -443,10 +448,13 @@ mod tests {
                 .body(Body::empty())
                 .unwrap();
             let response = guarded.clone().oneshot(unauthenticated).await.unwrap();
-            assert_eq!(
-                response.status(),
-                StatusCode::UNAUTHORIZED,
-                "{} {} answered without a credential",
+            // 503 here (no database, so no session can be valid); 401 with one.
+            assert!(
+                matches!(
+                    response.status(),
+                    StatusCode::UNAUTHORIZED | StatusCode::SERVICE_UNAVAILABLE
+                ),
+                "{} {} answered without a session",
                 function.method(),
                 function.path()
             );

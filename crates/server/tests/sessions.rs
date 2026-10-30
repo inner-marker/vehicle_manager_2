@@ -540,8 +540,7 @@ mod sessions {
             )
             .route("/api/v1/session", get(|| async { "public" }));
         let clock: Arc<dyn Clock + Send + Sync> = Arc::new(ManualClock::new(NOW));
-        let config = AuthConfig::unconfigured()
-            .with_sessions(SessionSource::new(move || Some(database.clone()), clock));
+        let config = AuthConfig::new(SessionSource::new(move || Some(database.clone()), clock));
         protect(routes, config)
     }
 

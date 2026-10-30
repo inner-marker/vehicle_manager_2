@@ -135,15 +135,13 @@ define_messages! {
 
     /// Diagnostics: heading of the connection test panel.
     CONNECTION_TITLE => "connection-title",
-    /// Connection panel: label of the credential field.
-    CONNECTION_CREDENTIAL => "connection-credential",
-    /// Connection panel: button that runs the version and credential checks.
+    /// Connection panel: button that runs the version, sign-in, and health checks.
     CONNECTION_RUN_CHECKS => "connection-run-checks",
     /// Connection panel: shown while the checks run.
     CONNECTION_RUNNING => "connection-running",
     /// Connection panel: name of the API version check.
     CONNECTION_VERSION_CHECK => "connection-version-check",
-    /// Connection panel: name of the credential check.
+    /// Connection panel: name of the signed-in check.
     CONNECTION_AUTH_CHECK => "connection-auth-check",
     /// Connection panel: a check passed.
     CONNECTION_PASS => "connection-pass",
@@ -205,11 +203,11 @@ define_messages! {
     /// Display name rule: at most 64 characters.
     DISPLAY_NAME_TOO_LONG => "display-name-too-long",
 
-    /// Refusal reason: no credential was sent.
+    /// Refusal reason: not signed in.
     API_ERROR_MISSING_CREDENTIAL => "api-error-missing-credential",
-    /// Refusal reason: the credential was wrong.
+    /// Refusal reason: the session isn't valid any more.
     API_ERROR_INVALID_CREDENTIAL => "api-error-invalid-credential",
-    /// Refusal reason: the server has no credential configured.
+    /// Refusal reason: the server can't check sessions.
     API_ERROR_AUTH_NOT_CONFIGURED => "api-error-auth-not-configured",
     /// Refusal reason: the app sent no API version.
     API_ERROR_MISSING_API_VERSION => "api-error-missing-api-version",

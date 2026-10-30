@@ -37,21 +37,10 @@ use axum::response::Response;
 use domain::api::{
     API_PATH_PREFIX, API_VERSION_HEADER, ApiError, check_client_api_version, parse_api_version,
 };
-use domain::identity::env_var_name;
 use domain::log_area;
-use subtle::ConstantTimeEq;
 
-/// The environment variable holding the test credential, without the app prefix
-/// (`domain::identity::env_var_name` turns it into `VEHICLEMANAGER_TEST_CREDENTIAL`).
-const CREDENTIAL_ENV_NAME: &str = "TEST_CREDENTIAL";
-
-/// The prefix of an `Authorization` header carrying a bearer credential.
+/// The prefix of an `Authorization` header carrying a session token (the desktop app).
 const BEARER_PREFIX: &str = "Bearer ";
-
-/// The name of the environment variable the server reads its credential from.
-pub fn credential_env_var() -> String {
-    env_var_name(CREDENTIAL_ENV_NAME)
-}
 
 /// The `/api/` paths that work without signing in. Each is still version-checked, and still
 /// gets the signed-in user attached if a valid session comes with it. Kept short and
@@ -93,73 +82,31 @@ impl SessionSource {
 /// What the auth gate accepts. Cheap to clone; shared by every request.
 #[derive(Clone)]
 pub struct AuthConfig {
-    /// The Phase 1 test credential; `None` if not configured.
-    credential: Option<Arc<str>>,
-    /// Where sessions are checked; `None` only in tests of the credential path.
+    /// Where sessions are checked; `None` refuses every protected request.
     sessions: Option<SessionSource>,
 }
 
 impl AuthConfig {
-    /// Accepts exactly this credential. Blank (empty or whitespace) means none is configured.
-    pub fn with_credential(credential: &str) -> Self {
-        let credential = credential.trim();
-        Self {
-            credential: (!credential.is_empty()).then(|| Arc::from(credential)),
-            sessions: None,
-        }
-    }
-
-    /// Also accepts signed-in sessions from `source`.
+    /// Accepts signed-in sessions from `source`.
     #[must_use]
-    pub fn with_sessions(mut self, source: SessionSource) -> Self {
-        self.sessions = Some(source);
-        self
-    }
-
-    /// Refuses every API request.
-    pub const fn unconfigured() -> Self {
+    pub fn new(source: SessionSource) -> Self {
         Self {
-            credential: None,
-            sessions: None,
+            sessions: Some(source),
         }
     }
 
-    /// Reads the credential from [`credential_env_var`]; unset or blank means refuse everything.
-    pub fn from_env() -> Self {
-        let name = credential_env_var();
-        let config = std::env::var(&name).map_or_else(
-            |_| Self::unconfigured(),
-            |value| Self::with_credential(&value),
-        );
-        if config.is_configured() {
-            tracing::info!(target: log_area::AUTH, env_var = %name, "API credential configured");
-        } else {
-            tracing::warn!(
-                target: log_area::AUTH,
-                env_var = %name,
-                "no API credential configured; every API request will be refused"
-            );
-        }
-        config
-    }
-
-    /// Whether a credential is configured.
-    pub const fn is_configured(&self) -> bool {
-        self.credential.is_some()
-    }
-
-    /// Whether anything at all can authenticate a request.
-    const fn can_authenticate(&self) -> bool {
-        self.credential.is_some() || self.sessions.is_some()
+    /// Refuses every protected request (only public paths work).
+    #[must_use]
+    pub const fn refuse_all() -> Self {
+        Self { sessions: None }
     }
 }
 
 impl fmt::Debug for AuthConfig {
-    /// Never prints the credential itself.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("AuthConfig")
-            .field("configured", &self.is_configured())
+            .field("sessions", &self.sessions.is_some())
             .finish()
     }
 }
@@ -258,36 +205,25 @@ pub fn check_request(
     public: bool,
 ) -> Result<(), ApiError> {
     if !public && !has_session {
-        if !config.can_authenticate() {
-            return Err(ApiError::AuthNotConfigured);
-        }
-        match config.credential.as_deref() {
-            Some(expected) => check_credential(expected, headers)?,
-            None if headers.contains_key(AUTHORIZATION) || headers.contains_key(COOKIE) => {
-                return Err(ApiError::InvalidCredential);
-            }
-            None => return Err(ApiError::MissingCredential),
-        }
+        return Err(missing_session_reason(config, headers));
     }
     check_api_version_header(headers)
 }
 
-fn check_credential(expected: &str, headers: &HeaderMap) -> Result<(), ApiError> {
-    let value = headers
-        .get(AUTHORIZATION)
-        .ok_or(ApiError::MissingCredential)?;
-    let presented = value
-        .to_str()
-        .ok()
-        .and_then(|text| text.strip_prefix(BEARER_PREFIX))
-        .ok_or(ApiError::InvalidCredential)?;
-    // Constant time for equal-length inputs, so response timing doesn't reveal how
-    // much of a guess was right. (A length mismatch fails fast; length isn't secret enough
-    // to matter for this stub.)
-    if bool::from(presented.as_bytes().ct_eq(expected.as_bytes())) {
-        Ok(())
+/// Why a protected request without a valid session is refused: sessions can't be checked
+/// at all, none was sent, or the one sent isn't valid (ended, signed out, or made up).
+fn missing_session_reason(config: &AuthConfig, headers: &HeaderMap) -> ApiError {
+    // Sessions can't be checked without the database (not open yet, or failed to open).
+    let can_check = config
+        .sessions
+        .as_ref()
+        .is_some_and(|source| (source.database)().is_some());
+    if !can_check {
+        ApiError::AuthNotConfigured
+    } else if presented_session_token(headers).is_some() {
+        ApiError::InvalidCredential
     } else {
-        Err(ApiError::InvalidCredential)
+        ApiError::MissingCredential
     }
 }
 
@@ -325,26 +261,18 @@ mod tests {
 
     use super::*;
 
-    const CREDENTIAL: &str = "correct horse battery staple";
-
+    /// A public path, a protected path, and a page, behind the gate.
     fn router(config: AuthConfig) -> Router {
         let routes = Router::new()
+            .route("/api/v1/handshake", get(|| async { "hello" }))
             .route("/api/v1/ping", get(|| async { "pong" }))
             .route("/garage", get(|| async { "page" }));
         protect(routes, config)
     }
 
-    /// Sends a GET with optional credential and version headers; returns status and body.
-    async fn send(
-        config: AuthConfig,
-        path: &str,
-        credential: Option<&str>,
-        version: Option<&str>,
-    ) -> (StatusCode, String) {
+    /// Sends a GET with an optional version header; returns status and body.
+    async fn send(config: AuthConfig, path: &str, version: Option<&str>) -> (StatusCode, String) {
         let mut request = Request::builder().uri(path);
-        if let Some(credential) = credential {
-            request = request.header(AUTHORIZATION, format!("Bearer {credential}"));
-        }
         if let Some(version) = version {
             request = request.header(API_VERSION_HEADER, version);
         }
@@ -357,10 +285,6 @@ mod tests {
         (status, String::from_utf8(body.to_vec()).unwrap())
     }
 
-    fn configured() -> AuthConfig {
-        AuthConfig::with_credential(CREDENTIAL)
-    }
-
     /// The current API version header value (`API_VERSION` is 1).
     const CURRENT: Option<&str> = Some("1");
 
@@ -371,114 +295,64 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn request_without_credential_is_401() {
-        let (status, body) = send(configured(), "/api/v1/ping", None, CURRENT).await;
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert_eq!(reason(&body), ApiError::MissingCredential);
-    }
-
-    #[tokio::test]
-    async fn wrong_credential_is_401() {
-        let (status, body) = send(configured(), "/api/v1/ping", Some("guess"), CURRENT).await;
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert_eq!(reason(&body), ApiError::InvalidCredential);
-    }
-
-    #[tokio::test]
-    async fn non_bearer_authorization_is_401() {
-        let request = Request::builder()
-            .uri("/api/v1/ping")
-            .header(AUTHORIZATION, format!("Basic {CREDENTIAL}"))
-            .header(API_VERSION_HEADER, "1")
-            .body(Body::empty())
-            .unwrap();
-        let response = router(configured()).oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    }
-
-    #[tokio::test]
-    async fn unconfigured_auth_refuses_every_api_request() {
-        let (status, body) = send(
-            AuthConfig::unconfigured(),
-            "/api/v1/ping",
-            Some(CREDENTIAL),
-            CURRENT,
-        )
-        .await;
+    async fn protected_paths_are_refused_when_sessions_cant_be_checked() {
+        let (status, body) = send(AuthConfig::refuse_all(), "/api/v1/ping", CURRENT).await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(reason(&body), ApiError::AuthNotConfigured);
-        // A blank credential counts as not configured.
-        assert!(!AuthConfig::with_credential("   ").is_configured());
     }
 
     #[tokio::test]
-    async fn missing_or_malformed_version_is_400() {
-        let (status, body) = send(configured(), "/api/v1/ping", Some(CREDENTIAL), None).await;
+    async fn public_paths_work_without_a_session_but_still_check_the_version() {
+        let (status, body) = send(AuthConfig::refuse_all(), "/api/v1/handshake", CURRENT).await;
+        assert_eq!((status, body.as_str()), (StatusCode::OK, "hello"));
+
+        let (status, body) = send(AuthConfig::refuse_all(), "/api/v1/handshake", None).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(reason(&body), ApiError::MissingApiVersion);
 
-        let (status, body) = send(configured(), "/api/v1/ping", Some(CREDENTIAL), Some("v1")).await;
-        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let (_, body) = send(AuthConfig::refuse_all(), "/api/v1/handshake", Some("v1")).await;
         assert_eq!(reason(&body), ApiError::MalformedApiVersion);
     }
 
     #[tokio::test]
-    async fn old_client_is_426() {
+    async fn old_client_is_426_and_newer_client_is_400() {
         let old = (MIN_SUPPORTED_API_VERSION - 1).to_string();
-        let (status, body) = send(configured(), "/api/v1/ping", Some(CREDENTIAL), Some(&old)).await;
+        let (status, body) = send(AuthConfig::refuse_all(), "/api/v1/handshake", Some(&old)).await;
         assert_eq!(status, StatusCode::UPGRADE_REQUIRED);
         assert_eq!(reason(&body), ApiError::ClientTooOld);
-    }
 
-    #[tokio::test]
-    async fn newer_client_is_400() {
         let newer = (API_VERSION + 1).to_string();
         let (status, body) =
-            send(configured(), "/api/v1/ping", Some(CREDENTIAL), Some(&newer)).await;
+            send(AuthConfig::refuse_all(), "/api/v1/handshake", Some(&newer)).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(reason(&body), ApiError::ClientTooNew);
     }
 
     #[tokio::test]
-    async fn credential_is_checked_before_version() {
-        // A wrong credential with a bad version reports only the credential problem.
-        let (status, body) = send(configured(), "/api/v1/ping", Some("guess"), Some("999")).await;
-        assert_eq!(status, StatusCode::UNAUTHORIZED);
-        assert_eq!(reason(&body), ApiError::InvalidCredential);
-    }
-
-    #[tokio::test]
-    async fn valid_request_reaches_the_handler() {
-        let (status, body) = send(configured(), "/api/v1/ping", Some(CREDENTIAL), CURRENT).await;
-        assert_eq!(status, StatusCode::OK);
-        assert_eq!(body, "pong");
+    async fn authentication_is_checked_before_version() {
+        // No session and a bad version reports only the session problem.
+        let (status, body) = send(AuthConfig::refuse_all(), "/api/v1/ping", Some("999")).await;
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(reason(&body), ApiError::AuthNotConfigured);
     }
 
     #[tokio::test]
     async fn non_api_paths_pass_through() {
-        let (status, body) = send(AuthConfig::unconfigured(), "/garage", None, None).await;
-        assert_eq!(status, StatusCode::OK);
-        assert_eq!(body, "page");
+        let (status, body) = send(AuthConfig::refuse_all(), "/garage", None).await;
+        assert_eq!((status, body.as_str()), (StatusCode::OK, "page"));
     }
 
     #[tokio::test]
     async fn refusals_use_the_dioxus_error_payload_shape() {
-        let (_, body) = send(configured(), "/api/v1/ping", None, CURRENT).await;
+        let (_, body) = send(AuthConfig::refuse_all(), "/api/v1/ping", CURRENT).await;
         let value: serde_json::Value = serde_json::from_str(&body).unwrap();
-        assert_eq!(value["code"], 401);
-        assert_eq!(value["data"], "missing-credential");
+        assert_eq!(value["code"], 503);
+        assert_eq!(value["data"], "auth-not-configured");
         assert!(value["message"].is_string());
     }
 
     #[test]
-    fn credential_env_var_name_comes_from_app_id() {
-        assert_eq!(credential_env_var(), "VEHICLEMANAGER_TEST_CREDENTIAL");
-    }
-
-    #[test]
-    fn debug_output_never_contains_the_credential() {
-        let debug = format!("{:?}", configured());
-        assert!(!debug.contains(CREDENTIAL), "{debug}");
-        assert!(debug.contains("configured: true"), "{debug}");
+    fn the_session_cookie_is_named_after_the_app_id() {
+        assert_eq!(session_cookie_name(), "vehiclemanager_session");
     }
 }

@@ -202,6 +202,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
   - Failing closed means a misconfigured server can't be open by accident.
 - **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.
+- **Retired 2026-10-30** (Phase 2 step 2e): replaced by sign-in with sessions (#028). The variable, its handling, and the Connection panel's credential field are gone.
 
 ### 025. First server image is linux/amd64; arm64 later
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*

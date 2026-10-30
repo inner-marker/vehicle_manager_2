@@ -84,11 +84,10 @@ log-level-trace = Trace
 ## Connection test (Diagnostics)
 
 connection-title = Connection
-connection-credential = Test credential
 connection-run-checks = Run checks
 connection-running = Checking…
 connection-version-check = API version
-connection-auth-check = Credential
+connection-auth-check = Signed in
 connection-pass = Pass
 connection-fail = Fail
 connection-not-checked = Not checked
@@ -129,9 +128,9 @@ display-name-too-long = A name can have at most 64 characters.
 
 ## Why the server refused a request
 
-api-error-missing-credential = No credential was sent.
-api-error-invalid-credential = The server didn't accept this credential.
-api-error-auth-not-configured = The server has no credential configured, so it refuses every request.
+api-error-missing-credential = You're not signed in.
+api-error-invalid-credential = Your session has ended. Sign in again.
+api-error-auth-not-configured = The server can't check sign-ins right now. Check the server's log.
 api-error-missing-api-version = The app didn't send its API version.
 api-error-malformed-api-version = The server couldn't read the app's API version.
 api-error-client-too-old = This app is too old for the server. Update the app.

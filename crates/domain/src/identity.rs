@@ -45,7 +45,7 @@ pub const DATA_DIR_NAME: &str = "vehiclemanager";
 /// ```
 /// use domain::identity::env_var_name;
 ///
-/// assert_eq!(env_var_name("TEST_CREDENTIAL"), "VEHICLEMANAGER_TEST_CREDENTIAL");
+/// assert_eq!(env_var_name("DATA_DIR"), "VEHICLEMANAGER_DATA_DIR");
 /// ```
 pub fn env_var_name(name: &str) -> String {
     format!("{}_{name}", APP_ID.to_ascii_uppercase())

@@ -1,7 +1,9 @@
-//! The Diagnostics "Connection" panel: checks the API version and credential against
-//! the server and shows pass/fail for each (Phase 1 milestone 2).
+//! The Diagnostics "Connection" panel: checks the API version, whether this session is
+//! signed in, and the server's health, and shows pass/fail for each.
 //!
-//! The credential is typed in and held in memory only, until Phase 2 adds logins.
+//! 1. The **handshake** is public: it checks the API version and reports the server's health.
+//! 2. A **ping** needs a signed-in session: it's the "Signed in" check, and times the round trip.
+//!
 //! Checks run only when the button is pressed, never during server rendering (see
 //! `crate::api`).
 
@@ -21,7 +23,7 @@ use crate::ui::{tr, tr_with};
 pub(crate) enum CheckState {
     Pass,
     Fail,
-    /// Didn't run, e.g. the version isn't checked once the credential fails.
+    /// Didn't run, e.g. sign-in isn't checked when the server can't be reached.
     NotChecked,
 }
 
@@ -80,9 +82,10 @@ pub(crate) struct CheckOutcome {
 }
 
 impl CheckOutcome {
-    fn failed(auth: CheckState, version: CheckState, problem: Problem) -> Self {
+    /// Nothing passed: the handshake itself failed.
+    const fn handshake_failed(version: CheckState, problem: Problem) -> Self {
         Self {
-            auth,
+            auth: CheckState::NotChecked,
             version,
             health: CheckState::NotChecked,
             problem: Some(problem),
@@ -92,35 +95,15 @@ impl CheckOutcome {
     }
 }
 
-/// Turns a failed server-function call into pass/fail states.
-///
-/// The auth layer checks the credential first, so a credential refusal means the
-/// version was never checked, and a version refusal means the credential passed.
-pub(crate) fn outcome_from_error(error: &ServerFnError) -> CheckOutcome {
+/// What went wrong with a server-function call.
+pub(crate) fn problem_from_error(error: &ServerFnError) -> Problem {
     match error {
         ServerFnError::ServerError {
             details: Some(details),
             ..
-        } => match serde_json::from_value::<ApiError>(details.clone()) {
-            Ok(reason) if reason.is_auth_failure() => CheckOutcome::failed(
-                CheckState::Fail,
-                CheckState::NotChecked,
-                Problem::Refused(reason),
-            ),
-            Ok(reason) => {
-                CheckOutcome::failed(CheckState::Pass, CheckState::Fail, Problem::Refused(reason))
-            }
-            Err(_) => CheckOutcome::failed(
-                CheckState::NotChecked,
-                CheckState::NotChecked,
-                Problem::Unexpected,
-            ),
-        },
-        ServerFnError::Request(_) => CheckOutcome::failed(
-            CheckState::NotChecked,
-            CheckState::NotChecked,
-            Problem::Unreachable,
-        ),
+        } => serde_json::from_value::<ApiError>(details.clone())
+            .map_or(Problem::Unexpected, Problem::Refused),
+        ServerFnError::Request(_) => Problem::Unreachable,
         // A server function's own failure, or a decoding problem: not a refusal we understand.
         ServerFnError::ServerError { details: None, .. }
         | ServerFnError::StreamError(_)
@@ -131,67 +114,92 @@ pub(crate) fn outcome_from_error(error: &ServerFnError) -> CheckOutcome {
         | ServerFnError::Serialization(_)
         | ServerFnError::Args(_)
         | ServerFnError::MissingArg(_)
-        | ServerFnError::Response(_) => CheckOutcome::failed(
-            CheckState::NotChecked,
-            CheckState::NotChecked,
-            Problem::Unexpected,
-        ),
+        | ServerFnError::Response(_) => Problem::Unexpected,
     }
 }
 
-/// The headers every server-function call carries: credential and API version.
-/// A credential with characters headers can't carry is left out (the server then
-/// reports it as missing).
-fn request_headers(credential: &str) -> HeaderMap {
+/// The handshake failed: a version refusal fails the version check; anything else (server
+/// unreachable, unexpected answer) leaves every check unchecked.
+pub(crate) fn outcome_from_handshake_error(error: &ServerFnError) -> CheckOutcome {
+    let problem = problem_from_error(error);
+    let version = match problem {
+        Problem::Refused(reason) if !reason.is_auth_failure() => CheckState::Fail,
+        Problem::Refused(_)
+        | Problem::Unreachable
+        | Problem::Unexpected
+        | Problem::ServerUnhealthy => CheckState::NotChecked,
+    };
+    CheckOutcome::handshake_failed(version, problem)
+}
+
+/// The handshake passed; `ping` is the signed-in check's result (its round trip in
+/// milliseconds, or its error). A sign-in problem is reported before an unhealthy server.
+pub(crate) fn outcome_from_handshake(
+    server: Handshake,
+    ping: Result<i64, &ServerFnError>,
+) -> CheckOutcome {
+    let health = if server.healthy {
+        CheckState::Pass
+    } else {
+        CheckState::Fail
+    };
+    let unhealthy = (!server.healthy).then_some(Problem::ServerUnhealthy);
+    let (auth, auth_problem, round_trip_ms) = match ping {
+        Ok(millis) => (CheckState::Pass, None, Some(millis)),
+        Err(error) => match problem_from_error(error) {
+            Problem::Refused(reason) if reason.is_auth_failure() => {
+                (CheckState::Fail, Some(Problem::Refused(reason)), None)
+            }
+            other @ (Problem::Refused(_)
+            | Problem::Unreachable
+            | Problem::Unexpected
+            | Problem::ServerUnhealthy) => (CheckState::NotChecked, Some(other), None),
+        },
+    };
+    CheckOutcome {
+        auth,
+        version: CheckState::Pass,
+        health,
+        problem: auth_problem.or(unhealthy),
+        server: Some(server),
+        round_trip_ms,
+    }
+}
+
+/// The headers every server-function call carries: the API version, and the session token
+/// when the desktop app has one (the web app's session travels in its cookie instead).
+fn request_headers(session_token: Option<&str>) -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert(API_VERSION_HEADER, HeaderValue::from(API_VERSION));
-    if let Ok(value) = HeaderValue::from_str(&format!("Bearer {}", credential.trim())) {
+    if let Some(Ok(value)) =
+        session_token.map(|token| HeaderValue::from_str(&format!("Bearer {token}")))
+    {
         headers.insert("authorization", value);
     }
     headers
 }
 
-/// Runs the handshake, then a ping to time the round trip.
-async fn run_checks(credential: &str) -> CheckOutcome {
-    set_request_headers(request_headers(credential));
+/// Runs the handshake, then a ping to check the session and time the round trip.
+async fn run_checks() -> CheckOutcome {
+    // The desktop app's session token arrives with sign-in (step 2f).
+    set_request_headers(request_headers(None));
     tracing::debug!(target: log_area::AUTH, "running connection checks");
 
     let server = match api::handshake().await {
         Ok(server) => server,
         Err(error) => {
-            let outcome = outcome_from_error(&error);
+            let outcome = outcome_from_handshake_error(&error);
             tracing::debug!(target: log_area::AUTH, problem = ?outcome.problem, "handshake failed");
             return outcome;
         }
     };
-
     let started = SystemClock.now().as_millis();
-    let round_trip_ms = match api::ping().await {
-        Ok(_) => Some(SystemClock.now().as_millis().saturating_sub(started)),
-        Err(error) => return outcome_from_error(&error),
-    };
-    tracing::debug!(target: log_area::AUTH, ?round_trip_ms, server_api = server.api_version, healthy = server.healthy, "connection checks passed");
-    outcome_from_handshake(server, round_trip_ms)
-}
-
-/// Both checks passed: the result now depends on the server's own health.
-pub(crate) fn outcome_from_handshake(
-    server: Handshake,
-    round_trip_ms: Option<i64>,
-) -> CheckOutcome {
-    let (health, problem) = if server.healthy {
-        (CheckState::Pass, None)
-    } else {
-        (CheckState::Fail, Some(Problem::ServerUnhealthy))
-    };
-    CheckOutcome {
-        auth: CheckState::Pass,
-        version: CheckState::Pass,
-        health,
-        problem,
-        server: Some(server),
-        round_trip_ms,
-    }
+    let ping = api::ping()
+        .await
+        .map(|_| SystemClock.now().as_millis().saturating_sub(started));
+    let outcome = outcome_from_handshake(server, ping.as_ref().map(|millis| *millis));
+    tracing::debug!(target: log_area::AUTH, auth = ?outcome.auth, healthy = ?outcome.health, round_trip_ms = ?outcome.round_trip_ms, "connection checks finished");
+    outcome
 }
 
 /// The panel.
@@ -204,7 +212,6 @@ pub(crate) fn outcome_from_handshake(
 )]
 #[component]
 pub(crate) fn ConnectionPanel() -> Element {
-    let mut credential = use_signal(String::new);
     let mut running = use_signal(|| false);
     let mut outcome = use_signal(|| None::<CheckOutcome>);
 
@@ -213,21 +220,12 @@ pub(crate) fn ConnectionPanel() -> Element {
             h2 { {tr(messages::CONNECTION_TITLE)} }
             ServerAddressField {}
             div { class: "connection-controls",
-                label {
-                    {tr(messages::CONNECTION_CREDENTIAL)}
-                    input {
-                        r#type: "password",
-                        autocomplete: "off",
-                        value: credential(),
-                        oninput: move |event| credential.set(event.value()),
-                    }
-                }
                 button {
                     class: "run-checks",
                     disabled: running(),
                     onclick: move |_| async move {
                         running.set(true);
-                        let result = run_checks(&credential()).await;
+                        let result = run_checks().await;
                         outcome.set(Some(result));
                         running.set(false);
                     },
@@ -382,41 +380,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn credential_refusal_fails_auth_and_skips_version() {
-        let outcome = outcome_from_error(&refused(ApiError::InvalidCredential));
-        assert_eq!(outcome.auth, CheckState::Fail);
-        assert_eq!(outcome.version, CheckState::NotChecked);
-        assert_eq!(
-            outcome.problem,
-            Some(Problem::Refused(ApiError::InvalidCredential))
-        );
-    }
-
-    #[test]
-    fn version_refusal_passes_auth_and_fails_version() {
-        let outcome = outcome_from_error(&refused(ApiError::ClientTooOld));
-        assert_eq!(outcome.auth, CheckState::Pass);
-        assert_eq!(outcome.version, CheckState::Fail);
-    }
-
-    #[test]
-    fn unknown_or_missing_reasons_are_unexpected() {
-        let unknown = ServerFnError::ServerError {
-            message: String::new(),
-            code: 500,
-            details: Some(serde_json::json!("something-else")),
-        };
-        assert_eq!(
-            outcome_from_error(&unknown).problem,
-            Some(Problem::Unexpected)
-        );
-        assert_eq!(
-            outcome_from_error(&ServerFnError::new("boom")).problem,
-            Some(Problem::Unexpected)
-        );
-    }
-
     fn handshake(healthy: bool) -> Handshake {
         Handshake {
             app_version: "0.1.0".to_owned(),
@@ -428,38 +391,92 @@ mod tests {
     }
 
     #[test]
-    fn a_healthy_server_passes_every_check() {
-        let outcome = outcome_from_handshake(handshake(true), Some(12));
-        assert_eq!(outcome.health, CheckState::Pass);
-        assert_eq!(outcome.problem, None);
+    fn signed_in_to_a_healthy_server_passes_every_check() {
+        let outcome = outcome_from_handshake(handshake(true), Ok(12));
+        assert_eq!(
+            (outcome.version, outcome.auth, outcome.health),
+            (CheckState::Pass, CheckState::Pass, CheckState::Pass)
+        );
+        assert_eq!((outcome.problem, outcome.round_trip_ms), (None, Some(12)));
+    }
+
+    #[test]
+    fn not_signed_in_fails_only_the_sign_in_check() {
+        let error = refused(ApiError::MissingCredential);
+        let outcome = outcome_from_handshake(handshake(true), Err(&error));
+        assert_eq!(
+            (outcome.version, outcome.auth, outcome.health),
+            (CheckState::Pass, CheckState::Fail, CheckState::Pass)
+        );
+        assert_eq!(
+            outcome.problem,
+            Some(Problem::Refused(ApiError::MissingCredential))
+        );
     }
 
     #[test]
     fn an_unhealthy_server_fails_the_health_check_with_its_reason() {
-        let outcome = outcome_from_handshake(handshake(false), Some(12));
-        assert_eq!(outcome.auth, CheckState::Pass);
-        assert_eq!(outcome.health, CheckState::Fail);
+        let outcome = outcome_from_handshake(handshake(false), Ok(12));
+        assert_eq!(
+            (outcome.auth, outcome.health),
+            (CheckState::Pass, CheckState::Fail)
+        );
         assert_eq!(outcome.problem, Some(Problem::ServerUnhealthy));
     }
 
     #[test]
-    fn a_refused_handshake_leaves_health_unchecked() {
-        let outcome = outcome_from_error(&refused(ApiError::InvalidCredential));
-        assert_eq!(outcome.health, CheckState::NotChecked);
+    fn a_sign_in_problem_is_reported_before_an_unhealthy_server() {
+        let error = refused(ApiError::InvalidCredential);
+        let outcome = outcome_from_handshake(handshake(false), Err(&error));
+        assert_eq!(
+            outcome.problem,
+            Some(Problem::Refused(ApiError::InvalidCredential))
+        );
     }
 
     #[test]
-    fn requests_carry_api_version_and_bearer_credential() {
-        let headers = request_headers("  secret  ");
+    fn a_version_refusal_fails_the_version_and_checks_nothing_else() {
+        let outcome = outcome_from_handshake_error(&refused(ApiError::ClientTooOld));
         assert_eq!(
-            headers
-                .get(API_VERSION_HEADER)
-                .and_then(|v| v.to_str().ok()),
+            (outcome.version, outcome.auth, outcome.health),
+            (
+                CheckState::Fail,
+                CheckState::NotChecked,
+                CheckState::NotChecked
+            )
+        );
+    }
+
+    #[test]
+    fn unknown_or_missing_reasons_are_unexpected() {
+        let unknown = ServerFnError::ServerError {
+            message: String::new(),
+            code: 500,
+            details: Some(serde_json::json!("something-else")),
+        };
+        assert_eq!(problem_from_error(&unknown), Problem::Unexpected);
+        assert_eq!(
+            problem_from_error(&ServerFnError::new("boom")),
+            Problem::Unexpected
+        );
+    }
+
+    #[test]
+    fn requests_carry_the_api_version_and_a_desktop_session_token() {
+        let web = request_headers(None);
+        assert_eq!(
+            web.get(API_VERSION_HEADER).and_then(|v| v.to_str().ok()),
             Some("1")
         );
+        assert!(
+            web.get("authorization").is_none(),
+            "the web app uses its cookie"
+        );
+
+        let desktop = request_headers(Some("abc123"));
         assert_eq!(
-            headers.get("authorization").and_then(|v| v.to_str().ok()),
-            Some("Bearer secret")
+            desktop.get("authorization").and_then(|v| v.to_str().ok()),
+            Some("Bearer abc123")
         );
     }
 

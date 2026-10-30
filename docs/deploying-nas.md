@@ -10,7 +10,7 @@ The server runs as one Docker container from the image `ghcr.io/inner-marker/veh
 ```
 /volume1/docker/vehicle_manager/   Project folder
 ├── compose.yaml                   copy of deploy/compose.yaml
-├── .env                           settings + credential (from deploy/.env.example); NAS only
+├── .env                           settings (from deploy/.env.example); NAS only
 └── data/                          the container's /data
     ├── vehiclemanager.sqlite      the database (plus -wal and -shm files while it runs)
     ├── backups/                   copies made before each database upgrade
@@ -42,10 +42,7 @@ GHCR packages start private, even for a public repo. After the first image is pu
 - On GitHub, go to your profile → **Packages** → `vehicle_manager_2` → **Package settings** → *Change visibility* → **Public**.
 - That's it: the NAS can then pull without a login.
 
-### 3. Choose a credential
-On your Mac, run `openssl rand -base64 32` and keep the output for step 4. **Don't put it in the repo, a chat, or a screenshot.**
-
-### 4. Put `compose.yaml` and `.env` in the Project folder
+### 3. Put `compose.yaml` and `.env` in the Project folder
 Enable SSH if needed: Control Panel → Terminal & SNMP → *Enable SSH service*. Then:
 
 ```sh
@@ -57,9 +54,9 @@ chmod 600 .env
 vi .env
 ```
 
-In `.env`, check `VEHICLEMANAGER_UID=1030`, `VEHICLEMANAGER_GID=100` and `VEHICLEMANAGER_HOST_PORT=8410`, and paste the credential after `VEHICLEMANAGER_TEST_CREDENTIAL=`. Use `nano` instead of `vi` if it's installed. You can also make the two files on your Mac and upload them with File Station; files starting with `.` upload fine.
+In `.env`, check `VEHICLEMANAGER_UID=1030`, `VEHICLEMANAGER_GID=100` and `VEHICLEMANAGER_HOST_PORT=8410`. Use `nano` instead of `vi` if it's installed. You can also make the two files on your Mac and upload them with File Station; files starting with `.` upload fine.
 
-### 5. Create the Project (Container Manager)
+### 4. Create the Project (Container Manager)
 - Go to Container Manager → **Project** → **Create**.
   - **Project name:** `vehiclemanager` (must match the `name:` line in `compose.yaml`)
   - **Path:** `/docker/vehicle_manager`
@@ -69,9 +66,7 @@ In `.env`, check `VEHICLEMANAGER_UID=1030`, `VEHICLEMANAGER_GID=100` and `VEHICL
 
 **Check:** Container → `vehiclemanager` shows **Running**, and its **Log** tab includes `app starting` and `writing log files` lines. `data/logs/current.jsonl` appears in File Station.
 
-If the log says `no API credential configured`, the `.env` line is empty or wasn't read. Every API request is refused until that's fixed (decision #024).
-
-### 6. Publish it on the tailnet (`tailscale serve`)
+### 5. Publish it on the tailnet (`tailscale serve`)
 Over SSH:
 
 ```sh
@@ -89,6 +84,20 @@ sudo /var/packages/Tailscale/target/bin/tailscale serve --bg --https=8443 http:/
 ```
 
 The address is then `https://<nas-name>.<tailnet>.ts.net:8443`.
+
+### 6. Create the first Admin
+
+A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028):
+
+```sh
+sudo docker logs vehiclemanager 2>&1 | grep -i "setup code"
+```
+
+The line ends with `setup_code=K7QM-4XRT-9PWD-H2CN` (yours differs). Open the app's address from step 5; it shows **first-time setup**. Enter the code, your username, name, and a password of at least 12 characters. You're signed in as the household's **Admin**, and the code stops working.
+
+- **Only someone who can read the server's log can do this,** so another device on the tailnet can't claim Admin first.
+- Add the rest of the household afterwards, in Admin mode.
+- **Forgot the password, and you're the only Admin?** There's no reset yet; idea 11 in `docs/ideas-to-discuss.md` (a NAS maintenance tool) is where that would go.
 
 ## Updating
 
@@ -175,7 +184,8 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 
 - **"Permission denied" writing logs:** `data/` isn't writable by `vehiclemanager`. Redo setup step 1's permissions. The server keeps running without file logs and says so in its log.
 - **Container exits at once with "set VEHICLEMANAGER_UID in .env":** `.env` is missing those lines, or isn't in the Project folder.
-- **`docker compose up` says "container name "/vehiclemanager" is already in use":** the `compose.yaml` in the Project folder is an old copy without the `name: vehiclemanager` line. Download it again (setup step 4), or add `-p vehiclemanager` to both update commands.
+- **`docker compose up` says "container name "/vehiclemanager" is already in use":** the `compose.yaml` in the Project folder is an old copy without the `name: vehiclemanager` line. Download it again (setup step 3), or add `-p vehiclemanager` to both update commands.
+- **Upgrading from Phase 1:** the `VEHICLEMANAGER_TEST_CREDENTIAL` line in an older `.env` is ignored now; delete it. Signing in replaces it.
 - **Diagnostics shows "Server health: Fail":** the database couldn't be opened or failed a check; nothing is being saved. The container log says which (`can't open the database` or `database integrity problem`). See "Database, backups, and snapshots".
 - **`job skipped` for the nightly snapshot:** the snapshot folder set in `VEHICLEMANAGER_SNAPSHOT_DIR` isn't there (e.g. the USB disk isn't mounted).
 - **Pulls fail with "denied":** the GHCR package is still private (setup step 2).

@@ -3,7 +3,8 @@
 //! The **API version** is separate from the app version (plan §8): it changes only
 //! when the contract between app and server changes. Every request to a path under
 //! [`API_PATH_PREFIX`] carries the client's API version in [`API_VERSION_HEADER`]
-//! and its credential in the standard `Authorization: Bearer <credential>` header.
+//! and is made by a signed-in session: the session cookie (web) or `Authorization: Bearer
+//! <session token>` (desktop).
 //! The server checks both before any server function runs (phase-1.md step 7).
 //!
 //! # Examples
@@ -36,11 +37,11 @@ pub const API_PATH_PREFIX: &str = "/api/";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ApiError {
-    /// No `Authorization: Bearer ...` header.
+    /// No session was sent: not signed in.
     MissingCredential,
-    /// A credential was sent but isn't the one the server expects.
+    /// A session was sent but isn't valid (ended, signed out, or unknown).
     InvalidCredential,
-    /// The server has no credential configured, so it refuses everything (fail closed).
+    /// The server can't check sessions (its database isn't open), so it refuses (fail closed).
     AuthNotConfigured,
     /// No API version header.
     MissingApiVersion,
@@ -88,7 +89,7 @@ impl ApiError {
         }
     }
 
-    /// Whether this is a credential problem (as opposed to a version problem).
+    /// Whether this is a sign-in problem (as opposed to a version problem).
     pub const fn is_auth_failure(self) -> bool {
         matches!(
             self,
@@ -100,9 +101,9 @@ impl ApiError {
     /// Never shown in the UI, which uses [`ApiError::message`].
     pub const fn description(self) -> &'static str {
         match self {
-            Self::MissingCredential => "missing credential",
-            Self::InvalidCredential => "invalid credential",
-            Self::AuthNotConfigured => "server has no credential configured",
+            Self::MissingCredential => "not signed in",
+            Self::InvalidCredential => "session not valid",
+            Self::AuthNotConfigured => "server can't check sessions",
             Self::MissingApiVersion => "missing API version header",
             Self::MalformedApiVersion => "malformed API version header",
             Self::ClientTooOld => "client API version is too old",
