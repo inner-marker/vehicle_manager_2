@@ -443,3 +443,13 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Urgency first puts what needs attention on top; a personal order covers households that think in their own order.
   - The tabs group a vehicle's information the way it's used, and the garage-friendly rules come from using the app with gloves or dirty hands.
   - Choosing between drawn options is quicker and clearer than describing a layout in words.
+
+### 041. Mobile apps move to post-MVP
+*Decided: 2026-10-29 · Plan: §9 Roadmap (Post-MVP: Mobile), §10 Open questions · Replaces "Phase 4: Mobile"*
+
+- **Decision:**
+  - The Android and iOS apps, and everything that needs them (offline "glovebox", native camera and document scanning, native location, the bundled geocoder), are **post-MVP**.
+  - **Phones use the web UI** over Tailscale in the meantime: camera and photo library through the browser, browser location, and the adaptive narrow layout.
+  - **The phase numbers stay** (Phase 3, then 5 and 6) so existing references remain valid.
+  - Phase 4's open questions move: mobile distribution and camera to Post-MVP; **desktop signing** to Phase 6, since it's needed by the first release with desktop packages.
+- **Why (the human's reasons):** the web UI already works on phones; app signing, sideloading, and distribution are a burden for the first mobile release; and the focus is on core features first.
