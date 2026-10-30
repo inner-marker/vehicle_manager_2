@@ -11,6 +11,8 @@
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+# ...except the migration fixtures, which are part of the tests
+!crates/storage/tests/fixtures/*.sqlite
 
 # Personal Claude Code settings (shared settings live in .claude/settings.json)
 .claude/settings.local.json

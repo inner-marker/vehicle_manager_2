@@ -5,3 +5,10 @@
 //! integer database representation and the `uom` domain types.
 //!
 //! Native only: the web (WASM) build must never depend on this crate.
+
+pub mod convert;
+pub mod database;
+mod error;
+
+pub use database::{Database, NewDatabaseIds, OpenReport};
+pub use error::StorageError;

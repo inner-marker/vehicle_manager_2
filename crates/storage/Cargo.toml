@@ -9,6 +9,13 @@ publish = false
 
 [dependencies]
 domain.workspace = true
+sqlx.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+domain = { workspace = true, features = ["test-support"] }
+tempfile.workspace = true
+tokio = { version = "1", features = ["macros", "rt"] }
 
 [lints]
 workspace = true
