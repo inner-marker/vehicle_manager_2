@@ -133,6 +133,7 @@
 | 2h | ☑️ | `feat: Admin password recovery` | **SVG first.** "Forgot your password?" on sign-in, one generic answer; for an Admin account, a one-time recovery code in the server log (15 minutes, once); code and new password sign them in and end their other sessions (#047) | none |
 | 2i | ☑️ | `feat(app): display preferences` | **SVG options first.** Settings records: server defaults (Admin) and per-user overrides (#029), last-write-wins per setting; a Settings screen for units, currency, language (English only so far), and date format. **Formatting** with these preferences arrives where values first appear: units in milestone 4, dates in milestone 6 | none |
 | 2j | ☑️ | `docs: users and login test plan` | `docs/test-plans/users-and-login.md` | none |
+| 2k | ☑️ | `docs: record the users and login test run` | NAS and Mac test passed (steps 1–37); the idle watcher planned for milestone 3 (#049) | none |
 
 **Written so far**
 - **2a:** `domain::user` (`User`, `Username` with its rules, `check_new_password`, `check_display_name`, `UserPatch`; the password hash is deliberately not part of `User`) and `domain::access` (`Role`, `GrantTarget`, `RoleGrant` and its patch, `ActiveMode`, `AssetAction`, `AdminAction`, `role_on`, `available_modes`, `permits_on_asset`, `permits_admin`, `leaves_an_admin`). `domain::id::Asset` is a marker until the asset record arrives in milestone 4. 7 translated messages. Unit tests plus three property tests (more grants never remove a permission; a higher mode never removes one; Driver mode never does Maintainer work).
@@ -187,6 +188,10 @@
   - **Formatting with these preferences** still arrives where values first appear (units in milestone 4, dates in milestone 6).
 
 - **2j:** `docs/test-plans/users-and-login.md`: 37 steps on the NAS and the Mac: the schema upgrade and its backup, setup code, sign-in, modes and the Admin timeout, the attempt limit, a second user (temporary password, roles, disable, reset, change password), the desktop app, Admin recovery, Settings, and a secrets check of the log. It also removes the old credential line from `.env`.
+
+- **2k:** the test plan passed on the NAS and the Mac, 2026-10-30 (all 37 steps). Notes from the run:
+  - A Dioxus warning in the log, `Ignoring "click": not the expected type`, is a generic click (likely from password autofill) that Dioxus drops; nothing failed because of it.
+  - A broken `settings.json` left over from the Phase 1 desktop test made the desktop app use the local server until the NAS address was saved again (as designed: a broken file is ignored).
 
 **Choices in this plan (all approved 2026-10-30):**
 - **Passwords:** at least 12 characters, no other composition rules (current NIST guidance); usernames are lowercase letters, digits, `.`, `-`, `_`, 3–32 characters, compared case-insensitively. argon2id with the library's recommended parameters, re-hashed if they change.

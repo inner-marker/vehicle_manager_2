@@ -49,43 +49,43 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager` | `backed up before migrating` with `schema_before=1`, then `database open` with `created=false`, `schema_before=1 schema_now=3`, and the **same database ID** as milestone 1. `database integrity check passed`. A `WARN` line ending `setup_code=XXXX-XXXX-XXXX-XXXX`. No `ERROR` lines and nothing about a credential. |
-| [ ] | 2 | `ls -ln data/backups/` | One `pre-migration-<UTC time>-v1.sqlite`, owned by `1030 100`. |
-| [ ] | 3 | Open the app's address in the browser | **Set up this server**, STEP 1 OF 2, asking only for the setup code. No other page is reachable. |
-| [ ] | 4 | Enter `AAAA-AAAA-AAAA-AAAA` → **Next** | "That code isn't right." Still step 1. |
-| [ ] | 5 | Enter the real code **in lowercase** → **Next** | STEP 2 OF 2: "✓ Code accepted. You'll be the Admin." Fields for username, name, and the password twice. |
-| [ ] | 6 | Choose username `stuart`, your name, and a password; first try one of 11 characters, then two that differ, then a real one → **Create Admin and sign in** | First: "A password needs at least 12 characters…". Then: "The two passwords aren't the same." Then you're in the **Garage**, with chips **Driver** and your name. The sidebar shows **Users**. |
-| [ ] | 7 | `sudo docker compose restart`, then `sudo docker logs --tail 20 vehiclemanager \| grep -i "setup code"` | Nothing: setup is closed once an Admin exists. Reload the browser: you're still signed in. |
-| [ ] | 8 | Diagnostics → **Run checks** | API version, **Signed in**, and Server health all **Pass**. |
-| [ ] | 9 | **Driver ▾** → **Admin** → a wrong password | "That password isn't right." Still Driver. |
-| [ ] | 10 | **Driver ▾** → **Admin** → your password | Orange **Admin** chip and the banner "ADMIN MODE · Changes affect the whole household · ends after 15 idle minutes" with **Leave**. |
-| [ ] | 11 | **Leave** | Back to **Driver**; the banner is gone. |
-| [ ] | 12 | Enter Admin mode again, leave the tab alone for **16 minutes**, then click **Garage** | Back in **Driver**; no banner. |
-| [ ] | 13 | In Admin mode: **Users** → **+ Add user**: username `sam`, a name, role **Maintainer** → **Add user** | "Sam's temporary password" in groups of 4 (`XXXX-XXXX-XXXX`), with **Copy**. "It's shown only this once." Sam's row shows **Temporary password**. |
-| [ ] | 14 | In the **private window**: sign in as `sam` with a wrong password **6 times** | Tries 1–5: "Wrong username or password." Try 6: "Too many attempts. Try again in 15 minutes." Then even the **right** temporary password is refused with the same message. |
-| [ ] | 15 | `sudo docker compose restart` (clears the limit). In the private window, sign in as `sam` with the temporary password | **Choose a new password**: "Your Admin gave you a temporary password…". Nothing else is reachable until Sam chooses one. |
-| [ ] | 16 | Choose Sam's new password | Sam is in the Garage in **Driver** mode. The mode menu offers **Driver** and **Maintainer**, **not Admin**. There's **no Users** item in the sidebar. |
-| [ ] | 17 | As Sam, open `/users` by typing it in the address bar | No user list: "Switch to Admin mode to manage users." |
-| [ ] | 18 | As stuart in **Driver** mode, open **Users** | "Switch to Admin mode to manage users." No list. |
-| [ ] | 19 | As stuart in Admin mode: open your own page in Users | Role shown greyed out with "The last Admin can't be disabled or lose the Admin role…". No **Disable…** button. |
-| [ ] | 20 | Open Sam's page → change the role to **Viewer**. Then, as Sam, click **Garage** | Sam's mode chip shows **Read-only**. |
-| [ ] | 21 | As stuart: Sam's page → **Disable…** → "Disable Sam?" → **Disable**. Then, as Sam, click any page | Sam's row shows **Disabled**. Sam is sent to **Sign in**; signing in again gives "Wrong username or password." |
-| [ ] | 22 | As stuart: **Enable**, then **Reset password…** → **Reset password** | A new temporary password is shown once. Sam signs in with it and must choose a new password again (as in 15–16). |
-| [ ] | 23 | As Sam: account chip → **Change password** with a wrong current password, then the right one | First: "Your current password isn't right." Then: "Password changed. You were signed out on your other devices." |
-| [ ] | 24 | As Sam: account chip → **Sign out**. Then use the browser's **Back** button | **Sign in** page; Back doesn't show Sam's pages. Close the private window. |
-| [ ] | 25 | **Mac:** start the desktop app | **Sign in**, not setup (the NAS already has an Admin). |
-| [ ] | 26 | Sign in as stuart | Garage in **Driver** mode. Diagnostics → **Run checks**: all **Pass**. |
-| [ ] | 27 | Enter Admin mode in the desktop app → **Settings** → **Household** → **Kilometers** | Kilometers is selected. In the browser (still stuart), Settings → **You**: Kilometers shows as the household's value, with **Use household default** ticked. |
-| [ ] | 28 | Restart the desktop app | **Sign in** again (the token was in memory only). `grep -ril "token\|password" ~/Library/Application\ Support/vehiclemanager/settings.json` prints nothing. |
-| [ ] | 29 | **Browser, stuart:** account chip → **Sign out** → **Forgot your password?** → username `nobody` → **Continue**. Then `sudo docker logs --since 5m vehiclemanager \| grep -i "recovery code"` | "Ask your Admin for further instructions." with a code form. **No** recovery code in the log. |
-| [ ] | 30 | ← Back → **Forgot your password?** → `stuart` → **Continue**, then the same `grep` | The **same** answer on screen. One `WARN` line with `recovery_code=XXXX-XXXX-XXXX-XXXX`. |
-| [ ] | 31 | Enter `AAAA-AAAA-AAAA-AAAA` and a new password, then the real code (lowercase) and a new password → **Set password and sign in** | First: "That code isn't right, or it has expired." Then you're signed in to the Garage. The desktop app's session is gone (its next click goes to Sign in). |
-| [ ] | 32 | Try the same recovery code once more (sign out first) | "That code isn't right, or it has expired." |
-| [ ] | 33 | **Settings → You:** choose **Kilometers**, **Liters**, **bar**, and **2026-10-30** | Each is your own choice (filled), and its **Use household default** is unticked. |
-| [ ] | 34 | Tick **Use household default** for Distance | Distance goes back to following the household (Kilometers since step 27, outlined). |
-| [ ] | 35 | Settings → **Household** in Driver mode | "Switch to Admin mode to change the household defaults." Only the theme row below. |
-| [ ] | 36 | `sudo docker compose restart`, sign in, open Settings → You | Everything from 33–34 is as you left it. |
-| [ ] | 37 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` and `sudo docker logs vehiclemanager 2>&1 \| grep -ic "token="` | `0` both times. Then look through `sudo docker logs --tail 200 vehiclemanager` for anything that looks like a password or temporary password: none. Only `setup_code=` and `recovery_code=` lines carry codes. |
+| [x] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager` | `backed up before migrating` with `schema_before=1`, then `database open` with `created=false`, `schema_before=1 schema_now=3`, and the **same database ID** as milestone 1. `database integrity check passed`. A `WARN` line ending `setup_code=XXXX-XXXX-XXXX-XXXX`. No `ERROR` lines and nothing about a credential. |
+| [x] | 2 | `ls -ln data/backups/` | One `pre-migration-<UTC time>-v1.sqlite`, owned by `1030 100`. |
+| [x] | 3 | Open the app's address in the browser | **Set up this server**, STEP 1 OF 2, asking only for the setup code. No other page is reachable. |
+| [x] | 4 | Enter `AAAA-AAAA-AAAA-AAAA` → **Next** | "That code isn't right." Still step 1. |
+| [x] | 5 | Enter the real code **in lowercase** → **Next** | STEP 2 OF 2: "✓ Code accepted. You'll be the Admin." Fields for username, name, and the password twice. |
+| [x] | 6 | Choose username `stuart`, your name, and a password; first try one of 11 characters, then two that differ, then a real one → **Create Admin and sign in** | First: "A password needs at least 12 characters…". Then: "The two passwords aren't the same." Then you're in the **Garage**, with chips **Driver** and your name. The sidebar shows **Users**. |
+| [x] | 7 | `sudo docker compose restart`, then `sudo docker logs --tail 20 vehiclemanager \| grep -i "setup code"` | Nothing: setup is closed once an Admin exists. Reload the browser: you're still signed in. |
+| [x] | 8 | Diagnostics → **Run checks** | API version, **Signed in**, and Server health all **Pass**. |
+| [x] | 9 | **Driver ▾** → **Admin** → a wrong password | "That password isn't right." Still Driver. |
+| [x] | 10 | **Driver ▾** → **Admin** → your password | Orange **Admin** chip and the banner "ADMIN MODE · Changes affect the whole household · ends after 15 idle minutes" with **Leave**. |
+| [x] | 11 | **Leave** | Back to **Driver**; the banner is gone. |
+| [x] | 12 | Enter Admin mode again, leave the tab alone for **16 minutes**, then click **Garage** | Back in **Driver**; no banner. |
+| [x] | 13 | In Admin mode: **Users** → **+ Add user**: username `sam`, a name, role **Maintainer** → **Add user** | "Sam's temporary password" in groups of 4 (`XXXX-XXXX-XXXX`), with **Copy**. "It's shown only this once." Sam's row shows **Temporary password**. |
+| [x] | 14 | In the **private window**: sign in as `sam` with a wrong password **6 times** | Tries 1–5: "Wrong username or password." Try 6: "Too many attempts. Try again in 15 minutes." Then even the **right** temporary password is refused with the same message. |
+| [x] | 15 | `sudo docker compose restart` (clears the limit). In the private window, sign in as `sam` with the temporary password | **Choose a new password**: "Your Admin gave you a temporary password…". Nothing else is reachable until Sam chooses one. |
+| [x] | 16 | Choose Sam's new password | Sam is in the Garage in **Driver** mode. The mode menu offers **Driver** and **Maintainer**, **not Admin**. There's **no Users** item in the sidebar. |
+| [x] | 17 | As Sam, open `/users` by typing it in the address bar | No user list: "Switch to Admin mode to manage users." |
+| [x] | 18 | As stuart in **Driver** mode, open **Users** | "Switch to Admin mode to manage users." No list. |
+| [x] | 19 | As stuart in Admin mode: open your own page in Users | Role shown greyed out with "The last Admin can't be disabled or lose the Admin role…". No **Disable…** button. |
+| [x] | 20 | Open Sam's page → change the role to **Viewer**. Then, as Sam, click **Garage** | Sam's mode chip shows **Read-only**. |
+| [x] | 21 | As stuart: Sam's page → **Disable…** → "Disable Sam?" → **Disable**. Then, as Sam, click any page | Sam's row shows **Disabled**. Sam is sent to **Sign in**; signing in again gives "Wrong username or password." |
+| [x] | 22 | As stuart: **Enable**, then **Reset password…** → **Reset password** | A new temporary password is shown once. Sam signs in with it and must choose a new password again (as in 15–16). |
+| [x] | 23 | As Sam: account chip → **Change password** with a wrong current password, then the right one | First: "Your current password isn't right." Then: "Password changed. You were signed out on your other devices." |
+| [x] | 24 | As Sam: account chip → **Sign out**. Then use the browser's **Back** button | **Sign in** page; Back doesn't show Sam's pages. Close the private window. |
+| [x] | 25 | **Mac:** start the desktop app | **Sign in**, not setup (the NAS already has an Admin). |
+| [x] | 26 | Sign in as stuart | Garage in **Driver** mode. Diagnostics → **Run checks**: all **Pass**. |
+| [x] | 27 | Enter Admin mode in the desktop app → **Settings** → **Household** → **Kilometers** | Kilometers is selected. In the browser (still stuart), Settings → **You**: Kilometers shows as the household's value, with **Use household default** ticked. |
+| [x] | 28 | Restart the desktop app | **Sign in** again (the token was in memory only). `grep -ril "token\|password" ~/Library/Application\ Support/vehiclemanager/settings.json` prints nothing. |
+| [x] | 29 | **Browser, stuart:** account chip → **Sign out** → **Forgot your password?** → username `nobody` → **Continue**. Then `sudo docker logs --since 5m vehiclemanager \| grep -i "recovery code"` | "Ask your Admin for further instructions." with a code form. **No** recovery code in the log. |
+| [x] | 30 | ← Back → **Forgot your password?** → `stuart` → **Continue**, then the same `grep` | The **same** answer on screen. One `WARN` line with `recovery_code=XXXX-XXXX-XXXX-XXXX`. |
+| [x] | 31 | Enter `AAAA-AAAA-AAAA-AAAA` and a new password, then the real code (lowercase) and a new password → **Set password and sign in** | First: "That code isn't right, or it has expired." Then you're signed in to the Garage. The desktop app's session is gone (its next click goes to Sign in). |
+| [x] | 32 | Try the same recovery code once more (sign out first) | "That code isn't right, or it has expired." |
+| [x] | 33 | **Settings → You:** choose **Kilometers**, **Liters**, **bar**, and **2026-10-30** | Each is your own choice (filled), and its **Use household default** is unticked. |
+| [x] | 34 | Tick **Use household default** for Distance | Distance goes back to following the household (Kilometers since step 27, outlined). |
+| [x] | 35 | Settings → **Household** in Driver mode | "Switch to Admin mode to change the household defaults." Only the theme row below. |
+| [x] | 36 | `sudo docker compose restart`, sign in, open Settings → You | Everything from 33–34 is as you left it. |
+| [x] | 37 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` and `sudo docker logs vehiclemanager 2>&1 \| grep -ic "token="` | `0` both times. Then look through `sudo docker logs --tail 200 vehiclemanager` for anything that looks like a password or temporary password: none. Only `setup_code=` and `recovery_code=` lines carry codes. |
 
 ## 4. If a step fails, capture
 
