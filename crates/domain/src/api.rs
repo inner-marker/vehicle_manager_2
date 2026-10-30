@@ -156,6 +156,64 @@ pub struct Handshake {
     pub healthy: bool,
 }
 
+/// Who is signed in, as the client sees it (from the session check and sign-in).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionInfo {
+    /// Their username.
+    pub username: crate::user::Username,
+    /// Their display name.
+    pub display_name: String,
+    /// They must choose a new password before anything else.
+    pub must_change_password: bool,
+    /// The mode the session is in.
+    pub mode: crate::access::ActiveMode,
+    /// The modes they may switch to (empty for a Viewer-only user, who works read-only).
+    pub available_modes: Vec<crate::access::ActiveMode>,
+}
+
+/// The answer to a sign-in attempt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SignInOutcome {
+    /// Signed in. The web app gets a session cookie; `token` is set only when the caller
+    /// asked for it (the desktop app, which sends it as `Authorization: Bearer`), so a
+    /// web page's scripts never see it.
+    SignedIn {
+        /// Who signed in.
+        session: SessionInfo,
+        /// The session token, for the desktop app.
+        token: Option<String>,
+    },
+    /// Unknown username or wrong password (deliberately not saying which).
+    InvalidCredentials,
+    /// Too many failed attempts; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The server couldn't check right now.
+    Unavailable,
+}
+
+/// The answer to a mode switch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SwitchModeOutcome {
+    /// Now in this mode.
+    Switched {
+        /// The new mode.
+        mode: crate::access::ActiveMode,
+    },
+    /// The user's roles don't allow that mode.
+    NotAllowed,
+    /// Admin mode needs the password, and it was wrong.
+    WrongPassword,
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't switch right now.
+    Unavailable,
+}
+
 /// Servers from before the `healthy` field had no health check, so treat them as healthy.
 const fn healthy_by_default() -> bool {
     true

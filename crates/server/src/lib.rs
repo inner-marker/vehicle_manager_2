@@ -10,4 +10,7 @@ pub mod commands;
 pub mod health;
 pub mod ids;
 pub mod jobs;
+pub mod login_limiter;
+pub mod passwords;
+pub mod sessions;
 pub mod startup;

@@ -10,7 +10,7 @@
 //! from event handlers or effects, which only run in the browser or app.
 
 use dioxus::prelude::*;
-use domain::api::{Handshake, Pong};
+use domain::api::{Handshake, Pong, SessionInfo, SignInOutcome, SwitchModeOutcome};
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -69,6 +69,200 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
     })
 }
 
+/// Signs in. On success the web app gets an `HttpOnly` session cookie; `want_token` (the
+/// desktop app) also returns the token, to send as `Authorization: Bearer`.
+///
+/// A public path ([`::server::auth::PUBLIC_API_PATHS`]): it works without a session.
+///
+/// # Errors
+///
+/// Only transport errors; refusals are [`SignInOutcome`] values.
+#[post("/api/v1/sign-in")]
+pub(crate) async fn sign_in(
+    username: String,
+    password: String,
+    want_token: bool,
+) -> ServerFnResult<SignInOutcome> {
+    use ::server::sessions::SignInError;
+
+    let Some(database) = ::server::startup::database() else {
+        return Ok(SignInOutcome::Unavailable);
+    };
+    let now = server_side::now();
+    let client = server_side::client_key();
+    match ::server::sessions::sign_in(
+        database,
+        &server_side::LOGIN_LIMITER,
+        &username,
+        password,
+        &client,
+        now,
+    )
+    .await
+    {
+        Ok((token, signed_in)) => {
+            server_side::set_session_cookie(Some(token.as_str()));
+            Ok(SignInOutcome::SignedIn {
+                session: server_side::session_info(&signed_in),
+                token: want_token.then(|| token.as_str().to_owned()),
+            })
+        }
+        Err(SignInError::InvalidCredentials) => Ok(SignInOutcome::InvalidCredentials),
+        Err(SignInError::RateLimited { retry_after_millis }) => {
+            Ok(SignInOutcome::TooManyAttempts {
+                // Rounded up, so "try again in 0 seconds" never appears.
+                retry_after_seconds: (retry_after_millis + 999) / 1000,
+            })
+        }
+        Err(SignInError::Unavailable) => Ok(SignInOutcome::Unavailable),
+    }
+}
+
+/// Who is signed in on this session, or `None`. A public path, so the app can ask before
+/// signing in.
+///
+/// # Errors
+///
+/// Only transport errors.
+#[get("/api/v1/session")]
+#[cfg_attr(
+    feature = "server",
+    expect(
+        clippy::unused_async,
+        reason = "server functions must be async; this one only reads the request"
+    )
+)]
+pub(crate) async fn session() -> ServerFnResult<Option<SessionInfo>> {
+    Ok(server_side::signed_in().map(|signed_in| server_side::session_info(&signed_in)))
+}
+
+/// Signs out: ends this session and clears the cookie.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/sign-out")]
+pub(crate) async fn sign_out() -> ServerFnResult<()> {
+    if let (Some(signed_in), Some(database)) =
+        (server_side::signed_in(), ::server::startup::database())
+        && let Err(error) = ::server::sessions::sign_out(database, signed_in.token_hash).await
+    {
+        tracing::error!(target: domain::log_area::AUTH, %error, "sign-out failed");
+    }
+    server_side::set_session_cookie(None);
+    Ok(())
+}
+
+/// Switches this session's mode. Admin mode needs `password`.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SwitchModeOutcome`] values.
+#[post("/api/v1/mode")]
+pub(crate) async fn switch_mode(
+    mode: domain::access::ActiveMode,
+    password: Option<String>,
+) -> ServerFnResult<SwitchModeOutcome> {
+    use ::server::sessions::SwitchModeError;
+
+    let (Some(signed_in), Some(database)) =
+        (server_side::signed_in(), ::server::startup::database())
+    else {
+        return Ok(SwitchModeOutcome::NotSignedIn);
+    };
+    Ok(
+        match ::server::sessions::switch_mode(
+            database,
+            &signed_in,
+            mode,
+            password,
+            server_side::now(),
+        )
+        .await
+        {
+            Ok(mode) => SwitchModeOutcome::Switched { mode },
+            Err(SwitchModeError::NotAllowed) => SwitchModeOutcome::NotAllowed,
+            Err(SwitchModeError::WrongPassword) => SwitchModeOutcome::WrongPassword,
+            Err(SwitchModeError::Unavailable) => SwitchModeOutcome::Unavailable,
+        },
+    )
+}
+
+/// Server-side helpers for the server functions above: the current request's signed-in
+/// user and client, the session cookie, and the login limiter.
+#[cfg(feature = "server")]
+mod server_side {
+    use std::sync::LazyLock;
+
+    use dioxus::prelude::dioxus_fullstack::FullstackContext;
+    use dioxus::prelude::dioxus_server::http::HeaderValue;
+    use dioxus::prelude::dioxus_server::http::header::SET_COOKIE;
+    use domain::api::SessionInfo;
+    use domain::time::{Clock, UnixMillis};
+    use server::login_limiter::LoginLimiter;
+    use server::sessions::{IDLE_LIFETIME_MILLIS, SignedIn};
+
+    use crate::logging::SystemClock;
+
+    /// Failed sign-ins, shared by every request.
+    pub(super) static LOGIN_LIMITER: LazyLock<LoginLimiter> = LazyLock::new(LoginLimiter::new);
+
+    pub(super) fn now() -> UnixMillis {
+        SystemClock.now()
+    }
+
+    /// The signed-in user the auth layer attached to this request.
+    pub(super) fn signed_in() -> Option<SignedIn> {
+        FullstackContext::current()?.extension::<SignedIn>()
+    }
+
+    /// Where the request came from, for the login limit. The server listens only on the
+    /// NAS's loopback, behind `tailscale serve`, which names the real client in
+    /// `X-Forwarded-For`; without it, all requests share one key.
+    pub(super) fn client_key() -> String {
+        FullstackContext::current()
+            .and_then(|context| {
+                context
+                    .parts_mut()
+                    .headers
+                    .get("x-forwarded-for")
+                    .and_then(|value| value.to_str().ok())
+                    .and_then(|value| value.split(',').next())
+                    .map(|first| first.trim().to_owned())
+            })
+            .unwrap_or_else(|| "unknown".to_owned())
+    }
+
+    /// Sets the session cookie to `token`, or clears it with `None`.
+    pub(super) fn set_session_cookie(token: Option<&str>) {
+        let name = server::auth::session_cookie_name();
+        // HttpOnly: scripts can't read it. Secure: HTTPS only (tailscale serve; browsers also
+        // allow it on localhost). SameSite=Strict: never sent from other sites' pages.
+        let cookie = match token {
+            Some(token) => format!(
+                "{name}={token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age={}",
+                IDLE_LIFETIME_MILLIS / 1000
+            ),
+            None => format!("{name}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0"),
+        };
+        if let (Some(context), Ok(value)) =
+            (FullstackContext::current(), HeaderValue::from_str(&cookie))
+        {
+            context.add_response_header(SET_COOKIE, value);
+        }
+    }
+
+    pub(super) fn session_info(signed_in: &SignedIn) -> SessionInfo {
+        SessionInfo {
+            username: signed_in.username.clone(),
+            display_name: signed_in.display_name.clone(),
+            must_change_password: signed_in.must_change_password,
+            mode: signed_in.mode,
+            available_modes: signed_in.available_modes(),
+        }
+    }
+}
+
 /// Tests of the auth coverage guarantee: every registered server function is under
 /// `/api/` and refuses unauthenticated requests. Server-only (the registry and router
 /// exist only with the `server` feature); CI runs them with `--features server`.
@@ -98,6 +292,22 @@ mod tests {
         }
     }
 
+    #[test]
+    fn every_public_path_is_a_real_server_function() {
+        // A typo in the public list would silently leave a function protected, or worse,
+        // name a path that a future function could take over unprotected.
+        let registered: Vec<&str> = ServerFunction::collect()
+            .into_iter()
+            .map(ServerFunction::path)
+            .collect();
+        for public in ::server::auth::PUBLIC_API_PATHS {
+            assert!(
+                registered.contains(public),
+                "{public} isn't a registered server function"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn every_server_function_rejects_unauthenticated_requests() {
         // The real server-function routes, behind the real auth layer.
@@ -108,7 +318,10 @@ mod tests {
             ::server::auth::AuthConfig::with_credential("test-only"),
         );
 
-        for function in ServerFunction::collect() {
+        let protected = ServerFunction::collect()
+            .into_iter()
+            .filter(|function| !::server::auth::PUBLIC_API_PATHS.contains(&function.path()));
+        for function in protected {
             let unauthenticated = Request::builder()
                 .method(function.method())
                 .uri(function.path())

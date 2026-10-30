@@ -66,7 +66,12 @@ fn launch(log_handles: Option<LogHandles>) {
     use dioxus::prelude::dioxus_server::axum::Router;
     use dioxus::prelude::{DioxusRouterExt, ServeConfig};
 
-    let auth = server::auth::AuthConfig::from_env();
+    // Signed-in sessions, plus the Phase 1 test credential until step 2e retires it.
+    let auth =
+        server::auth::AuthConfig::from_env().with_sessions(server::auth::SessionSource::new(
+            || server::startup::database().cloned(),
+            std::sync::Arc::new(logging::SystemClock),
+        ));
     let paths = server_paths();
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {

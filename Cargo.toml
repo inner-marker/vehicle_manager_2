@@ -32,6 +32,9 @@ server = { path = "crates/server" }
 dioxus = "=0.7.10"              # exact pin: must match the installed Dioxus CLI (`dx --version`)
 # Server-side HTTP: auth middleware in `server` (phase-1.md step 7). Same versions Dioxus uses.
 axum = { version = "0.8.9", default-features = false }
+# Password hashing (argon2id; decision #028, phase-2.md milestone 2). Default features: salts
+# come from the OS through `getrandom`, which the server already uses.
+argon2 = "0.6.0"
 dirs = "6.0.0"                   # per-user data folder on desktop; already used by dioxus-desktop
 getrandom = "0.4.3"             # OS randomness for new IDs on the server (approved, phase-2.md 1d)
 fluent-bundle = "0.16.0"        # translation engine (Project Fluent); see decisions.md #022
@@ -40,6 +43,7 @@ fluent-bundle = "0.16.0"        # translation engine (Project Fluent); see decis
 # (phase-2.md milestone 1 plan); `macros` is only for `sqlx::migrate!`.
 sqlx = { version = "0.9.0", default-features = false, features = ["sqlite-bundled", "runtime-tokio", "migrate", "macros"] }
 serde = { version = "1.0.229", features = ["derive"] }
+sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
 tower = { version = "0.5.3", default-features = false }

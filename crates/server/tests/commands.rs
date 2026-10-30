@@ -519,7 +519,12 @@ mod engine {
                     title: title.map(|value| format!("t{value}")),
                     body: body.map(|value| format!("b{value}")),
                 };
-                commands.push(update(n, at(1 + offset, device), patch));
+                // A real device never issues the same HLC twice (step 1a), so each edit's stamp is
+                // made unique with the edit's index as the HLC counter. Without that, two edits
+                // from one device with equal stamps would tie, and arrival order would decide.
+                let mut stamp = at(1 + offset, device);
+                stamp.hlc = Hlc::new(stamp.hlc.physical(), u16::try_from(index).unwrap()).unwrap();
+                commands.push(update(n, stamp, patch));
             }
             commands
         }
