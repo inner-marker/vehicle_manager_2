@@ -43,6 +43,9 @@ tracing = "0.1.44"
 # terminal output would add nu-ansi-term (phase-1.md step 4).
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["std", "registry", "fmt"] }
 tracing-wasm = "0.2.1"          # browser devtools console output (web only)
+# UUIDv7 record IDs (decisions.md #042). No features: domain supplies the time and
+# random bytes itself, and needs no std-only or RNG code.
+uuid = { version = "1.28.0", default-features = false }
 unic-langid = "0.9.6"           # language identifiers (e.g. en-US) for fluent-bundle
 web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's panics there)
 

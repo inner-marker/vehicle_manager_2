@@ -13,5 +13,7 @@
 //! those types arrive (Phase 2).
 
 mod clock;
+mod ids;
 
 pub use clock::ManualClock;
+pub use ids::test_id;

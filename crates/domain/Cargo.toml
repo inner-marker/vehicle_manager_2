@@ -11,6 +11,7 @@ publish = false
 fluent-bundle.workspace = true
 serde.workspace = true
 unic-langid.workspace = true
+uuid.workspace = true
 
 [features]
 # Shared test helpers (`domain::test_support`). Enable only in other crates'

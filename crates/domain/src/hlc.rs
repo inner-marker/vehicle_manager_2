@@ -6,8 +6,8 @@
 //! logical clocks").
 //!
 //! An [`Hlc`] packs **48 bits of milliseconds since 1970 and a 16-bit counter** into
-//! one `u64` that sorts as a plain integer. When two stamps are equal, the device ID
-//! breaks the tie (see `domain::id`).
+//! one `u64` that sorts as a plain integer. When two HLCs are equal, the device ID
+//! breaks the tie: a [`Stamp`] is the pair, and the full ordering key.
 //!
 //! [`HlcClock`] produces stamps from a passed-in [`Clock`]: `domain` never reads the
 //! real clock. The caller persists [`HlcClock::last`] and passes it back after a
@@ -42,6 +42,9 @@
 
 use core::fmt;
 
+use serde::{Deserialize, Serialize};
+
+use crate::id::DeviceId;
 use crate::time::{Clock, UnixMillis};
 
 /// Bits used by the counter, below the physical time.
@@ -52,7 +55,9 @@ const MAX_PHYSICAL_MILLIS: i64 = (1 << 48) - 1;
 
 /// A hybrid logical clock stamp: physical milliseconds and a counter, packed so that
 /// comparing two stamps compares their packed `u64` values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Serialized as its packed `u64`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Hlc(u64);
 
 /// Why an HLC couldn't be made.
@@ -131,6 +136,17 @@ impl Hlc {
             ),
         }
     }
+}
+
+/// An HLC together with the device that made it: the full ordering key for
+/// last-write-wins. Equal HLCs from two devices are ordered by device ID, so every
+/// device and the server pick the same winner.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct Stamp {
+    /// When, by hybrid logical clock. Compared first.
+    pub hlc: Hlc,
+    /// Which device. Compared only when the HLCs are equal.
+    pub device: DeviceId,
 }
 
 /// Produces HLC stamps for one device from a wall [`Clock`].
@@ -300,6 +316,29 @@ mod tests {
             clock.receive(stamp(1_000, 9)).unwrap(),
             stamp(START.as_millis(), 0)
         );
+    }
+
+    #[test]
+    fn equal_hlcs_are_ordered_by_device() {
+        let hlc = stamp(START.as_millis(), 0);
+        let first_device = DeviceId::generate(START, [0; 10]).unwrap();
+        let second_device = DeviceId::generate(START, [0xFF; 10]).unwrap();
+        let first = Stamp {
+            hlc,
+            device: first_device,
+        };
+        let second = Stamp {
+            hlc,
+            device: second_device,
+        };
+
+        assert!(first < second);
+        // A later HLC wins whatever the device.
+        let later = Stamp {
+            hlc: stamp(START.as_millis(), 1),
+            device: first_device,
+        };
+        assert!(later > second);
     }
 
     #[test]
