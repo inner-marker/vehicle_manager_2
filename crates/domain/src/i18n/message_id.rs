@@ -236,8 +236,6 @@ define_messages! {
     SIGN_IN_BUTTON => "sign-in-button",
     /// Sign-in screen: shown on the button while signing in.
     SIGN_IN_BUSY => "sign-in-busy",
-    /// Sign-in screen: what to do about a forgotten password.
-    SIGN_IN_FORGOT => "sign-in-forgot",
     /// Sign-in error: wrong username or password (deliberately not saying which).
     SIGN_IN_WRONG => "sign-in-wrong",
     /// Too many failed attempts; takes `minutes` (number).
@@ -409,4 +407,31 @@ define_messages! {
     USERS_SELECT_HINT => "users-select-hint",
     /// Users detail on phones: back to the list.
     USERS_BACK => "users-back",
+
+    /// Sign-in screen: the link to recover a password.
+    SIGN_IN_FORGOT_LINK => "sign-in-forgot-link",
+    /// Recovery: heading of the username step.
+    RECOVERY_TITLE => "recovery-title",
+    /// Recovery: the username step's instruction.
+    RECOVERY_SUBTITLE => "recovery-subtitle",
+    /// Recovery: the username step's button.
+    RECOVERY_CONTINUE => "recovery-continue",
+    /// Recovery: the answer everyone gets (heading).
+    RECOVERY_ASK_ADMIN_TITLE => "recovery-ask-admin-title",
+    /// Recovery: the answer everyone gets (line under it).
+    RECOVERY_ASK_ADMIN_TEXT => "recovery-ask-admin-text",
+    /// Recovery: heading above the code form.
+    RECOVERY_HAVE_CODE => "recovery-have-code",
+    /// Form label: the recovery code.
+    FIELD_RECOVERY_CODE => "field-recovery-code",
+    /// Form label: a new password replacing an old one.
+    FIELD_NEW_PASSWORD_LONG => "field-new-password-long",
+    /// Form label: the new password, again.
+    FIELD_NEW_PASSWORD_AGAIN => "field-new-password-again",
+    /// Recovery: the code form's button.
+    RECOVERY_SUBMIT => "recovery-submit",
+    /// Recovery: back to sign-in.
+    RECOVERY_BACK => "recovery-back",
+    /// Recovery error: wrong, used, or expired code.
+    RECOVERY_WRONG_CODE => "recovery-wrong-code",
 }

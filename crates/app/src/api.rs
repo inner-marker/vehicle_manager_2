@@ -12,8 +12,8 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, SessionState, SetupOutcome,
-    SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
+    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, RecoveryOutcome, SessionState,
+    SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -335,6 +335,73 @@ pub(crate) async fn switch_mode(
             Err(SwitchModeError::Unavailable) => SwitchModeOutcome::Unavailable,
         },
     )
+}
+
+/// Asks for a password-recovery code (decision #047). Always answers the same way; only for an
+/// Admin does the server write a code to its log. A public path.
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/recovery/request")]
+pub(crate) async fn request_recovery(username: String) -> ServerFnResult<()> {
+    if let Some(database) = ::server::startup::database() {
+        // A rate-limited request gets the same answer: it must reveal nothing.
+        let _ = ::server::recovery::request_code(
+            database,
+            &server_side::LOGIN_LIMITER,
+            &username,
+            &server_side::client_key(),
+            server_side::now(),
+        )
+        .await;
+    }
+    Ok(())
+}
+
+/// Completes a password recovery with the code from the server log and a new password, and
+/// signs in. A public path.
+///
+/// # Errors
+///
+/// Only transport errors; refusals are [`RecoveryOutcome`] values.
+#[post("/api/v1/recovery/complete")]
+pub(crate) async fn complete_recovery(
+    username: String,
+    code: String,
+    new_password: String,
+    want_token: bool,
+) -> ServerFnResult<RecoveryOutcome> {
+    use ::server::recovery::RecoveryError;
+
+    let Some(database) = ::server::startup::database() else {
+        return Ok(RecoveryOutcome::Unavailable);
+    };
+    let result = ::server::recovery::complete(
+        database,
+        &server_side::LOGIN_LIMITER,
+        &username,
+        &code,
+        new_password,
+        &server_side::client_key(),
+        &crate::logging::SystemClock,
+    )
+    .await;
+    Ok(match result {
+        Ok((token, signed_in)) => {
+            server_side::set_session_cookie(Some(token.as_str()));
+            RecoveryOutcome::SignedIn {
+                session: server_side::session_info(&signed_in),
+                token: want_token.then(|| token.as_str().to_owned()),
+            }
+        }
+        Err(RecoveryError::WrongCode) => RecoveryOutcome::WrongCode,
+        Err(RecoveryError::RateLimited(millis)) => RecoveryOutcome::TooManyAttempts {
+            retry_after_seconds: (millis + 999) / 1000,
+        },
+        Err(RecoveryError::InvalidPassword(reason)) => RecoveryOutcome::InvalidPassword { reason },
+        Err(RecoveryError::Unavailable) => RecoveryOutcome::Unavailable,
+    })
 }
 
 /// Everyone, for the Users screen (Admin mode only).

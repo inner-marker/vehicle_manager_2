@@ -483,6 +483,11 @@ select,
     font-size: 1.6rem;
 }
 
+.auth-step.muted {
+    margin-top: 6px;
+    color: var(--text-muted);
+}
+
 .auth-subtitle,
 .auth-note {
     margin: 0;

@@ -97,7 +97,15 @@ The line ends with `setup_code=K7QM-4XRT-9PWD-H2CN` (yours differs). Open the ap
 
 - **Only someone who can read the server's log can do this,** so another device on the tailnet can't claim Admin first.
 - Add the rest of the household afterwards, in Admin mode.
-- **Forgot the password, and you're the only Admin?** There's no reset yet; idea 11 in `docs/ideas-to-discuss.md` (a NAS maintenance tool) is where that would go.
+- **Forgot your password?** Anyone else asks an Admin, who resets it from **Users** (they get a temporary password). **An Admin** recovers it from the sign-in screen (decision #047):
+  1. **Forgot your password?** → enter your username → **Continue**. Everyone sees "Ask your Admin for further instructions."
+  2. For an Admin account only, the server writes a one-time code to its log. Over SSH:
+
+     ```sh
+     sudo docker logs vehiclemanager 2>&1 | grep -i "recovery code"
+     ```
+
+  3. Enter the code (the newest line; it works once, for 15 minutes) and a new password. You're signed in, and your other sessions end.
 
 ## Updating
 

@@ -5,7 +5,9 @@
 //! rendering (`crate::api`). The forms submit with Enter as well as the button.
 
 use dioxus::prelude::*;
-use domain::api::{ChangePasswordOutcome, CheckSetupCodeOutcome, SetupOutcome, SignInOutcome};
+use domain::api::{
+    ChangePasswordOutcome, CheckSetupCodeOutcome, RecoveryOutcome, SetupOutcome, SignInOutcome,
+};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 
@@ -88,13 +90,150 @@ fn AuthCard(children: Element) -> Element {
 
 // --- Sign in -----------------------------------------------------------------------------
 
-/// The sign-in screen.
+/// Where the sign-in card is: signing in, asking for recovery, or entering a recovery code.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum SignInStage {
+    SignIn,
+    Forgot,
+    Recover { username: String },
+}
+
+/// The sign-in screen, and password recovery (`docs/ui-sketches/p2m2-recovery.svg`, #047).
+#[component]
+pub(crate) fn SignIn() -> Element {
+    let mut stage = use_signal(|| SignInStage::SignIn);
+    rsx! {
+        match stage() {
+            SignInStage::SignIn => rsx! { SignInForm { on_forgot: move |()| stage.set(SignInStage::Forgot) } },
+            SignInStage::Forgot => rsx! {
+                ForgotPassword {
+                    on_asked: move |username| stage.set(SignInStage::Recover { username }),
+                    on_back: move |()| stage.set(SignInStage::SignIn),
+                }
+            },
+            SignInStage::Recover { username } => rsx! {
+                RecoverWithCode { username, on_back: move |()| stage.set(SignInStage::SignIn) }
+            },
+        }
+    }
+}
+
+/// "Forgot your password?": the username. Everyone then gets the same answer.
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-pub(crate) fn SignIn() -> Element {
+fn ForgotPassword(on_asked: EventHandler<String>, on_back: EventHandler<()>) -> Element {
+    let username = use_signal(String::new);
+    let mut busy = use_signal(|| false);
+    let submit = move |event: FormEvent| {
+        event.prevent_default();
+        if busy() {
+            return;
+        }
+        busy.set(true);
+        spawn(async move {
+            // The answer is the same whatever happens, so failures aren't shown either.
+            if let Err(error) = api::request_recovery(username()).await {
+                tracing::debug!(target: log_area::AUTH, %error, "recovery request failed");
+            }
+            busy.set(false);
+            on_asked.call(username());
+        });
+    };
+    rsx! {
+        AuthCard {
+            form { class: "auth-form", onsubmit: submit,
+                h1 { class: "auth-title", {tr(messages::RECOVERY_TITLE)} }
+                p { class: "auth-subtitle", {tr(messages::RECOVERY_SUBTITLE)} }
+                Field { label: messages::FIELD_USERNAME, value: username, autocomplete: "username", autofocus: true }
+                button { class: "primary-button", r#type: "submit", disabled: busy(), {tr(messages::RECOVERY_CONTINUE)} }
+                button { class: "link-button", r#type: "button", onclick: move |_| on_back.call(()), {tr(messages::RECOVERY_BACK)} }
+            }
+        }
+    }
+}
+
+/// "Ask your Admin for further instructions", and the form for a recovery code.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn RecoverWithCode(username: String, on_back: EventHandler<()>) -> Element {
+    let mut state = use_auth();
+    let code = use_signal(String::new);
+    let password = use_signal(String::new);
+    let again = use_signal(String::new);
+    let mut error = use_signal(|| None::<String>);
+    let mut busy = use_signal(|| false);
+    let submit = move |event: FormEvent| {
+        event.prevent_default();
+        if busy() {
+            return;
+        }
+        if password() != again() {
+            error.set(Some(tr(messages::PASSWORDS_DIFFER)));
+            return;
+        }
+        busy.set(true);
+        let username = username.clone();
+        spawn(async move {
+            let result =
+                api::complete_recovery(username, code(), password(), client::USES_SESSION_TOKEN)
+                    .await;
+            busy.set(false);
+            match result {
+                Ok(RecoveryOutcome::SignedIn { session, token }) => {
+                    tracing::info!(target: log_area::AUTH, "password recovered; signed in");
+                    if token.is_some() {
+                        client::set_session_token(token);
+                    }
+                    state.set(AuthState::SignedIn(session));
+                }
+                Ok(RecoveryOutcome::WrongCode) => {
+                    error.set(Some(tr(messages::RECOVERY_WRONG_CODE)));
+                }
+                Ok(RecoveryOutcome::TooManyAttempts {
+                    retry_after_seconds,
+                }) => {
+                    error.set(Some(too_many_attempts(retry_after_seconds)));
+                }
+                Ok(RecoveryOutcome::InvalidPassword { reason }) => {
+                    error.set(Some(tr(reason.message())));
+                }
+                Ok(RecoveryOutcome::Unavailable) => {
+                    error.set(Some(tr(messages::SOMETHING_WENT_WRONG)));
+                }
+                Err(failure) => error.set(Some(transport_error(&failure))),
+            }
+        });
+    };
+    rsx! {
+        AuthCard {
+            form { class: "auth-form", onsubmit: submit,
+                h1 { class: "auth-title", {tr(messages::RECOVERY_ASK_ADMIN_TITLE)} }
+                p { class: "auth-subtitle", {tr(messages::RECOVERY_ASK_ADMIN_TEXT)} }
+                p { class: "auth-step muted", {tr(messages::RECOVERY_HAVE_CODE)} }
+                Field { label: messages::FIELD_RECOVERY_CODE, value: code, mono: true }
+                Field { label: messages::FIELD_NEW_PASSWORD_LONG, value: password, kind: "password", autocomplete: "new-password" }
+                Field { label: messages::FIELD_NEW_PASSWORD_AGAIN, value: again, kind: "password", autocomplete: "new-password" }
+                FormError { message: error() }
+                button { class: "primary-button", r#type: "submit", disabled: busy(), {tr(messages::RECOVERY_SUBMIT)} }
+                button { class: "link-button", r#type: "button", onclick: move |_| on_back.call(()), {tr(messages::RECOVERY_BACK)} }
+            }
+        }
+    }
+}
+
+/// The sign-in form, with the "Forgot your password?" link.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn SignInForm(on_forgot: EventHandler<()>) -> Element {
     let mut state = use_auth();
     let username = use_signal(String::new);
     let mut password = use_signal(String::new);
@@ -152,7 +291,9 @@ pub(crate) fn SignIn() -> Element {
                 button { class: "primary-button", r#type: "submit", disabled: busy(),
                     if busy() { {tr(messages::SIGN_IN_BUSY)} } else { {tr(messages::SIGN_IN_BUTTON)} }
                 }
-                p { class: "auth-note", {tr(messages::SIGN_IN_FORGOT)} }
+                button { class: "link-button", r#type: "button", onclick: move |_| on_forgot.call(()),
+                    {tr(messages::SIGN_IN_FORGOT_LINK)}
+                }
             }
         }
     }
@@ -395,8 +536,8 @@ pub(crate) fn ChangePasswordForm(
     rsx! {
         form { class: "auth-form", onsubmit: submit,
             Field { label: messages::FIELD_CURRENT_PASSWORD, value: current, kind: "password", autocomplete: "current-password", autofocus: true }
-            Field { label: messages::FIELD_NEW_PASSWORD, value: new, kind: "password", autocomplete: "new-password" }
-            Field { label: messages::FIELD_PASSWORD_AGAIN, value: again, kind: "password", autocomplete: "new-password" }
+            Field { label: messages::FIELD_NEW_PASSWORD_LONG, value: new, kind: "password", autocomplete: "new-password" }
+            Field { label: messages::FIELD_NEW_PASSWORD_AGAIN, value: again, kind: "password", autocomplete: "new-password" }
             FormError { message: error() }
             div { class: "form-buttons",
                 if let Some(on_cancel) = on_cancel {

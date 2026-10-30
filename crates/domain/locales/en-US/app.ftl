@@ -147,7 +147,6 @@ field-username = Username
 field-password = Password
 sign-in-button = Sign in
 sign-in-busy = Signing in…
-sign-in-forgot = Forgot it? Ask your household's Admin.
 sign-in-wrong = Wrong username or password.
 # $minutes (number): how long to wait.
 too-many-attempts =
@@ -246,3 +245,19 @@ users-username-taken = Someone already has that username.
 users-not-allowed = Switch to Admin mode to manage users.
 users-select-hint = Choose someone to see their roles and account.
 users-back = ← Users
+
+## Password recovery (decision #047)
+
+sign-in-forgot-link = Forgot your password?
+recovery-title = Forgot your password?
+recovery-subtitle = Enter your username.
+recovery-continue = Continue
+recovery-ask-admin-title = Ask your Admin
+recovery-ask-admin-text = for further instructions.
+recovery-have-code = HAVE A RECOVERY CODE?
+field-recovery-code = Recovery code
+field-new-password-long = New password (12+ characters)
+field-new-password-again = New password again
+recovery-submit = Set password and sign in
+recovery-back = ← Back to sign in
+recovery-wrong-code = That code isn't right, or it has expired.

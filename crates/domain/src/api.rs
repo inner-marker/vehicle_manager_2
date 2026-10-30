@@ -307,6 +307,33 @@ pub enum UserAdminOutcome {
     Unavailable,
 }
 
+/// The answer to completing a password recovery (decision #047).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum RecoveryOutcome {
+    /// The new password is set; signed in (as for [`SignInOutcome::SignedIn`]).
+    SignedIn {
+        /// Who signed in.
+        session: SessionInfo,
+        /// The session token, if asked for (the desktop app).
+        token: Option<String>,
+    },
+    /// The code is wrong, used, or expired.
+    WrongCode,
+    /// Too many attempts; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The new password breaks a rule.
+    InvalidPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// The answer to a password change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]
