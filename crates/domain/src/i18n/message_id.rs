@@ -434,4 +434,69 @@ define_messages! {
     RECOVERY_BACK => "recovery-back",
     /// Recovery error: wrong, used, or expired code.
     RECOVERY_WRONG_CODE => "recovery-wrong-code",
+
+    /// Settings: the tab with the user's own preferences.
+    SETTINGS_TAB_YOU => "settings-tab-you",
+    /// Settings: the tab with the household defaults.
+    SETTINGS_TAB_HOUSEHOLD => "settings-tab-household",
+    /// Settings, You tab: what it's for.
+    SETTINGS_YOU_HELP => "settings-you-help",
+    /// Settings, Household tab: what it's for.
+    SETTINGS_HOUSEHOLD_HELP => "settings-household-help",
+    /// Settings, Household tab outside Admin mode.
+    SETTINGS_HOUSEHOLD_ADMIN_ONLY => "settings-household-admin-only",
+    /// Settings: the switch to follow the household default.
+    SETTINGS_USE_HOUSEHOLD => "settings-use-household",
+    /// Settings: the per-device section heading.
+    SETTINGS_THIS_DEVICE => "settings-this-device",
+    /// Settings: the theme row.
+    SETTINGS_THEME => "settings-theme",
+    /// Setting: distance unit.
+    SETTING_DISTANCE => "setting-distance",
+    /// Setting: fuel volume unit.
+    SETTING_VOLUME => "setting-volume",
+    /// Setting: fuel economy unit.
+    SETTING_ECONOMY => "setting-economy",
+    /// Setting: pressure unit.
+    SETTING_PRESSURE => "setting-pressure",
+    /// Setting: date format.
+    SETTING_DATE_FORMAT => "setting-date-format",
+    /// Setting: default currency.
+    SETTING_CURRENCY => "setting-currency",
+    /// Setting: language.
+    SETTING_LANGUAGE => "setting-language",
+    /// Choice: miles.
+    UNIT_MILES => "unit-miles",
+    /// Choice: kilometers.
+    UNIT_KILOMETERS => "unit-kilometers",
+    /// Choice: US gallons.
+    UNIT_US_GALLONS => "unit-us-gallons",
+    /// Choice: imperial gallons.
+    UNIT_IMPERIAL_GALLONS => "unit-imperial-gallons",
+    /// Choice: liters.
+    UNIT_LITERS => "unit-liters",
+    /// Choice: miles per US gallon.
+    UNIT_MPG_US => "unit-mpg-us",
+    /// Choice: miles per imperial gallon.
+    UNIT_MPG_UK => "unit-mpg-uk",
+    /// Choice: liters per 100 km.
+    UNIT_L_PER_100_KM => "unit-l-per-100-km",
+    /// Choice: kilometers per liter.
+    UNIT_KM_PER_L => "unit-km-per-l",
+    /// Choice: psi.
+    UNIT_PSI => "unit-psi",
+    /// Choice: kilopascals.
+    UNIT_KPA => "unit-kpa",
+    /// Choice: bar.
+    UNIT_BAR => "unit-bar",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_DAY_MONTH_NAME_YEAR => "date-sample-day-month-name-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_MONTH_DAY_YEAR => "date-sample-month-day-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_DAY_MONTH_YEAR => "date-sample-day-month-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_YEAR_MONTH_DAY => "date-sample-year-month-day",
+    /// Choice: English (United States).
+    LANGUAGE_ENGLISH_US => "language-english-us",
 }

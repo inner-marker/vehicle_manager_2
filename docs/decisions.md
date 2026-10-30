@@ -525,3 +525,19 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - If the only Admin forgets their password, there's otherwise no way back in.
   - Only someone who can read the NAS's log can finish a recovery, like first-Admin setup; anyone on the tailnet can ask, but can't use the code.
   - One generic answer for everyone reveals nothing about which usernames exist or which are Admins, and a real Admin knows to check the log.
+
+### 048. Settings: tabs and buttons; the units, formats, and defaults offered
+*Decided: 2026-10-30 · Plan: §5 UI direction · Phase plan: phase-2.md step 2i · Sketch: `docs/ui-sketches/p2m2-settings-options.svg`, option B · Refines #029*
+
+- **Decision:**
+  - **Layout (option B):** two tabs, **You** and **Household** (the Household tab works only in Admin mode). Each setting is a row of buttons; on the You tab each has a **"Use household default"** switch. Currency and language use a list. The theme stays under **This device**. Changes save at once.
+  - **Choices and household defaults** (the default is listed first):
+    - **Distance:** miles, kilometers.
+    - **Fuel volume:** US gallons, imperial gallons, liters.
+    - **Fuel economy:** mpg (US), mpg (UK), L/100 km, km/L.
+    - **Pressure** (e.g. tires): psi, kPa, bar.
+    - **Date format:** **30 Oct 2026**, 10/30/2026, 30/10/2026, 2026-10-30.
+    - **Currency:** any ISO 4217 code; default USD, with common ones listed first.
+    - **Language:** English (US) only, for now.
+  - **Storage (refines #029):** one preferences record for the household and one per user, **one field per setting**. With last-write-wins per field (#043), each setting still merges on its own, as #029 requires. A user's unset field means "follow the household default".
+- **Why:** the human preferred buttons and an explicit "use household default" switch; pressure and the day-month-name date were asked for; per-field records give #029's per-setting merging without a second kind of record ID.

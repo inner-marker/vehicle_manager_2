@@ -66,12 +66,6 @@ pub(crate) fn LogEvent() -> Element {
     rsx! { ComingSoon {} }
 }
 
-/// App settings (Phase 2).
-#[component]
-pub(crate) fn Settings() -> Element {
-    rsx! { ComingSoon {} }
-}
-
 /// No screen at this address.
 #[component]
 pub(crate) fn NotFound(segments: Vec<String>) -> Element {

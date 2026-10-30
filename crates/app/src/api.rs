@@ -12,8 +12,9 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, RecoveryOutcome, SessionState,
-    SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
+    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, PreferencesOutcome,
+    RecoveryOutcome, SessionState, SetupOutcome, SignInOutcome, SwitchModeOutcome,
+    UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -404,6 +405,49 @@ pub(crate) async fn complete_recovery(
     })
 }
 
+/// The signed-in user's display preferences: theirs, the household's, and the ones in effect.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/preferences")]
+pub(crate) async fn get_preferences() -> ServerFnResult<PreferencesOutcome> {
+    Ok(
+        server_side::with_preferences(async |context| ::server::preferences::view(&context).await)
+            .await,
+    )
+}
+
+/// Changes the signed-in user's own preferences.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/preferences/mine")]
+pub(crate) async fn set_my_preferences(
+    patch: domain::preferences::PreferencesPatch,
+) -> ServerFnResult<PreferencesOutcome> {
+    Ok(server_side::with_preferences(async |context| {
+        ::server::preferences::set_mine(&context, patch).await
+    })
+    .await)
+}
+
+/// Changes the household defaults (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PreferencesOutcome`] values.
+#[post("/api/v1/preferences/household")]
+pub(crate) async fn set_household_preferences(
+    patch: domain::preferences::PreferencesPatch,
+) -> ServerFnResult<PreferencesOutcome> {
+    Ok(server_side::with_preferences(async |context| {
+        ::server::preferences::set_household(&context, patch).await
+    })
+    .await)
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -559,6 +603,30 @@ mod server_side {
         let context = server::user_admin::AdminContext {
             database,
             admin: &admin,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the signed-in user's preferences context, or answers that it's
+    /// unavailable (no database, or not signed in).
+    pub(super) async fn with_preferences(
+        action: impl AsyncFnOnce(
+            server::preferences::PreferencesContext<'_>,
+        ) -> domain::api::PreferencesOutcome,
+    ) -> domain::api::PreferencesOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::PreferencesOutcome::Unavailable;
+        };
+        let context = server::preferences::PreferencesContext {
+            database,
+            database_id,
+            user: &user,
             health: server::health::current(),
             clock: &SystemClock,
         };

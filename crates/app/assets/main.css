@@ -888,6 +888,107 @@ select,
     user-select: all;
 }
 
+/* ---------- Settings (p2m2-settings-options.svg, option B; decision #048) ---------- */
+
+.settings {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 760px;
+}
+
+.segmented {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--surface-raised);
+}
+
+.segment {
+    min-height: 40px;
+    min-width: 110px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 19px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segment.on {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.setting-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.setting-label {
+    flex: 0 0 130px;
+    font-weight: 600;
+}
+
+.setting-value {
+    color: var(--text-muted);
+}
+
+.choice-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.choice {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.choice.on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 700;
+}
+
+/* The household's value while following it: shown, but not as my own choice. */
+.choice.following {
+    border-color: var(--accent);
+    color: var(--text);
+    font-weight: 700;
+}
+
+.switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.switch input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+}
+
 /* ---------- Admin mode: the banner (decision #046: no sidebar edge) ---------- */
 
 .admin-banner {
@@ -1086,5 +1187,13 @@ select,
 
     .users-back {
         display: inline-flex;
+    }
+
+    .setting-label {
+        flex-basis: 100%;
+    }
+
+    .switch {
+        margin-left: 0;
     }
 }

@@ -14,6 +14,7 @@ pub mod i18n;
 pub mod id;
 pub mod identity;
 pub mod log_area;
+pub mod preferences;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;

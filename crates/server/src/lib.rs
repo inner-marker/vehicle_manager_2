@@ -13,6 +13,7 @@ pub mod ids;
 pub mod jobs;
 pub mod login_limiter;
 pub mod passwords;
+pub mod preferences;
 pub mod recovery;
 pub mod sessions;
 pub mod setup;

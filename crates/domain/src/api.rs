@@ -334,6 +334,32 @@ pub enum RecoveryOutcome {
     Unavailable,
 }
 
+/// Someone's display preferences, as the Settings screen shows them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PreferencesView {
+    /// What they chose themselves (unchosen settings follow the household).
+    pub mine: crate::preferences::PreferenceChoices,
+    /// What the household chose (unchosen settings follow the built-in defaults).
+    pub household: crate::preferences::PreferenceChoices,
+    /// What's in effect for them.
+    pub effective: crate::preferences::Preferences,
+}
+
+/// The answer to a Settings request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum PreferencesOutcome {
+    /// The preferences (after any change).
+    Preferences {
+        /// Mine, the household's, and the effective ones.
+        view: PreferencesView,
+    },
+    /// Household defaults need the household's Admin in Admin mode.
+    NotAllowed,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// The answer to a password change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]
