@@ -253,3 +253,96 @@ async fn a_corrupted_file_fails_the_integrity_check() {
     );
     database.close().await;
 }
+
+#[cfg(test)]
+mod snapshots {
+    use storage::jobs::{JobResult, JobRun};
+    use storage::snapshot::{rotate_snapshots, snapshot_file_name, verify_snapshot};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn a_snapshot_is_a_complete_healthy_copy() {
+        let temp = tempfile::tempdir().unwrap();
+        let (database, report) = Database::open(temp.path(), NOW, new_ids(1)).await.unwrap();
+        let snapshots = temp.path().join("snapshots");
+        std::fs::create_dir(&snapshots).unwrap();
+
+        let path = database.snapshot_into(&snapshots, NOW).await.unwrap();
+
+        assert_eq!(path, snapshots.join("snapshot-20231114T221320Z.sqlite"));
+        assert_eq!(verify_snapshot(&path).await.unwrap(), Vec::<String>::new());
+        // It's the same database: same ID.
+        let (copy, copy_report) = Database::open(&snapshots_as_data_dir(&path), NOW, new_ids(50))
+            .await
+            .unwrap();
+        assert_eq!(copy_report.database_id, report.database_id);
+        copy.close().await;
+        database.close().await;
+    }
+
+    /// Puts a snapshot where `Database::open` expects a live database, in a fresh folder.
+    fn snapshots_as_data_dir(snapshot: &std::path::Path) -> std::path::PathBuf {
+        let dir = snapshot.with_extension("restored");
+        std::fs::create_dir(&dir).unwrap();
+        std::fs::copy(snapshot, dir.join(database_file_name())).unwrap();
+        dir
+    }
+
+    #[tokio::test]
+    async fn a_snapshot_into_a_missing_folder_fails_and_leaves_nothing() {
+        let temp = tempfile::tempdir().unwrap();
+        let (database, _) = Database::open(temp.path(), NOW, new_ids(1)).await.unwrap();
+        let missing = temp.path().join("no-such-folder");
+
+        assert!(database.snapshot_into(&missing, NOW).await.is_err());
+        assert!(!missing.exists());
+        database.close().await;
+    }
+
+    #[test]
+    fn rotation_keeps_the_newest_and_ignores_other_files() {
+        let temp = tempfile::tempdir().unwrap();
+        for day in 0..10 {
+            let name =
+                snapshot_file_name(UnixMillis::from_millis(NOW.as_millis() + day * 86_400_000));
+            std::fs::write(temp.path().join(name), "").unwrap();
+        }
+        std::fs::write(temp.path().join("notes.txt"), "keep me").unwrap();
+
+        let removed = rotate_snapshots(temp.path(), 7).unwrap();
+
+        assert_eq!(removed.len(), 3);
+        let left: Vec<String> = std::fs::read_dir(temp.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(left.len(), 8, "7 snapshots plus notes.txt: {left:?}");
+        assert!(left.contains(&"notes.txt".to_owned()));
+        assert!(
+            !left.contains(&snapshot_file_name(NOW)),
+            "the oldest went first"
+        );
+    }
+
+    #[tokio::test]
+    async fn job_runs_are_recorded_and_their_next_time_read_back() {
+        let temp = tempfile::tempdir().unwrap();
+        let (database, _) = Database::open(temp.path(), NOW, new_ids(1)).await.unwrap();
+        assert_eq!(database.job_next_run("snapshot").await.unwrap(), None);
+
+        let next = UnixMillis::from_millis(NOW.as_millis() + 86_400_000);
+        let run = JobRun {
+            started: NOW,
+            finished: NOW,
+            result: JobResult::Ok,
+            message: "ok".into(),
+            next_run: next,
+        };
+        database.record_job_run("snapshot", &run).await.unwrap();
+        database.record_job_run("snapshot", &run).await.unwrap();
+
+        assert_eq!(database.job_next_run("snapshot").await.unwrap(), Some(next));
+        database.close().await;
+    }
+}

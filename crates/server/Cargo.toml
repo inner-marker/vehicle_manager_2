@@ -16,8 +16,9 @@ sqlx.workspace = true
 serde_json.workspace = true
 subtle.workspace = true
 tracing.workspace = true
-# One-time async startup (`OnceCell`); the runtime itself comes from Dioxus/axum.
-tokio = { version = "1", default-features = false, features = ["sync"] }
+# One-time async startup (`OnceCell`) and the job scheduler's task and timers; the runtime
+# itself comes from Dioxus/axum.
+tokio = { version = "1", default-features = false, features = ["rt", "sync", "time"] }
 
 [dev-dependencies]
 domain = { workspace = true, features = ["test-support"] }

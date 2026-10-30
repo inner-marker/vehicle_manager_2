@@ -67,15 +67,16 @@ fn launch(log_handles: Option<LogHandles>) {
     use dioxus::prelude::{DioxusRouterExt, ServeConfig};
 
     let auth = server::auth::AuthConfig::from_env();
-    let database_dir = server_database_dir();
+    let paths = server_paths();
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {
         let log_handles = log_handles.clone();
         let auth = auth.clone();
-        let database_dir = database_dir.clone();
+        let paths = paths.clone();
         async move {
-            // Opens and checks the database once; later calls (hot reloads) reuse it.
-            server::startup::start(&database_dir, &logging::SystemClock).await;
+            // Opens and checks the database and starts the jobs once; later calls (hot
+            // reloads) reuse them.
+            server::startup::start(&paths, std::sync::Arc::new(logging::SystemClock)).await;
             let mut config = ServeConfig::new();
             // The log viewer reads the handles from context.
             if let Some(log_handles) = log_handles {
@@ -100,6 +101,17 @@ fn server_database_dir() -> std::path::PathBuf {
         },
         std::path::PathBuf::from,
     )
+}
+
+/// The server's folders: the data directory, and the snapshot folder from
+/// `VEHICLEMANAGER_SNAPSHOT_DIR` if set (otherwise `<data dir>/snapshots`).
+#[cfg(feature = "server")]
+fn server_paths() -> server::startup::ServerPaths {
+    let snapshot_override = std::env::var_os(domain::identity::env_var_name(
+        server::startup::SNAPSHOT_DIR_ENV_NAME,
+    ))
+    .map(std::path::PathBuf::from);
+    server::startup::ServerPaths::new(server_database_dir(), snapshot_override)
 }
 
 /// The local development data folder, used when `VEHICLEMANAGER_DATA_DIR` isn't set.

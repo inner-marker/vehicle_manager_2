@@ -11,6 +11,8 @@ pub mod convert;
 pub mod database;
 mod error;
 mod integrity;
+pub mod jobs;
+pub mod snapshot;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
 pub use error::StorageError;

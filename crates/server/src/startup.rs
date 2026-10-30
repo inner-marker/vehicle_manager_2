@@ -5,7 +5,8 @@
 //! or fails its check, the server still serves pages, reports itself unhealthy, and
 //! refuses changes (`crate::health`).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use domain::log_area;
 use domain::time::Clock;
@@ -14,14 +15,66 @@ use tokio::sync::OnceCell;
 
 use crate::health::{self, Health, HealthProblem};
 use crate::ids::{NewIdError, new_id};
+use crate::jobs::{self, JobContext, SnapshotDir};
 
 static DATABASE: OnceCell<Option<Database>> = OnceCell::const_new();
 
-/// Opens and checks the database in `data_dir` the first time it's called, and returns
-/// it (`None` if it couldn't be opened). `clock` is the real clock, from the app.
-pub async fn start(data_dir: &Path, clock: &(dyn Clock + Sync)) -> Option<&'static Database> {
+/// Where the server keeps its files.
+#[derive(Debug, Clone)]
+pub struct ServerPaths {
+    /// The data directory: the database, backups, and (by default) snapshots.
+    pub data_dir: PathBuf,
+    /// Where nightly snapshots go.
+    pub snapshot_dir: SnapshotDir,
+}
+
+/// The environment variable naming a snapshot folder other than `<data dir>/snapshots`
+/// (e.g. a USB disk mounted into the container; #035), without the app prefix.
+pub const SNAPSHOT_DIR_ENV_NAME: &str = "SNAPSHOT_DIR";
+
+/// The default snapshot folder inside the data directory.
+pub const DEFAULT_SNAPSHOT_DIR_NAME: &str = "snapshots";
+
+impl ServerPaths {
+    /// The paths for `data_dir`, with the snapshot folder from `snapshot_dir_override`
+    /// (the `VEHICLEMANAGER_SNAPSHOT_DIR` value, if set) or `<data dir>/snapshots`.
+    #[must_use]
+    pub fn new(data_dir: PathBuf, snapshot_dir_override: Option<PathBuf>) -> Self {
+        let snapshot_dir = snapshot_dir_override.map_or_else(
+            || SnapshotDir {
+                path: data_dir.join(DEFAULT_SNAPSHOT_DIR_NAME),
+                create_if_missing: true,
+            },
+            |path| SnapshotDir {
+                path,
+                create_if_missing: false,
+            },
+        );
+        Self {
+            data_dir,
+            snapshot_dir,
+        }
+    }
+}
+
+/// Opens and checks the database the first time it's called, starts the scheduled jobs,
+/// and returns the database (`None` if it couldn't be opened). `clock` is the real clock,
+/// from the app. Must run inside the tokio runtime (it spawns the scheduler).
+pub async fn start(
+    paths: &ServerPaths,
+    clock: Arc<dyn Clock + Send + Sync>,
+) -> Option<&'static Database> {
     DATABASE
-        .get_or_init(|| open_and_check(data_dir, clock))
+        .get_or_init(|| async {
+            let database = open_and_check(&paths.data_dir, clock.as_ref()).await?;
+            jobs::spawn(JobContext {
+                database: database.clone(),
+                clock,
+                snapshot_dir: paths.snapshot_dir.clone(),
+            });
+            tracing::info!(target: log_area::DATABASE, snapshot_dir = %paths.snapshot_dir.path.display(), "scheduled jobs started");
+            Some(database)
+        })
         .await
         .as_ref()
 }
@@ -119,6 +172,20 @@ mod tests {
         let database = open(temp.path(), &ManualClock::new(NOW)).await.unwrap();
         assert_eq!(check(&database).await, Health::Healthy);
         database.close().await;
+    }
+
+    #[test]
+    fn snapshots_default_to_the_data_dir_and_an_override_is_never_created() {
+        let default = ServerPaths::new(PathBuf::from("/data"), None);
+        assert_eq!(default.snapshot_dir.path, PathBuf::from("/data/snapshots"));
+        assert!(default.snapshot_dir.create_if_missing);
+
+        let usb = ServerPaths::new(
+            PathBuf::from("/data"),
+            Some(PathBuf::from("/usb/snapshots")),
+        );
+        assert_eq!(usb.snapshot_dir.path, PathBuf::from("/usb/snapshots"));
+        assert!(!usb.snapshot_dir.create_if_missing);
     }
 
     #[tokio::test]
