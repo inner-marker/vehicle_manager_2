@@ -69,7 +69,7 @@
 | 1d | ☑️ | `feat(server): startup integrity check and health` | `PRAGMA integrity_check` + `foreign_key_check` at startup; on failure the server keeps serving pages but refuses every command and reports itself unhealthy. The handshake gains a `healthy` field (additive, so API version stays 1); the Connection panel shows it | none |
 | 1e | ☑️ | `feat(domain,server): command pipeline` | `CommandEnvelope` (command ID, device ID, HLC, format version, operation; actor and active mode reserved for milestone 2); field-level updates (#043): only changed fields, each applied if newer than its `field_clocks` entry; creates; deletes as tombstones; idempotency via `applied_commands`; a sequence number per accepted change; the future-HLC guard; one transaction per command. Proven with a test-only record type; the first real records arrive in milestone 2 | none |
 | 1f | ☑️ | `feat(server): job scheduler and nightly snapshot` | The scheduler (#044) on tokio timers, with `jobs` rows (last run, result, next run). Jobs: **nightly snapshot** (`VACUUM INTO` `<snapshot dir>/<UTC time>.sqlite`, integrity-checked, keep 7; `VEHICLEMANAGER_SNAPSHOT_DIR`, default `data/snapshots`; skipped and reported if unavailable, #035) and an **hourly `quick_check`**. Snapshot time: 03:00 in the NAS's time zone (`TZ` in `.env`) | none (`tokio` `time` feature; already in `Cargo.lock`) |
-| 1g | ⬜ | `build: database and snapshots in the NAS deployment` | `.env.example` gains `TZ` and the optional snapshot folder; `docs/deploying-nas.md`: what's in `data/`, how to read snapshot results, and how to restore a snapshot | none |
+| 1g | ☑️ | `build: database and snapshots in the NAS deployment` | `.env.example` gains `TZ` and the optional snapshot folder; `docs/deploying-nas.md`: what's in `data/`, how to read snapshot results, and how to restore a snapshot | none |
 | 1h | ⬜ | `docs: database foundation test plan` | `docs/test-plans/database-foundation.md` | none |
 
 **Written so far**
@@ -96,6 +96,9 @@
   - **Change from the plan: the snapshot runs at 07:00 UTC** (03:00 US Eastern daylight time, 02:00 standard), not at 03:00 in the NAS's `TZ`. Local-time scheduling needs a time-zone library, which milestone 6 needs anyway (events store their IANA zone) and which should be chosen once, there.
   - Smoke-tested with the server binary: both jobs are scheduled on a new database.
   - **Note for 1h:** the container's `/tmp` is a 16 MB tmpfs; if a large `VACUUM INTO` ever needs more temporary space, the NAS test will show it.
+
+- **1g:** `compose.yaml` passes `VEHICLEMANAGER_SNAPSHOT_DIR` (empty by default) and has a commented-out USB mount; `.env.example` lists it, empty; the server treats an empty value as unset (Compose passes unfilled settings as empty). `docs/deploying-nas.md`: what's in `data/`; a "Database, backups, and snapshots" section (the checks, schedule, where things are, what an unhealthy server does); restoring a snapshot step by step; a rollback warning (an older build refuses a database a newer one upgraded); two troubleshooting entries. `deploy_config` test for the new variable.
+  - **Change from the plan:** no `TZ` setting, since the snapshot runs at a fixed UTC time (see 1f). An existing NAS `.env` needs no change: the new setting is optional.
 
 **Choices in this plan (say if you'd rather otherwise):**
 - **Runtime-checked queries, not sqlx's compile-time macros.** The macros need a database or a committed `.sqlx` cache at build time (and `sqlx-cli`); every query is instead covered by tests against a fresh temporary database (AGENTS.md §7).

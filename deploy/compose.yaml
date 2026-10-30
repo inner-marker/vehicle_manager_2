@@ -29,11 +29,17 @@ services:
     environment:
       # Empty or missing means the server refuses every API request (decisions.md #024).
       VEHICLEMANAGER_TEST_CREDENTIAL: ${VEHICLEMANAGER_TEST_CREDENTIAL:-}
+      # Optional: a snapshot folder other than /data/snapshots (decisions.md #035). Empty
+      # means the default. A folder set here is never created, so it must be mounted below.
+      VEHICLEMANAGER_SNAPSHOT_DIR: ${VEHICLEMANAGER_SNAPSHOT_DIR:-}
 
-    # The data folder: logs now, the database from Phase 2. Must be a local NAS
+    # The data folder: database, backups, snapshots, and logs. Must be a local NAS
     # volume, never a network share (decisions.md #002).
     volumes:
       - ./data:/data
+      # For snapshots on a USB disk (later; not set up yet), mount it here and set
+      # VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots in .env, e.g.:
+      # - /volumeUSB1/usbshare/vehicle_manager_snapshots:/snapshots
 
     # Hardening: nothing in the container is writable except /data and a small /tmp;
     # no Linux capabilities; no privilege escalation.

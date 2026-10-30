@@ -44,6 +44,22 @@ fn compose_passes_the_credential_variable_the_server_reads() {
 }
 
 #[test]
+fn compose_passes_the_optional_snapshot_folder_and_leaves_it_empty_by_default() {
+    // server::startup::SNAPSHOT_DIR_ENV_NAME; its own test pins it to this name.
+    let snapshot_dir = env_var_name("SNAPSHOT_DIR");
+    assert!(
+        COMPOSE.contains(&format!("{snapshot_dir}: ${{{snapshot_dir}:-}}")),
+        "compose.yaml must pass {snapshot_dir}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE
+            .lines()
+            .any(|line| line == format!("{snapshot_dir}=")),
+        ".env.example must list {snapshot_dir}, empty"
+    );
+}
+
+#[test]
 fn compose_publishes_the_port_on_loopback_only() {
     // Every published port must bind to 127.0.0.1: the LAN must never reach the app (plan §6).
     let port_lines: Vec<&str> = COMPOSE

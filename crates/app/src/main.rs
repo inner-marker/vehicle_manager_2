@@ -107,9 +107,11 @@ fn server_database_dir() -> std::path::PathBuf {
 /// `VEHICLEMANAGER_SNAPSHOT_DIR` if set (otherwise `<data dir>/snapshots`).
 #[cfg(feature = "server")]
 fn server_paths() -> server::startup::ServerPaths {
+    // Compose passes an unfilled optional setting as an empty value: treat that as unset.
     let snapshot_override = std::env::var_os(domain::identity::env_var_name(
         server::startup::SNAPSHOT_DIR_ENV_NAME,
     ))
+    .filter(|value| !value.is_empty())
     .map(std::path::PathBuf::from);
     server::startup::ServerPaths::new(server_database_dir(), snapshot_override)
 }
