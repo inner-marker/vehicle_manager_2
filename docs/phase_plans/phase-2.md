@@ -132,7 +132,7 @@
 | 2g | ☑️ | `feat(app): user management` | **SVG options first.** Admin mode only: list users, add one (with a temporary password they change at first sign-in), grant and remove roles (on all vehicles for now; per-vehicle grants get their picker in milestone 4, when vehicles exist), disable a user, reset a password | none |
 | 2h | ☑️ | `feat: Admin password recovery` | **SVG first.** "Forgot your password?" on sign-in, one generic answer; for an Admin account, a one-time recovery code in the server log (15 minutes, once); code and new password sign them in and end their other sessions (#047) | none |
 | 2i | ☑️ | `feat(app): display preferences` | **SVG options first.** Settings records: server defaults (Admin) and per-user overrides (#029), last-write-wins per setting; a Settings screen for units, currency, language (English only so far), and date format. **Formatting** with these preferences arrives where values first appear: units in milestone 4, dates in milestone 6 | none |
-| 2j | ⬜ | `docs: users and login test plan` | `docs/test-plans/users-and-login.md` | none |
+| 2j | ☑️ | `docs: users and login test plan` | `docs/test-plans/users-and-login.md` | none |
 
 **Written so far**
 - **2a:** `domain::user` (`User`, `Username` with its rules, `check_new_password`, `check_display_name`, `UserPatch`; the password hash is deliberately not part of `User`) and `domain::access` (`Role`, `GrantTarget`, `RoleGrant` and its patch, `ActiveMode`, `AssetAction`, `AdminAction`, `role_on`, `available_modes`, `permits_on_asset`, `permits_admin`, `leaves_an_admin`). `domain::id::Asset` is a marker until the asset record arrives in milestone 4. 7 translated messages. Unit tests plus three property tests (more grants never remove a permission; a higher mode never removes one; Driver mode never does Maintainer work).
@@ -185,6 +185,8 @@
   - **Bug found in a test and fixed:** serde's kebab-case made L/100 km `liters-per100-km`; it is now named `liters-per-100-km` explicitly, and a test stores and reads back every choice of every setting.
   - **Checked in a real browser:** defaults show Miles and 30 Oct 2026 as the household's, followed; choosing Kilometers makes it the user's own and turns the switch off; in Admin mode, setting the household to Liters shows on the You tab as the household's value, still followed; the Household tab outside Admin mode explains it needs Admin mode; the phone layout stacks each switch under its buttons.
   - **Formatting with these preferences** still arrives where values first appear (units in milestone 4, dates in milestone 6).
+
+- **2j:** `docs/test-plans/users-and-login.md`: 37 steps on the NAS and the Mac: the schema upgrade and its backup, setup code, sign-in, modes and the Admin timeout, the attempt limit, a second user (temporary password, roles, disable, reset, change password), the desktop app, Admin recovery, Settings, and a secrets check of the log. It also removes the old credential line from `.env`.
 
 **Choices in this plan (all approved 2026-10-30):**
 - **Passwords:** at least 12 characters, no other composition rules (current NIST guidance); usernames are lowercase letters, digits, `.`, `-`, `_`, 3–32 characters, compared case-insensitively. argon2id with the library's recommended parameters, re-hashed if they change.
