@@ -117,6 +117,16 @@ server-address-invalid-host = The server name can only have letters, numbers, do
 server-address-invalid-port = The port must be a number from 1 to 65535.
 server-address-extra-parts = Enter only the server's address, without a path, query, or login.
 
+## Usernames, passwords, and names
+
+username-wrong-length = A username needs 3 to 32 characters.
+username-invalid-character = A username can only have letters, numbers, dots, hyphens, and underscores.
+username-must-start-with-letter-or-digit = A username must start with a letter or a number.
+password-too-short = A password needs at least 12 characters. A short sentence works well.
+password-too-long = A password can have at most 256 characters.
+display-name-empty = Enter a name.
+display-name-too-long = A name can have at most 64 characters.
+
 ## Why the server refused a request
 
 api-error-missing-credential = No credential was sent.

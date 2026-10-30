@@ -190,6 +190,21 @@ define_messages! {
     /// Server address rule: a path, query, or login after the server name.
     SERVER_ADDRESS_EXTRA_PARTS => "server-address-extra-parts",
 
+    /// Username rule: 3–32 characters.
+    USERNAME_WRONG_LENGTH => "username-wrong-length",
+    /// Username rule: letters, digits, `.`, `-`, `_` only.
+    USERNAME_INVALID_CHARACTER => "username-invalid-character",
+    /// Username rule: must start with a letter or digit.
+    USERNAME_MUST_START_WITH_LETTER_OR_DIGIT => "username-must-start-with-letter-or-digit",
+    /// Password rule: at least 12 characters.
+    PASSWORD_TOO_SHORT => "password-too-short",
+    /// Password rule: at most 256 characters.
+    PASSWORD_TOO_LONG => "password-too-long",
+    /// Display name rule: can't be empty.
+    DISPLAY_NAME_EMPTY => "display-name-empty",
+    /// Display name rule: at most 64 characters.
+    DISPLAY_NAME_TOO_LONG => "display-name-too-long",
+
     /// Refusal reason: no credential was sent.
     API_ERROR_MISSING_CREDENTIAL => "api-error-missing-credential",
     /// Refusal reason: the credential was wrong.

@@ -5,6 +5,7 @@
 //! compiles to WebAssembly for the web UI. It never reads the real clock,
 //! random numbers, or location directly; callers pass those in.
 
+pub mod access;
 pub mod api;
 pub mod command;
 pub mod hlc;
@@ -16,6 +17,7 @@ pub mod log_area;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;
+pub mod user;
 
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support;
