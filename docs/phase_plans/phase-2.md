@@ -124,7 +124,7 @@
 |---|---|---|---|---|
 | 2.0 | ☑️ | `docs: Phase 2 milestone 2 plan` | This plan; decision #045; milestone 1 marked merged | none |
 | 2a | ☑️ | `feat(domain): users, roles, and permissions` | `User` (username, display name, disabled), `Role`, `RoleGrant` with `GrantTarget::{AllAssets, Asset(id)}` (#045), `ActiveMode`; a pure `permits(grants, mode, action, asset)` check, test-first, with property tests (more grants never remove a permission; Driver mode never gets Maintainer actions). Username and password rules | none |
-| 2b | ⬜ | `feat(storage): users, grants, sessions, and settings tables` | Migration `0002_users.sql`; `RecordWriter`s for users, grants, and settings; session queries | none |
+| 2b | ☑️ | `feat(storage): users, grants, sessions, and settings tables` | Migration `0002_users.sql`; `RecordWriter`s for users, grants, and settings; session queries | none |
 | 2c | ⬜ | `feat(server): passwords, sessions, and the signed-in user` | argon2id password hashes; sessions (random 32-byte token, stored only as its SHA-256); the auth layer resolves the session and attaches the user and active mode to the request (`FullstackContext::extract`); web: `HttpOnly; Secure; SameSite=Strict` cookie; desktop: the same token as `Authorization: Bearer`; login, logout, and "who am I" server functions; login rate limiting; an explicit, tested list of the few `/api/` paths that work without a session (handshake, login, setup) | `argon2`; `sha2` (already in `Cargo.lock`) (approved) |
 | 2d | ⬜ | `feat(server): first-Admin setup code` | With no users, a one-time code is generated at startup, kept in memory only, and written to the log; a setup server function takes the code, username, and password, and creates the Admin (Admin on all vehicles) through the command pipeline; the code stops working once any user exists | none |
 | 2e | ⬜ | `feat!: retire the test credential` | `VEHICLEMANAGER_TEST_CREDENTIAL` removed from the server, `compose.yaml`, `.env.example`, the docs, and the Connection panel (which now checks the session) | none |
@@ -138,6 +138,10 @@
   - **Added from the plan's §6:** household-wide actions (users, adding assets, server settings) need the **Admin role on all assets** and Admin mode, so the Admin of one vehicle isn't the household's Admin; and `leaves_an_admin` backs the rule that there's always at least one enabled Admin.
   - **Grants are created and deleted, never edited:** changing someone's role is a delete plus a create, one clear entry each in the history.
   - Viewing isn't limited by mode: every mode sees what the user's grants cover.
+
+- **2b:** migration `0002_users.sql`: `users` (username unique among users not deleted), `user_passwords`, `role_grants` (a `CHECK` ties `target_asset` to the target kind), `sessions` (by token hash only). `storage::users`: `UserWriter` and `RoleGrantWriter` for the command pipeline; user, grant, password-hash, and session queries. Tests against a real database, plus one through the command pipeline (create a user and an Admin grant, then rename).
+  - **Changes from the plan:** the **settings table moves to 2h**, where the settings record is designed. **Password hashes get their own table** (`user_passwords`), apart from the user record, so a hash can never be part of anything synced or sent to a device.
+  - `role_grants.target_asset` gets its foreign key to `assets` when that table exists (milestone 4, by rebuilding the table).
 
 **Choices in this plan (all approved 2026-10-30):**
 - **Passwords:** at least 12 characters, no other composition rules (current NIST guidance); usernames are lowercase letters, digits, `.`, `-`, `_`, 3–32 characters, compared case-insensitively. argon2id with the library's recommended parameters, re-hashed if they change.
