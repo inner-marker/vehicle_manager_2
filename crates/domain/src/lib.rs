@@ -6,6 +6,7 @@
 //! random numbers, or location directly; callers pass those in.
 
 pub mod api;
+pub mod command;
 pub mod hlc;
 pub mod hlc_utils;
 pub mod i18n;

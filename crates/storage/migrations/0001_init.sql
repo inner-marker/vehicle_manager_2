@@ -16,12 +16,13 @@ CREATE TABLE database_meta (
     last_hlc         INTEGER NOT NULL DEFAULT 0 CHECK (last_hlc >= 0)
 ) STRICT;
 
--- Commands already applied, so a retried command is never applied twice.
+-- Commands already applied, so a retried command is never applied twice. `sequence` is
+-- empty for a command that changed nothing (every field already newer, or the record deleted).
 CREATE TABLE applied_commands (
     command_id    BLOB    PRIMARY KEY CHECK (length(command_id) = 16),
     device_id     BLOB    NOT NULL CHECK (length(device_id) = 16),
     hlc           INTEGER NOT NULL CHECK (hlc >= 0),
-    sequence      INTEGER NOT NULL,
+    sequence      INTEGER,
     applied_at_ms INTEGER NOT NULL
 ) STRICT, WITHOUT ROWID;
 
