@@ -1,4 +1,5 @@
-//! The layout around every screen: sidebar, top bar, bottom tabs, and the + Log buttons.
+//! The layout around every screen: sidebar, top bar (with the mode and account chips),
+//! the Admin banner, bottom tabs, and the + Log buttons.
 //!
 //! All parts are always rendered; `main.css` media queries decide which show:
 //! - **Wide** (≥ 1024 px): full sidebar, + Log in the top bar.
@@ -10,6 +11,8 @@ use dioxus::prelude::*;
 use domain::i18n::messages;
 use domain::log_area;
 
+use super::account::{AccountChip, AdminBanner, ModeChip, in_admin_mode};
+use super::auth::{refresh, use_auth};
 use super::icons::{Icon, IconView};
 use super::nav::{NavItem, NavSection, nav_items};
 use super::routes::Route;
@@ -27,6 +30,13 @@ use super::tr;
 #[component]
 pub(crate) fn Shell() -> Element {
     let route = use_route::<Route>();
+    let auth = use_auth();
+    // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
+    // minutes (or a session it ended) stops showing.
+    use_effect(use_reactive!(|route| {
+        let _ = route;
+        spawn(refresh(auth));
+    }));
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
 
@@ -45,7 +55,13 @@ pub(crate) fn Shell() -> Element {
 
     rsx! {
         div { class: "shell",
-            aside { class: if menu_open() { "sidebar open" } else { "sidebar" },
+            aside {
+                class: match (menu_open(), in_admin_mode(&auth())) {
+                    (true, true) => "sidebar open admin",
+                    (true, false) => "sidebar open",
+                    (false, true) => "sidebar admin",
+                    (false, false) => "sidebar",
+                },
                 button {
                     class: "menu-close",
                     "aria-label": tr(messages::MENU_CLOSE),
@@ -88,7 +104,10 @@ pub(crate) fn Shell() -> Element {
                         IconView { icon: Icon::Add }
                         span { {tr(messages::ACTION_LOG)} }
                     }
+                    ModeChip {}
+                    AccountChip {}
                 }
+                AdminBanner {}
                 main { class: "content", Outlet::<Route> {} }
             }
 

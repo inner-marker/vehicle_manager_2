@@ -7,9 +7,8 @@
 //! Checks run only when the button is pressed, never during server rendering (see
 //! `crate::api`).
 
-use dioxus::prelude::dioxus_fullstack::{HeaderMap, HeaderValue, set_request_headers};
 use dioxus::prelude::*;
-use domain::api::{API_VERSION, API_VERSION_HEADER, ApiError, Handshake};
+use domain::api::{ApiError, Handshake};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::time::Clock;
@@ -59,7 +58,7 @@ pub(crate) enum Problem {
 }
 
 impl Problem {
-    const fn message(self) -> MessageId {
+    pub(crate) const fn message(self) -> MessageId {
         match self {
             Self::Refused(error) => error.message(),
             Self::Unreachable => messages::CONNECTION_UNREACHABLE,
@@ -166,23 +165,10 @@ pub(crate) fn outcome_from_handshake(
     }
 }
 
-/// The headers every server-function call carries: the API version, and the session token
-/// when the desktop app has one (the web app's session travels in its cookie instead).
-fn request_headers(session_token: Option<&str>) -> HeaderMap {
-    let mut headers = HeaderMap::new();
-    headers.insert(API_VERSION_HEADER, HeaderValue::from(API_VERSION));
-    if let Some(Ok(value)) =
-        session_token.map(|token| HeaderValue::from_str(&format!("Bearer {token}")))
-    {
-        headers.insert("authorization", value);
-    }
-    headers
-}
-
 /// Runs the handshake, then a ping to check the session and time the round trip.
 async fn run_checks() -> CheckOutcome {
-    // The desktop app's session token arrives with sign-in (step 2f).
-    set_request_headers(request_headers(None));
+    // Headers (API version, desktop session token) are kept current by `crate::client`.
+    crate::client::apply_request_headers();
     tracing::debug!(target: log_area::AUTH, "running connection checks");
 
     let server = match api::handshake().await {
@@ -383,8 +369,8 @@ mod tests {
     fn handshake(healthy: bool) -> Handshake {
         Handshake {
             app_version: "0.1.0".to_owned(),
-            api_version: API_VERSION,
-            min_supported_api_version: API_VERSION,
+            api_version: domain::api::API_VERSION,
+            min_supported_api_version: domain::api::API_VERSION,
             server_time_ms: 0,
             healthy,
         }
@@ -458,25 +444,6 @@ mod tests {
         assert_eq!(
             problem_from_error(&ServerFnError::new("boom")),
             Problem::Unexpected
-        );
-    }
-
-    #[test]
-    fn requests_carry_the_api_version_and_a_desktop_session_token() {
-        let web = request_headers(None);
-        assert_eq!(
-            web.get(API_VERSION_HEADER).and_then(|v| v.to_str().ok()),
-            Some("1")
-        );
-        assert!(
-            web.get("authorization").is_none(),
-            "the web app uses its cookie"
-        );
-
-        let desktop = request_headers(Some("abc123"));
-        assert_eq!(
-            desktop.get("authorization").and_then(|v| v.to_str().ok()),
-            Some("Bearer abc123")
         );
     }
 

@@ -135,3 +135,66 @@ api-error-missing-api-version = The app didn't send its API version.
 api-error-malformed-api-version = The server couldn't read the app's API version.
 api-error-client-too-old = This app is too old for the server. Update the app.
 api-error-client-too-new = This app is newer than the server. Update the server first.
+
+## Signing in, first-Admin setup, modes, and the account menu
+
+loading = Loading…
+something-went-wrong = Something went wrong. Try again.
+action-cancel = Cancel
+sign-in-title = Sign in
+sign-in-subtitle = to see your household's vehicles
+field-username = Username
+field-password = Password
+sign-in-button = Sign in
+sign-in-busy = Signing in…
+sign-in-forgot = Forgot it? Ask your household's Admin.
+sign-in-wrong = Wrong username or password.
+# $minutes (number): how long to wait.
+too-many-attempts =
+    { $minutes ->
+        [one] Too many attempts. Try again in { $minutes } minute.
+       *[other] Too many attempts. Try again in { $minutes } minutes.
+    }
+sign-in-unavailable = The server can't sign you in right now. Try again in a moment.
+# $step (number): 1 or 2.
+setup-step = STEP { $step } OF 2
+setup-title = Set up this server
+setup-subtitle = No one has an account yet.
+setup-code-help = Enter the setup code from the server's log (see the guide).
+field-setup-code = Setup code
+setup-next = Next
+setup-checking = Checking…
+setup-wrong-code = That code isn't right.
+setup-already = This server already has an Admin. Sign in instead.
+setup-account-title = Your account
+setup-code-accepted = ✓ Code accepted. You'll be the Admin.
+field-display-name = Your name
+field-new-password = Password (12+ characters)
+field-password-again = Password again
+passwords-differ = The two passwords aren't the same.
+setup-create = Create Admin and sign in
+setup-creating = Creating…
+action-back = ← Back
+mode-driver = Driver
+mode-maintainer = Maintainer
+mode-admin = Admin
+mode-read-only = Read-only
+mode-needs-password = password
+mode-menu-label = Change mode
+admin-dialog-title = Enter Admin mode
+admin-dialog-text = Type your password to confirm. Admin mode ends after 15 minutes without activity.
+admin-dialog-confirm = Enter Admin mode
+wrong-password = That password isn't right.
+admin-banner-label = ADMIN MODE
+admin-banner-text = Changes affect the whole household · ends after 15 idle minutes
+admin-banner-leave = Leave
+account-menu-label = Account
+account-change-password = Change password
+account-sign-out = Sign out
+password-dialog-title = Change password
+field-current-password = Current password
+password-save = Change password
+password-changed = Password changed. You were signed out on your other devices.
+password-must-change-title = Choose a new password
+password-must-change-text = Your Admin gave you a temporary password. Choose your own to continue.
+password-current-wrong = Your current password isn't right.

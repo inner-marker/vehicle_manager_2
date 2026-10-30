@@ -221,6 +221,23 @@ pub enum SetupOutcome {
     Unavailable,
 }
 
+/// The answer to setup step 1, checking the setup code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum CheckSetupCodeOutcome {
+    /// The code is right: go on to step 2.
+    Valid,
+    /// The code is wrong.
+    WrongCode,
+    /// Too many wrong codes; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// An Admin already exists: sign in instead.
+    AlreadySetUp,
+}
+
 /// The answer to a password change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]

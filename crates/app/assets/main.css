@@ -22,6 +22,9 @@
     --accent-text: #0b1420;
     --error: #ff6b6b;
     --warn: #f5b942;
+    --admin: #f0883e;
+    --admin-bg: #3a2615;
+    --admin-text: #1a0e04;
     color-scheme: dark;
 }
 
@@ -37,6 +40,9 @@
     --accent-text: #ffffff;
     --error: #c62828;
     --warn: #a86400;
+    --admin: #c2570c;
+    --admin-bg: #fdebdc;
+    --admin-text: #ffffff;
     color-scheme: light;
 }
 
@@ -434,6 +440,325 @@ select,
     color: var(--warn);
 }
 
+/* ---------- Sign-in, setup, and password screens (p2m2-sign-in-chosen.svg) ---------- */
+
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px 16px;
+    background: var(--bg);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 32px 28px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.auth-loading {
+    color: var(--text-muted);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.auth-step {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.auth-title {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.auth-subtitle,
+.auth-note {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.auth-help {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.field-input {
+    min-height: 48px; /* garage-friendly touch target (decision #040) */
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+}
+
+.field-input.mono {
+    font-family: ui-monospace, Menlo, monospace;
+    letter-spacing: 0.05em;
+}
+
+.form-error {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    color: var(--error);
+    font-weight: 600;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.primary-button,
+.secondary-button {
+    min-height: 48px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-button {
+    border: none;
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.auth-form > .primary-button {
+    width: 100%;
+}
+
+.primary-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.secondary-button {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.link-button {
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ---------- Mode and account chips, menus, dialog (p2m2-mode-options.svg, option A) ---------- */
+
+.chip-anchor {
+    position: relative;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.chip-static {
+    cursor: default;
+    color: var(--text-muted);
+}
+
+.chip-admin {
+    border-color: var(--admin);
+    background: var(--admin);
+    color: var(--admin-text);
+}
+
+.chip-caret {
+    font-size: 0.75rem;
+}
+
+.chip-name-short {
+    display: none;
+}
+
+.menu-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+}
+
+.chip-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 31;
+    min-width: 220px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 35%);
+}
+
+.menu-heading {
+    margin: 6px 10px 8px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background: var(--surface);
+}
+
+.menu-item.checked {
+    font-weight: 700;
+}
+
+.menu-check {
+    width: 1em;
+}
+
+.menu-hint {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.dialog-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgb(0 0 0 / 55%);
+}
+
+.dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-raised);
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.dialog-text {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.admin-button {
+    background: var(--admin);
+    color: var(--admin-text);
+}
+
+/* ---------- Admin mode: banner and sidebar edge ---------- */
+
+.admin-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    background: var(--admin-bg);
+    border-bottom: 2px solid var(--admin);
+}
+
+.admin-banner-label {
+    color: var(--admin);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.admin-banner-text {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.admin-banner-leave {
+    min-height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 16px;
+    background: var(--admin);
+    color: var(--admin-text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sidebar.admin {
+    box-shadow: inset 4px 0 0 var(--admin);
+}
+
 /* ---------- Medium: icon-only sidebar ---------- */
 
 @media (max-width: 1023px) {
@@ -559,5 +884,23 @@ select,
         background: var(--accent);
         color: var(--accent-text);
         box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+    }
+
+    .chip {
+        min-height: 44px;
+        padding: 0 12px;
+    }
+
+    .chip-name-full {
+        display: none;
+    }
+
+    .chip-name-short {
+        display: inline;
+    }
+
+    .admin-banner {
+        flex-wrap: wrap;
+        padding: 6px 12px;
     }
 }

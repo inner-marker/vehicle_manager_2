@@ -50,6 +50,7 @@ pub const PUBLIC_API_PATHS: &[&str] = &[
     "/api/v1/sign-in",
     "/api/v1/session",
     "/api/v1/setup",
+    "/api/v1/setup/code",
 ];
 
 /// The session cookie's name, from the app ID: `vehiclemanager_session`.

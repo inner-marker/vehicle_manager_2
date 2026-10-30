@@ -217,4 +217,113 @@ define_messages! {
     API_ERROR_CLIENT_TOO_OLD => "api-error-client-too-old",
     /// Refusal reason: the app is newer than the server.
     API_ERROR_CLIENT_TOO_NEW => "api-error-client-too-new",
+
+    /// Shown while the app checks who's signed in.
+    LOADING => "loading",
+    /// A request failed for an unexpected reason.
+    SOMETHING_WENT_WRONG => "something-went-wrong",
+    /// Button: cancel a dialog.
+    ACTION_CANCEL => "action-cancel",
+    /// Sign-in screen: heading.
+    SIGN_IN_TITLE => "sign-in-title",
+    /// Sign-in screen: line under the heading.
+    SIGN_IN_SUBTITLE => "sign-in-subtitle",
+    /// Form label: username.
+    FIELD_USERNAME => "field-username",
+    /// Form label: password.
+    FIELD_PASSWORD => "field-password",
+    /// Sign-in screen: the button.
+    SIGN_IN_BUTTON => "sign-in-button",
+    /// Sign-in screen: shown on the button while signing in.
+    SIGN_IN_BUSY => "sign-in-busy",
+    /// Sign-in screen: what to do about a forgotten password.
+    SIGN_IN_FORGOT => "sign-in-forgot",
+    /// Sign-in error: wrong username or password (deliberately not saying which).
+    SIGN_IN_WRONG => "sign-in-wrong",
+    /// Too many failed attempts; takes `minutes` (number).
+    TOO_MANY_ATTEMPTS => "too-many-attempts",
+    /// Sign-in error: the server couldn't check.
+    SIGN_IN_UNAVAILABLE => "sign-in-unavailable",
+    /// Setup: which step; takes `step` (number).
+    SETUP_STEP => "setup-step",
+    /// Setup step 1: heading.
+    SETUP_TITLE => "setup-title",
+    /// Setup step 1: line under the heading.
+    SETUP_SUBTITLE => "setup-subtitle",
+    /// Setup step 1: where to find the code.
+    SETUP_CODE_HELP => "setup-code-help",
+    /// Form label: the setup code.
+    FIELD_SETUP_CODE => "field-setup-code",
+    /// Setup step 1: the button.
+    SETUP_NEXT => "setup-next",
+    /// Setup step 1: shown on the button while checking.
+    SETUP_CHECKING => "setup-checking",
+    /// Setup error: wrong code.
+    SETUP_WRONG_CODE => "setup-wrong-code",
+    /// Setup error: an Admin already exists.
+    SETUP_ALREADY => "setup-already",
+    /// Setup step 2: heading.
+    SETUP_ACCOUNT_TITLE => "setup-account-title",
+    /// Setup step 2: confirms step 1.
+    SETUP_CODE_ACCEPTED => "setup-code-accepted",
+    /// Form label: the person's name.
+    FIELD_DISPLAY_NAME => "field-display-name",
+    /// Form label: a password being chosen.
+    FIELD_NEW_PASSWORD => "field-new-password",
+    /// Form label: the chosen password, again.
+    FIELD_PASSWORD_AGAIN => "field-password-again",
+    /// Form error: the two passwords differ.
+    PASSWORDS_DIFFER => "passwords-differ",
+    /// Setup step 2: the button.
+    SETUP_CREATE => "setup-create",
+    /// Setup step 2: shown on the button while working.
+    SETUP_CREATING => "setup-creating",
+    /// Button: go back a step.
+    ACTION_BACK => "action-back",
+    /// Active mode: Driver.
+    MODE_DRIVER => "mode-driver",
+    /// Active mode: Maintainer.
+    MODE_MAINTAINER => "mode-maintainer",
+    /// Active mode: Admin.
+    MODE_ADMIN => "mode-admin",
+    /// Mode chip for a Viewer-only user.
+    MODE_READ_ONLY => "mode-read-only",
+    /// Mode menu: Admin asks for the password.
+    MODE_NEEDS_PASSWORD => "mode-needs-password",
+    /// Accessible label of the mode chip.
+    MODE_MENU_LABEL => "mode-menu-label",
+    /// Admin password dialog: heading.
+    ADMIN_DIALOG_TITLE => "admin-dialog-title",
+    /// Admin password dialog: explanation.
+    ADMIN_DIALOG_TEXT => "admin-dialog-text",
+    /// Admin password dialog: the button.
+    ADMIN_DIALOG_CONFIRM => "admin-dialog-confirm",
+    /// Error: the password typed isn't right.
+    WRONG_PASSWORD => "wrong-password",
+    /// Admin banner: the label.
+    ADMIN_BANNER_LABEL => "admin-banner-label",
+    /// Admin banner: the explanation.
+    ADMIN_BANNER_TEXT => "admin-banner-text",
+    /// Admin banner: button to leave Admin mode.
+    ADMIN_BANNER_LEAVE => "admin-banner-leave",
+    /// Accessible label of the account chip.
+    ACCOUNT_MENU_LABEL => "account-menu-label",
+    /// Account menu: change password.
+    ACCOUNT_CHANGE_PASSWORD => "account-change-password",
+    /// Account menu: sign out.
+    ACCOUNT_SIGN_OUT => "account-sign-out",
+    /// Change-password dialog: heading.
+    PASSWORD_DIALOG_TITLE => "password-dialog-title",
+    /// Form label: the current password.
+    FIELD_CURRENT_PASSWORD => "field-current-password",
+    /// Change-password dialog: the button.
+    PASSWORD_SAVE => "password-save",
+    /// Change-password: done.
+    PASSWORD_CHANGED => "password-changed",
+    /// Forced password change: heading.
+    PASSWORD_MUST_CHANGE_TITLE => "password-must-change-title",
+    /// Forced password change: explanation.
+    PASSWORD_MUST_CHANGE_TEXT => "password-must-change-text",
+    /// Change-password error: the current password is wrong.
+    PASSWORD_CURRENT_WRONG => "password-current-wrong",
 }

@@ -12,8 +12,8 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    ChangePasswordOutcome, Handshake, Pong, SessionState, SetupOutcome, SignInOutcome,
-    SwitchModeOutcome,
+    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, SessionState, SetupOutcome,
+    SignInOutcome, SwitchModeOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -212,6 +212,39 @@ pub(crate) async fn setup(
         | SignInOutcome::TooManyAttempts { .. }
         | SignInOutcome::Unavailable => SetupOutcome::Unavailable,
     })
+}
+
+/// Setup step 1: checks the setup code before the person types their account details.
+/// A public path; wrong codes count toward the same limit as in [`setup`].
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/setup/code")]
+#[cfg_attr(
+    feature = "server",
+    expect(
+        clippy::unused_async,
+        reason = "server functions must be async; this one only checks memory"
+    )
+)]
+pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupCodeOutcome> {
+    if !::server::setup::is_open() {
+        return Ok(CheckSetupCodeOutcome::AlreadySetUp);
+    }
+    let now = server_side::now();
+    let client_key = format!("setup:{}", server_side::client_key());
+    if let Err(retry_after_millis) = server_side::LOGIN_LIMITER.check(&[&client_key], now) {
+        return Ok(CheckSetupCodeOutcome::TooManyAttempts {
+            retry_after_seconds: (retry_after_millis + 999) / 1000,
+        });
+    }
+    if ::server::setup::code_is_valid(&code) {
+        Ok(CheckSetupCodeOutcome::Valid)
+    } else {
+        server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
+        Ok(CheckSetupCodeOutcome::WrongCode)
+    }
 }
 
 /// Changes the signed-in user's password; their other sessions are signed out.

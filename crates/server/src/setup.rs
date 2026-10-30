@@ -206,6 +206,13 @@ fn unavailable(error: &ApplyError) -> SetupError {
     SetupError::Unavailable
 }
 
+/// Whether `entered` is the open setup code (setup step 1 checks it before asking for the
+/// account; step 2 sends it again and [`create_first_admin`] checks it again).
+#[must_use]
+pub fn code_is_valid(entered: &str) -> bool {
+    code_matches(entered)
+}
+
 /// Whether `entered` matches the open code: case, dashes, and spaces ignored; constant time.
 fn code_matches(entered: &str) -> bool {
     let entered = normalize(entered);
