@@ -77,11 +77,11 @@ A self-hosted app for tracking vehicles, everything that happens to them, and th
 
 ### Sync & conflict handling
 
-- **Device-generated unique IDs** (e.g. UUIDs) for every record, so devices can't create colliding records while offline.
+- **Device-generated unique IDs** (**UUIDv7**, time-ordered; `docs/decisions.md` #042) for every record, so devices can't create colliding records while offline.
 - **Conflicts are expected to be rare:**
   - Realistically only one person works on a given vehicle at a time.
   - Logging is mostly **append-only**, and new records from different devices simply merge.
-- **Edge case:** the same existing record edited on two devices before syncing. **Last-write-wins per record, ordered by hybrid logical clock (HLC)** is the rule. This applies to drafts and configuration; **finalized events are immutable** and are corrected by amendments, which are new records.
+- **Edge case:** the same existing record edited on two devices before syncing. **Last-write-wins per field, ordered by hybrid logical clock (HLC)** is the rule (`docs/decisions.md` #043): commands carry only changed fields, so edits to different fields always merge. This applies to drafts and configuration; **finalized events are immutable** and are corrected by amendments, which are new records.
 
 ### Hybrid logical clocks (HLC)
 
@@ -117,7 +117,8 @@ Devices don't send database rows or SQL. They send a log of **typed domain comma
 - The device sends its outbox, in order.
 - **Idempotent:** the server records applied command IDs, so retries after a dropped connection never apply anything twice.
 - **Absolute values, never deltas** ("set reading to 123,456," not "add 100"), so replay or reordering can't corrupt data.
-- Applied in **HLC order** with **last-write-wins per record**; a command older than the stored record's HLC is ignored.
+- Applied in **HLC order** with **last-write-wins per field** (#043): each changed field applies only if its HLC is newer than that field's stored HLC.
+- **Only changed fields** are sent; apps **keep fields and event types they don't know** and return them untouched (#043).
 - **Server re-validates** every command with the same shared-crate rules (monotonic readings, required meters, etc.).
 - **Rejection path:** commands valid on the device but invalid on the server (e.g. another device synced a conflicting reading) are returned with a reason and shown to the user to resolve. Never dropped silently.
 - The outbox is **pruned** once the server acknowledges each command.
@@ -367,7 +368,7 @@ The core abstraction is a single **event** type covering everything that happens
   - **Maintenance and repair:** only when the user taps **Finish**; never automatically. A draft untouched for 14 days gets a message center reminder.
   - Delays are defaults the Admin can change per event type. The server does automatic finalizing.
 - **Finalizing by hand asks for confirmation** ("Finalize this event?"), explaining that afterwards it can only be corrected by amendment.
-- Last-write-wins applies only to drafts; finalized records never change, so sync conflicts on them can't occur.
+- Last-write-wins (per field, #043) applies only to drafts; finalized records never change, so sync conflicts on them can't occur.
 - This makes history trustworthy for sale and insurance reports, and is required for aviation records later.
 
 **Attachments (photos and documents)**
@@ -680,7 +681,7 @@ Everything that must be done to an asset, whether your own schedule or an extern
 
 ```text
 Asset                # tracked thing; the UI calls it a "vehicle" (static identity only)
- ├─ id               # device-generated UUID
+ ├─ id               # device-generated UUIDv7 (#042)
  ├─ kind             # car | truck | trailer | generator | ... → selects an AssetProfile
  ├─ parent_asset_id? # → Asset where currently installed (history in Installation)
  ├─ lifecycle_status # in_service | spare | out_for_service | retired | disposed
@@ -697,7 +698,7 @@ Meter                # user-defined, per asset
  └─ description?     # what drives this meter
 
 Event                # anything that happens to a vehicle
- ├─ id               # device-generated UUID
+ ├─ id               # device-generated UUIDv7 (#042)
  ├─ asset_id         # → Asset
  ├─ type             # fuel | maintenance | repair | reading | ...
  ├─ started_at       # Unix epoch ms (UTC); the event's date
@@ -1745,7 +1746,7 @@ Every agent change is reviewed as a diff before merging.
 
 Each phase has open questions in section 10 that must be resolved before work on that phase starts.
 
-- **Phase 2: Data model & server storage.** *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md) (draft).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
+- **Phase 2: Data model & server storage.** *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 - *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
 - **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
 - **Phase 5: Maintenance intelligence.** What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
@@ -1758,6 +1759,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Post-MVP: Components.** Installation history with positions, install/remove workflow, spare and out-for-service components, component meters linked to the parent, permission inheritance.
 - **Post-MVP: Reference data import.** Recall suggestions from NHTSA data by VIN; automatic applicability matching by model and serial range.
 - **Post-MVP: Measurements.** Structured measurements with positions, multiple values, limits, and auto-squawks.
+- **Post-MVP: Human-friendly record numbers** (e.g. "F-150 entry 42"), assigned by the server at finalize, with reports or logbooks (#042).
 - **Post-MVP: Vehicle history reports.** Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
 - **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts.
 - **Post-MVP (later): Logbook label and other page formats.**

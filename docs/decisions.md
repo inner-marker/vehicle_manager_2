@@ -39,6 +39,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 
 - **Decision:** every change gets an HLC stamp (48-bit ms + 16-bit counter packed into a `u64`, device ID as tiebreak). Drafts and configuration use last-write-wins per record. Finalized events are immutable and corrected by amendments.
 - **Why:** device clocks drift; HLC gives a total, deterministic order without heavy conflict machinery.
+- **Refined by #043:** last-write-wins is now **per field**, with field-level commands.
 
 ### 005. Sync: push typed commands, pull current state
 *Decided: before 2026-10-19 · Plan: §3 Sync protocol*
@@ -453,3 +454,40 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **The phase numbers stay** (Phase 3, then 5 and 6) so existing references remain valid.
   - Phase 4's open questions move: mobile distribution and camera to Post-MVP; **desktop signing** to Phase 6, since it's needed by the first release with desktop packages.
 - **Why (the human's reasons):** the web UI already works on phones; app signing, sideloading, and distribution are a burden for the first mobile release; and the focus is on core features first.
+
+### 042. Record IDs are UUIDv7; human-friendly record numbers later
+*Decided: 2026-10-29 · Plan: §3 Data model, §9 Roadmap · Was idea 5 in ideas-to-discuss.md*
+
+- **Decision:**
+  - **Every record's ID is a UUIDv7,** generated on the device that creates the record (as the plan already required for offline use).
+  - **The database ID** (plan §6) is a UUIDv7 too.
+  - **Human-friendly record numbers** (e.g. "F-150 entry 42") are **later**, with reports or logbooks (post-MVP). When added, the server assigns them as events finalize, and a migration numbers existing finalized events in finalize order.
+- **Why:**
+  - UUIDv7 starts with the creation time, so IDs sort in creation order: SQLite appends new rows instead of inserting them at random places, and IDs in logs line up with time. It's as unique as random UUIDs, and can only be chosen before records exist.
+  - It reveals roughly when a record was created, which doesn't matter for private, self-hosted data.
+  - Nothing in Phase 2 prints records, and numbers can be added later without losing anything.
+
+### 043. Field-level commands with last-write-wins per field; unknown fields and types are kept
+*Decided: 2026-10-29 · Plan: §3 Sync & conflict handling, Sync protocol · Was idea 1 in ideas-to-discuss.md · **Refines #004** (per record → per field)*
+
+- **Decision:**
+  - **Update commands carry only the fields that changed,** each with its new absolute value, never the whole record.
+  - **Conflicts resolve per field:** the server stores the HLC (and device ID) of the last accepted change **for each field** of each record. An incoming change to a field applies only if its HLC is newer than that field's; changes to different fields always merge. A record's own HLC is the newest of its fields', for ordering pulls.
+  - **Creates** set every field with the command's HLC. **Deletes** are tombstones with their own HLC; a change older than the tombstone is ignored.
+  - **Unknown fields are kept:** an app that receives fields it doesn't know stores and returns them untouched instead of dropping them. **Unknown event types** are kept too and shown as "Unsupported record. Update the app to view."
+  - Finalized events stay immutable (#004); amendments are new records.
+- **Why:**
+  - Whole-record updates from an older app would silently delete fields it doesn't know about.
+  - With field-level commands, last-write-wins per *record* could still drop an older-stamped edit to a *different* field (e.g. price on the laptop, notes on an offline phone). Per-field clocks merge those, like per-setting records do in #029.
+  - The command format is the hardest thing to change after release, so it's settled before the first command exists (Phase 2 milestone 1).
+
+### 044. One background job system on the server
+*Decided: 2026-10-29 · Plan: §6 Data integrity, Backups · Was idea 9 in ideas-to-discuss.md*
+
+- **Decision:**
+  - **One small scheduler inside the server** runs all timed work: the nightly snapshot and periodic integrity checks first (Phase 2 milestone 1), then automatic finalizing, forgotten-job reminders, document expirations, re-geocoding, and later reference data refreshes.
+  - **Each job's last run, result, and next run** are stored in the database and logged.
+  - **Failures become Admin messages** in the message center (once it exists, milestone 3).
+  - **An Admin "Jobs" status view** comes later, when there are enough jobs to need one.
+  - Built on the server's existing async runtime (tokio timers); no scheduler crate.
+- **Why:** one place to see, log, and test timed work, instead of several ad-hoc timers.
