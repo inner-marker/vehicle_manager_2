@@ -491,3 +491,13 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **An Admin "Jobs" status view** comes later, when there are enough jobs to need one.
   - Built on the server's existing async runtime (tokio timers); no scheduler crate.
 - **Why:** one place to see, log, and test timed work, instead of several ad-hoc timers.
+
+### 045. Roles are granted on one asset or on all assets; groups later
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · ideas-to-discuss.md idea 6 (in part)*
+
+- **Decision:**
+  - **A role grant targets one asset, or "all assets".** "All assets" includes assets added later, so a household member gets one grant instead of one per vehicle.
+  - **Grants combine** as the plan already says: a person's permissions on an asset are the union of every grant that covers it.
+  - **The grant's target is an extensible kind** (`Asset(id)` or `AllAssets`), so a third kind, `Group(id)`, can be added later without changing existing grants.
+  - **Groups ("garages") wait** until there's a real need (a club, co-ownership, a second household).
+- **Why:** covers a household with almost no setup, avoids building group screens in Phase 2, and keeps the door open for groups.

@@ -48,6 +48,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 
 - Assets belong to one or more **groups,** and roles can be granted per group as well as per asset.
 - Covers a family garage now, and later a flying club, co-ownership, or a shop, without redesigning permissions.
+- **Partly decided (#045):** roles target one asset or all assets for now; the target is built so groups can be added later as a third kind.
 - **To discuss:** how group roles combine with per-asset roles and component permission inheritance.
 
 ### 7. One layered settings model 🟡

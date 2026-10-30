@@ -1341,7 +1341,7 @@ For the MVP there is no separate backup of the master database. Device copies ac
 | **Admin** | Full permissions: add/remove vehicles; manage users, roles, and devices; revoke tokens; server operations (e.g. "rebuild server from this device"). |
 
 **Assignment**
-- **Roles are assigned per vehicle.** For example, someone can be a Driver on one car and a Maintainer on the truck.
+- **Roles are assigned per vehicle, or on all vehicles** (`docs/decisions.md` #045). For example, someone can be a Maintainer on all vehicles, or a Driver on one car and a Maintainer on the truck. "All vehicles" includes vehicles added later. Groups of vehicles may come later.
 - **A person can hold multiple roles;** permissions are the union of their roles.
 - **Required readings can be skipped** by whoever is logging that event, behind the confirmation dialogs.
 
