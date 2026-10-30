@@ -98,6 +98,8 @@ connection-server-info = Server app { $app_version }, API { $api_version } (acce
 connection-round-trip = Round trip: { $millis } ms
 connection-unreachable = Couldn't reach the server.
 connection-unexpected = The server sent an unexpected response.
+connection-health-check = Server health
+connection-server-unhealthy = The server has a problem with its database and isn't accepting changes. Check the server's log.
 connection-server-address = Server address
 connection-save-address = Save address
 # $address (text): the server address this run of the app uses.

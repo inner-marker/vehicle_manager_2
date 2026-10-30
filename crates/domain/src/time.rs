@@ -71,6 +71,14 @@ pub trait Clock {
     fn now(&self) -> UnixMillis;
 }
 
+/// A shared reference to a clock is a clock, so one clock can feed several users
+/// (e.g. a test's `ManualClock` and the `HlcClock` under test).
+impl<T: Clock + ?Sized> Clock for &T {
+    fn now(&self) -> UnixMillis {
+        (**self).now()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

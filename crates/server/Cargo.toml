@@ -11,12 +11,20 @@ publish = false
 domain.workspace = true
 storage.workspace = true
 axum.workspace = true
+getrandom.workspace = true
+sqlx.workspace = true
 serde_json.workspace = true
 subtle.workspace = true
 tracing.workspace = true
+# One-time async startup (`OnceCell`) and the job scheduler's task and timers; the runtime
+# itself comes from Dioxus/axum.
+tokio = { version = "1", default-features = false, features = ["rt", "sync", "time"] }
 
 [dev-dependencies]
+domain = { workspace = true, features = ["test-support"] }
+tempfile.workspace = true
 http-body-util.workspace = true
+proptest.workspace = true
 serde_json.workspace = true
 # Async test runtime only; the server's runtime comes from Dioxus.
 tokio = { version = "1", features = ["macros", "rt"] }

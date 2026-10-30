@@ -11,6 +11,10 @@
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+# ...except the migration fixtures, which are part of the tests
+!crates/storage/tests/fixtures/*.sqlite
+# The server's local development data folder (dx serve without VEHICLEMANAGER_DATA_DIR)
+dev-data/
 
 # Personal Claude Code settings (shared settings live in .claude/settings.json)
 .claude/settings.local.json

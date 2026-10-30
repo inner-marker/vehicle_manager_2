@@ -65,6 +65,7 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
         api_version: API_VERSION,
         min_supported_api_version: MIN_SUPPORTED_API_VERSION,
         server_time_ms: SystemClock.now().as_millis(),
+        healthy: ::server::health::current().is_healthy(),
     })
 }
 

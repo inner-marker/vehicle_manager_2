@@ -8,7 +8,10 @@ allow-dbg-in-tests = true
 allow-print-in-tests = true
 
 too-many-lines-threshold = 80        # functions longer than this should be split
-cognitive-complexity-threshold = 15  # deeply nested/branchy functions get flagged
+# Deeply nested/branchy functions get flagged. 30, not 15: sqlx turns on tracing's `log`
+# feature, and every tracing macro then adds about 2 to the score, so 15 failed
+# ordinary functions with two log calls (phase-2.md step 1c; agreed with the human).
+cognitive-complexity-threshold = 30
 
 # Proper nouns that doc_markdown would otherwise demand backticks around.
 # ".." keeps clippy's built-in list.
