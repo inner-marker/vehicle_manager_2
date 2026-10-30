@@ -240,3 +240,206 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Dioxus 0.7.10 stores the server address once per process (`set_server_url` is a `OnceLock`, and Dioxus falls back to `http://127.0.0.1:8080` if it's unset), so it can't change while the app runs.
   - Phase 2 logins replace the test credential, so saving it now would add a keychain dependency for nothing.
   - The exit criterion doesn't need packages, and packaging belongs with the release pipeline it runs in.
+
+### 028. Login: username and password with session cookies; first Admin by one-time setup code
+*Decided: 2026-10-29 · Plan: §6 Security (Application), §10 Phase 2 open questions · Replaces the Phase 1 test credential (#024)*
+
+- **Decision:**
+  - **Sign-in is a username and password.** Passwords are hashed with **argon2** on the server. Login attempts are rate-limited.
+  - **The web UI gets a session cookie** after login: `HttpOnly`, `Secure`, `SameSite=Strict`. The auth middleware accepts it on every `/api/` request.
+  - **Native apps** (desktop now, mobile later) sign in with the same username and password until Phase 3 pairing issues per-device tokens.
+  - **First Admin:** while the server has no users, it writes a **one-time setup code** to its log at every startup. The first visitor enters the code, then chooses the Admin's username and password. The code stops working once an Admin exists.
+  - **Passkeys are later,** not in Phase 2.
+- **Why:**
+  - A password is enough behind Tailscale (only approved devices can reach the server), and works the same in every browser and in the native apps.
+  - The setup code means only someone who can read the server's log (NAS access) can claim Admin, so another tailnet device can't get there first.
+  - Passkeys need extra browser and platform work for little gain on a private tailnet.
+
+### 029. Display preferences: per user, with server-wide defaults; each setting its own record
+*Decided: 2026-10-29 · Plan: §10 Phase 2 open questions; ideas-to-discuss.md idea 7 (in part)*
+
+- **Decision:**
+  - **Units** (distance, volume, and the rest, chosen separately, so miles with litres is allowed), **default currency**, **language**, and **date format** have **server-wide defaults** set by the Admin.
+  - **Each user can override any of them.** A user's choices follow them to every device they sign in on.
+  - **Not per device.** The theme stays the only device-only setting.
+  - **Each setting is its own record** (one per user per setting, and one per server default), stamped with the **HLC** of the change. Changes go through commands like every other write. Two devices changing settings offline then merge by **last-write-wins per setting**: a newer change to one setting doesn't undo an older change to a different one.
+  - Display only: stored values stay metric integers and currency codes (§3, AGENTS.md).
+- **Why:**
+  - One household default saves every user setting things up, while still allowing a personal choice.
+  - A record per setting makes #004 (last-write-wins per record, by HLC) work per setting, without a new merge rule. The HLC is the "timestamp": it follows real time, but stays ordered even when device clocks disagree.
+  - Per-device units would show the same person different numbers on phone and laptop.
+- **Idea 7 (layered settings):** this sets two layers, server and user. Whether device and asset layers are needed is still open.
+
+### 030. Phase 2 asset kinds and profiles; trip computer readings on fuel-ups
+*Decided: 2026-10-29 · Plan: §3 Asset profiles, Custom fields, §10 Phase 2 open questions*
+
+- **Decision: six kinds ship in Phase 2,** each as a profile (seed data, never `if kind == ...`):
+
+  | Kind | Default meters | Event types | Extra sections |
+  |---|---|---|---|
+  | Car | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Truck | Odometer | Fuel, maintenance, repair, reading | Fuel economy, towing and hauling |
+  | Motorcycle | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Trailer | none (odometer optional) | Maintenance, repair, reading | none |
+  | Generator | Run hours | Fuel, maintenance, repair, reading | none |
+  | Other equipment | none (add any) | Maintenance, repair, reading | none |
+
+  - Identifier types: VIN or serial number, and license plate.
+  - Expected documents: title, registration, and insurance for cars, trucks, motorcycles, and trailers.
+  - A fuel-up requires the odometer (run hours for the generator).
+  - Boats, aircraft, and components are later; the model already allows them.
+- **Decision: groundwork for trip computer readings** (what the vehicle's own display reports at a fill-up):
+  - **Quantity types for custom fields:** besides text, number, date, yes/no, and choice list, a custom field can be a **distance**, **duration** (entered and shown as `HH:MM:SS`), **volume**, or **fuel economy**. Values are stored as integers in base units (meters, seconds, milliliters, meters per liter) and displayed in the user's units (#029).
+  - **Profiles can ship custom field definitions** per event type, which the user can turn off or extend. Car, truck, and motorcycle fuel-ups ship with **trip time** (duration) and **trip EV distance** (distance; for hybrids, off by default), and the user can add more (e.g. trip distance, average speed).
+  - **Vehicle-reported fuel economy is a real, optional column** on the fuel-up details, not a custom field, because the app compares it with its own calculated fuel economy, and the plan's rule is that anything the app computes on gets a real column (§3 Custom fields).
+- **Why:**
+  - These six cover the household's vehicles and equipment, and "other equipment" catches anything else without a new profile.
+  - Trip computer values vary by vehicle, so most belong in defined custom fields; the one the app calculates with gets a column, so comparisons are plain SQL.
+
+### 031. Intervals and service bundles belong to one asset; templates are copies
+*Decided: 2026-10-29 · Plan: §3 Recurring maintenance, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Every requirement's interval rules and every service bundle belong to one asset.** There's no live link to a shared definition.
+  - **Phase 2:** "Copy schedule from another asset" copies its requirements, interval rules, and bundles onto a new asset, where they can then be changed.
+  - **Phase 5 (with what's due):** **named household templates** (e.g. "F-150 factory schedule"). Applying one **copies** it onto the asset; editing the template later doesn't change assets it was applied to. The copy may remember which template it came from, for information only.
+  - Factory schedules from reference data packs (post-MVP) arrive as templates too.
+- **Why:**
+  - Each asset drifts from its siblings (synthetic oil on one truck, not the other). A live link would let one template edit silently move every asset's due dates.
+  - Copies keep each asset's schedule stable and its history easy to follow, and templates can be added later without changing how intervals are stored.
+
+### 032. Repairs reuse maintenance tasks, plus complaint and cause; labor on every task
+*Decided: 2026-10-29 · Plan: §3 Maintenance & repair events, data model, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **A repair event uses the same workflow and task structure as maintenance:** draft while in progress, tasks with parts, cost, and notes, squawk sign-off or deferral, and the same finishing checks.
+  - **`repair_details`** (1:1 with a repair event, per #006) holds two optional fields: **complaint** (what was wrong, as noticed) and **cause** (the diagnosis). The **correction** is the event's tasks.
+  - **Every task, maintenance or repair, gets optional labor:** **labor time** (entered as `HH:MM`, stored in seconds) and its cost split into **parts cost** and **labor cost** (minor units plus currency).
+  - **A task's requirement is optional:** a repair task often fixes something no interval tracks.
+  - Squawks resolved by a repair link to it through the existing squawk sign-off; nothing new.
+- **Why:**
+  - One task structure means one set of rules; a separate repair model would duplicate them.
+  - Complaint, cause, and correction is how repair shops write up work, and it makes a repair's history readable later.
+  - Labor on every task makes "shop vs. DIY" and labor cost reports possible for maintenance too.
+
+### 033. Towing and hauling are percentages, shown by profile with a per-asset switch
+*Decided: 2026-10-29 · Plan: §3 Driving conditions & towing, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Towing % and hauling % are integer percentages (0–100),** like highway %, not yes/no flags. Entered with the detent slider; stored as plain integers.
+  - **Both default to 0%,** so a normal fill-up needs no extra input.
+  - **Shown on kinds whose profile has the "towing and hauling" section** (the truck, #030), and on **any other asset where the user turns it on** (e.g. a car pulling a small trailer).
+  - Fuel-ups keep listing which asset(s) were towed.
+- **Why:**
+  - One tank often mixes towing and normal driving; a flag would label the whole tank "towing" and distort both averages.
+  - Percentages let fuel economy be broken down by condition, as the plan describes.
+  - The per-asset switch follows the plan's rule that an asset's settings start from its profile and can be changed per asset.
+
+### 034. When events finalize; confirm before finalizing by hand
+*Decided: 2026-10-29 · Plan: §3 Finalized records and amendments, Maintenance & repair events, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Fuel-ups and readings finalize 24 hours after their last edit,** or sooner with **Finalize now**. Every edit restarts the 24 hours.
+  - **Maintenance and repair events finalize only when the user taps Finish,** which runs the finishing checks first. They **never finalize automatically.**
+  - **A forgotten job** (a maintenance or repair draft untouched for **14 days**) gets a reminder in the message center. It's only a reminder; nothing is locked.
+  - **Later event types** (documents, lifecycle) default to 24 hours after the last edit unless their own section says otherwise.
+  - **The delays are defaults the Admin can change** per event type.
+  - **The server finalizes automatically,** so every device agrees on when an event locked.
+  - **Finalizing by hand always asks for confirmation** ("Finalize this event?"), for both Finalize now and Finish: the dialog says that afterwards it can only be corrected with an amendment, and has Finalize and Cancel buttons. Automatic finalizing has no dialog.
+- **Why:**
+  - Finalizing can't be undone, so tapping it by accident shouldn't lock an event.
+  - A 24-hour window lets a mistyped odometer be fixed without an amendment.
+  - Maintenance can take a weekend or wait weeks for parts; locking it halfway would force amendments for normal work.
+
+### 035. Nightly snapshots in the same pool for now, with a configurable folder for a USB disk later
+*Decided: 2026-10-29 · Plan: §6 Data integrity & loss detection, Backups, §10 Phase 2 open questions · Changes the plan's "different NAS disk"*
+
+- **Decision:**
+  - **The nightly `VACUUM INTO` snapshot goes to `data/snapshots/` by default,** in the same storage pool as the live database. The server keeps the **last 7** and integrity-checks each one after writing it.
+  - **Groundwork for a USB disk:** the snapshot folder is configurable (`VEHICLEMANAGER_SNAPSHOT_DIR`, built from `APP_ID`), so it can later point at a second mount in `compose.yaml`, such as a USB disk. If that folder is missing or not writable, the server keeps running, skips the snapshot, and reports it (log and Admin message).
+  - **Not a focus now:** no USB setup, Hyper Backup task, or docs for it in Phase 2. They come later, or with offsite backups (post-MVP).
+- **Why:**
+  - The DS1019+ has one storage pool (4 data disks + 1 parity), so there's no "different NAS disk". Its parity already survives one failed disk.
+  - Same-pool snapshots still cover what they're mainly for: corruption, a bad migration, a bad sync, and accidental deletion.
+  - A configurable folder makes a USB disk (or any second volume) a deployment change later, not a code change.
+- **Not covered until offsite backups:** losing the whole pool or the NAS.
+
+### 036. Photos: Small, Medium, or Large JPEG per photo; originals only for Maintainers and Admins
+*Decided: 2026-10-29 · Plan: §3 Photos from the web UI on a phone, Asset photos, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Every stored photo is a JPEG** (quality 85), turned upright, plus a **400 px thumbnail**. HEIC and other formats are converted. **Upload limit: 25 MB** per photo.
+  - **A size picker on every photo:**
+
+    | Size | Long edge | Typical size | For |
+    |---|---|---|---|
+    | **Small** | 1280 px | ~200 KB | Meter close-ups, receipts, labels |
+    | **Medium** (default) | 2560 px | ~0.5–1 MB | General photos |
+    | **Large** | 4096 px | ~2–3 MB | Damage, condition at the start of an event |
+
+    A photo smaller than the chosen size is never enlarged. **Profiles can set the default size per event type** (e.g. Small on fuel-ups and readings).
+  - **Keep original (gated):** a Maintainer (on that asset) or an Admin can also keep the **original file exactly as taken** (HEIC or camera JPEG), alongside the JPEG the app shows. Others never see the option. The Admin can turn the option off server-wide.
+    - An original keeps everything the camera wrote, including GPS. **Exports leave originals out** unless chosen, with a warning that they include location and camera details.
+  - **Metadata follows the existing photo rule:** time taken, GPS, and camera are read before resizing and kept as structured fields (shown in the photo's details and offered as suggestions); exports strip GPS by default. The JPEG files themselves carry no metadata.
+  - **Where it happens:** the browser or app resizes to the chosen size before upload (less data to send); the server checks type, size, and dimensions, and converts anything that isn't a correctly sized JPEG.
+  - The image-processing crate (likely `image`, plus HEIC support) is proposed for approval when the photo step is planned.
+- **Why:**
+  - Photos live in the database, so their size drives database, sync, and snapshot size. Choosing per photo keeps quick shots small and evidence photos sharp.
+  - Originals are large and hold the most private metadata, so they're limited to the roles that do maintenance and documentation.
+
+### 037. Documents: 50 MB per PDF; pdf.js as the viewer on every platform
+*Decided: 2026-10-29 · Plan: §3 Attachments, Official asset documents, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Limit: 50 MB per PDF,** with no separate page limit.
+  - **The server checks every upload** really is a PDF within the limit, and records its **page count** (shown on the document card, e.g. "12 pages").
+  - **Viewer: Mozilla's pdf.js** (Apache-2.0), bundled with the app and used **on every platform:** web, macOS, Linux, Windows, and later mobile.
+  - **Every PDF also has Download / Open in system viewer.**
+  - The exact pdf.js version is proposed for approval when the documents step is planned.
+- **Why:**
+  - Size, not page count, is what affects the database, sync, and snapshots. 50 MB fits receipts, invoices, registrations, and most owner's manuals; very large manuals are better kept outside the app.
+  - Linux's WebKitGTK can't show PDFs itself, and one bundled viewer looks and works the same everywhere, with room for thumbnails and search later.
+
+### 038. Offline geocoder: GeoNames cities1000 and Natural Earth 1:10m, nearest boundary as a fallback
+*Decided: 2026-10-29 · Plan: §3 Reverse geocoding, §10 Phase 2 open questions (geocoder dataset; geocoding on device vs. server)*
+
+- **Decision:**
+  - **Cities:** GeoNames **cities1000** (every place with at least 1,000 people), nearest place wins.
+  - **States/provinces and countries:** **Natural Earth admin boundaries at 1:10m**, slightly simplified for size.
+  - **Outside every polygon, the nearest one is used.** Natural Earth doesn't trace exact coastlines, so a point on a beach, pier, causeway, or island can fall just outside its country or state. The lookup then takes the **nearest country, and the nearest state/province** (within that country where possible), by distance to the boundary. A point never ends up with no country or state.
+  - **Shipped as a versioned data file** the server loads at startup, not compiled into the program, so the data can be updated without a new build (and fits reference data packs later).
+  - **The crate** (`reverse_geocoder` or a small lookup of our own) is chosen, with dependency approval, when the location step is planned.
+  - **Phones (Phase 4):** a budget of about **15–20 MB** for the bundled data, checked in Phase 4. If it's too large, phones store coordinates and the server fills in the place at sync, as the plan already allows.
+  - **Attribution:** "Contains GeoNames data (CC BY 4.0)" on the About screen.
+  - The looked-up place is a suggestion; the user can still correct the event's city, state, and country.
+- **Why:**
+  - cities1000 resolves small towns without the size of cities500; cities5000 would put small-town events in the next bigger town.
+  - Coarser boundaries put events near a border in the wrong state, and the nearest-boundary fallback covers the coastline gaps any simplified dataset has.
+
+### 039. No map picker in Phase 2; map tiles decided with the event map
+*Decided: 2026-10-29 · Plan: §3 Event location, Event map (post-MVP), §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Phase 2 has no map.** An event's location comes from the device's **GPS**, a **saved place**, or **manual entry** (city, state, country, with the geocoder's suggestion).
+  - **The map picker arrives with the post-MVP event map,** and both use the same tile source, decided then.
+  - **Preferred option for then:** self-hosted tiles, a **PMTiles** file (Protomaps) for the region, served by the server on the tailnet: no outside service or usage limits, and it works offline. The alternative is an online OpenStreetMap-based tile provider.
+  - The `map` location source stays in the data model, so map picks need no migration later.
+- **Why:**
+  - GPS, saved places, and manual entry cover nearly every real event without an online dependency.
+  - One tile decision for both map features avoids choosing twice.
+
+### 040. UI direction for Phase 2 screens; SVG layout options before building each screen
+*Decided: 2026-10-29 · Plan: §5 UI direction, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Garage cards:** ordered by **urgency** by default (overdue → due soon → OK, then most recent activity). Each user can switch to **My order** and drag cards (a per-user setting, #029).
+  - **Vehicle detail:** a header (photo, name, main identifiers, current meter readings) and tabs **Overview** (next due, open squawks, latest fill-ups and fuel economy, last activity), **Timeline**, **Maintenance** (requirements, intervals, bundles), **Fuel** (fill-ups, economy by condition), **Documents**, and **Setup** (meters, profile overrides, custom fields). On phones the tabs are a scrollable row.
+  - **Message center:** an inbox, newest first and unread on top, with a severity marker (info / warning / urgent); each message can be marked read, dismissed, and have one action; filters by severity and vehicle.
+  - **Log viewer:** the Phase 1 viewer stays; search and export come later.
+  - **Garage-friendly:** touch targets at least **48 px**, large numbers, high contrast in both themes, and nothing that needs precise taps (no tiny icons or hover-only controls).
+  - **Quick logging:** the **+ Log** chooser (Fuel-up, Reading, Squawk, Maintenance) remembers the last vehicle and offers "Same vehicle as last time"; the fuel-up form starts with the odometer (last value as a hint), then volume and price; a vehicle card's long-press or ⋯ menu offers "Log fuel-up for this vehicle".
+  - **Process:** before a screen is built, its step plan includes **SVG layout options** in `docs/ui-sketches/` for the human to choose from: usually two or three, or **one when only one makes sense**. The chosen layout is linked from the step plan.
+- **Why:**
+  - Urgency first puts what needs attention on top; a personal order covers households that think in their own order.
+  - The tabs group a vehicle's information the way it's used, and the garage-friendly rules come from using the app with gloves or dirty hands.
+  - Choosing between drawn options is quicker and clearer than describing a layout in words.

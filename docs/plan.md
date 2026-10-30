@@ -228,7 +228,7 @@ Holds only information that doesn't change over time:
 ### Asset profiles
 
 Each asset kind has a **profile** that defines its defaults, as **data, not hard-coded logic:**
-- Default meters (e.g. car: odometer; generator: run hours)
+- Default meters (e.g. car: odometer; generator: run hours) · Phase 2 kinds: car, truck, motorcycle, trailer, generator, other equipment (#030)
 - Which event types apply (e.g. fuel-ups for cars, not trailers)
 - Default required readings per event type
 - Identifier types offered (VIN, plate, serial, …)
@@ -362,8 +362,11 @@ The core abstraction is a single **event** type covering everything that happens
 **Finalized records and amendments**
 - Events start as **drafts** (freely editable) and become **finalized**.
 - **Finalized events can't be edited.** Corrections are **amendments:** a new linked entry stating what changed and why. The original stays visible, with full history.
-- **When an event finalizes:** when the user taps "Finalize," or automatically after a set period (e.g. 24 hours), so records don't sit as drafts forever.
-- Fuel-ups and readings may finalize immediately (configurable per event type).
+- **When an event finalizes** (`docs/decisions.md` #034):
+  - **Fuel-ups and readings:** 24 hours after the last edit, or sooner with **Finalize now**.
+  - **Maintenance and repair:** only when the user taps **Finish**; never automatically. A draft untouched for 14 days gets a message center reminder.
+  - Delays are defaults the Admin can change per event type. The server does automatic finalizing.
+- **Finalizing by hand asks for confirmation** ("Finalize this event?"), explaining that afterwards it can only be corrected by amendment.
 - Last-write-wins applies only to drafts; finalized records never change, so sync conflicts on them can't occur.
 - This makes history trustworthy for sale and insurance reports, and is required for aviation records later.
 
@@ -372,8 +375,9 @@ The core abstraction is a single **event** type covering everything that happens
   - **Photos:** single images.
   - **Documents:** **multi-page PDFs,** e.g. recall paperwork, dealer invoices, receipts, warranty documents.
 - **Documents open in a document viewer** (scroll or swipe through pages, zoom), not as a stack of separate images.
-  - Desktop and web: an embedded PDF viewer (e.g. the browser's built-in viewer, or `pdf.js`).
-  - Mobile: the platform's document viewer.
+  - **Every platform:** the bundled **pdf.js** viewer, plus Download / Open in system viewer (`docs/decisions.md` #037).
+  - **Limit:** 50 MB per PDF, no page limit; the server checks the type and records the page count (#037).
+  - Mobile (Phase 4): the same pdf.js viewer.
 - Lists show a **thumbnail of the first page** and the page count.
 - **Getting documents in:**
   - Upload an existing PDF (all platforms).
@@ -396,7 +400,8 @@ The core abstraction is a single **event** type covering everything that happens
 - In Rust, an `EventKind` enum has one variant per type; the table layout only affects the row layer.
 
 **Custom fields: defined fields, values in a small JSON `extras` column**
-- Users can add custom fields (e.g. "tire brand" on a repair), but each is first **defined:** name, type (text, number, date, yes/no, choice list), unit (via `uom`, for numbers), and which asset kinds and event types it applies to.
+- Users can add custom fields (e.g. "tire brand" on a repair), but each is first **defined:** name, type (text, number, date, yes/no, choice list, or a quantity: distance, duration as `HH:MM:SS`, volume, fuel economy), unit (via `uom`, for numbers), and which asset kinds and event types it applies to.
+- **Profiles can ship custom field definitions,** e.g. trip time and trip EV distance on fuel-ups for trip computer readings (`docs/decisions.md` #030).
 - Values are stored in the event's optional **`extras` JSON column,** keyed by the field definition's ID, and **validated against the definition.**
 - Defined fields can be shown, filtered, and included in reports and exports, rather than being free-form blobs.
 - Core app fields **never** go in `extras`; anything the app computes on or validates gets a real column.
@@ -411,7 +416,7 @@ The core abstraction is a single **event** type covering everything that happens
   - Latitude and longitude as **integers in degrees × 10⁷** (≈1 cm precision; fits a 32-bit integer), following the integers-in-the-database rule.
   - **Accuracy radius** in meters, as reported by the device.
   - **Fix time,** so a stale fix (e.g. 20+ minutes old) can be flagged.
-- **Source:** GPS, saved place, map pick, or manual entry.
+- **Source:** GPS, saved place, map pick, or manual entry. **Map pick arrives with the post-MVP event map;** Phase 2 has no map (`docs/decisions.md` #039).
 - **Place (required):** city, state/province, country (ISO country code plus display names).
   - Normally derived from the coordinates by reverse geocoding.
   - Entered or corrected manually when there are no coordinates.
@@ -432,8 +437,10 @@ The core abstraction is a single **event** type covering everything that happens
 
 **Reverse geocoding: built-in and offline**
 - **No external service required.** A built-in lookup turns coordinates into city, state/province, and country:
-  - **City:** nearest populated place from **GeoNames** city data (CC BY 4.0: free, with attribution on the About screen).
-  - **State/province and country:** point-in-polygon against **Natural Earth** boundaries (public domain).
+  - **City:** nearest populated place from **GeoNames cities1000** (places of 1,000+ people; CC BY 4.0: free, with attribution on the About screen).
+  - **State/province and country:** point-in-polygon against **Natural Earth 1:10m** boundaries (public domain), slightly simplified.
+  - **Outside every polygon** (Natural Earth doesn't trace exact coastlines), the **nearest** country and state/province are used, so a point always gets both (`docs/decisions.md` #038).
+  - Shipped as a versioned data file the server loads, not compiled in. Phone budget: about 15–20 MB, checked in Phase 4 (#038).
   - *Possible later refinement:* **US Census TIGER** data (public domain) for finer US detail.
 - **Where it runs:**
   - On the **server**, for web UI events and as a backstop during sync.
@@ -444,7 +451,7 @@ The core abstraction is a single **event** type covering everything that happens
 **Event map (post-MVP)**
 - The main reason for keeping coordinates: **plot every event on a map**, per vehicle or across the whole fleet, for fun and history (e.g. where you've fueled, towed, and done maintenance).
 - Filter by vehicle, event type, and date range; tap a pin to open the event.
-- Needs map tiles (see the map question in Phase 2's open questions); events without coordinates still appear by their city.
+- Needs map tiles, shared with the map picker. Preferred: a self-hosted **PMTiles** file served on the tailnet; an online OpenStreetMap-based provider is the alternative (#039). Events without coordinates still appear by their city.
 
 **Privacy**
 - Coordinates stay in the self-hosted data. **Exports leave out coordinates by default** (with an option to include them), matching the photo-metadata rule. City, state, country, and place name are always included.
@@ -468,6 +475,7 @@ Fuel events (covering the distance since the previous fill) record **driving con
 - Entered with a **slider that snaps to detents**, initially 0, 25, 50, 75, 100.
 - The detents are **configurable** and only affect input.
 - Values are **stored as plain integer percentages (0–100).** Changing the detents later never alters or reinterprets existing data, and any value stays valid.
+- **Towing and hauling default to 0%** and are shown on kinds whose profile includes them (the truck), or on any asset where the user turns them on (`docs/decisions.md` #033).
 
 **Towing: any vehicle can tow any other vehicle**
 - Trailers aren't a separate kind of record. **A trailer is a vehicle,** with its own meters, maintenance, squawks, and history (bearings, tires, brakes, etc.).
@@ -506,7 +514,8 @@ A **squawk** is an issue or broken item noted on a vehicle, to be dealt with lat
 - The event shows these as an ordered **work log**, so it reads in the order the work happened.
 - **Finishing the event** runs the checks: required readings present, every open or deferred squawk signed off or deferred, required location set. Then the event finalizes.
 - **Which reading resets intervals:** by default, a task's interval resets from the event's **start** reading (the mileage when the work was done). This is adjustable per task if needed.
-- Each task can carry its own parts, cost, and notes.
+- Each task can carry its own parts, notes, optional **labor time**, and cost split into **parts cost** and **labor cost** (`docs/decisions.md` #032).
+- **Repairs use the same workflow and tasks,** plus an optional **complaint** (what was wrong) and **cause** (the diagnosis) in `repair_details`; the tasks are the correction (#032).
 - **Reporting this enables:**
   - Total cost of a visit
   - Spend on a given task across all time
@@ -527,6 +536,7 @@ Some maintenance is recurring, such as a 5,000 or 10,000 mile service.
   1. Creates one maintenance event.
   2. Logs each task in the bundle.
   3. Independently resets each task's own interval clock.
+- **Per asset, copied not linked** (`docs/decisions.md` #031): interval rules and bundles belong to one asset. Phase 2 offers "Copy schedule from another asset"; Phase 5 adds named household templates, which are copied onto an asset when applied, never linked.
 
 ### Asset lifecycle & components
 
@@ -780,10 +790,12 @@ RequiredMeter        # per-asset config: which meters an event type must record
 MaintenanceTask      # one row per task performed in a maintenance event
  ├─ id
  ├─ event_id         # → Event (one event, many tasks)
- ├─ requirement_id   # → Requirement this task complies with
+ ├─ requirement_id?  # → Requirement this task complies with (often none on a repair)
  ├─ compliance_method?          # which method or paragraph, or an approved alternative
  ├─ terminating      # true if this was the terminating action
- └─ parts, cost_minor, currency, notes
+ ├─ labor_seconds?   # labor time (#032)
+ ├─ parts_cost_minor?, labor_cost_minor?, currency
+ └─ parts, notes
 
 Installation         # component install/removal history (post-MVP)
  ├─ id
@@ -1162,6 +1174,8 @@ When a vehicle is sold to someone who also runs this app, export it as an **impo
 - Left sidebar navigation: Garage, Due & squawks, Messages, Timeline, Reports; then Vehicles, Settings, Diagnostics.
 - Top bar: page title, sync status, mode chip (Driver ▾), theme toggle, **+ Log** button.
 
+**Phase 2 screens** (`docs/decisions.md` #040): Garage cards ordered by urgency (or the user's own order); vehicle detail with Overview, Timeline, Maintenance, Fuel, Documents, and Setup tabs; a message center inbox; 48 px touch targets. **Each screen's step plan includes SVG layout options** in `docs/ui-sketches/` to choose from (one if only one makes sense).
+
 **Home ("Garage") screen** (proposed)
 - **Fleet strip:** counts of overdue, due soon, open squawks, and sync status; each taps through to its list.
 - **One card per vehicle:**
@@ -1189,6 +1203,8 @@ When a vehicle is sold to someone who also runs this app, export it as an **impo
   - Shown in the photo's details, and offered as **suggestions** when logging (e.g. pre-fill the event date or location).
   - **Stripped on the way out:** exports and shared photos leave out GPS by default, with an option to include it.
 - **HEIC:** iPhones usually hand the browser a JPEG, but the server must still validate type and size and reject or convert anything else.
+- **Size picker** (`docs/decisions.md` #036): **Small** (1280 px), **Medium** (2560 px, default), or **Large** (4096 px) per photo, saved as JPEG with a 400 px thumbnail; profiles can set the default per event type. Upload limit 25 MB.
+- **Keep original (gated, #036):** Maintainers (on that asset) and Admins can also keep the original file (e.g. HEIC) as taken. Exports leave originals out unless chosen.
 - Native apps (Phase 4) use the device camera directly with the same resize and metadata rules.
 
 ### In-app notifications
@@ -1305,10 +1321,11 @@ For the MVP there is no separate backup of the master database. Device copies ac
 **Known gap until offsite backups exist:** device copies are only as fresh as each device's last sync. Data entered only through the web UI, or photos not yet pulled by any device, could exist only on the server.
 
 **MVP mitigation: nightly local snapshot**
-- The server makes a **nightly `VACUUM INTO` copy** of the master database on a **different NAS disk** (or volume) from the live database.
-- Keeps a few recent nightly copies; older ones are rotated out.
+- The server makes a **nightly `VACUUM INTO` copy** of the master database in `data/snapshots/`. The DS1019+ has one storage pool, so for now that's the **same pool** as the live database (`docs/decisions.md` #035).
+- The snapshot folder is **configurable** (`VEHICLEMANAGER_SNAPSHOT_DIR`), so it can later point at a USB disk or another volume mounted into the container. If it's unavailable, the server skips the snapshot and reports it.
+- Keeps the last 7 nightly copies; older ones are rotated out.
 - Each snapshot is **integrity-checked** after it's written.
-- **Covers:** corruption, a bad migration, accidental deletion, and failure of the disk holding the live database.
+- **Covers:** corruption, a bad migration, a bad sync, and accidental deletion. One failed disk is covered by the pool's parity; losing the whole pool needs the USB disk (later) or offsite backups.
 - **Doesn't cover:** loss of the whole NAS (fire, theft, total failure). That's what post-MVP offsite backups are for.
 
 ### Users, roles & permissions
@@ -1368,7 +1385,8 @@ Dioxus provides no encryption or authentication on its own; server functions are
 **Application**
 - **Two credential types, one auth middleware:**
   - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
-  - **Web UI:** browsers have no keychain, so the web UI uses a login that sets an **HttpOnly, Secure session cookie**.
+  - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
+  - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
 - **Auth enforced in middleware**, so no server function can be left unprotected by accident.
 - **Rate limiting** on auth and pairing endpoints (e.g. `tower_governor`).
 - **Server-side input validation** and parameterized queries (e.g. sqlx).
@@ -1470,7 +1488,7 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 - **Persistent volume** for the SQLite database (and any file storage), on a **local NAS disk, not a network share**, so containers can be rebuilt or upgraded without data loss.
 - **Secrets** (token-signing keys, etc.) supplied via environment or Docker secrets, never baked into the image.
 - **Upgrades:** rebuild or pull the new app image and restart. The app backs up the database (`VACUUM INTO`) and runs schema migrations on startup.
-- **Backups (MVP):** device copies, pre-migration snapshots, and a **nightly local `VACUUM INTO` snapshot** to a second volume on a different NAS disk, mounted into the app container. See Data integrity & loss detection.
+- **Backups (MVP):** device copies, pre-migration snapshots, and a **nightly local `VACUUM INTO` snapshot** in `data/snapshots/` (same pool for now; configurable for a USB disk later, #035). See Data integrity & loss detection.
 - **Offsite backups (post-MVP):**
   - **Litestream** sidecar for continuous replication to S3-compatible storage (e.g. Backblaze B2, Wasabi, or MinIO on another machine) or SFTP, with point-in-time restore.
   - **Nightly snapshots** (`VACUUM INTO`) shipped offsite with **restic** or **borg** for encrypted, deduplicated, long-term retention.
@@ -1727,7 +1745,7 @@ Every agent change is reviewed as a diff before merging.
 
 Each phase has open questions in section 10 that must be resolved before work on that phase starts.
 
-- **Phase 2: Data model & server storage.** Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot to a second NAS disk. **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
+- **Phase 2: Data model & server storage.** Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 - **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
 - **Phase 4: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder.
 - **Phase 5: Maintenance intelligence.** What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
@@ -1759,20 +1777,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 ### Phase 2: Data model & server storage
 
-- **Login and first-Admin setup:** how users authenticate to the web UI (password, passkeys?), and how the first Admin is created on a fresh server.
-- **Display preferences:** units (mi/km, gal/L), default currency, language, and date format: per user, per device, or per server?
-- **Initial asset kinds and profiles:** which kinds ship in the MVP (e.g. car, truck, motorcycle, trailer, generator) and their default meters and event types.
-- **Interval and service-bundle templates:** defined per vehicle only, or as shared templates (e.g. "F-150 factory schedule") applied to vehicles?
-- **Towing and hauling percentages:** confirm both are 0–100 percentages like highway/city, rather than yes/no flags.
-- **Repair events:** do repairs need their own detail table (e.g. diagnosis, parts, labor), or do they reuse the maintenance task structure?
-- **Photos:** maximum size, compression, and thumbnail generation for vehicle photos.
-- **Documents:** maximum PDF size and page count; which PDF viewer to embed on desktop/web (Linux WebKitGTK may not show PDFs natively).
-- **Finalizing:** auto-finalize delay, and which event types finalize immediately. In-progress maintenance events shouldn't auto-finalize mid-job: finalize only when the user finishes them, or after a much longer delay?
-- **UI/UX:** finalize the UI direction (section 5): card ordering, and remaining screens (vehicle detail, message center, log viewer). Garage-friendly targets and quick-log shortcuts. Theme is already decided.
-- **Geocoder dataset:** which GeoNames city threshold (places of 500, 1,000, or 5,000+ people) and boundary detail, balancing accuracy against size; which crate (if any) to use.
-- **Map picker:** a map needs map tiles, which usually come from an online service (e.g. OpenStreetMap, with usage limits). Online-only map picking, or skip the map and use saved places plus manual entry? (The post-MVP event map needs the same tile source, so the two could be decided together.)
-- **Geocoding on device vs. server:** confirm the bundled dataset size is acceptable for phones.
-- **Nightly snapshot disk:** the NAS (DS1019+) has **one storage pool** (4 data disks + 1 parity), so there is no separate disk for the "different NAS disk" snapshot rule (§6 Data integrity). Options: a USB disk on the NAS, Hyper Backup to another device, or accept same-pool snapshots until offsite backups (post-MVP).
+*None open.* (Answered 2026-10-29; see `docs/decisions.md` #028–#040.)
 
 ### Phase 3: Local-first & sync
 
