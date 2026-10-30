@@ -541,3 +541,19 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
     - **Language:** English (US) only, for now.
   - **Storage (refines #029):** one preferences record for the household and one per user, **one field per setting**. With last-write-wins per field (#043), each setting still merges on its own, as #029 requires. A user's unset field means "follow the household default".
 - **Why:** the human preferred buttons and an explicit "use household default" switch; pressure and the day-month-name date were asked for; per-field records give #029's per-setting merging without a second kind of record ID.
+
+### 049. Leave Admin mode and sign out when idle
+*Decided: 2026-10-30 · Phase plan: phase-2.md milestone 3 (its first step) · Refines #028 (sessions) and #048 (adds a setting)*
+
+- **Decision:**
+  - **The app watches for inactivity** while someone is signed in. Only real input counts: pointer down, key down, wheel or scroll, touch. Background requests don't.
+  - **After 15 idle minutes in Admin mode,** the app leaves Admin mode by itself (as **Leave** does) and shows a short notice: "Admin mode ended after 15 idle minutes."
+  - **After a longer idle time,** the app signs out and the sign-in card shows a short notice ("You were signed out after N idle hours."). A setting, **Sign out when idle**, offers 1 hour, 4 hours, **8 hours** (default), 24 hours, and Never.
+  - **Keeping the server in step:** while in Admin mode, the app checks its session about every 5 minutes, but only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
+  - **The server stays the authority:** its 15 idle minutes for Admin mode and 30 idle days for sessions are unchanged and still apply when the app is closed.
+  - **How (no new dependency):** one long-lived `document::eval` script records the last input and reports the idle time to Rust about every 15 seconds; this works on web and desktop. The decision itself (stay, keep alive, leave Admin, sign out) is a pure function, unit-tested.
+  - **To settle when milestone 3 is planned:** whether **Sign out when idle** is a per-person preference with a household default (a new field on the preferences record, #048) or a per-device setting like the theme (a shared computer may want a shorter time than a personal phone).
+- **Why:**
+  - Today the app only notices the end of Admin mode at the next navigation or click, so the orange banner can outlive Admin mode on a screen left open.
+  - A browser left open could stay signed in for up to 30 idle days.
+  - Raised by the human during the milestone 2 NAS test.
