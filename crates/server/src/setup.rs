@@ -5,8 +5,7 @@
 //! with a username and password, becomes the household's Admin (Admin on all assets). After
 //! that the code stops working, and no new one is made.
 //!
-//! The code is 16 characters from an alphabet without look-alikes (no `0`/`O`, `1`/`I`),
-//! shown in groups of 4: `K7QM-4XRT-9PWD-H2CN`. It's kept in memory only, so it never
+//! The code is 16 characters (`crate::codes`), shown in groups of 4: `K7QM-4XRT-9PWD-H2CN`. It's kept in memory only, so it never
 //! reaches the database or a snapshot. Entry ignores case, dashes, and spaces.
 
 use std::sync::Mutex;
@@ -24,13 +23,11 @@ use storage::Database;
 use storage::users::{RoleGrantWriter, UserWriter};
 use subtle::ConstantTimeEq;
 
+use crate::codes::{group_by_four, random_code};
 use crate::commands::{ApplyError, issue};
 use crate::health::Health;
 use crate::ids::new_id;
 use crate::passwords::hash_password;
-
-/// The code's characters: 32 of them, so each random byte maps to one without bias.
-const ALPHABET: &[u8; 32] = b"23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 /// Characters in a code.
 const CODE_CHARS: usize = 16;
@@ -95,7 +92,7 @@ pub fn open_if_needed(user_count: i64) -> Option<String> {
             return None;
         }
     };
-    let shown = format_code(&code);
+    let shown = group_by_four(&code);
     set_code(Some(code));
     // Deliberately logged: reading the server log (NAS access) is what proves you may set it up.
     tracing::warn!(target: log_area::AUTH, setup_code = %shown, "no users yet: create the first Admin in the app with this setup code");
@@ -231,22 +228,7 @@ fn normalize(code: &str) -> String {
 
 /// A new random code (normalized form).
 fn new_code() -> Result<String, getrandom::Error> {
-    let mut bytes = [0_u8; CODE_CHARS];
-    getrandom::fill(&mut bytes)?;
-    // 256 is a multiple of 32, so `byte % 32` picks every character equally often.
-    Ok(bytes
-        .iter()
-        .map(|byte| char::from(ALPHABET[usize::from(*byte) % ALPHABET.len()]))
-        .collect())
-}
-
-/// `K7QM4XRT9PWDH2CN` → `K7QM-4XRT-9PWD-H2CN`.
-fn format_code(code: &str) -> String {
-    code.as_bytes()
-        .chunks(4)
-        .map(|group| String::from_utf8_lossy(group).into_owned())
-        .collect::<Vec<_>>()
-        .join("-")
+    random_code(CODE_CHARS)
 }
 
 fn set_code(code: Option<String>) {
@@ -265,17 +247,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn codes_use_only_unambiguous_characters_and_are_random() {
-        let code = new_code().unwrap();
-        assert_eq!(code.len(), CODE_CHARS);
-        assert!(code.bytes().all(|byte| ALPHABET.contains(&byte)), "{code}");
-        assert!(!code.contains(['0', 'O', '1', 'I']));
-        assert_ne!(new_code().unwrap(), code);
-    }
-
-    #[test]
-    fn codes_are_shown_in_groups_of_four_and_entered_loosely() {
-        assert_eq!(format_code("K7QM4XRT9PWDH2CN"), "K7QM-4XRT-9PWD-H2CN");
+    fn codes_are_entered_loosely() {
         assert_eq!(normalize(" k7qm-4xrt 9pwd-h2cn "), "K7QM4XRT9PWDH2CN");
+        assert_eq!(new_code().unwrap().len(), CODE_CHARS);
     }
 }

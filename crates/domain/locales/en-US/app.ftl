@@ -198,3 +198,51 @@ password-changed = Password changed. You were signed out on your other devices.
 password-must-change-title = Choose a new password
 password-must-change-text = Your Admin gave you a temporary password. Choose your own to continue.
 password-current-wrong = Your current password isn't right.
+
+## Users (Admin mode)
+
+nav-users = Users
+role-viewer = Viewer
+role-driver = Driver
+role-maintainer = Maintainer
+role-admin = Admin
+role-none = No role
+users-add = + Add user
+users-you = You
+users-disabled = Disabled
+users-temporary = Temporary password
+# $role (text): the role's name.
+users-role-summary = { $role } · all vehicles
+users-roles-heading = ROLES
+users-all-vehicles = All vehicles
+users-one-vehicle-later = One vehicle: available once vehicles exist (milestone 4).
+users-account-heading = ACCOUNT
+users-reset-password = Reset password…
+users-disable = Disable…
+users-enable = Enable
+users-last-admin = The last Admin can't be disabled or lose the Admin role. Make someone else an Admin first.
+users-disable-note = Disabling signs them out everywhere; it can be undone.
+# $name (text): the person's display name.
+users-confirm-disable-title = Disable { $name }?
+users-confirm-disable-text = They'll be signed out everywhere and can't sign in until you enable them again.
+users-confirm-disable = Disable
+# $name (text): the person's display name.
+users-confirm-reset-title = Reset { $name }'s password?
+users-confirm-reset-text = They'll be signed out everywhere and get a temporary password to change at their next sign-in.
+users-confirm-reset = Reset password
+users-add-title = Add a user
+field-their-name = Their name
+users-role-on-all = Role on all vehicles
+users-add-note = A temporary password is made for them; they choose their own at their first sign-in.
+users-add-button = Add user
+# $name (text): the person's display name.
+users-temp-title = { $name }'s temporary password
+users-temp-text = Give it to them, typed exactly as shown. It's shown only this once.
+users-temp-copy = Copy
+users-temp-copied = Copied
+users-temp-done = Done
+users-temp-note = They must choose a new password at their next sign-in.
+users-username-taken = Someone already has that username.
+users-not-allowed = Switch to Admin mode to manage users.
+users-select-hint = Choose someone to see their roles and account.
+users-back = ← Users

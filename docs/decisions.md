@@ -502,3 +502,26 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **The grant's target is an extensible kind** (`Asset(id)` or `AllAssets`), so a third kind, `Group(id)`, can be added later without changing existing grants.
   - **Groups ("garages") wait** until there's a real need (a club, co-ownership, a second household).
 - **Why:** covers a household with almost no setup, avoids building group screens in Phase 2, and keeps the door open for groups.
+
+### 046. User management: list and detail; server-made temporary passwords; no orange sidebar edge
+*Decided: 2026-10-30 · Plan: §5 UI direction, §6 Users, roles & permissions · Phase plan: phase-2.md step 2g · Sketch: `docs/ui-sketches/p2m2-users-options.svg`, option A*
+
+- **Decision:**
+  - **The Users screen is a list and a detail page** (option A): users on the left, the selected person's roles and account actions on the right; on phones, the list then a page per person. Per-vehicle roles go under the person's **Roles** in milestone 4.
+  - **Temporary passwords are made by the server** (12 characters from the setup code's unambiguous alphabet) and shown to the Admin **once**, when adding a user or resetting a password. The user must choose their own at their next sign-in. Admins never type or see anyone's real password.
+  - **Disable and reset ask "Are you sure?" first.** For the last enabled Admin, disabling and changing the role are unavailable, with the reason shown.
+  - **Admin mode shows as the orange mode chip and the banner only**, with no orange edge on the sidebar (removed from step 2f).
+- **Why:** one page per person has room for per-vehicle roles later and keeps destructive actions visible; server-made temporary passwords are never weak or reused; the banner and chip are enough to make Admin mode unmistakable.
+
+### 047. Password recovery: a one-time code in the server log, for Admins
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · Phase plan: phase-2.md step 2h · Extends #028*
+
+- **Decision:**
+  - The sign-in screen has a **"Forgot your password?"** link for everyone. It asks for the username and always answers **"Ask your Admin for further instructions."**, whatever the username is.
+  - **Only for an Admin account** does the server then write a **one-time recovery code** to its log (like the setup code). Entering the username, the code, and a new password signs them in and **ends all their other sessions**.
+  - The code works **once** and **expires after 15 minutes**; requests and wrong codes count toward the sign-in attempt limit. It's kept in memory only.
+  - Anyone else who forgot their password asks an Admin, who resets it from the Users screen (#046).
+- **Why:**
+  - If the only Admin forgets their password, there's otherwise no way back in.
+  - Only someone who can read the NAS's log can finish a recovery, like first-Admin setup; anyone on the tailnet can ask, but can't use the code.
+  - One generic answer for everyone reveals nothing about which usernames exist or which are Admins, and a real Admin knows to check the log.

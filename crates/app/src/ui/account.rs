@@ -4,7 +4,8 @@
 //! - the **mode chip** (`Driver ▾`): switch between the modes the user's roles allow;
 //!   Admin asks for the password in a dialog first;
 //! - the **account chip** (`Stuart ▾`): change password, sign out;
-//! - the **Admin banner**: an orange strip with **Leave** while in Admin mode.
+//! - the **Admin banner**: an orange strip with **Leave** while in Admin mode (with the
+//!   orange chip, the only Admin-mode signal; no sidebar edge, decision #046).
 //!
 //! The server decides; after every change the app asks it again (`auth::refresh`).
 
@@ -292,9 +293,4 @@ pub(crate) fn AdminBanner() -> Element {
             }
         }
     }
-}
-
-/// Whether the signed-in user is in Admin mode (the shell tints its sidebar edge).
-pub(crate) fn in_admin_mode(state: &AuthState) -> bool {
-    matches!(state, AuthState::SignedIn(session) if session.mode == ActiveMode::Admin)
 }

@@ -10,7 +10,7 @@ use super::routes::Route;
 pub(crate) enum NavSection {
     /// Everyday screens: Garage, Due & squawks, Messages, Timeline, Reports.
     Main,
-    /// Below the divider: Vehicles, Settings, Diagnostics.
+    /// Below the divider: Vehicles, Users (Admins only), Settings, Diagnostics.
     Manage,
 }
 
@@ -23,6 +23,8 @@ pub(crate) struct NavItem {
     pub(crate) section: NavSection,
     /// Also shown in the bottom tab bar on narrow screens.
     pub(crate) bottom_tab: bool,
+    /// Shown only to the household's Admin (who can enter Admin mode).
+    pub(crate) admin_only: bool,
 }
 
 /// Every navigation item, in sidebar order.
@@ -33,6 +35,7 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
         icon,
         section,
         bottom_tab,
+        admin_only: false,
     };
     vec![
         item(
@@ -77,6 +80,16 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
             NavSection::Manage,
             false,
         ),
+        NavItem {
+            admin_only: true,
+            ..item(
+                Route::Users {},
+                messages::NAV_USERS,
+                Icon::Users,
+                NavSection::Manage,
+                false,
+            )
+        },
         item(
             Route::Settings {},
             messages::NAV_SETTINGS,
@@ -101,11 +114,21 @@ mod tests {
     #[test]
     fn every_nav_item_has_a_route_message_and_icon() {
         let items = nav_items();
-        assert_eq!(items.len(), 8);
+        assert_eq!(items.len(), 9);
         for item in &items {
             // The nav label and the top-bar title come from the same message.
             assert_eq!(item.route.title(), item.label, "{:?}", item.route);
         }
+    }
+
+    #[test]
+    fn only_users_is_admin_only() {
+        let admin_only: Vec<Route> = nav_items()
+            .into_iter()
+            .filter(|item| item.admin_only)
+            .map(|item| item.route)
+            .collect();
+        assert_eq!(admin_only, [Route::Users {}]);
     }
 
     #[test]

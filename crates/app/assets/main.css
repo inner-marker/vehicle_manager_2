@@ -721,7 +721,169 @@ select,
     color: var(--admin-text);
 }
 
-/* ---------- Admin mode: banner and sidebar edge ---------- */
+/* ---------- Users (Admin mode; p2m2-users-options.svg, option A) ---------- */
+
+.users {
+    display: grid;
+    grid-template-columns: minmax(240px, 320px) 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 60px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.user-row.selected {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+}
+
+.user-row.disabled {
+    color: var(--text-muted);
+}
+
+.user-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-row-role {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.badge {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-raised);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.users-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.users-back {
+    display: none;
+}
+
+.user-name {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.user-username {
+    margin: 0;
+    color: var(--text-muted);
+    font-family: ui-monospace, Menlo, monospace;
+}
+
+.section-heading {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+}
+
+.role-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 440px;
+    padding: 8px 8px 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.role-select {
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+}
+
+.muted-note {
+    margin: 0;
+    max-width: 440px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.danger-button {
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid var(--error);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--error);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.danger-button.filled {
+    background: var(--error);
+    color: var(--accent-text);
+}
+
+.danger-button:disabled,
+.role-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.temporary-password {
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    background: var(--bg);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    user-select: all;
+}
+
+/* ---------- Admin mode: the banner (decision #046: no sidebar edge) ---------- */
 
 .admin-banner {
     display: flex;
@@ -753,10 +915,6 @@ select,
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-}
-
-.sidebar.admin {
-    box-shadow: inset 4px 0 0 var(--admin);
 }
 
 /* ---------- Medium: icon-only sidebar ---------- */
@@ -902,5 +1060,26 @@ select,
     .admin-banner {
         flex-wrap: wrap;
         padding: 6px 12px;
+    }
+
+    /* Users on phones: the list, or one person's page with a way back. */
+    .users {
+        display: block;
+    }
+
+    .users .users-detail {
+        display: none;
+    }
+
+    .users.has-selection .users-list {
+        display: none;
+    }
+
+    .users.has-selection .users-detail {
+        display: flex;
+    }
+
+    .users-back {
+        display: inline-flex;
     }
 }

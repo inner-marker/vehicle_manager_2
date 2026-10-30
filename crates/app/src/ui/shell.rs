@@ -11,7 +11,7 @@ use dioxus::prelude::*;
 use domain::i18n::messages;
 use domain::log_area;
 
-use super::account::{AccountChip, AdminBanner, ModeChip, in_admin_mode};
+use super::account::{AccountChip, AdminBanner, ModeChip};
 use super::auth::{refresh, use_auth};
 use super::icons::{Icon, IconView};
 use super::nav::{NavItem, NavSection, nav_items};
@@ -40,7 +40,16 @@ pub(crate) fn Shell() -> Element {
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
 
-    let items = nav_items();
+    // Users appears only for the household's Admin (who can enter Admin mode).
+    let is_household_admin = matches!(
+        auth(),
+        super::auth::AuthState::SignedIn(session)
+            if session.available_modes.contains(&domain::access::ActiveMode::Admin)
+    );
+    let items: Vec<NavItem> = nav_items()
+        .into_iter()
+        .filter(|item| is_household_admin || !item.admin_only)
+        .collect();
     let main_items: Vec<NavItem> = items
         .iter()
         .filter(|i| i.section == NavSection::Main)
@@ -55,13 +64,7 @@ pub(crate) fn Shell() -> Element {
 
     rsx! {
         div { class: "shell",
-            aside {
-                class: match (menu_open(), in_admin_mode(&auth())) {
-                    (true, true) => "sidebar open admin",
-                    (true, false) => "sidebar open",
-                    (false, true) => "sidebar admin",
-                    (false, false) => "sidebar",
-                },
+            aside { class: if menu_open() { "sidebar open" } else { "sidebar" },
                 button {
                     class: "menu-close",
                     "aria-label": tr(messages::MENU_CLOSE),

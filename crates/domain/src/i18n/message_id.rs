@@ -326,4 +326,87 @@ define_messages! {
     PASSWORD_MUST_CHANGE_TEXT => "password-must-change-text",
     /// Change-password error: the current password is wrong.
     PASSWORD_CURRENT_WRONG => "password-current-wrong",
+
+    /// Navigation: managing users (Admins only).
+    NAV_USERS => "nav-users",
+    /// Role: Viewer.
+    ROLE_VIEWER => "role-viewer",
+    /// Role: Driver.
+    ROLE_DRIVER => "role-driver",
+    /// Role: Maintainer.
+    ROLE_MAINTAINER => "role-maintainer",
+    /// Role: Admin.
+    ROLE_ADMIN => "role-admin",
+    /// No role on all vehicles.
+    ROLE_NONE => "role-none",
+    /// Users: button to add a user.
+    USERS_ADD => "users-add",
+    /// Users: badge on the signed-in Admin.
+    USERS_YOU => "users-you",
+    /// Users: badge on a disabled user.
+    USERS_DISABLED => "users-disabled",
+    /// Users: badge on someone with a temporary password.
+    USERS_TEMPORARY => "users-temporary",
+    /// Users list: a person's role on all vehicles; takes `role` (text).
+    USERS_ROLE_SUMMARY => "users-role-summary",
+    /// Users detail: the roles heading.
+    USERS_ROLES_HEADING => "users-roles-heading",
+    /// Users detail: the all-vehicles role row.
+    USERS_ALL_VEHICLES => "users-all-vehicles",
+    /// Users detail: per-vehicle roles come later.
+    USERS_ONE_VEHICLE_LATER => "users-one-vehicle-later",
+    /// Users detail: the account heading.
+    USERS_ACCOUNT_HEADING => "users-account-heading",
+    /// Users detail: reset password.
+    USERS_RESET_PASSWORD => "users-reset-password",
+    /// Users detail: disable.
+    USERS_DISABLE => "users-disable",
+    /// Users detail: enable again.
+    USERS_ENABLE => "users-enable",
+    /// Users detail: why the last Admin can't be disabled or demoted.
+    USERS_LAST_ADMIN => "users-last-admin",
+    /// Users detail: what disabling does.
+    USERS_DISABLE_NOTE => "users-disable-note",
+    /// Confirm dialog: disable; takes `name` (text).
+    USERS_CONFIRM_DISABLE_TITLE => "users-confirm-disable-title",
+    /// Confirm dialog: what disabling does.
+    USERS_CONFIRM_DISABLE_TEXT => "users-confirm-disable-text",
+    /// Confirm dialog: the disable button.
+    USERS_CONFIRM_DISABLE => "users-confirm-disable",
+    /// Confirm dialog: reset; takes `name` (text).
+    USERS_CONFIRM_RESET_TITLE => "users-confirm-reset-title",
+    /// Confirm dialog: what a reset does.
+    USERS_CONFIRM_RESET_TEXT => "users-confirm-reset-text",
+    /// Confirm dialog: the reset button.
+    USERS_CONFIRM_RESET => "users-confirm-reset",
+    /// Add-user dialog: heading.
+    USERS_ADD_TITLE => "users-add-title",
+    /// Form label: another person's name.
+    FIELD_THEIR_NAME => "field-their-name",
+    /// Add-user dialog: role label.
+    USERS_ROLE_ON_ALL => "users-role-on-all",
+    /// Add-user dialog: about the temporary password.
+    USERS_ADD_NOTE => "users-add-note",
+    /// Add-user dialog: the button.
+    USERS_ADD_BUTTON => "users-add-button",
+    /// Temporary-password dialog: heading; takes `name` (text).
+    USERS_TEMP_TITLE => "users-temp-title",
+    /// Temporary-password dialog: what to do with it.
+    USERS_TEMP_TEXT => "users-temp-text",
+    /// Temporary-password dialog: copy button.
+    USERS_TEMP_COPY => "users-temp-copy",
+    /// Temporary-password dialog: after copying.
+    USERS_TEMP_COPIED => "users-temp-copied",
+    /// Temporary-password dialog: close.
+    USERS_TEMP_DONE => "users-temp-done",
+    /// Temporary-password dialog: what happens next.
+    USERS_TEMP_NOTE => "users-temp-note",
+    /// Add-user error: the username is taken.
+    USERS_USERNAME_TAKEN => "users-username-taken",
+    /// Users screen outside Admin mode.
+    USERS_NOT_ALLOWED => "users-not-allowed",
+    /// Users detail with nobody chosen.
+    USERS_SELECT_HINT => "users-select-hint",
+    /// Users detail on phones: back to the list.
+    USERS_BACK => "users-back",
 }

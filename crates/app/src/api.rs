@@ -13,7 +13,7 @@
 use dioxus::prelude::*;
 use domain::api::{
     ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, SessionState, SetupOutcome,
-    SignInOutcome, SwitchModeOutcome,
+    SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -337,6 +337,83 @@ pub(crate) async fn switch_mode(
     )
 }
 
+/// Everyone, for the Users screen (Admin mode only).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[get("/api/v1/users")]
+pub(crate) async fn list_users() -> ServerFnResult<UserAdminOutcome> {
+    Ok(
+        server_side::with_admin(async |context| ::server::user_admin::list_users(&context).await)
+            .await,
+    )
+}
+
+/// Adds a user with `role` on all vehicles; answers with their temporary password.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/add")]
+pub(crate) async fn add_user(
+    username: String,
+    display_name: String,
+    role: domain::access::Role,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::add_user(&context, &username, &display_name, role).await
+    })
+    .await)
+}
+
+/// Sets a user's role on all vehicles (`None` removes it).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/role")]
+pub(crate) async fn set_user_role(
+    user: domain::user::UserId,
+    role: Option<domain::access::Role>,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::set_role_on_all(&context, user, role).await
+    })
+    .await)
+}
+
+/// Disables a user (signing them out everywhere) or enables them again.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/disabled")]
+pub(crate) async fn set_user_disabled(
+    user: domain::user::UserId,
+    disabled: bool,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::set_disabled(&context, user, disabled).await
+    })
+    .await)
+}
+
+/// Gives a user a new temporary password and signs them out everywhere.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/reset-password")]
+pub(crate) async fn reset_user_password(
+    user: domain::user::UserId,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::reset_password(&context, user).await
+    })
+    .await)
+}
+
 /// Server-side helpers for the server functions above: the current request's signed-in
 /// user and client, the session cookie, and the login limiter.
 #[cfg(feature = "server")]
@@ -399,6 +476,26 @@ mod server_side {
         {
             context.add_response_header(SET_COOKIE, value);
         }
+    }
+
+    /// Runs `action` as the signed-in user in an Admin context, or answers that it's
+    /// unavailable (no database) or not allowed (not signed in).
+    pub(super) async fn with_admin(
+        action: impl AsyncFnOnce(server::user_admin::AdminContext<'_>) -> domain::api::UserAdminOutcome,
+    ) -> domain::api::UserAdminOutcome {
+        let Some(database) = server::startup::database() else {
+            return domain::api::UserAdminOutcome::Unavailable;
+        };
+        let Some(admin) = signed_in() else {
+            return domain::api::UserAdminOutcome::NotAllowed;
+        };
+        let context = server::user_admin::AdminContext {
+            database,
+            admin: &admin,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
     }
 
     pub(super) fn session_info(signed_in: &SignedIn) -> SessionInfo {

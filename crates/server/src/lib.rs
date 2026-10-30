@@ -6,6 +6,7 @@
 //! same code. Native only: the web (WASM) build must never depend on this crate.
 
 pub mod auth;
+pub mod codes;
 pub mod commands;
 pub mod health;
 pub mod ids;
@@ -15,3 +16,4 @@ pub mod passwords;
 pub mod sessions;
 pub mod setup;
 pub mod startup;
+pub mod user_admin;

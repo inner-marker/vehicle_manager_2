@@ -238,6 +238,75 @@ pub enum CheckSetupCodeOutcome {
     AlreadySetUp,
 }
 
+/// Whether a user can sign in, and with what.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AccountStatus {
+    /// Signs in with their own password.
+    Active,
+    /// Has a temporary password they must change at their next sign-in.
+    TemporaryPassword,
+    /// Can't sign in.
+    Disabled,
+}
+
+/// One user, as the Users screen (Admin mode) shows them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserSummary {
+    /// The user's ID.
+    pub id: crate::user::UserId,
+    /// Their username.
+    pub username: crate::user::Username,
+    /// Their display name.
+    pub display_name: String,
+    /// Whether they can sign in, and with what.
+    pub status: AccountStatus,
+    /// Their role on all vehicles, if any (per-vehicle roles arrive in milestone 4).
+    pub role_on_all: Option<crate::access::Role>,
+    /// This is the signed-in Admin.
+    pub is_you: bool,
+    /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
+    pub is_last_admin: bool,
+}
+
+/// The answer to a Users screen request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum UserAdminOutcome {
+    /// The household's users, by username.
+    Users {
+        /// Everyone (not deleted).
+        users: Vec<UserSummary>,
+    },
+    /// Done.
+    Done,
+    /// Done; give this temporary password to the user. Shown once.
+    TemporaryPassword {
+        /// The password, e.g. `QX7M-K2PD-9WRT`, typed exactly as shown.
+        password: String,
+    },
+    /// Not in Admin mode, or not the household's Admin.
+    NotAllowed,
+    /// It would leave the household without an enabled Admin.
+    LastAdmin,
+    /// Someone already has that username.
+    UsernameTaken,
+    /// The username breaks a rule.
+    InvalidUsername {
+        /// Which rule.
+        reason: crate::user::UsernameError,
+    },
+    /// The display name breaks a rule.
+    InvalidDisplayName {
+        /// Which rule.
+        reason: crate::user::DisplayNameError,
+    },
+    /// There's no such user.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// The answer to a password change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]
