@@ -11,17 +11,19 @@ mod sessions {
     use axum::http::StatusCode;
     use axum::routing::get;
     use domain::access::{ActiveMode, GrantTarget, Role, RoleGrant, RoleGrantPatch};
+    use domain::command::Change;
     use domain::test_support::{ManualClock, test_id};
     use domain::time::{Clock, UnixMillis};
     use domain::user::{User, UserPatch, Username};
     use server::auth::{AuthConfig, SessionSource, protect, session_cookie_name};
+    use server::commands::issue;
+    use server::health::Health;
     use server::login_limiter::LoginLimiter;
     use server::passwords::hash_password;
     use server::sessions::{
-        ADMIN_IDLE_MILLIS, IDLE_LIFETIME_MILLIS, SignInError, SignedIn, SwitchModeError, resolve,
-        sign_in, sign_out, switch_mode, token_hash,
+        ADMIN_IDLE_MILLIS, ChangePasswordError, IDLE_LIFETIME_MILLIS, SignInError, SignedIn,
+        SwitchModeError, change_password, resolve, sign_in, sign_out, switch_mode, token_hash,
     };
-    use storage::commands::RecordWriter;
     use storage::users::{RoleGrantWriter, UserWriter};
     use storage::{Database, NewDatabaseIds};
     use tower::ServiceExt;
@@ -45,6 +47,7 @@ mod sessions {
         (temp, database)
     }
 
+    /// Creates a user and their grant through the command pipeline, as the app does.
     async fn add_user(database: &Database, n: u32, username: &str, role: Role) {
         let user = User {
             username: Username::parse(username).unwrap(),
@@ -57,26 +60,62 @@ mod sessions {
             target: GrantTarget::AllAssets,
             role,
         };
-        let mut connection = database.pool().acquire().await.unwrap();
-        UserWriter
-            .create(&mut connection, test_id(n), &UserPatch::all(user), 1)
-            .await
-            .unwrap();
-        RoleGrantWriter
-            .create(
-                &mut connection,
-                test_id(n + 100),
-                &RoleGrantPatch::all(grant),
-                2,
-            )
-            .await
-            .unwrap();
-        drop(connection);
+        let clock = ManualClock::new(NOW);
+        let device = test_id(901);
+        let create_user = Change::Create {
+            id: test_id(n),
+            values: UserPatch::all(user),
+        };
+        let create_grant = Change::Create {
+            id: test_id(n + 100),
+            values: RoleGrantPatch::all(grant),
+        };
+        issue(
+            database,
+            &UserWriter,
+            create_user,
+            device,
+            None,
+            Health::Healthy,
+            &clock,
+        )
+        .await
+        .unwrap();
+        issue(
+            database,
+            &RoleGrantWriter,
+            create_grant,
+            device,
+            None,
+            Health::Healthy,
+            &clock,
+        )
+        .await
+        .unwrap();
         let hash = hash_password(PASSWORD.into()).await.unwrap();
         database
             .set_password_hash(test_id(n), &hash, NOW)
             .await
             .unwrap();
+    }
+
+    /// Changes one user's fields through the command pipeline.
+    async fn update_user(database: &Database, n: u32, patch: UserPatch) {
+        let change = Change::Update {
+            id: test_id(n),
+            patch,
+        };
+        issue(
+            database,
+            &UserWriter,
+            change,
+            test_id(901),
+            None,
+            Health::Healthy,
+            &ManualClock::new(NOW),
+        )
+        .await
+        .unwrap();
     }
 
     async fn signed_in(database: &Database) -> (String, SignedIn) {
@@ -128,16 +167,15 @@ mod sessions {
         )
         .await;
         let unknown = sign_in(&database, &limiter, "nobody", PASSWORD.into(), "b", NOW).await;
-        let mut connection = database.pool().acquire().await.unwrap();
-        let disable = UserPatch {
-            disabled: Some(true),
-            ..UserPatch::default()
-        };
-        UserWriter
-            .update(&mut connection, test_id(1), &disable, 3)
-            .await
-            .unwrap();
-        drop(connection);
+        update_user(
+            &database,
+            1,
+            UserPatch {
+                disabled: Some(true),
+                ..UserPatch::default()
+            },
+        )
+        .await;
         let disabled = sign_in(&database, &limiter, "stuart", PASSWORD.into(), "c", NOW).await;
 
         for result in [wrong, unknown, disabled] {
@@ -344,21 +382,145 @@ mod sessions {
                 .is_some()
         );
 
-        let mut connection = database.pool().acquire().await.unwrap();
-        let disable = UserPatch {
-            disabled: Some(true),
-            ..UserPatch::default()
-        };
-        UserWriter
-            .update(&mut connection, test_id(1), &disable, 3)
-            .await
-            .unwrap();
-        drop(connection);
+        update_user(
+            &database,
+            1,
+            UserPatch {
+                disabled: Some(true),
+                ..UserPatch::default()
+            },
+        )
+        .await;
         assert!(
             resolve(&database, token_hash(&second).unwrap(), NOW)
                 .await
                 .unwrap()
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn changing_the_password_checks_the_old_one_and_signs_out_other_sessions() {
+        let (_temp, database) = database().await;
+        let clock = ManualClock::new(NOW);
+        let (other, _) = signed_in(&database).await;
+        let (this, signed_in) = signed_in(&database).await;
+
+        let wrong = change_password(
+            &database,
+            &signed_in,
+            "not it at all".into(),
+            "a brand new password".into(),
+            Health::Healthy,
+            &clock,
+        )
+        .await;
+        let short = change_password(
+            &database,
+            &signed_in,
+            PASSWORD.into(),
+            "short".into(),
+            Health::Healthy,
+            &clock,
+        )
+        .await;
+        assert_eq!(wrong, Err(ChangePasswordError::WrongPassword));
+        assert!(matches!(short, Err(ChangePasswordError::Invalid(_))));
+
+        change_password(
+            &database,
+            &signed_in,
+            PASSWORD.into(),
+            "a brand new password".into(),
+            Health::Healthy,
+            &clock,
+        )
+        .await
+        .unwrap();
+
+        assert!(
+            resolve(&database, token_hash(&this).unwrap(), NOW)
+                .await
+                .unwrap()
+                .is_some(),
+            "this session stays"
+        );
+        assert!(
+            resolve(&database, token_hash(&other).unwrap(), NOW)
+                .await
+                .unwrap()
+                .is_none(),
+            "others end"
+        );
+        let old = sign_in(
+            &database,
+            &LoginLimiter::new(),
+            "stuart",
+            PASSWORD.into(),
+            "z",
+            NOW,
+        )
+        .await;
+        assert!(matches!(old, Err(SignInError::InvalidCredentials)));
+        assert!(
+            sign_in(
+                &database,
+                &LoginLimiter::new(),
+                "stuart",
+                "a brand new password".into(),
+                "z",
+                NOW
+            )
+            .await
+            .is_ok()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_temporary_password_is_cleared_through_a_command_with_the_user_in_the_history() {
+        let (_temp, database) = database().await;
+        let clock = ManualClock::new(NOW);
+        update_user(
+            &database,
+            1,
+            UserPatch {
+                must_change_password: Some(true),
+                ..UserPatch::default()
+            },
+        )
+        .await;
+        let (_, signed_in) = signed_in(&database).await;
+        assert!(signed_in.must_change_password);
+
+        change_password(
+            &database,
+            &signed_in,
+            PASSWORD.into(),
+            "a brand new password".into(),
+            Health::Healthy,
+            &clock,
+        )
+        .await
+        .unwrap();
+
+        assert!(
+            !database
+                .user(test_id(1))
+                .await
+                .unwrap()
+                .unwrap()
+                .user
+                .must_change_password
+        );
+        let (user_id, mode): (Vec<u8>, String) = sqlx::query_as(
+            "SELECT user_id, active_mode FROM applied_commands WHERE user_id IS NOT NULL",
+        )
+        .fetch_one(database.pool())
+        .await
+        .unwrap();
+        assert_eq!(
+            (user_id, mode.as_str()),
+            (test_id::<User>(1).to_bytes().to_vec(), "driver")
         );
     }
 

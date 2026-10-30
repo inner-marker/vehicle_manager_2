@@ -155,6 +155,15 @@ pub enum AdminAction {
     ServerOperations,
 }
 
+/// Who made a change, and in which mode: recorded with every command for the audit trail.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Actor {
+    /// The user.
+    pub user: UserId,
+    /// Their active mode at the time.
+    pub mode: ActiveMode,
+}
+
 /// The user's role on `asset`: the highest of the grants that cover it, or `None`.
 /// `grants` are this user's own grants.
 #[must_use]

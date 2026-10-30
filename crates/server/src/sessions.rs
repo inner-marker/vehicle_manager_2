@@ -409,6 +409,96 @@ pub async fn sign_out(database: &Database, token_hash: [u8; 32]) -> Result<(), S
     Ok(())
 }
 
+/// Why a password change was refused.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChangePasswordError {
+    /// The current password is wrong.
+    WrongPassword,
+    /// The new password breaks a rule.
+    Invalid(domain::user::PasswordError),
+    /// The database or hashing failed.
+    Unavailable,
+}
+
+/// Changes the signed-in user's password, after checking their current one. Clears "must
+/// change password" (through a command, so it's in the history) and signs out their other
+/// sessions; this one stays signed in. `health` is the server's current health.
+///
+/// # Errors
+///
+/// [`ChangePasswordError`].
+pub async fn change_password(
+    database: &Database,
+    signed_in: &SignedIn,
+    current: String,
+    new: String,
+    health: crate::health::Health,
+    clock: &(dyn domain::time::Clock + Sync),
+) -> Result<(), ChangePasswordError> {
+    domain::user::check_new_password(&new).map_err(ChangePasswordError::Invalid)?;
+    let stored = database
+        .password_hash(signed_in.user)
+        .await
+        .map_err(|_| ChangePasswordError::Unavailable)?;
+    let matches = match stored {
+        Some(hash) => verify_password(current, hash).await,
+        None => false,
+    };
+    if !matches {
+        return Err(ChangePasswordError::WrongPassword);
+    }
+    let hash = hash_password(new)
+        .await
+        .map_err(|_| ChangePasswordError::Unavailable)?;
+    database
+        .set_password_hash(signed_in.user, &hash, clock.now())
+        .await
+        .map_err(|_| ChangePasswordError::Unavailable)?;
+    if signed_in.must_change_password {
+        clear_must_change(database, signed_in, health, clock).await?;
+    }
+    let ended = database
+        .delete_other_sessions_of(signed_in.user, signed_in.token_hash)
+        .await
+        .map_err(|_| ChangePasswordError::Unavailable)?;
+    tracing::info!(target: log_area::AUTH, user = %signed_in.user, other_sessions_ended = ended, "password changed");
+    Ok(())
+}
+
+async fn clear_must_change(
+    database: &Database,
+    signed_in: &SignedIn,
+    health: crate::health::Health,
+    clock: &(dyn domain::time::Clock + Sync),
+) -> Result<(), ChangePasswordError> {
+    let change = domain::command::Change::Update {
+        id: signed_in.user,
+        patch: domain::user::UserPatch {
+            must_change_password: Some(false),
+            ..domain::user::UserPatch::default()
+        },
+    };
+    let actor = domain::access::Actor {
+        user: signed_in.user,
+        mode: signed_in.mode,
+    };
+    crate::commands::issue(
+        database,
+        &storage::users::UserWriter,
+        change,
+        signed_in.device,
+        Some(actor),
+        health,
+        clock,
+    )
+    .await
+    .map(|_| ())
+    .map_err(|error| {
+        tracing::error!(target: log_area::AUTH, %error, "couldn't clear must-change-password");
+        ChangePasswordError::Unavailable
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

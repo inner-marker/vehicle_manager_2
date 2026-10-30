@@ -73,6 +73,7 @@ mod pipeline {
                         values: UserPatch::all(user),
                     },
                 ),
+                None,
                 Health::Healthy,
                 &clock,
             )
@@ -88,6 +89,7 @@ mod pipeline {
                         values: RoleGrantPatch::all(grant),
                     },
                 ),
+                None,
                 Health::Healthy,
                 &clock,
             )
@@ -103,6 +105,7 @@ mod pipeline {
                         patch: rename,
                     },
                 ),
+                None,
                 Health::Healthy,
                 &clock,
             )

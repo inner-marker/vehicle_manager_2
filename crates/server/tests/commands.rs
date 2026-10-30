@@ -196,6 +196,7 @@ mod engine {
             database,
             &NoteWriter,
             command,
+            None,
             Health::Healthy,
             &ManualClock::new(NOW),
         )
@@ -417,6 +418,7 @@ mod engine {
             &database,
             &NoteWriter,
             &create(1, at(0, laptop()), "Oil", "5W-30"),
+            None,
             Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
             &clock,
         )

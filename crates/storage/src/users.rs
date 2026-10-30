@@ -37,7 +37,7 @@ fn role_from_sql(value: &str) -> Result<Role, StorageError> {
     }
 }
 
-fn mode_to_sql(mode: ActiveMode) -> &'static str {
+pub(crate) fn mode_to_sql(mode: ActiveMode) -> &'static str {
     match mode {
         ActiveMode::Driver => "driver",
         ActiveMode::Maintainer => "maintainer",
@@ -559,6 +559,27 @@ impl Database {
             .execute(self.pool())
             .await?
             .rows_affected())
+    }
+
+    /// Ends every session of a user except one (e.g. after they change their password),
+    /// and returns how many ended.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if the query fails.
+    pub async fn delete_other_sessions_of(
+        &self,
+        user: UserId,
+        keep: [u8; 32],
+    ) -> Result<u64, StorageError> {
+        Ok(
+            sqlx::query("DELETE FROM sessions WHERE user_id = ? AND token_hash != ?")
+                .bind(id_to_sql(user))
+                .bind(keep.to_vec())
+                .execute(self.pool())
+                .await?
+                .rows_affected(),
+        )
     }
 
     /// Removes sessions that ended before `now`, and returns how many.

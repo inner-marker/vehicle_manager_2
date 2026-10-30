@@ -11,6 +11,7 @@
 
 use std::collections::HashMap;
 
+use domain::access::Actor;
 use domain::command::{CommandId, Record};
 use domain::hlc::{Hlc, Stamp};
 use domain::id::Id;
@@ -19,6 +20,7 @@ use sqlx::{Row, SqliteConnection};
 
 use crate::StorageError;
 use crate::convert::{hlc_from_sql, hlc_to_sql, id_from_sql, id_to_sql};
+use crate::users::mode_to_sql;
 
 /// Writes one kind of record's own table. Implemented once per record type; called by the
 /// command engine with only the fields that won, inside the command's transaction.
@@ -67,7 +69,8 @@ pub async fn is_applied(
     Ok(applied)
 }
 
-/// Records `command_id` as applied; `sequence` is `None` if it changed nothing.
+/// Records `command_id` as applied; `sequence` is `None` if it changed nothing. `actor` is
+/// who made it and in which mode (`None` for the server's own changes).
 ///
 /// # Errors
 ///
@@ -76,21 +79,48 @@ pub async fn record_applied(
     connection: &mut SqliteConnection,
     command_id: CommandId,
     stamp: Stamp,
+    actor: Option<Actor>,
     sequence: Option<i64>,
     now: UnixMillis,
 ) -> Result<(), StorageError> {
     sqlx::query(
-        "INSERT INTO applied_commands (command_id, device_id, hlc, sequence, applied_at_ms)
-         VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO applied_commands
+             (command_id, device_id, hlc, user_id, active_mode, sequence, applied_at_ms)
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(id_to_sql(command_id))
     .bind(id_to_sql(stamp.device))
     .bind(hlc_to_sql(stamp.hlc, "applied_commands.hlc")?)
+    .bind(actor.map(|actor| id_to_sql(actor.user)))
+    .bind(actor.map(|actor| mode_to_sql(actor.mode)))
     .bind(sequence)
     .bind(now.as_millis())
     .execute(connection)
     .await?;
     Ok(())
+}
+
+/// Takes the server's next HLC stamp for a change it makes (for itself or on a signed-in
+/// user's behalf), and saves it, in its own immediate transaction so concurrent changes
+/// never get the same stamp.
+///
+/// # Errors
+///
+/// [`StorageError`] if the database fails, or the clock is outside the HLC range.
+pub async fn next_server_hlc(
+    database: &crate::Database,
+    clock: &(dyn domain::time::Clock + Sync),
+) -> Result<Hlc, StorageError> {
+    let mut transaction = database.pool().begin_with("BEGIN IMMEDIATE").await?;
+    let last = server_last_hlc(&mut transaction).await?;
+    let next = domain::hlc::HlcClock::new(clock, last)
+        .tick()
+        .map_err(|_| StorageError::InvalidValue {
+            column: "database_meta.last_hlc",
+        })?;
+    set_server_last_hlc(&mut transaction, next).await?;
+    transaction.commit().await?;
+    Ok(next)
 }
 
 /// The stamp of the last accepted change to each field of one record.

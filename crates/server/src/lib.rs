@@ -13,4 +13,5 @@ pub mod jobs;
 pub mod login_limiter;
 pub mod passwords;
 pub mod sessions;
+pub mod setup;
 pub mod startup;

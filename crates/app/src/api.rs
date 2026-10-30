@@ -10,7 +10,10 @@
 //! from event handlers or effects, which only run in the browser or app.
 
 use dioxus::prelude::*;
-use domain::api::{Handshake, Pong, SessionInfo, SignInOutcome, SwitchModeOutcome};
+use domain::api::{
+    ChangePasswordOutcome, Handshake, Pong, SessionState, SetupOutcome, SignInOutcome,
+    SwitchModeOutcome,
+};
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -118,8 +121,8 @@ pub(crate) async fn sign_in(
     }
 }
 
-/// Who is signed in on this session, or `None`. A public path, so the app can ask before
-/// signing in.
+/// Who is signed in on this session (if anyone), and whether the server still needs its first
+/// Admin. A public path, so the app can ask before signing in.
 ///
 /// # Errors
 ///
@@ -132,8 +135,120 @@ pub(crate) async fn sign_in(
         reason = "server functions must be async; this one only reads the request"
     )
 )]
-pub(crate) async fn session() -> ServerFnResult<Option<SessionInfo>> {
-    Ok(server_side::signed_in().map(|signed_in| server_side::session_info(&signed_in)))
+pub(crate) async fn session() -> ServerFnResult<SessionState> {
+    Ok(SessionState {
+        signed_in: server_side::signed_in().map(|signed_in| server_side::session_info(&signed_in)),
+        setup_needed: ::server::setup::is_open(),
+    })
+}
+
+/// Creates the first Admin with the setup code from the server log, and signs them in.
+/// A public path; it works only while the server has no users.
+///
+/// # Errors
+///
+/// Only transport errors; refusals are [`SetupOutcome`] values.
+#[post("/api/v1/setup")]
+pub(crate) async fn setup(
+    code: String,
+    username: String,
+    display_name: String,
+    password: String,
+    want_token: bool,
+) -> ServerFnResult<SetupOutcome> {
+    use ::server::setup::SetupError;
+
+    let (Some(database), Some(device)) = (
+        ::server::startup::database(),
+        ::server::startup::server_device(),
+    ) else {
+        return Ok(SetupOutcome::Unavailable);
+    };
+    let now = server_side::now();
+    // Wrong codes count against the same limit as wrong passwords, by client.
+    let client_key = format!("setup:{}", server_side::client_key());
+    if let Err(retry_after_millis) = server_side::LOGIN_LIMITER.check(&[&client_key], now) {
+        return Ok(SetupOutcome::TooManyAttempts {
+            retry_after_seconds: (retry_after_millis + 999) / 1000,
+        });
+    }
+    let request = ::server::setup::SetupRequest {
+        code,
+        username: username.clone(),
+        display_name,
+        password: password.clone(),
+    };
+    let created = ::server::setup::create_first_admin(
+        database,
+        device,
+        ::server::health::current(),
+        &crate::logging::SystemClock,
+        request,
+    )
+    .await;
+    match created {
+        Ok(_) => {}
+        Err(SetupError::WrongCode) => {
+            server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
+            return Ok(SetupOutcome::WrongCode);
+        }
+        Err(SetupError::AlreadySetUp) => return Ok(SetupOutcome::AlreadySetUp),
+        Err(SetupError::InvalidUsername(reason)) => {
+            return Ok(SetupOutcome::InvalidUsername { reason });
+        }
+        Err(SetupError::InvalidDisplayName(reason)) => {
+            return Ok(SetupOutcome::InvalidDisplayName { reason });
+        }
+        Err(SetupError::InvalidPassword(reason)) => {
+            return Ok(SetupOutcome::InvalidPassword { reason });
+        }
+        Err(SetupError::Unavailable) => return Ok(SetupOutcome::Unavailable),
+    }
+    // Signed straight in, so the new Admin doesn't have to type it all again.
+    Ok(match sign_in(username, password, want_token).await? {
+        SignInOutcome::SignedIn { session, token } => SetupOutcome::SignedIn { session, token },
+        SignInOutcome::InvalidCredentials
+        | SignInOutcome::TooManyAttempts { .. }
+        | SignInOutcome::Unavailable => SetupOutcome::Unavailable,
+    })
+}
+
+/// Changes the signed-in user's password; their other sessions are signed out.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ChangePasswordOutcome`] values.
+#[post("/api/v1/password")]
+pub(crate) async fn change_password(
+    current: String,
+    new: String,
+) -> ServerFnResult<ChangePasswordOutcome> {
+    use ::server::sessions::ChangePasswordError;
+
+    let (Some(signed_in), Some(database)) =
+        (server_side::signed_in(), ::server::startup::database())
+    else {
+        return Ok(ChangePasswordOutcome::NotSignedIn);
+    };
+    Ok(
+        match ::server::sessions::change_password(
+            database,
+            &signed_in,
+            current,
+            new,
+            ::server::health::current(),
+            &crate::logging::SystemClock,
+        )
+        .await
+        {
+            Ok(()) => ChangePasswordOutcome::Changed,
+            Err(ChangePasswordError::WrongPassword) => ChangePasswordOutcome::WrongPassword,
+            Err(ChangePasswordError::Invalid(reason)) => {
+                ChangePasswordOutcome::InvalidNewPassword { reason }
+            }
+            Err(ChangePasswordError::Unavailable) => ChangePasswordOutcome::Unavailable,
+        },
+    )
 }
 
 /// Signs out: ends this session and clears the cookie.

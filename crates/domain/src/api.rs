@@ -171,6 +171,74 @@ pub struct SessionInfo {
     pub available_modes: Vec<crate::access::ActiveMode>,
 }
 
+/// The session check's answer: who is signed in (if anyone), and whether the server still
+/// needs its first Admin.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionState {
+    /// The signed-in user, or `None`.
+    pub signed_in: Option<SessionInfo>,
+    /// No users exist yet: the app should offer first-Admin setup instead of sign-in.
+    pub setup_needed: bool,
+}
+
+/// The answer to a first-Admin setup attempt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SetupOutcome {
+    /// The Admin was created and is signed in (as for [`SignInOutcome::SignedIn`]).
+    SignedIn {
+        /// The new Admin.
+        session: SessionInfo,
+        /// The session token, if asked for (the desktop app).
+        token: Option<String>,
+    },
+    /// The setup code is wrong.
+    WrongCode,
+    /// Too many wrong codes; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The username breaks a rule.
+    InvalidUsername {
+        /// Which rule.
+        reason: crate::user::UsernameError,
+    },
+    /// The display name breaks a rule.
+    InvalidDisplayName {
+        /// Which rule.
+        reason: crate::user::DisplayNameError,
+    },
+    /// The password breaks a rule.
+    InvalidPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// An Admin already exists: sign in instead.
+    AlreadySetUp,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to a password change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ChangePasswordOutcome {
+    /// Changed. Other sessions of this user were signed out.
+    Changed,
+    /// The current password is wrong.
+    WrongPassword,
+    /// The new password breaks a rule.
+    InvalidNewPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// The answer to a sign-in attempt.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]

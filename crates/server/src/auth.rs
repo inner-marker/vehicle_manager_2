@@ -9,7 +9,8 @@
 //!    functions read it (`app::api`).
 //! 2. **Authenticated?** A valid session passes. Until step 2e retires it, so does the
 //!    Phase 1 test credential (`Authorization: Bearer <credential>`, constant-time compare).
-//!    Only the few [`PUBLIC_API_PATHS`] (handshake, sign-in, the session check) are allowed
+//!    Only the few [`PUBLIC_API_PATHS`] (handshake, sign-in, the session check, first-Admin
+//!    setup) are allowed
 //!    without either.
 //! 3. The client's API version header must be one this server supports.
 //!
@@ -55,7 +56,12 @@ pub fn credential_env_var() -> String {
 /// The `/api/` paths that work without signing in. Each is still version-checked, and still
 /// gets the signed-in user attached if a valid session comes with it. Kept short and
 /// explicit; a test checks each one is a real server function.
-pub const PUBLIC_API_PATHS: &[&str] = &["/api/v1/handshake", "/api/v1/sign-in", "/api/v1/session"];
+pub const PUBLIC_API_PATHS: &[&str] = &[
+    "/api/v1/handshake",
+    "/api/v1/sign-in",
+    "/api/v1/session",
+    "/api/v1/setup",
+];
 
 /// The session cookie's name, from the app ID: `vehiclemanager_session`.
 #[must_use]

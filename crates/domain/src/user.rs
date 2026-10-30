@@ -58,7 +58,8 @@ pub struct User {
 pub struct Username(String);
 
 /// Why a username was refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum UsernameError {
     /// Fewer than 3 or more than 32 characters.
     WrongLength,
@@ -129,7 +130,8 @@ impl From<Username> for String {
 
 /// Why a new password was refused. Only length is checked (current NIST guidance: long
 /// passwords, no composition rules).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum PasswordError {
     /// Fewer than 12 characters.
     TooShort,
@@ -180,7 +182,8 @@ pub fn check_display_name(input: &str) -> Result<String, DisplayNameError> {
 }
 
 /// Why a display name was refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum DisplayNameError {
     /// Nothing was entered.
     Empty,

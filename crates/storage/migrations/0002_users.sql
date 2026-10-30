@@ -53,3 +53,9 @@ CREATE TABLE sessions (
 ) STRICT, WITHOUT ROWID;
 
 CREATE INDEX sessions_by_user ON sessions (user_id);
+
+-- The audit trail (plan §6): who applied each command, and in which mode. Empty for
+-- commands the server makes itself (e.g. first-Admin setup, automatic finalizing).
+ALTER TABLE applied_commands ADD COLUMN user_id BLOB CHECK (length(user_id) = 16);
+ALTER TABLE applied_commands ADD COLUMN active_mode TEXT
+    CHECK (active_mode IN ('driver', 'maintainer', 'admin'));
