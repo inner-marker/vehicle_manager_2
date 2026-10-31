@@ -3,7 +3,7 @@
 //! Option B of `docs/ui-sketches/p2m2-settings-options.svg`: two tabs, **You** and
 //! **Household** (Admin mode only); each setting is a row of buttons, and on the You tab a
 //! **"Use household default"** switch. Changes save at once; the server answers with the
-//! preferences now in effect.
+//! preferences now in effect. Under **Sign-in**, when the app signs out by itself (#049).
 
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
@@ -11,12 +11,13 @@ use domain::api::{PreferencesOutcome, PreferencesView};
 use domain::i18n::{MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
-    Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, PreferenceChoices, Preferences,
-    PreferencesPatch, PressureUnit, VolumeUnit,
+    Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, PreferenceChoices,
+    Preferences, PreferencesPatch, PressureUnit, VolumeUnit,
 };
 
 use crate::api;
 use crate::ui::auth::{AuthState, use_auth};
+use crate::ui::idle::{IdleContext, use_idle};
 use crate::ui::screens::problem_from_error;
 use crate::ui::theme::ThemeToggle;
 use crate::ui::tr;
@@ -202,11 +203,12 @@ pub(crate) fn Settings() -> Element {
     let mut tab = use_signal(|| Tab::You);
     let view = use_signal(|| None::<PreferencesView>);
     let error = use_signal(|| None::<String>);
+    let idle = use_idle();
 
     // Loads after mounting, never during server rendering.
     use_effect(move || {
         spawn(async move {
-            apply(api::get_preferences().await, view, error);
+            apply(api::get_preferences().await, view, error, idle);
         });
     });
 
@@ -218,7 +220,7 @@ pub(crate) fn Settings() -> Element {
             } else {
                 api::set_my_preferences(patch).await
             };
-            apply(result, view, error);
+            apply(result, view, error, idle);
         });
     };
 
@@ -254,6 +256,8 @@ pub(crate) fn Settings() -> Element {
                 }
                 CurrencyRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 LanguageRow {}
+                h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
+                IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
             }
             h3 { class: "section-heading", {tr(messages::SETTINGS_THIS_DEVICE)} }
             div { class: "setting-row",
@@ -264,16 +268,18 @@ pub(crate) fn Settings() -> Element {
     }
 }
 
-/// Shows the server's answer, or what went wrong.
+/// Shows the server's answer, or what went wrong; tells the idle watcher the sign-out setting.
 fn apply(
     result: Result<PreferencesOutcome, ServerFnError>,
     mut view: Signal<Option<PreferencesView>>,
     mut error: Signal<Option<String>>,
+    mut idle: IdleContext,
 ) {
     match result {
         Ok(PreferencesOutcome::Preferences { view: next }) => {
             tracing::debug!(target: log_area::UI, effective = ?next.effective, "preferences loaded");
             error.set(None);
+            idle.sign_out.set(next.effective.idle_sign_out);
             view.set(Some(next));
         }
         Ok(PreferencesOutcome::NotAllowed) => {
@@ -400,6 +406,78 @@ fn CurrencyRow(
     }
 }
 
+/// The sign-out choices, in list order, with their labels.
+const IDLE_SIGN_OUT_CHOICES: [(IdleSignOut, MessageId); 5] = [
+    (IdleSignOut::OneHour, messages::IDLE_SIGN_OUT_ONE_HOUR),
+    (IdleSignOut::FourHours, messages::IDLE_SIGN_OUT_FOUR_HOURS),
+    (IdleSignOut::EightHours, messages::IDLE_SIGN_OUT_EIGHT_HOURS),
+    (
+        IdleSignOut::TwentyFourHours,
+        messages::IDLE_SIGN_OUT_TWENTY_FOUR_HOURS,
+    ),
+    (IdleSignOut::Never, messages::IDLE_SIGN_OUT_NEVER),
+];
+
+/// "Sign out when idle": a list, with "Use household default" on the You tab (#049).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn IdleSignOutRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let household = view.household.idle_sign_out.unwrap_or_default();
+    let (current, following) = if household_tab {
+        (household, false)
+    } else {
+        view.mine
+            .idle_sign_out
+            .map_or((household, true), |mine| (mine, false))
+    };
+    let set = move |choice: Option<IdleSignOut>| {
+        on_save.call(PreferencesPatch {
+            idle_sign_out: Some(choice.map_or(Choice::Default, Choice::Set)),
+            ..PreferencesPatch::default()
+        });
+    };
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_IDLE_SIGN_OUT)} }
+            select {
+                class: "role-select",
+                // The value is the choice's index in IDLE_SIGN_OUT_CHOICES.
+                onchange: move |event| {
+                    let picked = event
+                        .value()
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|index| IDLE_SIGN_OUT_CHOICES.get(index))
+                        .map(|(choice, _)| *choice);
+                    if picked.is_some() {
+                        set(picked);
+                    }
+                },
+                for (index, (choice, label)) in IDLE_SIGN_OUT_CHOICES.iter().enumerate() {
+                    option { key: "{index}", value: "{index}", selected: *choice == current, {tr(*label)} }
+                }
+            }
+            if !household_tab {
+                label { class: "switch",
+                    input {
+                        r#type: "checkbox",
+                        checked: following,
+                        onchange: move |_| set(if following { Some(current) } else { None }),
+                    }
+                    span { {tr(messages::SETTINGS_USE_HOUSEHOLD)} }
+                }
+            }
+        }
+    }
+}
+
 /// The language: English (US) only so far, so nothing to change.
 #[component]
 fn LanguageRow() -> Element {
@@ -446,6 +524,20 @@ mod tests {
                 "{setting:?} changes one setting"
             );
             assert!(setting.chosen(&PreferenceChoices::default()).is_none());
+        }
+    }
+
+    #[test]
+    fn the_sign_out_list_has_every_choice_once() {
+        let listed: Vec<IdleSignOut> = IDLE_SIGN_OUT_CHOICES
+            .iter()
+            .map(|(choice, _)| *choice)
+            .collect();
+        assert_eq!(listed.len(), 5);
+        assert!(listed.contains(&IdleSignOut::default()));
+        assert!(listed.contains(&IdleSignOut::Never));
+        for (index, choice) in listed.iter().enumerate() {
+            assert!(!listed[index + 1..].contains(choice), "{choice:?} twice");
         }
     }
 

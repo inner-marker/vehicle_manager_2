@@ -499,4 +499,24 @@ define_messages! {
     DATE_SAMPLE_YEAR_MONTH_DAY => "date-sample-year-month-day",
     /// Choice: English (United States).
     LANGUAGE_ENGLISH_US => "language-english-us",
+    /// Settings: the sign-in section heading.
+    SETTINGS_SIGN_IN => "settings-sign-in",
+    /// Setting: when the app signs out by itself.
+    SETTING_IDLE_SIGN_OUT => "setting-idle-sign-out",
+    /// Idle sign-out choice: 1 hour.
+    IDLE_SIGN_OUT_ONE_HOUR => "idle-sign-out-one-hour",
+    /// Idle sign-out choice: 4 hours.
+    IDLE_SIGN_OUT_FOUR_HOURS => "idle-sign-out-four-hours",
+    /// Idle sign-out choice: 8 hours.
+    IDLE_SIGN_OUT_EIGHT_HOURS => "idle-sign-out-eight-hours",
+    /// Idle sign-out choice: 24 hours.
+    IDLE_SIGN_OUT_TWENTY_FOUR_HOURS => "idle-sign-out-twenty-four-hours",
+    /// Idle sign-out choice: never.
+    IDLE_SIGN_OUT_NEVER => "idle-sign-out-never",
+    /// Notice: the app left Admin mode after 15 idle minutes.
+    IDLE_ADMIN_ENDED => "idle-admin-ended",
+    /// Notice on the sign-in card: signed out after `$hours` idle hours.
+    IDLE_SIGNED_OUT => "idle-signed-out",
+    /// A notice's dismiss button.
+    NOTICE_DISMISS => "notice-dismiss",
 }

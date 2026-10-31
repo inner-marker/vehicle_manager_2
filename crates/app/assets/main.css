@@ -1023,6 +1023,41 @@ select,
     cursor: pointer;
 }
 
+/* ---------- Notices: what the app did by itself (decision #049) ---------- */
+
+.notice-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border);
+}
+
+.notice-text {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.notice-dismiss {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.auth-notice {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+}
+
 /* ---------- Medium: icon-only sidebar ---------- */
 
 @media (max-width: 1023px) {

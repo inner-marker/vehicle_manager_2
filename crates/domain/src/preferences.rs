@@ -1,4 +1,5 @@
-//! Display preferences: units, formats, currency, and language (decisions #029, #048).
+//! Preferences: units, formats, currency, language (decisions #029, #048), and when the app
+//! signs out by itself (#049).
 //!
 //! Display only: stored values are always metric integers and currency codes. Each value
 //! here is chosen by the household (an Admin) and can be overridden by each user:
@@ -239,6 +240,8 @@ pub struct Preferences {
     pub currency: CurrencyCode,
     /// The app's language.
     pub language: Language,
+    /// When the app signs out by itself.
+    pub idle_sign_out: IdleSignOut,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -259,6 +262,8 @@ pub struct PreferenceChoices {
     pub currency: Option<CurrencyCode>,
     /// The app's language.
     pub language: Option<Language>,
+    /// When the app signs out by itself.
+    pub idle_sign_out: Option<IdleSignOut>,
 }
 
 impl Preferences {
@@ -293,6 +298,10 @@ impl Preferences {
                 .language
                 .or(household.language)
                 .unwrap_or(defaults.language),
+            idle_sign_out: mine
+                .idle_sign_out
+                .or(household.idle_sign_out)
+                .unwrap_or(defaults.idle_sign_out),
         }
     }
 }
@@ -350,6 +359,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::language`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<Choice<Language>>,
+    /// See [`Preferences::idle_sign_out`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub idle_sign_out: Option<Choice<IdleSignOut>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -362,6 +374,7 @@ impl Patch for PreferencesPatch {
             ("date_format", self.date_format.is_some()),
             ("currency", self.currency.is_some()),
             ("language", self.language.is_some()),
+            ("idle_sign_out", self.idle_sign_out.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -391,6 +404,9 @@ impl Patch for PreferencesPatch {
         if !keep("language") {
             self.language = None;
         }
+        if !keep("idle_sign_out") {
+            self.idle_sign_out = None;
+        }
     }
 }
 
@@ -413,6 +429,7 @@ mod tests {
         assert_eq!(defaults.date_format, DateFormat::DayMonthNameYear);
         assert_eq!(defaults.currency.as_str(), "USD");
         assert_eq!(defaults.language, Language::EnglishUs);
+        assert_eq!(defaults.idle_sign_out, IdleSignOut::EightHours);
     }
 
     #[test]

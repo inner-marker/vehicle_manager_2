@@ -14,6 +14,7 @@ use domain::log_area;
 use crate::api;
 use crate::client;
 use crate::ui::auth::{AuthState, refresh, use_auth};
+use crate::ui::idle::SignedOutNotice;
 use crate::ui::screens::problem_from_error;
 use crate::ui::{tr, tr_with};
 
@@ -285,6 +286,7 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
             form { class: "auth-form", onsubmit: submit,
                 h1 { class: "auth-title", {tr(messages::SIGN_IN_TITLE)} }
                 p { class: "auth-subtitle", {tr(messages::SIGN_IN_SUBTITLE)} }
+                SignedOutNotice {}
                 Field { label: messages::FIELD_USERNAME, value: username, autocomplete: "username", autofocus: true }
                 Field { label: messages::FIELD_PASSWORD, value: password, kind: "password", autocomplete: "current-password" }
                 FormError { message: error() }

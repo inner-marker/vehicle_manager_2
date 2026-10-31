@@ -14,6 +14,7 @@ use domain::log_area;
 use super::account::{AccountChip, AdminBanner, ModeChip};
 use super::auth::{refresh, use_auth};
 use super::icons::{Icon, IconView};
+use super::idle::{AdminEndedNotice, IdleWatcher};
 use super::nav::{NavItem, NavSection, nav_items};
 use super::routes::Route;
 use super::theme::ThemeToggle;
@@ -63,6 +64,7 @@ pub(crate) fn Shell() -> Element {
     let tab_items: Vec<NavItem> = items.iter().filter(|i| i.bottom_tab).cloned().collect();
 
     rsx! {
+        IdleWatcher {}
         div { class: "shell",
             aside { class: if menu_open() { "sidebar open" } else { "sidebar" },
                 button {
@@ -111,6 +113,7 @@ pub(crate) fn Shell() -> Element {
                     AccountChip {}
                 }
                 AdminBanner {}
+                AdminEndedNotice {}
                 main { class: "content", Outlet::<Route> {} }
             }
 

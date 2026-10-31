@@ -296,3 +296,21 @@ date-sample-month-day-year = 10/30/2026
 date-sample-day-month-year = 30/10/2026
 date-sample-year-month-day = 2026-10-30
 language-english-us = English (US)
+
+## Idle sign-out and Admin timeout (decision #049)
+
+settings-sign-in = SIGN-IN
+setting-idle-sign-out = Sign out when idle
+idle-sign-out-one-hour = After 1 hour
+idle-sign-out-four-hours = After 4 hours
+idle-sign-out-eight-hours = After 8 hours
+idle-sign-out-twenty-four-hours = After 24 hours
+idle-sign-out-never = Never
+idle-admin-ended = Admin mode ended after 15 idle minutes.
+# $hours (number): how long the app was idle.
+idle-signed-out =
+    { $hours ->
+        [one] You were signed out after { $hours } idle hour.
+       *[other] You were signed out after { $hours } idle hours.
+    }
+notice-dismiss = Dismiss

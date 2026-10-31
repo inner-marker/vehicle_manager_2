@@ -7,8 +7,8 @@ mod preferences {
     use domain::api::{PreferencesOutcome, PreferencesView};
     use domain::command::Change;
     use domain::preferences::{
-        Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, Language, PreferencesPatch,
-        PressureUnit, VolumeUnit,
+        Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, Language,
+        PreferencesPatch, PressureUnit, VolumeUnit,
     };
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
@@ -247,6 +247,7 @@ mod preferences {
                 date_format: Some(Choice::Set(date_format)),
                 currency: Some(Choice::Set(CurrencyCode::parse("CAD").unwrap())),
                 language: Some(Choice::Set(Language::EnglishUs)),
+                idle_sign_out: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -266,6 +267,21 @@ mod preferences {
                 )
             );
             assert_eq!(view.mine.currency.unwrap().as_str(), "CAD");
+        }
+        for idle_sign_out in [
+            IdleSignOut::OneHour,
+            IdleSignOut::FourHours,
+            IdleSignOut::EightHours,
+            IdleSignOut::TwentyFourHours,
+            IdleSignOut::Never,
+        ] {
+            let patch = PreferencesPatch {
+                idle_sign_out: Some(Choice::Set(idle_sign_out)),
+                ..PreferencesPatch::default()
+            };
+            let view = unwrap_view(set_mine(&ctx, patch).await);
+            assert_eq!(view.mine.idle_sign_out, Some(idle_sign_out));
+            assert_eq!(view.effective.idle_sign_out, idle_sign_out);
         }
     }
 }
