@@ -104,6 +104,43 @@ pub enum Language {
     EnglishUs,
 }
 
+/// How long the app may sit idle before it signs out by itself (decision #049).
+///
+/// Only real input counts as activity (see [`crate::idle`]). The server's own limit, 30 idle
+/// days, still applies whatever this says.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum IdleSignOut {
+    /// After 1 hour.
+    OneHour,
+    /// After 4 hours.
+    FourHours,
+    /// After 8 hours (the default).
+    #[default]
+    EightHours,
+    /// After 24 hours.
+    TwentyFourHours,
+    /// Never: only the server's limit applies.
+    Never,
+}
+
+impl IdleSignOut {
+    /// Milliseconds in one hour.
+    const HOUR_MILLIS: i64 = 60 * 60 * 1000;
+
+    /// How long idle before signing out, in milliseconds; `None` for [`IdleSignOut::Never`].
+    #[must_use]
+    pub const fn after_millis(self) -> Option<i64> {
+        match self {
+            Self::OneHour => Some(Self::HOUR_MILLIS),
+            Self::FourHours => Some(4 * Self::HOUR_MILLIS),
+            Self::EightHours => Some(8 * Self::HOUR_MILLIS),
+            Self::TwentyFourHours => Some(24 * Self::HOUR_MILLIS),
+            Self::Never => None,
+        }
+    }
+}
+
 /// An ISO 4217 currency code: three capital letters, e.g. `USD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -398,6 +435,21 @@ mod tests {
             effective.pressure,
             PressureUnit::Psi,
             "the built-in default"
+        );
+    }
+
+    #[test]
+    fn idle_sign_out_defaults_to_eight_hours_and_never_has_no_limit() {
+        assert_eq!(IdleSignOut::default(), IdleSignOut::EightHours);
+        assert_eq!(
+            IdleSignOut::EightHours.after_millis(),
+            Some(8 * 60 * 60 * 1000)
+        );
+        assert_eq!(IdleSignOut::OneHour.after_millis(), Some(60 * 60 * 1000));
+        assert_eq!(IdleSignOut::Never.after_millis(), None);
+        assert_eq!(
+            serde_json::to_string(&IdleSignOut::TwentyFourHours).unwrap(),
+            r#""twenty-four-hours""#
         );
     }
 

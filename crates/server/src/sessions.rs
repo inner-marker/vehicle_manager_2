@@ -27,12 +27,13 @@ use crate::passwords::{hash_password, needs_rehash, verify_password};
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
 
-/// Admin mode ends after this long without activity: 15 minutes.
-pub const ADMIN_IDLE_MILLIS: i64 = 15 * 60 * 1000;
+/// Admin mode ends after this long without activity: 15 minutes. Shared with the app's idle
+/// watcher, which leaves Admin mode at the same point (decision #049).
+pub const ADMIN_IDLE_MILLIS: i64 = domain::idle::ADMIN_IDLE_MILLIS;
 
 /// A session's last use is written at most this often (once a minute), so ordinary requests
-/// don't each cost a database write.
-const TOUCH_INTERVAL_MILLIS: i64 = 60 * 1000;
+/// don't each cost a database write. The app's Admin-mode keep-alive uses the same interval.
+const TOUCH_INTERVAL_MILLIS: i64 = domain::idle::KEEP_ALIVE_EVERY_MILLIS;
 
 /// Token length in bytes.
 const TOKEN_BYTES: usize = 32;
