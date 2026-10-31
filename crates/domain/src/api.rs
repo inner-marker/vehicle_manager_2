@@ -360,6 +360,31 @@ pub enum PreferencesOutcome {
     Unavailable,
 }
 
+/// What to do with a message (decision #050).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MarkMessage {
+    /// Mark it read.
+    Read,
+    /// Put it away (it's also marked read).
+    Dismiss,
+}
+
+/// The answer to a message center request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum InboxOutcome {
+    /// The person's inbox (after any change).
+    Inbox {
+        /// What they can see, unread first.
+        inbox: crate::inbox::Inbox,
+    },
+    /// There's no message with that key for this person (gone, or not theirs to see).
+    NotFound,
+    /// The server couldn't do it right now (e.g. it's refusing changes).
+    Unavailable,
+}
+
 /// The answer to a password change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]

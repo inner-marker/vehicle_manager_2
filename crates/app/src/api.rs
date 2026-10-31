@@ -12,9 +12,9 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, Pong, PreferencesOutcome,
-    RecoveryOutcome, SessionState, SetupOutcome, SignInOutcome, SwitchModeOutcome,
-    UserAdminOutcome,
+    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, InboxOutcome, MarkMessage, Pong,
+    PreferencesOutcome, RecoveryOutcome, SessionState, SetupOutcome, SignInOutcome,
+    SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -448,6 +448,32 @@ pub(crate) async fn set_household_preferences(
     .await)
 }
 
+/// The signed-in person's messages: what they can see in their mode, unread first (#050).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/messages")]
+pub(crate) async fn get_messages() -> ServerFnResult<InboxOutcome> {
+    Ok(server_side::with_messages(async |context| ::server::messages::view(&context).await).await)
+}
+
+/// Marks one of the signed-in person's messages read, or dismisses it.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`InboxOutcome`] values.
+#[post("/api/v1/messages/mark")]
+pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnResult<InboxOutcome> {
+    let Some(key) = domain::inbox::MessageKey::parse(&key) else {
+        return Ok(InboxOutcome::NotFound);
+    };
+    Ok(server_side::with_messages(async |context| {
+        ::server::messages::mark(&context, key, action).await
+    })
+    .await)
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -628,6 +654,24 @@ mod server_side {
             database_id,
             user: &user,
             health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the signed-in person's message center context, or answers that it's
+    /// unavailable (no database, or nobody signed in).
+    pub(super) async fn with_messages(
+        action: impl AsyncFnOnce(server::messages::MessagesContext<'_>) -> domain::api::InboxOutcome,
+    ) -> domain::api::InboxOutcome {
+        let (Some(database), Some(user)) = (server::startup::database(), signed_in()) else {
+            return domain::api::InboxOutcome::Unavailable;
+        };
+        let context = server::messages::MessagesContext {
+            database,
+            user: &user,
+            health: server::health::current(),
+            problem: server::health::unhealthy_since(),
             clock: &SystemClock,
         };
         action(context).await

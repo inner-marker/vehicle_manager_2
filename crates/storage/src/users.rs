@@ -13,7 +13,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::{id_from_sql, id_to_sql};
+use crate::convert::{id_from_sql, id_to_sql, required};
 use crate::{Database, StorageError};
 
 // --- Column forms of domain enums --------------------------------------------------------
@@ -76,11 +76,6 @@ fn target_from_row(row: &SqliteRow) -> Result<GrantTarget, StorageError> {
             column: "target_kind",
         }),
     }
-}
-
-/// A patch field that must be set when creating a record.
-fn required<T>(value: Option<T>, column: &'static str) -> Result<T, StorageError> {
-    value.ok_or(StorageError::InvalidValue { column })
 }
 
 // --- Users -------------------------------------------------------------------------------

@@ -12,6 +12,7 @@ pub mod health;
 pub mod ids;
 pub mod jobs;
 pub mod login_limiter;
+pub mod messages;
 pub mod passwords;
 pub mod preferences;
 pub mod recovery;

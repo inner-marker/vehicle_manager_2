@@ -116,11 +116,14 @@ async fn open_and_check(data_dir: &Path, clock: &(dyn Clock + Sync)) -> Option<D
         Ok(database) => database,
         Err(error) => {
             tracing::error!(target: log_area::DATABASE, data_dir = %data_dir.display(), %error, "can't open the database; refusing all changes");
-            health::set(Health::Unhealthy(HealthProblem::DatabaseUnavailable));
+            health::set(
+                Health::Unhealthy(HealthProblem::DatabaseUnavailable),
+                clock.now(),
+            );
             return None;
         }
     };
-    health::set(check(&database).await);
+    health::set(check(&database).await, clock.now());
     Some(database)
 }
 

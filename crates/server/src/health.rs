@@ -4,9 +4,12 @@
 //! see what's wrong, but refuses every command (from step 1e), rather than writing to a
 //! database that's missing or damaged. The handshake reports it.
 //!
-//! One state for the whole process, set at startup and by the periodic checks.
+//! One state for the whole process, set at startup and by the periodic checks, with the time
+//! it last changed (the message center's "since", #050).
 
 use std::sync::RwLock;
+
+use domain::time::UnixMillis;
 
 /// The server's health.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,22 +39,41 @@ impl Health {
     }
 }
 
-static CURRENT: RwLock<Health> = RwLock::new(Health::Starting);
+/// The health, and when it last changed.
+static CURRENT: RwLock<(Health, UnixMillis)> = RwLock::new((Health::Starting, UnixMillis::EPOCH));
 
-/// The current health.
-#[must_use]
-pub fn current() -> Health {
+/// The current health and when it became so.
+fn read() -> (Health, UnixMillis) {
     // A poisoned lock means a panic while setting it; the last value is still the best answer.
     *CURRENT
         .read()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
-/// Sets the health (startup and periodic checks only).
-pub fn set(health: Health) {
-    *CURRENT
+/// The current health.
+#[must_use]
+pub fn current() -> Health {
+    read().0
+}
+
+/// What's wrong and since when, if the server is unhealthy.
+#[must_use]
+pub fn unhealthy_since() -> Option<(HealthProblem, UnixMillis)> {
+    match read() {
+        (Health::Unhealthy(problem), since) => Some((problem, since)),
+        (Health::Starting | Health::Healthy, _) => None,
+    }
+}
+
+/// Sets the health at `now` (startup and periodic checks only). Setting the same health again
+/// keeps the time it started.
+pub fn set(health: Health, now: UnixMillis) {
+    let mut current = CURRENT
         .write()
-        .unwrap_or_else(std::sync::PoisonError::into_inner) = health;
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if current.0 != health {
+        *current = (health, now);
+    }
 }
 
 #[cfg(test)]

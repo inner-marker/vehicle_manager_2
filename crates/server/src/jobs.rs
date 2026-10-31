@@ -169,14 +169,12 @@ pub fn spawn(context: JobContext) {
 }
 
 async fn schedule_first_run(context: &JobContext, job: Job, now: UnixMillis) {
-    let run = JobRun {
-        started: now,
-        finished: now,
-        result: JobResult::Skipped,
-        message: "scheduled".to_owned(),
-        next_run: next_run(job, now),
-    };
-    if let Err(error) = context.database.record_job_run(job.name(), &run).await {
+    // Only the due time: the job hasn't run, so it has no result (and no message, #050).
+    if let Err(error) = context
+        .database
+        .schedule_job(job.name(), next_run(job, now))
+        .await
+    {
         tracing::error!(target: log_area::DATABASE, job = job.name(), %error, "can't record the job schedule");
     }
 }
@@ -287,18 +285,20 @@ async fn quick_check(context: &JobContext) -> (JobResult, String) {
     match context.database.quick_check().await {
         Ok(problems) if problems.is_empty() => (JobResult::Ok, "no problems".to_owned()),
         Ok(problems) => {
-            health::set(health::Health::Unhealthy(
-                HealthProblem::IntegrityCheckFailed,
-            ));
+            health::set(
+                health::Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
+                context.clock.now(),
+            );
             (
                 JobResult::Failed,
                 format!("problems found: {}", problems.join("; ")),
             )
         }
         Err(error) => {
-            health::set(health::Health::Unhealthy(
-                HealthProblem::IntegrityCheckFailed,
-            ));
+            health::set(
+                health::Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
+                context.clock.now(),
+            );
             (JobResult::Failed, format!("couldn't run: {error}"))
         }
     }
