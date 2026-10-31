@@ -26,7 +26,11 @@
 /// assert!(earlier < later);
 /// assert_eq!(later.as_millis(), 1_700_000_000_001);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// Serialized as the plain number of milliseconds (e.g. in API answers).
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct UnixMillis(i64);
 
 impl UnixMillis {

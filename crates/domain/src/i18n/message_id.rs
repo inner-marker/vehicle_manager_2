@@ -519,4 +519,24 @@ define_messages! {
     IDLE_SIGNED_OUT => "idle-signed-out",
     /// A notice's dismiss button.
     NOTICE_DISMISS => "notice-dismiss",
+    /// Message title: the nightly snapshot failed.
+    INBOX_SNAPSHOT_FAILED => "inbox-snapshot-failed",
+    /// Message title: the nightly snapshot was skipped.
+    INBOX_SNAPSHOT_SKIPPED => "inbox-snapshot-skipped",
+    /// Message title: the hourly database check failed.
+    INBOX_QUICK_CHECK_FAILED => "inbox-quick-check-failed",
+    /// Message title: a job this build doesn't know by name failed.
+    INBOX_JOB_FAILED => "inbox-job-failed",
+    /// Message title: a job this build doesn't know by name was skipped.
+    INBOX_JOB_SKIPPED => "inbox-job-skipped",
+    /// Message text for a failed or skipped job.
+    INBOX_JOB_BODY => "inbox-job-body",
+    /// Message title: the server is refusing changes.
+    INBOX_SERVER_UNHEALTHY => "inbox-server-unhealthy",
+    /// Message text: the database couldn't be opened.
+    INBOX_DATABASE_UNAVAILABLE => "inbox-database-unavailable",
+    /// Message text: the integrity check found problems.
+    INBOX_INTEGRITY_CHECK_FAILED => "inbox-integrity-check-failed",
+    /// Message button: open Diagnostics.
+    INBOX_OPEN_DIAGNOSTICS => "inbox-open-diagnostics",
 }

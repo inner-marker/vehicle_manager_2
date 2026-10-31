@@ -314,3 +314,17 @@ idle-signed-out =
        *[other] You were signed out after { $hours } idle hours.
     }
 notice-dismiss = Dismiss
+
+## Message center (decisions #040, #050)
+
+inbox-snapshot-failed = The nightly snapshot failed
+inbox-snapshot-skipped = The nightly snapshot was skipped
+inbox-quick-check-failed = The hourly database check failed
+# The job's name is in the message's details.
+inbox-job-failed = A scheduled job failed
+inbox-job-skipped = A scheduled job was skipped
+inbox-job-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
+inbox-server-unhealthy = The server isn't accepting changes
+inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
+inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
+inbox-open-diagnostics = Open Diagnostics
