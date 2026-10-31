@@ -783,7 +783,7 @@ StatementTemplate    # library of pre-written statements; editable by Admin only
  ├─ name, text_with_placeholders
  └─ locked/editable parts, source (e.g. official wording, custom)
 
-Signature            # shared by everything that needs a signature
+Signature            # shared by everything that needs a signature (pending the records & signatures standards plan, idea 12)
  ├─ id, signer_user_id, signed_at
  ├─ strokes, rendered_image
  ├─ credential_snapshot
@@ -1057,6 +1057,9 @@ Formal **logbook entries:** the statements that go into an asset's logbook (e.g.
 - This replaces the earlier "entry text templates" idea: requirements and service bundles can point at a statement template to pre-fill both the event description and logbook entries.
 
 **Signatures: one shared signature system for the whole app**
+
+> **Pending: a standards plan for digital records and signatures.** The human is preparing a plan (2026-10-31) so records and signatures generally follow recognized standards. **Nothing about digital signatures is implemented until that plan is reviewed and the human confirms the approach;** this section may change with it. See `docs/ideas-to-discuss.md` idea 12.
+
 - Used by **every item that needs a signature** (logbook entries first; any future sign-off reuses it).
 - **Two signing options:**
   - **Drawn on screen** with a finger, stylus, or mouse. The signature is stored with the entry and printed on it.
@@ -1804,7 +1807,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Post-MVP: Measurements.** Structured measurements with positions, multiple values, limits, and auto-squawks.
 - **Post-MVP: Human-friendly record numbers** (e.g. "F-150 entry 42"), assigned by the server at finalize, with reports or logbooks (#042).
 - **Post-MVP: Vehicle history reports.** Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
-- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts.
+- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. **Signatures wait for the human's records and signatures standards plan to be confirmed** (idea 12).
 - **Post-MVP (later): Logbook label and other page formats.**
 - **Post-MVP (after reports): Vehicle transfer to the next owner.** Importable vehicle package for another server running the app.
 - **Post-MVP: Event map.** Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.

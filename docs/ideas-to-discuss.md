@@ -94,3 +94,11 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **How it's installed and kept up to date:** downloaded like `compose.yaml`, or shipped inside the image and copied out.
   - **Testing:** how it's tested in CI without a NAS (e.g. against a fake Project folder and a stub `docker`).
   - **Safety:** always confirm before replacing the database, keep what it replaces, and refuse to run while the container is up for steps that need it stopped.
+
+### 12. Digital records and signatures that follow standards 🟡
+*Raised by the human, 2026-10-31 · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
+
+- The human is preparing a **plan for digital records and signatures** (with Claude on the web) so the app's records and signatures generally follow recognized standards. It will be added here, or to `docs/plan.md`, when it's ready.
+- **Rule until then:** **don't implement digital signatures** (the shared Signature system in `docs/plan.md`, Logbook entries) until the plan is reviewed and the human **confirms** the approach.
+- **Also check before milestone 6:** whether the plan changes anything about finalized records, amendments, or the audit trail, which milestone 6 builds.
+

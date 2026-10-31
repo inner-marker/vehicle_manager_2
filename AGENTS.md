@@ -15,6 +15,7 @@ The code must stay **human-readable and human-maintainable**, even though most o
 - **New or redesigned screens:** the plan includes **SVG layout options** saved in `docs/ui-sketches/` for the human to choose from (usually two or three; one when only one makes sense). Build the chosen one (decision #040).
 - **`docs/phase_plans/`** holds the agreed plan for each roadmap phase (`phase-N.md`), so the human can follow along. Once a phase plan, or the detailed plan for one of its PRs, is agreed, **save it there** and keep its status column current as work progresses. When a new phase plan file is created, **link it from that phase's section** in `docs/plan.md` §9 Roadmap.
 - **Before starting work on a roadmap phase,** check that phase's section in "Open Questions by Phase" in `docs/plan.md`. If any question is unresolved, **ask the user and stop** until it's answered. Then record the answer in `docs/decisions.md`, update the plan, and remove the question from the list.
+- **Digital signatures are on hold:** don't implement any part of them until the human's records and signatures standards plan is reviewed and confirmed (`docs/ideas-to-discuss.md` idea 12).
 - Don't answer open questions yourself by picking a default. If a question blocks only part of a task, say which part and continue with the rest.
 - **`../xplm-oxide`** (the human's X-Plane plugin library) is available as **read-only reference** context. Look at it for conventions or when a task mentions it; never edit it, and don't add it as a dependency unless that is recorded in `docs/decisions.md`.
 
