@@ -53,7 +53,7 @@
 | 9b | ✅ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
 | 9c | ✅ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
 | 9d | ✅ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
-| 9e | ✅ | `docs: NAS deployment test plan` | `docs/test-plans/nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
+| 9e | ✅ | `docs: NAS deployment test plan` | `docs/test-plans/p1m3-nas-web.md`: Project setup, `tailscale serve`, checks from another tailnet device | none |
 | 9f | ✅ | `fix: name the compose project so docker compose matches the NAS Project` | `name: vehiclemanager` in `deploy/compose.yaml`, so `docker compose` over SSH updates the Container Manager Project's container; test pins it to `APP_ID`; troubleshooting entry | none |
 | 9g | ✅ | `docs: record the NAS test run` | Test plan passed; web half of the Phase 1 exit criteria met | none |
 
@@ -65,7 +65,7 @@
 | 10.0 | ✅ | `docs: milestone 4 plan` | Milestone 3 marked merged; decision #027 (macOS first, address at launch, credential in memory); plan §9 updated; this milestone plan | none |
 | 10a | ✅ | `feat(app): desktop data folder and log files` | Platform data folder from `DATA_DIR_NAME`; desktop log files (`FileLogPolicy::DESKTOP`) and crash file | `dirs` 6.0 (approved; already in `Cargo.lock`) |
 | 10b | ✅ | `feat(app): server address setting (desktop)` | Address rules in `domain`; `settings.json` in the data folder; applied before launch; Diagnostics field with "restart to apply" | none |
-| 10c | ✅ | `docs: macOS desktop test plan` | `docs/test-plans/desktop-macos.md` | none |
+| 10c | ✅ | `docs: macOS desktop test plan` | `docs/test-plans/p1m4-desktop-macos.md` | none |
 | 10d | ✅ | `docs: record the macOS test run` | Test plan passed; Phase 1 exit criteria met; window-size idea noted | none |
 
 
@@ -320,7 +320,7 @@ No app display name anywhere; it isn't decided.
 - `log_viewer_filters_by_level_and_area_newest_first`
 - `every_log_area_has_a_translated_label`
 
-**Manual test plan:** `docs/test-plans/skeleton-ui.md`. It covers navigation, each layout at its width, the theme toggle, the log viewer, and what to capture if a step fails (the `ui` area at `debug`).
+**Manual test plan:** `docs/test-plans/p1m1-skeleton-ui.md`. It covers navigation, each layout at its width, the theme toggle, the log viewer, and what to capture if a step fails (the `ui` area at `debug`).
 
 **Verification:** the usual self-review commands, the WASM build and its guard, then your manual run of `dx serve`.
 
@@ -338,7 +338,7 @@ No app display name anywhere; it isn't decided.
 - Clippy is clean for native, wasm32, `server`, and `desktop`. Docs, the WASM guard, and `cargo deny` are also clean.
 - `dx build --platform web` succeeds, with the server and client built and `main.css` bundled.
 - A local smoke run of the built server returned 200 with the right title for `/`, `/due`, `/vehicles/abc123`, `/diagnostics`, and an unknown path. `data-theme="dark"` was set and icons were inlined.
-- **Manual test plan:** `docs/test-plans/skeleton-ui.md`. **Passed on web, 2026-10-29**, after the narrow-menu theme toggle fix.
+- **Manual test plan:** `docs/test-plans/p1m1-skeleton-ui.md`. **Passed on web, 2026-10-29**, after the narrow-menu theme toggle fix.
 
 ### Step 8: `ci: release workflow and git-cliff`
 *Planned 2026-10-28 · Branch: `milestone/p1-m1-local-skeleton`*
@@ -431,7 +431,7 @@ No app display name anywhere; it isn't decided.
 - **Docs:**
   - decision #024 (credential source and fail-closed rule);
   - an AGENTS.md rule: "never call server functions during SSR; every server function lives under `/api/`";
-  - `docs/test-plans/auth-handshake.md`.
+  - `docs/test-plans/p1m2-auth-handshake.md`.
 
 **Dependencies:**
 - `server`: `axum` 0.8, `tower` 0.5, `subtle` 2.6, and `serde`/`serde_json` (already in the workspace).
@@ -495,7 +495,7 @@ No app display name anywhere; it isn't decided.
   - a valid handshake and ping returned 200;
   - with the variable unset, every API request got `503 auth-not-configured` while pages loaded.
   - The log shows only the variable's *name*.
-- **Manual test plan:** `docs/test-plans/auth-handshake.md`.
+- **Manual test plan:** `docs/test-plans/p1m2-auth-handshake.md`.
 
 
 ### Milestone 3 plan (steps 9a–9e): web UI on the NAS
@@ -556,7 +556,7 @@ No app display name anywhere; it isn't decided.
 - **The release workflow** builds and pushes `:<version>` and `:latest` after the gate. The plan's "Docker image build (not published)" PR-to-main check becomes the main gate building the image without pushing it.
 - **GHCR packages start private.** The deploy doc includes the one-time step to make the package public, so the NAS can pull without logging in.
 
-**9e: manual test plan** (`docs/test-plans/nas-web.md`)
+**9e: manual test plan** (`docs/test-plans/p1m3-nas-web.md`)
 - Set up the Project.
 - `tailscale serve --bg --https=443 http://127.0.0.1:8410`, using the Synology package's CLI over SSH, with a fallback HTTPS port if 443 is taken.
 - **Checks:**
@@ -615,7 +615,7 @@ No app display name anywhere; it isn't decided.
   - Tags: `milestone-p1-m3-nas-web`, `sha-354aa4a`.
 
 **Step 9e: written**
-- `docs/test-plans/nas-web.md` has 16 steps:
+- `docs/test-plans/p1m3-nas-web.md` has 16 steps:
   - Project creation and the container log;
   - log files and their owner;
   - loopback `curl`, then `tailscale serve`;
@@ -670,16 +670,16 @@ No app display name anywhere; it isn't decided.
 - 12 new messages in `app.ftl` and `define_messages!`.
 - **New lint override:** `#[expect(unused_qualifications)]` on `ServerAddressField`, the same rsx! false positive as the other panels.
 
-**10c: manual test plan** (`docs/test-plans/desktop-macos.md`)
+**10c: manual test plan** (`docs/test-plans/p1m4-desktop-macos.md`)
 - Run with `dx serve --platform desktop` on the Mac, with Tailscale connected.
 - **Checks:** set the address to the NAS's `ts.net` address, restart, and the panel shows it; wrong credential → Fail with "The server didn't accept this credential"; right credential → both Pass with the server version; an unreachable address → "Unreachable"; an `http://` non-loopback address is refused; logs appear in the data folder; the credential appears nowhere in them or in `settings.json`.
 
 **Step 10c: written**
-- `docs/test-plans/desktop-macos.md` has 16 steps: data folder and logs; address rules in the UI; save, restart, and "Using"; wrong and right credential against the NAS; the address surviving a restart while the credential doesn't; Tailscale off → "Couldn't reach the server."; a corrupt `settings.json`; the credential absent from logs and settings.
+- `docs/test-plans/p1m4-desktop-macos.md` has 16 steps: data folder and logs; address rules in the UI; save, restart, and "Using"; wrong and right credential against the NAS; the address surviving a restart while the credential doesn't; Tailscale off → "Couldn't reach the server."; a corrupt `settings.json`; the credential absent from logs and settings.
 - An incompatible API version can't be produced from the UI; the plan points to the automated tests and the milestone 2 `curl` checks.
 - Found while writing it: `dx serve` may give the local development server a port other than 8080, so the plan says "the local development server" rather than a fixed address.
 - **Passed on the Mac, 2026-10-29:** all 16 steps, against the NAS over Tailscale.
-- **Phase 1 exit criteria: met.** The web UI (milestone 3, `docs/test-plans/nas-web.md`) and the macOS desktop app (this milestone) both reach the server on the NAS over Tailscale and show the handshake result; a wrong credential is rejected cleanly on both. An incompatible version is rejected by the server (automated tests, and milestone 2's `curl` checks).
+- **Phase 1 exit criteria: met.** The web UI (milestone 3, `docs/test-plans/p1m3-nas-web.md`) and the macOS desktop app (this milestone) both reach the server on the NAS over Tailscale and show the handshake result; a wrong credential is rejected cleanly on both. An incompatible version is rejected by the server (automated tests, and milestone 2's `curl` checks).
 - **Raised during the run:** the desktop app should remember its window size in `settings.json`. Noted as idea 10 in `docs/ideas-to-discuss.md`, not scheduled.
 
 **Verification:** the usual self-review commands, plus `cargo clippy -p app --features desktop --all-targets -- -D warnings` and `cargo check -p app --target wasm32-unknown-unknown` (the web build must not pull in `dirs` or the settings file code).

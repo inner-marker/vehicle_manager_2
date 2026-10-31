@@ -16,12 +16,12 @@
   - A broken or hand-edited `settings.json` is ignored with a warning; the app still starts.
 - **Credential:** typed in each run, kept in memory only. It's never saved and never logged.
 - **Phase 1 exit criterion (desktop half):** the desktop app on the Mac reaches the NAS over Tailscale and shows the handshake result. A wrong credential is rejected cleanly.
-  - *An incompatible API version* can't be produced from the UI. It's covered by the automated tests (`server::auth`, the Connection panel's `version_refusal_passes_auth_and_fails_version`) and was checked with `curl` in `docs/test-plans/auth-handshake.md`.
+  - *An incompatible API version* can't be produced from the UI. It's covered by the automated tests (`server::auth`, the Connection panel's `version_refusal_passes_auth_and_fails_version`) and was checked with `curl` in `docs/test-plans/p1m2-auth-handshake.md`.
 
 ## 2. Setup
 
 - **Mac:** on `milestone/p1-m4-desktop` with steps 10a and 10b. `dx` 0.7.10 installed. Tailscale connected.
-- **NAS:** the server running and published with `tailscale serve`, as in `docs/test-plans/nas-web.md`. You need the NAS credential (`grep TEST_CREDENTIAL .env` on the NAS; keep it private).
+- **NAS:** the server running and published with `tailscale serve`, as in `docs/test-plans/p1m3-nas-web.md`. You need the NAS credential (`grep TEST_CREDENTIAL .env` on the NAS; keep it private).
 - **Start clean:** quit the app, then move any earlier data folder aside:
 
   ```sh

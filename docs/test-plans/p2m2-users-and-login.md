@@ -41,7 +41,7 @@
 
   Then `Esc` and `:wq`.
 - **Two browsers on the tailnet:** your usual one (the Admin, "stuart" below) and a **private window** or a second device (the second user, "sam" below).
-- **The Mac** for the desktop steps (25–28): `dx` 0.7.10, Tailscale connected, and the NAS address saved from `docs/test-plans/desktop-macos.md` (Diagnostics → Server address). Run the app from `crates/app` with `dx serve --platform desktop`. "Restart the app" means close the window, Ctrl+C, and run it again.
+- **The Mac** for the desktop steps (25–28): `dx` 0.7.10, Tailscale connected, and the NAS address saved from `docs/test-plans/p1m4-desktop-macos.md` (Diagnostics → Server address). Run the app from `crates/app` with `dx serve --platform desktop`. "Restart the app" means close the window, Ctrl+C, and run it again.
 - **Write down** each password as you choose it. **Don't paste any password into a shell command**; step 29 checks the log without one.
 - **Timing:** step 12 needs 16 idle minutes, and step 14 locks out one device for 15 minutes (or until a restart). Steps 30–31 need a server restart.
 

@@ -552,8 +552,37 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Keeping the server in step:** while in Admin mode, the app checks its session about every 5 minutes, but only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
   - **The server stays the authority:** its 15 idle minutes for Admin mode and 30 idle days for sessions are unchanged and still apply when the app is closed.
   - **How (no new dependency):** one long-lived `document::eval` script records the last input and reports the idle time to Rust about every 15 seconds; this works on web and desktop. The decision itself (stay, keep alive, leave Admin, sign out) is a pure function, unit-tested.
-  - **To settle when milestone 3 is planned:** whether **Sign out when idle** is a per-person preference with a household default (a new field on the preferences record, #048) or a per-device setting like the theme (a shared computer may want a shorter time than a personal phone).
+  - **The setting is per person** (settled 2026-10-31, milestone 3 plan): a new field on the preferences record (#048), so each person chooses their own and the household sets the default, like the units.
 - **Why:**
   - Today the app only notices the end of Admin mode at the next navigation or click, so the orange banner can outlive Admin mode on a screen left open.
   - A browser left open could stay signed in for up to 30 idle days.
   - Raised by the human during the milestone 2 NAS test.
+
+### 050. Messages are derived from the current state; only read and dismissed are stored
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md milestone 3 · Refines #040 (message center), #044 (job failures become Admin messages)*
+
+- **Decision:**
+  - **A message is worked out from what's true now,** not saved when something happens: "Last night's snapshot failed" exists while the snapshot job's latest result is a failure; later, "Oil change due soon" exists while the interval says so. When the cause is fixed, the message goes away by itself.
+  - **Each message has a stable key** built from its cause (e.g. `job-failed:nightly-snapshot:<finish time>`), so the same cause is the same message everywhere, and a new failure is a new message.
+  - **Only each person's mark is stored:** read and dismissed, per key, through the command pipeline. A dismissed message stays dismissed; a new key shows again.
+  - **Who sees a message** follows roles and mode: Admin messages only in Admin mode; asset messages only for assets the person can view.
+- **Why:**
+  - The plan says messages are "generated locally from synced data", so they work offline with no push infrastructure (Phase 3); derived messages need no message table to sync or clean up.
+  - A message can't go stale: one that's still showing is still true.
+  - The human chose this over storing each message as a row (which would keep a history but need its own syncing and cleanup).
+
+### 051. A per-vehicle dashboard and a "Ready to use?" summary
+*Decided: 2026-10-31 · Plan: §4 Readiness, Squawks, Asset profiles; §5 UI direction; §10 Phase 5 open questions · Refines #040 (the Overview tab)*
+
+- **Decision:**
+  - **The vehicle's Overview tab is its dashboard:** "Ready to use?" at the top, then time and distance to each major service, open and deferred squawks (blocking ones first), latest fill-ups, and last activity. The Garage card shows the same readiness as a badge.
+  - **Readiness is generic, from profiles:** requirements and official documents can be **needed for use**; profiles set the defaults per kind, and each asset can change them. Each profile lists **operation types** ("ready for what?"), each adding its own items (e.g. IFR, for hire, heavy towing). No kind-specific code.
+  - **Squawks can block use,** marked when opened or at any disposition.
+  - **Each item shows why** (✓ or ✗, its due date or meter value, a link), with a warning before it's due.
+  - **Advisory only:** the summary reflects the records and certifies nothing; for aircraft, the pilot in command decides airworthiness.
+  - **Phasing:** the Overview shell in Phase 2 milestone 4; the squawk flag in milestone 7 (it can't be filled in later); the summary, operation types, and service countdowns in Phase 5; aviation items in the aircraft phase; a person's currency (e.g. a pilot's flight review and medical) post-MVP, with credentials.
+- **Why:**
+  - The human asked for one place per vehicle showing open squawks and what's coming due, and for aircraft, airworthiness for a flight.
+  - "Road-ready" and "airworthy" are the same question; making it data keeps aircraft possible without special cases.
+  - Readiness depends on the intended use (IFR needs more than VFR), so a single yes/no would be wrong.
+

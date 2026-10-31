@@ -136,7 +136,7 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 
 **Manual test plans (when the human must verify something)**
 
-If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/<feature>.md`:
+If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/p<phase>m<milestone>-<feature>.md`:
 
 1. **Intended behavior:** what the feature should do, including edge cases and what should be rejected.
 2. **Setup:** device, data, mode, and server state needed first.
