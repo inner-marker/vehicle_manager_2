@@ -43,13 +43,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 ### 5. Time-ordered IDs (UUIDv7) ✅
 *Decided 2026-10-29: `docs/decisions.md` #042 (UUIDv7 now; human-friendly record numbers later, with reports or logbooks).*
 
-### 6. Groups ("garages" or "hangars") 🟡
-*Suggested phase: Phase 2 or 3, before multi-user permissions see heavy use*
-
-- Assets belong to one or more **groups,** and roles can be granted per group as well as per asset.
-- Covers a family garage now, and later a flying club, co-ownership, or a shop, without redesigning permissions.
-- **Partly decided (#045):** roles target one asset or all assets for now; the target is built so groups can be added later as a third kind.
-- **To discuss:** how group roles combine with per-asset roles and component permission inheritance.
+### 6. Groups ("garages" or "hangars") ✅
+*Decided 2026-10-31: `docs/decisions.md` #052 (every asset in exactly one group; roles per group; built in Phase 2 milestone 4).*
 
 ### 7. One layered settings model 🟡
 *Suggested phase: Phase 2*

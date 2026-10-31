@@ -586,3 +586,20 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - "Road-ready" and "airworthy" are the same question; making it data keeps aircraft possible without special cases.
   - Readiness depends on the intended use (IFR needs more than VFR), so a single yes/no would be wrong.
 
+### 052. Groups: every asset in exactly one; roles can be granted per group
+*Decided: 2026-10-31 · Plan: §4 Asset, Asset lifecycle & components; §5 UI direction; §6 Users, roles & permissions · Phase plan: phase-2.md milestone 4 · Was idea 6 in ideas-to-discuss.md · Extends #045*
+
+- **Decision:**
+  - **Every asset is in exactly one group,** the place it lives ("Garage", "Hangar", "Boathouse", "Storage", …). Each group has a **name** and an **icon** from a built-in set; an uploaded logo can come after Phase 2 milestone 8 (images).
+  - **A default group,** "Garage" with the garage icon, is created at setup, so every asset always has a group and a one-place household never has to think about it.
+  - **Roles can be granted on a group,** as a third grant target next to one asset and all assets (#045 reserved it). A group grant covers every asset in the group, including ones added later. Permissions remain the union of all of a person's grants.
+  - **Assets can move** between groups, kept in the asset's history. **Access follows the current group;** before a move is confirmed, the app shows who gains and who loses access.
+  - **Components** are in their parent's group while installed and inherit its access; uninstalled, they have their own group.
+  - **The household Admin stays global** (users, server, settings). A per-group Admin could come much later.
+  - **The Garage screen** shows a section per group; filters can use groups.
+  - **Built in Phase 2 milestone 4,** with assets: the groups table, the default group, the asset's group, group grants, moving assets, and a screen to manage groups (SVG options first, #040).
+- **Why:**
+  - The human wants every asset assigned to a group with its own name and icon, and different permissions per group.
+  - One group per asset keeps permissions and the Garage screen easy to follow; an asset that needs different people uses a per-asset grant.
+  - Deciding before milestone 4 means the first asset is already in a group, with nothing to move later.
+

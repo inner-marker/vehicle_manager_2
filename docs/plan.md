@@ -214,6 +214,7 @@ Changing it is nearly free during Phase 1 dev builds, and becomes hard once rele
 Holds only information that doesn't change over time:
 
 - **Kind:** car, truck, motorcycle, trailer, boat, generator, equipment, … (later aircraft, engine, propeller). The kind selects an **asset profile** (see Asset profiles).
+- **Group:** exactly one, the place it lives (e.g. "Garage", "Hangar"); it can move to another group, and the move is kept in its history (see Groups, #052).
 - **Parent asset (optional):** where the asset is **currently installed**, e.g. an engine in a truck, or later an engine and propeller on an airframe. The full installation history lives in installation records (see Asset lifecycle & components). *Component tracking is post-MVP; the field exists from Phase 2.*
 - **Lifecycle status:** in service, spare / in storage, out for service, retired, disposed (see Asset lifecycle & components).
 - Make, model, year
@@ -602,8 +603,8 @@ The full round trip is a sequence of ordinary events, each with dates, attachmen
 - **Overhauls** reset a "time since overhaul" meter (via a meter adjustment) while "total time" keeps counting.
 
 **Permissions for components**
-- **While installed,** a component inherits access from its parent (whoever can maintain the airplane can maintain its engine).
-- **While uninstalled,** it uses its own per-asset roles. New spares default to the roles of the user who added them, adjustable by an Admin.
+- **While installed,** a component inherits access from its parent (whoever can maintain the airplane can maintain its engine), and it's in its parent's group (#052).
+- **While uninstalled,** it uses its own per-asset roles and its own group (e.g. a spare engine in "Storage"). New spares default to the roles of the user who added them, adjustable by an Admin.
 
 **Phasing**
 - **Phase 2:** lifecycle status, acquisition and disposal events with attachments, archive-instead-of-delete, the parent field, and send-out / return events.
@@ -699,9 +700,15 @@ A per-asset summary of whether the records say the asset can be used, shown at t
 ### Entity sketch
 
 ```text
+Group                # where assets live, e.g. "Garage", "Hangar" (#052)
+ ├─ id
+ ├─ name
+ └─ icon             # from a built-in set; an uploaded logo later
+
 Asset                # tracked thing; the UI calls it a "vehicle" (static identity only)
  ├─ id               # device-generated UUIDv7 (#042)
  ├─ kind             # car | truck | trailer | generator | ... → selects an AssetProfile
+ ├─ group_id         # → Group: exactly one, where it lives (#052)
  ├─ parent_asset_id? # → Asset where currently installed (history in Installation)
  ├─ lifecycle_status # in_service | spare | out_for_service | retired | disposed
  ├─ make, model, year, color, description
@@ -1198,6 +1205,7 @@ When a vehicle is sold to someone who also runs this app, export it as an **impo
 **Phase 2 screens** (`docs/decisions.md` #040): Garage cards ordered by urgency (or the user's own order); vehicle detail with Overview, Timeline, Maintenance, Fuel, Documents, and Setup tabs; a message center inbox; 48 px touch targets. **Each screen's step plan includes SVG layout options** in `docs/ui-sketches/` to choose from (one if only one makes sense).
 
 **Home ("Garage") screen** (proposed)
+- **A section per group** (#052), with the group's name and icon; a household with one group sees just its cards.
 - **Fleet strip:** counts of overdue, due soon, open squawks, and sync status; each taps through to its list.
 - **One card per vehicle:**
   - Photo, name, and primary meter readings
@@ -1368,7 +1376,15 @@ For the MVP there is no separate backup of the master database. Device copies ac
 | **Admin** | Full permissions: add/remove vehicles; manage users, roles, and devices; revoke tokens; server operations (e.g. "rebuild server from this device"). |
 
 **Assignment**
-- **Roles are assigned per vehicle, or on all vehicles** (`docs/decisions.md` #045). For example, someone can be a Maintainer on all vehicles, or a Driver on one car and a Maintainer on the truck. "All vehicles" includes vehicles added later. Groups of vehicles may come later.
+- **Roles are assigned per vehicle, per group, or on all vehicles** (`docs/decisions.md` #045, #052). For example, someone can be a Maintainer on all vehicles; a Maintainer on the "Hangar" group and a Viewer on the "Garage" group; or a Driver on one car and a Maintainer on the truck. "All vehicles" and a group both include vehicles added later.
+
+**Groups** (#052)
+- **Every asset is in exactly one group:** the place it lives, e.g. "Garage", "Hangar", "Boathouse", "Storage". Each group has a **name** and an **icon** from a built-in set (garage, hangar, boathouse, storage, warehouse, shop, farm, …); an uploaded logo can come once images are stored (Phase 2 milestone 8).
+- **A default group** ("Garage", garage icon) is created at setup, so a household with one place never has to think about groups.
+- **Assets can move** between groups; the move is kept in the asset's history. **Access follows the asset's current group:** before a move is confirmed, the app shows who gains and who loses access.
+- **Components** are in their parent's group while installed (see Asset lifecycle & components).
+- **The household Admin stays global:** users, the server, and settings aren't per group. A per-group Admin (e.g. for a flying club) could come much later.
+- **The Garage screen** shows a section per group, with its name and icon; filters (e.g. in the message center) can use groups.
 - **A person can hold multiple roles;** permissions are the union of their roles.
 - **Required readings can be skipped** by whoever is logging that event, behind the confirmation dialogs.
 
