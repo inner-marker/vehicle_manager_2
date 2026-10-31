@@ -202,6 +202,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
   - Failing closed means a misconfigured server can't be open by accident.
 - **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.
+- **Retired 2026-10-30** (Phase 2 step 2e): replaced by sign-in with sessions (#028). The variable, its handling, and the Connection panel's credential field are gone.
 
 ### 025. First server image is linux/amd64; arm64 later
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
@@ -491,3 +492,68 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **An Admin "Jobs" status view** comes later, when there are enough jobs to need one.
   - Built on the server's existing async runtime (tokio timers); no scheduler crate.
 - **Why:** one place to see, log, and test timed work, instead of several ad-hoc timers.
+
+### 045. Roles are granted on one asset or on all assets; groups later
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · ideas-to-discuss.md idea 6 (in part)*
+
+- **Decision:**
+  - **A role grant targets one asset, or "all assets".** "All assets" includes assets added later, so a household member gets one grant instead of one per vehicle.
+  - **Grants combine** as the plan already says: a person's permissions on an asset are the union of every grant that covers it.
+  - **The grant's target is an extensible kind** (`Asset(id)` or `AllAssets`), so a third kind, `Group(id)`, can be added later without changing existing grants.
+  - **Groups ("garages") wait** until there's a real need (a club, co-ownership, a second household).
+- **Why:** covers a household with almost no setup, avoids building group screens in Phase 2, and keeps the door open for groups.
+
+### 046. User management: list and detail; server-made temporary passwords; no orange sidebar edge
+*Decided: 2026-10-30 · Plan: §5 UI direction, §6 Users, roles & permissions · Phase plan: phase-2.md step 2g · Sketch: `docs/ui-sketches/p2m2-users-options.svg`, option A*
+
+- **Decision:**
+  - **The Users screen is a list and a detail page** (option A): users on the left, the selected person's roles and account actions on the right; on phones, the list then a page per person. Per-vehicle roles go under the person's **Roles** in milestone 4.
+  - **Temporary passwords are made by the server** (12 characters from the setup code's unambiguous alphabet) and shown to the Admin **once**, when adding a user or resetting a password. The user must choose their own at their next sign-in. Admins never type or see anyone's real password.
+  - **Disable and reset ask "Are you sure?" first.** For the last enabled Admin, disabling and changing the role are unavailable, with the reason shown.
+  - **Admin mode shows as the orange mode chip and the banner only**, with no orange edge on the sidebar (removed from step 2f).
+- **Why:** one page per person has room for per-vehicle roles later and keeps destructive actions visible; server-made temporary passwords are never weak or reused; the banner and chip are enough to make Admin mode unmistakable.
+
+### 047. Password recovery: a one-time code in the server log, for Admins
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · Phase plan: phase-2.md step 2h · Extends #028*
+
+- **Decision:**
+  - The sign-in screen has a **"Forgot your password?"** link for everyone. It asks for the username and always answers **"Ask your Admin for further instructions."**, whatever the username is.
+  - **Only for an Admin account** does the server then write a **one-time recovery code** to its log (like the setup code). Entering the username, the code, and a new password signs them in and **ends all their other sessions**.
+  - The code works **once** and **expires after 15 minutes**; requests and wrong codes count toward the sign-in attempt limit. It's kept in memory only.
+  - Anyone else who forgot their password asks an Admin, who resets it from the Users screen (#046).
+- **Why:**
+  - If the only Admin forgets their password, there's otherwise no way back in.
+  - Only someone who can read the NAS's log can finish a recovery, like first-Admin setup; anyone on the tailnet can ask, but can't use the code.
+  - One generic answer for everyone reveals nothing about which usernames exist or which are Admins, and a real Admin knows to check the log.
+
+### 048. Settings: tabs and buttons; the units, formats, and defaults offered
+*Decided: 2026-10-30 · Plan: §5 UI direction · Phase plan: phase-2.md step 2i · Sketch: `docs/ui-sketches/p2m2-settings-options.svg`, option B · Refines #029*
+
+- **Decision:**
+  - **Layout (option B):** two tabs, **You** and **Household** (the Household tab works only in Admin mode). Each setting is a row of buttons; on the You tab each has a **"Use household default"** switch. Currency and language use a list. The theme stays under **This device**. Changes save at once.
+  - **Choices and household defaults** (the default is listed first):
+    - **Distance:** miles, kilometers.
+    - **Fuel volume:** US gallons, imperial gallons, liters.
+    - **Fuel economy:** mpg (US), mpg (UK), L/100 km, km/L.
+    - **Pressure** (e.g. tires): psi, kPa, bar.
+    - **Date format:** **30 Oct 2026**, 10/30/2026, 30/10/2026, 2026-10-30.
+    - **Currency:** any ISO 4217 code; default USD, with common ones listed first.
+    - **Language:** English (US) only, for now.
+  - **Storage (refines #029):** one preferences record for the household and one per user, **one field per setting**. With last-write-wins per field (#043), each setting still merges on its own, as #029 requires. A user's unset field means "follow the household default".
+- **Why:** the human preferred buttons and an explicit "use household default" switch; pressure and the day-month-name date were asked for; per-field records give #029's per-setting merging without a second kind of record ID.
+
+### 049. Leave Admin mode and sign out when idle
+*Decided: 2026-10-30 · Phase plan: phase-2.md milestone 3 (its first step) · Refines #028 (sessions) and #048 (adds a setting)*
+
+- **Decision:**
+  - **The app watches for inactivity** while someone is signed in. Only real input counts: pointer down, key down, wheel or scroll, touch. Background requests don't.
+  - **After 15 idle minutes in Admin mode,** the app leaves Admin mode by itself (as **Leave** does) and shows a short notice: "Admin mode ended after 15 idle minutes."
+  - **After a longer idle time,** the app signs out and the sign-in card shows a short notice ("You were signed out after N idle hours."). A setting, **Sign out when idle**, offers 1 hour, 4 hours, **8 hours** (default), 24 hours, and Never.
+  - **Keeping the server in step:** while in Admin mode, the app checks its session about every 5 minutes, but only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
+  - **The server stays the authority:** its 15 idle minutes for Admin mode and 30 idle days for sessions are unchanged and still apply when the app is closed.
+  - **How (no new dependency):** one long-lived `document::eval` script records the last input and reports the idle time to Rust about every 15 seconds; this works on web and desktop. The decision itself (stay, keep alive, leave Admin, sign out) is a pure function, unit-tested.
+  - **To settle when milestone 3 is planned:** whether **Sign out when idle** is a per-person preference with a household default (a new field on the preferences record, #048) or a per-device setting like the theme (a shared computer may want a shorter time than a personal phone).
+- **Why:**
+  - Today the app only notices the end of Admin mode at the next navigation or click, so the orange banner can outlive Admin mode on a screen left open.
+  - A browser left open could stay signed in for up to 30 idle days.
+  - Raised by the human during the milestone 2 NAS test.

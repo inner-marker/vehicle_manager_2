@@ -30,20 +30,6 @@ fn compose_mounts_the_data_folder_at_the_data_dir() {
 }
 
 #[test]
-fn compose_passes_the_credential_variable_the_server_reads() {
-    // server::auth reads this name (its own test pins it to env_var_name("TEST_CREDENTIAL")).
-    let credential = env_var_name("TEST_CREDENTIAL");
-    assert!(
-        COMPOSE.contains(&format!("{credential}: ${{{credential}")),
-        "compose.yaml must pass {credential}"
-    );
-    assert!(
-        ENV_EXAMPLE.contains(&format!("{credential}=")),
-        ".env.example must list {credential}"
-    );
-}
-
-#[test]
 fn compose_passes_the_optional_snapshot_folder_and_leaves_it_empty_by_default() {
     // server::startup::SNAPSHOT_DIR_ENV_NAME; its own test pins it to this name.
     let snapshot_dir = env_var_name("SNAPSHOT_DIR");
@@ -56,6 +42,20 @@ fn compose_passes_the_optional_snapshot_folder_and_leaves_it_empty_by_default() 
             .lines()
             .any(|line| line == format!("{snapshot_dir}=")),
         ".env.example must list {snapshot_dir}, empty"
+    );
+}
+
+#[test]
+fn the_retired_test_credential_is_gone_from_the_deploy_files() {
+    // Retired in Phase 2 step 2e: signing in replaces it (decision #028).
+    let credential = env_var_name("TEST_CREDENTIAL");
+    assert!(
+        !COMPOSE.contains(&credential),
+        "compose.yaml still passes {credential}"
+    );
+    assert!(
+        !ENV_EXAMPLE.contains(&credential),
+        ".env.example still lists {credential}"
     );
 }
 
@@ -101,16 +101,4 @@ fn image_and_container_never_run_as_root() {
         COMPOSE.contains("user: \"${VEHICLEMANAGER_UID:?"),
         "compose.yaml must set the NAS user"
     );
-}
-
-#[test]
-fn env_example_leaves_the_credential_empty() {
-    // An empty credential makes the server refuse everything (decisions.md #024), so a
-    // copied-but-unedited .env can't leave the server open with a known value.
-    let credential = env_var_name("TEST_CREDENTIAL");
-    let line = ENV_EXAMPLE
-        .lines()
-        .find(|line| line.starts_with(&format!("{credential}=")))
-        .unwrap_or_default();
-    assert_eq!(line, format!("{credential}="));
 }

@@ -10,10 +10,12 @@ publish = false
 [dependencies]
 domain.workspace = true
 storage.workspace = true
+argon2.workspace = true
 axum.workspace = true
 getrandom.workspace = true
 sqlx.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 subtle.workspace = true
 tracing.workspace = true
 # One-time async startup (`OnceCell`) and the job scheduler's task and timers; the runtime

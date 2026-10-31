@@ -66,7 +66,11 @@ fn launch(log_handles: Option<LogHandles>) {
     use dioxus::prelude::dioxus_server::axum::Router;
     use dioxus::prelude::{DioxusRouterExt, ServeConfig};
 
-    let auth = server::auth::AuthConfig::from_env();
+    // Every protected API request needs a signed-in session (decision #028).
+    let auth = server::auth::AuthConfig::new(server::auth::SessionSource::new(
+        || server::startup::database().cloned(),
+        std::sync::Arc::new(logging::SystemClock),
+    ));
     let paths = server_paths();
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {

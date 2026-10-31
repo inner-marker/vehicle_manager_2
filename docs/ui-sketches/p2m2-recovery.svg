@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="860" viewBox="0 0 1560 860" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="860" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2h · Password recovery (decision #047): one layout</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">The same card as sign-in. Everyone gets the same answer; only an Admin username makes the server write a one-time code (15 minutes) to its log.</text>
+<text x="40" y="118" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">1 · Sign in</text>
+<rect x="40" y="130" width="300" height="650" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="156" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="60" y="200" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Sign in</text>
+<text x="60" y="228" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to see your household&#x27;s vehicles</text>
+<text x="60" y="260" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="60" y="268" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="60" y="330" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="60" y="338" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="60" y="406" width="260" height="44" rx="10" fill="#5aa9ff"/>
+<text x="190.0" y="433.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Sign in</text>
+<text x="60" y="486" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Forgot your password?</text>
+<text x="60" y="516" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(replaces &quot;Forgot it? Ask your Admin.&quot;)</text>
+<text x="380" y="118" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">2 · Forgot your password?</text>
+<rect x="380" y="130" width="300" height="650" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="398" y="156" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="400" y="200" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Forgot your password?</text>
+<text x="400" y="228" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Enter your username.</text>
+<text x="400" y="260" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="400" y="268" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="412" y="293" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<rect x="400" y="336" width="260" height="44" rx="10" fill="#5aa9ff"/>
+<text x="530.0" y="363.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Continue</text>
+<text x="400" y="416" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">← Back to sign in</text>
+<text x="720" y="118" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">3 · The same answer for everyone</text>
+<rect x="720" y="130" width="300" height="650" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="738" y="156" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="740" y="200" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Ask your Admin</text>
+<text x="740" y="228" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">for further instructions.</text>
+<rect x="740" y="250" width="260" height="0" rx="8" fill="#14171c"/>
+<text x="740" y="276" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">HAVE A RECOVERY CODE?</text>
+<text x="740" y="306" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Recovery code</text>
+<rect x="740" y="314" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="752" y="339" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XXXX-XXXX-XXXX-XXXX</text>
+<text x="740" y="372" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">New password (12+ characters)</text>
+<rect x="740" y="380" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="752" y="405" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<text x="740" y="438" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">New password again</text>
+<rect x="740" y="446" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="752" y="471" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="740" y="508" width="260" height="44" rx="10" fill="#5aa9ff"/>
+<text x="870.0" y="535.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Set password and sign in</text>
+<text x="740" y="588" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">← Back to sign in</text>
+<text x="1060" y="170" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">• Step 3 looks the same whether the username exists, is an</text>
+<text x="1060" y="192" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">  Admin, or not: it reveals nothing.</text>
+<text x="1060" y="214" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">• Only for an Admin, the server logs a code like</text>
+<text x="1060" y="236" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">  K7QM-4XRT-9PWD-H2CN (find it with</text>
+<text x="1060" y="258" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">  docker logs vehiclemanager | grep &quot;recovery code&quot;).</text>
+<text x="1060" y="280" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">• The code works once, for 15 minutes. Asking and wrong</text>
+<text x="1060" y="302" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">  codes count toward the sign-in attempt limit.</text>
+<text x="1060" y="324" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">• Success signs you in and ends your other sessions.</text>
+<text x="1060" y="346" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">• Everyone else: an Admin resets your password from</text>
+<text x="1060" y="368" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">  Users (it gives you a temporary one).</text>
+</svg>

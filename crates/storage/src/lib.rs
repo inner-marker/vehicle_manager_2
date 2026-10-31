@@ -12,7 +12,9 @@ pub mod database;
 mod error;
 mod integrity;
 pub mod jobs;
+pub mod preferences;
 pub mod snapshot;
+pub mod users;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
 pub use error::StorageError;

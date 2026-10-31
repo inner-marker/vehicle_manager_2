@@ -16,8 +16,28 @@ use tokio::sync::OnceCell;
 use crate::health::{self, Health, HealthProblem};
 use crate::ids::{NewIdError, new_id};
 use crate::jobs::{self, JobContext, SnapshotDir};
+use crate::setup;
+use domain::id::DeviceId;
 
 static DATABASE: OnceCell<Option<Database>> = OnceCell::const_new();
+
+/// The server's own device ID (from the database), for the changes it makes itself.
+static SERVER_DEVICE: std::sync::OnceLock<DeviceId> = std::sync::OnceLock::new();
+
+/// This database's ID (also the household preferences' record ID, #048).
+static DATABASE_ID: std::sync::OnceLock<domain::id::DatabaseId> = std::sync::OnceLock::new();
+
+/// This database's ID, once [`start`] has opened it.
+#[must_use]
+pub fn database_id() -> Option<domain::id::DatabaseId> {
+    DATABASE_ID.get().copied()
+}
+
+/// The server's own device ID, once [`start`] has opened the database.
+#[must_use]
+pub fn server_device() -> Option<DeviceId> {
+    SERVER_DEVICE.get().copied()
+}
 
 /// Where the server keeps its files.
 #[derive(Debug, Clone)]
@@ -67,6 +87,12 @@ pub async fn start(
     DATABASE
         .get_or_init(|| async {
             let database = open_and_check(&paths.data_dir, clock.as_ref()).await?;
+            match database.user_count().await {
+                Ok(count) => {
+                    setup::open_if_needed(count);
+                }
+                Err(error) => tracing::error!(target: log_area::AUTH, %error, "can't count users; setup stays closed"),
+            }
             jobs::spawn(JobContext {
                 database: database.clone(),
                 clock,
@@ -105,7 +131,10 @@ async fn open(data_dir: &Path, clock: &(dyn Clock + Sync)) -> Result<Database, S
         database_id: new_id(now)?,
         server_device_id: new_id(now)?,
     };
-    let (database, _report) = Database::open(data_dir, now, new_ids).await?;
+    let (database, report) = Database::open(data_dir, now, new_ids).await?;
+    // Set once per process; a second open (tests) keeps the first.
+    let _ = SERVER_DEVICE.set(report.server_device_id);
+    let _ = DATABASE_ID.set(report.database_id);
     Ok(database)
 }
 

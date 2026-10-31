@@ -3,7 +3,8 @@
 //! The **API version** is separate from the app version (plan §8): it changes only
 //! when the contract between app and server changes. Every request to a path under
 //! [`API_PATH_PREFIX`] carries the client's API version in [`API_VERSION_HEADER`]
-//! and its credential in the standard `Authorization: Bearer <credential>` header.
+//! and is made by a signed-in session: the session cookie (web) or `Authorization: Bearer
+//! <session token>` (desktop).
 //! The server checks both before any server function runs (phase-1.md step 7).
 //!
 //! # Examples
@@ -36,11 +37,11 @@ pub const API_PATH_PREFIX: &str = "/api/";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ApiError {
-    /// No `Authorization: Bearer ...` header.
+    /// No session was sent: not signed in.
     MissingCredential,
-    /// A credential was sent but isn't the one the server expects.
+    /// A session was sent but isn't valid (ended, signed out, or unknown).
     InvalidCredential,
-    /// The server has no credential configured, so it refuses everything (fail closed).
+    /// The server can't check sessions (its database isn't open), so it refuses (fail closed).
     AuthNotConfigured,
     /// No API version header.
     MissingApiVersion,
@@ -88,7 +89,7 @@ impl ApiError {
         }
     }
 
-    /// Whether this is a credential problem (as opposed to a version problem).
+    /// Whether this is a sign-in problem (as opposed to a version problem).
     pub const fn is_auth_failure(self) -> bool {
         matches!(
             self,
@@ -100,9 +101,9 @@ impl ApiError {
     /// Never shown in the UI, which uses [`ApiError::message`].
     pub const fn description(self) -> &'static str {
         match self {
-            Self::MissingCredential => "missing credential",
-            Self::InvalidCredential => "invalid credential",
-            Self::AuthNotConfigured => "server has no credential configured",
+            Self::MissingCredential => "not signed in",
+            Self::InvalidCredential => "session not valid",
+            Self::AuthNotConfigured => "server can't check sessions",
             Self::MissingApiVersion => "missing API version header",
             Self::MalformedApiVersion => "malformed API version header",
             Self::ClientTooOld => "client API version is too old",
@@ -154,6 +155,271 @@ pub struct Handshake {
     /// server refuses changes. Missing from servers before Phase 2, which counts as healthy.
     #[serde(default = "healthy_by_default")]
     pub healthy: bool,
+}
+
+/// Who is signed in, as the client sees it (from the session check and sign-in).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionInfo {
+    /// Their username.
+    pub username: crate::user::Username,
+    /// Their display name.
+    pub display_name: String,
+    /// They must choose a new password before anything else.
+    pub must_change_password: bool,
+    /// The mode the session is in.
+    pub mode: crate::access::ActiveMode,
+    /// The modes they may switch to (empty for a Viewer-only user, who works read-only).
+    pub available_modes: Vec<crate::access::ActiveMode>,
+}
+
+/// The session check's answer: who is signed in (if anyone), and whether the server still
+/// needs its first Admin.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionState {
+    /// The signed-in user, or `None`.
+    pub signed_in: Option<SessionInfo>,
+    /// No users exist yet: the app should offer first-Admin setup instead of sign-in.
+    pub setup_needed: bool,
+}
+
+/// The answer to a first-Admin setup attempt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SetupOutcome {
+    /// The Admin was created and is signed in (as for [`SignInOutcome::SignedIn`]).
+    SignedIn {
+        /// The new Admin.
+        session: SessionInfo,
+        /// The session token, if asked for (the desktop app).
+        token: Option<String>,
+    },
+    /// The setup code is wrong.
+    WrongCode,
+    /// Too many wrong codes; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The username breaks a rule.
+    InvalidUsername {
+        /// Which rule.
+        reason: crate::user::UsernameError,
+    },
+    /// The display name breaks a rule.
+    InvalidDisplayName {
+        /// Which rule.
+        reason: crate::user::DisplayNameError,
+    },
+    /// The password breaks a rule.
+    InvalidPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// An Admin already exists: sign in instead.
+    AlreadySetUp,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to setup step 1, checking the setup code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum CheckSetupCodeOutcome {
+    /// The code is right: go on to step 2.
+    Valid,
+    /// The code is wrong.
+    WrongCode,
+    /// Too many wrong codes; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// An Admin already exists: sign in instead.
+    AlreadySetUp,
+}
+
+/// Whether a user can sign in, and with what.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AccountStatus {
+    /// Signs in with their own password.
+    Active,
+    /// Has a temporary password they must change at their next sign-in.
+    TemporaryPassword,
+    /// Can't sign in.
+    Disabled,
+}
+
+/// One user, as the Users screen (Admin mode) shows them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UserSummary {
+    /// The user's ID.
+    pub id: crate::user::UserId,
+    /// Their username.
+    pub username: crate::user::Username,
+    /// Their display name.
+    pub display_name: String,
+    /// Whether they can sign in, and with what.
+    pub status: AccountStatus,
+    /// Their role on all vehicles, if any (per-vehicle roles arrive in milestone 4).
+    pub role_on_all: Option<crate::access::Role>,
+    /// This is the signed-in Admin.
+    pub is_you: bool,
+    /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
+    pub is_last_admin: bool,
+}
+
+/// The answer to a Users screen request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum UserAdminOutcome {
+    /// The household's users, by username.
+    Users {
+        /// Everyone (not deleted).
+        users: Vec<UserSummary>,
+    },
+    /// Done.
+    Done,
+    /// Done; give this temporary password to the user. Shown once.
+    TemporaryPassword {
+        /// The password, e.g. `QX7M-K2PD-9WRT`, typed exactly as shown.
+        password: String,
+    },
+    /// Not in Admin mode, or not the household's Admin.
+    NotAllowed,
+    /// It would leave the household without an enabled Admin.
+    LastAdmin,
+    /// Someone already has that username.
+    UsernameTaken,
+    /// The username breaks a rule.
+    InvalidUsername {
+        /// Which rule.
+        reason: crate::user::UsernameError,
+    },
+    /// The display name breaks a rule.
+    InvalidDisplayName {
+        /// Which rule.
+        reason: crate::user::DisplayNameError,
+    },
+    /// There's no such user.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to completing a password recovery (decision #047).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum RecoveryOutcome {
+    /// The new password is set; signed in (as for [`SignInOutcome::SignedIn`]).
+    SignedIn {
+        /// Who signed in.
+        session: SessionInfo,
+        /// The session token, if asked for (the desktop app).
+        token: Option<String>,
+    },
+    /// The code is wrong, used, or expired.
+    WrongCode,
+    /// Too many attempts; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The new password breaks a rule.
+    InvalidPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// Someone's display preferences, as the Settings screen shows them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PreferencesView {
+    /// What they chose themselves (unchosen settings follow the household).
+    pub mine: crate::preferences::PreferenceChoices,
+    /// What the household chose (unchosen settings follow the built-in defaults).
+    pub household: crate::preferences::PreferenceChoices,
+    /// What's in effect for them.
+    pub effective: crate::preferences::Preferences,
+}
+
+/// The answer to a Settings request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum PreferencesOutcome {
+    /// The preferences (after any change).
+    Preferences {
+        /// Mine, the household's, and the effective ones.
+        view: PreferencesView,
+    },
+    /// Household defaults need the household's Admin in Admin mode.
+    NotAllowed,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to a password change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ChangePasswordOutcome {
+    /// Changed. Other sessions of this user were signed out.
+    Changed,
+    /// The current password is wrong.
+    WrongPassword,
+    /// The new password breaks a rule.
+    InvalidNewPassword {
+        /// Which rule.
+        reason: crate::user::PasswordError,
+    },
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to a sign-in attempt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SignInOutcome {
+    /// Signed in. The web app gets a session cookie; `token` is set only when the caller
+    /// asked for it (the desktop app, which sends it as `Authorization: Bearer`), so a
+    /// web page's scripts never see it.
+    SignedIn {
+        /// Who signed in.
+        session: SessionInfo,
+        /// The session token, for the desktop app.
+        token: Option<String>,
+    },
+    /// Unknown username or wrong password (deliberately not saying which).
+    InvalidCredentials,
+    /// Too many failed attempts; try again after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
+    /// The server couldn't check right now.
+    Unavailable,
+}
+
+/// The answer to a mode switch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SwitchModeOutcome {
+    /// Now in this mode.
+    Switched {
+        /// The new mode.
+        mode: crate::access::ActiveMode,
+    },
+    /// The user's roles don't allow that mode.
+    NotAllowed,
+    /// Admin mode needs the password, and it was wrong.
+    WrongPassword,
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't switch right now.
+    Unavailable,
 }
 
 /// Servers from before the `healthy` field had no health check, so treat them as healthy.

@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use domain::i18n::{MessageId, messages};
 
 use super::screens::{
-    Diagnostics, Due, Garage, LogEvent, Messages, NotFound, Reports, Settings, Timeline,
+    Diagnostics, Due, Garage, LogEvent, Messages, NotFound, Reports, Settings, Timeline, Users,
     VehicleDetail, Vehicles,
 };
 use super::shell::Shell;
@@ -31,6 +31,8 @@ pub(crate) enum Route {
         VehicleDetail { asset_id: String },
         #[route("/log")]
         LogEvent {},
+        #[route("/users")]
+        Users {},
         #[route("/settings")]
         Settings {},
         #[route("/diagnostics")]
@@ -52,6 +54,7 @@ impl Route {
             Self::Vehicles {} => messages::NAV_VEHICLES,
             Self::VehicleDetail { .. } => messages::SCREEN_VEHICLE_DETAIL,
             Self::LogEvent {} => messages::SCREEN_LOG_EVENT,
+            Self::Users {} => messages::NAV_USERS,
             Self::Settings {} => messages::NAV_SETTINGS,
             Self::Diagnostics {} => messages::NAV_DIAGNOSTICS,
             Self::NotFound { .. } => messages::SCREEN_NOT_FOUND,

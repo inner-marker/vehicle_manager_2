@@ -135,15 +135,13 @@ define_messages! {
 
     /// Diagnostics: heading of the connection test panel.
     CONNECTION_TITLE => "connection-title",
-    /// Connection panel: label of the credential field.
-    CONNECTION_CREDENTIAL => "connection-credential",
-    /// Connection panel: button that runs the version and credential checks.
+    /// Connection panel: button that runs the version, sign-in, and health checks.
     CONNECTION_RUN_CHECKS => "connection-run-checks",
     /// Connection panel: shown while the checks run.
     CONNECTION_RUNNING => "connection-running",
     /// Connection panel: name of the API version check.
     CONNECTION_VERSION_CHECK => "connection-version-check",
-    /// Connection panel: name of the credential check.
+    /// Connection panel: name of the signed-in check.
     CONNECTION_AUTH_CHECK => "connection-auth-check",
     /// Connection panel: a check passed.
     CONNECTION_PASS => "connection-pass",
@@ -190,11 +188,26 @@ define_messages! {
     /// Server address rule: a path, query, or login after the server name.
     SERVER_ADDRESS_EXTRA_PARTS => "server-address-extra-parts",
 
-    /// Refusal reason: no credential was sent.
+    /// Username rule: 3–32 characters.
+    USERNAME_WRONG_LENGTH => "username-wrong-length",
+    /// Username rule: letters, digits, `.`, `-`, `_` only.
+    USERNAME_INVALID_CHARACTER => "username-invalid-character",
+    /// Username rule: must start with a letter or digit.
+    USERNAME_MUST_START_WITH_LETTER_OR_DIGIT => "username-must-start-with-letter-or-digit",
+    /// Password rule: at least 12 characters.
+    PASSWORD_TOO_SHORT => "password-too-short",
+    /// Password rule: at most 256 characters.
+    PASSWORD_TOO_LONG => "password-too-long",
+    /// Display name rule: can't be empty.
+    DISPLAY_NAME_EMPTY => "display-name-empty",
+    /// Display name rule: at most 64 characters.
+    DISPLAY_NAME_TOO_LONG => "display-name-too-long",
+
+    /// Refusal reason: not signed in.
     API_ERROR_MISSING_CREDENTIAL => "api-error-missing-credential",
-    /// Refusal reason: the credential was wrong.
+    /// Refusal reason: the session isn't valid any more.
     API_ERROR_INVALID_CREDENTIAL => "api-error-invalid-credential",
-    /// Refusal reason: the server has no credential configured.
+    /// Refusal reason: the server can't check sessions.
     API_ERROR_AUTH_NOT_CONFIGURED => "api-error-auth-not-configured",
     /// Refusal reason: the app sent no API version.
     API_ERROR_MISSING_API_VERSION => "api-error-missing-api-version",
@@ -204,4 +217,286 @@ define_messages! {
     API_ERROR_CLIENT_TOO_OLD => "api-error-client-too-old",
     /// Refusal reason: the app is newer than the server.
     API_ERROR_CLIENT_TOO_NEW => "api-error-client-too-new",
+
+    /// Shown while the app checks who's signed in.
+    LOADING => "loading",
+    /// A request failed for an unexpected reason.
+    SOMETHING_WENT_WRONG => "something-went-wrong",
+    /// Button: cancel a dialog.
+    ACTION_CANCEL => "action-cancel",
+    /// Sign-in screen: heading.
+    SIGN_IN_TITLE => "sign-in-title",
+    /// Sign-in screen: line under the heading.
+    SIGN_IN_SUBTITLE => "sign-in-subtitle",
+    /// Form label: username.
+    FIELD_USERNAME => "field-username",
+    /// Form label: password.
+    FIELD_PASSWORD => "field-password",
+    /// Sign-in screen: the button.
+    SIGN_IN_BUTTON => "sign-in-button",
+    /// Sign-in screen: shown on the button while signing in.
+    SIGN_IN_BUSY => "sign-in-busy",
+    /// Sign-in error: wrong username or password (deliberately not saying which).
+    SIGN_IN_WRONG => "sign-in-wrong",
+    /// Too many failed attempts; takes `minutes` (number).
+    TOO_MANY_ATTEMPTS => "too-many-attempts",
+    /// Sign-in error: the server couldn't check.
+    SIGN_IN_UNAVAILABLE => "sign-in-unavailable",
+    /// Setup: which step; takes `step` (number).
+    SETUP_STEP => "setup-step",
+    /// Setup step 1: heading.
+    SETUP_TITLE => "setup-title",
+    /// Setup step 1: line under the heading.
+    SETUP_SUBTITLE => "setup-subtitle",
+    /// Setup step 1: where to find the code.
+    SETUP_CODE_HELP => "setup-code-help",
+    /// Form label: the setup code.
+    FIELD_SETUP_CODE => "field-setup-code",
+    /// Setup step 1: the button.
+    SETUP_NEXT => "setup-next",
+    /// Setup step 1: shown on the button while checking.
+    SETUP_CHECKING => "setup-checking",
+    /// Setup error: wrong code.
+    SETUP_WRONG_CODE => "setup-wrong-code",
+    /// Setup error: an Admin already exists.
+    SETUP_ALREADY => "setup-already",
+    /// Setup step 2: heading.
+    SETUP_ACCOUNT_TITLE => "setup-account-title",
+    /// Setup step 2: confirms step 1.
+    SETUP_CODE_ACCEPTED => "setup-code-accepted",
+    /// Form label: the person's name.
+    FIELD_DISPLAY_NAME => "field-display-name",
+    /// Form label: a password being chosen.
+    FIELD_NEW_PASSWORD => "field-new-password",
+    /// Form label: the chosen password, again.
+    FIELD_PASSWORD_AGAIN => "field-password-again",
+    /// Form error: the two passwords differ.
+    PASSWORDS_DIFFER => "passwords-differ",
+    /// Setup step 2: the button.
+    SETUP_CREATE => "setup-create",
+    /// Setup step 2: shown on the button while working.
+    SETUP_CREATING => "setup-creating",
+    /// Button: go back a step.
+    ACTION_BACK => "action-back",
+    /// Active mode: Driver.
+    MODE_DRIVER => "mode-driver",
+    /// Active mode: Maintainer.
+    MODE_MAINTAINER => "mode-maintainer",
+    /// Active mode: Admin.
+    MODE_ADMIN => "mode-admin",
+    /// Mode chip for a Viewer-only user.
+    MODE_READ_ONLY => "mode-read-only",
+    /// Mode menu: Admin asks for the password.
+    MODE_NEEDS_PASSWORD => "mode-needs-password",
+    /// Accessible label of the mode chip.
+    MODE_MENU_LABEL => "mode-menu-label",
+    /// Admin password dialog: heading.
+    ADMIN_DIALOG_TITLE => "admin-dialog-title",
+    /// Admin password dialog: explanation.
+    ADMIN_DIALOG_TEXT => "admin-dialog-text",
+    /// Admin password dialog: the button.
+    ADMIN_DIALOG_CONFIRM => "admin-dialog-confirm",
+    /// Error: the password typed isn't right.
+    WRONG_PASSWORD => "wrong-password",
+    /// Admin banner: the label.
+    ADMIN_BANNER_LABEL => "admin-banner-label",
+    /// Admin banner: the explanation.
+    ADMIN_BANNER_TEXT => "admin-banner-text",
+    /// Admin banner: button to leave Admin mode.
+    ADMIN_BANNER_LEAVE => "admin-banner-leave",
+    /// Accessible label of the account chip.
+    ACCOUNT_MENU_LABEL => "account-menu-label",
+    /// Account menu: change password.
+    ACCOUNT_CHANGE_PASSWORD => "account-change-password",
+    /// Account menu: sign out.
+    ACCOUNT_SIGN_OUT => "account-sign-out",
+    /// Change-password dialog: heading.
+    PASSWORD_DIALOG_TITLE => "password-dialog-title",
+    /// Form label: the current password.
+    FIELD_CURRENT_PASSWORD => "field-current-password",
+    /// Change-password dialog: the button.
+    PASSWORD_SAVE => "password-save",
+    /// Change-password: done.
+    PASSWORD_CHANGED => "password-changed",
+    /// Forced password change: heading.
+    PASSWORD_MUST_CHANGE_TITLE => "password-must-change-title",
+    /// Forced password change: explanation.
+    PASSWORD_MUST_CHANGE_TEXT => "password-must-change-text",
+    /// Change-password error: the current password is wrong.
+    PASSWORD_CURRENT_WRONG => "password-current-wrong",
+
+    /// Navigation: managing users (Admins only).
+    NAV_USERS => "nav-users",
+    /// Role: Viewer.
+    ROLE_VIEWER => "role-viewer",
+    /// Role: Driver.
+    ROLE_DRIVER => "role-driver",
+    /// Role: Maintainer.
+    ROLE_MAINTAINER => "role-maintainer",
+    /// Role: Admin.
+    ROLE_ADMIN => "role-admin",
+    /// No role on all vehicles.
+    ROLE_NONE => "role-none",
+    /// Users: button to add a user.
+    USERS_ADD => "users-add",
+    /// Users: badge on the signed-in Admin.
+    USERS_YOU => "users-you",
+    /// Users: badge on a disabled user.
+    USERS_DISABLED => "users-disabled",
+    /// Users: badge on someone with a temporary password.
+    USERS_TEMPORARY => "users-temporary",
+    /// Users list: a person's role on all vehicles; takes `role` (text).
+    USERS_ROLE_SUMMARY => "users-role-summary",
+    /// Users detail: the roles heading.
+    USERS_ROLES_HEADING => "users-roles-heading",
+    /// Users detail: the all-vehicles role row.
+    USERS_ALL_VEHICLES => "users-all-vehicles",
+    /// Users detail: per-vehicle roles come later.
+    USERS_ONE_VEHICLE_LATER => "users-one-vehicle-later",
+    /// Users detail: the account heading.
+    USERS_ACCOUNT_HEADING => "users-account-heading",
+    /// Users detail: reset password.
+    USERS_RESET_PASSWORD => "users-reset-password",
+    /// Users detail: disable.
+    USERS_DISABLE => "users-disable",
+    /// Users detail: enable again.
+    USERS_ENABLE => "users-enable",
+    /// Users detail: why the last Admin can't be disabled or demoted.
+    USERS_LAST_ADMIN => "users-last-admin",
+    /// Users detail: what disabling does.
+    USERS_DISABLE_NOTE => "users-disable-note",
+    /// Confirm dialog: disable; takes `name` (text).
+    USERS_CONFIRM_DISABLE_TITLE => "users-confirm-disable-title",
+    /// Confirm dialog: what disabling does.
+    USERS_CONFIRM_DISABLE_TEXT => "users-confirm-disable-text",
+    /// Confirm dialog: the disable button.
+    USERS_CONFIRM_DISABLE => "users-confirm-disable",
+    /// Confirm dialog: reset; takes `name` (text).
+    USERS_CONFIRM_RESET_TITLE => "users-confirm-reset-title",
+    /// Confirm dialog: what a reset does.
+    USERS_CONFIRM_RESET_TEXT => "users-confirm-reset-text",
+    /// Confirm dialog: the reset button.
+    USERS_CONFIRM_RESET => "users-confirm-reset",
+    /// Add-user dialog: heading.
+    USERS_ADD_TITLE => "users-add-title",
+    /// Form label: another person's name.
+    FIELD_THEIR_NAME => "field-their-name",
+    /// Add-user dialog: role label.
+    USERS_ROLE_ON_ALL => "users-role-on-all",
+    /// Add-user dialog: about the temporary password.
+    USERS_ADD_NOTE => "users-add-note",
+    /// Add-user dialog: the button.
+    USERS_ADD_BUTTON => "users-add-button",
+    /// Temporary-password dialog: heading; takes `name` (text).
+    USERS_TEMP_TITLE => "users-temp-title",
+    /// Temporary-password dialog: what to do with it.
+    USERS_TEMP_TEXT => "users-temp-text",
+    /// Temporary-password dialog: copy button.
+    USERS_TEMP_COPY => "users-temp-copy",
+    /// Temporary-password dialog: after copying.
+    USERS_TEMP_COPIED => "users-temp-copied",
+    /// Temporary-password dialog: close.
+    USERS_TEMP_DONE => "users-temp-done",
+    /// Temporary-password dialog: what happens next.
+    USERS_TEMP_NOTE => "users-temp-note",
+    /// Add-user error: the username is taken.
+    USERS_USERNAME_TAKEN => "users-username-taken",
+    /// Users screen outside Admin mode.
+    USERS_NOT_ALLOWED => "users-not-allowed",
+    /// Users detail with nobody chosen.
+    USERS_SELECT_HINT => "users-select-hint",
+    /// Users detail on phones: back to the list.
+    USERS_BACK => "users-back",
+
+    /// Sign-in screen: the link to recover a password.
+    SIGN_IN_FORGOT_LINK => "sign-in-forgot-link",
+    /// Recovery: heading of the username step.
+    RECOVERY_TITLE => "recovery-title",
+    /// Recovery: the username step's instruction.
+    RECOVERY_SUBTITLE => "recovery-subtitle",
+    /// Recovery: the username step's button.
+    RECOVERY_CONTINUE => "recovery-continue",
+    /// Recovery: the answer everyone gets (heading).
+    RECOVERY_ASK_ADMIN_TITLE => "recovery-ask-admin-title",
+    /// Recovery: the answer everyone gets (line under it).
+    RECOVERY_ASK_ADMIN_TEXT => "recovery-ask-admin-text",
+    /// Recovery: heading above the code form.
+    RECOVERY_HAVE_CODE => "recovery-have-code",
+    /// Form label: the recovery code.
+    FIELD_RECOVERY_CODE => "field-recovery-code",
+    /// Form label: a new password replacing an old one.
+    FIELD_NEW_PASSWORD_LONG => "field-new-password-long",
+    /// Form label: the new password, again.
+    FIELD_NEW_PASSWORD_AGAIN => "field-new-password-again",
+    /// Recovery: the code form's button.
+    RECOVERY_SUBMIT => "recovery-submit",
+    /// Recovery: back to sign-in.
+    RECOVERY_BACK => "recovery-back",
+    /// Recovery error: wrong, used, or expired code.
+    RECOVERY_WRONG_CODE => "recovery-wrong-code",
+
+    /// Settings: the tab with the user's own preferences.
+    SETTINGS_TAB_YOU => "settings-tab-you",
+    /// Settings: the tab with the household defaults.
+    SETTINGS_TAB_HOUSEHOLD => "settings-tab-household",
+    /// Settings, You tab: what it's for.
+    SETTINGS_YOU_HELP => "settings-you-help",
+    /// Settings, Household tab: what it's for.
+    SETTINGS_HOUSEHOLD_HELP => "settings-household-help",
+    /// Settings, Household tab outside Admin mode.
+    SETTINGS_HOUSEHOLD_ADMIN_ONLY => "settings-household-admin-only",
+    /// Settings: the switch to follow the household default.
+    SETTINGS_USE_HOUSEHOLD => "settings-use-household",
+    /// Settings: the per-device section heading.
+    SETTINGS_THIS_DEVICE => "settings-this-device",
+    /// Settings: the theme row.
+    SETTINGS_THEME => "settings-theme",
+    /// Setting: distance unit.
+    SETTING_DISTANCE => "setting-distance",
+    /// Setting: fuel volume unit.
+    SETTING_VOLUME => "setting-volume",
+    /// Setting: fuel economy unit.
+    SETTING_ECONOMY => "setting-economy",
+    /// Setting: pressure unit.
+    SETTING_PRESSURE => "setting-pressure",
+    /// Setting: date format.
+    SETTING_DATE_FORMAT => "setting-date-format",
+    /// Setting: default currency.
+    SETTING_CURRENCY => "setting-currency",
+    /// Setting: language.
+    SETTING_LANGUAGE => "setting-language",
+    /// Choice: miles.
+    UNIT_MILES => "unit-miles",
+    /// Choice: kilometers.
+    UNIT_KILOMETERS => "unit-kilometers",
+    /// Choice: US gallons.
+    UNIT_US_GALLONS => "unit-us-gallons",
+    /// Choice: imperial gallons.
+    UNIT_IMPERIAL_GALLONS => "unit-imperial-gallons",
+    /// Choice: liters.
+    UNIT_LITERS => "unit-liters",
+    /// Choice: miles per US gallon.
+    UNIT_MPG_US => "unit-mpg-us",
+    /// Choice: miles per imperial gallon.
+    UNIT_MPG_UK => "unit-mpg-uk",
+    /// Choice: liters per 100 km.
+    UNIT_L_PER_100_KM => "unit-l-per-100-km",
+    /// Choice: kilometers per liter.
+    UNIT_KM_PER_L => "unit-km-per-l",
+    /// Choice: psi.
+    UNIT_PSI => "unit-psi",
+    /// Choice: kilopascals.
+    UNIT_KPA => "unit-kpa",
+    /// Choice: bar.
+    UNIT_BAR => "unit-bar",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_DAY_MONTH_NAME_YEAR => "date-sample-day-month-name-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_MONTH_DAY_YEAR => "date-sample-month-day-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_DAY_MONTH_YEAR => "date-sample-day-month-year",
+    /// Date format choice, shown as a sample.
+    DATE_SAMPLE_YEAR_MONTH_DAY => "date-sample-year-month-day",
+    /// Choice: English (United States).
+    LANGUAGE_ENGLISH_US => "language-english-us",
 }

@@ -1,8 +1,8 @@
 # The server on the NAS, as a Container Manager "Project" (docs/deploying-nas.md).
 #
 # Copy this file to the Project folder (e.g. /volume1/docker/vehicle_manager/) next to
-# a `.env` file made from `.env.example`. Settings that differ per NAS, and the
-# credential, live in `.env`, which is never committed.
+# a `.env` file made from `.env.example`. Settings that differ per NAS live in `.env`,
+# which is never committed.
 #
 # Variable names must match domain::identity::env_var_name(...);
 # crates/app/tests/deploy_config.rs checks them.
@@ -27,8 +27,6 @@ services:
       - "127.0.0.1:${VEHICLEMANAGER_HOST_PORT:-8410}:8080"
 
     environment:
-      # Empty or missing means the server refuses every API request (decisions.md #024).
-      VEHICLEMANAGER_TEST_CREDENTIAL: ${VEHICLEMANAGER_TEST_CREDENTIAL:-}
       # Optional: a snapshot folder other than /data/snapshots (decisions.md #035). Empty
       # means the default. A folder set here is never created, so it must be mounted below.
       VEHICLEMANAGER_SNAPSHOT_DIR: ${VEHICLEMANAGER_SNAPSHOT_DIR:-}

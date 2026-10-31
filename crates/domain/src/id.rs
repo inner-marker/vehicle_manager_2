@@ -52,6 +52,14 @@ pub enum Device {}
 #[derive(Debug)]
 pub enum Database {}
 
+/// An asset (a vehicle or other tracked thing). A marker for now: the asset record itself
+/// arrives in Phase 2 milestone 4, and role grants already refer to assets.
+#[derive(Debug)]
+pub enum Asset {}
+
+/// The ID of an asset.
+pub type AssetId = Id<Asset>;
+
 /// The ID of a device. Breaks ties between equal HLC stamps (`crate::hlc::Stamp`).
 pub type DeviceId = Id<Device>;
 

@@ -4,11 +4,15 @@
 //! - `shell`: the layout around every screen (sidebar, top bar, bottom tabs).
 //! - `nav`: which screens appear in the sidebar and bottom tabs.
 //! - `theme`: Light / Dark / System, default Dark (decision #012).
+//! - `auth`: who is signed in, and the gate showing setup, sign-in, or the app.
+//! - `account`: the mode chip, account chip, Admin dialog, and Admin banner (in the shell).
 //! - `screens`: one component per screen; placeholders until their phase.
 //!
 //! Every visible string comes from `domain::i18n`; components never contain
 //! business rules or touch the database.
 
+mod account;
+pub(crate) mod auth;
 mod icons;
 pub(crate) mod nav;
 pub(crate) mod routes;
@@ -32,10 +36,13 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 #[component]
 pub fn App() -> Element {
     let theme = use_context_provider(|| Signal::new(ThemeChoice::default()));
+    use_context_provider(|| Signal::new(auth::AuthState::Loading));
 
     rsx! {
         Stylesheet { href: MAIN_CSS }
-        div { class: "app", "data-theme": theme().attribute(), Router::<Route> {} }
+        div { class: "app", "data-theme": theme().attribute(),
+            auth::AuthGate { Router::<Route> {} }
+        }
     }
 }
 
