@@ -603,3 +603,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - One group per asset keeps permissions and the Garage screen easy to follow; an asset that needs different people uses a per-asset grant.
   - Deciding before milestone 4 means the first asset is already in a group, with nothing to move later.
 
+### 053. Messages screen: list and detail, with a divider; the badge and the urgent banner
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md step 3e · Sketches: `docs/ui-sketches/p2m3-messages-options.svg` (option B), drawn as `docs/ui-sketches/p2m3-messages-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **List and detail,** like the Users screen (#046): short rows on the left (severity stripe and word, title, time, an unread dot), the chosen message on the right (text, Admin-only details, one action, **Dismiss**). **Opening a message marks it read;** there's no Mark read button. Dismissing it chooses the next one.
+  - **A clear divider on wide and medium screens:** a full-height grey line between the columns, with the list on a slightly darker panel.
+  - **Phones:** the list, then a page per message with **← Messages**.
+  - **Filters:** All, Urgent, Warning, Info (by vehicle once vehicles exist, milestone 4). Newest first, unread on top.
+  - **Everywhere:** an unread badge on **Messages** (sidebar and phone tabs; Admin messages count only in Admin mode), and a red **urgent banner** under the top bar on every screen while an urgent message is showing, with **View**.
+  - **Severity** is a colour stripe (red urgent, amber warning, blue info) **and** the word, never colour alone.
+- **Why:** the human chose option B and asked for a stronger line between the columns on large screens. The list stays tidy as Phase 5 adds maintenance, squawk, and document messages, and it works like Users.
+
