@@ -95,10 +95,16 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Testing:** how it's tested in CI without a NAS (e.g. against a fake Project folder and a stub `docker`).
   - **Safety:** always confirm before replacing the database, keep what it replaces, and refuse to run while the container is up for steps that need it stopped.
 
-### 12. Digital records and signatures that follow standards 🟡
-*Raised by the human, 2026-10-31 · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
+### 12. Digital records and signatures that follow standards 🔵
+*Raised by the human, 2026-10-31 · Plan received 2026-10-31: `docs/sub-plans/signatures-and-records.md` (draft) · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
 
-- The human is preparing a **plan for digital records and signatures** (with Claude on the web) so the app's records and signatures generally follow recognized standards. It will be added here, or to `docs/plan.md`, when it's ready.
-- **Rule until then:** **don't implement digital signatures** (the shared Signature system in `docs/plan.md`, Logbook entries) until the plan is reviewed and the human **confirms** the approach.
-- **Also check before milestone 6:** whether the plan changes anything about finalized records, amendments, or the audit trail, which milestone 6 builds.
-
+- **The plan:** `docs/sub-plans/signatures-and-records.md`, the human's draft design for electronic signatures and record-keeping that meet the intent of FAA AC 120-78B and 14 CFR 43.9 / 43.11 / 91.417 as far as practical, with zero paid dependencies: Ed25519 signatures over canonical (RFC 8785) records, a self-hosted root → intermediate → per-user-and-device key certificate chain, a per-vehicle hash chain, corrections by superseding entries, revocation, a signed export bundle with a verifier CLI, and a PDF logbook. Its phases are S1–S6, with its own open decisions (§13).
+- **Rule until it's confirmed:** **don't implement digital signatures** (or anything from the sub-plan) until it's reviewed with the human and they **confirm** the approach. The sub-plan replaces the Signatures part of "Logbook entries, statement templates & signatures" in `docs/plan.md` once confirmed.
+- **To review with the human** (where it meets settled decisions; nothing decided yet):
+  - **Signatures become cryptographic:** `docs/plan.md` currently says a signature "is not a cryptographic signature"; the sub-plan makes the drawn or typed mark only the *appearance*, with an Ed25519 signature behind it.
+  - **New crate and dependencies:** a `vm-records` crate (AGENTS.md has four crates with one-way dependencies) and `ed25519-dalek`, `serde_jcs`, `keyring`, `hex` (all need approval); its sample code uses `OffsetDateTime` where `domain` uses `UnixMillis`.
+  - **Immutability:** SQLite triggers that block updates to signed rows, alongside the command pipeline (#043: field-level last-write-wins, deletes as tombstones); signed entries as content-addressed and conflict-free.
+  - **Milestone 6:** its finalized records and amendments (#034) next to the sub-plan's `draft → signed → superseded` states and correction entries, so the two fit together.
+  - **Sync and time:** per-vehicle hash chains with server-signed chain-join entries for offline forks, server receipts (`received_at`), and device time as untrusted, versus the HLC and Phase 3 sync design.
+  - **Where S1–S6 go in the roadmap,** the `docs/records-procedures.md` template, and the tests it asks to add to AGENTS.md (§12).
+  - Its "Related" line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.

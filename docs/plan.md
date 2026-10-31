@@ -6,6 +6,9 @@ A self-hosted app for tracking vehicles, everything that happens to them, and th
 
 *Ideas raised but not yet decided are tracked separately in `docs/ideas-to-discuss.md`; they are not part of this plan until moved here.*
 
+*To keep this plan readable, **detailed designs for one feature area live in sub-plans** in `docs/sub-plans/`, each linked from the section it details; this plan keeps a short summary. A sub-plan marked draft isn't part of the plan until the human confirms it. Sub-plans so far:*
+- *`docs/sub-plans/signatures-and-records.md`: electronic signatures and record-keeping (draft; see Logbook entries, statement templates & signatures).*
+
 **Long-term aspiration (well past MVP):** extend the app, or a sibling app built on the same core, to **aircraft maintenance records**, alongside or instead of ground vehicles. Aircraft features are not being planned yet, but early data-model decisions are made so they won't block it (see Aircraft-ready groundwork).
 
 ---
@@ -783,7 +786,7 @@ StatementTemplate    # library of pre-written statements; editable by Admin only
  ├─ name, text_with_placeholders
  └─ locked/editable parts, source (e.g. official wording, custom)
 
-Signature            # shared by everything that needs a signature (pending the records & signatures standards plan, idea 12)
+Signature            # shared by everything that needs a signature (pending docs/sub-plans/signatures-and-records.md, idea 12)
  ├─ id, signer_user_id, signed_at
  ├─ strokes, rendered_image
  ├─ credential_snapshot
@@ -1058,7 +1061,7 @@ Formal **logbook entries:** the statements that go into an asset's logbook (e.g.
 
 **Signatures: one shared signature system for the whole app**
 
-> **Pending: a standards plan for digital records and signatures.** The human is preparing a plan (2026-10-31) so records and signatures generally follow recognized standards. **Nothing about digital signatures is implemented until that plan is reviewed and the human confirms the approach;** this section may change with it. See `docs/ideas-to-discuss.md` idea 12.
+> **Pending: a standards plan for digital records and signatures.** The human's draft is `docs/sub-plans/signatures-and-records.md` (2026-10-31): signatures and records meant to meet the intent of FAA AC 120-78B and 14 CFR 43.9 / 43.11 / 91.417, with Ed25519 signatures and a self-hosted certificate chain. **Nothing about digital signatures is implemented until it is reviewed and the human confirms the approach;** once confirmed, it replaces this section. See `docs/ideas-to-discuss.md` idea 12.
 
 - Used by **every item that needs a signature** (logbook entries first; any future sign-off reuses it).
 - **Two signing options:**
@@ -1117,7 +1120,7 @@ Aircraft maintenance is a long-term aspiration, not planned yet. These choices k
 
 **Deferred to the aircraft phase** (keep the door open, don't build):
 - **Aviation component specifics:** time between overhaul, life-limited parts, core exchange paperwork. **Groundwork in place:** components are assets with lifecycle status, installation history, and linked meters (see Asset lifecycle & components).
-- **Aviation statement library and record layouts:** FAA-provided statement templates as a reference data pack, aviation-specific logbook page formats, and a review of electronic signature and recordkeeping acceptability. **Groundwork in place:** logbook entries, statement templates, signatures, and credentials (post-MVP feature).
+- **Aviation statement library and record layouts:** FAA-provided statement templates as a reference data pack, aviation-specific logbook page formats, and a review of electronic signature and recordkeeping acceptability (the human's draft, `docs/sub-plans/signatures-and-records.md`, maps AC 120-78B to features). **Groundwork in place:** logbook entries, statement templates, signatures, and credentials (post-MVP feature).
 
 ### Vehicle history reports (post-MVP)
 
@@ -1807,7 +1810,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Post-MVP: Measurements.** Structured measurements with positions, multiple values, limits, and auto-squawks.
 - **Post-MVP: Human-friendly record numbers** (e.g. "F-150 entry 42"), assigned by the server at finalize, with reports or logbooks (#042).
 - **Post-MVP: Vehicle history reports.** Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
-- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. **Signatures wait for the human's records and signatures standards plan to be confirmed** (idea 12).
+- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. **Signatures wait for the human's records and signatures standards plan to be confirmed** (`docs/sub-plans/signatures-and-records.md`, idea 12).
 - **Post-MVP (later): Logbook label and other page formats.**
 - **Post-MVP (after reports): Vehicle transfer to the next owner.** Importable vehicle package for another server running the app.
 - **Post-MVP: Event map.** Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
