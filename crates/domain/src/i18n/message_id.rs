@@ -499,4 +499,86 @@ define_messages! {
     DATE_SAMPLE_YEAR_MONTH_DAY => "date-sample-year-month-day",
     /// Choice: English (United States).
     LANGUAGE_ENGLISH_US => "language-english-us",
+    /// Settings: the sign-in section heading.
+    SETTINGS_SIGN_IN => "settings-sign-in",
+    /// Setting: when the app signs out by itself.
+    SETTING_IDLE_SIGN_OUT => "setting-idle-sign-out",
+    /// Idle sign-out choice: 1 hour.
+    IDLE_SIGN_OUT_ONE_HOUR => "idle-sign-out-one-hour",
+    /// Idle sign-out choice: 4 hours.
+    IDLE_SIGN_OUT_FOUR_HOURS => "idle-sign-out-four-hours",
+    /// Idle sign-out choice: 8 hours.
+    IDLE_SIGN_OUT_EIGHT_HOURS => "idle-sign-out-eight-hours",
+    /// Idle sign-out choice: 24 hours.
+    IDLE_SIGN_OUT_TWENTY_FOUR_HOURS => "idle-sign-out-twenty-four-hours",
+    /// Idle sign-out choice: never.
+    IDLE_SIGN_OUT_NEVER => "idle-sign-out-never",
+    /// Notice: the app left Admin mode after 15 idle minutes.
+    IDLE_ADMIN_ENDED => "idle-admin-ended",
+    /// Notice on the sign-in card: signed out after `$hours` idle hours.
+    IDLE_SIGNED_OUT => "idle-signed-out",
+    /// A notice's dismiss button.
+    NOTICE_DISMISS => "notice-dismiss",
+    /// Message title: the nightly snapshot failed.
+    INBOX_SNAPSHOT_FAILED => "inbox-snapshot-failed",
+    /// Message title: the nightly snapshot was skipped.
+    INBOX_SNAPSHOT_SKIPPED => "inbox-snapshot-skipped",
+    /// Message title: the hourly database check failed.
+    INBOX_QUICK_CHECK_FAILED => "inbox-quick-check-failed",
+    /// Message title: a job this build doesn't know by name failed.
+    INBOX_JOB_FAILED => "inbox-job-failed",
+    /// Message title: a job this build doesn't know by name was skipped.
+    INBOX_JOB_SKIPPED => "inbox-job-skipped",
+    /// Message text for a job this build doesn't know by name.
+    INBOX_JOB_BODY => "inbox-job-body",
+    /// Message text for a failed or skipped nightly snapshot.
+    INBOX_SNAPSHOT_BODY => "inbox-snapshot-body",
+    /// Message text for a failed hourly database check.
+    INBOX_QUICK_CHECK_BODY => "inbox-quick-check-body",
+    /// Message title: the server is refusing changes.
+    INBOX_SERVER_UNHEALTHY => "inbox-server-unhealthy",
+    /// Message text: the database couldn't be opened.
+    INBOX_DATABASE_UNAVAILABLE => "inbox-database-unavailable",
+    /// Message text: the integrity check found problems.
+    INBOX_INTEGRITY_CHECK_FAILED => "inbox-integrity-check-failed",
+    /// Message button: open Diagnostics.
+    INBOX_OPEN_DIAGNOSTICS => "inbox-open-diagnostics",
+    /// Messages filter: everything.
+    MESSAGES_FILTER_ALL => "messages-filter-all",
+    /// Severity word: urgent.
+    MESSAGES_SEVERITY_URGENT => "messages-severity-urgent",
+    /// Severity word: warning.
+    MESSAGES_SEVERITY_WARNING => "messages-severity-warning",
+    /// Severity word: info.
+    MESSAGES_SEVERITY_INFO => "messages-severity-info",
+    /// Messages filter: urgent only.
+    MESSAGES_FILTER_URGENT => "messages-filter-urgent",
+    /// Messages filter: warnings only.
+    MESSAGES_FILTER_WARNING => "messages-filter-warning",
+    /// Messages filter: info only.
+    MESSAGES_FILTER_INFO => "messages-filter-info",
+    /// How many messages are unread (`$count`).
+    MESSAGES_UNREAD => "messages-unread",
+    /// Messages: nothing chosen yet.
+    MESSAGES_SELECT_HINT => "messages-select-hint",
+    /// Messages: there are none.
+    MESSAGES_EMPTY => "messages-empty",
+    /// Messages on phones: back to the list.
+    MESSAGES_BACK => "messages-back",
+    /// Messages: the technical details heading (Admin mode).
+    MESSAGES_DETAILS => "messages-details",
+    /// Messages: the dismiss button.
+    MESSAGES_DISMISS => "messages-dismiss",
+    /// A time shown in UTC (`$time`).
+    MESSAGES_TIME_UTC => "messages-time-utc",
+    /// The urgent banner's label.
+    URGENT_BANNER_LABEL => "urgent-banner-label",
+    /// The urgent banner's link to the message.
+    URGENT_BANNER_VIEW => "urgent-banner-view",
+    /// Notice on the sign-in card: signed out after `$minutes` idle minutes (test timers).
+    IDLE_SIGNED_OUT_MINUTES => "idle-signed-out-minutes",
+    /// The top bar's tag while test timers are on (`$minutes`).
+    TEST_TIMERS_TAG => "test-timers-tag",
+    /// A sign-out choice with its test length (`$label`, `$minutes`).
+    IDLE_SIGN_OUT_TEST => "idle-sign-out-test",
 }

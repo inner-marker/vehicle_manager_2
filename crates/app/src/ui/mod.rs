@@ -6,6 +6,8 @@
 //! - `theme`: Light / Dark / System, default Dark (decision #012).
 //! - `auth`: who is signed in, and the gate showing setup, sign-in, or the app.
 //! - `account`: the mode chip, account chip, Admin dialog, and Admin banner (in the shell).
+//! - `idle`: leaving Admin mode and signing out when idle, and their notices (#049).
+//! - `inbox`: the person's messages, the unread badge, and the urgent banner (#050, #053).
 //! - `screens`: one component per screen; placeholders until their phase.
 //!
 //! Every visible string comes from `domain::i18n`; components never contain
@@ -14,6 +16,8 @@
 mod account;
 pub(crate) mod auth;
 mod icons;
+pub(crate) mod idle;
+pub(crate) mod inbox;
 pub(crate) mod nav;
 pub(crate) mod routes;
 mod screens;
@@ -37,6 +41,7 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 pub fn App() -> Element {
     let theme = use_context_provider(|| Signal::new(ThemeChoice::default()));
     use_context_provider(|| Signal::new(auth::AuthState::Loading));
+    idle::provide_idle_context();
 
     rsx! {
         Stylesheet { href: MAIN_CSS }

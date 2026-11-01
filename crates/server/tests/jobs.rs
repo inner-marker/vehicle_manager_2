@@ -8,6 +8,7 @@ mod scheduler {
 
     use domain::test_support::{ManualClock, test_id};
     use domain::time::{Clock, UnixMillis};
+    use domain::timers::Timers;
     use server::jobs::{Job, JobContext, SnapshotDir, next_run, run_due_jobs};
     use storage::{Database, NewDatabaseIds};
 
@@ -26,6 +27,7 @@ mod scheduler {
             database,
             clock: Arc::clone(&clock) as Arc<dyn Clock + Send + Sync>,
             snapshot_dir,
+            timers: Timers::NORMAL,
         };
         (context, clock)
     }
@@ -76,7 +78,7 @@ mod scheduler {
                 .job_next_run(Job::NightlySnapshot.name())
                 .await
                 .unwrap(),
-            Some(next_run(Job::NightlySnapshot, NOW))
+            Some(next_run(Job::NightlySnapshot, NOW, Timers::NORMAL))
         );
         assert!(snapshots_in(&snapshots).is_empty());
     }

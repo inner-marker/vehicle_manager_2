@@ -48,6 +48,11 @@ pub fn hlc_from_sql(value: i64, column: &'static str) -> Result<Hlc, StorageErro
         .map_err(|_| StorageError::InvalidValue { column })
 }
 
+/// A patch field that must be set when creating a record.
+pub(crate) fn required<T>(value: Option<T>, column: &'static str) -> Result<T, StorageError> {
+    value.ok_or(StorageError::InvalidValue { column })
+}
+
 #[cfg(test)]
 mod tests {
     use domain::id::DeviceId;

@@ -8,16 +8,18 @@
 //!   bottom tabs, and a floating + Log button.
 
 use dioxus::prelude::*;
-use domain::i18n::messages;
+use domain::i18n::{MessageArg, messages};
 use domain::log_area;
 
 use super::account::{AccountChip, AdminBanner, ModeChip};
-use super::auth::{refresh, use_auth};
+use super::auth::{AuthState, refresh, use_auth};
 use super::icons::{Icon, IconView};
+use super::idle::{AdminEndedNotice, IdleWatcher};
+use super::inbox::{UrgentBanner, provide_inbox_context, refresh_inbox, unread_count};
 use super::nav::{NavItem, NavSection, nav_items};
 use super::routes::Route;
 use super::theme::ThemeToggle;
-use super::tr;
+use super::{tr, tr_with};
 
 /// The shell layout; the current screen renders in its [`Outlet`].
 // rsx! expands event handlers to fully qualified `dioxus_elements::events::on*` calls,
@@ -31,12 +33,27 @@ use super::tr;
 pub(crate) fn Shell() -> Element {
     let route = use_route::<Route>();
     let auth = use_auth();
+    let inbox = provide_inbox_context();
     // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
     // minutes (or a session it ended) stops showing.
     use_effect(use_reactive!(|route| {
         let _ = route;
         spawn(refresh(auth));
     }));
+    // Messages: again on every navigation and whenever the mode changes (Admin messages show
+    // only in Admin mode).
+    let mode = use_memo(move || match auth() {
+        AuthState::SignedIn(session) => Some(session.mode),
+        AuthState::Loading
+        | AuthState::NeedsSetup
+        | AuthState::SignedOut
+        | AuthState::Unreachable(_) => None,
+    });
+    use_effect(use_reactive!(|route| {
+        let _ = (route, mode());
+        spawn(refresh_inbox(inbox));
+    }));
+    let unread = unread_count(inbox);
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
 
@@ -63,6 +80,7 @@ pub(crate) fn Shell() -> Element {
     let tab_items: Vec<NavItem> = items.iter().filter(|i| i.bottom_tab).cloned().collect();
 
     rsx! {
+        IdleWatcher {}
         div { class: "shell",
             aside { class: if menu_open() { "sidebar open" } else { "sidebar" },
                 button {
@@ -73,11 +91,16 @@ pub(crate) fn Shell() -> Element {
                 }
                 nav { class: "sidebar-nav",
                     for item in main_items {
-                        SidebarLink { key: "{item.route}", item, on_navigate: close_menu }
+                        SidebarLink {
+                            key: "{item.route}",
+                            badge: if item.route == (Route::Messages {}) { unread } else { 0 },
+                            item,
+                            on_navigate: close_menu,
+                        }
                     }
                     hr {}
                     for item in manage_items {
-                        SidebarLink { key: "{item.route}", item, on_navigate: close_menu }
+                        SidebarLink { key: "{item.route}", badge: 0, item, on_navigate: close_menu }
                     }
                 }
                 div { class: "sidebar-theme", ThemeToggle {} }
@@ -107,10 +130,19 @@ pub(crate) fn Shell() -> Element {
                         IconView { icon: Icon::Add }
                         span { {tr(messages::ACTION_LOG)} }
                     }
+                    if let AuthState::SignedIn(session) = auth() {
+                        if let Some(minutes) = session.timers.test_minutes() {
+                            span { class: "test-timers-tag", title: tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))]),
+                                {tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))])}
+                            }
+                        }
+                    }
                     ModeChip {}
                     AccountChip {}
                 }
                 AdminBanner {}
+                AdminEndedNotice {}
+                UrgentBanner {}
                 main { class: "content", Outlet::<Route> {} }
             }
 
@@ -123,6 +155,9 @@ pub(crate) fn Shell() -> Element {
                         to: item.route.clone(),
                         IconView { icon: item.icon }
                         span { {tr(item.label)} }
+                        if item.route == (Route::Messages {}) && unread > 0 {
+                            span { class: "nav-badge", "{unread}" }
+                        }
                     }
                 }
             }
@@ -133,9 +168,10 @@ pub(crate) fn Shell() -> Element {
     }
 }
 
-/// One sidebar entry: icon plus label (the label hides on medium screens).
+/// One sidebar entry: icon plus label (the label hides on medium screens), and a count badge
+/// when `badge` isn't 0 (unread messages).
 #[component]
-fn SidebarLink(item: NavItem, on_navigate: EventHandler<MouseEvent>) -> Element {
+fn SidebarLink(item: NavItem, badge: usize, on_navigate: EventHandler<MouseEvent>) -> Element {
     let label = tr(item.label);
     rsx! {
         Link {
@@ -146,6 +182,9 @@ fn SidebarLink(item: NavItem, on_navigate: EventHandler<MouseEvent>) -> Element 
             onclick: move |event| on_navigate.call(event),
             IconView { icon: item.icon }
             span { class: "sidebar-label", {label} }
+            if badge > 0 {
+                span { class: "nav-badge", "{badge}" }
+            }
         }
     }
 }

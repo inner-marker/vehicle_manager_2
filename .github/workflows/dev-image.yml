@@ -41,6 +41,8 @@ jobs:
     uses: ./.github/workflows/server-image.yml
     with:
       push: true
+      # Test images can shorten their timers with VEHICLEMANAGER_TEST_MINUTES (#054).
+      test-timers: true
       # The branch name as a tag ("/" becomes "-"): `dev` on dev, the milestone's name on
       # a milestone branch; plus the commit.
       tags: |

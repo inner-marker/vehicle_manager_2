@@ -11,6 +11,9 @@ use domain::identity::{APP_ID, env_var_name};
 const DOCKERFILE: &str = include_str!("../../../Dockerfile");
 const COMPOSE: &str = include_str!("../../../deploy/compose.yaml");
 const ENV_EXAMPLE: &str = include_str!("../../../deploy/.env.example");
+const DEV_IMAGE_WORKFLOW: &str = include_str!("../../../.github/workflows/dev-image.yml");
+const RELEASE_WORKFLOW: &str = include_str!("../../../.github/workflows/release.yml");
+const MAIN_GATE_WORKFLOW: &str = include_str!("../../../.github/workflows/main-gate.yml");
 
 /// The image's data directory, which compose.yaml mounts the NAS folder onto.
 const CONTAINER_DATA_DIR: &str = "/data";
@@ -43,6 +46,39 @@ fn compose_passes_the_optional_snapshot_folder_and_leaves_it_empty_by_default() 
             .any(|line| line == format!("{snapshot_dir}=")),
         ".env.example must list {snapshot_dir}, empty"
     );
+}
+
+#[test]
+fn compose_passes_the_test_timers_setting_empty_by_default() {
+    // main.rs's TEST_MINUTES_ENV_NAME (decision #054).
+    let test_minutes = env_var_name("TEST_MINUTES");
+    assert!(
+        COMPOSE.contains(&format!("{test_minutes}: ${{{test_minutes}:-}}")),
+        "compose.yaml must pass {test_minutes}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE
+            .lines()
+            .any(|line| line == format!("{test_minutes}=")),
+        ".env.example must list {test_minutes}, empty"
+    );
+}
+
+#[test]
+fn only_the_dev_image_workflow_builds_in_test_timers() {
+    assert!(
+        DEV_IMAGE_WORKFLOW.contains("test-timers: true"),
+        "dev and milestone images build in test timers"
+    );
+    for (name, workflow) in [
+        ("release", RELEASE_WORKFLOW),
+        ("main gate", MAIN_GATE_WORKFLOW),
+    ] {
+        assert!(
+            !workflow.contains("test-timers"),
+            "the {name} workflow must never build in test timers"
+        );
+    }
 }
 
 #[test]

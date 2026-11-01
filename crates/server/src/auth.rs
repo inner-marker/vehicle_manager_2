@@ -159,7 +159,14 @@ async fn signed_in_from(config: &AuthConfig, headers: &HeaderMap) -> Option<Sign
     let source = config.sessions.as_ref()?;
     let hash = presented_session_token(headers).and_then(|token| token_hash(&token))?;
     let database = (source.database)()?;
-    match sessions::resolve(&database, hash, source.clock.now()).await {
+    match sessions::resolve(
+        &database,
+        hash,
+        source.clock.now(),
+        crate::startup::timers(),
+    )
+    .await
+    {
         Ok(signed_in) => signed_in,
         Err(error) => {
             tracing::error!(target: log_area::AUTH, %error, "can't check the session");

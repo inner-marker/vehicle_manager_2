@@ -18,6 +18,7 @@ use crate::ids::{NewIdError, new_id};
 use crate::jobs::{self, JobContext, SnapshotDir};
 use crate::setup;
 use domain::id::DeviceId;
+use domain::timers::Timers;
 
 static DATABASE: OnceCell<Option<Database>> = OnceCell::const_new();
 
@@ -26,6 +27,15 @@ static SERVER_DEVICE: std::sync::OnceLock<DeviceId> = std::sync::OnceLock::new()
 
 /// This database's ID (also the household preferences' record ID, #048).
 static DATABASE_ID: std::sync::OnceLock<domain::id::DatabaseId> = std::sync::OnceLock::new();
+
+/// The timer lengths for this run (normal, or test timers on a test build; #054).
+static TIMERS: std::sync::OnceLock<Timers> = std::sync::OnceLock::new();
+
+/// The timer lengths [`start`] was given (normal before then).
+#[must_use]
+pub fn timers() -> Timers {
+    TIMERS.get().copied().unwrap_or(Timers::NORMAL)
+}
 
 /// This database's ID, once [`start`] has opened it.
 #[must_use]
@@ -83,7 +93,10 @@ impl ServerPaths {
 pub async fn start(
     paths: &ServerPaths,
     clock: Arc<dyn Clock + Send + Sync>,
+    timers: Timers,
 ) -> Option<&'static Database> {
+    // Set once per process; a second call (tests) keeps the first.
+    let _ = TIMERS.set(timers);
     DATABASE
         .get_or_init(|| async {
             let database = open_and_check(&paths.data_dir, clock.as_ref()).await?;
@@ -97,6 +110,7 @@ pub async fn start(
                 database: database.clone(),
                 clock,
                 snapshot_dir: paths.snapshot_dir.clone(),
+                timers,
             });
             tracing::info!(target: log_area::DATABASE, snapshot_dir = %paths.snapshot_dir.path.display(), "scheduled jobs started");
             Some(database)
@@ -116,11 +130,14 @@ async fn open_and_check(data_dir: &Path, clock: &(dyn Clock + Sync)) -> Option<D
         Ok(database) => database,
         Err(error) => {
             tracing::error!(target: log_area::DATABASE, data_dir = %data_dir.display(), %error, "can't open the database; refusing all changes");
-            health::set(Health::Unhealthy(HealthProblem::DatabaseUnavailable));
+            health::set(
+                Health::Unhealthy(HealthProblem::DatabaseUnavailable),
+                clock.now(),
+            );
             return None;
         }
     };
-    health::set(check(&database).await);
+    health::set(check(&database).await, clock.now());
     Some(database)
 }
 

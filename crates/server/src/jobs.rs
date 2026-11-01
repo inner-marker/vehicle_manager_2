@@ -18,6 +18,7 @@ use std::time::Duration;
 
 use domain::log_area;
 use domain::time::{Clock, UnixMillis};
+use domain::timers::Timers;
 use storage::Database;
 use storage::jobs::{JobResult, JobRun};
 use storage::snapshot::{rotate_snapshots, verify_snapshot};
@@ -77,11 +78,15 @@ enum Schedule {
     DailyAtUtcHour(i64),
 }
 
-/// The first time after `after` that `job` is due.
+/// The first time after `after` that `job` is due. With test timers (#054), every job is due
+/// every N minutes instead of on its own schedule.
 #[must_use]
-pub fn next_run(job: Job, after: UnixMillis) -> UnixMillis {
+pub fn next_run(job: Job, after: UnixMillis, timers: Timers) -> UnixMillis {
     let after = after.as_millis();
-    let next = match job.schedule() {
+    let schedule = timers
+        .job_interval_millis()
+        .map_or_else(|| job.schedule(), Schedule::Every);
+    let next = match schedule {
         Schedule::Every(interval) => after.saturating_add(interval),
         Schedule::DailyAtUtcHour(hour) => {
             let today = after - after.rem_euclid(MILLIS_PER_DAY) + hour * MILLIS_PER_HOUR;
@@ -115,6 +120,8 @@ pub struct JobContext {
     pub clock: Arc<dyn Clock + Send + Sync>,
     /// Where snapshots go.
     pub snapshot_dir: SnapshotDir,
+    /// Normal timers, or test timers (every job every N minutes, #054).
+    pub timers: Timers,
 }
 
 /// Runs every job due at `now`, in [`Job::ALL`] order, and records each run. A job never
@@ -169,14 +176,12 @@ pub fn spawn(context: JobContext) {
 }
 
 async fn schedule_first_run(context: &JobContext, job: Job, now: UnixMillis) {
-    let run = JobRun {
-        started: now,
-        finished: now,
-        result: JobResult::Skipped,
-        message: "scheduled".to_owned(),
-        next_run: next_run(job, now),
-    };
-    if let Err(error) = context.database.record_job_run(job.name(), &run).await {
+    // Only the due time: the job hasn't run, so it has no result (and no message, #050).
+    if let Err(error) = context
+        .database
+        .schedule_job(job.name(), next_run(job, now, context.timers))
+        .await
+    {
         tracing::error!(target: log_area::DATABASE, job = job.name(), %error, "can't record the job schedule");
     }
 }
@@ -194,7 +199,7 @@ async fn run_and_record(context: &JobContext, job: Job) {
         finished,
         result,
         message,
-        next_run: next_run(job, finished),
+        next_run: next_run(job, finished, context.timers),
     };
     log_result(job, &run);
     if let Err(error) = context.database.record_job_run(job.name(), &run).await {
@@ -287,18 +292,20 @@ async fn quick_check(context: &JobContext) -> (JobResult, String) {
     match context.database.quick_check().await {
         Ok(problems) if problems.is_empty() => (JobResult::Ok, "no problems".to_owned()),
         Ok(problems) => {
-            health::set(health::Health::Unhealthy(
-                HealthProblem::IntegrityCheckFailed,
-            ));
+            health::set(
+                health::Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
+                context.clock.now(),
+            );
             (
                 JobResult::Failed,
                 format!("problems found: {}", problems.join("; ")),
             )
         }
         Err(error) => {
-            health::set(health::Health::Unhealthy(
-                HealthProblem::IntegrityCheckFailed,
-            ));
+            health::set(
+                health::Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
+                context.clock.now(),
+            );
             (JobResult::Failed, format!("couldn't run: {error}"))
         }
     }
@@ -316,10 +323,22 @@ mod tests {
     }
 
     #[test]
+    fn test_timers_run_every_job_every_n_minutes() {
+        let timers = Timers::test(3).unwrap();
+        for job in Job::ALL {
+            assert_eq!(
+                next_run(job, NOW, timers).as_millis(),
+                NOW.as_millis() + 3 * 60_000,
+                "{job:?}"
+            );
+        }
+    }
+
+    #[test]
     fn the_nightly_snapshot_is_next_due_at_seven_utc() {
         // 22:13 is past 07:00, so the next one is tomorrow.
         assert_eq!(
-            utc(next_run(Job::NightlySnapshot, NOW).as_millis()),
+            utc(next_run(Job::NightlySnapshot, NOW, Timers::NORMAL).as_millis()),
             "2023-11-15T07:00:00.000Z"
         );
         // At 06:59 it's later the same day; exactly at 07:00 it's the next day.
@@ -327,12 +346,22 @@ mod tests {
             + 7 * MILLIS_PER_HOUR
             - 60_000;
         assert_eq!(
-            utc(next_run(Job::NightlySnapshot, UnixMillis::from_millis(early)).as_millis()),
+            utc(next_run(
+                Job::NightlySnapshot,
+                UnixMillis::from_millis(early),
+                Timers::NORMAL
+            )
+            .as_millis()),
             "2023-11-14T07:00:00.000Z"
         );
         let exactly = early + 60_000;
         assert_eq!(
-            utc(next_run(Job::NightlySnapshot, UnixMillis::from_millis(exactly)).as_millis()),
+            utc(next_run(
+                Job::NightlySnapshot,
+                UnixMillis::from_millis(exactly),
+                Timers::NORMAL
+            )
+            .as_millis()),
             "2023-11-15T07:00:00.000Z"
         );
     }
@@ -340,7 +369,7 @@ mod tests {
     #[test]
     fn the_quick_check_repeats_hourly() {
         assert_eq!(
-            next_run(Job::QuickCheck, NOW).as_millis(),
+            next_run(Job::QuickCheck, NOW, Timers::NORMAL).as_millis(),
             NOW.as_millis() + MILLIS_PER_HOUR
         );
     }

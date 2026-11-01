@@ -1,4 +1,5 @@
-//! Display preferences: units, formats, currency, and language (decisions #029, #048).
+//! Preferences: units, formats, currency, language (decisions #029, #048), and when the app
+//! signs out by itself (#049).
 //!
 //! Display only: stored values are always metric integers and currency codes. Each value
 //! here is chosen by the household (an Admin) and can be overridden by each user:
@@ -104,6 +105,43 @@ pub enum Language {
     EnglishUs,
 }
 
+/// How long the app may sit idle before it signs out by itself (decision #049).
+///
+/// Only real input counts as activity (see [`crate::idle`]). The server's own limit, 30 idle
+/// days, still applies whatever this says.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum IdleSignOut {
+    /// After 1 hour.
+    OneHour,
+    /// After 4 hours.
+    FourHours,
+    /// After 8 hours (the default).
+    #[default]
+    EightHours,
+    /// After 24 hours.
+    TwentyFourHours,
+    /// Never: only the server's limit applies.
+    Never,
+}
+
+impl IdleSignOut {
+    /// Milliseconds in one hour.
+    const HOUR_MILLIS: i64 = 60 * 60 * 1000;
+
+    /// How long idle before signing out, in milliseconds; `None` for [`IdleSignOut::Never`].
+    #[must_use]
+    pub const fn after_millis(self) -> Option<i64> {
+        match self {
+            Self::OneHour => Some(Self::HOUR_MILLIS),
+            Self::FourHours => Some(4 * Self::HOUR_MILLIS),
+            Self::EightHours => Some(8 * Self::HOUR_MILLIS),
+            Self::TwentyFourHours => Some(24 * Self::HOUR_MILLIS),
+            Self::Never => None,
+        }
+    }
+}
+
 /// An ISO 4217 currency code: three capital letters, e.g. `USD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -202,6 +240,8 @@ pub struct Preferences {
     pub currency: CurrencyCode,
     /// The app's language.
     pub language: Language,
+    /// When the app signs out by itself.
+    pub idle_sign_out: IdleSignOut,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -222,6 +262,8 @@ pub struct PreferenceChoices {
     pub currency: Option<CurrencyCode>,
     /// The app's language.
     pub language: Option<Language>,
+    /// When the app signs out by itself.
+    pub idle_sign_out: Option<IdleSignOut>,
 }
 
 impl Preferences {
@@ -256,6 +298,10 @@ impl Preferences {
                 .language
                 .or(household.language)
                 .unwrap_or(defaults.language),
+            idle_sign_out: mine
+                .idle_sign_out
+                .or(household.idle_sign_out)
+                .unwrap_or(defaults.idle_sign_out),
         }
     }
 }
@@ -313,6 +359,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::language`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<Choice<Language>>,
+    /// See [`Preferences::idle_sign_out`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub idle_sign_out: Option<Choice<IdleSignOut>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -325,6 +374,7 @@ impl Patch for PreferencesPatch {
             ("date_format", self.date_format.is_some()),
             ("currency", self.currency.is_some()),
             ("language", self.language.is_some()),
+            ("idle_sign_out", self.idle_sign_out.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -354,6 +404,9 @@ impl Patch for PreferencesPatch {
         if !keep("language") {
             self.language = None;
         }
+        if !keep("idle_sign_out") {
+            self.idle_sign_out = None;
+        }
     }
 }
 
@@ -376,6 +429,7 @@ mod tests {
         assert_eq!(defaults.date_format, DateFormat::DayMonthNameYear);
         assert_eq!(defaults.currency.as_str(), "USD");
         assert_eq!(defaults.language, Language::EnglishUs);
+        assert_eq!(defaults.idle_sign_out, IdleSignOut::EightHours);
     }
 
     #[test]
@@ -398,6 +452,21 @@ mod tests {
             effective.pressure,
             PressureUnit::Psi,
             "the built-in default"
+        );
+    }
+
+    #[test]
+    fn idle_sign_out_defaults_to_eight_hours_and_never_has_no_limit() {
+        assert_eq!(IdleSignOut::default(), IdleSignOut::EightHours);
+        assert_eq!(
+            IdleSignOut::EightHours.after_millis(),
+            Some(8 * 60 * 60 * 1000)
+        );
+        assert_eq!(IdleSignOut::OneHour.after_millis(), Some(60 * 60 * 1000));
+        assert_eq!(IdleSignOut::Never.after_millis(), None);
+        assert_eq!(
+            serde_json::to_string(&IdleSignOut::TwentyFourHours).unwrap(),
+            r#""twenty-four-hours""#
         );
     }
 

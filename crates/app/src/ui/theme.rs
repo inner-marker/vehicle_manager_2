@@ -99,4 +99,31 @@ mod tests {
         let attributes: Vec<&str> = ThemeChoice::ALL.iter().map(|c| c.attribute()).collect();
         assert_eq!(attributes, ["light", "dark", "system"]);
     }
+
+    /// The `--name: value;` declarations in the first `{ … }` block after `selector`.
+    fn declarations(css: &str, selector: &str) -> Vec<String> {
+        let start = css.find(selector).expect("selector in main.css");
+        let block = &css[start..];
+        let open = block.find('{').expect("block opens");
+        let close = block.find('}').expect("block closes");
+        // Each `--name: value;` line, trimmed, in file order.
+        block[open + 1..close]
+            .lines()
+            .map(str::trim)
+            .filter(|line| line.starts_with("--"))
+            .map(str::to_owned)
+            .collect()
+    }
+
+    #[test]
+    fn system_dark_repeats_every_dark_colour() {
+        let css = include_str!("../../assets/main.css");
+        let dark = declarations(css, ".app[data-theme=\"dark\"] {");
+        let system_dark = declarations(css, "@media (prefers-color-scheme: dark)");
+        assert!(!dark.is_empty());
+        assert_eq!(
+            system_dark, dark,
+            "the System theme's dark colours drifted from Dark's"
+        );
+    }
 }

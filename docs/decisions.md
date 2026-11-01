@@ -549,11 +549,80 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **The app watches for inactivity** while someone is signed in. Only real input counts: pointer down, key down, wheel or scroll, touch. Background requests don't.
   - **After 15 idle minutes in Admin mode,** the app leaves Admin mode by itself (as **Leave** does) and shows a short notice: "Admin mode ended after 15 idle minutes."
   - **After a longer idle time,** the app signs out and the sign-in card shows a short notice ("You were signed out after N idle hours."). A setting, **Sign out when idle**, offers 1 hour, 4 hours, **8 hours** (default), 24 hours, and Never.
-  - **Keeping the server in step:** while in Admin mode, the app checks its session about every 5 minutes, but only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
+  - **Keeping the server in step:** while in Admin mode, the app checks its session at most once a minute (the server's own interval for recording use), and only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
   - **The server stays the authority:** its 15 idle minutes for Admin mode and 30 idle days for sessions are unchanged and still apply when the app is closed.
   - **How (no new dependency):** one long-lived `document::eval` script records the last input and reports the idle time to Rust about every 15 seconds; this works on web and desktop. The decision itself (stay, keep alive, leave Admin, sign out) is a pure function, unit-tested.
-  - **To settle when milestone 3 is planned:** whether **Sign out when idle** is a per-person preference with a household default (a new field on the preferences record, #048) or a per-device setting like the theme (a shared computer may want a shorter time than a personal phone).
+  - **The setting is per person** (settled 2026-10-31, milestone 3 plan): a new field on the preferences record (#048), so each person chooses their own and the household sets the default, like the units.
 - **Why:**
   - Today the app only notices the end of Admin mode at the next navigation or click, so the orange banner can outlive Admin mode on a screen left open.
   - A browser left open could stay signed in for up to 30 idle days.
   - Raised by the human during the milestone 2 NAS test.
+
+### 050. Messages are derived from the current state; only read and dismissed are stored
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md milestone 3 · Refines #040 (message center), #044 (job failures become Admin messages)*
+
+- **Decision:**
+  - **A message is worked out from what's true now,** not saved when something happens: "Last night's snapshot failed" exists while the snapshot job's latest result is a failure; later, "Oil change due soon" exists while the interval says so. When the cause is fixed, the message goes away by itself.
+  - **Each message has a stable key** built from its cause (e.g. `job-failed:nightly-snapshot:<finish time>`), so the same cause is the same message everywhere, and a new failure is a new message.
+  - **Only each person's mark is stored:** read and dismissed, per key, through the command pipeline. A dismissed message stays dismissed; a new key shows again.
+  - **Who sees a message** follows roles and mode: Admin messages only in Admin mode; asset messages only for assets the person can view.
+- **Why:**
+  - The plan says messages are "generated locally from synced data", so they work offline with no push infrastructure (Phase 3); derived messages need no message table to sync or clean up.
+  - A message can't go stale: one that's still showing is still true.
+  - The human chose this over storing each message as a row (which would keep a history but need its own syncing and cleanup).
+
+### 051. A per-vehicle dashboard and a "Ready to use?" summary
+*Decided: 2026-10-31 · Plan: §4 Readiness, Squawks, Asset profiles; §5 UI direction; §10 Phase 5 open questions · Refines #040 (the Overview tab)*
+
+- **Decision:**
+  - **The vehicle's Overview tab is its dashboard:** "Ready to use?" at the top, then time and distance to each major service, open and deferred squawks (blocking ones first), latest fill-ups, and last activity. The Garage card shows the same readiness as a badge.
+  - **Readiness is generic, from profiles:** requirements and official documents can be **needed for use**; profiles set the defaults per kind, and each asset can change them. Each profile lists **operation types** ("ready for what?"), each adding its own items (e.g. IFR, for hire, heavy towing). No kind-specific code.
+  - **Squawks can block use,** marked when opened or at any disposition.
+  - **Each item shows why** (✓ or ✗, its due date or meter value, a link), with a warning before it's due.
+  - **Advisory only:** the summary reflects the records and certifies nothing; for aircraft, the pilot in command decides airworthiness.
+  - **Phasing:** the Overview shell in Phase 2 milestone 4; the squawk flag in milestone 7 (it can't be filled in later); the summary, operation types, and service countdowns in Phase 5; aviation items in the aircraft phase; a person's currency (e.g. a pilot's flight review and medical) post-MVP, with credentials.
+- **Why:**
+  - The human asked for one place per vehicle showing open squawks and what's coming due, and for aircraft, airworthiness for a flight.
+  - "Road-ready" and "airworthy" are the same question; making it data keeps aircraft possible without special cases.
+  - Readiness depends on the intended use (IFR needs more than VFR), so a single yes/no would be wrong.
+
+### 052. Groups: every asset in exactly one; roles can be granted per group
+*Decided: 2026-10-31 · Plan: §4 Asset, Asset lifecycle & components; §5 UI direction; §6 Users, roles & permissions · Phase plan: phase-2.md milestone 4 · Was idea 6 in ideas-to-discuss.md · Extends #045*
+
+- **Decision:**
+  - **Every asset is in exactly one group,** the place it lives ("Garage", "Hangar", "Boathouse", "Storage", …). Each group has a **name** and an **icon** from a built-in set; an uploaded logo can come after Phase 2 milestone 8 (images).
+  - **A default group,** "Garage" with the garage icon, is created at setup, so every asset always has a group and a one-place household never has to think about it.
+  - **Roles can be granted on a group,** as a third grant target next to one asset and all assets (#045 reserved it). A group grant covers every asset in the group, including ones added later. Permissions remain the union of all of a person's grants.
+  - **Assets can move** between groups, kept in the asset's history. **Access follows the current group;** before a move is confirmed, the app shows who gains and who loses access.
+  - **Components** are in their parent's group while installed and inherit its access; uninstalled, they have their own group.
+  - **The household Admin stays global** (users, server, settings). A per-group Admin could come much later.
+  - **The Garage screen** shows a section per group; filters can use groups.
+  - **Built in Phase 2 milestone 4,** with assets: the groups table, the default group, the asset's group, group grants, moving assets, and a screen to manage groups (SVG options first, #040).
+- **Why:**
+  - The human wants every asset assigned to a group with its own name and icon, and different permissions per group.
+  - One group per asset keeps permissions and the Garage screen easy to follow; an asset that needs different people uses a per-asset grant.
+  - Deciding before milestone 4 means the first asset is already in a group, with nothing to move later.
+
+### 053. Messages screen: list and detail, with a divider; the badge and the urgent banner
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md step 3e · Sketches: `docs/ui-sketches/p2m3-messages-options.svg` (option B), drawn as `docs/ui-sketches/p2m3-messages-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **List and detail,** like the Users screen (#046): short rows on the left (severity stripe and word, title, time, an unread dot), the chosen message on the right (text, Admin-only details, one action, **Dismiss**). **Opening a message marks it read;** there's no Mark read button. Dismissing it chooses the next one.
+  - **A clear divider on wide and medium screens:** a full-height grey line between the columns, with the list on a slightly darker panel.
+  - **Phones:** the list, then a page per message with **← Messages**.
+  - **Filters:** All, Urgent, Warning, Info (by vehicle once vehicles exist, milestone 4). Newest first, unread on top.
+  - **Everywhere:** an unread badge on **Messages** (sidebar and phone tabs; Admin messages count only in Admin mode), and a red **urgent banner** under the top bar on every screen while an urgent message is showing, with **View**.
+  - **Severity** is a colour stripe (red urgent, amber warning, blue info) **and** the word, never colour alone.
+- **Why:** the human chose option B and asked for a stronger line between the columns on large screens. The list stays tidy as Phase 5 adds maintenance, squawk, and document messages, and it works like Users.
+
+### 054. Test timers: minutes instead of hours, on test images only
+*Decided: 2026-11-01 · Phase plan: phase-2.md step 3i · Applies to #044 (jobs), #047 (recovery codes), #049 (idle)*
+
+- **Decision:**
+  - **Two locks:** test timers are **built only into test images** (the `test-timers` build option, turned on only by the Dev image workflow for `dev` and `milestone-…` images; never in a release or the main gate's check build), and **switched on only by `VEHICLEMANAGER_TEST_MINUTES`** = N, from 1 to 5. Anything else, or the setting on a release, is ignored with a warning.
+  - **What N shortens:** Admin mode's idle limit → N minutes; Sign out when idle 1 h / 4 h / 8 h / 24 h → N / 2N / 3N / 4N minutes (still in order); the Admin keep-alive and the server's "last used" → every 15 seconds; messages reload on an open screen → every minute; the nightly snapshot and the hourly check → every N minutes; recovery codes → N minutes.
+  - **Never shortened:** the sign-in attempt limit (it protects against guessing) and the 30-day session.
+  - **The server decides and tells the app** with the session (`SessionInfo::timers`), so the browser, the phone, and the desktop app all follow the NAS's setting.
+  - **Visible:** a `TEST TIMERS ON` warning at startup, a **TEST TIMERS · N min** tag in the top bar, and each sign-out choice shows its test length.
+- **Why:** manual test plans had steps of an hour or a night; the human asked for 1–5 minute timers on milestone test builds. Two locks make sure a real install can't run them.
+

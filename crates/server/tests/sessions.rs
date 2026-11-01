@@ -14,6 +14,7 @@ mod sessions {
     use domain::command::Change;
     use domain::test_support::{ManualClock, test_id};
     use domain::time::{Clock, UnixMillis};
+    use domain::timers::Timers;
     use domain::user::{User, UserPatch, Username};
     use server::auth::{AuthConfig, SessionSource, protect, session_cookie_name};
     use server::commands::issue;
@@ -21,12 +22,21 @@ mod sessions {
     use server::login_limiter::LoginLimiter;
     use server::passwords::hash_password;
     use server::sessions::{
-        ADMIN_IDLE_MILLIS, ChangePasswordError, IDLE_LIFETIME_MILLIS, SignInError, SignedIn,
-        SwitchModeError, change_password, resolve, sign_in, sign_out, switch_mode, token_hash,
+        ChangePasswordError, IDLE_LIFETIME_MILLIS, SignInError, SignedIn, SwitchModeError,
+        change_password, sign_in, sign_out, switch_mode, token_hash,
     };
     use storage::users::{RoleGrantWriter, UserWriter};
     use storage::{Database, NewDatabaseIds};
     use tower::ServiceExt;
+
+    /// [`server::sessions::resolve`] with normal timers.
+    async fn resolve(
+        database: &Database,
+        token_hash: [u8; 32],
+        now: UnixMillis,
+    ) -> Result<Option<SignedIn>, storage::StorageError> {
+        server::sessions::resolve(database, token_hash, now, Timers::NORMAL).await
+    }
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const PASSWORD: &str = "correct horse battery";
@@ -293,10 +303,14 @@ mod sessions {
             ActiveMode::Admin
         );
 
-        let lapsed = resolve(&database, hash, at(60_000 + ADMIN_IDLE_MILLIS))
-            .await
-            .unwrap()
-            .unwrap();
+        let lapsed = resolve(
+            &database,
+            hash,
+            at(60_000 + Timers::NORMAL.admin_idle_millis()),
+        )
+        .await
+        .unwrap()
+        .unwrap();
         assert_eq!(lapsed.mode, ActiveMode::Driver);
     }
 

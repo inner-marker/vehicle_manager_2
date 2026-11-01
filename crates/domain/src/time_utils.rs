@@ -62,6 +62,30 @@ pub fn format_utc_file_stamp(instant: UnixMillis) -> String {
     format!("{year:04}{month:02}{day:02}T{hour:02}{minute:02}{second:02}Z")
 }
 
+/// Formats an instant as a UTC date and time to the minute, e.g. `2023-11-14 22:13`.
+///
+/// A stopgap for times shown to people until dates are formatted with each person's
+/// preferences and time zone (Phase 2 milestone 6); callers say it's UTC.
+///
+/// # Examples
+///
+/// ```
+/// use domain::time::UnixMillis;
+/// use domain::time_utils::format_utc_minute;
+///
+/// let instant = UnixMillis::from_millis(1_700_000_000_123);
+/// assert_eq!(format_utc_minute(instant), "2023-11-14 22:13");
+/// ```
+pub fn format_utc_minute(instant: UnixMillis) -> String {
+    let millis = instant.as_millis();
+    let (year, month, day) = civil_from_days(millis.div_euclid(MILLIS_PER_DAY));
+    let millis_of_day = millis.rem_euclid(MILLIS_PER_DAY);
+    let hour = millis_of_day / 3_600_000;
+    let minute = millis_of_day / 60_000 % 60;
+
+    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}")
+}
+
 /// Converts days since 1970-01-01 to a proleptic Gregorian `(year, month, day)`.
 ///
 /// Howard Hinnant's `civil_from_days` algorithm

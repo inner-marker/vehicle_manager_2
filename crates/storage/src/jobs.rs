@@ -60,6 +60,23 @@ impl Database {
             .map(UnixMillis::from_millis))
     }
 
+    /// Schedules `job` for the first time: only its next due time, with no result (it hasn't
+    /// run), so nothing reports it as failed or skipped. Does nothing if it's already known.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if the query fails.
+    pub async fn schedule_job(&self, job: &str, next_run: UnixMillis) -> Result<(), StorageError> {
+        sqlx::query(
+            "INSERT INTO jobs (name, next_run_ms) VALUES (?, ?) ON CONFLICT (name) DO NOTHING",
+        )
+        .bind(job)
+        .bind(next_run.as_millis())
+        .execute(self.pool())
+        .await?;
+        Ok(())
+    }
+
     /// Records a finished run of `job` and its next due time.
     ///
     /// # Errors

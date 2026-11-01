@@ -12,12 +12,12 @@
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
 use domain::api::SwitchModeOutcome;
-use domain::i18n::{MessageId, messages};
+use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 
 use super::auth::{AuthState, refresh, use_auth};
 use super::screens::{ChangePasswordForm, problem_from_error};
-use super::tr;
+use super::{tr, tr_with};
 use crate::{api, client};
 
 /// The label of a mode.
@@ -31,7 +31,7 @@ const fn mode_label(mode: ActiveMode) -> MessageId {
 
 /// Asks the server to switch mode, then refreshes the session. Returns the error to show,
 /// if any (only Admin's password can be wrong).
-async fn switch(mode: ActiveMode, password: Option<String>) -> Option<String> {
+pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option<String> {
     match api::switch_mode(mode, password).await {
         Ok(SwitchModeOutcome::Switched { mode }) => {
             tracing::info!(target: log_area::AUTH, ?mode, "mode switched");
@@ -44,6 +44,16 @@ async fn switch(mode: ActiveMode, password: Option<String>) -> Option<String> {
         Ok(SwitchModeOutcome::NotSignedIn) => Some(tr(messages::API_ERROR_MISSING_CREDENTIAL)),
         Err(error) => Some(tr(problem_from_error(&error).message())),
     }
+}
+
+/// Signs out: tells the server, forgets the desktop token, and refreshes the session (which
+/// shows sign-in). Used by the account chip and the idle watcher.
+pub(super) async fn sign_out(state: Signal<AuthState>) {
+    if let Err(error) = api::sign_out().await {
+        tracing::warn!(target: log_area::AUTH, %error, "sign-out request failed; forgetting the session anyway");
+    }
+    client::set_session_token(None);
+    refresh(state).await;
 }
 
 /// The mode chip and its menu, plus the Admin password dialog.
@@ -124,6 +134,19 @@ pub(crate) fn ModeChip() -> Element {
     }
 }
 
+/// A message about Admin mode's idle limit, with its minutes (15, or the test timers').
+fn admin_minutes_text(message: MessageId, state: &AuthState) -> String {
+    let timers = match state {
+        AuthState::SignedIn(session) => session.timers,
+        AuthState::Loading
+        | AuthState::NeedsSetup
+        | AuthState::SignedOut
+        | AuthState::Unreachable(_) => domain::timers::Timers::NORMAL,
+    };
+    let minutes = timers.admin_idle_millis() / 60_000;
+    tr_with(message, &[("minutes", MessageArg::from(minutes))])
+}
+
 /// "Enter Admin mode": the password again.
 #[expect(
     unused_qualifications,
@@ -160,7 +183,7 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
         div { class: "dialog-scrim",
             form { class: "dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
                 h2 { class: "dialog-title", {tr(messages::ADMIN_DIALOG_TITLE)} }
-                p { class: "dialog-text", {tr(messages::ADMIN_DIALOG_TEXT)} }
+                p { class: "dialog-text", {admin_minutes_text(messages::ADMIN_DIALOG_TEXT, &state())} }
                 label { class: "field",
                     span { class: "field-label", {tr(messages::FIELD_PASSWORD)} }
                     input {
@@ -204,15 +227,9 @@ pub(crate) fn AccountChip() -> Element {
     // The full name on wide screens; just its first letter on phones (CSS chooses).
     let initial: String = session.display_name.chars().take(1).collect();
 
-    let sign_out = move |_| {
+    let sign_out_now = move |_| {
         menu_open.set(false);
-        spawn(async move {
-            if let Err(error) = api::sign_out().await {
-                tracing::warn!(target: log_area::AUTH, %error, "sign-out request failed; forgetting the session anyway");
-            }
-            client::set_session_token(None);
-            refresh(state).await;
-        });
+        spawn(sign_out(state));
     };
 
     rsx! {
@@ -240,7 +257,7 @@ pub(crate) fn AccountChip() -> Element {
                         span { class: "menu-check" }
                         span { {tr(messages::ACCOUNT_CHANGE_PASSWORD)} }
                     }
-                    button { class: "menu-item", role: "menuitem", onclick: sign_out,
+                    button { class: "menu-item", role: "menuitem", onclick: sign_out_now,
                         span { class: "menu-check" }
                         span { {tr(messages::ACCOUNT_SIGN_OUT)} }
                     }
@@ -272,15 +289,16 @@ pub(crate) fn AccountChip() -> Element {
 #[component]
 pub(crate) fn AdminBanner() -> Element {
     let state = use_auth();
-    let in_admin =
-        matches!(state(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
-    if !in_admin {
+    let AuthState::SignedIn(session) = state() else {
+        return rsx! {};
+    };
+    if session.mode != ActiveMode::Admin {
         return rsx! {};
     }
     rsx! {
         div { class: "admin-banner", role: "status",
             strong { class: "admin-banner-label", {tr(messages::ADMIN_BANNER_LABEL)} }
-            span { class: "admin-banner-text", {tr(messages::ADMIN_BANNER_TEXT)} }
+            span { class: "admin-banner-text", {admin_minutes_text(messages::ADMIN_BANNER_TEXT, &state())} }
             button {
                 class: "admin-banner-leave",
                 onclick: move |_| {

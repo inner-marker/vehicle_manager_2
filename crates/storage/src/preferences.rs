@@ -1,4 +1,4 @@
-//! The `preferences` table: the household's display preferences and each user's (#029, #048).
+//! The `preferences` table: the household's preferences and each user's (#029, #048, #049).
 //!
 //! Values are stored as the same names they have in JSON (e.g. `kilometers`), so the table
 //! reads the same as the API. NULL means "not chosen".
@@ -57,7 +57,7 @@ impl ColumnChange {
 }
 
 /// Every setting's change, in column order.
-fn changes(patch: &PreferencesPatch) -> [ColumnChange; 7] {
+fn changes(patch: &PreferencesPatch) -> [ColumnChange; 8] {
     [
         ColumnChange::of(patch.distance),
         ColumnChange::of(patch.volume),
@@ -66,6 +66,7 @@ fn changes(patch: &PreferencesPatch) -> [ColumnChange; 7] {
         ColumnChange::of(patch.date_format),
         ColumnChange::of(patch.currency),
         ColumnChange::of(patch.language),
+        ColumnChange::of(patch.idle_sign_out),
     ]
 }
 
@@ -89,11 +90,13 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
             date_format,
             currency,
             language,
+            idle_sign_out,
         ] = changes(values);
         sqlx::query(
             "INSERT INTO preferences
-                 (id, distance, volume, economy, pressure, date_format, currency, language, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 (id, distance, volume, economy, pressure, date_format, currency, language,
+                  idle_sign_out, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(distance.value())
@@ -103,6 +106,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
         .bind(date_format.value())
         .bind(currency.value())
         .bind(language.value())
+        .bind(idle_sign_out.value())
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -127,6 +131,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
                  date_format = CASE WHEN ? THEN ? ELSE date_format END,
                  currency    = CASE WHEN ? THEN ? ELSE currency END,
                  language    = CASE WHEN ? THEN ? ELSE language END,
+                 idle_sign_out = CASE WHEN ? THEN ? ELSE idle_sign_out END,
                  sequence = ?
              WHERE id = ?",
         );
@@ -165,6 +170,7 @@ fn choices_from_row(row: &SqliteRow) -> Result<PreferenceChoices, StorageError> 
         date_format: from_sql(row.try_get("date_format")?),
         currency: from_sql(row.try_get("currency")?),
         language: from_sql(row.try_get("language")?),
+        idle_sign_out: from_sql(row.try_get("idle_sign_out")?),
     })
 }
 
@@ -179,7 +185,8 @@ impl Database {
         id: PreferencesId,
     ) -> Result<PreferenceChoices, StorageError> {
         sqlx::query(
-            "SELECT distance, volume, economy, pressure, date_format, currency, language
+            "SELECT distance, volume, economy, pressure, date_format, currency, language,
+                    idle_sign_out
              FROM preferences WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

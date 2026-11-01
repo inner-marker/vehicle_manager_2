@@ -25,6 +25,9 @@
     --admin: #f0883e;
     --admin-bg: #3a2615;
     --admin-text: #1a0e04;
+    --panel: #171a20;
+    --divider: #4a535e;
+    --urgent-bg: #3a1618;
     color-scheme: dark;
 }
 
@@ -43,6 +46,9 @@
     --admin: #c2570c;
     --admin-bg: #fdebdc;
     --admin-text: #ffffff;
+    --panel: #eceef1;
+    --divider: #b8bec7;
+    --urgent-bg: #fde4e4;
     color-scheme: light;
 }
 
@@ -59,6 +65,12 @@
         --accent-text: #0b1420;
         --error: #ff6b6b;
         --warn: #f5b942;
+        --admin: #f0883e;
+        --admin-bg: #3a2615;
+        --admin-text: #1a0e04;
+        --panel: #171a20;
+        --divider: #4a535e;
+        --urgent-bg: #3a1618;
         color-scheme: dark;
     }
 }
@@ -1023,6 +1035,264 @@ select,
     cursor: pointer;
 }
 
+/* ---------- Messages (p2m3-messages-chosen.svg, decision #053) ---------- */
+
+/* Severity: a color stripe plus the word, never color alone. */
+.severity-urgent {
+    --severity: var(--error);
+}
+
+.severity-warning {
+    --severity: var(--warn);
+}
+
+.severity-info {
+    --severity: var(--accent);
+}
+
+/* The list on a darker panel, a full-height divider, the message beside it. */
+.messages {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    min-height: 70vh;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: var(--panel);
+    border-right: 2px solid var(--divider);
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.chip-filter {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.chip-filter.on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 700;
+}
+
+.message-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 56px;
+    padding: 8px 12px 8px 28px;
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--severity);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.message-row.selected {
+    border-color: var(--accent);
+    border-left-color: var(--severity);
+    background: var(--surface-raised);
+}
+
+/* The unread dot. */
+.message-row.unread::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.message-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.message-row-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.message-row.unread .message-row-title {
+    font-weight: 700;
+}
+
+.message-row-meta,
+.message-meta {
+    color: var(--severity);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.messages-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 20px 28px;
+}
+
+.messages-back {
+    display: none;
+}
+
+.message-meta {
+    margin: 0;
+}
+
+.message-title {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.message-body {
+    margin: 0;
+    max-width: 60ch;
+}
+
+.message-detail {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.message-buttons {
+    justify-content: flex-start;
+}
+
+/* The unread count on Messages (sidebar and bottom tabs). */
+.nav-badge {
+    margin-left: auto;
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: var(--error);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+/* An urgent message, under the top bar on every screen. */
+.urgent-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    background: var(--urgent-bg);
+    border-bottom: 2px solid var(--error);
+}
+
+.urgent-banner-label {
+    color: var(--error);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.urgent-banner-text {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.urgent-banner-view {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--error);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--error);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ---------- Test timers (decision #054): never in a release ---------- */
+
+.test-timers-tag {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 12px;
+    color: var(--warn);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* ---------- Notices: what the app did by itself (decision #049) ---------- */
+
+.notice-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 20px;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border);
+}
+
+.notice-text {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.notice-dismiss {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.auth-notice {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+}
+
 /* ---------- Medium: icon-only sidebar ---------- */
 
 @media (max-width: 1023px) {
@@ -1039,6 +1309,16 @@ select,
 
     .sidebar-label {
         display: none;
+    }
+
+    .sidebar-link {
+        position: relative;
+    }
+
+    .sidebar-link .nav-badge {
+        position: absolute;
+        top: 2px;
+        right: 0;
     }
 }
 
@@ -1187,6 +1467,47 @@ select,
 
     .users-back {
         display: inline-flex;
+    }
+
+    /* Messages on phones: the list, or one message's page with a way back. */
+    .messages {
+        display: block;
+        min-height: 0;
+        border: none;
+    }
+
+    .messages-list {
+        padding: 0;
+        background: none;
+        border-right: none;
+    }
+
+    .messages .messages-detail {
+        display: none;
+        padding: 0;
+    }
+
+    .messages.has-selection .messages-list {
+        display: none;
+    }
+
+    .messages.has-selection .messages-detail {
+        display: flex;
+    }
+
+    .messages-back {
+        display: inline-flex;
+    }
+
+    .bottom-tab {
+        position: relative;
+    }
+
+    .bottom-tab .nav-badge {
+        position: absolute;
+        top: 2px;
+        left: 55%;
+        margin: 0;
     }
 
     .setting-label {

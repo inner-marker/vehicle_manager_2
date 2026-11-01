@@ -25,9 +25,15 @@ COPY . .
 # /out/server + /out/public/ (verified with dx 0.7.10). rust-toolchain.toml installs the
 # pinned toolchain and the wasm32 target on first use. The cache mounts keep crate
 # downloads and build output between builds.
+#
+# TEST_TIMERS=true builds in test timers (decision #054): only the Dev image workflow sets it
+# (dev and milestone images); a release never does, so a release can't shorten its timers.
+ARG TEST_TIMERS=false
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cd crates/app && dx bundle --platform web --release --out-dir /out
+    cd crates/app \
+    && if [ "$TEST_TIMERS" = "true" ]; then FEATURES="--features test-timers"; else FEATURES=""; fi \
+    && dx bundle --platform web --release $FEATURES --out-dir /out
 
 # ---------- Runtime stage ----------
 FROM debian:trixie-slim

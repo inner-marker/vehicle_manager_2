@@ -181,11 +181,21 @@ mode-read-only = Read-only
 mode-needs-password = password
 mode-menu-label = Change mode
 admin-dialog-title = Enter Admin mode
-admin-dialog-text = Type your password to confirm. Admin mode ends after 15 minutes without activity.
+# $minutes (number): Admin mode's idle limit (15, or less with test timers).
+admin-dialog-text =
+    { $minutes ->
+        [one] Type your password to confirm. Admin mode ends after { $minutes } minute without activity.
+       *[other] Type your password to confirm. Admin mode ends after { $minutes } minutes without activity.
+    }
 admin-dialog-confirm = Enter Admin mode
 wrong-password = That password isn't right.
 admin-banner-label = ADMIN MODE
-admin-banner-text = Changes affect the whole household · ends after 15 idle minutes
+# $minutes (number): Admin mode's idle limit.
+admin-banner-text =
+    { $minutes ->
+        [one] Changes affect the whole household · ends after { $minutes } idle minute
+       *[other] Changes affect the whole household · ends after { $minutes } idle minutes
+    }
 admin-banner-leave = Leave
 account-menu-label = Account
 account-change-password = Change password
@@ -296,3 +306,79 @@ date-sample-month-day-year = 10/30/2026
 date-sample-day-month-year = 30/10/2026
 date-sample-year-month-day = 2026-10-30
 language-english-us = English (US)
+
+## Idle sign-out and Admin timeout (decision #049)
+
+settings-sign-in = SIGN-IN
+setting-idle-sign-out = Sign out when idle
+idle-sign-out-one-hour = After 1 hour
+idle-sign-out-four-hours = After 4 hours
+idle-sign-out-eight-hours = After 8 hours
+idle-sign-out-twenty-four-hours = After 24 hours
+idle-sign-out-never = Never
+# $minutes (number): Admin mode's idle limit.
+idle-admin-ended =
+    { $minutes ->
+        [one] Admin mode ended after { $minutes } idle minute.
+       *[other] Admin mode ended after { $minutes } idle minutes.
+    }
+# $hours (number): how long the app was idle.
+idle-signed-out =
+    { $hours ->
+        [one] You were signed out after { $hours } idle hour.
+       *[other] You were signed out after { $hours } idle hours.
+    }
+notice-dismiss = Dismiss
+
+## Message center (decisions #040, #050)
+
+inbox-snapshot-failed = The nightly snapshot failed
+inbox-snapshot-skipped = The nightly snapshot was skipped
+inbox-quick-check-failed = The hourly database check failed
+# The job's name is in the message's details.
+inbox-job-failed = A scheduled job failed
+inbox-job-skipped = A scheduled job was skipped
+inbox-job-body = See the details below and the server's log.
+inbox-snapshot-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
+inbox-quick-check-body = The hourly check found a problem in the database, so the server is refusing changes. See the details below and the server's log.
+inbox-server-unhealthy = The server isn't accepting changes
+inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
+inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
+inbox-open-diagnostics = Open Diagnostics
+messages-filter-all = All
+messages-severity-urgent = URGENT
+messages-severity-warning = WARNING
+messages-severity-info = INFO
+messages-filter-urgent = Urgent
+messages-filter-warning = Warning
+messages-filter-info = Info
+# $count (number): unread messages.
+messages-unread =
+    { $count ->
+        [0] All read
+        [one] { $count } unread
+       *[other] { $count } unread
+    }
+messages-select-hint = Choose a message to read it.
+messages-empty = No messages. You're all caught up.
+messages-back = ← Messages
+messages-details = DETAILS
+messages-dismiss = Dismiss
+# $time (text): e.g. 2026-10-31 07:00.
+messages-time-utc = { $time } UTC
+urgent-banner-label = URGENT
+urgent-banner-view = View
+# $minutes (number): how long the app was idle, when it isn't whole hours (test timers).
+idle-signed-out-minutes =
+    { $minutes ->
+        [one] You were signed out after { $minutes } idle minute.
+       *[other] You were signed out after { $minutes } idle minutes.
+    }
+
+## Test timers (decision #054)
+
+# $minutes (number): the test minute setting.
+test-timers-tag = TEST TIMERS · { $minutes } min
+# $label (text): the normal choice, e.g. "After 1 hour"; $minutes (number): its test length.
+idle-sign-out-test = { $label } (test: { $minutes } min)
+

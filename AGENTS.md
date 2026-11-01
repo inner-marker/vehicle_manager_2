@@ -15,6 +15,14 @@ The code must stay **human-readable and human-maintainable**, even though most o
 - **New or redesigned screens:** the plan includes **SVG layout options** saved in `docs/ui-sketches/` for the human to choose from (usually two or three; one when only one makes sense). Build the chosen one (decision #040).
 - **`docs/phase_plans/`** holds the agreed plan for each roadmap phase (`phase-N.md`), so the human can follow along. Once a phase plan, or the detailed plan for one of its PRs, is agreed, **save it there** and keep its status column current as work progresses. When a new phase plan file is created, **link it from that phase's section** in `docs/plan.md` §9 Roadmap.
 - **Before starting work on a roadmap phase,** check that phase's section in "Open Questions by Phase" in `docs/plan.md`. If any question is unresolved, **ask the user and stop** until it's answered. Then record the answer in `docs/decisions.md`, update the plan, and remove the question from the list.
+- **`docs/sub-plans/`** holds smaller, detailed design plans for one feature area, so `docs/plan.md` stays clean. Each sub-plan is **linked from `docs/plan.md`** (its list near the top, and the section it details), which keeps only a short summary. When a design grows too detailed for the plan, propose moving it into a sub-plan. **Naming:** `NN-topic.md`, where `NN` is the next two-digit number in the order sub-plans are added (`01-signatures-and-records.md`, `02-voice-capture.md`, …), so they sort oldest first; a number is never reused or changed, and there's no `-plan` suffix. A sub-plan marked draft is not part of the plan until the human confirms it.
+- **Digital signatures are on hold:** don't implement any part of them until the human's records and signatures plan, `docs/sub-plans/01-signatures-and-records.md` (draft), is reviewed and confirmed (`docs/ideas-to-discuss.md` idea 12).
+- **Every new phase plan or milestone plan starts with a review** of `docs/ideas-to-discuss.md`, every sub-plan in `docs/sub-plans/`, and (for a phase) that phase's open questions in `docs/plan.md` §10. For each idea and sub-plan, decide whether:
+  - it **belongs** in this phase or milestone (for a phase plan, also say **which milestone** it fits);
+  - it needs **cheap groundwork now**: something small (a field, a column, a naming choice) that would mean a migration or rework if left for later;
+  - or it has **no effect** now.
+
+  Put a short **"Reviewed against"** note in the plan: what's proposed, what needs the human's decision first, and what had no effect (one line, by idea number and sub-plan name). **Only propose:** draft sub-plans and undecided ideas aren't built until the human confirms them, and a conflict with a recorded decision is raised as a question, not resolved.
 - Don't answer open questions yourself by picking a default. If a question blocks only part of a task, say which part and continue with the rest.
 - **`../xplm-oxide`** (the human's X-Plane plugin library) is available as **read-only reference** context. Look at it for conventions or when a task mentions it; never edit it, and don't add it as a dependency unless that is recorded in `docs/decisions.md`.
 
@@ -136,7 +144,7 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 
 **Manual test plans (when the human must verify something)**
 
-If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/<feature>.md`:
+If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/p<phase>m<milestone>-<feature>.md`:
 
 1. **Intended behavior:** what the feature should do, including edge cases and what should be rejected.
 2. **Setup:** device, data, mode, and server state needed first.

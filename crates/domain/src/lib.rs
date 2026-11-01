@@ -13,11 +13,14 @@ pub mod hlc_utils;
 pub mod i18n;
 pub mod id;
 pub mod identity;
+pub mod idle;
+pub mod inbox;
 pub mod log_area;
 pub mod preferences;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;
+pub mod timers;
 pub mod user;
 
 #[cfg(any(test, feature = "test-support"))]

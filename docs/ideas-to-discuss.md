@@ -43,13 +43,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 ### 5. Time-ordered IDs (UUIDv7) ✅
 *Decided 2026-10-29: `docs/decisions.md` #042 (UUIDv7 now; human-friendly record numbers later, with reports or logbooks).*
 
-### 6. Groups ("garages" or "hangars") 🟡
-*Suggested phase: Phase 2 or 3, before multi-user permissions see heavy use*
-
-- Assets belong to one or more **groups,** and roles can be granted per group as well as per asset.
-- Covers a family garage now, and later a flying club, co-ownership, or a shop, without redesigning permissions.
-- **Partly decided (#045):** roles target one asset or all assets for now; the target is built so groups can be added later as a third kind.
-- **To discuss:** how group roles combine with per-asset roles and component permission inheritance.
+### 6. Groups ("garages" or "hangars") ✅
+*Decided 2026-10-31: `docs/decisions.md` #052 (every asset in exactly one group; roles per group; built in Phase 2 milestone 4).*
 
 ### 7. One layered settings model 🟡
 *Suggested phase: Phase 2*
@@ -99,3 +94,46 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **How it's installed and kept up to date:** downloaded like `compose.yaml`, or shipped inside the image and copied out.
   - **Testing:** how it's tested in CI without a NAS (e.g. against a fake Project folder and a stub `docker`).
   - **Safety:** always confirm before replacing the database, keep what it replaces, and refuse to run while the container is up for steps that need it stopped.
+
+### 12. Digital records and signatures that follow standards 🔵
+*Raised by the human, 2026-10-31 · Plan received 2026-10-31: `docs/sub-plans/01-signatures-and-records.md` (draft) · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
+
+- **The plan:** `docs/sub-plans/01-signatures-and-records.md`, the human's draft design for electronic signatures and record-keeping that meet the intent of FAA AC 120-78B and 14 CFR 43.9 / 43.11 / 91.417 as far as practical, with zero paid dependencies: Ed25519 signatures over canonical (RFC 8785) records, a self-hosted root → intermediate → per-user-and-device key certificate chain, a per-vehicle hash chain, corrections by superseding entries, revocation, a signed export bundle with a verifier CLI, and a PDF logbook. Its phases are S1–S6, with its own open decisions (§13).
+- **Rule until it's confirmed:** **don't implement digital signatures** (or anything from the sub-plan) until it's reviewed with the human and they **confirm** the approach. The sub-plan replaces the Signatures part of "Logbook entries, statement templates & signatures" in `docs/plan.md` once confirmed.
+- **To review with the human** (where it meets settled decisions; nothing decided yet):
+  - **Signatures become cryptographic:** `docs/plan.md` currently says a signature "is not a cryptographic signature"; the sub-plan makes the drawn or typed mark only the *appearance*, with an Ed25519 signature behind it.
+  - **New crate and dependencies:** a `vm-records` crate (AGENTS.md has four crates with one-way dependencies) and `ed25519-dalek`, `serde_jcs`, `keyring`, `hex` (all need approval); its sample code uses `OffsetDateTime` where `domain` uses `UnixMillis`.
+  - **Immutability:** SQLite triggers that block updates to signed rows, alongside the command pipeline (#043: field-level last-write-wins, deletes as tombstones); signed entries as content-addressed and conflict-free.
+  - **Milestone 6:** its finalized records and amendments (#034) next to the sub-plan's `draft → signed → superseded` states and correction entries, so the two fit together.
+  - **Sync and time:** per-vehicle hash chains with server-signed chain-join entries for offline forks, server receipts (`received_at`), and device time as untrusted, versus the HLC and Phase 3 sync design.
+  - **Where S1–S6 go in the roadmap,** the `docs/records-procedures.md` template, and the tests it asks to add to AGENTS.md (§12).
+  - Its "Related" line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
+
+### 13. Optional email and email password reset 🔵
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing; not yet placed in the roadmap)*
+
+- **The plan:** email stays **optional** (the app works fully without it), any SMTP provider (Gmail with an app password as the reference), configured by environment variables or Docker secrets; an email reset link (token stored only as a hash, about 30 minutes, one use, the same generic answer for everyone, rate-limited, other sessions ended); a per-person email on/off switch and a "send test email" button; later, email notifications for maintenance due, with per-person preferences.
+- **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
+- **To review with the human** (where it meets what's built or decided; nothing decided yet):
+  - **Recovery today (#046, #047):** an Admin resets anyone's password with a **temporary password** (the sub-plan's path 2 says a one-time code); only an **Admin** can recover their own with the log code (path 1 reads as if anyone can). The sub-plan's reset by **username or email** needs an **email field on users**, which doesn't exist yet.
+  - **Codes in log files (worth settling soon):** the setup and recovery codes go to the server log, which is also written to `data/logs/` and may be shared when debugging. The sub-plan asks for them to be **redacted from exported logs or written to a separate file**; today the test plans only say to blank them out before sharing.
+  - **New dependency:** `lettre` (needs approval); SMTP passwords kept out of the database.
+  - **Email notifications vs. #050:** messages are derived from the current state and nothing records that one was "sent", so emailing each new message once needs a small record of what was emailed to whom.
+  - **Base URL** for links (the tailnet name vs. a local address) and **host-mode desktop** installs are the sub-plan's own open questions.
+  - Its first line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
+
+### 14. Voice logging (hands-free fuel-ups, readings, and squawks) 🔵
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/02-voice-capture.md` (draft v2) · Suggested phase: not placed yet; its phase 1 (a typed, text-only dialog engine) has no dependency on mobile, but most of the rest needs the mobile apps (post-MVP, #041)*
+
+- **The plan:** opt-in voice logging that never starts by itself (driving detection only *suggests* a "Voice log" chip); on-device speech (`whisper-rs`, `tts`, `cpal`); a guided dialog (vehicle first, then that vehicle's fields, with "cancel", "repeat", "go back", "skip", "options"); a Rust dialog engine that's text in, text out, so it's testable without audio; entries saved as **drafts** with the raw transcript, reviewed on a **Voice drafts** list.
+- **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
+- **To review with the human** (where it meets what's built or decided; nothing decided yet):
+  - **Drafts and finalizing (#034):** fuel-ups and readings are finalized **automatically after 24 hours** by the server; voice drafts waiting for review would be finalized too unless they're treated differently. The sub-plan says drafts are "signed later", but signatures are on hold (idea 12) and fuel-ups aren't signed.
+  - **Per-vehicle fields:** these are the asset profiles, required readings, and custom fields (#030, milestone 4), plus per-asset overrides; one definition should drive forms, voice, and review, as the sub-plan says.
+  - **Naming:** its sketch uses `VehicleId`; AGENTS.md requires `AssetId` in code.
+  - **Groundwork for Phase 2:** recording each event's **source** (typed, voice, later import) is cheap when events are created (milestone 6) and hard to add later; a squawk's "ground it vs. monitor" maps to **blocks use** (#051, milestone 7).
+  - **Where it runs:** until the mobile apps, phones use the **web UI**; on-device Whisper in a phone browser isn't covered (and the browser's own speech recognition usually isn't offline). Desktop works first.
+  - **New dependencies** (`whisper-rs`, `tts`, `cpal`) and a downloadable speech model (tens to hundreds of MB) need approval.
+  - **"Voice drafts" on the dashboard:** which screen (Garage, the vehicle's Overview, Messages, or + Log), and its relation to the forgotten-job reminder (milestone 7).
+  - Its own open questions (§14): push-to-talk, model size, keeping audio clips, squawk severity, and more.
+

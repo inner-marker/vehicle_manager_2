@@ -87,7 +87,7 @@ The address is then `https://<nas-name>.<tailnet>.ts.net:8443`.
 
 ### 6. Create the first Admin
 
-A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028):
+A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028). The setup and recovery codes go **only to the container's log** (`docker logs`), never to the files in `data/logs/`, so log files you share for debugging never contain them:
 
 ```sh
 sudo docker logs vehiclemanager 2>&1 | grep -i "setup code"
@@ -106,6 +106,10 @@ The line ends with `setup_code=K7QM-4XRT-9PWD-H2CN` (yours differs). Open the ap
      ```
 
   3. Enter the code (the newest line; it works once, for 15 minutes) and a new password. You're signed in, and your other sessions end.
+
+## Test timers (dev and milestone images only)
+
+To run a test plan in minutes instead of hours, set `VEHICLEMANAGER_TEST_MINUTES` in `.env` to a number from 1 to 5 and run `sudo docker compose up -d` (decision #054). Admin mode, Sign out when idle, the nightly snapshot, the hourly check, and recovery codes then use minutes; the app shows a **TEST TIMERS** tag in the top bar. Empty it again (and `up -d`) when you're done. Release images ignore it.
 
 ## Updating
 
@@ -195,5 +199,5 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 - **`docker compose up` says "container name "/vehiclemanager" is already in use":** the `compose.yaml` in the Project folder is an old copy without the `name: vehiclemanager` line. Download it again (setup step 3), or add `-p vehiclemanager` to both update commands.
 - **Upgrading from Phase 1:** the `VEHICLEMANAGER_TEST_CREDENTIAL` line in an older `.env` is ignored now; delete it. Signing in replaces it.
 - **Diagnostics shows "Server health: Fail":** the database couldn't be opened or failed a check; nothing is being saved. The container log says which (`can't open the database` or `database integrity problem`). See "Database, backups, and snapshots".
-- **`job skipped` for the nightly snapshot:** the snapshot folder set in `VEHICLEMANAGER_SNAPSHOT_DIR` isn't there (e.g. the USB disk isn't mounted).
+- **`job skipped` for the nightly snapshot:** the snapshot folder set in `VEHICLEMANAGER_SNAPSHOT_DIR` isn't there (e.g. the USB disk isn't mounted). The household's Admin also sees it in **Messages** (in Admin mode), as does a failed snapshot or hourly check; the message goes away once the cause is fixed.
 - **Pulls fail with "denied":** the GHCR package is still private (setup step 2).

@@ -94,8 +94,9 @@ pub fn open_if_needed(user_count: i64) -> Option<String> {
     };
     let shown = group_by_four(&code);
     set_code(Some(code));
-    // Deliberately logged: reading the server log (NAS access) is what proves you may set it up.
-    tracing::warn!(target: log_area::AUTH, setup_code = %shown, "no users yet: create the first Admin in the app with this setup code");
+    // Deliberately logged, to the console only (`docker logs`, never the log files): reading it
+    // (NAS access) is what proves you may set it up.
+    tracing::warn!(target: log_area::AUTH, console_only = true, setup_code = %shown, "no users yet: create the first Admin in the app with this setup code");
     Some(shown)
 }
 
