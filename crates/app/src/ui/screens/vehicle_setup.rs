@@ -663,7 +663,7 @@ fn ConfirmRemove(target: Removal, name: String, on_close: EventHandler<()>) -> E
                 FormError { message: error() }
                 div { class: "form-buttons",
                     button { class: "secondary-button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
-                    button { class: "primary-button danger-button", disabled: busy(), onclick: remove, {tr(messages::ACTION_REMOVE)} }
+                    button { class: "danger-button filled", disabled: busy(), onclick: remove, {tr(messages::ACTION_REMOVE)} }
                 }
             }
         }
@@ -1369,7 +1369,7 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
                 FormError { message: error() }
                 div { class: "form-buttons",
                     button { class: "secondary-button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
-                    button { class: "primary-button danger-button", disabled: busy() || !matches, onclick: delete,
+                    button { class: "danger-button filled", disabled: busy() || !matches, onclick: delete,
                         if busy() { {tr(messages::DELETE_DELETING)} } else { {tr(messages::DELETE_DELETE)} }
                     }
                 }

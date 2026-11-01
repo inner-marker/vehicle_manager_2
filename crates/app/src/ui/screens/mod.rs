@@ -3,8 +3,10 @@
 mod account;
 mod connection;
 mod diagnostics;
+mod groups;
 mod messages;
 mod placeholders;
+mod roles;
 mod settings;
 mod users;
 mod vehicle;
@@ -16,6 +18,7 @@ pub(crate) use account::{
 };
 pub(crate) use connection::{ConnectionPanel, problem_from_error};
 pub(crate) use diagnostics::Diagnostics;
+pub(crate) use groups::Groups;
 pub(crate) use messages::Messages;
 pub(crate) use placeholders::{Due, LogEvent, NotFound, Reports, Timeline};
 pub(crate) use settings::Settings;

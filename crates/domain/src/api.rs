@@ -265,8 +265,11 @@ pub struct UserSummary {
     pub display_name: String,
     /// Whether they can sign in, and with what.
     pub status: AccountStatus,
-    /// Their role on all vehicles, if any (per-vehicle roles arrive in milestone 4).
+    /// Their role on all vehicles, if any.
     pub role_on_all: Option<crate::access::Role>,
+    /// Every role they have: on all vehicles, a group, or one vehicle (#058), the highest
+    /// for each, in that order.
+    pub roles: Vec<(crate::access::GrantTarget, crate::access::Role)>,
     /// This is the signed-in Admin.
     pub is_you: bool,
     /// They're the last enabled Admin: they can't be disabled or lose the Admin role.

@@ -658,3 +658,12 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Calculated fields** (formulas over built-in and custom fields, unit-aware, worked out when shown and never stored) come in **Phase 5**, with fuel-economy statistics. A **catalogue of ready-made fields and sets** (e.g. "Trip computer (hybrid)": trip distance, time, EV distance, fuel economy) is idea 16.
 - **Why:** the human chose option A and asked for richer trip-computer fields and calculations; keys cost little before any field has values and would mean backfilling every vehicle later.
 
+
+### 058. Groups screen (list and detail) and roles as a list with + Add role
+*Decided: 2026-11-01 · Plan: §6 Roles · Phase plan: phase-2.md step 4g · Sketch: `docs/ui-sketches/p2m4-groups-roles-options.svg` (Groups option B, roles option A) · Refines #046, #052*
+
+- **Decision:**
+  - **Groups** is a screen under Manage (the household's Admin, in Admin mode), laid out like Users: the groups on the left (icon, name, count; **+ Add group**), the chosen group on the right: its **name and icon** (saved when changed), its **vehicles** (each opens its page), **who sees it** (each person's role there and where it comes from: all vehicles, this group, or one of its vehicles), and **Delete group**, only for an empty group that isn't the last (otherwise greyed out with the reason). On phones: the list, then a page per group. Moving a vehicle stays on its own Setup tab, with its preview (#057).
+  - **Roles on the Users screen** are a list of the roles the person has, each with its role menu and ✕: on **all vehicles**, **a group**, or **one vehicle**. **+ Add role** opens a dialog: what it's on (all vehicles, a group, or a vehicle) and the role; adding one where they already have a role replaces it. A note says roles add up: on each vehicle, the highest applies.
+  - The list of users summarises each person's roles (e.g. "Admin · all vehicles", or "Maintainer · Hangar" when they have one role elsewhere, or "3 roles").
+- **Why:** the human chose as recommended: seeing who can see a group belongs next to the group, and a short list of roles avoids menus that look like they lower a role but can't (the highest role always applies).

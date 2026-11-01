@@ -80,6 +80,7 @@ pub(crate) fn Shell() -> Element {
         | Route::Reports {}
         | Route::LogEvent {}
         | Route::Users {}
+        | Route::Groups {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => tr(route.title()),

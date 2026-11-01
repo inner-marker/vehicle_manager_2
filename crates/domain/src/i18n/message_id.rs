@@ -349,8 +349,6 @@ define_messages! {
     USERS_ROLES_HEADING => "users-roles-heading",
     /// Users detail: the all-vehicles role row.
     USERS_ALL_VEHICLES => "users-all-vehicles",
-    /// Users detail: per-vehicle roles come later.
-    USERS_ONE_VEHICLE_LATER => "users-one-vehicle-later",
     /// Users detail: the account heading.
     USERS_ACCOUNT_HEADING => "users-account-heading",
     /// Users detail: reset password.
@@ -929,4 +927,92 @@ define_messages! {
     DELETE_DELETE => "delete-delete",
     /// Button while deleting.
     DELETE_DELETING => "delete-deleting",
+    /// Navigation: the Groups screen (Admin mode).
+    NAV_GROUPS => "nav-groups",
+    /// A person's one role, in the list; takes `role` and `target` (text).
+    USERS_ROLE_ON => "users-role-on",
+    /// A person with several roles, in the list; takes `count` (number).
+    USERS_ROLES_COUNT => "users-roles-count",
+    /// Users: add a role on all vehicles, a group, or one vehicle.
+    ROLES_ADD => "roles-add",
+    /// Dialog title: add a role; takes `name` (text).
+    ROLES_ADD_TITLE => "roles-add-title",
+    /// Form field: what a role is on.
+    ROLES_ON => "roles-on",
+    /// Form field: the role.
+    ROLES_ROLE => "roles-role",
+    /// Button: add the role.
+    ROLES_ADD_BUTTON => "roles-add-button",
+    /// A role's target: a group; takes `name` (text).
+    ROLES_ON_GROUP => "roles-on-group",
+    /// A role's target: one vehicle; takes `name` (text).
+    ROLES_ON_VEHICLE => "roles-on-vehicle",
+    /// Menu heading: groups.
+    ROLES_GROUPS => "roles-groups",
+    /// Menu heading: vehicles.
+    ROLES_VEHICLES => "roles-vehicles",
+    /// A role on a group or vehicle that no longer exists.
+    ROLES_REMOVED => "roles-removed",
+    /// Button label (✕): remove a role.
+    ROLES_REMOVE => "roles-remove",
+    /// Users: a person with no roles.
+    ROLES_NONE => "roles-none",
+    /// Users: how roles combine.
+    ROLES_NOTE => "roles-note",
+    /// Groups: add a group.
+    GROUPS_ADD => "groups-add",
+    /// Dialog title: add a group.
+    GROUPS_ADD_TITLE => "groups-add-title",
+    /// Form field: a group's icon.
+    GROUPS_ICON => "groups-icon",
+    /// Groups: nothing chosen yet.
+    GROUPS_SELECT_HINT => "groups-select-hint",
+    /// Groups: the chosen group's vehicles.
+    GROUPS_VEHICLES => "groups-vehicles",
+    /// Groups: an empty group.
+    GROUPS_NO_VEHICLES => "groups-no-vehicles",
+    /// Groups: open a vehicle's page.
+    GROUPS_OPEN => "groups-open",
+    /// Groups: each person's access to the group.
+    GROUPS_WHO => "groups-who",
+    /// Who sees it: a role on all vehicles; takes `role` (text).
+    GROUPS_FROM_ALL => "groups-from-all",
+    /// Who sees it: a role on the group; takes `role` (text).
+    GROUPS_FROM_GROUP => "groups-from-group",
+    /// Who sees it: a role on one of its vehicles; takes `role` and `vehicle` (text).
+    GROUPS_FROM_VEHICLE => "groups-from-vehicle",
+    /// Who sees it: no role here.
+    GROUPS_NO_ACCESS => "groups-no-access",
+    /// Groups: delete the chosen group.
+    GROUPS_DELETE => "groups-delete",
+    /// Dialog title: delete a group; takes `name` (text).
+    GROUPS_DELETE_TITLE => "groups-delete-title",
+    /// Delete group dialog.
+    GROUPS_DELETE_TEXT => "groups-delete-text",
+    /// Groups: when Delete is possible.
+    GROUPS_DELETE_NOTE => "groups-delete-note",
+    /// Groups: how changes save.
+    GROUPS_SAVES_NOTE => "groups-saves-note",
+    /// Groups: a change was saved.
+    GROUPS_SAVED => "groups-saved",
+    /// Groups: not in Admin mode.
+    GROUPS_NOT_ALLOWED => "groups-not-allowed",
+    /// Groups on phones: back to the list.
+    GROUPS_BACK => "groups-back",
+    /// Group icon: garage.
+    GROUP_ICON_GARAGE => "group-icon-garage",
+    /// Group icon: hangar.
+    GROUP_ICON_HANGAR => "group-icon-hangar",
+    /// Group icon: boathouse.
+    GROUP_ICON_BOATHOUSE => "group-icon-boathouse",
+    /// Group icon: storage.
+    GROUP_ICON_STORAGE => "group-icon-storage",
+    /// Group icon: warehouse.
+    GROUP_ICON_WAREHOUSE => "group-icon-warehouse",
+    /// Group icon: shop.
+    GROUP_ICON_SHOP => "group-icon-shop",
+    /// Group icon: farm.
+    GROUP_ICON_FARM => "group-icon-farm",
+    /// Group icon: house.
+    GROUP_ICON_HOUSE => "group-icon-house",
 }

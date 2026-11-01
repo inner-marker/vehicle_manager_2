@@ -1423,10 +1423,6 @@ select,
     align-items: center;
 }
 
-.danger-button {
-    background: var(--error);
-}
-
 .danger-text {
     color: var(--error);
 }
@@ -1476,6 +1472,91 @@ textarea.field-input {
     padding: 10px 12px;
     font: inherit;
     resize: vertical;
+}
+
+/* ---------- Groups and roles (p2m4-groups-roles-options.svg, decision #058) ---------- */
+
+.group-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.group-name-field {
+    max-width: 360px;
+}
+
+.icon-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 8px;
+    max-width: 440px;
+}
+
+.icon-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-height: 64px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.icon-choice.chosen {
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+    color: var(--accent);
+}
+
+.group-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 520px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.group-access {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.group-access.none {
+    font-style: italic;
+}
+
+.roles-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 440px;
+}
+
+.role-target {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.role-remove {
+    width: 40px;
+    height: 40px;
+}
+
+.role-row .role-select {
+    width: 140px;
+    margin-left: auto;
 }
 
 /* ---------- Messages (p2m3-messages-chosen.svg, decision #053) ---------- */

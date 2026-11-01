@@ -777,10 +777,11 @@ pub(crate) async fn add_user(
 #[post("/api/v1/users/role")]
 pub(crate) async fn set_user_role(
     user: domain::user::UserId,
+    target: domain::access::GrantTarget,
     role: Option<domain::access::Role>,
 ) -> ServerFnResult<UserAdminOutcome> {
     Ok(server_side::with_admin(async |context| {
-        ::server::user_admin::set_role_on_all(&context, user, role).await
+        ::server::user_admin::set_role(&context, user, target, role).await
     })
     .await)
 }

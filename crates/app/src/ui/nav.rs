@@ -13,7 +13,7 @@ pub(crate) enum NavSection {
     Vehicles,
     /// Everyday screens: Due & squawks, Messages, Timeline, Reports.
     Main,
-    /// Below the divider: Users (Admins only), Settings, Diagnostics (Groups joins in 4g).
+    /// Below the divider: Users and Groups (Admins only), Settings, Diagnostics.
     Manage,
 }
 
@@ -86,6 +86,16 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
                 false,
             )
         },
+        NavItem {
+            admin_only: true,
+            ..item(
+                Route::Groups {},
+                messages::NAV_GROUPS,
+                Icon::Groups,
+                NavSection::Manage,
+                false,
+            )
+        },
         item(
             Route::Settings {},
             messages::NAV_SETTINGS,
@@ -110,7 +120,7 @@ mod tests {
     #[test]
     fn every_nav_item_has_a_route_message_and_icon() {
         let items = nav_items();
-        assert_eq!(items.len(), 8);
+        assert_eq!(items.len(), 9);
         // The nav label and the top-bar title come from the same message, except the phone's
         // Vehicles tab, whose screen is titled "All vehicles".
         for item in items
@@ -122,13 +132,13 @@ mod tests {
     }
 
     #[test]
-    fn only_users_is_admin_only() {
+    fn only_users_and_groups_are_admin_only() {
         let admin_only: Vec<Route> = nav_items()
             .into_iter()
             .filter(|item| item.admin_only)
             .map(|item| item.route)
             .collect();
-        assert_eq!(admin_only, [Route::Users {}]);
+        assert_eq!(admin_only, [Route::Users {}, Route::Groups {}]);
     }
 
     #[test]

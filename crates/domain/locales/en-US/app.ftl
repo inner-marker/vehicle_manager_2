@@ -222,7 +222,6 @@ users-temporary = Temporary password
 users-role-summary = { $role } · all vehicles
 users-roles-heading = ROLES
 users-all-vehicles = All vehicles
-users-one-vehicle-later = One vehicle: available once vehicles exist (milestone 4).
 users-account-heading = ACCOUNT
 users-reset-password = Reset password…
 users-disable = Disable…
@@ -582,3 +581,59 @@ delete-text = Only for a vehicle added by mistake: its records go with it. To ke
 delete-type = Type { $name } to confirm.
 delete-delete = Delete
 delete-deleting = Deleting…
+
+## Groups and roles on a group or one vehicle (decision #058)
+
+nav-groups = Groups
+# $role (text): a role; $target (text): what it's on.
+users-role-on = { $role } · { $target }
+# $count (number): how many roles.
+users-roles-count = { $count } roles
+roles-add = + Add role
+# $name (text): the person.
+roles-add-title = Add a role for { $name }
+roles-on = On
+roles-role = Role
+roles-add-button = Add
+# $name (text): the group.
+roles-on-group = { $name } · group
+# $name (text): the vehicle.
+roles-on-vehicle = { $name } · vehicle
+roles-groups = Groups
+roles-vehicles = Vehicles
+roles-removed = (removed)
+roles-remove = Remove this role
+roles-none = No roles: they can't see any vehicles yet.
+roles-note = Roles add up: on each vehicle, the highest one applies. Adding a role where they already have one replaces it.
+groups-add = + Add group
+groups-add-title = Add a group
+groups-icon = Icon
+groups-select-hint = Choose a group to see its vehicles and who sees it.
+groups-vehicles = Vehicles
+groups-no-vehicles = No vehicles in this group yet.
+groups-open = Open ›
+groups-who = Who sees it
+# $role (text): the role.
+groups-from-all = { $role } · all vehicles
+# $role (text): the role.
+groups-from-group = { $role } · this group
+# $role (text): the role; $vehicle (text): the vehicle.
+groups-from-vehicle = { $role } · { $vehicle } only
+groups-no-access = no access
+groups-delete = Delete group…
+# $name (text): the group.
+groups-delete-title = Delete { $name }?
+groups-delete-text = Roles on this group are removed with it.
+groups-delete-note = Only an empty group can be deleted, and never the last one.
+groups-saves-note = The name and icon save when changed. Roles are set on the Users screen.
+groups-saved = Saved.
+groups-not-allowed = Switch to Admin mode to manage groups.
+groups-back = ← Groups
+group-icon-garage = Garage
+group-icon-hangar = Hangar
+group-icon-boathouse = Boathouse
+group-icon-storage = Storage
+group-icon-warehouse = Warehouse
+group-icon-shop = Shop
+group-icon-farm = Farm
+group-icon-house = House
