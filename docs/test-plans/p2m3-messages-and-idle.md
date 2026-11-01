@@ -29,14 +29,18 @@
   vi .env
   ```
 
-  Set `VEHICLEMANAGER_IMAGE_TAG=milestone-p2-m3-messages`, then `Esc` and `:wq`. `compose.yaml` is unchanged from milestone 2.
+  Set `VEHICLEMANAGER_IMAGE_TAG=milestone-p2-m3-messages`, then `Esc` and `:wq`. For test timers (below), also get the milestone's `compose.yaml`, which passes `VEHICLEMANAGER_TEST_MINUTES` into the container:
+
+  ```sh
+  curl -fsSLo compose.yaml https://raw.githubusercontent.com/inner-marker/vehicle_manager_2/milestone/p2-m3-messages/deploy/compose.yaml
+  ```
 - **People:** your Admin account ("stuart" below) and Sam from milestone 2 (any role but Admin). If Sam is disabled, enable them in Users.
 - **Devices:** the browser on the Mac (or another computer), a phone browser, and the desktop app on the Mac (`dx serve --platform desktop` from `crates/app`, with the NAS address saved).
 - **Timing:**
   - Steps 5–7 need about 20 minutes each, and step 8 about an hour (do other things on another device meanwhile).
   - Steps 13–19 need the server running past **07:00 UTC** (03:00 Eastern daylight time; 02:00 after November 1, 2026). Set up step 12 one evening, then do 13–19 the next morning.
   - Leave the tab **visible** during the waits. A hidden tab still works, but the browser may slow its timers to once a minute.
-- **Test timers (optional, decision #054): minutes instead of hours.** The milestone image can shorten the timers. Pull the newest image, then in `.env` set `VEHICLEMANAGER_TEST_MINUTES=2`, run `sudo docker compose up -d`, and reload the app. A **TEST TIMERS · 2 min** tag shows in the top bar, and the log has a `TEST TIMERS ON` warning. With 2 minutes:
+- **Test timers (optional, decision #054): minutes instead of hours.** The milestone image can shorten the timers. Get the milestone's `compose.yaml` (above), pull the newest image, then in `.env` set `VEHICLEMANAGER_TEST_MINUTES=2`, run `sudo docker compose up -d`, and reload the app. `sudo docker inspect vehiclemanager --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep TEST` should show the setting. A **TEST TIMERS · 2 min** tag shows in the top bar, and the log has a `TEST TIMERS ON` warning. With 2 minutes:
 
   | Steps | Wait with test timers | Notes |
   |---|---|---|
@@ -58,9 +62,9 @@
 | [x] | 3 | Sign in as stuart in the browser. Open **Messages** | Driver mode: "No messages. You're all caught up." No badge on Messages, no red banner. (If a real snapshot failed recently, you'd see it only in Admin mode; see step 15.) |
 | [x] | 4 | **Settings → You**, scroll to **SIGN-IN** | **Sign out when idle**: "After 8 hours", with **Use household default** ticked. |
 | [x] | 5 | **Admin idle:** enter Admin mode, then don't touch the computer for **16 minutes** | Without any click, Admin mode ends: the orange banner goes, the chip says **Driver**, and "Admin mode ended after 15 idle minutes." shows under the top bar. **Dismiss** hides it. |
-| [ ] | 6 | **Working keeps Admin mode:** enter Admin mode; about every 5 minutes, scroll or click somewhere harmless (e.g. a Settings tab), for **20 minutes** | Still in Admin mode at 20 minutes. Then open **Users**: it lists the users (the server still agrees you're in Admin mode). |
-| [ ] | 7 | **The server's own limit:** while in Admin mode, close the browser tab, wait **16 minutes**, open the app again | Driver mode: the server ended Admin mode by itself. |
-| [ ] | 8 | **Sign out when idle:** Settings → You → **After 1 hour** (the switch unticks). Don't touch the computer for **61 minutes** | The sign-in card says "You were signed out after 1 idle hour." Sign in again: the notice is gone. Then tick **Use household default** again. |
+| [x] | 6 | **Working keeps Admin mode:** enter Admin mode; about every 5 minutes, scroll or click somewhere harmless (e.g. a Settings tab), for **20 minutes** | Still in Admin mode at 20 minutes. Then open **Users**: it lists the users (the server still agrees you're in Admin mode). |
+| [x] | 7 | **The server's own limit:** while in Admin mode, close the browser tab, wait **16 minutes**, open the app again | Driver mode: the server ended Admin mode by itself. |
+| [x] | 8 | **Sign out when idle:** Settings → You → **After 1 hour** (the switch unticks). Don't touch the computer for **61 minutes** | The sign-in card says "You were signed out after 1 idle hour." Sign in again: the notice is gone. Then tick **Use household default** again. |
 | [ ] | 9 | **Household default:** in Admin mode, Settings → **Household** → **After 4 hours**. Then sign in as Sam on the phone → Settings → You | Sam's **Sign out when idle** shows "After 4 hours", following the household. Put the household back to **After 8 hours**. |
 | [ ] | 10 | **Sleep:** on the Mac, enter Admin mode in the browser, close the lid for **20 minutes**, open it | Within about 15 seconds: Driver mode, with the "Admin mode ended…" notice. |
 | [ ] | 11 | **Desktop app:** sign in, enter Admin mode, wait **16 minutes** without touching it | The same as step 5. Then open **Messages**: the screen shows, with its list, divider, and detail panel. |
