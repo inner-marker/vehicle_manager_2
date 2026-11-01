@@ -96,9 +96,9 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Safety:** always confirm before replacing the database, keep what it replaces, and refuse to run while the container is up for steps that need it stopped.
 
 ### 12. Digital records and signatures that follow standards 🔵
-*Raised by the human, 2026-10-31 · Plan received 2026-10-31: `docs/sub-plans/signatures-and-records.md` (draft) · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
+*Raised by the human, 2026-10-31 · Plan received 2026-10-31: `docs/sub-plans/01-signatures-and-records.md` (draft) · Suggested phase: before signatures are built (post-MVP logbook entries), and checked before Phase 2 milestone 6 (finalized records and amendments)*
 
-- **The plan:** `docs/sub-plans/signatures-and-records.md`, the human's draft design for electronic signatures and record-keeping that meet the intent of FAA AC 120-78B and 14 CFR 43.9 / 43.11 / 91.417 as far as practical, with zero paid dependencies: Ed25519 signatures over canonical (RFC 8785) records, a self-hosted root → intermediate → per-user-and-device key certificate chain, a per-vehicle hash chain, corrections by superseding entries, revocation, a signed export bundle with a verifier CLI, and a PDF logbook. Its phases are S1–S6, with its own open decisions (§13).
+- **The plan:** `docs/sub-plans/01-signatures-and-records.md`, the human's draft design for electronic signatures and record-keeping that meet the intent of FAA AC 120-78B and 14 CFR 43.9 / 43.11 / 91.417 as far as practical, with zero paid dependencies: Ed25519 signatures over canonical (RFC 8785) records, a self-hosted root → intermediate → per-user-and-device key certificate chain, a per-vehicle hash chain, corrections by superseding entries, revocation, a signed export bundle with a verifier CLI, and a PDF logbook. Its phases are S1–S6, with its own open decisions (§13).
 - **Rule until it's confirmed:** **don't implement digital signatures** (or anything from the sub-plan) until it's reviewed with the human and they **confirm** the approach. The sub-plan replaces the Signatures part of "Logbook entries, statement templates & signatures" in `docs/plan.md` once confirmed.
 - **To review with the human** (where it meets settled decisions; nothing decided yet):
   - **Signatures become cryptographic:** `docs/plan.md` currently says a signature "is not a cryptographic signature"; the sub-plan makes the drawn or typed mark only the *appearance*, with an Ed25519 signature behind it.
@@ -110,7 +110,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - Its "Related" line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
 
 ### 13. Optional email and email password reset 🔵
-*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/email-and-password-reset-plan.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing; not yet placed in the roadmap)*
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing; not yet placed in the roadmap)*
 
 - **The plan:** email stays **optional** (the app works fully without it), any SMTP provider (Gmail with an app password as the reference), configured by environment variables or Docker secrets; an email reset link (token stored only as a hash, about 30 minutes, one use, the same generic answer for everyone, rate-limited, other sessions ended); a per-person email on/off switch and a "send test email" button; later, email notifications for maintenance due, with per-person preferences.
 - **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
@@ -123,7 +123,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - Its first line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
 
 ### 14. Voice logging (hands-free fuel-ups, readings, and squawks) 🔵
-*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/voice-capture-plan.md` (draft v2) · Suggested phase: not placed yet; its phase 1 (a typed, text-only dialog engine) has no dependency on mobile, but most of the rest needs the mobile apps (post-MVP, #041)*
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/02-voice-capture.md` (draft v2) · Suggested phase: not placed yet; its phase 1 (a typed, text-only dialog engine) has no dependency on mobile, but most of the rest needs the mobile apps (post-MVP, #041)*
 
 - **The plan:** opt-in voice logging that never starts by itself (driving detection only *suggests* a "Voice log" chip); on-device speech (`whisper-rs`, `tts`, `cpal`); a guided dialog (vehicle first, then that vehicle's fields, with "cancel", "repeat", "go back", "skip", "options"); a Rust dialog engine that's text in, text out, so it's testable without audio; entries saved as **drafts** with the raw transcript, reviewed on a **Voice drafts** list.
 - **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
