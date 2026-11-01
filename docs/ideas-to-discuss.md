@@ -133,3 +133,9 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **"Voice drafts" on the dashboard:** which screen (Garage, the vehicle's Overview, Messages, or + Log), and its relation to the forgotten-job reminder (milestone 7).
   - Its own open questions (§14): push-to-talk, model size, keeping audio clips, squawk severity, and more.
 
+### 15. Pin vehicles to the top of the Garage 🟡
+*Raised by the human, 2026-11-01, choosing the Garage layout (#056) · Suggested phase: undecided (not now)*
+
+- Pinned vehicles stay at the top of their group whatever the sort (Newest activity, Name, Custom).
+- **To discuss:** per person or for everyone; pinning across groups (a "Pinned" section at the top) or within each group; how it shows on the card.
+

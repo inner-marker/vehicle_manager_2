@@ -283,6 +283,8 @@
 | 4h | ⬜ | `docs: assets and groups test plan` | `docs/test-plans/p2m4-assets-and-groups.md` | none |
 | 4i | ⬜ | `docs: record the assets and groups test run` | Results of the test run | none |
 
+**Vehicles layout (4e, chosen 2026-11-01, #056):** option A of `docs/ui-sketches/p2m4-garage-options.svg` (cards per group; + Add vehicle as a two-step dialog), with a **Sort menu** (Newest activity, Name (A–Z), Custom with Arrange) instead of a toggle, and **each group in the sidebar** (with All vehicles above them when there's more than one; the Garage screen becomes All vehicles; the Vehicles placeholder becomes Groups; on phones, a Vehicles tab with a group menu), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg`. Pinning is idea 15, for later.
+
 **You can check on the NAS:** add the real vehicles with their meters; the Garage shows them by group; make a second group and move a vehicle to it, seeing who gains and loses access first; give Sam a role on one group only, and Sam sees only those vehicles.
 
 **Written so far**

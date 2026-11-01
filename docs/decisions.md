@@ -635,3 +635,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Nothing else (no HTML, images, or tables); anything outside the subset shows as typed.
 - **Why:** changing the format later would mean converting every note; a subset keeps notes readable as plain text today and renderable later, in reports too (the idea's own suggestion, chosen by the human).
 
+### 056. Vehicles: groups in the sidebar, cards per group, a Sort menu, and adding a vehicle in two steps
+*Decided: 2026-11-01 · Plan: §5 UI direction (Home "Garage" screen) · Phase plan: phase-2.md step 4e · Sketches: `docs/ui-sketches/p2m4-garage-options.svg` (option A), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **Each group is a sidebar item,** with its icon and name, opening that group's own page (only its vehicles; **+ Add vehicle** starts in it). Above them, **All vehicles** shows every group as a section; it appears only when the person can see more than one group, so a one-group household sees just **Garage**. The screen called "Garage" goes away: "Garage" only ever means the group. The sidebar shows the groups the person can see a vehicle in (every group, for the household's Admin in Admin mode), in name order; on the icon-only sidebar, each group shows its icon with its name as a tooltip. The lower "Vehicles" placeholder becomes **Groups** (managing groups, the household's Admin, step 4g).
+  - **Phones:** the first bottom tab is **Vehicles**; a menu at the top picks All vehicles or a group, and the ☰ menu lists the groups too. Each group page has its own address, so bookmarks and Back work per group.
+  - **Cards in a grid, a section per group** (its icon, name, and count) on All vehicles. Cards show the name, kind with year, make, and model, and the plate or serial number; photos, readings, due items, and squawks fill them in as milestones 6–8 add them. **Show archived** adds retired and disposed vehicles, dimmed.
+  - **A Sort menu** instead of the earlier "urgency or My order" toggle: **Newest activity**, **Name (A–Z)**, or **Custom**. Custom shows **Arrange**, which puts ▲▼ buttons (48 px) on each card until **Done**. The sort applies within each group; groups stay in name order. The sort and the custom order are each person's own, saved like their other settings. **Urgency** joins the menu when vehicles have due items (Phase 5).
+  - **+ Add vehicle** (the household's Admin, in Admin mode) is a two-step dialog: the **kind** as large tiles, then the **details** (name, make, model, year, colour, that kind's identifiers, group).
+  - **Pinning** vehicles to the top of their group is for later (idea 15).
+- **Why:** the human chose option A, asked for the common Sort-menu convention, and asked for the groups in the sidebar (which also ends "Garage" meaning both a screen and a group); cards are where the Garage is heading (#040), and choosing the kind first keeps the details form to that kind's identifiers.
+
