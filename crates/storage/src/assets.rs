@@ -660,6 +660,46 @@ impl Database {
         .collect()
     }
 
+    /// One meter, if it exists and isn't deleted.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn meter(&self, id: MeterId) -> Result<Option<Meter>, StorageError> {
+        sqlx::query(
+            "SELECT id, asset_id, name, dimension, unit, precision, description, required_for
+             FROM meters WHERE id = ? AND deleted = 0",
+        )
+        .bind(id_to_sql(id))
+        .fetch_optional(self.pool())
+        .await?
+        .as_ref()
+        .map(|row| meter_from_row(row).map(|(_, meter)| meter))
+        .transpose()
+    }
+
+    /// One custom field definition, if it exists and isn't deleted.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn custom_field(
+        &self,
+        id: CustomFieldId,
+    ) -> Result<Option<CustomField>, StorageError> {
+        sqlx::query(
+            "SELECT id, asset_id, applies_to, label, kind, enabled, has_range, range_min,
+                    range_max
+             FROM custom_fields WHERE id = ? AND deleted = 0",
+        )
+        .bind(id_to_sql(id))
+        .fetch_optional(self.pool())
+        .await?
+        .as_ref()
+        .map(|row| custom_field_from_row(row).map(|(_, field)| field))
+        .transpose()
+    }
+
     /// One asset's custom field definitions (not deleted), in label order.
     ///
     /// # Errors

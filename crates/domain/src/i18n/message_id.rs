@@ -623,6 +623,14 @@ define_messages! {
     FIELD_BAD_CHOICES => "field-bad-choices",
     /// A range that doesn't fit its field.
     FIELD_BAD_RANGE => "field-bad-range",
+    /// Removing a group that still has vehicles.
+    GROUP_NOT_EMPTY => "group-not-empty",
+    /// Removing the last group.
+    GROUP_LAST => "group-last",
+    /// The typed name doesn't match the vehicle's.
+    NAME_MISMATCH => "name-mismatch",
+    /// The default group's name, made with the server.
+    GROUP_DEFAULT_NAME => "group-default-name",
     /// Profile name: car. Used by profile files (data), so code rarely names it.
     PROFILE_CAR => "profile-car",
     /// Profile name: truck. Used by profile files (data), so code rarely names it.

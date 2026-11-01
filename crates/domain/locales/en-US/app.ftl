@@ -426,3 +426,7 @@ meter-too-precise = A meter can show at most 2 decimal places.
 field-too-many-decimals = A number can have at most 4 decimal places.
 field-bad-choices = A choice list needs 1 to 30 choices.
 field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.
+group-not-empty = Move this group's vehicles to another group first.
+group-last = Every vehicle needs a group, so the last one can't be removed.
+name-mismatch = Type the vehicle's name exactly to delete it.
+group-default-name = Garage

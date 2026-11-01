@@ -5,9 +5,11 @@
 //! Used by the NAS server and, later, desktop host mode, so both share the
 //! same code. Native only: the web (WASM) build must never depend on this crate.
 
+pub mod assets;
 pub mod auth;
 pub mod codes;
 pub mod commands;
+pub mod groups;
 pub mod health;
 pub mod ids;
 pub mod jobs;

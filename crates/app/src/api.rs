@@ -12,9 +12,9 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, InboxOutcome, MarkMessage, Pong,
-    PreferencesOutcome, RecoveryOutcome, SessionState, SetupOutcome, SignInOutcome,
-    SwitchModeOutcome, UserAdminOutcome,
+    AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, InboxOutcome,
+    MarkMessage, Pong, PreferencesOutcome, RecoveryOutcome, SessionState, SetupOutcome,
+    SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -475,6 +475,253 @@ pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnRe
     .await)
 }
 
+/// The Garage: the groups and vehicles the signed-in person can see (#052).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[get("/api/v1/assets")]
+pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| ::server::assets::garage(&context).await).await)
+}
+
+/// One vehicle's page: details, meters, custom fields, and what the person may do.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/page")]
+pub(crate) async fn vehicle_page(id: domain::asset::AssetId) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| ::server::assets::view(&context, id).await).await)
+}
+
+/// Adds a vehicle, with copies of its profile's meters and fields (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/add")]
+pub(crate) async fn add_vehicle(
+    form: domain::asset_form::AssetForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| ::server::assets::add(&context, &form).await)
+            .await,
+    )
+}
+
+/// Changes a vehicle's details or lifecycle status (not its kind or group).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/edit")]
+pub(crate) async fn edit_vehicle(
+    id: domain::asset::AssetId,
+    form: domain::asset_form::AssetForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| ::server::assets::edit(&context, id, &form).await)
+            .await,
+    )
+}
+
+/// Who gains, loses, or changes access if a vehicle moves to another group.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/move-preview")]
+pub(crate) async fn preview_vehicle_move(
+    id: domain::asset::AssetId,
+    to: domain::group::GroupId,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::preview_move(&context, id, to).await
+    })
+    .await)
+}
+
+/// Moves a vehicle to another group (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/move")]
+pub(crate) async fn move_vehicle(
+    id: domain::asset::AssetId,
+    to: domain::group::GroupId,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| ::server::assets::move_to(&context, id, to).await)
+            .await,
+    )
+}
+
+/// Deletes a vehicle added by mistake, if `typed_name` is its name (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/delete")]
+pub(crate) async fn delete_vehicle(
+    id: domain::asset::AssetId,
+    typed_name: String,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::delete(&context, id, &typed_name).await
+    })
+    .await)
+}
+
+/// Adds a meter to a vehicle (Maintainer work).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/meters/add")]
+pub(crate) async fn add_vehicle_meter(
+    asset: domain::asset::AssetId,
+    form: domain::asset_form::MeterForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::add_meter(&context, asset, &form).await
+    })
+    .await)
+}
+
+/// Changes a meter's settings (not what it measures).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/meters/edit")]
+pub(crate) async fn edit_vehicle_meter(
+    id: domain::meter::MeterId,
+    form: domain::asset_form::MeterForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::edit_meter(&context, id, &form).await
+    })
+    .await)
+}
+
+/// Removes a meter.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/meters/delete")]
+pub(crate) async fn delete_vehicle_meter(
+    id: domain::meter::MeterId,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::assets::delete_meter(&context, id).await
+        })
+        .await,
+    )
+}
+
+/// Adds a custom field to a vehicle (Maintainer work).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/fields/add")]
+pub(crate) async fn add_vehicle_field(
+    asset: domain::asset::AssetId,
+    form: domain::asset_form::FieldForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::add_field(&context, asset, &form).await
+    })
+    .await)
+}
+
+/// Changes a custom field's label, on/off, or range.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/fields/edit")]
+pub(crate) async fn edit_vehicle_field(
+    id: domain::custom_field::CustomFieldId,
+    form: domain::asset_form::FieldForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::edit_field(&context, id, &form).await
+    })
+    .await)
+}
+
+/// Removes a custom field.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/fields/delete")]
+pub(crate) async fn delete_vehicle_field(
+    id: domain::custom_field::CustomFieldId,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::assets::delete_field(&context, id).await
+        })
+        .await,
+    )
+}
+
+/// Adds a group (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/groups/add")]
+pub(crate) async fn add_vehicle_group(
+    form: domain::asset_form::GroupForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::groups::add_group(&context, &form).await
+        })
+        .await,
+    )
+}
+
+/// Changes a group's name or icon.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/groups/edit")]
+pub(crate) async fn edit_vehicle_group(
+    id: domain::group::GroupId,
+    form: domain::asset_form::GroupForm,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::groups::edit_group(&context, id, &form).await
+    })
+    .await)
+}
+
+/// Removes an empty group (never the last).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/groups/delete")]
+pub(crate) async fn delete_vehicle_group(
+    id: domain::group::GroupId,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::groups::delete_group(&context, id).await
+        })
+        .await,
+    )
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -673,6 +920,28 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             problem: server::health::unhealthy_since(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context, or answers that it's
+    /// unavailable (no database, or nobody signed in).
+    pub(super) async fn with_assets(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::AssetsOutcome,
+    ) -> domain::api::AssetsOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::AssetsOutcome::Unavailable;
+        };
+        let context = server::assets::AssetsContext {
+            database,
+            database_id,
+            user: &user,
+            health: server::health::current(),
             clock: &SystemClock,
         };
         action(context).await
