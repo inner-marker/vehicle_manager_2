@@ -2,10 +2,10 @@
 //! phase builds it (Garage and the vehicle screens in Phase 2, Due in Phase 5, ...).
 
 use dioxus::prelude::*;
-use domain::i18n::{MessageArg, messages};
+use domain::i18n::messages;
 
 use crate::ui::routes::Route;
-use crate::ui::{tr, tr_with};
+use crate::ui::tr;
 
 /// The shared "Coming soon" body.
 #[component]
@@ -31,15 +31,6 @@ pub(crate) fn Timeline() -> Element {
 #[component]
 pub(crate) fn Reports() -> Element {
     rsx! { ComingSoon {} }
-}
-
-/// One vehicle's overview (Phase 2). Shows which vehicle was asked for.
-#[component]
-pub(crate) fn VehicleDetail(asset_id: String) -> Element {
-    rsx! {
-        p { class: "detail-id", {tr_with(messages::VEHICLE_DETAIL_ID, &[("id", MessageArg::from(asset_id))])} }
-        ComingSoon {}
-    }
 }
 
 /// Logging a fuel-up, reading, squawk, or maintenance (Phase 2).

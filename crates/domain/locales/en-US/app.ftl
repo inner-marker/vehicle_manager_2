@@ -28,8 +28,6 @@ open-squawk-count =
 ## Screens
 
 screen-vehicle-detail = Vehicle
-# $id (text): the vehicle's internal ID, until vehicles have names.
-vehicle-detail-id = ID: { $id }
 screen-log-event = Log
 screen-not-found = Page not found
 not-found-back = Back to the garage
@@ -474,3 +472,113 @@ status-out-for-service = Out for service
 status-retired = Retired
 status-disposed = Disposed
 vehicles-not-allowed = Your role or mode doesn't allow that. Switch mode, or ask your Admin.
+
+## A vehicle's page: tabs, Overview, and Setup (decision #057)
+
+vehicle-not-found = That vehicle isn't here, or you can't see it.
+vehicle-back-all = ← All vehicles
+# $group (text): the vehicle's group.
+vehicle-back-group = ← { $group }
+vehicle-tabs = Vehicle sections
+tab-overview = Overview
+tab-timeline = Timeline
+tab-maintenance = Maintenance
+tab-fuel = Fuel
+tab-documents = Documents
+tab-setup = Setup
+# $milestone (number): the Phase 2 milestone that fills the tab.
+tab-coming = This tab fills in with milestone { $milestone }.
+panel-ready = Ready to use?
+panel-ready-coming = Arrives with what's due (Phase 5).
+panel-due = Coming due
+panel-due-coming = Next services (Phase 5).
+panel-squawks = Open squawks
+panel-squawks-coming = Squawks arrive in milestone 7.
+panel-fuel = Latest fuel-ups
+panel-fuel-coming = Fuel-ups arrive in milestone 6.
+panel-meters = Meters
+meters-none = No meters yet.
+meters-readings-coming = Readings appear here from milestone 6.
+# $kinds (text): the event kinds, joined with commas.
+meter-required-for = Required for: { $kinds }
+meter-required-none = Not required for any event.
+precision-0 = whole
+precision-1 = tenths
+precision-2 = hundredths
+dimension-distance = Distance
+dimension-duration = Duration
+setup-details = Details
+setup-edit-details = Edit details
+setup-no-description = No description.
+setup-add-meter = + Add meter
+setup-fields = Custom fields
+setup-add-field = + Add field
+setup-fields-none = No custom fields yet.
+setup-required = Required readings
+setup-required-note = Which meters each kind of event must record.
+setup-group-status = Group and status
+setup-move = Move to another group…
+setup-status = Status
+setup-delete = Delete…
+setup-view-only = Changing this vehicle's setup needs Maintainer or Admin mode.
+action-edit = Edit
+action-remove = Remove
+action-save = Save
+action-saving = Saving…
+field-description = Description
+field-description-note = Plain text for now; **bold**, lists, and links show as typed (#055).
+meter-add-title = Add a meter
+meter-edit-title = Edit meter
+field-name = Name
+field-measures = Measures
+field-unit = Unit
+field-precision = Decimal places
+field-meter-description = What drives it (optional)
+meter-dimension-fixed = What a meter measures can't change once it exists.
+# $name (text): the meter's or field's name.
+remove-title = Remove { $name }?
+meter-remove-text = Its readings (from milestone 6) go with it.
+field-remove-text = To stop asking for it but keep its values, turn it off instead.
+field-add-title = Add a custom field
+field-edit-title = Edit field
+field-label = Label
+field-applies-to = On
+field-type = Type
+field-choices = Choices (one per line)
+field-enabled = Shown on forms
+field-off = Off
+field-range-min = Lowest likely
+field-range-max = Highest likely
+field-range-note = Values outside the range get a warning, never a refusal.
+field-range-bad-number = Enter a number for the range, or leave it empty.
+field-key = Key
+field-key-note = Formulas and reports use the key, so it never changes (#057).
+field-key-later = Made from the label when the field is added.
+field-kind-fixed = A field's type and event can't change once it exists.
+kind-text = Text
+kind-number = Number
+kind-date = Date
+kind-yes-no = Yes/No
+kind-choice = Choice list
+kind-distance = Distance
+kind-duration = Duration
+kind-volume = Volume
+kind-fuel-economy = Fuel economy
+# $name (text): the vehicle's name.
+move-title = Move { $name }
+move-to = To
+move-affected = Who's affected
+move-nobody = Nobody's access changes.
+# $name (text): a person; $before and $after (text): their role, or "no access".
+move-change = { $name }: { $before } → { $after }
+access-none = no access
+move-move = Move
+move-moving = Moving…
+move-no-other-group = There's no other group yet. The household's Admin adds groups.
+# $name (text): the vehicle's name.
+delete-title = Delete { $name }?
+delete-text = Only for a vehicle added by mistake: its records go with it. To keep its history, set its status to Retired or Disposed instead.
+# $name (text): the vehicle's name.
+delete-type = Type { $name } to confirm.
+delete-delete = Delete
+delete-deleting = Deleting…

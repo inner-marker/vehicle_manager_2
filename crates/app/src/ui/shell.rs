@@ -21,6 +21,7 @@ use super::routes::Route;
 use super::theme::ThemeToggle;
 use super::vehicles::{
     SidebarVehicles, group_name, only_group_name, provide_vehicles_context, refresh_garage,
+    vehicle_name,
 };
 use super::{tr, tr_with};
 
@@ -69,11 +70,14 @@ pub(crate) fn Shell() -> Element {
         }
         // With one group, All vehicles is that group, so it's titled with its name.
         Route::AllVehicles {} => only_group_name(vehicles).unwrap_or_else(|| tr(route.title())),
+        // A vehicle's page is titled with its name.
+        Route::VehicleDetail { asset_id } => {
+            vehicle_name(vehicles, asset_id).unwrap_or_else(|| tr(route.title()))
+        }
         Route::Due {}
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}
-        | Route::VehicleDetail { .. }
         | Route::LogEvent {}
         | Route::Users {}
         | Route::Settings {}

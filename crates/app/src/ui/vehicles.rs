@@ -91,6 +91,19 @@ pub(crate) fn group_name(context: VehiclesContext, group_id: &str) -> Option<Str
         .map(|summary| summary.group.name.as_str().to_owned())
 }
 
+/// A vehicle's name, for the top bar on its page.
+pub(crate) fn vehicle_name(context: VehiclesContext, asset_id: &str) -> Option<String> {
+    let id: domain::asset::AssetId = asset_id.parse().ok()?;
+    context
+        .garage
+        .read()
+        .as_ref()?
+        .assets
+        .iter()
+        .find(|summary| summary.id == id)
+        .map(|summary| summary.asset.name.as_str().to_owned())
+}
+
 /// The group's name, when the person sees exactly one group.
 pub(crate) fn only_group_name(context: VehiclesContext) -> Option<String> {
     match context.garage.read().as_ref()?.groups.as_slice() {

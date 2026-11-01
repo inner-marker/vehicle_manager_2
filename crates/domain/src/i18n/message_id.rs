@@ -61,8 +61,6 @@ define_messages! {
 
     /// Screen title: one vehicle's overview.
     SCREEN_VEHICLE_DETAIL => "screen-vehicle-detail",
-    /// Vehicle detail: which vehicle is shown; takes `id` (text).
-    VEHICLE_DETAIL_ID => "vehicle-detail-id",
     /// Screen title: logging a new event.
     SCREEN_LOG_EVENT => "screen-log-event",
     /// Screen title: no screen at this address.
@@ -733,4 +731,202 @@ define_messages! {
     FIELD_TRIP_TIME => "field-trip-time",
     /// A profile's custom field: trip EV distance. Used by profile files (data), so code rarely names it.
     FIELD_TRIP_EV_DISTANCE => "field-trip-ev-distance",
+    /// Vehicle page: no such vehicle, or not visible.
+    VEHICLE_NOT_FOUND => "vehicle-not-found",
+    /// Vehicle page: back to All vehicles.
+    VEHICLE_BACK_ALL => "vehicle-back-all",
+    /// Vehicle page: back to its group; takes `group` (text).
+    VEHICLE_BACK_GROUP => "vehicle-back-group",
+    /// Vehicle page: the tab bar's accessible name.
+    VEHICLE_TABS => "vehicle-tabs",
+    /// Vehicle tab: Overview.
+    TAB_OVERVIEW => "tab-overview",
+    /// Vehicle tab: Timeline.
+    TAB_TIMELINE => "tab-timeline",
+    /// Vehicle tab: Maintenance.
+    TAB_MAINTENANCE => "tab-maintenance",
+    /// Vehicle tab: Fuel.
+    TAB_FUEL => "tab-fuel",
+    /// Vehicle tab: Documents.
+    TAB_DOCUMENTS => "tab-documents",
+    /// Vehicle tab: Setup.
+    TAB_SETUP => "tab-setup",
+    /// Vehicle tab without content yet; takes `milestone` (number).
+    TAB_COMING => "tab-coming",
+    /// Overview panel: readiness.
+    PANEL_READY => "panel-ready",
+    /// Overview panel: readiness, not built yet.
+    PANEL_READY_COMING => "panel-ready-coming",
+    /// Overview panel: coming due.
+    PANEL_DUE => "panel-due",
+    /// Overview panel: coming due, not built yet.
+    PANEL_DUE_COMING => "panel-due-coming",
+    /// Overview panel: open squawks.
+    PANEL_SQUAWKS => "panel-squawks",
+    /// Overview panel: squawks, not built yet.
+    PANEL_SQUAWKS_COMING => "panel-squawks-coming",
+    /// Overview panel: latest fuel-ups.
+    PANEL_FUEL => "panel-fuel",
+    /// Overview panel: fuel-ups, not built yet.
+    PANEL_FUEL_COMING => "panel-fuel-coming",
+    /// Overview panel and Setup section: meters.
+    PANEL_METERS => "panel-meters",
+    /// A vehicle with no meters.
+    METERS_NONE => "meters-none",
+    /// Overview: meter readings, not built yet.
+    METERS_READINGS_COMING => "meters-readings-coming",
+    /// A meter's required event kinds; takes `kinds` (text, a list).
+    METER_REQUIRED_FOR => "meter-required-for",
+    /// A meter no event kind requires.
+    METER_REQUIRED_NONE => "meter-required-none",
+    /// Meter decimal places: none.
+    PRECISION_0 => "precision-0",
+    /// Meter decimal places: one.
+    PRECISION_1 => "precision-1",
+    /// Meter decimal places: two.
+    PRECISION_2 => "precision-2",
+    /// What a meter measures: distance.
+    DIMENSION_DISTANCE => "dimension-distance",
+    /// What a meter measures: duration.
+    DIMENSION_DURATION => "dimension-duration",
+    /// Setup section: the vehicle's details.
+    SETUP_DETAILS => "setup-details",
+    /// Setup: open the details form.
+    SETUP_EDIT_DETAILS => "setup-edit-details",
+    /// Setup: the vehicle has no description.
+    SETUP_NO_DESCRIPTION => "setup-no-description",
+    /// Setup: add a meter.
+    SETUP_ADD_METER => "setup-add-meter",
+    /// Setup section: custom fields.
+    SETUP_FIELDS => "setup-fields",
+    /// Setup: add a custom field.
+    SETUP_ADD_FIELD => "setup-add-field",
+    /// Setup: a vehicle with no custom fields.
+    SETUP_FIELDS_NONE => "setup-fields-none",
+    /// Setup section: which meters each event kind needs.
+    SETUP_REQUIRED => "setup-required",
+    /// Setup: what the required readings grid means.
+    SETUP_REQUIRED_NOTE => "setup-required-note",
+    /// Setup section: group, status, and deleting.
+    SETUP_GROUP_STATUS => "setup-group-status",
+    /// Setup: open the move dialog.
+    SETUP_MOVE => "setup-move",
+    /// Setup: the lifecycle status menu.
+    SETUP_STATUS => "setup-status",
+    /// Setup: open the delete dialog.
+    SETUP_DELETE => "setup-delete",
+    /// Setup: the person can look but not change anything now.
+    SETUP_VIEW_ONLY => "setup-view-only",
+    /// Button: edit.
+    ACTION_EDIT => "action-edit",
+    /// Button: remove.
+    ACTION_REMOVE => "action-remove",
+    /// Button: save.
+    ACTION_SAVE => "action-save",
+    /// Button while saving.
+    ACTION_SAVING => "action-saving",
+    /// Form field: a vehicle's description.
+    FIELD_DESCRIPTION => "field-description",
+    /// Form note: the description is a Markdown subset, shown as plain text.
+    FIELD_DESCRIPTION_NOTE => "field-description-note",
+    /// Dialog title: add a meter.
+    METER_ADD_TITLE => "meter-add-title",
+    /// Dialog title: edit a meter.
+    METER_EDIT_TITLE => "meter-edit-title",
+    /// Form field: a meter's name.
+    FIELD_NAME => "field-name",
+    /// Form field: what a meter measures.
+    FIELD_MEASURES => "field-measures",
+    /// Form field: a meter's unit.
+    FIELD_UNIT => "field-unit",
+    /// Form field: a meter's or number's decimal places.
+    FIELD_PRECISION => "field-precision",
+    /// Form field: a meter's description.
+    FIELD_METER_DESCRIPTION => "field-meter-description",
+    /// Form note: a meter's dimension is fixed.
+    METER_DIMENSION_FIXED => "meter-dimension-fixed",
+    /// Confirm dialog title: remove a meter or field; takes `name` (text).
+    REMOVE_TITLE => "remove-title",
+    /// Confirm text: removing a meter.
+    METER_REMOVE_TEXT => "meter-remove-text",
+    /// Confirm text: removing a custom field.
+    FIELD_REMOVE_TEXT => "field-remove-text",
+    /// Dialog title: add a custom field.
+    FIELD_ADD_TITLE => "field-add-title",
+    /// Dialog title: edit a custom field.
+    FIELD_EDIT_TITLE => "field-edit-title",
+    /// Form field: a custom field's label.
+    FIELD_LABEL => "field-label",
+    /// Form field: the kind of event a custom field is on.
+    FIELD_APPLIES_TO => "field-applies-to",
+    /// Form field: what a custom field holds.
+    FIELD_TYPE => "field-type",
+    /// Form field: a choice list's choices.
+    FIELD_CHOICES => "field-choices",
+    /// Form field: a custom field is on.
+    FIELD_ENABLED => "field-enabled",
+    /// Badge: a custom field that's turned off.
+    FIELD_OFF => "field-off",
+    /// Form field: a number's sensible lowest value.
+    FIELD_RANGE_MIN => "field-range-min",
+    /// Form field: a number's sensible highest value.
+    FIELD_RANGE_MAX => "field-range-max",
+    /// Form note: what a range does.
+    FIELD_RANGE_NOTE => "field-range-note",
+    /// Form error: a range end that isn't a number.
+    FIELD_RANGE_BAD_NUMBER => "field-range-bad-number",
+    /// Form field: a custom field's stable key.
+    FIELD_KEY => "field-key",
+    /// Form note: what a field's key is for.
+    FIELD_KEY_NOTE => "field-key-note",
+    /// Form note: a new field's key comes from its label.
+    FIELD_KEY_LATER => "field-key-later",
+    /// Form note: a custom field's type and event are fixed.
+    FIELD_KIND_FIXED => "field-kind-fixed",
+    /// Custom field type: text.
+    KIND_TEXT => "kind-text",
+    /// Custom field type: number.
+    KIND_NUMBER => "kind-number",
+    /// Custom field type: date.
+    KIND_DATE => "kind-date",
+    /// Custom field type: yes or no.
+    KIND_YES_NO => "kind-yes-no",
+    /// Custom field type: one of a list.
+    KIND_CHOICE => "kind-choice",
+    /// Custom field type: distance.
+    KIND_DISTANCE => "kind-distance",
+    /// Custom field type: duration.
+    KIND_DURATION => "kind-duration",
+    /// Custom field type: volume.
+    KIND_VOLUME => "kind-volume",
+    /// Custom field type: fuel economy.
+    KIND_FUEL_ECONOMY => "kind-fuel-economy",
+    /// Dialog title: move a vehicle; takes `name` (text).
+    MOVE_TITLE => "move-title",
+    /// Form field: the group to move to.
+    MOVE_TO => "move-to",
+    /// Move dialog: the access changes.
+    MOVE_AFFECTED => "move-affected",
+    /// Move dialog: no access changes.
+    MOVE_NOBODY => "move-nobody",
+    /// Move dialog: one person's change; takes `name`, `before`, `after` (text).
+    MOVE_CHANGE => "move-change",
+    /// A person with no access to a vehicle.
+    ACCESS_NONE => "access-none",
+    /// Button: move the vehicle.
+    MOVE_MOVE => "move-move",
+    /// Button while moving.
+    MOVE_MOVING => "move-moving",
+    /// Move dialog: only one group exists.
+    MOVE_NO_OTHER_GROUP => "move-no-other-group",
+    /// Dialog title: delete a vehicle; takes `name` (text).
+    DELETE_TITLE => "delete-title",
+    /// Delete dialog: when to delete.
+    DELETE_TEXT => "delete-text",
+    /// Delete dialog: type the name; takes `name` (text).
+    DELETE_TYPE => "delete-type",
+    /// Button: delete the vehicle.
+    DELETE_DELETE => "delete-delete",
+    /// Button while deleting.
+    DELETE_DELETING => "delete-deleting",
 }
