@@ -354,6 +354,7 @@ pub(crate) async fn request_recovery(username: String) -> ServerFnResult<()> {
             &username,
             &server_side::client_key(),
             server_side::now(),
+            ::server::startup::timers(),
         )
         .await;
     }
@@ -684,6 +685,7 @@ mod server_side {
             must_change_password: signed_in.must_change_password,
             mode: signed_in.mode,
             available_modes: signed_in.available_modes(),
+            timers: server::startup::timers(),
         }
     }
 }

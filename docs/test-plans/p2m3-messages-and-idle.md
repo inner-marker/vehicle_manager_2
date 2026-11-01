@@ -36,16 +36,28 @@
   - Steps 5–7 need about 20 minutes each, and step 8 about an hour (do other things on another device meanwhile).
   - Steps 13–19 need the server running past **07:00 UTC** (03:00 Eastern daylight time; 02:00 after November 1, 2026). Set up step 12 one evening, then do 13–19 the next morning.
   - Leave the tab **visible** during the waits. A hidden tab still works, but the browser may slow its timers to once a minute.
+- **Test timers (optional, decision #054): minutes instead of hours.** The milestone image can shorten the timers. Pull the newest image, then in `.env` set `VEHICLEMANAGER_TEST_MINUTES=2`, run `sudo docker compose up -d`, and reload the app. A **TEST TIMERS · 2 min** tag shows in the top bar, and the log has a `TEST TIMERS ON` warning. With 2 minutes:
+
+  | Steps | Wait with test timers | Notes |
+  |---|---|---|
+  | 5, 7, 10, 11 | **3 minutes** instead of 16–20 (Admin mode ends after 2 idle minutes) | The banner and dialog say "2 idle minutes"; the notice says "Admin mode ended after 2 idle minutes." |
+  | 6 | Click about **every minute** for **5 minutes** | Still in Admin mode at 5 minutes. |
+  | 8 | **3 minutes** instead of 61 ("After 1 hour (test: 2 min)") | The sign-in card says "You were signed out after 2 idle minutes." |
+  | 9 | No wait | The list shows each choice's test length, e.g. "After 4 hours (test: 4 min)". |
+  | 12–19 | **No overnight wait:** the snapshot and the check run **every 2 minutes** | **Each run is a new message:** while the snapshot folder is missing, a new "skipped" message replaces the last one every 2 minutes, unread again, with a new time. So step 18's "badge already gone" and step 19's "stays dismissed" hold only until the next run. |
+  | 20 | **3 minutes** | After the fix, the next run succeeds and the message **disappears by itself** (no dismissing); a new snapshot appears in `data/snapshots/` every 2 minutes. |
+
+  **When you're done, empty `VEHICLEMANAGER_TEST_MINUTES=` and run `sudo docker compose up -d`:** the tag disappears and the timers are normal again. Recovery codes also last 2 minutes while test timers are on.
 
 ## 3. Checklist
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager` | `backed up before migrating` with `schema_before=3`; `database open` with `created=false`, `schema_before=3 schema_now=5`, and the **same database ID** as before; `database integrity check passed`. No `ERROR` lines and no setup code. |
-| [ ] | 2 | `ls -ln data/backups/` | A new `pre-migration-<UTC time>-v3.sqlite`, owned by `1030 100`. |
-| [ ] | 3 | Sign in as stuart in the browser. Open **Messages** | Driver mode: "No messages. You're all caught up." No badge on Messages, no red banner. (If a real snapshot failed recently, you'd see it only in Admin mode; see step 15.) |
-| [ ] | 4 | **Settings → You**, scroll to **SIGN-IN** | **Sign out when idle**: "After 8 hours", with **Use household default** ticked. |
-| [ ] | 5 | **Admin idle:** enter Admin mode, then don't touch the computer for **16 minutes** | Without any click, Admin mode ends: the orange banner goes, the chip says **Driver**, and "Admin mode ended after 15 idle minutes." shows under the top bar. **Dismiss** hides it. |
+| [x] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager` | `backed up before migrating` with `schema_before=3`; `database open` with `created=false`, `schema_before=3 schema_now=5`, and the **same database ID** as before; `database integrity check passed`. No `ERROR` lines and no setup code. |
+| [x] | 2 | `ls -ln data/backups/` | A new `pre-migration-<UTC time>-v3.sqlite`, owned by `1030 100`. |
+| [x] | 3 | Sign in as stuart in the browser. Open **Messages** | Driver mode: "No messages. You're all caught up." No badge on Messages, no red banner. (If a real snapshot failed recently, you'd see it only in Admin mode; see step 15.) |
+| [x] | 4 | **Settings → You**, scroll to **SIGN-IN** | **Sign out when idle**: "After 8 hours", with **Use household default** ticked. |
+| [x] | 5 | **Admin idle:** enter Admin mode, then don't touch the computer for **16 minutes** | Without any click, Admin mode ends: the orange banner goes, the chip says **Driver**, and "Admin mode ended after 15 idle minutes." shows under the top bar. **Dismiss** hides it. |
 | [ ] | 6 | **Working keeps Admin mode:** enter Admin mode; about every 5 minutes, scroll or click somewhere harmless (e.g. a Settings tab), for **20 minutes** | Still in Admin mode at 20 minutes. Then open **Users**: it lists the users (the server still agrees you're in Admin mode). |
 | [ ] | 7 | **The server's own limit:** while in Admin mode, close the browser tab, wait **16 minutes**, open the app again | Driver mode: the server ended Admin mode by itself. |
 | [ ] | 8 | **Sign out when idle:** Settings → You → **After 1 hour** (the switch unticks). Don't touch the computer for **61 minutes** | The sign-in card says "You were signed out after 1 idle hour." Sign in again: the notice is gone. Then tick **Use household default** again. |

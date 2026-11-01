@@ -14,6 +14,11 @@ on:
         description: docker/metadata-action tag rules, one per line
         type: string
         required: true
+      test-timers:
+        description: Build in test timers (decision #054); only for dev and milestone images
+        type: boolean
+        required: false
+        default: false
 
 # No permissions are requested here: a reusable workflow inherits its caller's, and
 # may not ask for more. Callers that push grant `packages: write`; the main gate's
@@ -55,5 +60,7 @@ jobs:
           push: ${{ inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TEST_TIMERS=${{ inputs.test-timers }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -615,3 +615,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Severity** is a colour stripe (red urgent, amber warning, blue info) **and** the word, never colour alone.
 - **Why:** the human chose option B and asked for a stronger line between the columns on large screens. The list stays tidy as Phase 5 adds maintenance, squawk, and document messages, and it works like Users.
 
+### 054. Test timers: minutes instead of hours, on test images only
+*Decided: 2026-11-01 · Phase plan: phase-2.md step 3i · Applies to #044 (jobs), #047 (recovery codes), #049 (idle)*
+
+- **Decision:**
+  - **Two locks:** test timers are **built only into test images** (the `test-timers` build option, turned on only by the Dev image workflow for `dev` and `milestone-…` images; never in a release or the main gate's check build), and **switched on only by `VEHICLEMANAGER_TEST_MINUTES`** = N, from 1 to 5. Anything else, or the setting on a release, is ignored with a warning.
+  - **What N shortens:** Admin mode's idle limit → N minutes; Sign out when idle 1 h / 4 h / 8 h / 24 h → N / 2N / 3N / 4N minutes (still in order); the Admin keep-alive and the server's "last used" → every 15 seconds; messages reload on an open screen → every minute; the nightly snapshot and the hourly check → every N minutes; recovery codes → N minutes.
+  - **Never shortened:** the sign-in attempt limit (it protects against guessing) and the 30-day session.
+  - **The server decides and tells the app** with the session (`SessionInfo::timers`), so the browser, the phone, and the desktop app all follow the NAS's setting.
+  - **Visible:** a `TEST TIMERS ON` warning at startup, a **TEST TIMERS · N min** tag in the top bar, and each sign-out choice shows its test length.
+- **Why:** manual test plans had steps of an hour or a night; the human asked for 1–5 minute timers on milestone test builds. Two locks make sure a real install can't run them.
+

@@ -15,6 +15,7 @@ use std::sync::Mutex;
 use domain::access::is_household_admin;
 use domain::log_area;
 use domain::time::{Clock, UnixMillis};
+use domain::timers::Timers;
 use domain::user::{PasswordError, UserId, Username, check_new_password};
 use storage::Database;
 use subtle::ConstantTimeEq;
@@ -23,9 +24,6 @@ use crate::codes::{group_by_four, random_code};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::hash_password;
 use crate::sessions::{SessionToken, SignedIn, sign_in};
-
-/// How long a code works: 15 minutes.
-pub const CODE_LIFETIME_MILLIS: i64 = 15 * 60 * 1000;
 
 /// Characters in a recovery code (before the dashes), as for the setup code.
 const CODE_CHARS: usize = 16;
@@ -61,6 +59,7 @@ pub async fn request_code(
     username: &str,
     client: &str,
     now: UnixMillis,
+    timers: Timers,
 ) -> Result<(), i64> {
     let keys = keys(username, client);
     let key_refs = [keys[0].as_str(), keys[1].as_str()];
@@ -80,11 +79,13 @@ pub async fn request_code(
         }
     };
     let shown = group_by_four(&code);
-    let expires = UnixMillis::from_millis(now.as_millis() + CODE_LIFETIME_MILLIS);
+    let lifetime = timers.recovery_code_millis();
+    let expires = UnixMillis::from_millis(now.as_millis() + lifetime);
+    let valid_minutes = lifetime / 60_000;
     with_codes(|codes| codes.insert(admin, (code, expires)));
     // Deliberately logged, to the console only (`docker logs`, never the log files): reading it
     // (NAS access) is what proves you may recover.
-    tracing::warn!(target: log_area::AUTH, console_only = true, user = %admin, recovery_code = %shown, "password recovery asked for: enter this recovery code in the app within 15 minutes");
+    tracing::warn!(target: log_area::AUTH, console_only = true, user = %admin, recovery_code = %shown, valid_minutes, "password recovery asked for: enter this recovery code in the app before it expires");
     Ok(())
 }
 
@@ -270,16 +271,16 @@ mod tests {
     /// A Driver and an unknown name get the same answer, and no code; the Admin gets one.
     async fn request_codes(database: &Database, limiter: &LoginLimiter) -> String {
         assert_eq!(
-            request_code(database, limiter, "sam", "a", NOW).await,
+            request_code(database, limiter, "sam", "a", NOW, Timers::NORMAL).await,
             Ok(())
         );
         assert_eq!(
-            request_code(database, limiter, "nobody", "b", NOW).await,
+            request_code(database, limiter, "nobody", "b", NOW, Timers::NORMAL).await,
             Ok(())
         );
         assert_eq!(code_for(2), None);
         assert_eq!(
-            request_code(database, limiter, "Stuart", "c", NOW).await,
+            request_code(database, limiter, "Stuart", "c", NOW, Timers::NORMAL).await,
             Ok(())
         );
         let code = code_for(1).unwrap();
@@ -355,10 +356,15 @@ mod tests {
         .unwrap();
         assert_eq!(signed_in.user, test_id(1));
         assert!(
-            resolve(&database, token_hash(old.as_str()).unwrap(), NOW)
-                .await
-                .unwrap()
-                .is_none()
+            resolve(
+                &database,
+                token_hash(old.as_str()).unwrap(),
+                NOW,
+                Timers::NORMAL,
+            )
+            .await
+            .unwrap()
+            .is_none()
         );
 
         // Used up: the same code fails now.
@@ -375,12 +381,12 @@ mod tests {
         assert_eq!(again.err(), Some(RecoveryError::WrongCode));
 
         // A fresh code expires after 15 minutes.
-        request_code(&database, &limiter, "stuart", "i", NOW)
+        request_code(&database, &limiter, "stuart", "i", NOW, Timers::NORMAL)
             .await
             .unwrap();
         let fresh = code_for(1).unwrap();
         let late = ManualClock::new(UnixMillis::from_millis(
-            NOW.as_millis() + CODE_LIFETIME_MILLIS,
+            NOW.as_millis() + Timers::NORMAL.recovery_code_millis(),
         ));
         let expired = complete(
             &database,

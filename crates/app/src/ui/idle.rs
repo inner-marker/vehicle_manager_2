@@ -22,6 +22,7 @@ use domain::idle::{IdleAction, IdleState, decide};
 use domain::log_area;
 use domain::preferences::IdleSignOut;
 use domain::time::UnixMillis;
+use domain::timers::Timers;
 
 use super::account::{sign_out, switch};
 use super::auth::{AuthState, refresh, use_auth};
@@ -49,22 +50,21 @@ for (const kind of kinds) {
 }
 "#;
 
-/// How often messages are loaded again while the app is open (they're also loaded on every
-/// navigation), so a new problem shows on a screen left open. Sync replaces this in Phase 3.
-const INBOX_REFRESH_EVERY_MILLIS: i64 = 5 * 60 * 1000;
-
-/// Milliseconds in one hour, for the "signed out after N hours" notice.
-const HOUR_MILLIS: i64 = 60 * 60 * 1000;
+/// Milliseconds in one minute, for the notices.
+const MINUTE_MILLIS: i64 = 60_000;
 
 /// What the app did by itself, shown until dismissed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum IdleNotice {
-    /// Left Admin mode after 15 idle minutes.
-    AdminEnded,
-    /// Signed out after this many idle hours.
+    /// Left Admin mode after this many idle minutes.
+    AdminEnded {
+        /// Admin mode's idle limit, in minutes.
+        minutes: i64,
+    },
+    /// Signed out after this many idle minutes.
     SignedOut {
-        /// The person's setting, in hours.
-        hours: i64,
+        /// The person's setting, in minutes (whole hours except with test timers).
+        minutes: i64,
     },
 }
 
@@ -169,10 +169,12 @@ impl Tracker {
         (state, entered_admin)
     }
 
-    /// Whether messages are due to be loaded again at `now`; if so, notes that they were.
-    fn inbox_due(&mut self, now: UnixMillis) -> bool {
+    /// Whether messages are due to be loaded again at `now`, `every` milliseconds after the last
+    /// load (they're also loaded on every navigation, so a new problem shows on a screen left
+    /// open; sync replaces this in Phase 3). If so, notes that they were.
+    fn inbox_due(&mut self, now: UnixMillis, every: i64) -> bool {
         let last = *self.inbox_loaded.get_or_insert(now);
-        let due = now.as_millis().saturating_sub(last.as_millis()) >= INBOX_REFRESH_EVERY_MILLIS;
+        let due = now.as_millis().saturating_sub(last.as_millis()) >= every;
         if due {
             self.inbox_loaded = Some(now);
         }
@@ -200,17 +202,18 @@ async fn watch(
         let now = UnixMillis::from_millis(now);
         let (state, entered_admin) =
             tracker.observe(session.mode, now, UnixMillis::from_millis(last_input));
-        if entered_admin && *idle.notice.peek() == Some(IdleNotice::AdminEnded) {
+        if entered_admin && matches!(*idle.notice.peek(), Some(IdleNotice::AdminEnded { .. })) {
             idle.notice.set(None);
         }
-        let action = decide(state, session.mode, *idle.sign_out.peek());
+        let timers = session.timers;
+        let action = decide(state, session.mode, *idle.sign_out.peek(), timers);
         if action == IdleAction::KeepAlive {
             tracker.kept_alive = Some(now);
         }
-        if act(action, auth, idle).await {
+        if act(action, auth, idle, timers).await {
             break;
         }
-        if tracker.inbox_due(now) {
+        if tracker.inbox_due(now, timers.inbox_refresh_millis()) {
             refresh_inbox(inbox).await;
         }
     }
@@ -218,7 +221,12 @@ async fn watch(
 }
 
 /// Does what [`decide`] said; returns `true` once signed out (the watcher then stops).
-async fn act(action: IdleAction, auth: Signal<AuthState>, idle: IdleContext) -> bool {
+async fn act(
+    action: IdleAction,
+    auth: Signal<AuthState>,
+    idle: IdleContext,
+    timers: Timers,
+) -> bool {
     match action {
         IdleAction::Nothing => false,
         IdleAction::KeepAlive => {
@@ -227,31 +235,35 @@ async fn act(action: IdleAction, auth: Signal<AuthState>, idle: IdleContext) -> 
             false
         }
         IdleAction::LeaveAdmin => {
-            leave_admin(auth, idle).await;
+            leave_admin(auth, idle, timers).await;
             false
         }
         IdleAction::SignOut => {
-            sign_out_idle(auth, idle).await;
+            sign_out_idle(auth, idle, timers).await;
             true
         }
     }
 }
 
 /// Leaves Admin mode, as **Leave** does, and says so.
-async fn leave_admin(auth: Signal<AuthState>, mut idle: IdleContext) {
-    tracing::info!(target: log_area::AUTH, "idle watcher: leaving Admin mode after 15 idle minutes");
+async fn leave_admin(auth: Signal<AuthState>, mut idle: IdleContext, timers: Timers) {
+    let minutes = timers.admin_idle_millis() / MINUTE_MILLIS;
+    tracing::info!(target: log_area::AUTH, minutes, "idle watcher: leaving Admin mode");
     if let Some(problem) = switch(ActiveMode::Driver, None).await {
         tracing::warn!(target: log_area::AUTH, problem, "idle watcher: couldn't leave Admin mode");
     }
-    idle.notice.set(Some(IdleNotice::AdminEnded));
+    idle.notice.set(Some(IdleNotice::AdminEnded { minutes }));
     refresh(auth).await;
 }
 
 /// Signs out, leaving a notice for the sign-in card.
-async fn sign_out_idle(auth: Signal<AuthState>, mut idle: IdleContext) {
-    let hours = idle.sign_out.peek().after_millis().unwrap_or_default() / HOUR_MILLIS;
-    tracing::info!(target: log_area::AUTH, hours, "idle watcher: signing out");
-    idle.notice.set(Some(IdleNotice::SignedOut { hours }));
+async fn sign_out_idle(auth: Signal<AuthState>, mut idle: IdleContext, timers: Timers) {
+    let minutes = timers
+        .sign_out_after_millis(*idle.sign_out.peek())
+        .unwrap_or_default()
+        / MINUTE_MILLIS;
+    tracing::info!(target: log_area::AUTH, minutes, "idle watcher: signing out");
+    idle.notice.set(Some(IdleNotice::SignedOut { minutes }));
     sign_out(auth).await;
 }
 
@@ -278,14 +290,27 @@ mod tests {
         assert_eq!(state.last_keep_alive, at(5));
     }
 
+    impl Tracker {
+        /// [`Tracker::inbox_due`] with the normal interval.
+        fn inbox_due_every_five(&mut self, now: UnixMillis) -> bool {
+            self.inbox_due(now, Timers::NORMAL.inbox_refresh_millis())
+        }
+    }
+
     #[test]
     fn messages_are_loaded_again_every_five_minutes() {
         let mut tracker = Tracker::default();
-        assert!(!tracker.inbox_due(at(0)), "the shell has just loaded them");
-        assert!(!tracker.inbox_due(at(4)));
-        assert!(tracker.inbox_due(at(5)));
-        assert!(!tracker.inbox_due(at(6)), "counted from the last load");
-        assert!(tracker.inbox_due(at(10)));
+        assert!(
+            !tracker.inbox_due_every_five(at(0)),
+            "the shell has just loaded them"
+        );
+        assert!(!tracker.inbox_due_every_five(at(4)));
+        assert!(tracker.inbox_due_every_five(at(5)));
+        assert!(
+            !tracker.inbox_due_every_five(at(6)),
+            "counted from the last load"
+        );
+        assert!(tracker.inbox_due_every_five(at(10)));
     }
 
     #[test]
@@ -304,12 +329,12 @@ mod tests {
 #[component]
 pub(crate) fn AdminEndedNotice() -> Element {
     let mut idle = use_idle();
-    if *idle.notice.read() != Some(IdleNotice::AdminEnded) {
+    let Some(IdleNotice::AdminEnded { minutes }) = *idle.notice.read() else {
         return rsx! {};
-    }
+    };
     rsx! {
         div { class: "notice-bar", role: "status",
-            span { class: "notice-text", {tr(messages::IDLE_ADMIN_ENDED)} }
+            span { class: "notice-text", {tr_with(messages::IDLE_ADMIN_ENDED, &[("minutes", MessageArg::from(minutes))])} }
             button { class: "notice-dismiss", onclick: move |_| idle.notice.set(None),
                 {tr(messages::NOTICE_DISMISS)}
             }
@@ -321,12 +346,24 @@ pub(crate) fn AdminEndedNotice() -> Element {
 #[component]
 pub(crate) fn SignedOutNotice() -> Element {
     let idle = use_idle();
-    let Some(IdleNotice::SignedOut { hours }) = *idle.notice.read() else {
+    let Some(IdleNotice::SignedOut { minutes }) = *idle.notice.read() else {
         return rsx! {};
+    };
+    // Whole hours read as hours; test timers' minutes as minutes.
+    let text = if minutes > 0 && minutes % 60 == 0 {
+        tr_with(
+            messages::IDLE_SIGNED_OUT,
+            &[("hours", MessageArg::from(minutes / 60))],
+        )
+    } else {
+        tr_with(
+            messages::IDLE_SIGNED_OUT_MINUTES,
+            &[("minutes", MessageArg::from(minutes))],
+        )
     };
     rsx! {
         p { class: "auth-notice", role: "status",
-            {tr_with(messages::IDLE_SIGNED_OUT, &[("hours", MessageArg::from(hours))])}
+            {text}
         }
     }
 }

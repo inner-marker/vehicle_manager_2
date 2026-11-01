@@ -170,6 +170,10 @@ pub struct SessionInfo {
     pub mode: crate::access::ActiveMode,
     /// The modes they may switch to (empty for a Viewer-only user, who works read-only).
     pub available_modes: Vec<crate::access::ActiveMode>,
+    /// The server's timer lengths (normal, or test timers on a test build; #054), so every
+    /// device times out the same way.
+    #[serde(default)]
+    pub timers: crate::timers::Timers,
 }
 
 /// The session check's answer: who is signed in (if anyone), and whether the server still

@@ -8,19 +8,20 @@
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
 use domain::api::{PreferencesOutcome, PreferencesView};
-use domain::i18n::{MessageId, messages};
+use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
     Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, PreferenceChoices,
     Preferences, PreferencesPatch, PressureUnit, VolumeUnit,
 };
+use domain::timers::Timers;
 
 use crate::api;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::idle::{IdleContext, use_idle};
 use crate::ui::screens::problem_from_error;
 use crate::ui::theme::ThemeToggle;
-use crate::ui::tr;
+use crate::ui::{tr, tr_with};
 
 /// A setting shown as a row of buttons.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -200,6 +201,14 @@ pub(crate) fn Settings() -> Element {
     let auth = use_auth();
     let in_admin_mode =
         matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
+    // Test timers (#054) show each sign-out choice's real length.
+    let timers = match auth() {
+        AuthState::SignedIn(session) => session.timers,
+        AuthState::Loading
+        | AuthState::NeedsSetup
+        | AuthState::SignedOut
+        | AuthState::Unreachable(_) => Timers::NORMAL,
+    };
     let mut tab = use_signal(|| Tab::You);
     let view = use_signal(|| None::<PreferencesView>);
     let error = use_signal(|| None::<String>);
@@ -257,7 +266,7 @@ pub(crate) fn Settings() -> Element {
                 CurrencyRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 LanguageRow {}
                 h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
-                IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
+                IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, timers, on_save: save }
             }
             h3 { class: "section-heading", {tr(messages::SETTINGS_THIS_DEVICE)} }
             div { class: "setting-row",
@@ -427,6 +436,7 @@ const IDLE_SIGN_OUT_CHOICES: [(IdleSignOut, MessageId); 5] = [
 fn IdleSignOutRow(
     view: PreferencesView,
     household_tab: bool,
+    timers: Timers,
     on_save: EventHandler<PreferencesPatch>,
 ) -> Element {
     let household = view.household.idle_sign_out.unwrap_or_default();
@@ -461,7 +471,7 @@ fn IdleSignOutRow(
                     }
                 },
                 for (index, (choice, label)) in IDLE_SIGN_OUT_CHOICES.iter().enumerate() {
-                    option { key: "{index}", value: "{index}", selected: *choice == current, {tr(*label)} }
+                    option { key: "{index}", value: "{index}", selected: *choice == current, {sign_out_label(*choice, *label, timers)} }
                 }
             }
             if !household_tab {
@@ -475,6 +485,25 @@ fn IdleSignOutRow(
                 }
             }
         }
+    }
+}
+
+/// A sign-out choice's label; with test timers, also its test length, e.g.
+/// "After 1 hour (test: 2 min)".
+fn sign_out_label(choice: IdleSignOut, label: MessageId, timers: Timers) -> String {
+    let test_minutes = timers
+        .test_minutes()
+        .and_then(|_| timers.sign_out_after_millis(choice))
+        .map(|millis| millis / 60_000);
+    match test_minutes {
+        Some(minutes) => tr_with(
+            messages::IDLE_SIGN_OUT_TEST,
+            &[
+                ("label", MessageArg::from(tr(label))),
+                ("minutes", MessageArg::from(minutes)),
+            ],
+        ),
+        None => tr(label),
     }
 }
 
@@ -539,6 +568,27 @@ mod tests {
         for (index, choice) in listed.iter().enumerate() {
             assert!(!listed[index + 1..].contains(choice), "{choice:?} twice");
         }
+    }
+
+    #[test]
+    fn test_timers_show_each_sign_out_choice_in_minutes() {
+        let test = Timers::test(2).unwrap();
+        assert_eq!(
+            sign_out_label(IdleSignOut::OneHour, messages::IDLE_SIGN_OUT_ONE_HOUR, test),
+            "After 1 hour (test: 2 min)"
+        );
+        assert_eq!(
+            sign_out_label(IdleSignOut::Never, messages::IDLE_SIGN_OUT_NEVER, test),
+            "Never"
+        );
+        assert_eq!(
+            sign_out_label(
+                IdleSignOut::OneHour,
+                messages::IDLE_SIGN_OUT_ONE_HOUR,
+                Timers::NORMAL
+            ),
+            "After 1 hour"
+        );
     }
 
     #[test]

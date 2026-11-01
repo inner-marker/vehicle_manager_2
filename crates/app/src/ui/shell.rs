@@ -8,7 +8,7 @@
 //!   bottom tabs, and a floating + Log button.
 
 use dioxus::prelude::*;
-use domain::i18n::messages;
+use domain::i18n::{MessageArg, messages};
 use domain::log_area;
 
 use super::account::{AccountChip, AdminBanner, ModeChip};
@@ -19,7 +19,7 @@ use super::inbox::{UrgentBanner, provide_inbox_context, refresh_inbox, unread_co
 use super::nav::{NavItem, NavSection, nav_items};
 use super::routes::Route;
 use super::theme::ThemeToggle;
-use super::tr;
+use super::{tr, tr_with};
 
 /// The shell layout; the current screen renders in its [`Outlet`].
 // rsx! expands event handlers to fully qualified `dioxus_elements::events::on*` calls,
@@ -129,6 +129,13 @@ pub(crate) fn Shell() -> Element {
                     Link { class: "log-button", to: Route::LogEvent {},
                         IconView { icon: Icon::Add }
                         span { {tr(messages::ACTION_LOG)} }
+                    }
+                    if let AuthState::SignedIn(session) = auth() {
+                        if let Some(minutes) = session.timers.test_minutes() {
+                            span { class: "test-timers-tag", title: tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))]),
+                                {tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))])}
+                            }
+                        }
                     }
                     ModeChip {}
                     AccountChip {}

@@ -12,12 +12,12 @@
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
 use domain::api::SwitchModeOutcome;
-use domain::i18n::{MessageId, messages};
+use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 
 use super::auth::{AuthState, refresh, use_auth};
 use super::screens::{ChangePasswordForm, problem_from_error};
-use super::tr;
+use super::{tr, tr_with};
 use crate::{api, client};
 
 /// The label of a mode.
@@ -134,6 +134,19 @@ pub(crate) fn ModeChip() -> Element {
     }
 }
 
+/// A message about Admin mode's idle limit, with its minutes (15, or the test timers').
+fn admin_minutes_text(message: MessageId, state: &AuthState) -> String {
+    let timers = match state {
+        AuthState::SignedIn(session) => session.timers,
+        AuthState::Loading
+        | AuthState::NeedsSetup
+        | AuthState::SignedOut
+        | AuthState::Unreachable(_) => domain::timers::Timers::NORMAL,
+    };
+    let minutes = timers.admin_idle_millis() / 60_000;
+    tr_with(message, &[("minutes", MessageArg::from(minutes))])
+}
+
 /// "Enter Admin mode": the password again.
 #[expect(
     unused_qualifications,
@@ -170,7 +183,7 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
         div { class: "dialog-scrim",
             form { class: "dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
                 h2 { class: "dialog-title", {tr(messages::ADMIN_DIALOG_TITLE)} }
-                p { class: "dialog-text", {tr(messages::ADMIN_DIALOG_TEXT)} }
+                p { class: "dialog-text", {admin_minutes_text(messages::ADMIN_DIALOG_TEXT, &state())} }
                 label { class: "field",
                     span { class: "field-label", {tr(messages::FIELD_PASSWORD)} }
                     input {
@@ -276,15 +289,16 @@ pub(crate) fn AccountChip() -> Element {
 #[component]
 pub(crate) fn AdminBanner() -> Element {
     let state = use_auth();
-    let in_admin =
-        matches!(state(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
-    if !in_admin {
+    let AuthState::SignedIn(session) = state() else {
+        return rsx! {};
+    };
+    if session.mode != ActiveMode::Admin {
         return rsx! {};
     }
     rsx! {
         div { class: "admin-banner", role: "status",
             strong { class: "admin-banner-label", {tr(messages::ADMIN_BANNER_LABEL)} }
-            span { class: "admin-banner-text", {tr(messages::ADMIN_BANNER_TEXT)} }
+            span { class: "admin-banner-text", {admin_minutes_text(messages::ADMIN_BANNER_TEXT, &state())} }
             button {
                 class: "admin-banner-leave",
                 onclick: move |_| {

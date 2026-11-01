@@ -9,6 +9,7 @@
 //! - A **disabled or deleted** user's sessions stop working at once, and a mode their
 //!   grants no longer allow falls back to Driver.
 
+use domain::timers::Timers;
 use std::fmt;
 
 use domain::access::{ActiveMode, RoleGrant, available_modes};
@@ -26,14 +27,6 @@ use crate::passwords::{hash_password, needs_rehash, verify_password};
 
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
-
-/// Admin mode ends after this long without activity: 15 minutes. Shared with the app's idle
-/// watcher, which leaves Admin mode at the same point (decision #049).
-pub const ADMIN_IDLE_MILLIS: i64 = domain::idle::ADMIN_IDLE_MILLIS;
-
-/// A session's last use is written at most this often (once a minute), so ordinary requests
-/// don't each cost a database write. The app's Admin-mode keep-alive uses the same interval.
-const TOUCH_INTERVAL_MILLIS: i64 = domain::idle::KEEP_ALIVE_EVERY_MILLIS;
 
 /// Token length in bytes.
 const TOKEN_BYTES: usize = 32;
@@ -284,7 +277,11 @@ async fn grants_of(database: &Database, user: UserId) -> Result<Vec<RoleGrant>, 
 
 /// The signed-in user for a presented token hash, or `None` if the session doesn't exist,
 /// has expired, or its user is disabled or gone. Extends the session, and drops Admin mode
-/// after 15 idle minutes or a mode the user's grants no longer allow.
+/// after its idle limit or a mode the user's grants no longer allow.
+///
+/// `timers` gives the Admin idle limit (shared with the app's idle watcher, #049) and how often
+/// a session's last use is written: at most once per keep-alive interval, so ordinary requests
+/// don't each cost a database write.
 ///
 /// # Errors
 ///
@@ -293,6 +290,7 @@ pub async fn resolve(
     database: &Database,
     token_hash: [u8; 32],
     now: UnixMillis,
+    timers: Timers,
 ) -> Result<Option<SignedIn>, StorageError> {
     let Some(session) = database.session(token_hash).await? else {
         return Ok(None);
@@ -310,11 +308,11 @@ pub async fn resolve(
         return Ok(None);
     };
     let grants = grants_of(database, user.id).await?;
-    let mode = effective_mode(&session, &grants, now);
+    let mode = effective_mode(&session, &grants, now, timers);
     if mode != session.active_mode {
         database.set_session_mode(token_hash, mode).await?;
     }
-    if now.as_millis() - session.last_used.as_millis() >= TOUCH_INTERVAL_MILLIS {
+    if now.as_millis() - session.last_used.as_millis() >= timers.keep_alive_millis() {
         let expires_at = UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS);
         database.touch_session(token_hash, now, expires_at).await?;
     }
@@ -332,9 +330,14 @@ pub async fn resolve(
 
 /// The session's mode now: Driver if Admin mode has been idle too long, or if the user's
 /// grants no longer allow the stored mode.
-fn effective_mode(session: &Session, grants: &[RoleGrant], now: UnixMillis) -> ActiveMode {
+fn effective_mode(
+    session: &Session,
+    grants: &[RoleGrant],
+    now: UnixMillis,
+    timers: Timers,
+) -> ActiveMode {
     let admin_idle = session.active_mode == ActiveMode::Admin
-        && now.as_millis() - session.last_used.as_millis() >= ADMIN_IDLE_MILLIS;
+        && now.as_millis() - session.last_used.as_millis() >= timers.admin_idle_millis();
     let still_allowed = available_modes(grants).contains(&session.active_mode);
     if admin_idle || !still_allowed {
         ActiveMode::Driver

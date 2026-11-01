@@ -80,7 +80,12 @@ fn launch(log_handles: Option<LogHandles>) {
         async move {
             // Opens and checks the database and starts the jobs once; later calls (hot
             // reloads) reuse them.
-            server::startup::start(&paths, std::sync::Arc::new(logging::SystemClock)).await;
+            server::startup::start(
+                &paths,
+                std::sync::Arc::new(logging::SystemClock),
+                server_timers(),
+            )
+            .await;
             let mut config = ServeConfig::new();
             // The log viewer reads the handles from context.
             if let Some(log_handles) = log_handles {
@@ -118,6 +123,31 @@ fn server_paths() -> server::startup::ServerPaths {
     .filter(|value| !value.is_empty())
     .map(std::path::PathBuf::from);
     server::startup::ServerPaths::new(server_database_dir(), snapshot_override)
+}
+
+/// The environment variable for test timers (#054), without the app prefix: 1 to 5 minutes,
+/// honoured only by builds with the `test-timers` feature (test images, never releases).
+#[cfg(feature = "server")]
+const TEST_MINUTES_ENV_NAME: &str = "TEST_MINUTES";
+
+/// The timer lengths: normal, or test timers when this is a test build and
+/// `VEHICLEMANAGER_TEST_MINUTES` is set. Says so in the log either way it's set.
+#[cfg(feature = "server")]
+fn server_timers() -> domain::timers::Timers {
+    let env_var = domain::identity::env_var_name(TEST_MINUTES_ENV_NAME);
+    let setting = std::env::var(&env_var).ok();
+    match domain::timers::Timers::from_setting(setting.as_deref(), cfg!(feature = "test-timers")) {
+        Ok(timers) => {
+            if let Some(minutes) = timers.test_minutes() {
+                tracing::warn!(target: log_area::APP, minutes, "TEST TIMERS ON: Admin mode, sign-out, jobs, and recovery codes use minutes; for testing only");
+            }
+            timers
+        }
+        Err(error) => {
+            tracing::warn!(target: log_area::APP, env_var = %env_var, %error, "test timers setting ignored");
+            domain::timers::Timers::NORMAL
+        }
+    }
 }
 
 /// The local development data folder, used when `VEHICLEMANAGER_DATA_DIR` isn't set.

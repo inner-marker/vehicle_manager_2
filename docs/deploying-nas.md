@@ -107,6 +107,10 @@ The line ends with `setup_code=K7QM-4XRT-9PWD-H2CN` (yours differs). Open the ap
 
   3. Enter the code (the newest line; it works once, for 15 minutes) and a new password. You're signed in, and your other sessions end.
 
+## Test timers (dev and milestone images only)
+
+To run a test plan in minutes instead of hours, set `VEHICLEMANAGER_TEST_MINUTES` in `.env` to a number from 1 to 5 and run `sudo docker compose up -d` (decision #054). Admin mode, Sign out when idle, the nightly snapshot, the hourly check, and recovery codes then use minutes; the app shows a **TEST TIMERS** tag in the top bar. Empty it again (and `up -d`) when you're done. Release images ignore it.
+
 ## Updating
 
 Over SSH:

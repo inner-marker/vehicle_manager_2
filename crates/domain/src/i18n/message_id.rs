@@ -575,4 +575,10 @@ define_messages! {
     URGENT_BANNER_LABEL => "urgent-banner-label",
     /// The urgent banner's link to the message.
     URGENT_BANNER_VIEW => "urgent-banner-view",
+    /// Notice on the sign-in card: signed out after `$minutes` idle minutes (test timers).
+    IDLE_SIGNED_OUT_MINUTES => "idle-signed-out-minutes",
+    /// The top bar's tag while test timers are on (`$minutes`).
+    TEST_TIMERS_TAG => "test-timers-tag",
+    /// A sign-out choice with its test length (`$label`, `$minutes`).
+    IDLE_SIGN_OUT_TEST => "idle-sign-out-test",
 }

@@ -1244,6 +1244,20 @@ select,
     cursor: pointer;
 }
 
+/* ---------- Test timers (decision #054): never in a release ---------- */
+
+.test-timers-tag {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 12px;
+    color: var(--warn);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
 /* ---------- Notices: what the app did by itself (decision #049) ---------- */
 
 .notice-bar {

@@ -20,6 +20,7 @@ pub mod preferences;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;
+pub mod timers;
 pub mod user;
 
 #[cfg(any(test, feature = "test-support"))]

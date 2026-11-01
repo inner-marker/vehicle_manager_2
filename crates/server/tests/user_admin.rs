@@ -8,17 +8,27 @@ mod user_admin {
     use domain::command::Change;
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
+    use domain::timers::Timers;
     use domain::user::{User, UserId, UserPatch, Username};
     use server::commands::issue;
     use server::health::Health;
     use server::login_limiter::LoginLimiter;
     use server::passwords::hash_password;
-    use server::sessions::{SignInError, SignedIn, resolve, sign_in, switch_mode, token_hash};
+    use server::sessions::{SignInError, SignedIn, sign_in, switch_mode, token_hash};
     use server::user_admin::{
         AdminContext, add_user, list_users, reset_password, set_disabled, set_role_on_all,
     };
     use storage::users::{RoleGrantWriter, UserWriter};
     use storage::{Database, NewDatabaseIds};
+
+    /// [`server::sessions::resolve`] with normal timers.
+    async fn resolve(
+        database: &Database,
+        token_hash: [u8; 32],
+        now: UnixMillis,
+    ) -> Result<Option<SignedIn>, storage::StorageError> {
+        server::sessions::resolve(database, token_hash, now, Timers::NORMAL).await
+    }
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const PASSWORD: &str = "correct horse battery";

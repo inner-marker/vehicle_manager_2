@@ -52,6 +52,9 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dep:storage", "dep:server"]
+# Short timers for manual testing (#054): honoured only with this feature, which only the
+# Dev image workflow turns on (milestone and dev images), never a release.
+test-timers = []
 
 [lints]
 workspace = true

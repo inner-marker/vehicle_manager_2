@@ -4,7 +4,8 @@
 //! The app watches for real input (pointer, keys, scrolling, touch) and asks [`decide`] what
 //! to do. Background requests don't count as activity. The server stays the authority: its own
 //! limits (15 idle minutes in Admin mode, 30 idle days per session) apply even if the app is
-//! closed. The keep-alive exists because the server only sees requests: without it, someone
+//! closed. The timer lengths come from [`Timers`] (normal, or shortened for testing, #054).
+//! The keep-alive exists because the server only sees requests: without it, someone
 //! working on a long form in Admin mode would lose Admin mode on the server while the app still
 //! showed it.
 //!
@@ -15,6 +16,7 @@
 //! use domain::idle::{IdleAction, IdleState, decide};
 //! use domain::preferences::IdleSignOut;
 //! use domain::time::UnixMillis;
+//! use domain::timers::Timers;
 //!
 //! let minute = 60_000;
 //! let state = IdleState {
@@ -23,23 +25,21 @@
 //!     last_keep_alive: UnixMillis::from_millis(4 * minute),
 //! };
 //! // 16 idle minutes in Admin mode: leave it.
-//! assert_eq!(decide(state, ActiveMode::Admin, IdleSignOut::EightHours), IdleAction::LeaveAdmin);
+//! assert_eq!(
+//!     decide(state, ActiveMode::Admin, IdleSignOut::EightHours, Timers::NORMAL),
+//!     IdleAction::LeaveAdmin
+//! );
 //! // The same 16 minutes in Driver mode: nothing to do.
-//! assert_eq!(decide(state, ActiveMode::Driver, IdleSignOut::EightHours), IdleAction::Nothing);
+//! assert_eq!(
+//!     decide(state, ActiveMode::Driver, IdleSignOut::EightHours, Timers::NORMAL),
+//!     IdleAction::Nothing
+//! );
 //! ```
 
 use crate::access::ActiveMode;
 use crate::preferences::IdleSignOut;
 use crate::time::UnixMillis;
-
-/// Admin mode ends after this long without activity: 15 minutes. The server uses the same
-/// limit, counted from its last request.
-pub const ADMIN_IDLE_MILLIS: i64 = 15 * 60 * 1000;
-
-/// While someone is active in Admin mode, the app tells the server at most this often (once a
-/// minute). It matches how often the server records a session's use, so the server's idle
-/// clock is never more than about a minute behind the app's.
-pub const KEEP_ALIVE_EVERY_MILLIS: i64 = 60 * 1000;
+use crate::timers::Timers;
 
 /// The times the decision depends on, all from the same clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -75,24 +75,34 @@ pub enum IdleAction {
     SignOut,
 }
 
-/// Decides what the app should do, given the times in `state`, the active mode, and the
-/// person's sign-out setting.
+/// Decides what the app should do, given the times in `state`, the active mode, the person's
+/// sign-out setting, and the timer lengths.
 ///
 /// In order: signing out wins (it also ends Admin mode); then leaving Admin mode after
-/// [`ADMIN_IDLE_MILLIS`]; then, in Admin mode, a keep-alive if there was input since the last
-/// one and at least [`KEEP_ALIVE_EVERY_MILLIS`] has passed.
+/// [`Timers::admin_idle_millis`] (the server uses the same limit, counted from its last
+/// request); then, in Admin mode, a keep-alive if there was input since the last one and at
+/// least [`Timers::keep_alive_millis`] has passed. The keep-alive interval matches how often the
+/// server records a session's use, so the server's idle clock is never far behind the app's.
 #[must_use]
-pub fn decide(state: IdleState, mode: ActiveMode, sign_out: IdleSignOut) -> IdleAction {
+pub fn decide(
+    state: IdleState,
+    mode: ActiveMode,
+    sign_out: IdleSignOut,
+    timers: Timers,
+) -> IdleAction {
     let idle = state.idle_millis();
     let in_admin = mode == ActiveMode::Admin;
 
-    if sign_out.after_millis().is_some_and(|limit| idle >= limit) {
+    if timers
+        .sign_out_after_millis(sign_out)
+        .is_some_and(|limit| idle >= limit)
+    {
         IdleAction::SignOut
-    } else if in_admin && idle >= ADMIN_IDLE_MILLIS {
+    } else if in_admin && idle >= timers.admin_idle_millis() {
         IdleAction::LeaveAdmin
     } else if in_admin
         && state.last_input > state.last_keep_alive
-        && millis_between(state.last_keep_alive, state.now) >= KEEP_ALIVE_EVERY_MILLIS
+        && millis_between(state.last_keep_alive, state.now) >= timers.keep_alive_millis()
     {
         IdleAction::KeepAlive
     } else {
@@ -113,6 +123,11 @@ mod tests {
     use super::*;
 
     const MINUTE: i64 = 60_000;
+
+    /// [`super::decide`] with normal timers (most tests); test timers have their own test.
+    fn decide(state: IdleState, mode: ActiveMode, sign_out: IdleSignOut) -> IdleAction {
+        super::decide(state, mode, sign_out, Timers::NORMAL)
+    }
     const HOUR: i64 = 60 * MINUTE;
 
     /// A state at `now_minutes`, with the last input and keep-alive at the given minutes.
@@ -218,6 +233,27 @@ mod tests {
     }
 
     #[test]
+    fn test_timers_shorten_admin_mode_and_sign_out() {
+        let timers = Timers::test(2).unwrap();
+        let in_admin =
+            |state| super::decide(state, ActiveMode::Admin, IdleSignOut::OneHour, timers);
+        assert_eq!(in_admin(at(1, 0, 0)), IdleAction::Nothing);
+        assert_eq!(
+            in_admin(at(2, 0, 0)),
+            IdleAction::SignOut,
+            "1 hour is 2 minutes, and wins"
+        );
+        let eight =
+            |state| super::decide(state, ActiveMode::Admin, IdleSignOut::EightHours, timers);
+        assert_eq!(eight(at(2, 0, 0)), IdleAction::LeaveAdmin);
+        assert_eq!(
+            eight(at(6, 0, 0)),
+            IdleAction::SignOut,
+            "8 hours is 6 minutes"
+        );
+    }
+
+    #[test]
     fn a_clock_that_steps_back_counts_as_not_idle() {
         let state = at(5, 10, 10);
         assert_eq!(state.idle_millis(), 0);
@@ -251,7 +287,7 @@ mod tests {
         #[test]
         fn recent_input_never_ends_anything(
             now in 0..(48 * HOUR),
-            idle in 0..ADMIN_IDLE_MILLIS,
+            idle in 0..Timers::NORMAL.admin_idle_millis(),
             keep_alive in 0..(48 * HOUR),
             mode in any_mode(),
             sign_out in any_sign_out(),
