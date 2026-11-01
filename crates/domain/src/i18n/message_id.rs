@@ -599,4 +599,60 @@ define_messages! {
     ASSET_IDENTIFIER_EMPTY => "asset-identifier-empty",
     /// More identifiers than allowed.
     ASSET_TOO_MANY_IDENTIFIERS => "asset-too-many-identifiers",
+    /// Event kind: a fuel-up.
+    EVENT_KIND_FUEL => "event-kind-fuel",
+    /// Event kind: a reading.
+    EVENT_KIND_READING => "event-kind-reading",
+    /// Event kind: maintenance.
+    EVENT_KIND_MAINTENANCE => "event-kind-maintenance",
+    /// Event kind: a repair.
+    EVENT_KIND_REPAIR => "event-kind-repair",
+    /// Meter unit: hours.
+    UNIT_HOURS => "unit-hours",
+    /// A label with nothing in it.
+    LABEL_EMPTY => "label-empty",
+    /// A label longer than the limit.
+    LABEL_TOO_LONG => "label-too-long",
+    /// A meter unit that doesn't fit its dimension.
+    METER_WRONG_UNIT => "meter-wrong-unit",
+    /// Too many decimal places on a meter.
+    METER_TOO_PRECISE => "meter-too-precise",
+    /// Too many decimal places on a number field.
+    FIELD_TOO_MANY_DECIMALS => "field-too-many-decimals",
+    /// A choice list with no choices or too many.
+    FIELD_BAD_CHOICES => "field-bad-choices",
+    /// A range that doesn't fit its field.
+    FIELD_BAD_RANGE => "field-bad-range",
+    /// Profile name: car. Used by profile files (data), so code rarely names it.
+    PROFILE_CAR => "profile-car",
+    /// Profile name: truck. Used by profile files (data), so code rarely names it.
+    PROFILE_TRUCK => "profile-truck",
+    /// Profile name: motorcycle. Used by profile files (data), so code rarely names it.
+    PROFILE_MOTORCYCLE => "profile-motorcycle",
+    /// Profile name: trailer. Used by profile files (data), so code rarely names it.
+    PROFILE_TRAILER => "profile-trailer",
+    /// Profile name: generator. Used by profile files (data), so code rarely names it.
+    PROFILE_GENERATOR => "profile-generator",
+    /// Profile name: other equipment. Used by profile files (data), so code rarely names it.
+    PROFILE_OTHER_EQUIPMENT => "profile-other-equipment",
+    /// Identifier: VIN. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_VIN => "identifier-vin",
+    /// Identifier: license plate. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_PLATE => "identifier-plate",
+    /// Identifier: serial number. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_SERIAL => "identifier-serial",
+    /// Expected document: title. Used by profile files (data), so code rarely names it.
+    DOCUMENT_TITLE => "document-title",
+    /// Expected document: registration. Used by profile files (data), so code rarely names it.
+    DOCUMENT_REGISTRATION => "document-registration",
+    /// Expected document: insurance. Used by profile files (data), so code rarely names it.
+    DOCUMENT_INSURANCE => "document-insurance",
+    /// A profile's meter: the odometer. Used by profile files (data), so code rarely names it.
+    METER_ODOMETER => "meter-odometer",
+    /// A profile's meter: run hours. Used by profile files (data), so code rarely names it.
+    METER_RUN_HOURS => "meter-run-hours",
+    /// A profile's custom field: trip time. Used by profile files (data), so code rarely names it.
+    FIELD_TRIP_TIME => "field-trip-time",
+    /// A profile's custom field: trip EV distance. Used by profile files (data), so code rarely names it.
+    FIELD_TRIP_EV_DISTANCE => "field-trip-ev-distance",
 }

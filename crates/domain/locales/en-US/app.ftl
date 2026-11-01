@@ -394,3 +394,35 @@ asset-text-too-long = That's too long: at most 64 characters.
 asset-year-out-of-range = That year doesn't look right.
 asset-identifier-empty = Enter the identifier, or remove it.
 asset-too-many-identifiers = A vehicle can have at most 10 identifiers.
+
+## Profiles, meters, and custom fields (decision #030). Profile names, identifiers, documents,
+## meters, and fields below are keys used by crates/domain/profiles/*.ron.
+
+profile-car = Car
+profile-truck = Truck
+profile-motorcycle = Motorcycle
+profile-trailer = Trailer
+profile-generator = Generator
+profile-other-equipment = Other equipment
+identifier-vin = VIN
+identifier-plate = License plate
+identifier-serial = Serial number
+document-title = Title
+document-registration = Registration
+document-insurance = Insurance
+meter-odometer = Odometer
+meter-run-hours = Run hours
+field-trip-time = Trip time
+field-trip-ev-distance = Trip EV distance
+event-kind-fuel = Fuel-up
+event-kind-reading = Reading
+event-kind-maintenance = Maintenance
+event-kind-repair = Repair
+unit-hours = hours
+label-empty = Enter a name.
+label-too-long = That's too long: at most 40 characters.
+meter-wrong-unit = That unit doesn't measure this meter (e.g. hours for a distance).
+meter-too-precise = A meter can show at most 2 decimal places.
+field-too-many-decimals = A number can have at most 4 decimal places.
+field-bad-choices = A choice list needs 1 to 30 choices.
+field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.

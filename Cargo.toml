@@ -43,6 +43,8 @@ fluent-bundle = "0.16.0"        # translation engine (Project Fluent); see decis
 # (phase-2.md milestone 1 plan); `macros` is only for `sqlx::migrate!`.
 sqlx = { version = "0.9.0", default-features = false, features = ["sqlite-bundled", "runtime-tokio", "migrate", "macros"] }
 serde = { version = "1.0.229", features = ["derive"] }
+# Asset profiles as RON seed files compiled into domain (decision #030; approved, phase-2.md 4b).
+ron = "0.12.3"
 sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison

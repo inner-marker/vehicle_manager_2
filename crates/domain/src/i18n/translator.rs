@@ -157,6 +157,28 @@ impl Translator {
         self.bundle.has_message(id.as_str())
     }
 
+    /// The text of a message named by data rather than code (e.g. a profile's meter name in
+    /// its RON file), so it can't be a [`MessageId`]. A test checks every such key exists;
+    /// a missing one shows as the key itself.
+    pub fn tr_key(&self, key: &str) -> String {
+        let Some(pattern) = self
+            .bundle
+            .get_message(key)
+            .and_then(|message| message.value())
+        else {
+            return key.to_owned();
+        };
+        let mut errors = Vec::new();
+        self.bundle
+            .format_pattern(pattern, None, &mut errors)
+            .into_owned()
+    }
+
+    /// Whether the catalog has a message with this key (see [`Translator::tr_key`]).
+    pub fn has_key(&self, key: &str) -> bool {
+        self.bundle.has_message(key)
+    }
+
     /// Formats a message, falling back to its ID if it's missing or has no value,
     /// so a gap is visible on screen rather than a crash or a blank.
     fn format(&self, id: MessageId, args: Option<&FluentArgs<'_>>) -> String {

@@ -1,0 +1,14 @@
+// Other equipment (decision #030): anything else; add its meters by hand.
+(
+    id: "other-equipment",
+    version: 1,
+    name: "profile-other-equipment",
+    event_kinds: [reading, maintenance, repair],
+    sections: [],
+    identifiers: [
+        (kind: "serial", name: "identifier-serial"),
+    ],
+    documents: [],
+    meters: [],
+    fields: [],
+)
