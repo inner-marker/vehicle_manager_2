@@ -139,3 +139,9 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - Pinned vehicles stay at the top of their group whatever the sort (Newest activity, Name, Custom).
 - **To discuss:** per person or for everyone; pinning across groups (a "Pinned" section at the top) or within each group; how it shows on the card.
 
+### 16. A catalogue of ready-made fields and sets 🟡
+*Raised by the human, 2026-11-01 (e.g. the F-150 PowerBoost's trip computer: trip miles, time, EV miles, MPG) · Suggested phase: Phase 5, with calculated fields (#057)*
+
+- **Idea:** built-in field definitions in data (RON, like the profiles), each with a fixed key, type, and unit, offered from **+ Add field** with one tap: trip distance, trip time, trip EV distance, trip fuel economy, average speed, trip fuel used, EV share, idle time, and so on. **Sets** add several at once (e.g. "Trip computer (hybrid)"). Profiles would pick their defaults from the catalogue.
+- **To discuss:** which fields and sets; whether catalogue fields can be edited or only turned off; vehicles with Trip A and Trip B (a set added twice with a suffix?); how it relates to the vehicle-reported fuel economy column (#030).
+

@@ -647,3 +647,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Pinning** vehicles to the top of their group is for later (idea 15).
 - **Why:** the human chose option A, asked for the common Sort-menu convention, and asked for the groups in the sidebar (which also ends "Garage" meaning both a screen and a group); cards are where the Garage is heading (#040), and choosing the kind first keeps the details form to that kind's identifiers.
 
+### 057. A vehicle's page (header, tabs, Overview, Setup); stable field keys; calculations in Phase 5
+*Decided: 2026-11-01 · Plan: §3 Custom fields, §5 UI direction · Phase plan: phase-2.md step 4f · Sketch: `docs/ui-sketches/p2m4-vehicle-options.svg`, option A · Refines #040, #051*
+
+- **Decision:**
+  - **Layout (option A):** a header (name; kind, year, make, model, colour; identifiers and group as chips; status), then the tabs Overview, Timeline, Maintenance, Fuel, Documents, Setup across the top (scrolling sideways on phones). Tabs without content yet say which milestone fills them.
+  - **Overview** is the dashboard (#051) as panels: Ready to use? and Coming due (Phase 5), Open squawks (milestone 7), Latest fuel-ups (milestone 6), and the meters (now).
+  - **Setup** is one page of sections: Details (Edit details), Meters (+ Add meter; edit, remove), Custom fields (+ Add field; on/off, edit), Required readings (a grid of meters × event kinds), and Group and status (Move to another…, with who gains and loses access shown first; the status; Delete…, with the name typed).
+  - **Every custom field has a stable key** (e.g. `trip-ev-distance`) beside its label: from the profile (or later a catalogue) for built-in fields, made from the label (unique on the vehicle) for fields people add. Formulas, reports, comparisons across vehicles, and voice logging (idea 14) refer to fields by key, so renaming a label never breaks them. The key is shown, read-only, on Setup.
+  - **Calculated fields** (formulas over built-in and custom fields, unit-aware, worked out when shown and never stored) come in **Phase 5**, with fuel-economy statistics. A **catalogue of ready-made fields and sets** (e.g. "Trip computer (hybrid)": trip distance, time, EV distance, fuel economy) is idea 16.
+- **Why:** the human chose option A and asked for richer trip-computer fields and calculations; keys cost little before any field has values and would mean backfilling every vehicle later.
+
