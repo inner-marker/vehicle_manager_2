@@ -323,8 +323,33 @@ inbox-quick-check-failed = The hourly database check failed
 # The job's name is in the message's details.
 inbox-job-failed = A scheduled job failed
 inbox-job-skipped = A scheduled job was skipped
-inbox-job-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
+inbox-job-body = See the details below and the server's log.
+inbox-snapshot-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
+inbox-quick-check-body = The hourly check found a problem in the database, so the server is refusing changes. See the details below and the server's log.
 inbox-server-unhealthy = The server isn't accepting changes
 inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-open-diagnostics = Open Diagnostics
+messages-filter-all = All
+messages-severity-urgent = URGENT
+messages-severity-warning = WARNING
+messages-severity-info = INFO
+messages-filter-urgent = Urgent
+messages-filter-warning = Warning
+messages-filter-info = Info
+# $count (number): unread messages.
+messages-unread =
+    { $count ->
+        [0] All read
+        [one] { $count } unread
+       *[other] { $count } unread
+    }
+messages-select-hint = Choose a message to read it.
+messages-empty = No messages. You're all caught up.
+messages-back = ← Messages
+messages-details = DETAILS
+messages-dismiss = Dismiss
+# $time (text): e.g. 2026-10-31 07:00.
+messages-time-utc = { $time } UTC
+urgent-banner-label = URGENT
+urgent-banner-view = View

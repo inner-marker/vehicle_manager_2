@@ -185,6 +185,15 @@ impl MessageKind {
     #[must_use]
     pub const fn body(&self) -> MessageId {
         match self {
+            Self::JobFailed {
+                job: JobKind::NightlySnapshot,
+            }
+            | Self::JobSkipped {
+                job: JobKind::NightlySnapshot,
+            } => messages::INBOX_SNAPSHOT_BODY,
+            Self::JobFailed {
+                job: JobKind::QuickCheck,
+            } => messages::INBOX_QUICK_CHECK_BODY,
             Self::JobFailed { .. } | Self::JobSkipped { .. } => messages::INBOX_JOB_BODY,
             Self::ServerUnhealthy {
                 problem: ServerProblem::DatabaseUnavailable,
@@ -538,6 +547,16 @@ mod tests {
             ]
         );
         assert_eq!(messages[1].severity, Severity::Urgent, "a failed check");
+        let bodies: Vec<MessageId> = messages.iter().map(|m| m.kind.body()).collect();
+        assert_eq!(
+            bodies,
+            vec![
+                messages::INBOX_SNAPSHOT_BODY,
+                messages::INBOX_QUICK_CHECK_BODY,
+                messages::INBOX_JOB_BODY,
+            ],
+            "only a snapshot's text mentions backups"
+        );
     }
 
     #[test]

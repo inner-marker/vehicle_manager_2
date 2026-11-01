@@ -529,8 +529,12 @@ define_messages! {
     INBOX_JOB_FAILED => "inbox-job-failed",
     /// Message title: a job this build doesn't know by name was skipped.
     INBOX_JOB_SKIPPED => "inbox-job-skipped",
-    /// Message text for a failed or skipped job.
+    /// Message text for a job this build doesn't know by name.
     INBOX_JOB_BODY => "inbox-job-body",
+    /// Message text for a failed or skipped nightly snapshot.
+    INBOX_SNAPSHOT_BODY => "inbox-snapshot-body",
+    /// Message text for a failed hourly database check.
+    INBOX_QUICK_CHECK_BODY => "inbox-quick-check-body",
     /// Message title: the server is refusing changes.
     INBOX_SERVER_UNHEALTHY => "inbox-server-unhealthy",
     /// Message text: the database couldn't be opened.
@@ -539,4 +543,36 @@ define_messages! {
     INBOX_INTEGRITY_CHECK_FAILED => "inbox-integrity-check-failed",
     /// Message button: open Diagnostics.
     INBOX_OPEN_DIAGNOSTICS => "inbox-open-diagnostics",
+    /// Messages filter: everything.
+    MESSAGES_FILTER_ALL => "messages-filter-all",
+    /// Severity word: urgent.
+    MESSAGES_SEVERITY_URGENT => "messages-severity-urgent",
+    /// Severity word: warning.
+    MESSAGES_SEVERITY_WARNING => "messages-severity-warning",
+    /// Severity word: info.
+    MESSAGES_SEVERITY_INFO => "messages-severity-info",
+    /// Messages filter: urgent only.
+    MESSAGES_FILTER_URGENT => "messages-filter-urgent",
+    /// Messages filter: warnings only.
+    MESSAGES_FILTER_WARNING => "messages-filter-warning",
+    /// Messages filter: info only.
+    MESSAGES_FILTER_INFO => "messages-filter-info",
+    /// How many messages are unread (`$count`).
+    MESSAGES_UNREAD => "messages-unread",
+    /// Messages: nothing chosen yet.
+    MESSAGES_SELECT_HINT => "messages-select-hint",
+    /// Messages: there are none.
+    MESSAGES_EMPTY => "messages-empty",
+    /// Messages on phones: back to the list.
+    MESSAGES_BACK => "messages-back",
+    /// Messages: the technical details heading (Admin mode).
+    MESSAGES_DETAILS => "messages-details",
+    /// Messages: the dismiss button.
+    MESSAGES_DISMISS => "messages-dismiss",
+    /// A time shown in UTC (`$time`).
+    MESSAGES_TIME_UTC => "messages-time-utc",
+    /// The urgent banner's label.
+    URGENT_BANNER_LABEL => "urgent-banner-label",
+    /// The urgent banner's link to the message.
+    URGENT_BANNER_VIEW => "urgent-banner-view",
 }

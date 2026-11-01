@@ -27,12 +27,6 @@ pub(crate) fn Due() -> Element {
     rsx! { ComingSoon {} }
 }
 
-/// The message center (Phase 2).
-#[component]
-pub(crate) fn Messages() -> Element {
-    rsx! { ComingSoon {} }
-}
-
 /// Every event, newest first (Phase 2).
 #[component]
 pub(crate) fn Timeline() -> Element {

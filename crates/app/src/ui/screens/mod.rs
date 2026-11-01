@@ -3,6 +3,7 @@
 mod account;
 mod connection;
 mod diagnostics;
+mod messages;
 mod placeholders;
 mod settings;
 mod users;
@@ -10,8 +11,9 @@ mod users;
 pub(crate) use account::{ChangePasswordForm, ForcedPasswordChange, Setup, SignIn};
 pub(crate) use connection::{ConnectionPanel, problem_from_error};
 pub(crate) use diagnostics::Diagnostics;
+pub(crate) use messages::Messages;
 pub(crate) use placeholders::{
-    Due, Garage, LogEvent, Messages, NotFound, Reports, Timeline, VehicleDetail, Vehicles,
+    Due, Garage, LogEvent, NotFound, Reports, Timeline, VehicleDetail, Vehicles,
 };
 pub(crate) use settings::Settings;
 pub(crate) use users::Users;
