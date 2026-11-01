@@ -137,10 +137,50 @@ mod users {
         );
     }
 
+    /// Asset `n`, in a group, so a grant can name it (grants have a foreign key to assets).
+    async fn create_truck(database: &Database, n: u32) {
+        use domain::asset::{Asset, AssetKind, AssetName, AssetPatch, LifecycleStatus};
+        use domain::group::{Group, GroupIcon, GroupName, GroupPatch};
+        use storage::assets::{AssetWriter, GroupWriter};
+
+        let mut connection = database.pool().acquire().await.unwrap();
+        let group = Group {
+            name: GroupName::parse("Garage").unwrap(),
+            icon: GroupIcon::Garage,
+        };
+        GroupWriter
+            .create(
+                &mut connection,
+                test_id(n + 1000),
+                &GroupPatch::all(group),
+                1,
+            )
+            .await
+            .unwrap();
+        let truck = Asset {
+            kind: AssetKind::parse("truck").unwrap(),
+            name: AssetName::parse("Truck").unwrap(),
+            make: None,
+            model: None,
+            year: None,
+            colour: None,
+            description: domain::notes::Notes::default(),
+            group: test_id(n + 1000),
+            parent: None,
+            status: LifecycleStatus::InService,
+            identifiers: vec![],
+        };
+        AssetWriter
+            .create(&mut connection, test_id(n), &AssetPatch::all(truck), 1)
+            .await
+            .unwrap();
+    }
+
     #[tokio::test]
     async fn grants_on_all_assets_and_one_asset_round_trip() {
         let (_temp, database) = database().await;
         create_user(&database, 1, stuart()).await;
+        create_truck(&database, 50).await;
         let everywhere = RoleGrant {
             user: test_id(1),
             target: GrantTarget::AllAssets,
