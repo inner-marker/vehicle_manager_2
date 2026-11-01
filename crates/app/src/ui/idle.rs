@@ -5,6 +5,9 @@
 //! about every 15 seconds; [`domain::idle::decide`] says what to do. The server stays the
 //! authority: its own limits apply even when the app is closed.
 //!
+//! The same reports reload the person's messages every 5 minutes, so the badge and the urgent
+//! banner stay current on a screen left open.
+//!
 //! What happened is shown as a short notice: [`AdminEndedNotice`] in the shell, and
 //! [`SignedOutNotice`] on the sign-in card.
 
@@ -22,6 +25,7 @@ use domain::time::UnixMillis;
 
 use super::account::{sign_out, switch};
 use super::auth::{AuthState, refresh, use_auth};
+use super::inbox::{InboxContext, refresh_inbox, use_inbox};
 use super::{tr, tr_with};
 use crate::api;
 
@@ -44,6 +48,10 @@ for (const kind of kinds) {
     window.removeEventListener(kind, mark, { capture: true });
 }
 "#;
+
+/// How often messages are loaded again while the app is open (they're also loaded on every
+/// navigation), so a new problem shows on a screen left open. Sync replaces this in Phase 3.
+const INBOX_REFRESH_EVERY_MILLIS: i64 = 5 * 60 * 1000;
 
 /// Milliseconds in one hour, for the "signed out after N hours" notice.
 const HOUR_MILLIS: i64 = 60 * 60 * 1000;
@@ -88,6 +96,7 @@ pub(crate) fn use_idle() -> IdleContext {
 pub(crate) fn IdleWatcher() -> Element {
     let auth = use_auth();
     let idle = use_idle();
+    let inbox = use_inbox();
     // The running script, so it can be told to stop when the watcher goes away.
     let running = use_hook(|| Rc::new(Cell::new(None::<document::Eval>)));
 
@@ -100,7 +109,7 @@ pub(crate) fn IdleWatcher() -> Element {
                 load_setting(idle).await;
                 let eval = document::eval(WATCH_SCRIPT);
                 running.set(Some(eval));
-                watch(eval, auth, idle).await;
+                watch(eval, auth, idle, inbox).await;
             }
         });
     }
@@ -132,9 +141,11 @@ async fn load_setting(mut idle: IdleContext) {
 #[derive(Debug, Default)]
 struct Tracker {
     /// The last time the server heard from us for this person (entering Admin mode counts).
-    last_keep_alive: Option<UnixMillis>,
+    kept_alive: Option<UnixMillis>,
     /// The mode at the last report.
-    last_mode: Option<ActiveMode>,
+    mode_seen: Option<ActiveMode>,
+    /// When messages were last loaded by the watcher (the shell loads them when it starts).
+    inbox_loaded: Option<UnixMillis>,
 }
 
 impl Tracker {
@@ -145,22 +156,37 @@ impl Tracker {
         now: UnixMillis,
         last_input: UnixMillis,
     ) -> (IdleState, bool) {
-        let entered_admin = mode == ActiveMode::Admin && self.last_mode != Some(ActiveMode::Admin);
+        let entered_admin = mode == ActiveMode::Admin && self.mode_seen != Some(ActiveMode::Admin);
         if entered_admin {
-            self.last_keep_alive = Some(now);
+            self.kept_alive = Some(now);
         }
-        self.last_mode = Some(mode);
+        self.mode_seen = Some(mode);
         let state = IdleState {
             now,
             last_input,
-            last_keep_alive: self.last_keep_alive.unwrap_or(now),
+            last_keep_alive: self.kept_alive.unwrap_or(now),
         };
         (state, entered_admin)
+    }
+
+    /// Whether messages are due to be loaded again at `now`; if so, notes that they were.
+    fn inbox_due(&mut self, now: UnixMillis) -> bool {
+        let last = *self.inbox_loaded.get_or_insert(now);
+        let due = now.as_millis().saturating_sub(last.as_millis()) >= INBOX_REFRESH_EVERY_MILLIS;
+        if due {
+            self.inbox_loaded = Some(now);
+        }
+        due
     }
 }
 
 /// Reads the script's reports and acts on them, until the script stops or the app signs out.
-async fn watch(mut eval: document::Eval, auth: Signal<AuthState>, mut idle: IdleContext) {
+async fn watch(
+    mut eval: document::Eval,
+    auth: Signal<AuthState>,
+    mut idle: IdleContext,
+    inbox: InboxContext,
+) {
     tracing::debug!(target: log_area::AUTH, "idle watcher started");
     // Signed in again: the sign-in card's notice has done its job.
     if matches!(*idle.notice.peek(), Some(IdleNotice::SignedOut { .. })) {
@@ -179,10 +205,13 @@ async fn watch(mut eval: document::Eval, auth: Signal<AuthState>, mut idle: Idle
         }
         let action = decide(state, session.mode, *idle.sign_out.peek());
         if action == IdleAction::KeepAlive {
-            tracker.last_keep_alive = Some(now);
+            tracker.kept_alive = Some(now);
         }
         if act(action, auth, idle).await {
             break;
+        }
+        if tracker.inbox_due(now) {
+            refresh_inbox(inbox).await;
         }
     }
     tracing::debug!(target: log_area::AUTH, "idle watcher stopped");
@@ -247,6 +276,16 @@ mod tests {
         let (state, entered) = tracker.observe(ActiveMode::Admin, at(6), at(6));
         assert!(!entered, "still in Admin mode");
         assert_eq!(state.last_keep_alive, at(5));
+    }
+
+    #[test]
+    fn messages_are_loaded_again_every_five_minutes() {
+        let mut tracker = Tracker::default();
+        assert!(!tracker.inbox_due(at(0)), "the shell has just loaded them");
+        assert!(!tracker.inbox_due(at(4)));
+        assert!(tracker.inbox_due(at(5)));
+        assert!(!tracker.inbox_due(at(6)), "counted from the last load");
+        assert!(tracker.inbox_due(at(10)));
     }
 
     #[test]
