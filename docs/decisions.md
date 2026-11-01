@@ -626,3 +626,12 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Visible:** a `TEST TIMERS ON` warning at startup, a **TEST TIMERS · N min** tag in the top bar, and each sign-out choice shows its test length.
 - **Why:** manual test plans had steps of an hour or a night; the human asked for 1–5 minute timers on milestone test builds. Two locks make sure a real install can't run them.
 
+### 055. Notes are a Markdown subset, shown as plain text until rendering arrives
+*Decided: 2026-11-01 · Plan: §3 Event, Squawks, Asset · Phase plan: phase-2.md milestone 4 · Was idea 8 in ideas-to-discuss.md*
+
+- **Decision:**
+  - Every free-text notes field (an asset's description first, then event notes, squawks, tasks, documents) is stored as **text in a small Markdown subset:** bold, italics, lists, and links.
+  - **For now it's entered and shown as plain text** (the Markdown characters show as typed). A Markdown editor and rendering (screens, PDF and Word reports) come later.
+  - Nothing else (no HTML, images, or tables); anything outside the subset shows as typed.
+- **Why:** changing the format later would mean converting every note; a subset keeps notes readable as plain text today and renderable later, in reports too (the idea's own suggestion, chosen by the human).
+

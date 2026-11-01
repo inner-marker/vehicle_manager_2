@@ -54,12 +54,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - **Partly decided (#029):** display preferences use two layers, server defaults and per-user overrides, one record per setting with last-write-wins by HLC.
 - **To discuss:** which settings live at which layers by default.
 
-### 8. Notes format 🟡
-*Suggested phase: Phase 2*
-
-- Decide between **plain text** and a small **Markdown subset** (bold, lists, links) for notes.
-- Affects storage, search, and how notes render in PDF and Word reports; changing later means converting every existing note.
-- **Suggestion:** a Markdown subset.
+### 8. Notes format ✅
+*Decided 2026-11-01: `docs/decisions.md` #055 (a Markdown subset, shown as plain text until rendering arrives).*
 
 ### 9. One background job system on the server ✅
 *Decided 2026-10-29: `docs/decisions.md` #044.*

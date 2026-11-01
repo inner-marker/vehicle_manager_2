@@ -299,6 +299,7 @@ The app doesn't need to know *how* a meter accumulates (key-on, oil pressure, re
 - **Canonical values:** `uom` stores everything internally in SI base units; conversion to miles, km, gallons, liters, hours, etc. happens only for display and input.
 - **Display rounding is mandatory,** since unit conversion goes through `f64` (e.g. 123,456 mi may round-trip as 123,455.9999).
 - **Crate features trimmed** to `std`, `si`, `f64`, `serde` to keep compile times down.
+- **Arrives with the first values** (meter readings, Phase 2 milestone 6); milestone 4 only defines meters (distance or duration, display unit).
 
 ### Storing quantities: integers in the DB, `uom` in the app
 
@@ -346,7 +347,7 @@ A meter reading's integer value is interpreted through its meter's dimension (me
 The core abstraction is a single **event** type covering everything that happens to a vehicle.
 
 - **Event types:** fuel, maintenance, repair, **reading** (meter readings only, no other action), and more as needed.
-- **Common spine on every event:** asset, **date or date range** (see Event dates), **location** (see Event location), meter readings, and a free-text **notes** field. Notes are on every event type and prominent on fuel-up and maintenance forms; individual maintenance tasks also have their own notes.
+- **Common spine on every event:** asset, **date or date range** (see Event dates), **location** (see Event location), meter readings, and a free-text **notes** field. Notes are on every event type and prominent on fuel-up and maintenance forms; individual maintenance tasks also have their own notes. Notes are a **Markdown subset** (bold, italics, lists, links), shown as plain text until an editor and rendering arrive (`docs/decisions.md` #055).
 - **Type-specific details** on top of that. For example, a fuel event records volume and price.
 - This gives one chronological timeline per vehicle that can be viewed whole or filtered by type.
 
