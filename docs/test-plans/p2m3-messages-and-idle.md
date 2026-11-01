@@ -65,19 +65,19 @@
 | [x] | 6 | **Working keeps Admin mode:** enter Admin mode; about every 5 minutes, scroll or click somewhere harmless (e.g. a Settings tab), for **20 minutes** | Still in Admin mode at 20 minutes. Then open **Users**: it lists the users (the server still agrees you're in Admin mode). |
 | [x] | 7 | **The server's own limit:** while in Admin mode, close the browser tab, wait **16 minutes**, open the app again | Driver mode: the server ended Admin mode by itself. |
 | [x] | 8 | **Sign out when idle:** Settings → You → **After 1 hour** (the switch unticks). Don't touch the computer for **61 minutes** | The sign-in card says "You were signed out after 1 idle hour." Sign in again: the notice is gone. Then tick **Use household default** again. |
-| [ ] | 9 | **Household default:** in Admin mode, Settings → **Household** → **After 4 hours**. Then sign in as Sam on the phone → Settings → You | Sam's **Sign out when idle** shows "After 4 hours", following the household. Put the household back to **After 8 hours**. |
-| [ ] | 10 | **Sleep:** on the Mac, enter Admin mode in the browser, close the lid for **20 minutes**, open it | Within about 15 seconds: Driver mode, with the "Admin mode ended…" notice. |
-| [ ] | 11 | **Desktop app:** sign in, enter Admin mode, wait **16 minutes** without touching it | The same as step 5. Then open **Messages**: the screen shows, with its list, divider, and detail panel. |
-| [ ] | 12 | **Evening: make tomorrow's snapshot skip.** In `.env` set `VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots` (nothing is mounted there), then `sudo docker compose up -d` | The server restarts normally. |
-| [ ] | 13 | **Morning (after 07:00 UTC):** `sudo docker logs vehiclemanager 2>&1 \| grep nightly-snapshot` | A `job skipped job="nightly-snapshot"` line: "snapshot folder /snapshots is missing (not mounted?)". |
-| [ ] | 14 | As stuart in **Driver** mode, and as Sam: look at **Messages** | No badge, no messages for either (it's an Admin message, Admin mode only). |
-| [ ] | 15 | As stuart, enter **Admin mode** | Badge **1** on Messages in the sidebar. No red banner (it's a warning, not urgent). |
-| [ ] | 16 | Open **Messages** | One row, with an unread dot and an amber stripe: "The nightly snapshot was skipped", "WARNING · <date> 07:00 UTC". "Choose a message to read it." on the right. |
-| [ ] | 17 | Open it | The right side shows the text about backups, **DETAILS**: "snapshot folder /snapshots is missing (not mounted?)", **Open Diagnostics** and **Dismiss**. The dot and the badge are gone, and the list says "All read". **Open Diagnostics** goes to Diagnostics. |
-| [ ] | 18 | On the phone (stuart, Admin mode): **Messages** tab | The list; tapping the message opens its page with **← Messages**, which goes back. Its badge was already gone (read on the Mac). |
-| [ ] | 19 | Back on the Mac: **Dismiss**. Then `sudo docker compose restart`, reload the page (sign in again if asked), Admin mode, Messages | "No messages. You're all caught up." It stays dismissed after the restart. |
+| [x] | 9 | **Household default:** in Admin mode, Settings → **Household** → **After 4 hours**. Then sign in as Sam on the phone → Settings → You | Sam's **Sign out when idle** shows "After 4 hours", following the household. Put the household back to **After 8 hours**. |
+| [x] | 10 | **Sleep:** on the Mac, enter Admin mode in the browser, close the lid for **20 minutes**, open it | Within about 15 seconds: Driver mode, with the "Admin mode ended…" notice. |
+| [x] | 11 | **Desktop app:** sign in, enter Admin mode, wait **16 minutes** without touching it | The same as step 5. Then open **Messages**: the screen shows, with its list, divider, and detail panel. |
+| [x] | 12 | **Evening: make tomorrow's snapshot skip.** In `.env` set `VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots` (nothing is mounted there), then `sudo docker compose up -d` | The server restarts normally. |
+| [x] | 13 | **Morning (after 07:00 UTC):** `sudo docker logs vehiclemanager 2>&1 \| grep nightly-snapshot` | A `job skipped job="nightly-snapshot"` line: "snapshot folder /snapshots is missing (not mounted?)". |
+| [x] | 14 | As stuart in **Driver** mode, and as Sam: look at **Messages** | No badge, no messages for either (it's an Admin message, Admin mode only). |
+| [x] | 15 | As stuart, enter **Admin mode** | Badge **1** on Messages in the sidebar. No red banner (it's a warning, not urgent). |
+| [x] | 16 | Open **Messages** | One row, with an unread dot and an amber stripe: "The nightly snapshot was skipped", "WARNING · <date> 07:00 UTC". "Choose a message to read it." on the right. |
+| [x] | 17 | Open it | The right side shows the text about backups, **DETAILS**: "snapshot folder /snapshots is missing (not mounted?)", **Open Diagnostics** and **Dismiss**. The dot and the badge are gone, and the list says "All read". **Open Diagnostics** goes to Diagnostics. |
+| [x] | 18 | On the phone (stuart, Admin mode): **Messages** tab | The list; tapping the message opens its page with **← Messages**, which goes back. Its badge was already gone (read on the Mac). |
+| [x] | 19 | Back on the Mac: **Dismiss**. Then `sudo docker compose restart`, reload the page (sign in again if asked), Admin mode, Messages | "No messages. You're all caught up." It stays dismissed after the restart. |
 | [ ] | 20 | **Fix it:** empty `VEHICLEMANAGER_SNAPSHOT_DIR=` in `.env`, `sudo docker compose up -d` | The server restarts normally. *(Optional, the next morning: a new snapshot in `data/snapshots/`, and still no message.)* |
-| [ ] | 21 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
+| [x] | 21 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
 
 **Not testable by hand:** "The server isn't accepting changes" for everyone (urgent, with the red banner on every screen). It needs a database that opens but fails its integrity check, which can't be made safely by hand. If the database can't be opened at all (milestone 1's drill), nobody can sign in, so no messages can show. The server's automated tests cover it (`an_unhealthy_server_tells_everyone_and_refuses_marks`). The urgent banner itself was checked in a browser with a failed hourly check during development.
 
