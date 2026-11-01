@@ -82,8 +82,9 @@ pub async fn request_code(
     let shown = group_by_four(&code);
     let expires = UnixMillis::from_millis(now.as_millis() + CODE_LIFETIME_MILLIS);
     with_codes(|codes| codes.insert(admin, (code, expires)));
-    // Deliberately logged: reading the server log (NAS access) is what proves you may recover.
-    tracing::warn!(target: log_area::AUTH, user = %admin, recovery_code = %shown, "password recovery asked for: enter this recovery code in the app within 15 minutes");
+    // Deliberately logged, to the console only (`docker logs`, never the log files): reading it
+    // (NAS access) is what proves you may recover.
+    tracing::warn!(target: log_area::AUTH, console_only = true, user = %admin, recovery_code = %shown, "password recovery asked for: enter this recovery code in the app within 15 minutes");
     Ok(())
 }
 

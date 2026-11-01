@@ -87,7 +87,7 @@ The address is then `https://<nas-name>.<tailnet>.ts.net:8443`.
 
 ### 6. Create the first Admin
 
-A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028):
+A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028). The setup and recovery codes go **only to the container's log** (`docker logs`), never to the files in `data/logs/`, so log files you share for debugging never contain them:
 
 ```sh
 sudo docker logs vehiclemanager 2>&1 | grep -i "setup code"
