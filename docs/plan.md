@@ -8,6 +8,8 @@ A self-hosted app for tracking vehicles, everything that happens to them, and th
 
 *To keep this plan readable, **detailed designs for one feature area live in sub-plans** in `docs/sub-plans/`, each linked from the section it details; this plan keeps a short summary. A sub-plan marked draft isn't part of the plan until the human confirms it. Sub-plans so far:*
 - *`docs/sub-plans/signatures-and-records.md`: electronic signatures and record-keeping (draft; see Logbook entries, statement templates & signatures).*
+- *`docs/sub-plans/email-and-password-reset-plan.md`: optional email over SMTP, email password reset, and later email notifications (draft; see Security → Application, and In-app notifications).*
+- *`docs/sub-plans/voice-capture-plan.md`: hands-free logging of fuel-ups, readings, and squawks by voice, saved as drafts (draft; see Fast logging).*
 
 **Long-term aspiration (well past MVP):** extend the app, or a sibling app built on the same core, to **aircraft maintenance records**, alongside or instead of ground vehicles. Aircraft features are not being planned yet, but early data-model decisions are made so they won't block it (see Aircraft-ready groundwork).
 
@@ -1232,6 +1234,7 @@ When a vehicle is sold to someone who also runs this app, export it as an **impo
 - An always-available **+ Log** button (toolbar on desktop, floating button on mobile).
 - It opens a chooser: Fuel-up, Reading, Squawk, Maintenance. Options are limited by mode and role, and it remembers the last vehicle.
 - Large inputs, numeric keypads, required meters first with the last value as a hint, and detent sliders for driving conditions.
+- **Voice logging (proposed, draft):** `docs/sub-plans/voice-capture-plan.md` (idea 14): opt-in, on-device speech, a guided one-question-at-a-time dialog built from the asset's own fields, saved as **drafts** to review later. Not planned into a phase yet.
 
 **Photos from the web UI on a phone**
 - The web view lets a phone browser (e.g. iPhone Safari) **take a photo with the camera or pick one from the library**, using a standard file input that accepts images. The phone shows its own Take Photo / Photo Library / Choose File sheet.
@@ -1270,6 +1273,7 @@ A **message center** inside the apps: an inbox with an unread badge.
 - **Generated locally** from synced data, so they work offline and need no push infrastructure.
 - Respects **per-vehicle roles:** users only see messages for vehicles they have access to.
 - **OS-level notifications** (desktop notification center, mobile notifications, push) are **post-MVP.**
+- **Email notifications** (e.g. maintenance due, with per-person preferences) are proposed in the draft `docs/sub-plans/email-and-password-reset-plan.md` (idea 13), as an optional extra on top of the in-app messages.
 
 ---
 
@@ -1437,6 +1441,7 @@ Dioxus provides no encryption or authentication on its own; server functions are
   - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
   - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
   - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
+  - **Forgotten passwords:** an Admin resets anyone's with a temporary password (#046); an Admin who forgot their own uses a one-time recovery code in the server log (#047). **Optional email** (any SMTP provider) and an email reset link are proposed in the draft `docs/sub-plans/email-and-password-reset-plan.md` (idea 13).
 - **Auth enforced in middleware**, so no server function can be left unprotected by accident.
 - **Rate limiting** on auth and pairing endpoints (e.g. `tower_governor`).
 - **Server-side input validation** and parameterized queries (e.g. sqlx).
@@ -1800,7 +1805,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
 - **Phase 5: Maintenance intelligence.** The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 - **Phase 6: Polish.** Import/export, pairing flow, reports, **multi-page document capture in the web UI**, and **standalone mode** (single device, no server, local backups, upgrade path to a server).
-- **Post-MVP: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder.
+- **Post-MVP: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of **voice logging** needs the mobile apps too (draft `docs/sub-plans/voice-capture-plan.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
 - **Post-MVP: Offsite backups.** Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
 - **Post-MVP: OBD-II scans.** USB OBD-II reading on desktop (trouble codes, freeze frame, readiness, VIN, odometer), saved with events, before/after comparison; Bluetooth on mobile later.

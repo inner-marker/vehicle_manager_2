@@ -50,6 +50,7 @@
 
 - **ID format: decided,** UUIDv7 (#042). Human-friendly record numbers are post-MVP.
 - **Other ideas that touch Phase 2** (`docs/ideas-to-discuss.md`): field-level commands (idea 1, milestone 1), content-addressed blob storage (idea 3, milestone 8), groups (idea 6: decided, #052, milestone 4), notes format (idea 8, milestone 6), and the background job system (idea 9, milestone 1). Each is raised with you before the milestone it affects, as AGENTS.md requires.
+- **Draft sub-plans that touch Phase 2** (`docs/sub-plans/`, not part of the plan until confirmed): records and signatures (idea 12: finalizing, amendments, and the audit trail, milestone 6); voice capture (idea 14: an event **source** field and drafts vs. automatic finalizing, milestone 6; squawk severity vs. **blocks use**, milestone 7; per-asset fields, milestone 4); email (idea 13: an email field on users, and keeping codes out of exported logs). Each is raised with you before the milestone it affects.
 
 ---
 
