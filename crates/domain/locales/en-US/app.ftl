@@ -382,3 +382,15 @@ test-timers-tag = TEST TIMERS · { $minutes } min
 # $label (text): the normal choice, e.g. "After 1 hour"; $minutes (number): its test length.
 idle-sign-out-test = { $label } (test: { $minutes } min)
 
+
+## Assets, groups, and notes (decisions #052, #055)
+
+notes-too-long = That's too long: notes can have at most 10,000 characters.
+group-name-empty = Give the group a name.
+group-name-too-long = A group's name can have at most 40 characters.
+asset-name-empty = Give the vehicle a name.
+asset-name-too-long = A vehicle's name can have at most 40 characters.
+asset-text-too-long = That's too long: at most 64 characters.
+asset-year-out-of-range = That year doesn't look right.
+asset-identifier-empty = Enter the identifier, or remove it.
+asset-too-many-identifiers = A vehicle can have at most 10 identifiers.

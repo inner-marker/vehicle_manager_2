@@ -7,7 +7,9 @@
 
 pub mod access;
 pub mod api;
+pub mod asset;
 pub mod command;
+pub mod group;
 pub mod hlc;
 pub mod hlc_utils;
 pub mod i18n;
@@ -16,6 +18,7 @@ pub mod identity;
 pub mod idle;
 pub mod inbox;
 pub mod log_area;
+pub mod notes;
 pub mod preferences;
 pub mod server_address;
 pub mod time;

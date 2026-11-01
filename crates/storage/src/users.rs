@@ -61,6 +61,9 @@ fn target_to_sql(target: GrantTarget) -> (&'static str, Option<Vec<u8>>) {
     match target {
         GrantTarget::AllAssets => ("all-assets", None),
         GrantTarget::Asset(asset) => ("asset", Some(id_to_sql(asset))),
+        // Not storable until step 4c rebuilds the table with a group column; the table's
+        // CHECK refuses "group", so such a grant fails to save rather than being misread.
+        GrantTarget::Group(group) => ("group", Some(id_to_sql(group))),
     }
 }
 

@@ -581,4 +581,22 @@ define_messages! {
     TEST_TIMERS_TAG => "test-timers-tag",
     /// A sign-out choice with its test length (`$label`, `$minutes`).
     IDLE_SIGN_OUT_TEST => "idle-sign-out-test",
+    /// Notes longer than the limit.
+    NOTES_TOO_LONG => "notes-too-long",
+    /// A group with no name.
+    GROUP_NAME_EMPTY => "group-name-empty",
+    /// A group name longer than the limit.
+    GROUP_NAME_TOO_LONG => "group-name-too-long",
+    /// A vehicle with no name.
+    ASSET_NAME_EMPTY => "asset-name-empty",
+    /// A vehicle name longer than the limit.
+    ASSET_NAME_TOO_LONG => "asset-name-too-long",
+    /// Make, model, colour, or an identifier longer than the limit.
+    ASSET_TEXT_TOO_LONG => "asset-text-too-long",
+    /// A model year outside the plausible range.
+    ASSET_YEAR_OUT_OF_RANGE => "asset-year-out-of-range",
+    /// An identifier with no value.
+    ASSET_IDENTIFIER_EMPTY => "asset-identifier-empty",
+    /// More identifiers than allowed.
+    ASSET_TOO_MANY_IDENTIFIERS => "asset-too-many-identifiers",
 }

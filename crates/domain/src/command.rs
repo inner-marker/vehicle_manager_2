@@ -85,6 +85,34 @@ pub trait Patch: Clone + core::fmt::Debug {
     fn keep_only(&mut self, fields: &[&str]);
 }
 
+/// A change to an optional field in a patch: clear it, or set it. A patch holds
+/// `Option<Clearable<T>>`, where `None` means "unchanged".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "to", content = "value", rename_all = "kebab-case")]
+pub enum Clearable<T> {
+    /// Empty it.
+    Clear,
+    /// Set it to this.
+    Set(T),
+}
+
+impl<T> Clearable<T> {
+    /// The field's new value: `None` when cleared.
+    #[must_use]
+    pub fn into_option(self) -> Option<T> {
+        match self {
+            Self::Clear => None,
+            Self::Set(value) => Some(value),
+        }
+    }
+
+    /// The change that makes a field `value`: set when `Some`, cleared when `None`.
+    #[must_use]
+    pub fn from_option(value: Option<T>) -> Self {
+        value.map_or(Self::Clear, Self::Set)
+    }
+}
+
 /// What a command does to one record.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(
