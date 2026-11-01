@@ -10,15 +10,16 @@ mod assets {
     use domain::access::{ActiveMode, GrantTarget, Role, RoleGrant, RoleGrantPatch};
     use domain::api::{AssetView, AssetsOutcome, GarageView};
     use domain::asset::{AssetId, LifecycleStatus};
-    use domain::asset_form::{AssetForm, GroupForm, MeterForm, Problem};
+    use domain::asset_form::{AssetForm, FieldForm, GroupForm, MeterForm, Problem};
     use domain::command::Change;
+    use domain::custom_field::FieldKind;
     use domain::group::{GroupIcon, GroupId};
     use domain::meter::{EventKind, MeterDimension, MeterUnit};
     use domain::preferences::{Choice, DistanceUnit, PreferencesPatch};
     use domain::test_support::{ManualClock, test_id};
     use server::assets::{
-        AssetsContext, add, add_meter, delete, edit, edit_meter, garage, move_to, preview_move,
-        set_order, view,
+        AssetsContext, add, add_field, add_meter, delete, delete_field, edit, edit_field,
+        edit_meter, garage, move_to, preview_move, set_order, view,
     };
     use server::commands::issue;
     use server::groups::{add_group, delete_group, ensure_default_group};
@@ -440,6 +441,76 @@ mod assets {
         assert_eq!(
             database.meter(meter_id).await.unwrap().unwrap().dimension,
             MeterDimension::Duration
+        );
+    }
+
+    #[tokio::test]
+    async fn field_keys_come_from_labels_and_stay_put() {
+        let (_temp, database, stuart, _sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let garage_id = default_group(&database, &clock).await;
+        let admin = in_admin(&stuart);
+        let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
+        let ctx = context(&database, &admin, &clock);
+        let keys = |fields: &[(
+            domain::custom_field::CustomFieldId,
+            domain::custom_field::CustomField,
+        )]| {
+            let mut keys: Vec<String> = fields
+                .iter()
+                .map(|(_, f)| f.key.as_str().to_owned())
+                .collect();
+            keys.sort();
+            keys
+        };
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(
+            keys(&page.fields),
+            vec!["trip-ev-distance", "trip-time"],
+            "from the profile"
+        );
+
+        // A second "Trip time" gets a key of its own.
+        let form = FieldForm {
+            applies_to: EventKind::Fuel,
+            label: "Trip time".into(),
+            kind: FieldKind::Duration,
+            enabled: true,
+            range: None,
+        };
+        assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(
+            keys(&page.fields),
+            vec!["trip-ev-distance", "trip-time", "trip-time-2"]
+        );
+
+        // Renaming keeps the key; a removed field's key isn't reused.
+        let (new_id, _) = page
+            .fields
+            .iter()
+            .find(|(_, f)| f.key.as_str() == "trip-time-2")
+            .unwrap()
+            .clone();
+        let renamed = FieldForm {
+            label: "Moving time".into(),
+            ..form.clone()
+        };
+        assert_eq!(
+            edit_field(&ctx, new_id, &renamed).await,
+            AssetsOutcome::Done
+        );
+        let field = database.custom_field(new_id).await.unwrap().unwrap();
+        assert_eq!(
+            (field.label.as_str(), field.key.as_str()),
+            ("Moving time", "trip-time-2")
+        );
+        assert_eq!(delete_field(&ctx, new_id).await, AssetsOutcome::Done);
+        assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(
+            keys(&page.fields),
+            vec!["trip-ev-distance", "trip-time", "trip-time-3"]
         );
     }
 }

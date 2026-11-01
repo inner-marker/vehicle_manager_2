@@ -285,6 +285,8 @@
 
 **Vehicles layout (4e, chosen 2026-11-01, #056):** option A of `docs/ui-sketches/p2m4-garage-options.svg` (cards per group; + Add vehicle as a two-step dialog), with a **Sort menu** (Newest activity, Name (A–Z), Custom with Arrange) instead of a toggle, and **each group in the sidebar** (with All vehicles above them when there's more than one; the Garage screen becomes All vehicles; the Vehicles placeholder becomes Groups; on phones, a Vehicles tab with a group menu), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg`. Pinning is idea 15, for later.
 
+**Vehicle page (4f, chosen 2026-11-01, #057):** option A of `docs/ui-sketches/p2m4-vehicle-options.svg` (header and tabs across the top; Overview as dashboard panels; Setup as stacked sections; move with a preview; delete with the name typed). Custom fields get **stable keys** (groundwork for Phase 5's calculated fields and idea 16's field catalogue).
+
 **You can check on the NAS:** add the real vehicles with their meters; the Garage shows them by group; make a second group and move a vehicle to it, seeing who gains and loses access first; give Sam a role on one group only, and Sam sees only those vehicles.
 
 **Written so far**
@@ -307,3 +309,6 @@
   - **Fixed in the browser:** a group's count included hidden archived vehicles ("3 vehicles" over two cards); it now counts what's shown.
   - **The custom order is its own record, not a preference,** because it's a list (preferences are single values that merge one by one).
   - An Admin in Driver mode with no vehicles yet sees **All vehicles** rather than a group, since only groups with a vehicle they can see are listed (the empty ones show in Admin mode).
+- **4f, field keys (#057):** `custom_field::FieldKey` (1–40 lowercase letters, digits, and `-`), on `CustomField` and its patch. Profile fields name theirs in the RON files (`trip-time`, `trip-ev-distance`; a test checks they don't repeat in a profile); other fields get one from their label when added (`Trip EV miles` → `trip-ev-miles`, then `-2`, `-3` if it's taken). Migration 0006 edited in place (not applied anywhere that keeps data yet): `custom_fields.key` with a unique index per asset. `storage::field_keys_of` lists every key an asset has used, removed fields too. 3 new tests (keys from labels, keys from data, and on the server: a second "Trip time", renaming, removing); the profile and storage tests check keys too.
+  - **A key never changes and is never reused**, even after its field is removed, so a formula or report can't quietly start reading a different field. Renaming a field keeps its key; the storage writer ignores a key in an update.
+  - **The profile `version` stays 1:** no profile has been applied to a kept database yet.

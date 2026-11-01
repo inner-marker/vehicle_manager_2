@@ -64,6 +64,8 @@ CREATE TABLE custom_fields (
     id         BLOB    PRIMARY KEY CHECK (length(id) = 16),
     asset_id   BLOB    NOT NULL REFERENCES assets (id),
     applies_to TEXT    NOT NULL CHECK (applies_to IN ('fuel', 'reading', 'maintenance', 'repair')),
+    -- The stable key formulas and reports use (#057), e.g. 'trip-time'; never reused.
+    key        TEXT    NOT NULL CHECK (length(key) BETWEEN 1 AND 40),
     label      TEXT    NOT NULL CHECK (length(label) BETWEEN 1 AND 160),
     -- The field's kind as JSON, e.g. {"type":"number","decimals":1}.
     kind       TEXT    NOT NULL,
@@ -76,6 +78,9 @@ CREATE TABLE custom_fields (
 ) STRICT;
 
 CREATE INDEX custom_fields_by_asset ON custom_fields (asset_id) WHERE deleted = 0;
+
+-- A key names one field of an asset forever, even once that field is removed.
+CREATE UNIQUE INDEX custom_fields_keys ON custom_fields (asset_id, key);
 
 -- Role grants, rebuilt (milestone 2 planned it): a third target kind, a group, and foreign
 -- keys to the assets and groups they name. Every existing grant is on all assets (there were

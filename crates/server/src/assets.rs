@@ -18,7 +18,7 @@ use domain::api::{AssetSummary, AssetView, AssetsOutcome, GarageView, GroupSumma
 use domain::asset::{Asset, AssetId, AssetPatch};
 use domain::asset_form::{AssetForm, FieldForm, MeterForm, Problem, confirms_name};
 use domain::command::{Change, Clearable, Record};
-use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch};
+use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKey};
 use domain::garage::{GarageOrderId, GarageOrderPatch, MAX_ORDER_LENGTH};
 use domain::group::GroupId;
 use domain::i18n::Translator;
@@ -643,9 +643,15 @@ async fn add_field_to(
         .allowed(asset, AssetAction::ConfigureMaintenance)
         .await?;
     let label = form.parse().map_err(invalid)?;
+    let taken = context
+        .database
+        .field_keys_of(asset)
+        .await
+        .map_err(|error| unavailable("field keys", &error))?;
     let field = CustomField {
         asset,
         applies_to: form.applies_to,
+        key: FieldKey::from_label(&label, &taken),
         label,
         kind: form.kind.clone(),
         enabled: form.enabled,

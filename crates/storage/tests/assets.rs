@@ -8,7 +8,7 @@ mod assets {
         Asset, AssetKind, AssetName, AssetPatch, Identifier, IdentifierKind, LifecycleStatus,
     };
     use domain::command::Clearable;
-    use domain::custom_field::{CustomField, CustomFieldPatch, FieldKind, FieldRange};
+    use domain::custom_field::{CustomField, CustomFieldPatch, FieldKey, FieldKind, FieldRange};
     use domain::group::{Group, GroupIcon, GroupName, GroupPatch};
     use domain::label::Label;
     use domain::meter::{EventKind, Meter, MeterDimension, MeterPatch, MeterUnit};
@@ -231,6 +231,7 @@ mod assets {
         let field = CustomField {
             asset: test_id(TRUCK),
             applies_to: EventKind::Fuel,
+            key: FieldKey::parse("gallons-pumped").unwrap(),
             label: Label::parse("Gallons pumped").unwrap(),
             kind: FieldKind::Number { decimals: 3 },
             enabled: true,
@@ -268,6 +269,16 @@ mod assets {
         assert!(!updated.enabled);
         assert_eq!(updated.range, None);
         assert_eq!(updated.kind, FieldKind::Number { decimals: 3 }, "unchanged");
+
+        // Removed fields keep their keys, so a new field never reuses one.
+        CustomFieldWriter
+            .delete(&mut connection, test_id(30), 5)
+            .await
+            .unwrap();
+        assert_eq!(
+            database.field_keys_of(test_id(TRUCK)).await.unwrap(),
+            vec![FieldKey::parse("gallons-pumped").unwrap()]
+        );
     }
 
     #[tokio::test]

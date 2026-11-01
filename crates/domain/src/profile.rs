@@ -22,7 +22,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 use crate::asset::{AssetId, AssetKind, IdentifierKind};
-use crate::custom_field::{CustomField, FieldKind, FieldRange};
+use crate::custom_field::{CustomField, FieldKey, FieldKind, FieldRange};
 use crate::i18n::Translator;
 use crate::label::Label;
 use crate::meter::{EventKind, Meter, MeterDimension, MeterUnit};
@@ -101,6 +101,8 @@ pub struct ProfileMeter {
 /// A custom field a new asset starts with.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct ProfileField {
+    /// Its stable key (#057), e.g. `trip-time`; never changed once shipped.
+    pub key: FieldKey,
     /// Its label (a message key).
     pub label: String,
     /// The kind of event it's on.
@@ -198,6 +200,7 @@ impl Profile {
                 Some(CustomField {
                     asset,
                     applies_to: field.applies_to,
+                    key: field.key.clone(),
                     label: Label::parse(&translator.tr_key(&field.label)).ok()?,
                     kind: field.kind.clone(),
                     enabled: field.enabled,
@@ -286,6 +289,19 @@ mod tests {
                     assert!(profile.event_kinds.contains(kind), "{}", meter.name);
                 }
             }
+            let mut keys: Vec<&str> = profile
+                .fields
+                .iter()
+                .map(|field| field.key.as_str())
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            assert_eq!(
+                keys.len(),
+                profile.fields.len(),
+                "{}: keys repeat",
+                profile.id.as_str()
+            );
             for field in &profile.fields {
                 assert!(
                     check_field(&field.kind, field.range).is_ok(),
@@ -338,6 +354,7 @@ mod tests {
         let fields = car.new_fields(test_id(1), english);
         assert_eq!(fields.len(), 2);
         assert_eq!(fields[0].label.as_str(), "Trip time");
+        assert_eq!(fields[0].key.as_str(), "trip-time");
         assert_eq!(fields[0].kind, FieldKind::Duration);
     }
 }

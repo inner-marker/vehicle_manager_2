@@ -12,3 +12,5 @@ its profile's meters and fields, which it can then change.
 - Kebab-case values that aren't plain RON identifiers are written as raw identifiers,
   e.g. `r#fuel-economy`.
 - A meter `unit: None` means the person's distance preference (miles or kilometers).
+- Each field has a stable `key` (e.g. `trip-time`, decision #057): formulas, reports, and voice
+  refer to it, so never change one that has shipped.

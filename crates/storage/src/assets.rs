@@ -3,7 +3,9 @@
 
 use domain::access::AssetScope;
 use domain::asset::{Asset, AssetId, AssetPatch, Identifier, LifecycleStatus};
-use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKind, FieldRange};
+use domain::custom_field::{
+    CustomField, CustomFieldId, CustomFieldPatch, FieldKey, FieldKind, FieldRange,
+};
 use domain::garage::{GarageOrder, GarageOrderId, GarageOrderPatch};
 use domain::group::{Group, GroupId, GroupPatch};
 use domain::id::Id;
@@ -440,9 +442,9 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
                 .and_then(domain::command::Clearable::into_option),
         );
         sqlx::query(
-            "INSERT INTO custom_fields (id, asset_id, applies_to, label, kind, enabled,
+            "INSERT INTO custom_fields (id, asset_id, applies_to, key, label, kind, enabled,
                                         has_range, range_min, range_max, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -450,6 +452,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
             required(values.applies_to.as_ref(), "applies_to")?,
             "applies_to",
         )?)
+        .bind(required(values.key.as_ref(), "key")?.as_str())
         .bind(required(values.label.as_ref(), "label")?.as_str())
         .bind(json_to_sql(
             required(values.kind.as_ref(), "kind")?,
@@ -472,6 +475,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
         patch: &CustomFieldPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
+        // The key is fixed once made (#057), so a patch's key is ignored.
         // The range's three columns change together, or not at all.
         let range_change = patch
             .range
@@ -529,6 +533,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
 }
 
 fn custom_field_from_row(row: &SqliteRow) -> Result<(CustomFieldId, CustomField), StorageError> {
+    let key: String = row.try_get("key")?;
     let label: String = row.try_get("label")?;
     let kind: String = row.try_get("kind")?;
     let has_range: bool = row.try_get("has_range")?;
@@ -546,6 +551,9 @@ fn custom_field_from_row(row: &SqliteRow) -> Result<(CustomFieldId, CustomField)
                 "custom_fields.asset_id",
             )?,
             applies_to: required_name(row.try_get("applies_to")?, "custom_fields.applies_to")?,
+            key: FieldKey::parse(&key).map_err(|_| StorageError::InvalidValue {
+                column: "custom_fields.key",
+            })?,
             label: domain::label::Label::parse(&label).map_err(|_| StorageError::InvalidValue {
                 column: "custom_fields.label",
             })?,
@@ -776,7 +784,7 @@ impl Database {
         id: CustomFieldId,
     ) -> Result<Option<CustomField>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, applies_to, label, kind, enabled, has_range, range_min,
+            "SELECT id, asset_id, applies_to, key, label, kind, enabled, has_range, range_min,
                     range_max
              FROM custom_fields WHERE id = ? AND deleted = 0",
         )
@@ -798,7 +806,7 @@ impl Database {
         asset: AssetId,
     ) -> Result<Vec<(CustomFieldId, CustomField)>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, applies_to, label, kind, enabled, has_range, range_min,
+            "SELECT id, asset_id, applies_to, key, label, kind, enabled, has_range, range_min,
                     range_max
              FROM custom_fields WHERE asset_id = ? AND deleted = 0 ORDER BY label",
         )
@@ -808,5 +816,25 @@ impl Database {
         .iter()
         .map(custom_field_from_row)
         .collect()
+    }
+
+    /// Every key one asset's custom fields have used, removed ones too (a key is never reused).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored key is invalid.
+    pub async fn field_keys_of(&self, asset: AssetId) -> Result<Vec<FieldKey>, StorageError> {
+        let keys: Vec<String> =
+            sqlx::query_scalar("SELECT key FROM custom_fields WHERE asset_id = ? ORDER BY key")
+                .bind(id_to_sql(asset))
+                .fetch_all(self.pool())
+                .await?;
+        keys.iter()
+            .map(|key| {
+                FieldKey::parse(key).map_err(|_| StorageError::InvalidValue {
+                    column: "custom_fields.key",
+                })
+            })
+            .collect()
     }
 }
