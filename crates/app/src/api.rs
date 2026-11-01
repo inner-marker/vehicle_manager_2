@@ -495,6 +495,23 @@ pub(crate) async fn vehicle_page(id: domain::asset::AssetId) -> ServerFnResult<A
     Ok(server_side::with_assets(async |context| ::server::assets::view(&context, id).await).await)
 }
 
+/// Saves the signed-in person's custom Garage order (#056).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/assets/order")]
+pub(crate) async fn set_garage_order(
+    order: Vec<domain::asset::AssetId>,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::assets::set_order(&context, order).await
+        })
+        .await,
+    )
+}
+
 /// Adds a vehicle, with copies of its profile's meters and fields (the household's Admin).
 ///
 /// # Errors

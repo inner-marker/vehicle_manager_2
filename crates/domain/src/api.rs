@@ -398,6 +398,10 @@ pub struct GarageView {
     pub can_add: bool,
     /// They may manage groups and move vehicles (the household's Admin, in Admin mode).
     pub can_manage_groups: bool,
+    /// How they sort the Garage (#056).
+    pub sort: crate::preferences::GarageSort,
+    /// Their custom order, for the Custom sort.
+    pub order: Vec<crate::asset::AssetId>,
 }
 
 /// One vehicle's page.

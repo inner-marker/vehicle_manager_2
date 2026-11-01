@@ -631,6 +631,76 @@ define_messages! {
     NAME_MISMATCH => "name-mismatch",
     /// The default group's name, made with the server.
     GROUP_DEFAULT_NAME => "group-default-name",
+    /// Sidebar and title: every group's vehicles.
+    NAV_ALL_VEHICLES => "nav-all-vehicles",
+    /// Button: add a vehicle.
+    VEHICLES_ADD => "vehicles-add",
+    /// The sort menu's label (for screen readers).
+    VEHICLES_SORT_LABEL => "vehicles-sort-label",
+    /// Sort choice: newest activity.
+    SORT_NEWEST_ACTIVITY => "sort-newest-activity",
+    /// Sort choice: by name.
+    SORT_NAME => "sort-name",
+    /// Sort choice: the person's own order.
+    SORT_CUSTOM => "sort-custom",
+    /// Button: arrange the custom order.
+    VEHICLES_ARRANGE => "vehicles-arrange",
+    /// Button: finish arranging.
+    VEHICLES_ARRANGE_DONE => "vehicles-arrange-done",
+    /// Button: show archived vehicles (`$count`).
+    VEHICLES_SHOW_ARCHIVED => "vehicles-show-archived",
+    /// Button: hide archived vehicles.
+    VEHICLES_HIDE_ARCHIVED => "vehicles-hide-archived",
+    /// How many vehicles a group has (`$count`).
+    VEHICLES_COUNT => "vehicles-count",
+    /// No vehicles at all.
+    VEHICLES_EMPTY => "vehicles-empty",
+    /// No vehicles: how to add one.
+    VEHICLES_EMPTY_ADMIN => "vehicles-empty-admin",
+    /// A group with no vehicles.
+    VEHICLES_EMPTY_GROUP => "vehicles-empty-group",
+    /// The phone's group menu label.
+    VEHICLES_GROUP_MENU => "vehicles-group-menu",
+    /// A card's note until readings arrive.
+    VEHICLES_CARD_COMING => "vehicles-card-coming",
+    /// Arranging: move a vehicle up.
+    VEHICLES_MOVE_UP => "vehicles-move-up",
+    /// Arranging: move a vehicle down.
+    VEHICLES_MOVE_DOWN => "vehicles-move-down",
+    /// The add-vehicle dialog's title.
+    ADD_VEHICLE_TITLE => "add-vehicle-title",
+    /// Add vehicle, step 1: pick a kind.
+    ADD_VEHICLE_KIND => "add-vehicle-kind",
+    /// Add vehicle: the add button.
+    ADD_VEHICLE_ADD => "add-vehicle-add",
+    /// Add vehicle: while adding.
+    ADD_VEHICLE_ADDING => "add-vehicle-adding",
+    /// Field: the vehicle's name.
+    ADD_VEHICLE_NAME => "add-vehicle-name",
+    /// Add vehicle: what it starts with.
+    ADD_VEHICLE_NOTE => "add-vehicle-note",
+    /// Field: make.
+    FIELD_MAKE => "field-make",
+    /// Field: model.
+    FIELD_MODEL => "field-model",
+    /// Field: model year.
+    FIELD_YEAR => "field-year",
+    /// Field: colour.
+    FIELD_COLOUR => "field-colour",
+    /// Field: group.
+    FIELD_GROUP => "field-group",
+    /// Lifecycle status: in service.
+    STATUS_IN_SERVICE => "status-in-service",
+    /// Lifecycle status: spare.
+    STATUS_SPARE => "status-spare",
+    /// Lifecycle status: out for service.
+    STATUS_OUT_FOR_SERVICE => "status-out-for-service",
+    /// Lifecycle status: retired.
+    STATUS_RETIRED => "status-retired",
+    /// Lifecycle status: disposed.
+    STATUS_DISPOSED => "status-disposed",
+    /// A vehicle action the person's role or mode doesn't allow.
+    VEHICLES_NOT_ALLOWED => "vehicles-not-allowed",
     /// Profile name: car. Used by profile files (data), so code rarely names it.
     PROFILE_CAR => "profile-car",
     /// Profile name: truck. Used by profile files (data), so code rarely names it.

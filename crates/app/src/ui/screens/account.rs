@@ -44,9 +44,12 @@ fn transport_error(error: &ServerFnError) -> String {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn Field(
+pub(crate) fn Field(
     label: MessageId,
     value: Signal<String>,
+    /// A label already in words (e.g. from a profile file), used instead of `label`.
+    #[props(default)]
+    label_text: Option<String>,
     #[props(default = "text")] kind: &'static str,
     #[props(default = "off")] autocomplete: &'static str,
     #[props(default)] mono: bool,
@@ -55,7 +58,7 @@ fn Field(
     let mut value = value;
     rsx! {
         label { class: "field",
-            span { class: "field-label", {tr(label)} }
+            span { class: "field-label", {label_text.unwrap_or_else(|| tr(label))} }
             input {
                 class: if mono { "field-input mono" } else { "field-input" },
                 r#type: kind,
@@ -71,7 +74,7 @@ fn Field(
 
 /// A form error, above the button.
 #[component]
-fn FormError(message: Option<String>) -> Element {
+pub(crate) fn FormError(message: Option<String>) -> Element {
     rsx! {
         if let Some(message) = message {
             p { class: "form-error", role: "alert", {message} }

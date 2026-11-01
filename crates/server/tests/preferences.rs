@@ -9,8 +9,8 @@ mod preferences {
     use domain::access::ActiveMode;
     use domain::api::{PreferencesOutcome, PreferencesView};
     use domain::preferences::{
-        Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, Language,
-        PreferencesPatch, PressureUnit, VolumeUnit,
+        Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, GarageSort, IdleSignOut,
+        Language, PreferencesPatch, PressureUnit, VolumeUnit,
     };
     use domain::test_support::{ManualClock, test_id};
     use server::health::Health;
@@ -160,6 +160,7 @@ mod preferences {
                 currency: Some(Choice::Set(CurrencyCode::parse("CAD").unwrap())),
                 language: Some(Choice::Set(Language::EnglishUs)),
                 idle_sign_out: None,
+                garage_sort: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -180,6 +181,13 @@ mod preferences {
             );
             assert_eq!(view.mine.currency.unwrap().as_str(), "CAD");
         }
+    }
+
+    #[tokio::test]
+    async fn every_sign_out_and_garage_choice_is_stored_and_read_back() {
+        let (_temp, database, _stuart, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let ctx = context(&database, &sam, &clock);
         for idle_sign_out in [
             IdleSignOut::OneHour,
             IdleSignOut::FourHours,
@@ -194,6 +202,18 @@ mod preferences {
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(view.mine.idle_sign_out, Some(idle_sign_out));
             assert_eq!(view.effective.idle_sign_out, idle_sign_out);
+        }
+        for garage_sort in [
+            GarageSort::NewestActivity,
+            GarageSort::Name,
+            GarageSort::Custom,
+        ] {
+            let patch = PreferencesPatch {
+                garage_sort: Some(Choice::Set(garage_sort)),
+                ..PreferencesPatch::default()
+            };
+            let view = unwrap_view(set_mine(&ctx, patch).await);
+            assert_eq!(view.effective.garage_sort, garage_sort);
         }
     }
 }

@@ -1,5 +1,5 @@
 //! Preferences: units, formats, currency, language (decisions #029, #048), and when the app
-//! signs out by itself (#049).
+//! signs out by itself (#049), and how the Garage sorts vehicles (#056).
 //!
 //! Display only: stored values are always metric integers and currency codes. Each value
 //! here is chosen by the household (an Admin) and can be overridden by each user:
@@ -142,6 +142,19 @@ impl IdleSignOut {
     }
 }
 
+/// How vehicles are ordered within each group in the Garage (#056).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GarageSort {
+    /// Newest activity first (until vehicles have events: newest added first).
+    #[default]
+    NewestActivity,
+    /// By name, A to Z.
+    Name,
+    /// The person's own order (`crate::garage::GarageOrder`).
+    Custom,
+}
+
 /// An ISO 4217 currency code: three capital letters, e.g. `USD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -242,6 +255,8 @@ pub struct Preferences {
     pub language: Language,
     /// When the app signs out by itself.
     pub idle_sign_out: IdleSignOut,
+    /// How the Garage orders vehicles.
+    pub garage_sort: GarageSort,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -264,6 +279,8 @@ pub struct PreferenceChoices {
     pub language: Option<Language>,
     /// When the app signs out by itself.
     pub idle_sign_out: Option<IdleSignOut>,
+    /// How the Garage orders vehicles.
+    pub garage_sort: Option<GarageSort>,
 }
 
 impl Preferences {
@@ -302,6 +319,10 @@ impl Preferences {
                 .idle_sign_out
                 .or(household.idle_sign_out)
                 .unwrap_or(defaults.idle_sign_out),
+            garage_sort: mine
+                .garage_sort
+                .or(household.garage_sort)
+                .unwrap_or(defaults.garage_sort),
         }
     }
 }
@@ -362,6 +383,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::idle_sign_out`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub idle_sign_out: Option<Choice<IdleSignOut>>,
+    /// See [`Preferences::garage_sort`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub garage_sort: Option<Choice<GarageSort>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -375,6 +399,7 @@ impl Patch for PreferencesPatch {
             ("currency", self.currency.is_some()),
             ("language", self.language.is_some()),
             ("idle_sign_out", self.idle_sign_out.is_some()),
+            ("garage_sort", self.garage_sort.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -407,6 +432,9 @@ impl Patch for PreferencesPatch {
         if !keep("idle_sign_out") {
             self.idle_sign_out = None;
         }
+        if !keep("garage_sort") {
+            self.garage_sort = None;
+        }
     }
 }
 
@@ -430,6 +458,7 @@ mod tests {
         assert_eq!(defaults.currency.as_str(), "USD");
         assert_eq!(defaults.language, Language::EnglishUs);
         assert_eq!(defaults.idle_sign_out, IdleSignOut::EightHours);
+        assert_eq!(defaults.garage_sort, GarageSort::NewestActivity);
     }
 
     #[test]

@@ -1035,6 +1035,185 @@ select,
     cursor: pointer;
 }
 
+/* ---------- Vehicles (p2m4-garage-chosen.svg, decision #056) ---------- */
+
+.vehicles {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vehicles-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-menu {
+    min-width: 220px;
+}
+
+.archived-toggle {
+    margin-left: auto;
+}
+
+/* The group menu is for phones; wider screens use the sidebar. */
+.group-menu {
+    display: none;
+}
+
+.vehicle-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vehicle-group-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.vehicle-group-name {
+    flex: 1;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.vehicle-group-count {
+    font-weight: 500;
+}
+
+.vehicle-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.vehicle-card {
+    position: relative;
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.vehicle-card.archived {
+    opacity: 0.6;
+}
+
+.vehicle-card-link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    min-height: 130px;
+    padding: 14px;
+    color: var(--text);
+}
+
+.vehicle-card-link:hover {
+    background: var(--surface-raised);
+    border-radius: 10px;
+}
+
+.vehicle-card-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.vehicle-card-subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.vehicle-card-identifier {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-raised);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.8rem;
+}
+
+.vehicle-card-coming {
+    margin-top: auto;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.vehicle-card .badge {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.vehicle-card-arrange {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 10px 10px 0;
+}
+
+/* 48 px targets, for gloves (#040). */
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* Add vehicle */
+.dialog.add-vehicle {
+    max-width: 480px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+.kind-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.kind-tile {
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.kind-tile:hover {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
 /* ---------- Messages (p2m3-messages-chosen.svg, decision #053) ---------- */
 
 /* Severity: a color stripe plus the word, never color alone. */
@@ -1467,6 +1646,20 @@ select,
 
     .users-back {
         display: inline-flex;
+    }
+
+    /* Vehicles on phones: the group menu instead of the sidebar; tiles in two columns. */
+    .group-menu {
+        display: block;
+        width: 100%;
+    }
+
+    .archived-toggle {
+        margin-left: 0;
+    }
+
+    .kind-tiles {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     /* Messages on phones: the list, or one message's page with a way back. */

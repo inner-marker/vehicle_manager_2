@@ -4,6 +4,7 @@
 use domain::access::AssetScope;
 use domain::asset::{Asset, AssetId, AssetPatch, Identifier, LifecycleStatus};
 use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKind, FieldRange};
+use domain::garage::{GarageOrder, GarageOrderId, GarageOrderPatch};
 use domain::group::{Group, GroupId, GroupPatch};
 use domain::id::Id;
 use domain::meter::{EventKind, Meter, MeterId, MeterPatch};
@@ -555,6 +556,71 @@ fn custom_field_from_row(row: &SqliteRow) -> Result<(CustomFieldId, CustomField)
     ))
 }
 
+// --- Garage orders -----------------------------------------------------------------------
+
+/// Writes the `garage_orders` table.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct GarageOrderWriter;
+
+impl RecordWriter<GarageOrder> for GarageOrderWriter {
+    async fn create(
+        &self,
+        connection: &mut SqliteConnection,
+        id: Id<GarageOrder>,
+        values: &GarageOrderPatch,
+        sequence: i64,
+    ) -> Result<(), StorageError> {
+        sqlx::query("INSERT INTO garage_orders (id, vehicles, sequence) VALUES (?, ?, ?)")
+            .bind(id_to_sql(id))
+            .bind(json_to_sql(
+                &values.order.clone().unwrap_or_default(),
+                "vehicles",
+            )?)
+            .bind(sequence)
+            .execute(connection)
+            .await?;
+        Ok(())
+    }
+
+    async fn update(
+        &self,
+        connection: &mut SqliteConnection,
+        id: Id<GarageOrder>,
+        patch: &GarageOrderPatch,
+        sequence: i64,
+    ) -> Result<(), StorageError> {
+        let vehicles = patch
+            .order
+            .as_ref()
+            .map(|order| json_to_sql(order, "vehicles"))
+            .transpose()?;
+        sqlx::query(
+            "UPDATE garage_orders SET vehicles = coalesce(?, vehicles), sequence = ? WHERE id = ?",
+        )
+        .bind(vehicles)
+        .bind(sequence)
+        .bind(id_to_sql(id))
+        .execute(connection)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete(
+        &self,
+        connection: &mut SqliteConnection,
+        id: Id<GarageOrder>,
+        sequence: i64,
+    ) -> Result<(), StorageError> {
+        soft_delete(
+            connection,
+            "UPDATE garage_orders SET deleted = 1, sequence = ? WHERE id = ?",
+            id_to_sql(id),
+            sequence,
+        )
+        .await
+    }
+}
+
 // --- Queries -----------------------------------------------------------------------------
 
 impl Database {
@@ -640,6 +706,28 @@ impl Database {
                 .fetch_one(self.pool())
                 .await?,
         )
+    }
+
+    /// A person's custom Garage order, if they've made one.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or the stored list is invalid.
+    pub async fn garage_order(
+        &self,
+        id: GarageOrderId,
+    ) -> Result<Option<GarageOrder>, StorageError> {
+        let row = sqlx::query("SELECT vehicles FROM garage_orders WHERE id = ? AND deleted = 0")
+            .bind(id_to_sql(id))
+            .fetch_optional(self.pool())
+            .await?;
+        row.map(|row| -> Result<GarageOrder, StorageError> {
+            let vehicles: String = row.try_get("vehicles")?;
+            Ok(GarageOrder {
+                order: json_from_sql(&vehicles, "garage_orders.vehicles")?,
+            })
+        })
+        .transpose()
     }
 
     /// One asset's meters (not deleted), in name order.

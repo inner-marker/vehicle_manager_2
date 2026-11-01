@@ -430,3 +430,47 @@ group-not-empty = Move this group's vehicles to another group first.
 group-last = Every vehicle needs a group, so the last one can't be removed.
 name-mismatch = Type the vehicle's name exactly to delete it.
 group-default-name = Garage
+
+## Vehicles: All vehicles, a group's page, and adding a vehicle (decisions #052, #056)
+
+nav-all-vehicles = All vehicles
+vehicles-add = + Add vehicle
+vehicles-sort-label = Sort
+sort-newest-activity = Sort: Newest activity
+sort-name = Sort: Name (A–Z)
+sort-custom = Sort: Custom
+vehicles-arrange = Arrange
+vehicles-arrange-done = Done
+# $count (number): archived vehicles not shown.
+vehicles-show-archived = Show archived ({ $count })
+vehicles-hide-archived = Hide archived
+# $count (number): vehicles in a group.
+vehicles-count =
+    { $count ->
+        [one] { $count } vehicle
+       *[other] { $count } vehicles
+    }
+vehicles-empty = No vehicles yet.
+vehicles-empty-admin = Use + Add vehicle to add the first one.
+vehicles-empty-group = No vehicles in this group yet.
+vehicles-group-menu = Show
+vehicles-card-coming = Readings and due items arrive later.
+vehicles-move-up = Move up
+vehicles-move-down = Move down
+add-vehicle-title = Add a vehicle
+add-vehicle-kind = What kind?
+add-vehicle-add = Add
+add-vehicle-adding = Adding…
+add-vehicle-name = Name (on cards)
+add-vehicle-note = It starts with its kind's meters and custom fields; change them later on its Setup tab.
+field-make = Make
+field-model = Model
+field-year = Year
+field-colour = Colour
+field-group = Group
+status-in-service = In service
+status-spare = Spare
+status-out-for-service = Out for service
+status-retired = Retired
+status-disposed = Disposed
+vehicles-not-allowed = Your role or mode doesn't allow that. Switch mode, or ask your Admin.

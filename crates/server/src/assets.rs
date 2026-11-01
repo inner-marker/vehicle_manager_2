@@ -19,6 +19,7 @@ use domain::asset::{Asset, AssetId, AssetPatch};
 use domain::asset_form::{AssetForm, FieldForm, MeterForm, Problem, confirms_name};
 use domain::command::{Change, Clearable, Record};
 use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch};
+use domain::garage::{GarageOrderId, GarageOrderPatch, MAX_ORDER_LENGTH};
 use domain::group::GroupId;
 use domain::i18n::Translator;
 use domain::id::{DatabaseId, Id};
@@ -28,7 +29,7 @@ use domain::preferences::{Preferences, PreferencesId};
 use domain::profile::profile;
 use domain::time::Clock;
 use storage::Database;
-use storage::assets::{AssetWriter, CustomFieldWriter, MeterWriter};
+use storage::assets::{AssetWriter, CustomFieldWriter, GarageOrderWriter, MeterWriter};
 use storage::commands::RecordWriter;
 
 use crate::commands::issue;
@@ -177,6 +178,12 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
         })
         .filter(|summary| summary.vehicles > 0 || can_manage_groups)
         .collect();
+    let order = database
+        .garage_order(context.user.user.cast())
+        .await
+        .map_err(|error| unavailable("garage order", &error))?
+        .unwrap_or_default()
+        .order;
     tracing::debug!(target: log_area::APP, user = %context.user.user, vehicles = assets.len(), groups = groups.len(), "garage");
     Ok(AssetsOutcome::Garage {
         view: GarageView {
@@ -184,6 +191,8 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
             assets,
             can_add: context.may(AdminAction::AddAsset),
             can_manage_groups,
+            sort: person_preferences(context).await?.garage_sort,
+            order,
         },
     })
 }
@@ -226,6 +235,34 @@ async fn asset_view(
             fields,
         }),
     })
+}
+
+/// Saves the person's custom Garage order (#056): their own, so anyone signed in may.
+pub async fn set_order(context: &AssetsContext<'_>, order: Vec<AssetId>) -> AssetsOutcome {
+    either(save_order(context, order).await)
+}
+
+async fn save_order(
+    context: &AssetsContext<'_>,
+    mut order: Vec<AssetId>,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    order.truncate(MAX_ORDER_LENGTH);
+    let id: GarageOrderId = context.user.user.cast();
+    let exists = context
+        .database
+        .garage_order(id)
+        .await
+        .map_err(|error| unavailable("garage order", &error))?
+        .is_some();
+    let patch = GarageOrderPatch { order: Some(order) };
+    let change = if exists {
+        Change::Update { id, patch }
+    } else {
+        Change::Create { id, values: patch }
+    };
+    context.save(&GarageOrderWriter, change).await?;
+    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage order saved");
+    Ok(AssetsOutcome::Done)
 }
 
 // --- Adding, editing, archiving, deleting ------------------------------------------------

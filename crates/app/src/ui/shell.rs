@@ -19,6 +19,9 @@ use super::inbox::{UrgentBanner, provide_inbox_context, refresh_inbox, unread_co
 use super::nav::{NavItem, NavSection, nav_items};
 use super::routes::Route;
 use super::theme::ThemeToggle;
+use super::vehicles::{
+    SidebarVehicles, group_name, only_group_name, provide_vehicles_context, refresh_garage,
+};
 use super::{tr, tr_with};
 
 /// The shell layout; the current screen renders in its [`Outlet`].
@@ -34,6 +37,7 @@ pub(crate) fn Shell() -> Element {
     let route = use_route::<Route>();
     let auth = use_auth();
     let inbox = provide_inbox_context();
+    let vehicles = provide_vehicles_context();
     // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
     // minutes (or a session it ended) stops showing.
     use_effect(use_reactive!(|route| {
@@ -52,8 +56,30 @@ pub(crate) fn Shell() -> Element {
     use_effect(use_reactive!(|route| {
         let _ = (route, mode());
         spawn(refresh_inbox(inbox));
+        // The groups and vehicles too: the sidebar lists the groups (#056).
+        spawn(async move {
+            let _ = refresh_garage(vehicles).await;
+        });
     }));
     let unread = unread_count(inbox);
+    // A group's page is titled with the group's name (#056).
+    let title = match &route {
+        Route::GroupVehicles { group_id } => {
+            group_name(vehicles, group_id).unwrap_or_else(|| tr(route.title()))
+        }
+        // With one group, All vehicles is that group, so it's titled with its name.
+        Route::AllVehicles {} => only_group_name(vehicles).unwrap_or_else(|| tr(route.title())),
+        Route::Due {}
+        | Route::Messages {}
+        | Route::Timeline {}
+        | Route::Reports {}
+        | Route::VehicleDetail { .. }
+        | Route::LogEvent {}
+        | Route::Users {}
+        | Route::Settings {}
+        | Route::Diagnostics {}
+        | Route::NotFound { .. } => tr(route.title()),
+    };
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
 
@@ -90,6 +116,8 @@ pub(crate) fn Shell() -> Element {
                     IconView { icon: Icon::Close }
                 }
                 nav { class: "sidebar-nav",
+                    SidebarVehicles { on_navigate: close_menu }
+                    hr {}
                     for item in main_items {
                         SidebarLink {
                             key: "{item.route}",
@@ -120,7 +148,7 @@ pub(crate) fn Shell() -> Element {
                         },
                         IconView { icon: Icon::Menu }
                     }
-                    h1 { class: "page-title", {tr(route.title())} }
+                    h1 { class: "page-title", {title} }
                     span { class: "sync-status",
                         IconView { icon: Icon::SyncOff }
                         span { class: "sync-status-label", {tr(messages::SYNC_STATUS_UNKNOWN)} }

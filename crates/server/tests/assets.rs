@@ -18,7 +18,7 @@ mod assets {
     use domain::test_support::{ManualClock, test_id};
     use server::assets::{
         AssetsContext, add, add_meter, delete, edit, edit_meter, garage, move_to, preview_move,
-        view,
+        set_order, view,
     };
     use server::commands::issue;
     use server::groups::{add_group, delete_group, ensure_default_group};
@@ -231,6 +231,39 @@ mod assets {
 
         let sams = edit(&context(&database, &sam, &clock), id, &form).await;
         assert_eq!(sams, AssetsOutcome::NotAllowed);
+    }
+
+    #[tokio::test]
+    async fn each_person_keeps_their_own_custom_order() {
+        let (_temp, database, stuart, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let garage_id = default_group(&database, &clock).await;
+        let admin = in_admin(&stuart);
+        let ctx = context(&database, &admin, &clock);
+        let truck_id = added(&add(&ctx, &truck(garage_id)).await);
+        let car = AssetForm {
+            name: "Civic".into(),
+            ..AssetForm::new("car", garage_id)
+        };
+        let car_id = added(&add(&ctx, &car).await);
+
+        let sams = context(&database, &sam, &clock);
+        assert_eq!(
+            set_order(&sams, vec![car_id, truck_id]).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            set_order(&sams, vec![truck_id, car_id]).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            the_garage(garage(&sams).await).order,
+            vec![truck_id, car_id]
+        );
+        assert!(
+            the_garage(garage(&ctx).await).order.is_empty(),
+            "Stuart's own: none yet"
+        );
     }
 
     #[tokio::test]
