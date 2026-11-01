@@ -17,6 +17,12 @@ The code must stay **human-readable and human-maintainable**, even though most o
 - **Before starting work on a roadmap phase,** check that phase's section in "Open Questions by Phase" in `docs/plan.md`. If any question is unresolved, **ask the user and stop** until it's answered. Then record the answer in `docs/decisions.md`, update the plan, and remove the question from the list.
 - **`docs/sub-plans/`** holds smaller, detailed design plans for one feature area, so `docs/plan.md` stays clean. Each sub-plan is **linked from `docs/plan.md`** (its list near the top, and the section it details), which keeps only a short summary. When a design grows too detailed for the plan, propose moving it into a sub-plan. A sub-plan marked draft is not part of the plan until the human confirms it.
 - **Digital signatures are on hold:** don't implement any part of them until the human's records and signatures plan, `docs/sub-plans/signatures-and-records.md` (draft), is reviewed and confirmed (`docs/ideas-to-discuss.md` idea 12).
+- **Every new phase plan or milestone plan starts with a review** of `docs/ideas-to-discuss.md`, every sub-plan in `docs/sub-plans/`, and (for a phase) that phase's open questions in `docs/plan.md` §10. For each idea and sub-plan, decide whether:
+  - it **belongs** in this phase or milestone (for a phase plan, also say **which milestone** it fits);
+  - it needs **cheap groundwork now**: something small (a field, a column, a naming choice) that would mean a migration or rework if left for later;
+  - or it has **no effect** now.
+
+  Put a short **"Reviewed against"** note in the plan: what's proposed, what needs the human's decision first, and what had no effect (one line, by idea number and sub-plan name). **Only propose:** draft sub-plans and undecided ideas aren't built until the human confirms them, and a conflict with a recorded decision is raised as a question, not resolved.
 - Don't answer open questions yourself by picking a default. If a question blocks only part of a task, say which part and continue with the rest.
 - **`../xplm-oxide`** (the human's X-Plane plugin library) is available as **read-only reference** context. Look at it for conventions or when a task mentions it; never edit it, and don't add it as a dependency unless that is recorded in `docs/decisions.md`.
 

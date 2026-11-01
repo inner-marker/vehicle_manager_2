@@ -1563,6 +1563,7 @@ Most code will be written by AI agents (Claude Code, GitHub Copilot, and others)
 - The plan lives in the repo (`docs/plan.md`) alongside a **decision log** (`docs/decisions.md`), so agents don't re-open settled choices.
 
 `AGENTS.md` covers:
+- **Plan reviews:** every new phase or milestone plan starts by reviewing the ideas list, the sub-plans, and the phase's open questions, and says what it proposes, what needs a decision, and what had no effect (proposals only; nothing undecided is built);
 - **Architecture map:** what lives in each crate (`domain`, `storage`, `server`, `app`); all writes go through commands; the UI never touches the database; row ↔ domain conversion happens only in `TryFrom`; every server function goes through auth middleware.
 - **Reuse before writing:** search for an existing helper first; duplicated functions are treated as a bug. Shared helpers live in topic **`*_utils.rs` modules**, listed in a table that agents keep updated.
 - **Documentation:** rustdoc conventions: `//!` module docs; `///` on every public item with `# Errors`, `# Panics`, and `# Examples` sections where they apply.
