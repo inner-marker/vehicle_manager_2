@@ -11,7 +11,7 @@
 //!    does.
 
 use dioxus::prelude::*;
-use domain::api::{Located, PlaceSuggestion, PlacesOutcome, PreferencesOutcome};
+use domain::api::{Located, PlaceSuggestion, PlacesOutcome};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::location::{Coordinates, CountryCode, Fix, NearbyPlace, Place, SavedPlaceId};
 use domain::log_area;
@@ -120,8 +120,8 @@ pub(crate) struct Picker {
     pub typed: Signal<bool>,
     /// A saved place being edited (it doesn't count as "you're at" itself).
     pub editing: Option<SavedPlaceId>,
-    /// The person's distance unit, for the nearby places (miles until it's loaded).
-    pub distance: Signal<DistanceUnit>,
+    /// The person's units, for the nearby places (the defaults until they're loaded).
+    pub units: Signal<domain::preferences::Preferences>,
 }
 
 impl Picker {
@@ -198,21 +198,8 @@ pub(crate) fn use_picker(
         // An existing place's own values are kept until the person chooses the suggestion.
         typed: use_signal(|| coordinates.is_some()),
         editing,
-        distance: use_distance_unit(),
+        units: crate::ui::units::use_units(),
     }
-}
-
-/// The person's distance unit, loaded once (after mounting, never during server rendering).
-fn use_distance_unit() -> Signal<DistanceUnit> {
-    let mut unit = use_signal(DistanceUnit::default);
-    use_effect(move || {
-        spawn(async move {
-            if let Ok(PreferencesOutcome::Preferences { view }) = api::get_preferences().await {
-                unit.set(view.effective.distance);
-            }
-        });
-    });
-    unit
 }
 
 /// "1.9 km SW · Capital", "0.7 mi N · Town · county seat".
@@ -401,7 +388,7 @@ fn NearbyChoices(picker: Picker) -> Element {
     }
     let mut city = picker.city;
     let mut typed = picker.typed;
-    let unit = (picker.distance)();
+    let unit = (picker.units)().distance;
     rsx! {
         div { class: "nearby", role: "group", "aria-label": tr(messages::PLACE_NEARBY),
             span { class: "field-label", {tr(messages::PLACE_NEARBY).to_uppercase()} }

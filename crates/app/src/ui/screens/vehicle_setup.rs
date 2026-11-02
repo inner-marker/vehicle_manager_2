@@ -15,7 +15,12 @@ use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::label::Label;
 use domain::meter::{EventKind, MAX_PRECISION, Meter, MeterDimension, MeterId, MeterUnit};
+use domain::preferences::{DistanceUnit, EconomyUnit, Preferences, VolumeUnit};
 use domain::profile::profile;
+use domain::quantity::{
+    QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
+    parse_duration, parse_economy, parse_volume, show_duration, volume_value,
+};
 
 use super::users::role_label;
 use super::vehicle::{
@@ -689,6 +694,7 @@ fn field_summary(field: &CustomField) -> String {
 #[component]
 fn FieldsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<CustomFieldId, CustomField>>);
+    let units = crate::ui::units::use_units();
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     rsx! {
@@ -731,10 +737,10 @@ fn FieldsSection(view: AssetView) -> Element {
         match editing() {
             None => rsx! {},
             Some(Editing::Adding) => rsx! {
-                FieldDialog { asset: view.id, kinds, current: None, on_close: move |()| editing.set(None) }
+                FieldDialog { asset: view.id, kinds, current: None, units: units(), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Changing(id, field)) => rsx! {
-                FieldDialog { asset: view.id, kinds, current: Some((id, field)), on_close: move |()| editing.set(None) }
+                FieldDialog { asset: view.id, kinds, current: Some((id, field)), units: units(), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
@@ -773,18 +779,88 @@ fn kind_value(kind: &FieldKind) -> &'static str {
         .map_or("text", |(value, _)| value)
 }
 
-/// The range as typed, for a number field; other fields keep the range they have.
+/// A range end as typed for a field of `kind`, in the person's `units`, as the stored value
+/// (`None` when empty). Numbers keep their decimals; distances, durations, volumes, and fuel
+/// economy are typed in the person's units (#007).
+fn parse_range_end(
+    kind: &FieldKind,
+    text: &str,
+    units: Preferences,
+) -> Result<Option<i64>, MessageId> {
+    if text.trim().is_empty() {
+        return Ok(None);
+    }
+    let quantity =
+        |result: Result<i64, QuantityError>| result.map(Some).map_err(QuantityError::message);
+    match kind {
+        FieldKind::Number { decimals } => {
+            parse_scaled(text, *decimals).map_err(|()| messages::FIELD_RANGE_BAD_NUMBER)
+        }
+        FieldKind::Distance => quantity(parse_distance(text, units.distance)),
+        FieldKind::Duration => quantity(parse_duration(text)),
+        FieldKind::Volume => quantity(parse_volume(text, units.volume)),
+        FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
+        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => Ok(None),
+    }
+}
+
+/// A stored range end for a field of `kind`, as the person types it in their `units`.
+fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
+    match kind {
+        FieldKind::Number { decimals } => show_scaled(value, *decimals),
+        FieldKind::Distance => distance_value(value, units.distance),
+        FieldKind::Duration => show_duration(value),
+        FieldKind::Volume => volume_value(value, units.volume),
+        FieldKind::FuelEconomy => economy_value(value, units.economy),
+        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => {
+            String::new()
+        }
+    }
+}
+
+/// The unit a range is typed in, for its labels ("mi", "H:MM"), if any.
+fn range_unit(kind: &FieldKind, units: Preferences) -> Option<String> {
+    let tr_unit = |id| Some(tr(id));
+    match kind {
+        FieldKind::Distance => tr_unit(match units.distance {
+            DistanceUnit::Miles => messages::UNIT_ABBR_MI,
+            DistanceUnit::Kilometers => messages::UNIT_ABBR_KM,
+        }),
+        FieldKind::Duration => Some("H:MM".to_owned()),
+        FieldKind::Volume => tr_unit(match units.volume {
+            VolumeUnit::UsGallons => messages::UNIT_ABBR_GAL,
+            VolumeUnit::ImperialGallons => messages::UNIT_ABBR_GAL_UK,
+            VolumeUnit::Liters => messages::UNIT_ABBR_L,
+        }),
+        FieldKind::FuelEconomy => tr_unit(match units.economy {
+            EconomyUnit::MpgUs => messages::UNIT_ABBR_MPG,
+            EconomyUnit::MpgUk => messages::UNIT_ABBR_MPG_UK,
+            EconomyUnit::KmPerLiter => messages::UNIT_ABBR_KM_PER_L,
+            EconomyUnit::LitersPer100Km => messages::UNIT_ABBR_L_PER_100_KM,
+        }),
+        FieldKind::Number { .. }
+        | FieldKind::Text
+        | FieldKind::Date
+        | FieldKind::YesNo
+        | FieldKind::Choice { .. } => None,
+    }
+}
+
+/// The range as typed, for a numeric field, in the person's `units`. In L/100 km, more is
+/// worse, so the typed lowest and highest swap when stored (meters per liter).
 fn range_from_form(
     kind: &FieldKind,
     (min, max): (&str, &str),
-    kept: Option<FieldRange>,
+    units: Preferences,
 ) -> Result<Option<FieldRange>, MessageId> {
-    let FieldKind::Number { decimals } = kind else {
-        return Ok(kept.filter(|_| kind.is_numeric()));
-    };
-    let bad = |()| messages::FIELD_RANGE_BAD_NUMBER;
-    let low = parse_scaled(min, *decimals).map_err(bad)?;
-    let high = parse_scaled(max, *decimals).map_err(bad)?;
+    if !kind.is_numeric() {
+        return Ok(None);
+    }
+    let mut low = parse_range_end(kind, min, units)?;
+    let mut high = parse_range_end(kind, max, units)?;
+    if matches!(kind, FieldKind::FuelEconomy) && economy_is_inverse(units.economy) {
+        core::mem::swap(&mut low, &mut high);
+    }
     if low.is_none() && high.is_none() {
         return Ok(None);
     }
@@ -804,6 +880,8 @@ struct FieldInputs {
     enabled: Signal<bool>,
     min: Signal<String>,
     max: Signal<String>,
+    /// The person's units, for the range.
+    units: Signal<Preferences>,
 }
 
 impl FieldInputs {
@@ -813,11 +891,7 @@ impl FieldInputs {
             Some(field) => field.kind.clone(),
             None => kind_from_form((self.kind)(), (self.decimals)(), &(self.choices)())?,
         };
-        let range = range_from_form(
-            &kind,
-            (&(self.min)(), &(self.max)()),
-            kept.and_then(|field| field.range),
-        )?;
+        let range = range_from_form(&kind, (&(self.min)(), &(self.max)()), (self.units)())?;
         Ok(FieldForm {
             applies_to: kept.map_or((self.applies_to)(), |field| field.applies_to),
             label: (self.label)(),
@@ -838,6 +912,8 @@ fn FieldDialog(
     asset: AssetId,
     kinds: Vec<EventKind>,
     current: Option<(CustomFieldId, CustomField)>,
+    /// The person's units (loaded with Setup), for the range.
+    units: Preferences,
     on_close: EventHandler<()>,
 ) -> Element {
     let page = use_vehicle_page();
@@ -846,16 +922,26 @@ fn FieldDialog(
         Some(FieldKind::Number { decimals }) => *decimals,
         _ => 0,
     };
-    let range_end = |end: fn(&FieldRange) -> Option<i64>| {
+    // In L/100 km the stored lowest is the typed highest (more is worse).
+    let inverse = existing
+        .as_ref()
+        .is_some_and(|field| matches!(field.kind, FieldKind::FuelEconomy))
+        && economy_is_inverse(units.economy);
+    let range_end = |low: bool| {
+        let end = |range: &FieldRange| if low == inverse { range.max } else { range.min };
         existing
             .as_ref()
-            .and_then(|field| field.range.as_ref())
-            .and_then(end)
-            .map(|value| show_scaled(value, decimals_now))
+            .and_then(|field| {
+                field
+                    .range
+                    .as_ref()
+                    .and_then(end)
+                    .map(|value| range_end_text(&field.kind, value, units))
+            })
             .unwrap_or_default()
     };
-    let start_min = range_end(|range| range.min);
-    let start_max = range_end(|range| range.max);
+    let start_min = range_end(true);
+    let start_max = range_end(false);
     let inputs = FieldInputs {
         applies_to: use_signal(|| kinds.first().copied().unwrap_or(EventKind::Fuel)),
         label: use_signal(|| {
@@ -874,6 +960,7 @@ fn FieldDialog(
         enabled: use_signal(|| existing.as_ref().is_none_or(|field| field.enabled)),
         min: use_signal(|| start_min),
         max: use_signal(|| start_max),
+        units: use_signal(|| units),
     };
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
@@ -1000,19 +1087,26 @@ fn FieldTypeInputs(
 #[component]
 fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
     let mut enabled = inputs.enabled;
-    let is_number = existing.as_ref().map_or_else(
-        || (inputs.kind)() == "number",
-        |field| matches!(field.kind, FieldKind::Number { .. }),
+    // The field's kind (fixed once it exists; chosen while adding), for its range.
+    let kind = existing.as_ref().map_or_else(
+        || kind_from_form((inputs.kind)(), (inputs.decimals)(), "x").unwrap_or(FieldKind::Text),
+        |field| field.kind.clone(),
     );
+    let numeric = kind.is_numeric();
+    let unit = range_unit(&kind, (inputs.units)());
+    let with_unit = |label| {
+        unit.as_ref()
+            .map_or_else(|| tr(label), |unit| format!("{} ({unit})", tr(label)))
+    };
     rsx! {
         label { class: "switch",
             input { r#type: "checkbox", checked: enabled(), onchange: move |event| enabled.set(event.checked()) }
             span { {tr(messages::FIELD_ENABLED)} }
         }
-        if is_number {
+        if numeric {
             div { class: "field-row",
-                Field { label: messages::FIELD_RANGE_MIN, value: inputs.min }
-                Field { label: messages::FIELD_RANGE_MAX, value: inputs.max }
+                Field { label: messages::FIELD_RANGE_MIN, label_text: with_unit(messages::FIELD_RANGE_MIN), value: inputs.min }
+                Field { label: messages::FIELD_RANGE_MAX, label_text: with_unit(messages::FIELD_RANGE_MAX), value: inputs.max }
             }
             p { class: "muted-note", {tr(messages::FIELD_RANGE_NOTE)} }
         }
@@ -1400,23 +1494,57 @@ mod tests {
 
     #[test]
     fn a_number_fields_range_comes_from_the_form() {
+        let units = Preferences::default();
         let number = FieldKind::Number { decimals: 1 };
         assert_eq!(
-            range_from_form(&number, ("0", "40.5"), None),
+            range_from_form(&number, ("0", "40.5"), units),
             Ok(Some(FieldRange::new(Some(0), Some(405)).unwrap()))
         );
-        assert_eq!(range_from_form(&number, ("", ""), None), Ok(None));
+        assert_eq!(range_from_form(&number, ("", ""), units), Ok(None));
         assert_eq!(
-            range_from_form(&number, ("9", "1"), None),
+            range_from_form(&number, ("9", "1"), units),
             Err(messages::FIELD_BAD_RANGE)
         );
-        // Other numeric fields keep their range until entering their units arrives.
-        let kept = FieldRange::new(Some(1), None).ok();
         assert_eq!(
-            range_from_form(&FieldKind::Duration, ("", ""), kept),
-            Ok(kept)
+            range_from_form(&FieldKind::Text, ("1", "2"), units),
+            Ok(None)
         );
-        assert_eq!(range_from_form(&FieldKind::Text, ("", ""), kept), Ok(None));
+    }
+
+    #[test]
+    fn unit_fields_ranges_are_typed_in_the_persons_units() {
+        let miles = Preferences::default();
+        let metric = Preferences {
+            distance: DistanceUnit::Kilometers,
+            volume: VolumeUnit::Liters,
+            economy: EconomyUnit::LitersPer100Km,
+            ..Preferences::default()
+        };
+        // A trip distance up to 300 mi, stored in meters, shown back in km.
+        let range = range_from_form(&FieldKind::Distance, ("", "300"), miles)
+            .unwrap()
+            .unwrap();
+        assert_eq!(range.max, Some(482_803));
+        assert_eq!(
+            range_end_text(&FieldKind::Distance, 482_803, metric),
+            "482.8"
+        );
+        // Durations as H:MM.
+        let range = range_from_form(&FieldKind::Duration, ("0:05", "12:00"), miles)
+            .unwrap()
+            .unwrap();
+        assert_eq!((range.min, range.max), (Some(300), Some(43_200)));
+        // In L/100 km, the typed lowest (4) is the stored highest (25,000 m/L).
+        let range = range_from_form(&FieldKind::FuelEconomy, ("4", "20"), metric)
+            .unwrap()
+            .unwrap();
+        assert_eq!((range.min, range.max), (Some(5_000), Some(25_000)));
+        assert_eq!(
+            range_from_form(&FieldKind::Volume, ("lots", ""), miles),
+            Err(messages::QUANTITY_NOT_A_NUMBER)
+        );
+        assert_eq!(range_unit(&FieldKind::Volume, metric).as_deref(), Some("L"));
+        assert_eq!(range_unit(&FieldKind::Number { decimals: 0 }, metric), None);
     }
 
     #[test]

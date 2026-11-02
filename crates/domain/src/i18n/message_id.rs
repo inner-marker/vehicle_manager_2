@@ -1213,4 +1213,34 @@ define_messages! {
     MONTH_11 => "month-11",
     /// A month's short name: Dec.
     MONTH_12 => "month-12",
+    /// Quantity: not a number.
+    QUANTITY_NOT_A_NUMBER => "quantity-not-a-number",
+    /// Quantity: negative.
+    QUANTITY_NEGATIVE => "quantity-negative",
+    /// Quantity: too large to store (or zero L/100 km).
+    QUANTITY_TOO_LARGE => "quantity-too-large",
+    /// Quantity: more decimals than allowed.
+    QUANTITY_TOO_PRECISE => "quantity-too-precise",
+    /// Quantity: not a duration.
+    QUANTITY_NOT_A_DURATION => "quantity-not-a-duration",
+    /// Unit abbreviation: miles.
+    UNIT_ABBR_MI => "unit-abbr-mi",
+    /// Unit abbreviation: kilometers.
+    UNIT_ABBR_KM => "unit-abbr-km",
+    /// Unit abbreviation: US gallons.
+    UNIT_ABBR_GAL => "unit-abbr-gal",
+    /// Unit abbreviation: imperial gallons.
+    UNIT_ABBR_GAL_UK => "unit-abbr-gal-uk",
+    /// Unit abbreviation: liters.
+    UNIT_ABBR_L => "unit-abbr-l",
+    /// Unit abbreviation: miles per US gallon.
+    UNIT_ABBR_MPG => "unit-abbr-mpg",
+    /// Unit abbreviation: miles per imperial gallon.
+    UNIT_ABBR_MPG_UK => "unit-abbr-mpg-uk",
+    /// Unit abbreviation: kilometers per liter.
+    UNIT_ABBR_KM_PER_L => "unit-abbr-km-per-l",
+    /// Unit abbreviation: liters per 100 kilometers.
+    UNIT_ABBR_L_PER_100_KM => "unit-abbr-l-per-100-km",
+    /// Unit abbreviation: hours.
+    UNIT_ABBR_H => "unit-abbr-h",
 }

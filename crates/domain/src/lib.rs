@@ -28,6 +28,7 @@ pub mod meter;
 pub mod notes;
 pub mod preferences;
 pub mod profile;
+pub mod quantity;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;

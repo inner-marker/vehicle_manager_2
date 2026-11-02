@@ -760,3 +760,21 @@ month-9 = Sep
 month-10 = Oct
 month-11 = Nov
 month-12 = Dec
+
+## Quantities in each person's units (decisions #007, #029)
+
+quantity-not-a-number = Enter a number, e.g. 12.5.
+quantity-negative = That can't be below zero.
+quantity-too-large = That's too large.
+quantity-too-precise = That has too many decimal places.
+quantity-not-a-duration = Enter hours and minutes, e.g. 1:30 or 1:30:15.
+unit-abbr-mi = mi
+unit-abbr-km = km
+unit-abbr-gal = gal
+unit-abbr-gal-uk = gal (UK)
+unit-abbr-l = L
+unit-abbr-mpg = mpg
+unit-abbr-mpg-uk = mpg (UK)
+unit-abbr-km-per-l = km/L
+unit-abbr-l-per-100-km = L/100 km
+unit-abbr-h = h

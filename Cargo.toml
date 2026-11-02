@@ -50,6 +50,8 @@ ron = "0.12.3"
 # Time zones and dates (approved, phase-2.md milestone 6). The zone database is built in, so
 # the NAS image (no tzdata), the desktop app, and the browser all use the same rules.
 jiff = { version = "0.2.39", default-features = false, features = ["std", "tzdb-bundle-always"] }
+# Quantities and unit conversions in the domain (approved, phase-2.md milestone 6, #007).
+uom = { version = "0.38.0", default-features = false, features = ["std", "si", "f64"] }
 sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
