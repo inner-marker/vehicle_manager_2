@@ -195,6 +195,8 @@ admin-banner-text =
        *[other] Changes affect the whole household · ends after { $minutes } idle minutes
     }
 admin-banner-leave = Leave
+# $minutes (number): Admin mode's idle limit. The banner's text on phones.
+admin-banner-short = ends after { $minutes } idle min
 account-menu-label = Account
 account-change-password = Change password
 account-sign-out = Sign out

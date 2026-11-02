@@ -302,6 +302,8 @@ define_messages! {
     ADMIN_BANNER_TEXT => "admin-banner-text",
     /// Admin banner: button to leave Admin mode.
     ADMIN_BANNER_LEAVE => "admin-banner-leave",
+    /// Admin banner on phones: one short line; takes `minutes` (number).
+    ADMIN_BANNER_SHORT => "admin-banner-short",
     /// Accessible label of the account chip.
     ACCOUNT_MENU_LABEL => "account-menu-label",
     /// Account menu: change password.

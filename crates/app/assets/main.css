@@ -130,7 +130,24 @@ select,
     min-height: 100vh;
 }
 
+/* Scrolling to something (an error, a message) keeps it clear of the pinned top bar. */
+html {
+    scroll-padding-top: 8rem;
+}
+
+/* The sidebar stays put; it scrolls on its own only when it's taller than the window.
+   `dvh` follows phone browsers' address bars as they grow and shrink. */
 .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    box-sizing: border-box;
+    height: 100vh;
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
     width: 240px;
     flex-shrink: 0;
     display: flex;
@@ -188,6 +205,12 @@ select,
     min-width: 0;
     display: flex;
     flex-direction: column;
+}
+
+.topbar-stack {
+    position: sticky;
+    top: 0;
+    z-index: 8;
 }
 
 .topbar {
@@ -1016,9 +1039,14 @@ select,
     letter-spacing: 0.04em;
 }
 
-.admin-banner-text {
+.admin-banner-text,
+.admin-banner-short {
     flex: 1;
     font-size: 0.875rem;
+}
+
+.admin-banner-short {
+    display: none;
 }
 
 .admin-banner-leave {
@@ -1982,9 +2010,23 @@ textarea.field-input {
         display: inline;
     }
 
+    /* One line on phones, so the pinned banner stays small. */
     .admin-banner {
-        flex-wrap: wrap;
+        gap: 8px;
         padding: 6px 12px;
+    }
+
+    .admin-banner-text {
+        display: none;
+    }
+
+    .admin-banner-short {
+        display: inline;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.8rem;
     }
 
     /* Users on phones: the list, or one person's page with a way back. */

@@ -299,6 +299,8 @@ pub(crate) fn AdminBanner() -> Element {
         div { class: "admin-banner", role: "status",
             strong { class: "admin-banner-label", {tr(messages::ADMIN_BANNER_LABEL)} }
             span { class: "admin-banner-text", {admin_minutes_text(messages::ADMIN_BANNER_TEXT, &state())} }
+            // Phones show this one line instead.
+            span { class: "admin-banner-short", {admin_minutes_text(messages::ADMIN_BANNER_SHORT, &state())} }
             button {
                 class: "admin-banner-leave",
                 onclick: move |_| {

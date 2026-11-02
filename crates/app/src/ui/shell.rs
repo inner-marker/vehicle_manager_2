@@ -143,6 +143,8 @@ pub(crate) fn Shell() -> Element {
             }
 
             div { class: "main",
+                // The top bar and its banners stay put while the page scrolls.
+                div { class: "topbar-stack",
                 header { class: "topbar",
                     button {
                         class: "menu-open",
@@ -176,6 +178,7 @@ pub(crate) fn Shell() -> Element {
                 AdminBanner {}
                 AdminEndedNotice {}
                 UrgentBanner {}
+                }
                 main { class: "content", Outlet::<Route> {} }
             }
 
