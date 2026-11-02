@@ -719,6 +719,8 @@ html {
     font-size: 0.8rem;
 }
 
+/* A dialog over the page. The backdrop scrolls too, so a dialog taller than the screen can
+   always be scrolled to its buttons, and a swipe never scrolls the page behind it. */
 .dialog-scrim {
     position: fixed;
     inset: 0;
@@ -727,7 +729,14 @@ html {
     align-items: center;
     justify-content: center;
     padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: rgb(0 0 0 / 55%);
+}
+
+/* The page behind an open dialog stays still (iOS Safari otherwise scrolls it). */
+body:has(.dialog-scrim) {
+    overflow: hidden;
 }
 
 .dialog {
@@ -737,7 +746,13 @@ html {
     width: 100%;
     max-width: 420px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    flex-shrink: 0;
+    margin: auto;
+    /* The height limit includes the padding, so the whole dialog fits the screen. */
+    box-sizing: border-box;
     padding: 24px;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -1208,6 +1223,7 @@ html {
 .dialog.add-vehicle {
     max-width: 480px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
 }
 
@@ -1236,8 +1252,16 @@ html {
 
 .field-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, …): a field may be narrower than the browser's default input width, so two
+       fields side by side always fit (e.g. in a dialog on a phone). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+}
+
+.field-row .field-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* ---------- A vehicle's page (p2m4-vehicle-options.svg, option A, decision #057) ---------- */
@@ -1508,6 +1532,7 @@ html {
 .dialog.wide-dialog {
     max-width: 520px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
 }
 
