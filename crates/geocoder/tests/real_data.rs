@@ -3,7 +3,7 @@
 //! Ignored by default (the file isn't in the repository). Run it after building the data:
 //!
 //! ```sh
-//! GEODATA_FILE=.geodata/out/geodata-2026-11-02.gpkg cargo test -p geocoder --test real_data -- --ignored --nocapture
+//! GEODATA_FILE="$PWD/.geodata/out/geodata-2026-11-02.2.gpkg" cargo test -p geocoder --test real_data -- --ignored --nocapture
 //! ```
 
 use domain::location::Coordinates;
@@ -95,6 +95,16 @@ async fn real_places() {
             found.city_distance_m / 1000.0,
             took.as_secs_f64() * 1000.0,
         );
+        for near in &found.nearby {
+            println!(
+                "    · {} {:.1} km {:?} {:?}{}",
+                near.name.as_str(),
+                f64::from(near.distance_m) / 1000.0,
+                near.direction,
+                near.kind,
+                near.seat.map_or(String::new(), |seat| format!(" {seat:?}"))
+            );
+        }
         let country_ok = country.is_empty() || found.place.country.as_str() == country;
         let region_ok = region.is_empty() || found.place.region.as_str() == region;
         if !(country_ok && region_ok) {

@@ -458,6 +458,8 @@ pub struct PlaceSuggestion {
     pub inside_country: bool,
     /// The data version it came from (stored with a derived place, plan §3).
     pub data_version: String,
+    /// Up to five places nearby, nearest first, to choose the city from (#061).
+    pub nearby: Vec<crate::location::NearbyPlace>,
 }
 
 /// What's known about a point: the person's saved place it's in, and the suggested place.

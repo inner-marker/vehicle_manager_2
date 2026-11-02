@@ -11,10 +11,11 @@
 //!    does.
 
 use dioxus::prelude::*;
-use domain::api::{Located, PlaceSuggestion, PlacesOutcome};
+use domain::api::{Located, PlaceSuggestion, PlacesOutcome, PreferencesOutcome};
 use domain::i18n::{MessageArg, MessageId, messages};
-use domain::location::{Coordinates, CountryCode, Fix, Place, SavedPlaceId};
+use domain::location::{Coordinates, CountryCode, Fix, NearbyPlace, Place, SavedPlaceId};
 use domain::log_area;
+use domain::preferences::DistanceUnit;
 use domain::time::{Clock, UnixMillis};
 use serde::Deserialize;
 
@@ -119,6 +120,8 @@ pub(crate) struct Picker {
     pub typed: Signal<bool>,
     /// A saved place being edited (it doesn't count as "you're at" itself).
     pub editing: Option<SavedPlaceId>,
+    /// The person's distance unit, for the nearby places (miles until it's loaded).
+    pub distance: Signal<DistanceUnit>,
 }
 
 impl Picker {
@@ -195,7 +198,54 @@ pub(crate) fn use_picker(
         // An existing place's own values are kept until the person chooses the suggestion.
         typed: use_signal(|| coordinates.is_some()),
         editing,
+        distance: use_distance_unit(),
     }
+}
+
+/// The person's distance unit, loaded once (after mounting, never during server rendering).
+fn use_distance_unit() -> Signal<DistanceUnit> {
+    let mut unit = use_signal(DistanceUnit::default);
+    use_effect(move || {
+        spawn(async move {
+            if let Ok(PreferencesOutcome::Preferences { view }) = api::get_preferences().await {
+                unit.set(view.effective.distance);
+            }
+        });
+    });
+    unit
+}
+
+/// "1.9 km SW · Capital", "0.7 mi N · Town · county seat".
+pub(crate) fn nearby_detail(place: &NearbyPlace, unit: DistanceUnit) -> String {
+    let meters = f64::from(place.distance_m);
+    let distance = match unit {
+        DistanceUnit::Kilometers => tr_with(
+            messages::PLACE_DISTANCE_KM,
+            &[("km", MessageArg::from(format!("{:.1}", meters / 1000.0)))],
+        ),
+        DistanceUnit::Miles => tr_with(
+            messages::PLACE_DISTANCE_MI,
+            &[(
+                "miles",
+                MessageArg::from(format!("{:.1}", meters / 1609.344)),
+            )],
+        ),
+    };
+    let mut parts = vec![
+        format!("{distance} {}", tr(place.direction.label())),
+        tr(place.kind.label()),
+    ];
+    parts.extend(place.seat.map(|seat| tr(seat.label())));
+    parts.join(" · ")
+}
+
+/// How the coordinates are chosen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Where {
+    /// The device's location.
+    Device,
+    /// Typed or pasted.
+    Typed,
 }
 
 /// 1 · Where: the device's location, or typed coordinates.
@@ -207,9 +257,13 @@ pub(crate) fn use_picker(
 pub(crate) fn WherePart(picker: Picker) -> Element {
     let mut typing = use_signal(|| false);
     let mut typed_text = use_signal(String::new);
+    // Which way was chosen; only that button is highlighted (none until one is chosen).
+    let mut chosen = use_signal(|| None::<Where>);
     let mut finding = use_signal(|| false);
     let mut error = use_signal(|| None::<String>);
     let use_location = move |_| {
+        chosen.set(Some(Where::Device));
+        typing.set(false);
         finding.set(true);
         error.set(None);
         spawn(async move {
@@ -238,10 +292,24 @@ pub(crate) fn WherePart(picker: Picker) -> Element {
     rsx! {
         h3 { class: "section-heading", {tr(messages::PLACE_STEP_WHERE).to_uppercase()} }
         div { class: "picker-buttons",
-            button { class: "secondary-button picker-locate", r#type: "button", disabled: finding(), onclick: use_location,
+            button {
+                class: if chosen() == Some(Where::Device) { "secondary-button chosen" } else { "secondary-button" },
+                "aria-pressed": if chosen() == Some(Where::Device) { "true" } else { "false" },
+                r#type: "button",
+                disabled: finding(),
+                onclick: use_location,
                 if finding() { {tr(messages::PLACE_LOCATING)} } else { {format!("◎ {}", tr(messages::PLACE_USE_LOCATION))} }
             }
-            button { class: "secondary-button", r#type: "button", onclick: move |_| typing.toggle(), {tr(messages::PLACE_TYPE_COORDINATES)} }
+            button {
+                class: if chosen() == Some(Where::Typed) { "secondary-button chosen" } else { "secondary-button" },
+                "aria-pressed": if chosen() == Some(Where::Typed) { "true" } else { "false" },
+                r#type: "button",
+                onclick: move |_| {
+                    chosen.set(Some(Where::Typed));
+                    typing.set(true);
+                },
+                {tr(messages::PLACE_TYPE_COORDINATES)}
+            }
         }
         if typing() {
             label { class: "field",
@@ -301,7 +369,7 @@ fn PlaceNotes(picker: Picker) -> Element {
     let Some(suggestion) = located.suggestion else {
         return rsx! { p { class: "picker-note", {tr(messages::PLACE_LOOKUP_UNAVAILABLE)} } };
     };
-    let differs = (picker.typed)() && !matches_fields(picker, &suggestion);
+    let differs = (picker.typed)() && !matches_fields(&picker, &suggestion);
     rsx! {
         SuggestionNote { suggestion: suggestion.clone() }
         if differs {
@@ -315,8 +383,56 @@ fn PlaceNotes(picker: Picker) -> Element {
     }
 }
 
+/// The nearby places to choose the city from (#061): tap one to fill City or town. Not shown
+/// inside a saved place (its own place is used) or without a suggestion.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn NearbyChoices(picker: Picker) -> Element {
+    let nearby = (picker.located)()
+        .filter(|_| picker.at_saved().is_none())
+        .and_then(|located| located.suggestion)
+        .map(|suggestion| suggestion.nearby)
+        .unwrap_or_default();
+    if nearby.is_empty() {
+        return rsx! {};
+    }
+    let mut city = picker.city;
+    let mut typed = picker.typed;
+    let unit = (picker.distance)();
+    rsx! {
+        div { class: "nearby", role: "group", "aria-label": tr(messages::PLACE_NEARBY),
+            span { class: "field-label", {tr(messages::PLACE_NEARBY).to_uppercase()} }
+            for place in nearby {
+                {
+                    let name = place.name.as_str().to_owned();
+                    let on = city() == name;
+                    rsx! {
+                        button {
+                            key: "{name}-{place.distance_m}",
+                            r#type: "button",
+                            class: if on { "nearby-choice chosen" } else { "nearby-choice" },
+                            "aria-pressed": if on { "true" } else { "false" },
+                            onclick: move |_| {
+                                city.set(name.clone());
+                                typed.set(false);
+                            },
+                            span { class: "nearby-mark", if on { "◉" } else { "○" } }
+                            span { class: "nearby-name", {place.name.as_str().to_owned()} }
+                            span { class: "nearby-detail", {nearby_detail(&place, unit)} }
+                        }
+                    }
+                }
+            }
+            span { class: "muted-note", {tr(messages::PLACE_NEARBY_NOTE)} }
+        }
+    }
+}
+
 /// Whether the fields already say what `suggestion` does.
-fn matches_fields(picker: Picker, suggestion: &PlaceSuggestion) -> bool {
+fn matches_fields(picker: &Picker, suggestion: &PlaceSuggestion) -> bool {
     (picker.city)() == suggestion.place.city.as_str()
         && (picker.region)() == suggestion.place.region.as_str()
         && (picker.country)().eq_ignore_ascii_case(suggestion.place.country.as_str())
@@ -360,6 +476,7 @@ pub(crate) fn PlacePart(picker: Picker, countries: Vec<(CountryCode, String)>) -
     rsx! {
         h3 { class: "section-heading", {tr(messages::PLACE_STEP_PLACE).to_uppercase()} }
         PlaceNotes { picker }
+        NearbyChoices { picker }
         div { class: "field-row",
             label { class: "field",
                 span { class: "field-label", {tr(messages::PLACE_CITY)} }
@@ -425,6 +542,36 @@ mod tests {
             fix_from(&answer(Some(95.0), None)),
             Err(messages::PLACE_LOCATION_UNAVAILABLE),
             "out of range"
+        );
+    }
+
+    #[test]
+    fn a_nearby_place_says_how_far_which_way_and_what_it_is() {
+        use domain::location::{Compass, PlaceKind, PlaceName, Seat};
+        let place = NearbyPlace {
+            name: PlaceName::parse("Asheville").unwrap(),
+            distance_m: 1_900,
+            direction: Compass::SW,
+            kind: PlaceKind::Town,
+            seat: Some(Seat::County),
+        };
+        assert_eq!(
+            nearby_detail(&place, DistanceUnit::Kilometers),
+            "1.9 km SW · Town · county seat"
+        );
+        assert_eq!(
+            nearby_detail(&place, DistanceUnit::Miles),
+            "1.2 mi SW · Town · county seat"
+        );
+        let plain = NearbyPlace {
+            seat: None,
+            kind: PlaceKind::Capital,
+            distance_m: 400,
+            ..place
+        };
+        assert_eq!(
+            nearby_detail(&plain, DistanceUnit::Kilometers),
+            "0.4 km SW · Capital"
         );
     }
 

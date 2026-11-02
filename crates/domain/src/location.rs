@@ -439,6 +439,181 @@ impl Place {
     }
 }
 
+// --- Nearby places (#061) ------------------------------------------------------------------
+
+/// What kind of place a nearby place is, from its GeoNames feature code and population
+/// (population only approximates size).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PlaceKind {
+    /// A national capital (`PPLC`).
+    Capital,
+    /// A section of a bigger place (`PPLX`), e.g. a neighbourhood.
+    District,
+    /// A small named locality (`PPLL`).
+    Locality,
+    /// 100,000 people or more.
+    City,
+    /// 10,000 people or more.
+    Town,
+    /// Fewer than 10,000 people.
+    Village,
+}
+
+/// The administrative seat a place is, if any (GeoNames `PPLA`–`PPLA5`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Seat {
+    /// Of a state or province (`PPLA`).
+    Region,
+    /// Of a county or similar (`PPLA2`).
+    County,
+    /// Of a smaller division (`PPLA3`–`PPLA5`).
+    Local,
+}
+
+impl PlaceKind {
+    /// The kind's name.
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::Capital => messages::PLACE_KIND_CAPITAL,
+            Self::District => messages::PLACE_KIND_DISTRICT,
+            Self::Locality => messages::PLACE_KIND_LOCALITY,
+            Self::City => messages::PLACE_KIND_CITY,
+            Self::Town => messages::PLACE_KIND_TOWN,
+            Self::Village => messages::PLACE_KIND_VILLAGE,
+        }
+    }
+}
+
+impl Seat {
+    /// The role's name, e.g. "county seat".
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::Region => messages::PLACE_SEAT_REGION,
+            Self::County => messages::PLACE_SEAT_COUNTY,
+            Self::Local => messages::PLACE_SEAT_LOCAL,
+        }
+    }
+}
+
+/// A place's kind and seat from its GeoNames feature code and population.
+#[must_use]
+pub fn place_kind(feature_code: &str, population: i64) -> (PlaceKind, Option<Seat>) {
+    let seat = match feature_code {
+        "PPLA" => Some(Seat::Region),
+        "PPLA2" => Some(Seat::County),
+        "PPLA3" | "PPLA4" | "PPLA5" => Some(Seat::Local),
+        _ => None,
+    };
+    let kind = match feature_code {
+        "PPLC" => PlaceKind::Capital,
+        "PPLX" => PlaceKind::District,
+        "PPLL" => PlaceKind::Locality,
+        _ if population >= 100_000 => PlaceKind::City,
+        _ if population >= 10_000 => PlaceKind::Town,
+        _ => PlaceKind::Village,
+    };
+    (kind, seat)
+}
+
+/// An eight-point compass direction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Compass {
+    /// North.
+    N,
+    /// Northeast.
+    NE,
+    /// East.
+    E,
+    /// Southeast.
+    SE,
+    /// South.
+    S,
+    /// Southwest.
+    SW,
+    /// West.
+    W,
+    /// Northwest.
+    NW,
+}
+
+impl Compass {
+    /// The direction's short name, e.g. "NE".
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::N => messages::COMPASS_N,
+            Self::NE => messages::COMPASS_NE,
+            Self::E => messages::COMPASS_E,
+            Self::SE => messages::COMPASS_SE,
+            Self::S => messages::COMPASS_S,
+            Self::SW => messages::COMPASS_SW,
+            Self::W => messages::COMPASS_W,
+            Self::NW => messages::COMPASS_NW,
+        }
+    }
+
+    /// The nearest of the eight directions to a bearing in degrees (0 = north, clockwise).
+    #[must_use]
+    pub fn from_bearing(degrees: f64) -> Self {
+        const ALL: [Compass; 8] = [
+            Compass::N,
+            Compass::NE,
+            Compass::E,
+            Compass::SE,
+            Compass::S,
+            Compass::SW,
+            Compass::W,
+            Compass::NW,
+        ];
+        // Turned by half a sector, so each direction covers 45° around its own bearing;
+        // past 360° it's north again.
+        let turned = degrees.rem_euclid(360.0) + 22.5;
+        ALL.into_iter()
+            .zip(1_u8..)
+            .find(|(_, n)| turned < f64::from(*n) * 45.0)
+            .map_or(Self::N, |(direction, _)| direction)
+    }
+}
+
+impl Coordinates {
+    /// The initial bearing from here to `other`, in degrees from north, clockwise (0…360).
+    #[must_use]
+    pub fn bearing_to(self, other: Self) -> f64 {
+        let (lat1, lat2) = (self.latitude().to_radians(), other.latitude().to_radians());
+        let dlon = (other.longitude() - self.longitude()).to_radians();
+        let y = dlon.sin() * lat2.cos();
+        let x = lat1.cos() * lat2.sin() - lat1.sin() * lat2.cos() * dlon.cos();
+        y.atan2(x).to_degrees().rem_euclid(360.0)
+    }
+}
+
+/// A place near a point, for the picker's choices.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NearbyPlace {
+    /// Its name, e.g. "Paris".
+    pub name: PlaceName,
+    /// How far, in whole meters.
+    pub distance_m: u32,
+    /// Which way from the point.
+    pub direction: Compass,
+    /// What kind of place.
+    pub kind: PlaceKind,
+    /// The seat it is, if any.
+    pub seat: Option<Seat>,
+}
+
+impl NearbyPlace {
+    /// Whether it's part of a bigger place (never the picker's default choice, #061).
+    #[must_use]
+    pub const fn is_district(&self) -> bool {
+        matches!(self.kind, PlaceKind::District)
+    }
+}
+
 // --- Saved places --------------------------------------------------------------------------
 
 /// The ID of a saved place.
@@ -757,6 +932,43 @@ mod tests {
             Some(test_id(1))
         );
         assert_eq!(nearest_containing(&places, point(36.0, -82.0)), None);
+    }
+
+    #[test]
+    fn kinds_and_seats_come_from_the_feature_code_and_population() {
+        assert_eq!(place_kind("PPLC", 2_000_000), (PlaceKind::Capital, None));
+        assert_eq!(place_kind("PPLX", 116_000), (PlaceKind::District, None));
+        assert_eq!(place_kind("PPLL", 50), (PlaceKind::Locality, None));
+        assert_eq!(place_kind("PPL", 100_000), (PlaceKind::City, None));
+        assert_eq!(place_kind("PPL", 99_999), (PlaceKind::Town, None));
+        assert_eq!(
+            place_kind("PPLA2", 9_999),
+            (PlaceKind::Village, Some(Seat::County))
+        );
+        assert_eq!(
+            place_kind("PPLA", 500_000),
+            (PlaceKind::City, Some(Seat::Region))
+        );
+        assert_eq!(
+            place_kind("PPLA4", 0),
+            (PlaceKind::Village, Some(Seat::Local))
+        );
+    }
+
+    #[test]
+    fn bearings_and_compass_points() {
+        let here = point(35.0, -82.0);
+        let compass = |lat: f64, lon: f64| Compass::from_bearing(here.bearing_to(point(lat, lon)));
+        assert_eq!(compass(35.1, -82.0), Compass::N);
+        assert_eq!(compass(35.0, -81.9), Compass::E);
+        assert_eq!(compass(34.9, -82.0), Compass::S);
+        assert_eq!(compass(35.0, -82.1), Compass::W);
+        assert_eq!(compass(35.07, -81.93), Compass::NE);
+        assert_eq!(compass(34.93, -82.07), Compass::SW);
+        assert_eq!(Compass::from_bearing(359.0), Compass::N);
+        assert_eq!(Compass::from_bearing(-10.0), Compass::N);
+        assert_eq!(Compass::from_bearing(337.6), Compass::N);
+        assert_eq!(Compass::from_bearing(337.4), Compass::NW);
     }
 
     #[test]

@@ -68,6 +68,9 @@ struct Feature {
     code: String,
     name: String,
     time_zone: String,
+    /// Cities only: GeoNames' feature code (e.g. `PPLA2`) and population.
+    geonames_code: String,
+    population: i64,
 }
 
 /// A row as a feature, or `None` if its geometry can't be read (logged, then skipped).
@@ -86,6 +89,8 @@ fn feature(row: &SqliteRow) -> Result<Option<Feature>, sqlx::Error> {
         code: row.try_get("country_code")?,
         name: row.try_get("name")?,
         time_zone: row.try_get("time_zone").unwrap_or_default(),
+        geonames_code: row.try_get("feature_code").unwrap_or_default(),
+        population: row.try_get("population").unwrap_or_default(),
     }))
 }
 
@@ -293,7 +298,7 @@ async fn cities_in(
 ) -> Result<Vec<Feature>, sqlx::Error> {
     let rows = match country_code {
         Some(code) => sqlx::query(
-            "SELECT c.fid, c.geom, c.country_code, c.name, c.time_zone FROM rtree_cities_geom AS r
+            "SELECT c.fid, c.geom, c.country_code, c.name, c.time_zone, c.feature_code, c.population FROM rtree_cities_geom AS r
                  JOIN cities AS c ON c.fid = r.id
                  WHERE r.maxx >= ? AND r.minx <= ? AND r.maxy >= ? AND r.miny <= ?
                    AND c.country_code = ?",
@@ -306,7 +311,7 @@ async fn cities_in(
         .fetch_all(pool)
         .await?,
         None => sqlx::query(
-            "SELECT c.fid, c.geom, c.country_code, c.name, c.time_zone FROM rtree_cities_geom AS r
+            "SELECT c.fid, c.geom, c.country_code, c.name, c.time_zone, c.feature_code, c.population FROM rtree_cities_geom AS r
                  JOIN cities AS c ON c.fid = r.id
                  WHERE r.maxx >= ? AND r.minx <= ? AND r.maxy >= ? AND r.miny <= ?",
         )
@@ -320,10 +325,12 @@ async fn cities_in(
     features(&rows)
 }
 
-/// The nearest city among `features`, with its distance from `point` in meters.
+/// The nearest city among `features` that isn't a district (GeoNames `PPLX`, #061), with its
+/// distance from `point` in meters.
 fn nearest_city(features: Vec<Feature>, point: Coordinates) -> Option<(Feature, f64)> {
     features
         .into_iter()
+        .filter(|feature| feature.geonames_code != "PPLX")
         .filter_map(|feature| {
             let Geometry::Point(at) = feature.geometry else {
                 return None;
@@ -361,4 +368,51 @@ pub(crate) async fn city(
         }
     }
     Ok(None)
+}
+
+/// A nearby city, with what the picker shows and the city's time zone.
+pub(crate) struct Near {
+    pub name: String,
+    pub time_zone: String,
+    pub distance_m: f64,
+    pub bearing: f64,
+    pub feature_code: String,
+    pub population: i64,
+}
+
+/// Up to `limit` cities in `country_code` within `within_m` of `point`, nearest first (#061).
+pub(crate) async fn nearby(
+    pool: &SqlitePool,
+    point: Coordinates,
+    country_code: &str,
+    limit: usize,
+    within_m: f64,
+) -> Result<Vec<Near>, sqlx::Error> {
+    let at = Point {
+        x: point.longitude(),
+        y: point.latitude(),
+    };
+    let degrees = within_m / SAFE_METERS_PER_DEGREE;
+    let candidates = cities_in(pool, Area::around(at, degrees), Some(country_code)).await?;
+    let mut near: Vec<Near> = candidates
+        .into_iter()
+        .filter_map(|feature| {
+            let Geometry::Point(spot) = feature.geometry else {
+                return None;
+            };
+            let there = Coordinates::from_degrees(spot.y, spot.x).ok()?;
+            let distance_m = point.distance_m(there);
+            (distance_m <= within_m).then(|| Near {
+                name: feature.name,
+                time_zone: feature.time_zone,
+                distance_m,
+                bearing: point.bearing_to(there),
+                feature_code: feature.geonames_code,
+                population: feature.population,
+            })
+        })
+        .collect();
+    near.sort_by(|a, b| a.distance_m.total_cmp(&b.distance_m));
+    near.truncate(limit);
+    Ok(near)
 }

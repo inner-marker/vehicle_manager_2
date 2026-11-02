@@ -13,7 +13,7 @@
 //! | `geodata_info` | `key`, `value`: `format` = `vehicle-manager-geodata`, `format_version` = `1`, `data_version`, `attribution` |
 //! | `countries` | `fid`, `geom` (multipolygon), `country_code` (ISO alpha-2), `name` |
 //! | `regions` | `fid`, `geom` (multipolygon), `country_code`, `name` (state or province) |
-//! | `cities` | `fid`, `geom` (point), `name`, `country_code`, `time_zone` (IANA) |
+//! | `cities` | `fid`, `geom` (point), `name`, `country_code`, `time_zone` (IANA), `feature_code` (GeoNames, e.g. `PPLA2`), `population` |
 //!
 //! # A lookup
 //!
@@ -22,8 +22,11 @@
 //!    boundaries don't trace coastlines exactly), the **nearest** country is used, found by a
 //!    search box that widens until the nearest boundary is certainly inside it (#038).
 //! 2. **State or province:** the same, among that country's regions where possible.
-//! 3. **City:** the nearest city in that country (so a point just inside a border isn't named
-//!    after a town across it), found the same widening way; with it, its time zone.
+//! 3. **City:** up to five **nearby places** in that country within 25 km, nearest first,
+//!    with their distance, direction, and kind (#061). The suggested city is the nearest that
+//!    isn't a district; with none within 25 km, the nearest city in that country (so a point
+//!    just inside a border isn't named after a town across it), found the same widening way.
+//!    Its time zone comes with it.
 //!
 //! The answer is a **suggestion**: people can still correct an event's city, state, and
 //! country (#038).
@@ -39,15 +42,22 @@ mod tests;
 use std::fmt;
 use std::path::Path;
 
-use domain::location::{Coordinates, CountryCode, Place, PlaceName, TimeZone};
+use domain::location::{
+    Compass, Coordinates, CountryCode, NearbyPlace, Place, PlaceName, TimeZone, place_kind,
+};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 
 use crate::geometry::Point;
 
 /// The `format` value this crate reads.
 pub const FORMAT: &str = "vehicle-manager-geodata";
+/// How many nearby places a lookup offers, and how far they may be (#061).
+pub const NEARBY_LIMIT: usize = 5;
+/// See [`NEARBY_LIMIT`]: 25 km.
+pub const NEARBY_WITHIN_M: f64 = 25_000.0;
+
 /// The `format_version` this crate reads.
-pub const FORMAT_VERSION: &str = "1";
+pub const FORMAT_VERSION: &str = "2";
 
 /// Why the geocoder couldn't open its file or answer.
 #[derive(Debug)]
@@ -102,6 +112,21 @@ pub struct Lookup {
     pub inside_country: bool,
     /// The data version it came from.
     pub data_version: String,
+    /// Up to five places nearby, nearest first, for the picker to offer (#061).
+    pub nearby: Vec<NearbyPlace>,
+}
+
+/// A nearby city as the picker shows it (`None` if its name doesn't fit a place name).
+fn nearby_place(near: &store::Near) -> Option<NearbyPlace> {
+    let (kind, seat) = place_kind(&near.feature_code, near.population);
+    Some(NearbyPlace {
+        name: PlaceName::parse(&near.name).ok()?,
+        // Within 25 km, so it fits easily.
+        distance_m: u32::try_from(format!("{:.0}", near.distance_m).parse::<i64>().ok()?).ok()?,
+        direction: Compass::from_bearing(near.bearing),
+        kind,
+        seat,
+    })
 }
 
 /// The open geocoder data.
@@ -157,9 +182,35 @@ impl Geocoder {
         let region = store::region(&self.pool, at, &country.code)
             .await?
             .unwrap_or_else(|| country.name.clone());
-        let city = store::city(&self.pool, point, &country.code)
-            .await?
-            .ok_or(GeocoderError::Incomplete("city"))?;
+        let near = store::nearby(
+            &self.pool,
+            point,
+            &country.code,
+            NEARBY_LIMIT,
+            NEARBY_WITHIN_M,
+        )
+        .await?;
+        // Each row with what the picker shows (rows whose name doesn't fit are left out).
+        let pairs: Vec<(&store::Near, NearbyPlace)> = near
+            .iter()
+            .filter_map(|row| nearby_place(row).map(|place| (row, place)))
+            .collect();
+        // The suggestion: the nearest nearby place that isn't a district; with none, the
+        // nearest city in the country, however far.
+        let chosen = pairs
+            .iter()
+            .find(|(_, place)| !place.is_district())
+            .map(|(near, _)| store::City {
+                name: near.name.clone(),
+                time_zone: near.time_zone.clone(),
+                distance_m: near.distance_m,
+            });
+        let city = match chosen {
+            Some(city) => city,
+            None => store::city(&self.pool, point, &country.code)
+                .await?
+                .ok_or(GeocoderError::Incomplete("city"))?,
+        };
         let bad = |what: &str| GeocoderError::WrongFormat(format!("a {what} that isn't valid"));
         let place = Place {
             city: PlaceName::parse(&city.name).map_err(|_| bad("city name"))?,
@@ -173,6 +224,7 @@ impl Geocoder {
             city_distance_m: city.distance_m,
             inside_country: country.inside,
             data_version: self.info.data_version.clone(),
+            nearby: pairs.into_iter().map(|(_, place)| place).collect(),
         })
     }
 

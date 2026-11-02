@@ -158,3 +158,43 @@ async fn countries_are_listed_by_name() {
         ["AA Aland", "BB Bland", "CC Centre", "DD Dee Islands"]
     );
 }
+
+#[tokio::test]
+async fn nearby_places_are_offered_and_the_default_skips_districts() {
+    use domain::location::{Compass, PlaceKind, Seat};
+    let (_temp, geocoder) = test_map(FORMAT).await;
+    let geocoder = geocoder.unwrap();
+    // Between Alpha and its district Alpha Old Town (nearer): within 25 km of both, and of
+    // the locality Alphaville; Aleph and the other countries' places are far away.
+    let found = geocoder.lookup(at(2.08, 2.0)).await.unwrap();
+    let names: Vec<&str> = found
+        .nearby
+        .iter()
+        .map(|place| place.name.as_str())
+        .collect();
+    assert_eq!(
+        names,
+        ["Alpha Old Town", "Alpha", "Alphaville"],
+        "nearest first"
+    );
+    assert_eq!(found.nearby[0].kind, PlaceKind::District);
+    assert_eq!(found.nearby[0].direction, Compass::E);
+    assert_eq!(
+        (found.nearby[1].kind, found.nearby[1].seat),
+        (PlaceKind::Town, Some(Seat::Region))
+    );
+    assert_eq!(found.nearby[1].direction, Compass::W);
+    assert_eq!(found.nearby[2].kind, PlaceKind::Locality);
+    assert!(
+        (2_000..2_400).contains(&found.nearby[0].distance_m),
+        "{}",
+        found.nearby[0].distance_m
+    );
+    // The suggestion skips the district.
+    assert_eq!(found.place.city.as_str(), "Alpha");
+
+    // Nothing within 25 km: no choices, and the nearest city (never a district) is suggested.
+    let far = geocoder.lookup(at(5.0, 9.5)).await.unwrap();
+    assert!(far.nearby.is_empty());
+    assert_eq!(far.place.city.as_str(), "Aleph");
+}

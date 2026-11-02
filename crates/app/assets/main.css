@@ -1690,9 +1690,51 @@ textarea.field-input {
     min-width: 200px;
 }
 
-.picker-locate {
+/* The chosen way of giving the location, and the chosen nearby place (#061). */
+.picker-buttons .secondary-button.chosen {
     border-color: var(--accent);
     color: var(--accent);
+}
+
+.nearby {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nearby-choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    min-height: 48px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nearby-choice.chosen {
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+}
+
+.nearby-mark {
+    color: var(--accent);
+}
+
+.nearby-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.nearby-detail {
+    color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 .picker-fix {

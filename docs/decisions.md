@@ -695,3 +695,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **About** on Diagnostics: the app version, the place data version (or "not available"), and the GeoNames and Natural Earth credits.
   - **Not built from the sketch:** its "typed" mark on places whose city isn't from the place data. A saved place doesn't record where its city came from, and the city as typed already shows.
 - **Why:** the human chose as recommended: places are short lists, one dialog serves adding, editing, and later events, and putting "where" first follows the plan's fallback order and shows where each value came from.
+
+### 061. The location picker offers nearby places, with their distance, direction, and type
+*Decided: 2026-11-02 · Plan: §3 Reverse geocoding · Phase plan: phase-2.md step 5f.2 · Refines #059, #060*
+
+- **Decision:**
+  - After **Use my location** or typed coordinates, the picker lists **up to 5 nearby places** in the point's country, **within 25 km**, each with its **name**, **distance and compass direction** (eight points: N, NE, E, …, in the person's miles or kilometers), and **type**. Choosing one fills **City or town**; the state or province and country still come from the boundaries at the point. Typing any city still works.
+  - **The default choice is the nearest place that isn't a district;** districts (GeoNames `PPLX`, e.g. "Paris 04 Hôtel-de-Ville") stay in the list, labelled.
+  - **Types,** from GeoNames' feature code and population (population only approximates size): **Capital** (`PPLC`), **District** (`PPLX`), **Locality** (`PPLL`), otherwise **City** (100,000+ people), **Town** (10,000+), or **Village**; a seat of an administrative division (`PPLA`–`PPLA4`) adds its role, e.g. "Town · county seat".
+  - **The data gains each place's feature code and population, and leaves out abandoned, destroyed, and historical places** (`PPLQ`, `PPLW`, `PPLH`, `PPLCH`), which could otherwise be "the nearest town". The data version becomes **`2026-11-02.2`** (same sources, new build); the file's format version becomes 2.
+  - **Layout:** option A of `docs/ui-sketches/p2m5-nearby-options.svg`: a list of tappable rows above **City or town** ("Nearby: choose the city or town"), the chosen one marked; typing over the field still works.
+  - **Where's buttons show the choice:** **Use my location** and **Type coordinates** are both plain until one is chosen; the chosen one is highlighted (asked for during the test run).
+- **Why:** the human asked for choices on "my location"; the nearest GeoNames place can be a district in a big city or a small locality, and seeing the few nearest, labelled, lets the person pick the name they use.

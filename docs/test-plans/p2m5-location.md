@@ -1,6 +1,6 @@
 # Manual test plan: place lookup, saved places, and the location picker
 
-*Phase 2, milestone 5 · `docs/phase_plans/phase-2.md` · decisions #038, #059, #060*
+*Phase 2, milestone 5 · `docs/phase_plans/phase-2.md` · decisions #038, #059, #060, #061*
 
 ## 1. Intended behavior
 
@@ -52,7 +52,7 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager 2>&1` | <ul><li>`backed up before migrating` with `schema_before=7`.</li><li>`database open` with `created=false`, `schema_before=7 schema_now=8`, and the **same database ID** as before.</li><li>`place data opened` with `path=/app/geodata/geodata-2026-11-02.gpkg`, `data_version=2026-11-02`, and `size_mb=57`.</li><li>`database integrity check passed`.</li><li>No `ERROR` lines.</li></ul> |
+| [x] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager 2>&1` | <ul><li>`backed up before migrating` with `schema_before=7`.</li><li>`database open` with `created=false`, `schema_before=7 schema_now=8`, and the **same database ID** as before.</li><li>`place data opened` with `path=/app/geodata/geodata-2026-11-02.gpkg`, `data_version=2026-11-02`, and `size_mb=57`.</li><li>`database integrity check passed`.</li><li>No `ERROR` lines.</li></ul> |
 | [x] | 2 | `ls -ln data/backups/` | A new `pre-migration-<UTC time>-v7.sqlite`, owned by `1030 100`. |
 | [x] | 3 | Sign in as `admin` in the Mac browser (Driver mode is fine). Open **Diagnostics** | **ABOUT**: App `0.1.0`, Place data `2026-11-02`, and the GeoNames and Natural Earth credits. |
 | [x] | 4 | Open **Places** (under Manage, with a map pin) | "No places yet…" and **+ Add place**. |
@@ -60,27 +60,51 @@
 | [x] | 6 | **Type coordinates** → `35.5951, -82.5515` → **Use these** | <ul><li>The error clears.</li><li>"35.59510, -82.55150" and "Typed coordinates".</li><li>A green **Suggested: Asheville, North Carolina, US**, with "Time zone America/New_York · from place data 2026-11-02".</li><li>City, state, and country (**United States of America**) filled in.</li></ul>Name it `Test Asheville`, **Save**: it's in the list with "150 m". |
 | [x] | 7 | **Phone**, at home: sign in as `admin` → **Places** → **+ Add place** → **Use my location** | <ul><li>The browser asks for location permission once; allow it.</li><li>Your coordinates with "± N m · just now".</li><li>The suggestion names your town, state, and country, and fills the fields.</li></ul>Name it `Home garage`, pick a radius, **Save**. |
 | [x] | 8 | **Phone**, still at home: **+ Add place** → **Use my location** | "You're at Home garage (N m away). Its city, state, and country are used." **Cancel**. |
-| [ ] | 9 | **Mac:** **+ Add place** → **Type coordinates** `34.2133, -77.7850` (just off the Wrightsville Beach pier) | "Outside the map's coastline (at sea, or on a wide river or bay): the nearest place is Wrightsville Beach, North Carolina, US. Check it." Fields filled with Wrightsville Beach. Name it `Pier`, **Save**. |
-| [ ] | 10 | **A typed city:** **+ Add place** → **Type coordinates** `34.6600, -77.3500` → change **City or town** to `Camp Lejeune` → name it `Base gate` → **Save** | The list shows "Base gate · Camp Lejeune, North Carolina, US". |
+| [x] | 9 | **Mac:** **+ Add place** → **Type coordinates** `34.2133, -77.7850` (just off the Wrightsville Beach pier) | "Outside the map's coastline (at sea, or on a wide river or bay): the nearest place is Wrightsville Beach, North Carolina, US. Check it." Fields filled with Wrightsville Beach. Name it `Pier`, **Save**. |
+| [x] | 10 | **A typed city:** **+ Add place** → **Type coordinates** `34.6600, -77.3500` → change **City or town** to `Camp Lejeune` → name it `Base gate` → **Save** | The list shows "Base gate · Camp Lejeune, North Carolina, US". |
 | [x] | 11 | **Other places** (then **Cancel** each): type `42.3149, -83.0364`; then `48.8566, 2.3522` | <ul><li>Windsor, Ontario, CA (Canada), not Detroit across the river.</li><li>A Paris district ("Paris 04 Hôtel-de-Ville": GeoNames lists big cities' districts as places), region Paris, FR (France), time zone `Europe/Paris`.</li></ul> |
-| [ ] | 12 | **Edit** `Test Asheville` → **Type coordinates** `36.2168, -81.6746` | <ul><li>The fields still say Asheville (your saved values), with **Use the suggestion**.</li><li>**Use the suggestion** changes them to Boone.</li><li>Set the radius to **250 m**, **Save**: the list shows Boone and 250 m.</li></ul> |
-| [ ] | 13 | **Remove** `Pier`, then `Base gate`, then `Test Asheville` | Each asks "Remove …? Past events keep their own copy of it." and then it's gone. |
-| [ ] | 14 | **Sam** (phone or Mac): **Places** | "No places yet": Sam never sees yours. Sam can add their own. |
-| [ ] | 15 | **Phone layout:** the Places list | One column; tapping a place opens it to edit (no Edit and Remove buttons on the row). The dialog scrolls. |
-| [ ] | 16 | **Desktop app:** **Places** → **+ Add place** → **Use my location**, then **Type coordinates** `35.5951, -82.5515` | Your places are listed. **Use my location** may say "The location isn't available here. Type coordinates instead." (the desktop app's webview may not offer location). Typed coordinates work as in step 6. **Cancel**. |
-| [ ] | 17 | *(Optional)* **Location refused:** in the phone browser's settings, deny location for the site → **+ Add place** → **Use my location** | "Location permission was refused. Allow it in the browser's settings, or type coordinates." Allow it again afterwards. |
-| [ ] | 18 | **Missing place data:** in `.env` set `VEHICLEMANAGER_GEODATA_FILE=/data/none.gpkg`, run `sudo docker compose up -d`, then `sudo docker logs --since 2m vehiclemanager 2>&1 \| grep -i "place data"` | `can't open the place data; place lookup is unavailable` with the path. The server is otherwise normal. |
-| [ ] | 19 | With the data missing: Mac, Admin mode → **Messages** | A warning: **Place lookup isn't available**, with the error under DETAILS. In Driver mode, and for Sam, it isn't shown. |
-| [ ] | 20 | Still missing: **Places** → **+ Add place** → **Type coordinates** `35.5951, -82.5515` | "Place lookup isn't available: type the city, state, and country." A **Country code (e.g. US)** box instead of the list. Typing a city, state, and `us` saves the place (shown as US). Then remove it. **Diagnostics → ABOUT**: Place data **Not available**. |
-| [ ] | 21 | **Fix it:** empty `VEHICLEMANAGER_GEODATA_FILE=` in `.env`, `sudo docker compose up -d` | `place data opened` again. The Messages warning disappears by itself (#050). |
-| [ ] | 22 | `sudo docker compose restart`, then reload the browser | `Home garage` is still there, with its place and radius. |
-| [ ] | 23 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
+| [x] | 12 | **Edit** `Test Asheville` → **Type coordinates** `36.2168, -81.6746` | <ul><li>The fields still say Asheville (your saved values), with **Use the suggestion**.</li><li>**Use the suggestion** changes them to Boone.</li><li>Set the radius to **250 m**, **Save**: the list shows Boone and 250 m.</li></ul> |
+| [x] | 13 | **Remove** `Pier`, then `Base gate`, then `Test Asheville` | Each asks "Remove …? Past events keep their own copy of it." and then it's gone. |
+| [x] | 14 | **Sam** (phone or Mac): **Places** | "No places yet": Sam never sees yours. Sam can add their own. |
+| [x] | 15 | **Phone layout:** the Places list | One column; tapping a place opens it to edit (no Edit and Remove buttons on the row). The dialog scrolls. |
+| [x] | 16 | **Desktop app:** **Places** → **+ Add place** → **Use my location**, then **Type coordinates** `35.5951, -82.5515` | Your places are listed. **Use my location** may say "The location isn't available here. Type coordinates instead." (the desktop app's webview may not offer location). Typed coordinates work as in step 6. **Cancel**. |
+| [x] | 17 | *(Optional)* **Location refused:** in the phone browser's settings, deny location for the site → **+ Add place** → **Use my location** | "Location permission was refused. Allow it in the browser's settings, or type coordinates." Allow it again afterwards. |
+| [x] | 18 | **Missing place data:** in `.env` set `VEHICLEMANAGER_GEODATA_FILE=/data/none.gpkg`, run `sudo docker compose up -d`, then `sudo docker logs --since 2m vehiclemanager 2>&1 \| grep -i "place data"` | `can't open the place data; place lookup is unavailable` with the path. The server is otherwise normal. |
+| [x] | 19 | With the data missing: Mac, Admin mode → **Messages** | A warning: **Place lookup isn't available**, with the error under DETAILS. In Driver mode, and for Sam, it isn't shown. |
+| [x] | 20 | Still missing: **Places** → **+ Add place** → **Type coordinates** `35.5951, -82.5515` | "Place lookup isn't available: type the city, state, and country." A **Country code (e.g. US)** box instead of the list. Typing a city, state, and `us` saves the place (shown as US). Then remove it. **Diagnostics → ABOUT**: Place data **Not available**. |
+| [x] | 21 | **Fix it:** empty `VEHICLEMANAGER_GEODATA_FILE=` in `.env`, `sudo docker compose up -d` | `place data opened` again. The Messages warning disappears by itself (#050). |
+| [x] | 22 | `sudo docker compose restart`, then reload the browser | `Home garage` is still there, with its place and radius. |
+| [x] | 23 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
 
 **Not covered by hand:**
 - Events using the picker: milestone 6 adds them.
 - A location over 20 minutes old: the browser rarely gives one. The stale warning is tested in code (`a_fix_goes_stale_after_twenty_minutes`).
 - The R-tree's role in each lookup: covered by the geocoder's tests (`the_r_tree_is_what_finds_candidates`).
 - More real places (Point Roberts, Lake Erie, Fiji): `crates/geocoder/tests/real_data.rs` checks them against the data file.
+
+## 4. Follow-up: nearby places and the dialog fixes (step 5f.2, decision #061)
+
+Run after sections 1–3 passed on the earlier build. What changed:
+- **Nearby places:** the picker now lists up to 5 places within 25 km in the same country, nearest first, with the distance and compass direction (in your miles or km setting) and the place's type.
+- **The default:** the nearest place that isn't a district. GeoNames codes some cities' districts (e.g. New York's) as districts but others (Paris's arrondissements) as ordinary places, so central Paris still defaults to "Paris 04", with "Paris · Capital" one tap away.
+- **The buttons:** only the chosen **Where** button is blue.
+- **The data:** version `2026-11-02.2`, with each place's type and population, and abandoned and historical places left out.
+- **Dialogs** scroll on phones, and the page behind them stays still.
+
+No new migration: the schema stays at 8.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | F1 | Push 5f.2 and wait for the "Dev image" workflow. Then `sudo docker compose pull && sudo docker compose up -d` and `sudo docker logs --tail 20 vehiclemanager 2>&1 \| grep -i "place data"` | `place data opened` with `path=/app/geodata/geodata-2026-11-02.2.gpkg`, `data_version=2026-11-02.2`, and `size_mb=59`. |
+| [ ] | F2 | **Diagnostics → ABOUT** | Place data `2026-11-02.2`. |
+| [ ] | F3 | **Places → + Add place** | Neither **Use my location** nor **Type coordinates** is blue. Choosing **Type coordinates** makes it blue; choosing **Use my location** afterwards moves the blue to it. |
+| [ ] | F4 | **Type coordinates** `35.5951, -82.5515` | <ul><li>"Nearby: choose the city or town", with **Asheville · 0.4 mi N · Town · county seat** first and marked.</li><li>Below it: Woodfin, Biltmore Forest, Bent Creek, Weaverville (villages), each with its distance and direction.</li><li>City or town says Asheville.</li></ul> |
+| [ ] | F5 | Tap **Woodfin** | It's marked, and City or town says Woodfin. Typing over the field still works. **Cancel**. |
+| [ ] | F6 | **+ Add place → Type coordinates** `48.8566, 2.3522` | "Paris 04 Hôtel-de-Ville" is marked (see above), and **Paris · Capital** is listed. Tapping Paris marks it and fills Paris. **Cancel**. |
+| [ ] | F7 | **Phone:** **+ Add place → Use my location** | The button turns blue, and your nearby places are listed with the distance and direction from where you're standing. |
+| [ ] | F8 | **Settings → You → Distance → Kilometers**, then repeat F4 | The distances show in km, e.g. "Asheville · 0.7 km N". Put Distance back afterwards. |
+| [ ] | F9 | **Type coordinates** `-16.7000, 179.9500` (at sea, off Fiji) | No nearby list (nothing within 25 km). The suggestion still names the nearest place, Savusavu, with the coastline note. **Cancel**. |
+| [ ] | F10 | **Phone:** **+ Add place**, then swipe up and down on the dialog | The dialog scrolls to **Save** and **Cancel**, and the page behind it never moves. Two fields side by side (City and State) both fit on the screen. |
 
 ## 4. If a step fails, capture
 

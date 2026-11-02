@@ -18,7 +18,7 @@
 # its SHA-256 before use (scripts/geodata/sources.sha256 lists the same checksums;
 # crates/app/tests/deploy_config.rs checks they agree). Only the .gpkg leaves this stage.
 FROM ghcr.io/osgeo/gdal:ubuntu-small-3.13.3@sha256:64250faf833c06d4b21afce4c27190039ba7ab58d70f0eebc87cf77d929c0b40 AS geodata
-ARG GEODATA_VERSION=2026-11-02
+ARG GEODATA_VERSION=2026-11-02.2
 ARG GEODATA_SOURCES=https://github.com/inner-marker/vehicle_manager_2/releases/download/geodata-sources-2026-11-02
 ADD --checksum=sha256:74157e02b1a45d3bdc9ff76149bcef1e1521db5f59054ad5b6df85e3f97d4b69 ${GEODATA_SOURCES}/cities500.zip /src/
 ADD --checksum=sha256:ce1ac7036499a0edd641fbc093cd209a98f96a49d2eca8480aaacad35138a7f6 ${GEODATA_SOURCES}/ne_10m_admin_0_countries.zip /src/

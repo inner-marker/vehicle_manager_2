@@ -232,6 +232,7 @@ async fn located(
                 time_zone: found.time_zone,
                 inside_country: found.inside_country,
                 data_version: found.data_version,
+                nearby: found.nearby,
             }),
             Err(error) => {
                 tracing::error!(target: log_area::APP, %error, "place lookup failed");

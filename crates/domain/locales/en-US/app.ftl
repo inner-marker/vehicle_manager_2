@@ -712,3 +712,29 @@ about-place-data = Place data
 about-place-data-unavailable = Not available
 about-credits = Credits
 about-credits-default = Contains GeoNames data (CC BY 4.0, geonames.org). Boundaries: Natural Earth (public domain, naturalearthdata.com).
+
+## Nearby places in the picker (decision #061)
+
+place-nearby = Nearby: choose the city or town
+place-nearby-note = Not in the list? Type the city or town below.
+# $km: `km` (text, already formatted).
+place-distance-km = { $km } km
+# $miles: `miles` (text, already formatted).
+place-distance-mi = { $miles } mi
+place-kind-capital = Capital
+place-kind-district = District
+place-kind-locality = Locality
+place-kind-city = City
+place-kind-town = Town
+place-kind-village = Village
+place-seat-region = state or province capital
+place-seat-county = county seat
+place-seat-local = local seat
+compass-n = N
+compass-ne = NE
+compass-e = E
+compass-se = SE
+compass-s = S
+compass-sw = SW
+compass-w = W
+compass-nw = NW

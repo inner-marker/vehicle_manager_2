@@ -1133,4 +1133,46 @@ define_messages! {
     ABOUT_CREDITS => "about-credits",
     /// About: the data credits when the server doesn't give them.
     ABOUT_CREDITS_DEFAULT => "about-credits-default",
+    /// Picker: the nearby places list's heading (#061).
+    PLACE_NEARBY => "place-nearby",
+    /// Picker: typing is still possible.
+    PLACE_NEARBY_NOTE => "place-nearby-note",
+    /// A distance in kilometers, one decimal; takes `km` (text, already formatted).
+    PLACE_DISTANCE_KM => "place-distance-km",
+    /// A distance in miles, one decimal; takes `miles` (text, already formatted).
+    PLACE_DISTANCE_MI => "place-distance-mi",
+    /// Place type: a national capital.
+    PLACE_KIND_CAPITAL => "place-kind-capital",
+    /// Place type: a section of a bigger place.
+    PLACE_KIND_DISTRICT => "place-kind-district",
+    /// Place type: a small named locality.
+    PLACE_KIND_LOCALITY => "place-kind-locality",
+    /// Place type: 100,000 people or more.
+    PLACE_KIND_CITY => "place-kind-city",
+    /// Place type: 10,000 people or more.
+    PLACE_KIND_TOWN => "place-kind-town",
+    /// Place type: fewer than 10,000 people.
+    PLACE_KIND_VILLAGE => "place-kind-village",
+    /// Place role: seat of a state or province.
+    PLACE_SEAT_REGION => "place-seat-region",
+    /// Place role: seat of a county.
+    PLACE_SEAT_COUNTY => "place-seat-county",
+    /// Place role: seat of a smaller division.
+    PLACE_SEAT_LOCAL => "place-seat-local",
+    /// Compass: north.
+    COMPASS_N => "compass-n",
+    /// Compass: northeast.
+    COMPASS_NE => "compass-ne",
+    /// Compass: east.
+    COMPASS_E => "compass-e",
+    /// Compass: southeast.
+    COMPASS_SE => "compass-se",
+    /// Compass: south.
+    COMPASS_S => "compass-s",
+    /// Compass: southwest.
+    COMPASS_SW => "compass-sw",
+    /// Compass: west.
+    COMPASS_W => "compass-w",
+    /// Compass: northwest.
+    COMPASS_NW => "compass-nw",
 }

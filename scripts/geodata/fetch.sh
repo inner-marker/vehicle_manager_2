@@ -10,7 +10,7 @@
 # (crates/app/tests/deploy_config.rs checks).
 set -eu
 
-GEODATA_VERSION=2026-11-02
+GEODATA_VERSION=2026-11-02.2
 GEODATA_SOURCES=https://github.com/inner-marker/vehicle_manager_2/releases/download/geodata-sources-2026-11-02
 GDAL_IMAGE=ghcr.io/osgeo/gdal:ubuntu-small-3.13.3@sha256:64250faf833c06d4b21afce4c27190039ba7ab58d70f0eebc87cf77d929c0b40
 
@@ -32,6 +32,9 @@ if ! (cd "$sources" && shasum -a 256 -c sources.sha256); then
     exit 1
 fi
 
+# One data file at a time: the server takes the newest name, and an older build could sort
+# after a newer one (e.g. "2026-11-02.gpkg" after "2026-11-02.2.gpkg").
+rm -f "$out"/geodata-*.gpkg
 docker run --rm \
     -v "$sources:/src:ro" \
     -v "$root/scripts/geodata:/scripts:ro" \
