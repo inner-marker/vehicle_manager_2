@@ -445,6 +445,83 @@ pub struct MoveChange {
     pub after: Option<crate::access::Role>,
 }
 
+/// What the geocoder suggests for a point (decisions #038, #059).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlaceSuggestion {
+    /// The city, state or province, and country.
+    pub place: crate::location::Place,
+    /// The country's name, e.g. "United States of America".
+    pub country_name: String,
+    /// The nearest city's time zone, if known.
+    pub time_zone: Option<crate::location::TimeZone>,
+    /// The point is inside the country's boundary (false: the nearest country, e.g. offshore).
+    pub inside_country: bool,
+    /// The data version it came from (stored with a derived place, plan §3).
+    pub data_version: String,
+    /// Up to five places nearby, nearest first, to choose the city from (#061).
+    pub nearby: Vec<crate::location::NearbyPlace>,
+}
+
+/// What's known about a point: the person's saved place it's in, and the suggested place.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Located {
+    /// The person's nearest saved place whose radius contains the point, if any.
+    pub saved: Option<(crate::location::SavedPlaceId, crate::location::SavedPlace)>,
+    /// The geocoder's suggestion; `None` while place lookup is unavailable.
+    pub suggestion: Option<PlaceSuggestion>,
+}
+
+/// About the place data, for About on Diagnostics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlaceDataInfo {
+    /// The data's version, e.g. `2026-11-02`.
+    pub data_version: String,
+    /// The credit to show (GeoNames and Natural Earth).
+    pub attribution: String,
+}
+
+/// The answer to a saved places or place lookup request.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum PlacesOutcome {
+    /// The person's saved places, by name.
+    Places {
+        /// Each place and its ID.
+        places: Vec<(crate::location::SavedPlaceId, crate::location::SavedPlace)>,
+    },
+    /// What's known about a point.
+    Located {
+        /// The saved place and suggestion (boxed: much larger than the other answers).
+        located: Box<Located>,
+    },
+    /// Every country, by name, for typing a place by hand.
+    Countries {
+        /// Each country's code and name.
+        countries: Vec<(crate::location::CountryCode, String)>,
+    },
+    /// About the place data (`None` while it's unavailable).
+    DataInfo {
+        /// Its version and credit.
+        info: Option<PlaceDataInfo>,
+    },
+    /// A saved place was added.
+    Added {
+        /// Its ID.
+        id: crate::location::SavedPlaceId,
+    },
+    /// Done.
+    Done,
+    /// No such saved place of this person's.
+    NotFound,
+    /// The form was refused.
+    Invalid {
+        /// Why.
+        problem: crate::location::LocationError,
+    },
+    /// The server couldn't do it (no database, or a storage error).
+    Unavailable,
+}
+
 /// The answer to a Garage, vehicle, or group request.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "kebab-case")]

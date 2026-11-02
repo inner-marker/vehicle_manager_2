@@ -112,8 +112,9 @@ fn server_database_dir() -> std::path::PathBuf {
     )
 }
 
-/// The server's folders: the data directory, and the snapshot folder from
-/// `VEHICLEMANAGER_SNAPSHOT_DIR` if set (otherwise `<data dir>/snapshots`).
+/// The server's folders: the data directory, the snapshot folder from
+/// `VEHICLEMANAGER_SNAPSHOT_DIR` if set (otherwise `<data dir>/snapshots`), and the place data
+/// file from `VEHICLEMANAGER_GEODATA_FILE` if set (otherwise the server looks for it).
 #[cfg(feature = "server")]
 fn server_paths() -> server::startup::ServerPaths {
     // Compose passes an unfilled optional setting as an empty value: treat that as unset.
@@ -122,7 +123,14 @@ fn server_paths() -> server::startup::ServerPaths {
     ))
     .filter(|value| !value.is_empty())
     .map(std::path::PathBuf::from);
+    // The place data file, if set; otherwise the server looks for it (server::places).
+    let geodata_file = std::env::var_os(domain::identity::env_var_name(
+        server::places::GEODATA_FILE_ENV_NAME,
+    ))
+    .filter(|value| !value.is_empty())
+    .map(std::path::PathBuf::from);
     server::startup::ServerPaths::new(server_database_dir(), snapshot_override)
+        .with_geodata_file(geodata_file)
 }
 
 /// The environment variable for test timers (#054), without the app prefix: 1 to 5 minutes,

@@ -719,6 +719,8 @@ html {
     font-size: 0.8rem;
 }
 
+/* A dialog over the page. The backdrop scrolls too, so a dialog taller than the screen can
+   always be scrolled to its buttons, and a swipe never scrolls the page behind it. */
 .dialog-scrim {
     position: fixed;
     inset: 0;
@@ -727,7 +729,14 @@ html {
     align-items: center;
     justify-content: center;
     padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: rgb(0 0 0 / 55%);
+}
+
+/* The page behind an open dialog stays still (iOS Safari otherwise scrolls it). */
+body:has(.dialog-scrim) {
+    overflow: hidden;
 }
 
 .dialog {
@@ -737,7 +746,13 @@ html {
     width: 100%;
     max-width: 420px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    flex-shrink: 0;
+    margin: auto;
+    /* The height limit includes the padding, so the whole dialog fits the screen. */
+    box-sizing: border-box;
     padding: 24px;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -1208,6 +1223,7 @@ html {
 .dialog.add-vehicle {
     max-width: 480px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
 }
 
@@ -1236,8 +1252,16 @@ html {
 
 .field-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, …): a field may be narrower than the browser's default input width, so two
+       fields side by side always fit (e.g. in a dialog on a phone). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+}
+
+.field-row .field-input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* ---------- A vehicle's page (p2m4-vehicle-options.svg, option A, decision #057) ---------- */
@@ -1508,6 +1532,7 @@ html {
 .dialog.wide-dialog {
     max-width: 520px;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
 }
 
@@ -1600,6 +1625,164 @@ textarea.field-input {
 .role-row .role-select {
     width: 140px;
     margin-left: auto;
+}
+
+/* ---------- Places and the location picker (p2m5-places-options.svg, decision #060) ---------- */
+
+.places {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 760px;
+}
+
+.places-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.place-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.place-row-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.place-radius {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.place-row-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.picker-buttons,
+.picker-typed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.picker-typed .field-input {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* The chosen way of giving the location, and the chosen nearby place (#061). */
+.picker-buttons .secondary-button.chosen {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.nearby {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nearby-choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    min-height: 48px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nearby-choice.chosen {
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+}
+
+.nearby-mark {
+    color: var(--accent);
+}
+
+.nearby-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.nearby-detail {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.picker-fix {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.picker-note {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.picker-note.good {
+    border-color: #3fb950;
+}
+
+.picker-note.warn {
+    border-color: var(--warn);
+}
+
+.about {
+    margin: 8px 0 16px;
+}
+
+.about-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 18px;
+    margin: 8px 0 0;
+}
+
+.about-list dt {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.about-list dd {
+    margin: 0;
 }
 
 /* ---------- Messages (p2m3-messages-chosen.svg, decision #053) ---------- */
@@ -2008,6 +2191,11 @@ textarea.field-input {
 
     .chip-name-short {
         display: inline;
+    }
+
+    /* Places on phones: tap a place to edit it. */
+    .place-row-buttons {
+        display: none;
     }
 
     /* One line on phones, so the pinned banner stays small. */

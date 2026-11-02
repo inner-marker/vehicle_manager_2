@@ -341,6 +341,8 @@ inbox-job-body = See the details below and the server's log.
 inbox-snapshot-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
 inbox-quick-check-body = The hourly check found a problem in the database, so the server is refusing changes. See the details below and the server's log.
 inbox-server-unhealthy = The server isn't accepting changes
+inbox-place-lookup-unavailable = Place lookup isn't available
+inbox-place-lookup-body = The server couldn't open its place data, so it can't suggest a city, state, and country from a location. Saved places and typing a place still work. Restarting the server, or updating it, usually fixes this; the details below say what went wrong.
 inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-open-diagnostics = Open Diagnostics
@@ -639,3 +641,100 @@ group-icon-warehouse = Warehouse
 group-icon-shop = Shop
 group-icon-farm = Farm
 group-icon-house = House
+
+## Location (decisions #038, #059)
+
+location-latitude-range = Latitude must be between -90 and 90.
+location-longitude-range = Longitude must be between -180 and 180.
+location-not-coordinates = Enter decimal degrees, e.g. 35.5951 and -82.5515.
+location-radius-range = The radius must be between 25 m and 2 km.
+location-city-empty = Enter the city or town.
+location-region-empty = Enter the state or province.
+location-place-too-long = That's too long: at most 100 characters.
+location-country-invalid = Choose a country.
+location-time-zone-invalid = That time zone isn't recognised.
+
+## Places, the location picker, and About (decisions #059, #060)
+
+nav-places = Places
+places-add = + Add place
+places-intro = Your places: only you see them. When you're inside one, a new event uses it.
+places-empty = No places yet. Add the ones you go to often, like home or your usual fuel stop.
+places-remove-note = Removing a place never changes past events: each event keeps its own copy.
+# $meters: `meters` (number).
+places-meters = { $meters } m
+# $km: `km` (number).
+places-kilometers = { $km } km
+place-add-title = Add a place
+place-edit-title = Edit place
+place-step-where = 1 · Where
+place-step-place = 2 · Place
+place-step-name = 3 · Name
+place-use-location = Use my location
+place-locating = Finding your location…
+place-type-coordinates = Type coordinates
+place-coordinates = Latitude, longitude
+place-coordinates-hint = For example 35.5951, -82.5515 (as map apps copy them).
+place-coordinates-apply = Use these
+# $meters: `meters` (number).
+place-fix-now = ± { $meters } m · just now
+# $meters, $minutes: `meters` and `minutes` (numbers).
+place-fix-minutes = ± { $meters } m · { $minutes } min ago
+place-fix-typed = Typed coordinates
+place-fix-stale = This location is over 20 minutes old.
+place-no-location = No location yet: use yours, or type coordinates.
+place-location-denied = Location permission was refused. Allow it in the browser's settings, or type coordinates.
+place-location-unavailable = The location isn't available here. Type coordinates instead.
+# $place: `place` (text).
+place-suggested = Suggested: { $place }
+# $zone, $version: `zone` and `version` (text).
+place-suggested-detail = Time zone { $zone } · from place data { $version }
+# $place: `place` (text).
+place-offshore = Outside the map's coastline (at sea, or on a wide river or bay): the nearest place is { $place }. Check it.
+# $name, $meters: `name` (text) and `meters` (number).
+place-at-saved = You're at { $name } ({ $meters } m away). Its city, state, and country are used.
+place-lookup-unavailable = Place lookup isn't available: type the city, state, and country.
+place-use-suggestion = Use the suggestion
+place-city = City or town
+place-region = State or province
+place-country = Country
+place-country-code = Country code (e.g. US)
+place-typed-note = Type any city or state, e.g. a base that isn't in the list.
+place-name = Name
+place-radius = Radius
+place-needs-location = Set where it is first: use your location, or type coordinates.
+# $name: `name` (text).
+place-remove-title = Remove { $name }?
+place-remove-text = Past events keep their own copy of it.
+about-heading = About
+about-app = App
+about-place-data = Place data
+about-place-data-unavailable = Not available
+about-credits = Credits
+about-credits-default = Contains GeoNames data (CC BY 4.0, geonames.org). Boundaries: Natural Earth (public domain, naturalearthdata.com).
+
+## Nearby places in the picker (decision #061)
+
+place-nearby = Nearby: choose the city or town
+place-nearby-note = Not in the list? Type the city or town below.
+# $km: `km` (text, already formatted).
+place-distance-km = { $km } km
+# $miles: `miles` (text, already formatted).
+place-distance-mi = { $miles } mi
+place-kind-capital = Capital
+place-kind-district = District
+place-kind-locality = Locality
+place-kind-city = City
+place-kind-town = Town
+place-kind-village = Village
+place-seat-region = state or province capital
+place-seat-county = county seat
+place-seat-local = local seat
+compass-n = N
+compass-ne = NE
+compass-e = E
+compass-se = SE
+compass-s = S
+compass-sw = SW
+compass-w = W
+compass-nw = NW

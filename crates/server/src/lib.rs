@@ -16,6 +16,7 @@ pub mod jobs;
 pub mod login_limiter;
 pub mod messages;
 pub mod passwords;
+pub mod places;
 pub mod preferences;
 pub mod recovery;
 pub mod sessions;

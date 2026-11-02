@@ -13,8 +13,8 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, InboxOutcome,
-    MarkMessage, Pong, PreferencesOutcome, RecoveryOutcome, SessionState, SetupOutcome,
-    SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
+    MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, SessionState,
+    SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -739,6 +739,101 @@ pub(crate) async fn delete_vehicle_group(
     )
 }
 
+/// The signed-in person's saved places (#059).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[get("/api/v1/places")]
+pub(crate) async fn get_places() -> ServerFnResult<PlacesOutcome> {
+    Ok(server_side::with_places(async |context| ::server::places::list(&context).await).await)
+}
+
+/// Adds a saved place for the signed-in person.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[post("/api/v1/places/add")]
+pub(crate) async fn add_place(
+    form: domain::location::SavedPlaceForm,
+) -> ServerFnResult<PlacesOutcome> {
+    Ok(
+        server_side::with_places(async |context| ::server::places::add(&context, &form).await)
+            .await,
+    )
+}
+
+/// Changes one of the signed-in person's saved places.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[post("/api/v1/places/edit")]
+pub(crate) async fn edit_place(
+    id: domain::location::SavedPlaceId,
+    form: domain::location::SavedPlaceForm,
+) -> ServerFnResult<PlacesOutcome> {
+    Ok(
+        server_side::with_places(async |context| ::server::places::edit(&context, id, &form).await)
+            .await,
+    )
+}
+
+/// Removes one of the signed-in person's saved places.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[post("/api/v1/places/delete")]
+pub(crate) async fn delete_place(
+    id: domain::location::SavedPlaceId,
+) -> ServerFnResult<PlacesOutcome> {
+    Ok(
+        server_side::with_places(async |context| ::server::places::delete(&context, id).await)
+            .await,
+    )
+}
+
+/// What's known about a point: the person's saved place it's in, and the suggested city,
+/// state, country, and time zone (#038, #059).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[post("/api/v1/places/locate")]
+pub(crate) async fn locate(
+    coordinates: domain::location::Coordinates,
+) -> ServerFnResult<PlacesOutcome> {
+    Ok(server_side::with_places(async |context| {
+        ::server::places::locate(&context, coordinates).await
+    })
+    .await)
+}
+
+/// Every country, by name, for typing a place by hand.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[get("/api/v1/places/countries")]
+pub(crate) async fn get_countries() -> ServerFnResult<PlacesOutcome> {
+    Ok(server_side::with_places(async |context| ::server::places::countries(&context).await).await)
+}
+
+/// About the place data: its version and credit (for About on Diagnostics).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PlacesOutcome`] values.
+#[get("/api/v1/places/data")]
+pub(crate) async fn get_place_data() -> ServerFnResult<PlacesOutcome> {
+    Ok(
+        server_side::with_places(async |context| ::server::places::data_info(context.geocoder))
+            .await,
+    )
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -961,6 +1056,24 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the signed-in person's places context, or answers that it's
+    /// unavailable (no database, or nobody signed in).
+    pub(super) async fn with_places(
+        action: impl AsyncFnOnce(server::places::PlacesContext<'_>) -> domain::api::PlacesOutcome,
+    ) -> domain::api::PlacesOutcome {
+        let (Some(database), Some(user)) = (server::startup::database(), signed_in()) else {
+            return domain::api::PlacesOutcome::Unavailable;
+        };
+        let context = server::places::PlacesContext {
+            database,
+            user: &user,
+            health: server::health::current(),
+            clock: &SystemClock,
+            geocoder: server::places::geocoder(),
         };
         action(context).await
     }

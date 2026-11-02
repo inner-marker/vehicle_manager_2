@@ -162,3 +162,13 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Overlap with meters:** a meter is already a cumulative distance or duration (#030). Is a cumulative field just a meter (one concept, so "idle time" becomes a meter), or are meters the required, built-in subset?
   - Which types it applies to (distance, duration, volume, number), and whether it's chosen when the field is added and then fixed, like the type.
   - How the catalogue (idea 16) marks its fields.
+
+### 19. Check for newer geocoder data and tell the Admin 🟡
+*Raised by the human, 2026-11-02, after freezing the geocoder's sources (#059) · Suggested phase: Phase 6 (Polish), or with the post-MVP reference data packs*
+
+- **Idea:** a daily or weekly check notices when the geocoder's sources have something newer than the frozen copy (a Natural Earth release after 5.1.1; GeoNames changes enough to be worth a new snapshot), and tells the Admin through the message center (#050), as an info message with what's new.
+- **To discuss:**
+  - **Who acts on it.** The data is built into the image, so the NAS can't update itself: a new snapshot means a new source release, a rebuilt image, and an update on the NAS. The notice may matter more to whoever maintains the app than to the household's Admin.
+  - **Where the check runs.** On the server (the first outgoing internet request it would make, so opt-in, and off for a fully offline install), or as a scheduled **GitHub Actions** workflow that opens an issue, keeping the NAS offline.
+  - **What counts as "newer".** Natural Earth has versioned releases (its GitHub releases). GeoNames is rebuilt every day without versions, so it needs a threshold (e.g. how many places changed) or a fixed schedule (e.g. a yearly snapshot).
+  - Fits the server's background job system (idea 9) and the reference data packs' update path (plan §3).

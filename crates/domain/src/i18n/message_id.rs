@@ -535,6 +535,10 @@ define_messages! {
     INBOX_QUICK_CHECK_BODY => "inbox-quick-check-body",
     /// Message title: the server is refusing changes.
     INBOX_SERVER_UNHEALTHY => "inbox-server-unhealthy",
+    /// Inbox title: the server couldn't open its place data (#059).
+    INBOX_PLACE_LOOKUP_UNAVAILABLE => "inbox-place-lookup-unavailable",
+    /// Inbox text: place lookup unavailable, and what still works.
+    INBOX_PLACE_LOOKUP_BODY => "inbox-place-lookup-body",
     /// Message text: the database couldn't be opened.
     INBOX_DATABASE_UNAVAILABLE => "inbox-database-unavailable",
     /// Message text: the integrity check found problems.
@@ -1017,4 +1021,158 @@ define_messages! {
     GROUP_ICON_FARM => "group-icon-farm",
     /// Group icon: house.
     GROUP_ICON_HOUSE => "group-icon-house",
+    /// Location: latitude out of range.
+    LOCATION_LATITUDE_RANGE => "location-latitude-range",
+    /// Location: longitude out of range.
+    LOCATION_LONGITUDE_RANGE => "location-longitude-range",
+    /// Location: typed coordinates aren't numbers.
+    LOCATION_NOT_COORDINATES => "location-not-coordinates",
+    /// Location: a saved place's radius out of range.
+    LOCATION_RADIUS_RANGE => "location-radius-range",
+    /// Location: no city.
+    LOCATION_CITY_EMPTY => "location-city-empty",
+    /// Location: no state or province.
+    LOCATION_REGION_EMPTY => "location-region-empty",
+    /// Location: a city or region name too long.
+    LOCATION_PLACE_TOO_LONG => "location-place-too-long",
+    /// Location: not a country code.
+    LOCATION_COUNTRY_INVALID => "location-country-invalid",
+    /// Location: not an IANA time zone name.
+    LOCATION_TIME_ZONE_INVALID => "location-time-zone-invalid",
+    /// Navigation: each person's saved places (#060).
+    NAV_PLACES => "nav-places",
+    /// Places: add a saved place.
+    PLACES_ADD => "places-add",
+    /// Places: what saved places are.
+    PLACES_INTRO => "places-intro",
+    /// Places: none yet.
+    PLACES_EMPTY => "places-empty",
+    /// Places: removing is safe for past events.
+    PLACES_REMOVE_NOTE => "places-remove-note",
+    /// A distance in meters; takes `meters` (number).
+    PLACES_METERS => "places-meters",
+    /// A distance in kilometers; takes `km` (number).
+    PLACES_KILOMETERS => "places-kilometers",
+    /// Dialog title: add a saved place.
+    PLACE_ADD_TITLE => "place-add-title",
+    /// Dialog title: edit a saved place.
+    PLACE_EDIT_TITLE => "place-edit-title",
+    /// Place dialog: the location part.
+    PLACE_STEP_WHERE => "place-step-where",
+    /// Place dialog: the city, state, and country part.
+    PLACE_STEP_PLACE => "place-step-place",
+    /// Place dialog: the name and radius part.
+    PLACE_STEP_NAME => "place-step-name",
+    /// Button: ask the device where it is.
+    PLACE_USE_LOCATION => "place-use-location",
+    /// Waiting for the device's location.
+    PLACE_LOCATING => "place-locating",
+    /// Button: type latitude and longitude instead.
+    PLACE_TYPE_COORDINATES => "place-type-coordinates",
+    /// Form field: typed or pasted coordinates.
+    PLACE_COORDINATES => "place-coordinates",
+    /// Form note: how to type coordinates.
+    PLACE_COORDINATES_HINT => "place-coordinates-hint",
+    /// Button: use the typed coordinates.
+    PLACE_COORDINATES_APPLY => "place-coordinates-apply",
+    /// A device location's accuracy, just taken; takes `meters` (number).
+    PLACE_FIX_NOW => "place-fix-now",
+    /// A device location's accuracy and age; takes `meters` and `minutes` (numbers).
+    PLACE_FIX_MINUTES => "place-fix-minutes",
+    /// The coordinates were typed, not from the device.
+    PLACE_FIX_TYPED => "place-fix-typed",
+    /// Warning: the device location is stale.
+    PLACE_FIX_STALE => "place-fix-stale",
+    /// Place dialog: nothing chosen yet.
+    PLACE_NO_LOCATION => "place-no-location",
+    /// The device location was refused.
+    PLACE_LOCATION_DENIED => "place-location-denied",
+    /// The device location couldn't be found.
+    PLACE_LOCATION_UNAVAILABLE => "place-location-unavailable",
+    /// The geocoder's suggestion; takes `place` (text).
+    PLACE_SUGGESTED => "place-suggested",
+    /// The suggestion's time zone and data version; takes `zone` and `version` (text).
+    PLACE_SUGGESTED_DETAIL => "place-suggested-detail",
+    /// The point is outside every country; takes `place` (text).
+    PLACE_OFFSHORE => "place-offshore",
+    /// Inside a saved place; takes `name` (text) and `meters` (number).
+    PLACE_AT_SAVED => "place-at-saved",
+    /// No suggestion: the server's place data is unavailable.
+    PLACE_LOOKUP_UNAVAILABLE => "place-lookup-unavailable",
+    /// Button: fill the place fields from the suggestion.
+    PLACE_USE_SUGGESTION => "place-use-suggestion",
+    /// Form field: the city.
+    PLACE_CITY => "place-city",
+    /// Form field: the state or province.
+    PLACE_REGION => "place-region",
+    /// Form field: the country.
+    PLACE_COUNTRY => "place-country",
+    /// Form field: a two-letter country code, when there's no country list.
+    PLACE_COUNTRY_CODE => "place-country-code",
+    /// Form note: the place can be typed.
+    PLACE_TYPED_NOTE => "place-typed-note",
+    /// Form field: the saved place's name.
+    PLACE_NAME => "place-name",
+    /// Form field: how close counts as being there.
+    PLACE_RADIUS => "place-radius",
+    /// Form error: no coordinates yet.
+    PLACE_NEEDS_LOCATION => "place-needs-location",
+    /// Confirm dialog title; takes `name` (text).
+    PLACE_REMOVE_TITLE => "place-remove-title",
+    /// Confirm dialog text: removing a place.
+    PLACE_REMOVE_TEXT => "place-remove-text",
+    /// Diagnostics section: the app and its data.
+    ABOUT_HEADING => "about-heading",
+    /// About: the app's version.
+    ABOUT_APP => "about-app",
+    /// About: the place data's version.
+    ABOUT_PLACE_DATA => "about-place-data",
+    /// About: the server couldn't open its place data.
+    ABOUT_PLACE_DATA_UNAVAILABLE => "about-place-data-unavailable",
+    /// About: data credits.
+    ABOUT_CREDITS => "about-credits",
+    /// About: the data credits when the server doesn't give them.
+    ABOUT_CREDITS_DEFAULT => "about-credits-default",
+    /// Picker: the nearby places list's heading (#061).
+    PLACE_NEARBY => "place-nearby",
+    /// Picker: typing is still possible.
+    PLACE_NEARBY_NOTE => "place-nearby-note",
+    /// A distance in kilometers, one decimal; takes `km` (text, already formatted).
+    PLACE_DISTANCE_KM => "place-distance-km",
+    /// A distance in miles, one decimal; takes `miles` (text, already formatted).
+    PLACE_DISTANCE_MI => "place-distance-mi",
+    /// Place type: a national capital.
+    PLACE_KIND_CAPITAL => "place-kind-capital",
+    /// Place type: a section of a bigger place.
+    PLACE_KIND_DISTRICT => "place-kind-district",
+    /// Place type: a small named locality.
+    PLACE_KIND_LOCALITY => "place-kind-locality",
+    /// Place type: 100,000 people or more.
+    PLACE_KIND_CITY => "place-kind-city",
+    /// Place type: 10,000 people or more.
+    PLACE_KIND_TOWN => "place-kind-town",
+    /// Place type: fewer than 10,000 people.
+    PLACE_KIND_VILLAGE => "place-kind-village",
+    /// Place role: seat of a state or province.
+    PLACE_SEAT_REGION => "place-seat-region",
+    /// Place role: seat of a county.
+    PLACE_SEAT_COUNTY => "place-seat-county",
+    /// Place role: seat of a smaller division.
+    PLACE_SEAT_LOCAL => "place-seat-local",
+    /// Compass: north.
+    COMPASS_N => "compass-n",
+    /// Compass: northeast.
+    COMPASS_NE => "compass-ne",
+    /// Compass: east.
+    COMPASS_E => "compass-e",
+    /// Compass: southeast.
+    COMPASS_SE => "compass-se",
+    /// Compass: south.
+    COMPASS_S => "compass-s",
+    /// Compass: southwest.
+    COMPASS_SW => "compass-sw",
+    /// Compass: west.
+    COMPASS_W => "compass-w",
+    /// Compass: northwest.
+    COMPASS_NW => "compass-nw",
 }

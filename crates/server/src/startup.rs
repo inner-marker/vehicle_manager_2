@@ -56,6 +56,9 @@ pub struct ServerPaths {
     pub data_dir: PathBuf,
     /// Where nightly snapshots go.
     pub snapshot_dir: SnapshotDir,
+    /// The place data file, if `VEHICLEMANAGER_GEODATA_FILE` names one (otherwise it's
+    /// looked for; `crate::places`).
+    pub geodata_file: Option<PathBuf>,
 }
 
 /// The environment variable naming a snapshot folder other than `<data dir>/snapshots`
@@ -83,6 +86,16 @@ impl ServerPaths {
         Self {
             data_dir,
             snapshot_dir,
+            geodata_file: None,
+        }
+    }
+
+    /// The same paths, with the place data file `geodata_file` (if set).
+    #[must_use]
+    pub fn with_geodata_file(self, geodata_file: Option<PathBuf>) -> Self {
+        Self {
+            geodata_file,
+            ..self
         }
     }
 }
@@ -118,6 +131,8 @@ pub async fn start(
             {
                 tracing::error!(target: log_area::APP, %error, "can't make the default group; vehicles can't be added until it exists");
             }
+            // The place data (#059): missing or broken data never stops the server.
+            crate::places::load(paths.geodata_file.clone(), clock.now()).await;
             jobs::spawn(JobContext {
                 database: database.clone(),
                 clock,

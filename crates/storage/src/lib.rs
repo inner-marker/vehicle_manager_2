@@ -14,6 +14,7 @@ mod error;
 mod integrity;
 pub mod jobs;
 pub mod message_marks;
+pub mod places;
 pub mod preferences;
 pub mod snapshot;
 pub mod users;

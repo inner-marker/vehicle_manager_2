@@ -38,6 +38,8 @@ pub(crate) enum Icon {
     Down,
     /// The Groups screen (#058).
     Groups,
+    /// The Places screen (#060).
+    Places,
 }
 
 impl Icon {
@@ -72,6 +74,7 @@ impl Icon {
             Self::Up => include_str!("../../assets/icons/chevron-up.svg"),
             Self::Down => include_str!("../../assets/icons/chevron-down.svg"),
             Self::Groups => include_str!("../../assets/icons/layers.svg"),
+            Self::Places => include_str!("../../assets/icons/map-pin.svg"),
         }
     }
 }

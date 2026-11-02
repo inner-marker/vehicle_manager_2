@@ -24,6 +24,7 @@
 //!         finished: UnixMillis::from_millis(1_000),
 //!         detail: "disk full".into(),
 //!     }],
+//!     place_lookup_problem: None,
 //! };
 //! let messages = server_messages(&state);
 //! // An Admin message: shown in Admin mode, not in Driver mode.
@@ -157,6 +158,8 @@ pub enum MessageKind {
         /// What's wrong.
         problem: ServerProblem,
     },
+    /// The server couldn't open its place data, so coordinates can't be looked up (#059).
+    PlaceLookupUnavailable,
 }
 
 impl MessageKind {
@@ -178,6 +181,7 @@ impl MessageKind {
             } => messages::INBOX_SNAPSHOT_SKIPPED,
             Self::JobSkipped { .. } => messages::INBOX_JOB_SKIPPED,
             Self::ServerUnhealthy { .. } => messages::INBOX_SERVER_UNHEALTHY,
+            Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_UNAVAILABLE,
         }
     }
 
@@ -201,6 +205,7 @@ impl MessageKind {
             Self::ServerUnhealthy {
                 problem: ServerProblem::IntegrityCheckFailed,
             } => messages::INBOX_INTEGRITY_CHECK_FAILED,
+            Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_BODY,
         }
     }
 }
@@ -274,10 +279,12 @@ pub struct ServerState {
     pub problem: Option<(ServerProblem, UnixMillis)>,
     /// Each job's latest run (jobs that never ran are left out).
     pub jobs: Vec<JobReport>,
+    /// Since when, and why, the place data couldn't be opened, if it couldn't (#059).
+    pub place_lookup_problem: Option<(UnixMillis, String)>,
 }
 
-/// The messages the server's own state gives: one per failed or skipped job, and one while
-/// the server is unhealthy.
+/// The messages the server's own state gives: one per failed or skipped job, one while the
+/// server is unhealthy, and one while place lookup is unavailable.
 #[must_use]
 pub fn server_messages(state: &ServerState) -> Vec<Message> {
     let unhealthy = state.problem.map(|(problem, since)| Message {
@@ -293,9 +300,23 @@ pub fn server_messages(state: &ServerState) -> Vec<Message> {
         detail: String::new(),
         action: Some(MessageAction::OpenDiagnostics),
     });
+    // A warning for the Admin: saved places and typing a place still work (#059).
+    let place_lookup = state
+        .place_lookup_problem
+        .as_ref()
+        .map(|(since, detail)| Message {
+            key: MessageKey(format!("place-lookup-unavailable:{}", since.as_millis())),
+            kind: MessageKind::PlaceLookupUnavailable,
+            severity: Severity::Warning,
+            audience: Audience::AdminMode,
+            raised_at: *since,
+            detail: detail.clone(),
+            action: Some(MessageAction::OpenDiagnostics),
+        });
     unhealthy
         .into_iter()
         .chain(state.jobs.iter().filter_map(job_message))
+        .chain(place_lookup)
         .collect()
 }
 
@@ -494,6 +515,7 @@ mod tests {
                 job("nightly-snapshot", JobOutcome::Ok, 1),
                 job("quick-check", JobOutcome::Ok, 2),
             ],
+            place_lookup_problem: None,
         };
         assert!(server_messages(&state).is_empty());
     }
@@ -503,6 +525,7 @@ mod tests {
         let state = ServerState {
             problem: None,
             jobs: vec![job("nightly-snapshot", JobOutcome::Failed, 1_000)],
+            place_lookup_problem: None,
         };
         let messages = server_messages(&state);
         assert_eq!(messages.len(), 1);
@@ -519,10 +542,12 @@ mod tests {
         let first = server_messages(&ServerState {
             problem: None,
             jobs: vec![job("nightly-snapshot", JobOutcome::Failed, 1_000)],
+            place_lookup_problem: None,
         });
         let second = server_messages(&ServerState {
             problem: None,
             jobs: vec![job("nightly-snapshot", JobOutcome::Failed, 2_000)],
+            place_lookup_problem: None,
         });
         assert_ne!(first[0].key, second[0].key);
     }
@@ -536,6 +561,7 @@ mod tests {
                 job("quick-check", JobOutcome::Failed, 2),
                 job("something-new", JobOutcome::Failed, 3),
             ],
+            place_lookup_problem: None,
         });
         let titles: Vec<MessageId> = messages.iter().map(|m| m.kind.title()).collect();
         assert_eq!(
@@ -565,6 +591,7 @@ mod tests {
         let messages = server_messages(&ServerState {
             problem: Some((ServerProblem::IntegrityCheckFailed, since)),
             jobs: vec![],
+            place_lookup_problem: None,
         });
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].severity, Severity::Urgent);
@@ -587,6 +614,7 @@ mod tests {
                 UnixMillis::from_millis(1),
             )),
             jobs: vec![job("nightly-snapshot", JobOutcome::Failed, 2)],
+            place_lookup_problem: None,
         });
         assert_eq!(inbox(&messages, &[], ActiveMode::Admin).items.len(), 2);
         for mode in [ActiveMode::Driver, ActiveMode::Maintainer] {
@@ -604,6 +632,7 @@ mod tests {
                 UnixMillis::from_millis(1),
             )),
             jobs: vec![],
+            place_lookup_problem: None,
         });
         messages[0].detail = "file is not a database".into();
         assert_eq!(
@@ -629,6 +658,7 @@ mod tests {
                 job("b", JobOutcome::Failed, 2),
                 job("c", JobOutcome::Failed, 3),
             ],
+            place_lookup_problem: None,
         });
         let marks = [
             mark(&messages[0], true, false),
@@ -653,6 +683,7 @@ mod tests {
                 job("new-read", JobOutcome::Failed, 3),
                 job("new-unread", JobOutcome::Failed, 2),
             ],
+            place_lookup_problem: None,
         });
         let marks = [mark(&messages[1], true, false)];
         let seen = inbox(&messages, &marks, ActiveMode::Admin);
@@ -661,7 +692,9 @@ mod tests {
             .iter()
             .map(|item| match &item.message.kind {
                 MessageKind::JobFailed { job } => job.name(),
-                MessageKind::JobSkipped { .. } | MessageKind::ServerUnhealthy { .. } => "",
+                MessageKind::JobSkipped { .. }
+                | MessageKind::ServerUnhealthy { .. }
+                | MessageKind::PlaceLookupUnavailable => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);
@@ -694,9 +727,25 @@ mod tests {
                 UnixMillis::from_millis(1),
             )),
             jobs: vec![job("nightly-snapshot", JobOutcome::Skipped, 2)],
+            place_lookup_problem: None,
         });
         let seen = inbox(&messages, &[], ActiveMode::Admin);
         let json = serde_json::to_string(&seen).unwrap();
         assert_eq!(serde_json::from_str::<Inbox>(&json).unwrap(), seen);
+    }
+
+    #[test]
+    fn missing_place_data_is_a_warning_for_the_admin() {
+        let messages = server_messages(&ServerState {
+            place_lookup_problem: Some((UnixMillis::from_millis(5), "no such file".into())),
+            ..ServerState::default()
+        });
+        assert_eq!(messages.len(), 1);
+        let message = &messages[0];
+        assert_eq!(message.key.as_str(), "place-lookup-unavailable:5");
+        assert_eq!(message.severity, Severity::Warning);
+        assert_eq!(message.audience, Audience::AdminMode);
+        assert!(inbox(&messages, &[], ActiveMode::Driver).items.is_empty());
+        assert_eq!(inbox(&messages, &[], ActiveMode::Admin).items.len(), 1);
     }
 }

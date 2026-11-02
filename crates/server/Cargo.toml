@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 domain.workspace = true
 storage.workspace = true
+geocoder.workspace = true
 argon2.workspace = true
 axum.workspace = true
 getrandom.workspace = true
@@ -24,6 +25,7 @@ tokio = { version = "1", default-features = false, features = ["rt", "sync", "ti
 
 [dev-dependencies]
 domain = { workspace = true, features = ["test-support"] }
+geocoder = { workspace = true, features = ["test-support"] }
 tempfile.workspace = true
 http-body-util.workspace = true
 proptest.workspace = true

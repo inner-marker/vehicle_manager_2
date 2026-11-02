@@ -443,11 +443,11 @@ The core abstraction is a single **event** type covering everything that happens
 - Named places with coordinates, a radius, and their city/state/country, e.g. "Home garage," "Joe's Auto," "Costco fuel."
 - A new event automatically matches the nearest saved place whose radius contains the device's location, filling in the place name.
 - Created from the current location, from an existing event, or by picking on a map.
-- Shared across users and devices like other data; managed by Maintainer and Admin.
+- **Each person's own** (on all their devices), managed by that person. A saved place is an **alias:** choosing it copies its name and location into the event, so editing or removing the place later never changes past events (phase-2.md milestone 5).
 
 **Reverse geocoding: built-in and offline**
 - **No external service required.** A built-in lookup turns coordinates into city, state/province, and country:
-  - **City:** nearest populated place from **GeoNames cities1000** (places of 1,000+ people; CC BY 4.0: free, with attribution on the About screen).
+  - **City:** nearest populated place from **GeoNames cities500** (places of 500+ people, `docs/decisions.md` #059; CC BY 4.0: free, with attribution on the About screen).
   - **State/province and country:** point-in-polygon against **Natural Earth 1:10m** boundaries (public domain), slightly simplified.
   - **Outside every polygon** (Natural Earth doesn't trace exact coastlines), the **nearest** country and state/province are used, so a point always gets both (`docs/decisions.md` #038).
   - Shipped as a versioned data file the server loads, not compiled in. Phone budget: about 15–20 MB, checked when the mobile apps are built (post-MVP, #038).
@@ -742,7 +742,7 @@ Event                # anything that happens to a vehicle
  ├─ location_source  # gps | saved_place | map | manual
  ├─ city, region, country_code   # required (region = state/province)
  ├─ geocoder_version?            # set when city/region/country were derived
- ├─ saved_place_id?  # → SavedPlace
+ ├─ saved_place_id?  # → SavedPlace it was copied from (a hint only; the event keeps its own copy)
  ├─ place_name?      # optional business/garage name
  ├─ location_override_reason?    # guarded override when no location could be given
  ├─ notes
@@ -802,8 +802,8 @@ Credential           # on a user profile
  ├─ expires_on?      # date-only
  └─ attachments[]
 
-SavedPlace           # named location, matched automatically by radius
- ├─ id
+SavedPlace           # one person's named location (an alias), matched automatically by radius
+ ├─ id, user_id
  ├─ name             # "Home garage", "Joe's Auto"
  ├─ lat_e7, lon_e7, radius_m
  └─ city, region, country_code
