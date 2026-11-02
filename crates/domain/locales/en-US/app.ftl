@@ -793,6 +793,7 @@ event-tows-itself = A vehicle can't tow itself.
 event-wrong-kind = This vehicle doesn't have that kind of event.
 event-finalized = This event is finalized: correct it instead.
 event-not-finalized = This event is still a draft: edit it instead.
+event-already-corrected = This event was already corrected: correct the correction instead.
 event-flag-missing-location = No location
 event-flag-skipped = Skipped items
 event-flag-reading-override = Reading kept by the Admin

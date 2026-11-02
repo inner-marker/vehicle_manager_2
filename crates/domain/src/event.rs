@@ -296,6 +296,121 @@ pub struct Event {
     pub correction_reason: Option<Reason>,
 }
 
+/// An event as the app sends it: everything but what the server sets (who logged it, the
+/// times, its status, and what it corrects).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventInput {
+    /// See [`Event::asset`].
+    pub asset: AssetId,
+    /// See [`Event::kind`].
+    pub kind: EventKind,
+    /// See [`Event::dates`].
+    pub dates: EventDates,
+    /// See [`Event::location`].
+    pub location: EventLocation,
+    /// See [`Event::readings`].
+    pub readings: Vec<Reading>,
+    /// See [`Event::skipped`].
+    pub skipped: Vec<Skipped>,
+    /// See [`Event::fields`].
+    pub fields: Vec<FieldValue>,
+    /// See [`Event::notes`].
+    pub notes: Notes,
+    /// See [`Event::source`].
+    pub source: EventSource,
+    /// See [`Event::performed_by`].
+    pub performed_by: Option<Performer>,
+    /// See [`Event::fuel`].
+    pub fuel: Option<FuelDetails>,
+    /// See [`Event::reading_override`].
+    pub reading_override: Option<Reason>,
+}
+
+impl EventInput {
+    /// A new draft from this input, logged by `logged_by` at `now`.
+    #[must_use]
+    pub fn into_draft(self, logged_by: UserId, now: UnixMillis) -> Event {
+        Event {
+            asset: self.asset,
+            kind: self.kind,
+            dates: self.dates,
+            location: self.location,
+            readings: self.readings,
+            skipped: self.skipped,
+            fields: self.fields,
+            notes: self.notes,
+            source: self.source,
+            logged_by,
+            performed_by: self.performed_by,
+            fuel: self.fuel,
+            reading_override: self.reading_override,
+            status: EventStatus::Draft,
+            last_edited_at: now,
+            received_at: now,
+            finalized: None,
+            corrects: None,
+            correction_reason: None,
+        }
+    }
+
+    /// `current` with this input's changeable parts, edited at `now` (its vehicle, kind,
+    /// source, and what the server set are kept).
+    #[must_use]
+    pub fn edit(self, current: &Event, now: UnixMillis) -> Event {
+        Event {
+            dates: self.dates,
+            location: self.location,
+            readings: self.readings,
+            skipped: self.skipped,
+            fields: self.fields,
+            notes: self.notes,
+            performed_by: self.performed_by,
+            fuel: self.fuel,
+            reading_override: self.reading_override,
+            last_edited_at: now,
+            ..current.clone()
+        }
+    }
+}
+
+/// The change from `before` to `after`: only the fields that differ.
+#[must_use]
+pub fn event_changes(before: &Event, after: &Event) -> EventPatch {
+    fn changed<T: PartialEq + Clone>(before: &T, after: &T) -> Option<T> {
+        (before != after).then(|| after.clone())
+    }
+    fn cleared<T: PartialEq + Clone>(
+        before: Option<&T>,
+        after: Option<&T>,
+    ) -> Option<Clearable<T>> {
+        (before != after).then(|| Clearable::from_option(after.cloned()))
+    }
+    EventPatch {
+        asset: None,
+        kind: None,
+        dates: changed(&before.dates, &after.dates),
+        location: changed(&before.location, &after.location),
+        readings: changed(&before.readings, &after.readings),
+        skipped: changed(&before.skipped, &after.skipped),
+        fields: changed(&before.fields, &after.fields),
+        notes: changed(&before.notes, &after.notes),
+        source: None,
+        logged_by: None,
+        performed_by: cleared(before.performed_by.as_ref(), after.performed_by.as_ref()),
+        fuel: cleared(before.fuel.as_ref(), after.fuel.as_ref()),
+        reading_override: cleared(
+            before.reading_override.as_ref(),
+            after.reading_override.as_ref(),
+        ),
+        status: changed(&before.status, &after.status),
+        last_edited_at: changed(&before.last_edited_at, &after.last_edited_at),
+        received_at: None,
+        finalized: cleared(before.finalized.as_ref(), after.finalized.as_ref()),
+        corrects: None,
+        correction_reason: None,
+    }
+}
+
 /// Something worth marking on an event, so it's easy to find later.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -394,6 +509,8 @@ pub enum EventProblem {
     Finalized,
     /// A correction of an event that isn't finalized yet (edit the draft instead).
     NotFinalized,
+    /// A correction of an event that was already corrected (correct the correction instead).
+    AlreadyCorrected,
 }
 
 impl EventProblem {
@@ -418,6 +535,7 @@ impl EventProblem {
             Self::WrongKind => messages::EVENT_WRONG_KIND,
             Self::Finalized => messages::EVENT_FINALIZED,
             Self::NotFinalized => messages::EVENT_NOT_FINALIZED,
+            Self::AlreadyCorrected => messages::EVENT_ALREADY_CORRECTED,
         }
     }
 }

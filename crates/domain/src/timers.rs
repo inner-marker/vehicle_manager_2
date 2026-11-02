@@ -113,6 +113,13 @@ impl Timers {
             .map(|minutes| i64::from(minutes) * MINUTE)
     }
 
+    /// How long a fuel-up or reading stays a draft after its last edit (#034).
+    #[must_use]
+    pub fn finalize_after_millis(self) -> i64 {
+        self.test_millis()
+            .unwrap_or(crate::event::FINALIZE_AFTER_MILLIS)
+    }
+
     /// How long Admin mode lasts without activity.
     #[must_use]
     pub fn admin_idle_millis(self) -> i64 {

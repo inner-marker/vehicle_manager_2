@@ -22,7 +22,7 @@ use crate::command::Clearable;
 use crate::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
 use crate::event::{
     Event, EventId, EventPatch, EventProblem, EventStatus, FieldData, FieldValue, Finalized,
-    Finalizer, FuelDetails, PERFORMER_MAX_CHARS, Performer, Requirement,
+    Finalizer, FuelDetails, PERFORMER_MAX_CHARS, Performer, Requirement, Skipped,
 };
 use crate::meter::{EventKind, Meter, MeterId};
 use crate::time::UnixMillis;
@@ -307,6 +307,41 @@ fn matching_number(kind: &FieldKind, value: &FieldValue) -> Result<Option<i64>, 
             }
         }
         _ => wrong,
+    }
+}
+
+/// Drops what an accepted event doesn't need, so it isn't flagged for nothing: skip reasons
+/// for items that aren't required or were given, and the override reason when no reading
+/// needed it (`warnings` are [`check`]'s).
+pub fn tidy(event: &mut Event, context: &CheckContext<'_>, warnings: &[Warning]) {
+    let required = |item: Requirement| match item {
+        Requirement::Meter(id) => {
+            event.reading(id).is_none()
+                && context
+                    .meters
+                    .iter()
+                    .any(|(have, meter)| *have == id && meter.required_for.contains(&event.kind))
+        }
+        Requirement::Field(id) => {
+            !event.fields.iter().any(|value| value.field == id)
+                && context
+                    .fields
+                    .iter()
+                    .any(|(have, field)| *have == id && field.required_on(event.kind))
+        }
+    };
+    let mut kept: Vec<Skipped> = Vec::new();
+    for skip in &event.skipped {
+        if required(skip.item) && !kept.iter().any(|have| have.item == skip.item) {
+            kept.push(skip.clone());
+        }
+    }
+    event.skipped = kept;
+    if !warnings
+        .iter()
+        .any(|warning| matches!(warning, Warning::ReadingKept { .. }))
+    {
+        event.reading_override = None;
     }
 }
 

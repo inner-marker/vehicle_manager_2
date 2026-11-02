@@ -93,7 +93,7 @@ impl AssetsContext<'_> {
     }
 
     /// The vehicle as the permission check sees it, if it exists and the person can see it.
-    async fn visible(&self, id: AssetId) -> Result<AssetScope, AssetsOutcome> {
+    pub(crate) async fn visible(&self, id: AssetId) -> Result<AssetScope, AssetsOutcome> {
         let scope = self
             .database
             .asset_scope(id)

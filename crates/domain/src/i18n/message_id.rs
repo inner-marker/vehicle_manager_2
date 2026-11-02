@@ -1267,6 +1267,8 @@ define_messages! {
     EVENT_FINALIZED => "event-finalized",
     /// Event: a correction of a draft.
     EVENT_NOT_FINALIZED => "event-not-finalized",
+    /// Event: a correction of an event that was already corrected.
+    EVENT_ALREADY_CORRECTED => "event-already-corrected",
     /// Event flag: no place could be given.
     EVENT_FLAG_MISSING_LOCATION => "event-flag-missing-location",
     /// Event flag: a required reading or field was skipped.

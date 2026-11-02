@@ -145,6 +145,11 @@ pub enum AssetAction {
     DispositionSquawk,
     /// Change meters, intervals, service bundles, or required readings.
     ConfigureMaintenance,
+    /// Change, finalize, or correct someone else's events (milestone 6, choice 10). Anyone
+    /// may do these to their own, while they may still log that kind of event.
+    ManageEvents,
+    /// Keep a reading that doesn't fit its neighbours in time, with a reason (choice 3).
+    OverrideReadings,
     /// Edit the asset's own details, archive or delete it.
     ManageAsset,
 }
@@ -156,10 +161,11 @@ impl AssetAction {
         match self {
             Self::View => Role::Viewer,
             Self::LogFuel | Self::LogReading | Self::OpenSquawk => Role::Driver,
-            Self::LogMaintenance | Self::DispositionSquawk | Self::ConfigureMaintenance => {
-                Role::Maintainer
-            }
-            Self::ManageAsset => Role::Admin,
+            Self::LogMaintenance
+            | Self::DispositionSquawk
+            | Self::ConfigureMaintenance
+            | Self::ManageEvents => Role::Maintainer,
+            Self::ManageAsset | Self::OverrideReadings => Role::Admin,
         }
     }
 }

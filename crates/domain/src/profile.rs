@@ -155,6 +155,16 @@ pub fn profiles() -> Result<&'static [Profile], ProfileError> {
     PROFILES.as_deref().map_err(Clone::clone)
 }
 
+/// The kinds of events an asset of `kind` has: its profile's, or all of them for a kind
+/// without a profile.
+#[must_use]
+pub fn event_kinds(kind: &AssetKind) -> Vec<EventKind> {
+    profile(kind).map_or_else(
+        || EventKind::ALL.to_vec(),
+        |profile| profile.event_kinds.clone(),
+    )
+}
+
 /// The profile for `kind`, if there is one (and the profiles could be read).
 #[must_use]
 pub fn profile(kind: &AssetKind) -> Option<&'static Profile> {

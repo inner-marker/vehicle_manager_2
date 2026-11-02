@@ -5,6 +5,8 @@
 //!   folder, integrity-check the copy, keep the newest [`SNAPSHOTS_KEPT`] (#035).
 //! - **Hourly quick check:** `PRAGMA quick_check`; problems make the server unhealthy
 //!   until it's restarted and looked at.
+//! - **Finalize drafts** every [`FINALIZE_EVERY_MINUTES`] minutes: fuel-ups and readings
+//!   last edited 24 hours ago (or the test minutes) are finalized by the server (#034).
 //!
 //! Each run is logged and recorded in the `jobs` table (last run, result, next run). A job
 //! that was due while the server was off runs soon after it starts.
@@ -16,6 +18,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use domain::id::DeviceId;
 use domain::log_area;
 use domain::time::{Clock, UnixMillis};
 use domain::timers::Timers;
@@ -32,6 +35,10 @@ pub const SNAPSHOT_HOUR_UTC: i64 = 7;
 /// How many nightly snapshots are kept (#035).
 pub const SNAPSHOTS_KEPT: usize = 7;
 
+/// How often the server finalizes drafts that are due, so one is finalized at most this
+/// late.
+pub const FINALIZE_EVERY_MINUTES: i64 = 10;
+
 const MILLIS_PER_HOUR: i64 = 3_600_000;
 const MILLIS_PER_DAY: i64 = 24 * MILLIS_PER_HOUR;
 
@@ -46,11 +53,17 @@ pub enum Job {
     NightlySnapshot,
     /// The hourly `PRAGMA quick_check`.
     QuickCheck,
+    /// Finalizing drafts 24 hours after their last edit.
+    FinalizeDrafts,
 }
 
 impl Job {
     /// Every job, in the order they run when due together.
-    pub const ALL: [Self; 2] = [Self::NightlySnapshot, Self::QuickCheck];
+    pub const ALL: [Self; 3] = [
+        Self::NightlySnapshot,
+        Self::QuickCheck,
+        Self::FinalizeDrafts,
+    ];
 
     /// Its name in the `jobs` table and the log. Never changes once released.
     #[must_use]
@@ -58,6 +71,7 @@ impl Job {
         match self {
             Self::NightlySnapshot => "nightly-snapshot",
             Self::QuickCheck => "quick-check",
+            Self::FinalizeDrafts => "finalize-drafts",
         }
     }
 
@@ -65,6 +79,7 @@ impl Job {
         match self {
             Self::NightlySnapshot => Schedule::DailyAtUtcHour(SNAPSHOT_HOUR_UTC),
             Self::QuickCheck => Schedule::Every(MILLIS_PER_HOUR),
+            Self::FinalizeDrafts => Schedule::Every(FINALIZE_EVERY_MINUTES * 60_000),
         }
     }
 }
@@ -122,6 +137,8 @@ pub struct JobContext {
     pub snapshot_dir: SnapshotDir,
     /// Normal timers, or test timers (every job every N minutes, #054).
     pub timers: Timers,
+    /// The server's own device, for the changes it makes (finalizing drafts).
+    pub server_device: DeviceId,
 }
 
 /// Runs every job due at `now`, in [`Job::ALL`] order, and records each run. A job never
@@ -192,6 +209,7 @@ async fn run_and_record(context: &JobContext, job: Job) {
     let (result, message) = match job {
         Job::NightlySnapshot => snapshot(context, started).await,
         Job::QuickCheck => quick_check(context).await,
+        Job::FinalizeDrafts => finalize_drafts(context).await,
     };
     let finished = context.clock.now();
     let run = JobRun {
@@ -287,6 +305,22 @@ async fn snapshot(context: &JobContext, now: UnixMillis) -> (JobResult, String) 
     }
 }
 
+/// Finalizes the drafts that are due.
+async fn finalize_drafts(context: &JobContext) -> (JobResult, String) {
+    match crate::events::finalize_due(
+        &context.database,
+        context.server_device,
+        health::current(),
+        context.clock.as_ref(),
+        context.timers,
+    )
+    .await
+    {
+        Ok(count) => (JobResult::Ok, format!("finalized {count}")),
+        Err(message) => (JobResult::Failed, message),
+    }
+}
+
 /// The hourly quick check. A problem makes the server unhealthy.
 async fn quick_check(context: &JobContext) -> (JobResult, String) {
     match context.database.quick_check().await {
@@ -378,5 +412,6 @@ mod tests {
     fn job_names_are_stable() {
         assert_eq!(Job::NightlySnapshot.name(), "nightly-snapshot");
         assert_eq!(Job::QuickCheck.name(), "quick-check");
+        assert_eq!(Job::FinalizeDrafts.name(), "finalize-drafts");
     }
 }

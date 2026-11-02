@@ -12,9 +12,9 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, Handshake, InboxOutcome,
-    MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, SessionState,
-    SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
+    AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, EventsOutcome, Handshake,
+    InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
+    SessionState, SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -834,6 +834,119 @@ pub(crate) async fn get_place_data() -> ServerFnResult<PlacesOutcome> {
     )
 }
 
+/// One vehicle's fuel-ups and readings, newest first (milestone 6).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events")]
+pub(crate) async fn vehicle_events(asset: domain::asset::AssetId) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| ::server::events::list(&context, asset).await)
+            .await,
+    )
+}
+
+/// One event, and what the person may do with it.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/view")]
+pub(crate) async fn event_view(id: domain::event::EventId) -> ServerFnResult<EventsOutcome> {
+    Ok(server_side::with_events(async |context| ::server::events::view(&context, id).await).await)
+}
+
+/// What the log form needs: each meter's latest reading, and whether the person may keep a
+/// reading that doesn't fit.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/log-context")]
+pub(crate) async fn event_log_context(
+    asset: domain::asset::AssetId,
+) -> ServerFnResult<EventsOutcome> {
+    Ok(server_side::with_events(async |context| {
+        ::server::events::log_context(&context, asset).await
+    })
+    .await)
+}
+
+/// Logs a fuel-up or reading, as a draft.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/add")]
+pub(crate) async fn add_event(input: domain::event::EventInput) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| ::server::events::add(&context, input).await)
+            .await,
+    )
+}
+
+/// Changes a draft.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/edit")]
+pub(crate) async fn edit_event(
+    id: domain::event::EventId,
+    input: domain::event::EventInput,
+) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| ::server::events::edit(&context, id, input).await)
+            .await,
+    )
+}
+
+/// **Finalize now**: locks a draft.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/finalize")]
+pub(crate) async fn finalize_event(id: domain::event::EventId) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| {
+            ::server::events::finalize_now(&context, id).await
+        })
+        .await,
+    )
+}
+
+/// Deletes a draft.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/delete")]
+pub(crate) async fn delete_event(id: domain::event::EventId) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| ::server::events::delete(&context, id).await)
+            .await,
+    )
+}
+
+/// Corrects a finalized event with a new one, and a reason.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/correct")]
+pub(crate) async fn correct_event(
+    original: domain::event::EventId,
+    input: domain::event::EventInput,
+    reason: String,
+) -> ServerFnResult<EventsOutcome> {
+    Ok(server_side::with_events(async |context| {
+        ::server::events::correct(&context, original, input, &reason).await
+    })
+    .await)
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -1049,6 +1162,28 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::AssetsOutcome::Unavailable;
+        };
+        let context = server::assets::AssetsContext {
+            database,
+            database_id,
+            user: &user,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for an events request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_events(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::EventsOutcome,
+    ) -> domain::api::EventsOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::EventsOutcome::Unavailable;
         };
         let context = server::assets::AssetsContext {
             database,
