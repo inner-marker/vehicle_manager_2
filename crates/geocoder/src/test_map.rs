@@ -153,7 +153,8 @@ async fn city(
 }
 
 /// The cities: (fid, name, country, time zone, position, (feature code, population)).
-/// Near Alpha are a district of it (nearer to some points than Alpha is) and a locality.
+/// Near Alpha are a district of it (nearer to some points than Alpha is), a numbered part
+/// of it coded as an ordinary place, and a locality.
 type CityRow = (
     i64,
     &'static str,
@@ -162,7 +163,7 @@ type CityRow = (
     (f64, f64),
     (&'static str, i64),
 );
-const CITIES: [CityRow; 7] = [
+const CITIES: [CityRow; 8] = [
     (1, "Alpha", "AA", "Etc/GMT", (2.0, 2.0), ("PPLA", 50_000)),
     (2, "Aleph", "AA", "Etc/GMT", (8.0, 8.0), ("PPL", 2_000)),
     (3, "Beta", "BB", "Etc/GMT-1", (12.0, 2.0), ("PPLC", 300_000)),
@@ -177,6 +178,15 @@ const CITIES: [CityRow; 7] = [
         ("PPLX", 12_000),
     ),
     (7, "Alphaville", "AA", "Etc/GMT", (2.12, 1.9), ("PPLL", 40)),
+    // A numbered part of Alpha coded as an ordinary place (like "Paris 04").
+    (
+        8,
+        "Alpha 02 Quay",
+        "AA",
+        "Etc/GMT",
+        (2.07, 2.0),
+        ("PPL", 30_000),
+    ),
 ];
 
 /// The countries and regions (the map above).

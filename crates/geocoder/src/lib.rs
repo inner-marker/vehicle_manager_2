@@ -43,7 +43,8 @@ use std::fmt;
 use std::path::Path;
 
 use domain::location::{
-    Compass, Coordinates, CountryCode, NearbyPlace, Place, PlaceName, TimeZone, place_kind,
+    Compass, Coordinates, CountryCode, NearbyPlace, Place, PlaceKind, PlaceName, TimeZone,
+    is_numbered_part, place_kind,
 };
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 
@@ -129,6 +130,19 @@ fn nearby_place(near: &store::Near) -> Option<NearbyPlace> {
     })
 }
 
+/// Marks as districts the places that are a numbered part of a bigger place nearby, e.g.
+/// "Paris 04 Hôtel-de-Ville" of Paris (GeoNames codes those as ordinary places, #061).
+fn mark_numbered_parts(pairs: &mut [(&store::Near, NearbyPlace)], near: &[store::Near]) {
+    for (row, place) in pairs.iter_mut() {
+        let part_of_bigger = near.iter().any(|other| {
+            other.population > row.population && is_numbered_part(&row.name, &other.name)
+        });
+        if part_of_bigger {
+            place.kind = PlaceKind::District;
+        }
+    }
+}
+
 /// The open geocoder data.
 #[derive(Debug, Clone)]
 pub struct Geocoder {
@@ -182,19 +196,23 @@ impl Geocoder {
         let region = store::region(&self.pool, at, &country.code)
             .await?
             .unwrap_or_else(|| country.name.clone());
+        // Every place within 25 km, so a numbered part can be matched to its bigger place
+        // even when that place isn't among the five shown.
         let near = store::nearby(
             &self.pool,
             point,
             &country.code,
-            NEARBY_LIMIT,
+            usize::MAX,
             NEARBY_WITHIN_M,
         )
         .await?;
         // Each row with what the picker shows (rows whose name doesn't fit are left out).
-        let pairs: Vec<(&store::Near, NearbyPlace)> = near
+        let mut pairs: Vec<(&store::Near, NearbyPlace)> = near
             .iter()
             .filter_map(|row| nearby_place(row).map(|place| (row, place)))
             .collect();
+        mark_numbered_parts(&mut pairs, &near);
+        pairs.truncate(NEARBY_LIMIT);
         // The suggestion: the nearest nearby place that isn't a district; with none, the
         // nearest city in the country, however far.
         let chosen = pairs

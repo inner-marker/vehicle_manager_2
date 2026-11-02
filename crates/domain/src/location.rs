@@ -519,6 +519,16 @@ pub fn place_kind(feature_code: &str, population: i64) -> (PlaceKind, Option<Sea
     (kind, seat)
 }
 
+/// Whether `name` is a numbered part of the place `of`, e.g. "Paris 04 Hôtel-de-Ville" of
+/// "Paris" or "Lyon 3e" of "Lyon": `of`'s name, a space, then a digit (#061). GeoNames codes
+/// some cities' districts as ordinary places; this finds them by name.
+#[must_use]
+pub fn is_numbered_part(name: &str, of: &str) -> bool {
+    name.strip_prefix(of)
+        .and_then(|rest| rest.strip_prefix(' '))
+        .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
+}
+
 /// An eight-point compass direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Compass {
@@ -953,6 +963,17 @@ mod tests {
             place_kind("PPLA4", 0),
             (PlaceKind::Village, Some(Seat::Local))
         );
+    }
+
+    #[test]
+    fn numbered_parts_of_a_place_are_found_by_name() {
+        assert!(is_numbered_part("Paris 04 Hôtel-de-Ville", "Paris"));
+        assert!(is_numbered_part("Lyon 3e Arrondissement", "Lyon"));
+        assert!(is_numbered_part("Marseille 13", "Marseille"));
+        assert!(!is_numbered_part("Paris", "Paris"), "itself");
+        assert!(!is_numbered_part("Parisville 2", "Paris"), "a longer name");
+        assert!(!is_numbered_part("Paris Hilton", "Paris"), "no number");
+        assert!(!is_numbered_part("Springfield", "Paris"));
     }
 
     #[test]

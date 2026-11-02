@@ -86,7 +86,7 @@
 
 Run after sections 1–3 passed on the earlier build. What changed:
 - **Nearby places:** the picker now lists up to 5 places within 25 km in the same country, nearest first, with the distance and compass direction (in your miles or km setting) and the place's type.
-- **The default:** the nearest place that isn't a district. GeoNames codes some cities' districts (e.g. New York's) as districts but others (Paris's arrondissements) as ordinary places, so central Paris still defaults to "Paris 04", with "Paris · Capital" one tap away.
+- **The default:** the nearest place that isn't a district. A district is what GeoNames marks as one (e.g. New York's neighbourhoods), or a numbered part of a bigger place nearby (e.g. "Paris 04 Hôtel-de-Ville" beside Paris), so central Paris defaults to Paris.
 - **The buttons:** only the chosen **Where** button is blue.
 - **The data:** version `2026-11-02.2`, with each place's type and population, and abandoned and historical places left out.
 - **Dialogs** scroll on phones, and the page behind them stays still.
@@ -100,7 +100,7 @@ No new migration: the schema stays at 8.
 | [ ] | F3 | **Places → + Add place** | Neither **Use my location** nor **Type coordinates** is blue. Choosing **Type coordinates** makes it blue; choosing **Use my location** afterwards moves the blue to it. |
 | [ ] | F4 | **Type coordinates** `35.5951, -82.5515` | <ul><li>"Nearby: choose the city or town", with **Asheville · 0.4 mi N · Town · county seat** first and marked.</li><li>Below it: Woodfin, Biltmore Forest, Bent Creek, Weaverville (villages), each with its distance and direction.</li><li>City or town says Asheville.</li></ul> |
 | [ ] | F5 | Tap **Woodfin** | It's marked, and City or town says Woodfin. Typing over the field still works. **Cancel**. |
-| [ ] | F6 | **+ Add place → Type coordinates** `48.8566, 2.3522` | "Paris 04 Hôtel-de-Ville" is marked (see above), and **Paris · Capital** is listed. Tapping Paris marks it and fills Paris. **Cancel**. |
+| [ ] | F6 | **+ Add place → Type coordinates** `48.8566, 2.3522` | **Paris · 0.3 mi SW · Capital** is marked, and City or town says Paris. The arrondissements ("Paris 04 Hôtel-de-Ville", "Paris 01 Louvre"…) are listed as **District**. **Cancel**. |
 | [ ] | F7 | **Phone:** **+ Add place → Use my location** | The button turns blue, and your nearby places are listed with the distance and direction from where you're standing. |
 | [ ] | F8 | **Settings → You → Distance → Kilometers**, then repeat F4 | The distances show in km, e.g. "Asheville · 0.7 km N". Put Distance back afterwards. |
 | [ ] | F9 | **Type coordinates** `-16.7000, 179.9500` (at sea, off Fiji) | No nearby list (nothing within 25 km). The suggestion still names the nearest place, Savusavu, with the coastline note. **Cancel**. |

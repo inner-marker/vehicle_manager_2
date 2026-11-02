@@ -325,12 +325,23 @@ async fn cities_in(
     features(&rows)
 }
 
-/// The nearest city among `features` that isn't a district (GeoNames `PPLX`, #061), with its
-/// distance from `point` in meters.
+/// The nearest city among `features` that isn't a district (GeoNames `PPLX`, or a numbered
+/// part of a bigger place among them, #061), with its distance from `point` in meters.
 fn nearest_city(features: Vec<Feature>, point: Coordinates) -> Option<(Feature, f64)> {
+    // A numbered part of a bigger place among them (e.g. "Paris 04" beside Paris) is a
+    // district too, though GeoNames codes it as an ordinary place.
+    let numbered_part = |feature: &Feature| {
+        features.iter().any(|other| {
+            other.population > feature.population
+                && domain::location::is_numbered_part(&feature.name, &other.name)
+        })
+    };
+    let parts: Vec<bool> = features.iter().map(numbered_part).collect();
     features
         .into_iter()
-        .filter(|feature| feature.geonames_code != "PPLX")
+        .zip(parts)
+        .filter(|(feature, part)| feature.geonames_code != "PPLX" && !part)
+        .map(|(feature, _)| feature)
         .filter_map(|feature| {
             let Geometry::Point(at) = feature.geometry else {
                 return None;
