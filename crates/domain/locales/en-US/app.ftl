@@ -738,3 +738,25 @@ compass-s = S
 compass-sw = SW
 compass-w = W
 compass-nw = NW
+
+## Dates and times (decisions #008, #048)
+
+date-bad-date = Enter a date, e.g. 2026-11-02.
+date-bad-time = Enter a time, e.g. 15:30.
+date-unknown-zone = That time zone isn't recognised.
+date-end-before-start = The end date can't be before the start.
+date-out-of-range = That date is too far in the past or future.
+time-am = am
+time-pm = pm
+month-1 = Jan
+month-2 = Feb
+month-3 = Mar
+month-4 = Apr
+month-5 = May
+month-6 = Jun
+month-7 = Jul
+month-8 = Aug
+month-9 = Sep
+month-10 = Oct
+month-11 = Nov
+month-12 = Dec

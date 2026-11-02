@@ -47,6 +47,9 @@ sqlx = { version = "0.9.0", default-features = false, features = ["sqlite-bundle
 serde = { version = "1.0.229", features = ["derive"] }
 # Asset profiles as RON seed files compiled into domain (decision #030; approved, phase-2.md 4b).
 ron = "0.12.3"
+# Time zones and dates (approved, phase-2.md milestone 6). The zone database is built in, so
+# the NAS image (no tzdata), the desktop app, and the browser all use the same rules.
+jiff = { version = "0.2.39", default-features = false, features = ["std", "tzdb-bundle-always"] }
 sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison

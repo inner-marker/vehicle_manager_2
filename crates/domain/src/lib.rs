@@ -11,6 +11,7 @@ pub mod asset;
 pub mod asset_form;
 pub mod command;
 pub mod custom_field;
+pub mod dates;
 pub mod garage;
 pub mod group;
 pub mod hlc;

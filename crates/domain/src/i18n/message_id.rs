@@ -1175,4 +1175,42 @@ define_messages! {
     COMPASS_W => "compass-w",
     /// Compass: northwest.
     COMPASS_NW => "compass-nw",
+    /// Date: not a date.
+    DATE_BAD_DATE => "date-bad-date",
+    /// Date: not a time.
+    DATE_BAD_TIME => "date-bad-time",
+    /// Date: the zone isn't in the database.
+    DATE_UNKNOWN_ZONE => "date-unknown-zone",
+    /// Date: a multi-day event ending before it starts.
+    DATE_END_BEFORE_START => "date-end-before-start",
+    /// Date: outside 1900–2200.
+    DATE_OUT_OF_RANGE => "date-out-of-range",
+    /// Time: before noon.
+    TIME_AM => "time-am",
+    /// Time: noon and after.
+    TIME_PM => "time-pm",
+    /// A month's short name: Jan.
+    MONTH_1 => "month-1",
+    /// A month's short name: Feb.
+    MONTH_2 => "month-2",
+    /// A month's short name: Mar.
+    MONTH_3 => "month-3",
+    /// A month's short name: Apr.
+    MONTH_4 => "month-4",
+    /// A month's short name: May.
+    MONTH_5 => "month-5",
+    /// A month's short name: Jun.
+    MONTH_6 => "month-6",
+    /// A month's short name: Jul.
+    MONTH_7 => "month-7",
+    /// A month's short name: Aug.
+    MONTH_8 => "month-8",
+    /// A month's short name: Sep.
+    MONTH_9 => "month-9",
+    /// A month's short name: Oct.
+    MONTH_10 => "month-10",
+    /// A month's short name: Nov.
+    MONTH_11 => "month-11",
+    /// A month's short name: Dec.
+    MONTH_12 => "month-12",
 }
