@@ -1243,4 +1243,40 @@ define_messages! {
     UNIT_ABBR_L_PER_100_KM => "unit-abbr-l-per-100-km",
     /// Unit abbreviation: hours.
     UNIT_ABBR_H => "unit-abbr-h",
+    /// Event: a reason is needed (skip, override, correction).
+    EVENT_REASON_EMPTY => "event-reason-empty",
+    /// Event: a reason over 500 characters.
+    EVENT_REASON_TOO_LONG => "event-reason-too-long",
+    /// Event: the performer's name is empty or too long.
+    EVENT_BAD_PERFORMER => "event-bad-performer",
+    /// Event: no place and no reason.
+    EVENT_LOCATION_REQUIRED => "event-location-required",
+    /// Event: a required reading or field is missing.
+    EVENT_REQUIRED => "event-required",
+    /// Event: a reading that doesn't fit its neighbours in time.
+    EVENT_READING_OUT_OF_ORDER => "event-reading-out-of-order",
+    /// Event: a field value of the wrong type or choice.
+    EVENT_WRONG_VALUE => "event-wrong-value",
+    /// Event: a fuel-up of zero.
+    EVENT_NO_VOLUME => "event-no-volume",
+    /// Event: a negative cost or zero fuel economy.
+    EVENT_BAD_AMOUNT => "event-bad-amount",
+    /// Event: a percentage over 100.
+    EVENT_BAD_PERCENT => "event-bad-percent",
+    /// Event: the vehicle is among its own towed vehicles.
+    EVENT_TOWS_ITSELF => "event-tows-itself",
+    /// Event: e.g. a fuel-up for a trailer.
+    EVENT_WRONG_KIND => "event-wrong-kind",
+    /// Event: a change to a finalized event.
+    EVENT_FINALIZED => "event-finalized",
+    /// Event: a correction of a draft.
+    EVENT_NOT_FINALIZED => "event-not-finalized",
+    /// Event flag: no place could be given.
+    EVENT_FLAG_MISSING_LOCATION => "event-flag-missing-location",
+    /// Event flag: a required reading or field was skipped.
+    EVENT_FLAG_SKIPPED => "event-flag-skipped",
+    /// Event flag: a reading out of order was kept.
+    EVENT_FLAG_READING_OVERRIDE => "event-flag-reading-override",
+    /// Event flag: it corrects another event.
+    EVENT_FLAG_CORRECTION => "event-flag-correction",
 }

@@ -92,7 +92,8 @@ pub struct FieldRange {
 }
 
 /// Where a value falls against a [`FieldRange`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum RangeCheck {
     /// Inside the range (or no limit on that side).
     Within,

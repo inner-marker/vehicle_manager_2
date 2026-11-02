@@ -778,3 +778,24 @@ unit-abbr-mpg-uk = mpg (UK)
 unit-abbr-km-per-l = km/L
 unit-abbr-l-per-100-km = L/100 km
 unit-abbr-h = h
+
+## Events: fuel-ups and readings (milestone 6)
+
+event-reason-empty = Give a reason.
+event-reason-too-long = That's too long: at most 500 characters.
+event-bad-performer = Enter who did it (at most 100 characters).
+event-location-required = Set where it was, or say why you can't.
+event-required = Fill in the required items, or skip one with a reason.
+event-reading-out-of-order = That reading doesn't fit: it's lower than an earlier one or higher than a later one. Check it, or correct the other event.
+event-wrong-value = That value doesn't fit this field.
+event-no-volume = Enter how much fuel.
+event-bad-amount = That amount doesn't look right.
+event-bad-percent = Percentages go up to 100.
+event-tows-itself = A vehicle can't tow itself.
+event-wrong-kind = This vehicle doesn't have that kind of event.
+event-finalized = This event is finalized: correct it instead.
+event-not-finalized = This event is still a draft: edit it instead.
+event-flag-missing-location = No location
+event-flag-skipped = Skipped items
+event-flag-reading-override = Reading kept by the Admin
+event-flag-correction = Correction
