@@ -145,3 +145,20 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - **Idea:** built-in field definitions in data (RON, like the profiles), each with a fixed key, type, and unit, offered from **+ Add field** with one tap: trip distance, trip time, trip EV distance, trip fuel economy, average speed, trip fuel used, EV share, idle time, and so on. **Sets** add several at once (e.g. "Trip computer (hybrid)"). Profiles would pick their defaults from the catalogue.
 - **To discuss:** which fields and sets; whether catalogue fields can be edited or only turned off; vehicles with Trip A and Trip B (a set added twice with a suffix?); how it relates to the vehicle-reported fuel economy column (#030).
 
+
+### 17. Required readings as checkboxes on each meter and field 🟡
+*Raised by the human, 2026-11-02, after building the vehicle page (#057) · Suggested phase: undecided (before milestone 6's event forms use it, or with them)*
+
+- **Idea:** no separate **Required readings** section on Setup. Instead, each meter and each **custom field** has its own "Required for" checkboxes (Fuel-up, Reading, Maintenance, Repair), on its row or in its Edit dialog.
+- **What changes:** today only meters have `required_for` (#030); custom fields have just on/off. Fields would gain `required_for` too: a domain, storage, and server change, cheap now while no field has values.
+- **To discuss:** checkboxes on the row (always visible) or only in Edit; how "required" and "off" combine for a field (off wins?); whether a required field can be skipped with a reason, as a required reading can't today.
+
+### 18. Cumulative and trip custom fields 🟡
+*Raised by the human, 2026-11-02 · Suggested phase: milestone 6 (when fields get values), with Phase 5's calculations (#057)*
+
+- **Idea:** a numeric custom field is either **cumulative**, a running total read off the vehicle (odometer, engine idle time, total EV miles), or **trip**, a value for one stretch (trip miles, trip time, trip MPG).
+- **Why it matters:** cumulative values only go up, so a lower one is a warning (like a meter reading), and the difference between two readings is a trip value. Trip values add up over a period. Formulas and statistics (Phase 5) treat them differently.
+- **To discuss:**
+  - **Overlap with meters:** a meter is already a cumulative distance or duration (#030). Is a cumulative field just a meter (one concept, so "idle time" becomes a meter), or are meters the required, built-in subset?
+  - Which types it applies to (distance, duration, volume, number), and whether it's chosen when the field is added and then fixed, like the type.
+  - How the catalogue (idea 16) marks its fields.

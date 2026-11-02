@@ -1255,9 +1255,24 @@ select,
     gap: 6px;
 }
 
-.vehicle-group-badge svg {
+/* The icon's box is the sidebar's size unless told otherwise. */
+.vehicle-group-badge .icon {
     width: 14px;
     height: 14px;
+}
+
+/* The header's identifiers, group, and status: one height and shape. */
+.vehicle-chips > * {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    height: 28px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1;
 }
 
 /* Tabs scroll sideways when they don't fit (#040). */
