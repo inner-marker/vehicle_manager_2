@@ -23,6 +23,21 @@ pub(crate) enum Icon {
     System,
     Refresh,
     SyncOff,
+    /// All vehicles (#056).
+    AllVehicles,
+    /// Group icons (#052), besides the Garage's.
+    Hangar,
+    Boathouse,
+    Storage,
+    Warehouse,
+    Shop,
+    Farm,
+    House,
+    /// ▲▼ while arranging.
+    Up,
+    Down,
+    /// The Groups screen (#058).
+    Groups,
 }
 
 impl Icon {
@@ -46,6 +61,17 @@ impl Icon {
             Self::System => include_str!("../../assets/icons/monitor.svg"),
             Self::Refresh => include_str!("../../assets/icons/refresh-cw.svg"),
             Self::SyncOff => include_str!("../../assets/icons/cloud-off.svg"),
+            Self::AllVehicles => include_str!("../../assets/icons/layout-grid.svg"),
+            Self::Hangar => include_str!("../../assets/icons/plane.svg"),
+            Self::Boathouse => include_str!("../../assets/icons/sailboat.svg"),
+            Self::Storage => include_str!("../../assets/icons/package.svg"),
+            Self::Warehouse => include_str!("../../assets/icons/container.svg"),
+            Self::Shop => include_str!("../../assets/icons/wrench.svg"),
+            Self::Farm => include_str!("../../assets/icons/tractor.svg"),
+            Self::House => include_str!("../../assets/icons/house.svg"),
+            Self::Up => include_str!("../../assets/icons/chevron-up.svg"),
+            Self::Down => include_str!("../../assets/icons/chevron-down.svg"),
+            Self::Groups => include_str!("../../assets/icons/layers.svg"),
         }
     }
 }

@@ -61,8 +61,6 @@ define_messages! {
 
     /// Screen title: one vehicle's overview.
     SCREEN_VEHICLE_DETAIL => "screen-vehicle-detail",
-    /// Vehicle detail: which vehicle is shown; takes `id` (text).
-    VEHICLE_DETAIL_ID => "vehicle-detail-id",
     /// Screen title: logging a new event.
     SCREEN_LOG_EVENT => "screen-log-event",
     /// Screen title: no screen at this address.
@@ -304,6 +302,8 @@ define_messages! {
     ADMIN_BANNER_TEXT => "admin-banner-text",
     /// Admin banner: button to leave Admin mode.
     ADMIN_BANNER_LEAVE => "admin-banner-leave",
+    /// Admin banner on phones: one short line; takes `minutes` (number).
+    ADMIN_BANNER_SHORT => "admin-banner-short",
     /// Accessible label of the account chip.
     ACCOUNT_MENU_LABEL => "account-menu-label",
     /// Account menu: change password.
@@ -351,8 +351,6 @@ define_messages! {
     USERS_ROLES_HEADING => "users-roles-heading",
     /// Users detail: the all-vehicles role row.
     USERS_ALL_VEHICLES => "users-all-vehicles",
-    /// Users detail: per-vehicle roles come later.
-    USERS_ONE_VEHICLE_LATER => "users-one-vehicle-later",
     /// Users detail: the account heading.
     USERS_ACCOUNT_HEADING => "users-account-heading",
     /// Users detail: reset password.
@@ -581,4 +579,442 @@ define_messages! {
     TEST_TIMERS_TAG => "test-timers-tag",
     /// A sign-out choice with its test length (`$label`, `$minutes`).
     IDLE_SIGN_OUT_TEST => "idle-sign-out-test",
+    /// Notes longer than the limit.
+    NOTES_TOO_LONG => "notes-too-long",
+    /// A group with no name.
+    GROUP_NAME_EMPTY => "group-name-empty",
+    /// A group name longer than the limit.
+    GROUP_NAME_TOO_LONG => "group-name-too-long",
+    /// A vehicle with no name.
+    ASSET_NAME_EMPTY => "asset-name-empty",
+    /// A vehicle name longer than the limit.
+    ASSET_NAME_TOO_LONG => "asset-name-too-long",
+    /// Make, model, colour, or an identifier longer than the limit.
+    ASSET_TEXT_TOO_LONG => "asset-text-too-long",
+    /// A model year outside the plausible range.
+    ASSET_YEAR_OUT_OF_RANGE => "asset-year-out-of-range",
+    /// An identifier with no value.
+    ASSET_IDENTIFIER_EMPTY => "asset-identifier-empty",
+    /// More identifiers than allowed.
+    ASSET_TOO_MANY_IDENTIFIERS => "asset-too-many-identifiers",
+    /// Event kind: a fuel-up.
+    EVENT_KIND_FUEL => "event-kind-fuel",
+    /// Event kind: a reading.
+    EVENT_KIND_READING => "event-kind-reading",
+    /// Event kind: maintenance.
+    EVENT_KIND_MAINTENANCE => "event-kind-maintenance",
+    /// Event kind: a repair.
+    EVENT_KIND_REPAIR => "event-kind-repair",
+    /// Meter unit: hours.
+    UNIT_HOURS => "unit-hours",
+    /// A label with nothing in it.
+    LABEL_EMPTY => "label-empty",
+    /// A label longer than the limit.
+    LABEL_TOO_LONG => "label-too-long",
+    /// A meter unit that doesn't fit its dimension.
+    METER_WRONG_UNIT => "meter-wrong-unit",
+    /// Too many decimal places on a meter.
+    METER_TOO_PRECISE => "meter-too-precise",
+    /// Too many decimal places on a number field.
+    FIELD_TOO_MANY_DECIMALS => "field-too-many-decimals",
+    /// A choice list with no choices or too many.
+    FIELD_BAD_CHOICES => "field-bad-choices",
+    /// A range that doesn't fit its field.
+    FIELD_BAD_RANGE => "field-bad-range",
+    /// Removing a group that still has vehicles.
+    GROUP_NOT_EMPTY => "group-not-empty",
+    /// Removing the last group.
+    GROUP_LAST => "group-last",
+    /// The typed name doesn't match the vehicle's.
+    NAME_MISMATCH => "name-mismatch",
+    /// The default group's name, made with the server.
+    GROUP_DEFAULT_NAME => "group-default-name",
+    /// Sidebar and title: every group's vehicles.
+    NAV_ALL_VEHICLES => "nav-all-vehicles",
+    /// Button: add a vehicle.
+    VEHICLES_ADD => "vehicles-add",
+    /// The sort menu's label (for screen readers).
+    VEHICLES_SORT_LABEL => "vehicles-sort-label",
+    /// Sort choice: newest activity.
+    SORT_NEWEST_ACTIVITY => "sort-newest-activity",
+    /// Sort choice: by name.
+    SORT_NAME => "sort-name",
+    /// Sort choice: the person's own order.
+    SORT_CUSTOM => "sort-custom",
+    /// Button: arrange the custom order.
+    VEHICLES_ARRANGE => "vehicles-arrange",
+    /// Button: finish arranging.
+    VEHICLES_ARRANGE_DONE => "vehicles-arrange-done",
+    /// Button: show archived vehicles (`$count`).
+    VEHICLES_SHOW_ARCHIVED => "vehicles-show-archived",
+    /// Button: hide archived vehicles.
+    VEHICLES_HIDE_ARCHIVED => "vehicles-hide-archived",
+    /// How many vehicles a group has (`$count`).
+    VEHICLES_COUNT => "vehicles-count",
+    /// No vehicles at all.
+    VEHICLES_EMPTY => "vehicles-empty",
+    /// No vehicles: how to add one.
+    VEHICLES_EMPTY_ADMIN => "vehicles-empty-admin",
+    /// A group with no vehicles.
+    VEHICLES_EMPTY_GROUP => "vehicles-empty-group",
+    /// The phone's group menu label.
+    VEHICLES_GROUP_MENU => "vehicles-group-menu",
+    /// A card's note until readings arrive.
+    VEHICLES_CARD_COMING => "vehicles-card-coming",
+    /// Arranging: move a vehicle up.
+    VEHICLES_MOVE_UP => "vehicles-move-up",
+    /// Arranging: move a vehicle down.
+    VEHICLES_MOVE_DOWN => "vehicles-move-down",
+    /// The add-vehicle dialog's title.
+    ADD_VEHICLE_TITLE => "add-vehicle-title",
+    /// Add vehicle, step 1: pick a kind.
+    ADD_VEHICLE_KIND => "add-vehicle-kind",
+    /// Add vehicle: the add button.
+    ADD_VEHICLE_ADD => "add-vehicle-add",
+    /// Add vehicle: while adding.
+    ADD_VEHICLE_ADDING => "add-vehicle-adding",
+    /// Field: the vehicle's name.
+    ADD_VEHICLE_NAME => "add-vehicle-name",
+    /// Add vehicle: what it starts with.
+    ADD_VEHICLE_NOTE => "add-vehicle-note",
+    /// Field: make.
+    FIELD_MAKE => "field-make",
+    /// Field: model.
+    FIELD_MODEL => "field-model",
+    /// Field: model year.
+    FIELD_YEAR => "field-year",
+    /// Field: colour.
+    FIELD_COLOUR => "field-colour",
+    /// Field: group.
+    FIELD_GROUP => "field-group",
+    /// Lifecycle status: in service.
+    STATUS_IN_SERVICE => "status-in-service",
+    /// Lifecycle status: spare.
+    STATUS_SPARE => "status-spare",
+    /// Lifecycle status: out for service.
+    STATUS_OUT_FOR_SERVICE => "status-out-for-service",
+    /// Lifecycle status: retired.
+    STATUS_RETIRED => "status-retired",
+    /// Lifecycle status: disposed.
+    STATUS_DISPOSED => "status-disposed",
+    /// A vehicle action the person's role or mode doesn't allow.
+    VEHICLES_NOT_ALLOWED => "vehicles-not-allowed",
+    /// Profile name: car. Used by profile files (data), so code rarely names it.
+    PROFILE_CAR => "profile-car",
+    /// Profile name: truck. Used by profile files (data), so code rarely names it.
+    PROFILE_TRUCK => "profile-truck",
+    /// Profile name: motorcycle. Used by profile files (data), so code rarely names it.
+    PROFILE_MOTORCYCLE => "profile-motorcycle",
+    /// Profile name: trailer. Used by profile files (data), so code rarely names it.
+    PROFILE_TRAILER => "profile-trailer",
+    /// Profile name: generator. Used by profile files (data), so code rarely names it.
+    PROFILE_GENERATOR => "profile-generator",
+    /// Profile name: other equipment. Used by profile files (data), so code rarely names it.
+    PROFILE_OTHER_EQUIPMENT => "profile-other-equipment",
+    /// Identifier: VIN. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_VIN => "identifier-vin",
+    /// Identifier: license plate. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_PLATE => "identifier-plate",
+    /// Identifier: serial number. Used by profile files (data), so code rarely names it.
+    IDENTIFIER_SERIAL => "identifier-serial",
+    /// Expected document: title. Used by profile files (data), so code rarely names it.
+    DOCUMENT_TITLE => "document-title",
+    /// Expected document: registration. Used by profile files (data), so code rarely names it.
+    DOCUMENT_REGISTRATION => "document-registration",
+    /// Expected document: insurance. Used by profile files (data), so code rarely names it.
+    DOCUMENT_INSURANCE => "document-insurance",
+    /// A profile's meter: the odometer. Used by profile files (data), so code rarely names it.
+    METER_ODOMETER => "meter-odometer",
+    /// A profile's meter: run hours. Used by profile files (data), so code rarely names it.
+    METER_RUN_HOURS => "meter-run-hours",
+    /// A profile's custom field: trip time. Used by profile files (data), so code rarely names it.
+    FIELD_TRIP_TIME => "field-trip-time",
+    /// A profile's custom field: trip EV distance. Used by profile files (data), so code rarely names it.
+    FIELD_TRIP_EV_DISTANCE => "field-trip-ev-distance",
+    /// Vehicle page: no such vehicle, or not visible.
+    VEHICLE_NOT_FOUND => "vehicle-not-found",
+    /// Vehicle page: back to All vehicles.
+    VEHICLE_BACK_ALL => "vehicle-back-all",
+    /// Vehicle page: back to its group; takes `group` (text).
+    VEHICLE_BACK_GROUP => "vehicle-back-group",
+    /// Vehicle page: the tab bar's accessible name.
+    VEHICLE_TABS => "vehicle-tabs",
+    /// Vehicle tab: Overview.
+    TAB_OVERVIEW => "tab-overview",
+    /// Vehicle tab: Timeline.
+    TAB_TIMELINE => "tab-timeline",
+    /// Vehicle tab: Maintenance.
+    TAB_MAINTENANCE => "tab-maintenance",
+    /// Vehicle tab: Fuel.
+    TAB_FUEL => "tab-fuel",
+    /// Vehicle tab: Documents.
+    TAB_DOCUMENTS => "tab-documents",
+    /// Vehicle tab: Setup.
+    TAB_SETUP => "tab-setup",
+    /// Vehicle tab without content yet; takes `milestone` (number).
+    TAB_COMING => "tab-coming",
+    /// Overview panel: readiness.
+    PANEL_READY => "panel-ready",
+    /// Overview panel: readiness, not built yet.
+    PANEL_READY_COMING => "panel-ready-coming",
+    /// Overview panel: coming due.
+    PANEL_DUE => "panel-due",
+    /// Overview panel: coming due, not built yet.
+    PANEL_DUE_COMING => "panel-due-coming",
+    /// Overview panel: open squawks.
+    PANEL_SQUAWKS => "panel-squawks",
+    /// Overview panel: squawks, not built yet.
+    PANEL_SQUAWKS_COMING => "panel-squawks-coming",
+    /// Overview panel: latest fuel-ups.
+    PANEL_FUEL => "panel-fuel",
+    /// Overview panel: fuel-ups, not built yet.
+    PANEL_FUEL_COMING => "panel-fuel-coming",
+    /// Overview panel and Setup section: meters.
+    PANEL_METERS => "panel-meters",
+    /// A vehicle with no meters.
+    METERS_NONE => "meters-none",
+    /// Overview: meter readings, not built yet.
+    METERS_READINGS_COMING => "meters-readings-coming",
+    /// A meter's required event kinds; takes `kinds` (text, a list).
+    METER_REQUIRED_FOR => "meter-required-for",
+    /// A meter no event kind requires.
+    METER_REQUIRED_NONE => "meter-required-none",
+    /// Meter decimal places: none.
+    PRECISION_0 => "precision-0",
+    /// Meter decimal places: one.
+    PRECISION_1 => "precision-1",
+    /// Meter decimal places: two.
+    PRECISION_2 => "precision-2",
+    /// What a meter measures: distance.
+    DIMENSION_DISTANCE => "dimension-distance",
+    /// What a meter measures: duration.
+    DIMENSION_DURATION => "dimension-duration",
+    /// Setup section: the vehicle's details.
+    SETUP_DETAILS => "setup-details",
+    /// Setup: open the details form.
+    SETUP_EDIT_DETAILS => "setup-edit-details",
+    /// Setup: the vehicle has no description.
+    SETUP_NO_DESCRIPTION => "setup-no-description",
+    /// Setup: add a meter.
+    SETUP_ADD_METER => "setup-add-meter",
+    /// Setup section: custom fields.
+    SETUP_FIELDS => "setup-fields",
+    /// Setup: add a custom field.
+    SETUP_ADD_FIELD => "setup-add-field",
+    /// Setup: a vehicle with no custom fields.
+    SETUP_FIELDS_NONE => "setup-fields-none",
+    /// Setup section: which meters each event kind needs.
+    SETUP_REQUIRED => "setup-required",
+    /// Setup: what the required readings grid means.
+    SETUP_REQUIRED_NOTE => "setup-required-note",
+    /// Setup section: group, status, and deleting.
+    SETUP_GROUP_STATUS => "setup-group-status",
+    /// Setup: open the move dialog.
+    SETUP_MOVE => "setup-move",
+    /// Setup: the lifecycle status menu.
+    SETUP_STATUS => "setup-status",
+    /// Setup: open the delete dialog.
+    SETUP_DELETE => "setup-delete",
+    /// Setup: the person can look but not change anything now.
+    SETUP_VIEW_ONLY => "setup-view-only",
+    /// Button: edit.
+    ACTION_EDIT => "action-edit",
+    /// Button: remove.
+    ACTION_REMOVE => "action-remove",
+    /// Button: save.
+    ACTION_SAVE => "action-save",
+    /// Button while saving.
+    ACTION_SAVING => "action-saving",
+    /// Form field: a vehicle's description.
+    FIELD_DESCRIPTION => "field-description",
+    /// Form note: the description is a Markdown subset, shown as plain text.
+    FIELD_DESCRIPTION_NOTE => "field-description-note",
+    /// Dialog title: add a meter.
+    METER_ADD_TITLE => "meter-add-title",
+    /// Dialog title: edit a meter.
+    METER_EDIT_TITLE => "meter-edit-title",
+    /// Form field: a meter's name.
+    FIELD_NAME => "field-name",
+    /// Form field: what a meter measures.
+    FIELD_MEASURES => "field-measures",
+    /// Form field: a meter's unit.
+    FIELD_UNIT => "field-unit",
+    /// Form field: a meter's or number's decimal places.
+    FIELD_PRECISION => "field-precision",
+    /// Form field: a meter's description.
+    FIELD_METER_DESCRIPTION => "field-meter-description",
+    /// Form note: a meter's dimension is fixed.
+    METER_DIMENSION_FIXED => "meter-dimension-fixed",
+    /// Confirm dialog title: remove a meter or field; takes `name` (text).
+    REMOVE_TITLE => "remove-title",
+    /// Confirm text: removing a meter.
+    METER_REMOVE_TEXT => "meter-remove-text",
+    /// Confirm text: removing a custom field.
+    FIELD_REMOVE_TEXT => "field-remove-text",
+    /// Dialog title: add a custom field.
+    FIELD_ADD_TITLE => "field-add-title",
+    /// Dialog title: edit a custom field.
+    FIELD_EDIT_TITLE => "field-edit-title",
+    /// Form field: a custom field's label.
+    FIELD_LABEL => "field-label",
+    /// Form field: the kind of event a custom field is on.
+    FIELD_APPLIES_TO => "field-applies-to",
+    /// Form field: what a custom field holds.
+    FIELD_TYPE => "field-type",
+    /// Form field: a choice list's choices.
+    FIELD_CHOICES => "field-choices",
+    /// Form field: a custom field is on.
+    FIELD_ENABLED => "field-enabled",
+    /// Badge: a custom field that's turned off.
+    FIELD_OFF => "field-off",
+    /// Form field: a number's sensible lowest value.
+    FIELD_RANGE_MIN => "field-range-min",
+    /// Form field: a number's sensible highest value.
+    FIELD_RANGE_MAX => "field-range-max",
+    /// Form note: what a range does.
+    FIELD_RANGE_NOTE => "field-range-note",
+    /// Form error: a range end that isn't a number.
+    FIELD_RANGE_BAD_NUMBER => "field-range-bad-number",
+    /// Form field: a custom field's stable key.
+    FIELD_KEY => "field-key",
+    /// Form note: what a field's key is for.
+    FIELD_KEY_NOTE => "field-key-note",
+    /// Form note: a new field's key comes from its label.
+    FIELD_KEY_LATER => "field-key-later",
+    /// Form note: a custom field's type and event are fixed.
+    FIELD_KIND_FIXED => "field-kind-fixed",
+    /// Custom field type: text.
+    KIND_TEXT => "kind-text",
+    /// Custom field type: number.
+    KIND_NUMBER => "kind-number",
+    /// Custom field type: date.
+    KIND_DATE => "kind-date",
+    /// Custom field type: yes or no.
+    KIND_YES_NO => "kind-yes-no",
+    /// Custom field type: one of a list.
+    KIND_CHOICE => "kind-choice",
+    /// Custom field type: distance.
+    KIND_DISTANCE => "kind-distance",
+    /// Custom field type: duration.
+    KIND_DURATION => "kind-duration",
+    /// Custom field type: volume.
+    KIND_VOLUME => "kind-volume",
+    /// Custom field type: fuel economy.
+    KIND_FUEL_ECONOMY => "kind-fuel-economy",
+    /// Dialog title: move a vehicle; takes `name` (text).
+    MOVE_TITLE => "move-title",
+    /// Form field: the group to move to.
+    MOVE_TO => "move-to",
+    /// Move dialog: the access changes.
+    MOVE_AFFECTED => "move-affected",
+    /// Move dialog: no access changes.
+    MOVE_NOBODY => "move-nobody",
+    /// Move dialog: one person's change; takes `name`, `before`, `after` (text).
+    MOVE_CHANGE => "move-change",
+    /// A person with no access to a vehicle.
+    ACCESS_NONE => "access-none",
+    /// Button: move the vehicle.
+    MOVE_MOVE => "move-move",
+    /// Button while moving.
+    MOVE_MOVING => "move-moving",
+    /// Move dialog: only one group exists.
+    MOVE_NO_OTHER_GROUP => "move-no-other-group",
+    /// Dialog title: delete a vehicle; takes `name` (text).
+    DELETE_TITLE => "delete-title",
+    /// Delete dialog: when to delete.
+    DELETE_TEXT => "delete-text",
+    /// Delete dialog: type the name; takes `name` (text).
+    DELETE_TYPE => "delete-type",
+    /// Button: delete the vehicle.
+    DELETE_DELETE => "delete-delete",
+    /// Button while deleting.
+    DELETE_DELETING => "delete-deleting",
+    /// Navigation: the Groups screen (Admin mode).
+    NAV_GROUPS => "nav-groups",
+    /// A person's one role, in the list; takes `role` and `target` (text).
+    USERS_ROLE_ON => "users-role-on",
+    /// A person with several roles, in the list; takes `count` (number).
+    USERS_ROLES_COUNT => "users-roles-count",
+    /// Users: add a role on all vehicles, a group, or one vehicle.
+    ROLES_ADD => "roles-add",
+    /// Dialog title: add a role; takes `name` (text).
+    ROLES_ADD_TITLE => "roles-add-title",
+    /// Form field: what a role is on.
+    ROLES_ON => "roles-on",
+    /// Form field: the role.
+    ROLES_ROLE => "roles-role",
+    /// Button: add the role.
+    ROLES_ADD_BUTTON => "roles-add-button",
+    /// A role's target: a group; takes `name` (text).
+    ROLES_ON_GROUP => "roles-on-group",
+    /// A role's target: one vehicle; takes `name` (text).
+    ROLES_ON_VEHICLE => "roles-on-vehicle",
+    /// Menu heading: groups.
+    ROLES_GROUPS => "roles-groups",
+    /// Menu heading: vehicles.
+    ROLES_VEHICLES => "roles-vehicles",
+    /// A role on a group or vehicle that no longer exists.
+    ROLES_REMOVED => "roles-removed",
+    /// Button label (✕): remove a role.
+    ROLES_REMOVE => "roles-remove",
+    /// Users: a person with no roles.
+    ROLES_NONE => "roles-none",
+    /// Users: how roles combine.
+    ROLES_NOTE => "roles-note",
+    /// Groups: add a group.
+    GROUPS_ADD => "groups-add",
+    /// Dialog title: add a group.
+    GROUPS_ADD_TITLE => "groups-add-title",
+    /// Form field: a group's icon.
+    GROUPS_ICON => "groups-icon",
+    /// Groups: nothing chosen yet.
+    GROUPS_SELECT_HINT => "groups-select-hint",
+    /// Groups: the chosen group's vehicles.
+    GROUPS_VEHICLES => "groups-vehicles",
+    /// Groups: an empty group.
+    GROUPS_NO_VEHICLES => "groups-no-vehicles",
+    /// Groups: open a vehicle's page.
+    GROUPS_OPEN => "groups-open",
+    /// Groups: each person's access to the group.
+    GROUPS_WHO => "groups-who",
+    /// Who sees it: a role on all vehicles; takes `role` (text).
+    GROUPS_FROM_ALL => "groups-from-all",
+    /// Who sees it: a role on the group; takes `role` (text).
+    GROUPS_FROM_GROUP => "groups-from-group",
+    /// Who sees it: a role on one of its vehicles; takes `role` and `vehicle` (text).
+    GROUPS_FROM_VEHICLE => "groups-from-vehicle",
+    /// Who sees it: no role here.
+    GROUPS_NO_ACCESS => "groups-no-access",
+    /// Groups: delete the chosen group.
+    GROUPS_DELETE => "groups-delete",
+    /// Dialog title: delete a group; takes `name` (text).
+    GROUPS_DELETE_TITLE => "groups-delete-title",
+    /// Delete group dialog.
+    GROUPS_DELETE_TEXT => "groups-delete-text",
+    /// Groups: when Delete is possible.
+    GROUPS_DELETE_NOTE => "groups-delete-note",
+    /// Groups: how changes save.
+    GROUPS_SAVES_NOTE => "groups-saves-note",
+    /// Groups: a change was saved.
+    GROUPS_SAVED => "groups-saved",
+    /// Groups: not in Admin mode.
+    GROUPS_NOT_ALLOWED => "groups-not-allowed",
+    /// Groups on phones: back to the list.
+    GROUPS_BACK => "groups-back",
+    /// Group icon: garage.
+    GROUP_ICON_GARAGE => "group-icon-garage",
+    /// Group icon: hangar.
+    GROUP_ICON_HANGAR => "group-icon-hangar",
+    /// Group icon: boathouse.
+    GROUP_ICON_BOATHOUSE => "group-icon-boathouse",
+    /// Group icon: storage.
+    GROUP_ICON_STORAGE => "group-icon-storage",
+    /// Group icon: warehouse.
+    GROUP_ICON_WAREHOUSE => "group-icon-warehouse",
+    /// Group icon: shop.
+    GROUP_ICON_SHOP => "group-icon-shop",
+    /// Group icon: farm.
+    GROUP_ICON_FARM => "group-icon-farm",
+    /// Group icon: house.
+    GROUP_ICON_HOUSE => "group-icon-house",
 }

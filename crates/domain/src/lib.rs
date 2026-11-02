@@ -7,7 +7,12 @@
 
 pub mod access;
 pub mod api;
+pub mod asset;
+pub mod asset_form;
 pub mod command;
+pub mod custom_field;
+pub mod garage;
+pub mod group;
 pub mod hlc;
 pub mod hlc_utils;
 pub mod i18n;
@@ -15,8 +20,12 @@ pub mod id;
 pub mod identity;
 pub mod idle;
 pub mod inbox;
+pub mod label;
 pub mod log_area;
+pub mod meter;
+pub mod notes;
 pub mod preferences;
+pub mod profile;
 pub mod server_address;
 pub mod time;
 pub mod time_utils;

@@ -1,0 +1,20 @@
+// Truck (decision #030): a car's setup, plus towing and hauling.
+(
+    id: "truck",
+    version: 1,
+    name: "profile-truck",
+    event_kinds: [fuel, reading, maintenance, repair],
+    sections: [r#fuel-economy, r#towing-hauling],
+    identifiers: [
+        (kind: "vin", name: "identifier-vin"),
+        (kind: "plate", name: "identifier-plate"),
+    ],
+    documents: ["document-title", "document-registration", "document-insurance"],
+    meters: [
+        (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
+    ],
+    fields: [
+        (key: "trip-time", label: "field-trip-time", applies_to: fuel, kind: {"type": "duration"}, enabled: true, range: None),
+        (key: "trip-ev-distance", label: "field-trip-ev-distance", applies_to: fuel, kind: {"type": "distance"}, enabled: false, range: None),
+    ],
+)

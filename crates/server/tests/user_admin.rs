@@ -16,7 +16,7 @@ mod user_admin {
     use server::passwords::hash_password;
     use server::sessions::{SignInError, SignedIn, sign_in, switch_mode, token_hash};
     use server::user_admin::{
-        AdminContext, add_user, list_users, reset_password, set_disabled, set_role_on_all,
+        AdminContext, add_user, list_users, reset_password, set_disabled, set_role, set_role_on_all,
     };
     use storage::users::{RoleGrantWriter, UserWriter};
     use storage::{Database, NewDatabaseIds};
@@ -260,6 +260,76 @@ mod user_admin {
             UserAdminOutcome::Done
         );
         assert!(database.grants_for(sam).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn roles_go_on_a_group_or_one_vehicle_and_are_listed() {
+        let (_temp, database, admin) = admin_session().await;
+        let clock = ManualClock::new(NOW);
+        let context = context(&database, &admin, &clock);
+        let (sam, _) = add(&context, "sam", Role::Viewer).await;
+        server::groups::ensure_default_group(&database, test_id(901), Health::Healthy, &clock)
+            .await
+            .unwrap();
+        let garage = database.groups().await.unwrap()[0].0;
+        let assets = server::assets::AssetsContext {
+            database: &database,
+            database_id: test_id(900),
+            user: &admin,
+            health: Health::Healthy,
+            clock: &clock,
+        };
+        let form = domain::asset_form::AssetForm {
+            name: "Truck".into(),
+            ..domain::asset_form::AssetForm::new("truck", garage)
+        };
+        let domain::api::AssetsOutcome::Added { id: truck } =
+            server::assets::add(&assets, &form).await
+        else {
+            panic!("the truck wasn't added");
+        };
+
+        let on_garage = GrantTarget::Group(garage);
+        let on_truck = GrantTarget::Asset(truck);
+        for (target, role) in [(on_truck, Role::Driver), (on_garage, Role::Maintainer)] {
+            assert_eq!(
+                set_role(&context, sam, target, Some(role)).await,
+                UserAdminOutcome::Done
+            );
+        }
+        // Changing one role leaves the others.
+        assert_eq!(
+            set_role(&context, sam, on_truck, Some(Role::Admin)).await,
+            UserAdminOutcome::Done
+        );
+        let listed = users(&context).await;
+        let sam_now = listed.iter().find(|user| user.id == sam).unwrap();
+        assert_eq!(
+            sam_now.roles,
+            vec![
+                (GrantTarget::AllAssets, Role::Viewer),
+                (on_garage, Role::Maintainer),
+                (on_truck, Role::Admin),
+            ],
+            "all vehicles, then groups, then vehicles"
+        );
+        assert_eq!(sam_now.role_on_all, Some(Role::Viewer));
+
+        // A group or vehicle that doesn't exist.
+        for target in [
+            GrantTarget::Group(test_id(77)),
+            GrantTarget::Asset(test_id(78)),
+        ] {
+            assert_eq!(
+                set_role(&context, sam, target, Some(Role::Driver)).await,
+                UserAdminOutcome::NotFound
+            );
+        }
+        assert_eq!(
+            set_role(&context, sam, on_garage, None).await,
+            UserAdminOutcome::Done
+        );
+        assert_eq!(database.grants_for(sam).await.unwrap().len(), 2);
     }
 
     #[tokio::test]

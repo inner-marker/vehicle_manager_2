@@ -8,9 +8,12 @@ use super::routes::Route;
 /// Where a navigation item sits in the sidebar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum NavSection {
-    /// Everyday screens: Garage, Due & squawks, Messages, Timeline, Reports.
+    /// The vehicles: the shell shows All vehicles and each group here instead of this item
+    /// (#056); the item itself is the phone's Vehicles tab.
+    Vehicles,
+    /// Everyday screens: Due & squawks, Messages, Timeline, Reports.
     Main,
-    /// Below the divider: Vehicles, Users (Admins only), Settings, Diagnostics.
+    /// Below the divider: Users and Groups (Admins only), Settings, Diagnostics.
     Manage,
 }
 
@@ -39,10 +42,10 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
     };
     vec![
         item(
-            Route::Garage {},
-            messages::NAV_GARAGE,
-            Icon::Garage,
-            NavSection::Main,
+            Route::AllVehicles {},
+            messages::NAV_VEHICLES,
+            Icon::Vehicles,
+            NavSection::Vehicles,
             true,
         ),
         item(
@@ -73,19 +76,22 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
             NavSection::Main,
             false,
         ),
-        item(
-            Route::Vehicles {},
-            messages::NAV_VEHICLES,
-            Icon::Vehicles,
-            NavSection::Manage,
-            false,
-        ),
         NavItem {
             admin_only: true,
             ..item(
                 Route::Users {},
                 messages::NAV_USERS,
                 Icon::Users,
+                NavSection::Manage,
+                false,
+            )
+        },
+        NavItem {
+            admin_only: true,
+            ..item(
+                Route::Groups {},
+                messages::NAV_GROUPS,
+                Icon::Groups,
                 NavSection::Manage,
                 false,
             )
@@ -115,29 +121,36 @@ mod tests {
     fn every_nav_item_has_a_route_message_and_icon() {
         let items = nav_items();
         assert_eq!(items.len(), 9);
-        for item in &items {
-            // The nav label and the top-bar title come from the same message.
+        // The nav label and the top-bar title come from the same message, except the phone's
+        // Vehicles tab, whose screen is titled "All vehicles".
+        for item in items
+            .iter()
+            .filter(|item| item.section != NavSection::Vehicles)
+        {
             assert_eq!(item.route.title(), item.label, "{:?}", item.route);
         }
     }
 
     #[test]
-    fn only_users_is_admin_only() {
+    fn only_users_and_groups_are_admin_only() {
         let admin_only: Vec<Route> = nav_items()
             .into_iter()
             .filter(|item| item.admin_only)
             .map(|item| item.route)
             .collect();
-        assert_eq!(admin_only, [Route::Users {}]);
+        assert_eq!(admin_only, [Route::Users {}, Route::Groups {}]);
     }
 
     #[test]
-    fn bottom_tabs_are_garage_due_and_messages() {
+    fn bottom_tabs_are_vehicles_due_and_messages() {
         let tabs: Vec<Route> = nav_items()
             .into_iter()
             .filter(|item| item.bottom_tab)
             .map(|item| item.route)
             .collect();
-        assert_eq!(tabs, [Route::Garage {}, Route::Due {}, Route::Messages {}]);
+        assert_eq!(
+            tabs,
+            [Route::AllVehicles {}, Route::Due {}, Route::Messages {}]
+        );
     }
 }

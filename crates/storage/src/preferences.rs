@@ -8,26 +8,12 @@ use domain::preferences::{
     Choice, PreferenceChoices, PreferencesId, PreferencesPatch, PreferencesRecord,
 };
 use serde::Serialize;
-use serde::de::DeserializeOwned;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::id_to_sql;
+use crate::convert::{id_to_sql, name_from_sql, name_to_sql};
 use crate::{Database, StorageError};
-
-/// A value's stored name: its JSON string (every preference serializes to a string).
-fn to_sql<T: Serialize>(value: &T) -> Option<String> {
-    serde_json::to_value(value)
-        .ok()?
-        .as_str()
-        .map(str::to_owned)
-}
-
-/// A stored name back to its value; a name this build doesn't know reads as "not chosen".
-fn from_sql<T: DeserializeOwned>(name: Option<String>) -> Option<T> {
-    serde_json::from_value(serde_json::Value::String(name?)).ok()
-}
 
 /// What happens to one column.
 enum ColumnChange {
@@ -40,7 +26,7 @@ enum ColumnChange {
 impl ColumnChange {
     fn of<T: Serialize + Copy>(choice: Option<Choice<T>>) -> Self {
         choice.map_or(Self::Unchanged, |choice| {
-            Self::Set(choice.value().as_ref().and_then(to_sql))
+            Self::Set(choice.value().as_ref().and_then(name_to_sql))
         })
     }
 
@@ -57,7 +43,7 @@ impl ColumnChange {
 }
 
 /// Every setting's change, in column order.
-fn changes(patch: &PreferencesPatch) -> [ColumnChange; 8] {
+fn changes(patch: &PreferencesPatch) -> [ColumnChange; 9] {
     [
         ColumnChange::of(patch.distance),
         ColumnChange::of(patch.volume),
@@ -67,6 +53,7 @@ fn changes(patch: &PreferencesPatch) -> [ColumnChange; 8] {
         ColumnChange::of(patch.currency),
         ColumnChange::of(patch.language),
         ColumnChange::of(patch.idle_sign_out),
+        ColumnChange::of(patch.garage_sort),
     ]
 }
 
@@ -91,12 +78,13 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
             currency,
             language,
             idle_sign_out,
+            garage_sort,
         ] = changes(values);
         sqlx::query(
             "INSERT INTO preferences
                  (id, distance, volume, economy, pressure, date_format, currency, language,
-                  idle_sign_out, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  idle_sign_out, garage_sort, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(distance.value())
@@ -107,6 +95,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
         .bind(currency.value())
         .bind(language.value())
         .bind(idle_sign_out.value())
+        .bind(garage_sort.value())
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -132,6 +121,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
                  currency    = CASE WHEN ? THEN ? ELSE currency END,
                  language    = CASE WHEN ? THEN ? ELSE language END,
                  idle_sign_out = CASE WHEN ? THEN ? ELSE idle_sign_out END,
+                 garage_sort = CASE WHEN ? THEN ? ELSE garage_sort END,
                  sequence = ?
              WHERE id = ?",
         );
@@ -163,14 +153,15 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
 
 fn choices_from_row(row: &SqliteRow) -> Result<PreferenceChoices, StorageError> {
     Ok(PreferenceChoices {
-        distance: from_sql(row.try_get("distance")?),
-        volume: from_sql(row.try_get("volume")?),
-        economy: from_sql(row.try_get("economy")?),
-        pressure: from_sql(row.try_get("pressure")?),
-        date_format: from_sql(row.try_get("date_format")?),
-        currency: from_sql(row.try_get("currency")?),
-        language: from_sql(row.try_get("language")?),
-        idle_sign_out: from_sql(row.try_get("idle_sign_out")?),
+        distance: name_from_sql(row.try_get("distance")?),
+        volume: name_from_sql(row.try_get("volume")?),
+        economy: name_from_sql(row.try_get("economy")?),
+        pressure: name_from_sql(row.try_get("pressure")?),
+        date_format: name_from_sql(row.try_get("date_format")?),
+        currency: name_from_sql(row.try_get("currency")?),
+        language: name_from_sql(row.try_get("language")?),
+        idle_sign_out: name_from_sql(row.try_get("idle_sign_out")?),
+        garage_sort: name_from_sql(row.try_get("garage_sort")?),
     })
 }
 
@@ -186,7 +177,7 @@ impl Database {
     ) -> Result<PreferenceChoices, StorageError> {
         sqlx::query(
             "SELECT distance, volume, economy, pressure, date_format, currency, language,
-                    idle_sign_out
+                    idle_sign_out, garage_sort
              FROM preferences WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

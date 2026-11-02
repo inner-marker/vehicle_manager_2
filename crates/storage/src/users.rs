@@ -56,11 +56,30 @@ fn mode_from_sql(value: &str) -> Result<ActiveMode, StorageError> {
     }
 }
 
-/// `(target_kind, target_asset)` for a grant target.
-fn target_to_sql(target: GrantTarget) -> (&'static str, Option<Vec<u8>>) {
+/// A grant target as stored: its kind, and the asset or group it names.
+struct TargetColumns {
+    kind: &'static str,
+    asset: Option<Vec<u8>>,
+    group: Option<Vec<u8>>,
+}
+
+fn target_to_sql(target: GrantTarget) -> TargetColumns {
     match target {
-        GrantTarget::AllAssets => ("all-assets", None),
-        GrantTarget::Asset(asset) => ("asset", Some(id_to_sql(asset))),
+        GrantTarget::AllAssets => TargetColumns {
+            kind: "all-assets",
+            asset: None,
+            group: None,
+        },
+        GrantTarget::Asset(asset) => TargetColumns {
+            kind: "asset",
+            asset: Some(id_to_sql(asset)),
+            group: None,
+        },
+        GrantTarget::Group(group) => TargetColumns {
+            kind: "group",
+            asset: None,
+            group: Some(id_to_sql(group)),
+        },
     }
 }
 
@@ -71,6 +90,10 @@ fn target_from_row(row: &SqliteRow) -> Result<GrantTarget, StorageError> {
         "asset" => {
             let asset: &[u8] = row.try_get("target_asset")?;
             Ok(GrantTarget::Asset(id_from_sql(asset, "target_asset")?))
+        }
+        "group" => {
+            let group: &[u8] = row.try_get("target_group")?;
+            Ok(GrantTarget::Group(id_from_sql(group, "target_group")?))
         }
         _ => Err(StorageError::InvalidValue {
             column: "target_kind",
@@ -296,15 +319,17 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
         values: &RoleGrantPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
-        let (target_kind, target_asset) = target_to_sql(required(values.target, "target")?);
+        let target = target_to_sql(required(values.target, "target")?);
         sqlx::query(
-            "INSERT INTO role_grants (id, user_id, target_kind, target_asset, role, sequence)
-             VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO role_grants
+                 (id, user_id, target_kind, target_asset, target_group, role, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.user, "user")?))
-        .bind(target_kind)
-        .bind(target_asset)
+        .bind(target.kind)
+        .bind(target.asset)
+        .bind(target.group)
         .bind(role_to_sql(required(values.role, "role")?))
         .bind(sequence)
         .execute(connection)
@@ -327,14 +352,17 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
                  user_id = coalesce(?, user_id),
                  target_kind = coalesce(?, target_kind),
                  target_asset = CASE WHEN ? THEN ? ELSE target_asset END,
+                 target_group = CASE WHEN ? THEN ? ELSE target_group END,
                  role = coalesce(?, role),
                  sequence = ?
              WHERE id = ?",
         )
         .bind(patch.user.map(id_to_sql))
-        .bind(target.as_ref().map(|(kind, _)| *kind))
+        .bind(target.as_ref().map(|target| target.kind))
         .bind(target.is_some())
-        .bind(target.and_then(|(_, asset)| asset))
+        .bind(target.as_ref().and_then(|target| target.asset.clone()))
+        .bind(target.is_some())
+        .bind(target.and_then(|target| target.group))
         .bind(patch.role.map(role_to_sql))
         .bind(sequence)
         .bind(id_to_sql(id))
@@ -381,7 +409,7 @@ impl Database {
         user: UserId,
     ) -> Result<Vec<(RoleGrantId, RoleGrant)>, StorageError> {
         sqlx::query(
-            "SELECT id, user_id, target_kind, target_asset, role
+            "SELECT id, user_id, target_kind, target_asset, target_group, role
              FROM role_grants WHERE user_id = ? AND deleted = 0",
         )
         .bind(id_to_sql(user))
@@ -399,7 +427,7 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn all_grants(&self) -> Result<Vec<(RoleGrantId, RoleGrant)>, StorageError> {
         sqlx::query(
-            "SELECT id, user_id, target_kind, target_asset, role
+            "SELECT id, user_id, target_kind, target_asset, target_group, role
              FROM role_grants WHERE deleted = 0",
         )
         .fetch_all(self.pool())

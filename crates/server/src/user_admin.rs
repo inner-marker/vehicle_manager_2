@@ -124,6 +124,15 @@ fn summary(
         .filter(|(_, grant)| grant.user == stored.id && grant.target == GrantTarget::AllAssets)
         .map(|(_, grant)| grant.role)
         .max();
+    // The highest role on each target: all vehicles first, then groups, then vehicles.
+    let mut roles: Vec<(GrantTarget, Role)> = Vec::new();
+    for (_, grant) in grants.iter().filter(|(_, grant)| grant.user == stored.id) {
+        match roles.iter_mut().find(|(target, _)| *target == grant.target) {
+            Some((_, role)) => *role = (*role).max(grant.role),
+            None => roles.push((grant.target, grant.role)),
+        }
+    }
+    roles.sort_by_key(|(target, _)| target_order(*target));
     // The last Admin: without this user, no enabled household Admin would remain.
     let others: Vec<RoleGrant> = grants
         .iter()
@@ -144,8 +153,18 @@ fn summary(
             AccountStatus::Active
         },
         role_on_all,
+        roles,
         is_you: stored.id == you,
         is_last_admin,
+    }
+}
+
+/// Sorts roles: all vehicles, then groups, then vehicles (each kind in ID order).
+const fn target_order(target: GrantTarget) -> (u8, Option<[u8; 16]>) {
+    match target {
+        GrantTarget::AllAssets => (0, None),
+        GrantTarget::Group(id) => (1, Some(id.to_bytes())),
+        GrantTarget::Asset(id) => (2, Some(id.to_bytes())),
     }
 }
 
@@ -242,8 +261,41 @@ pub async fn set_role_on_all(
     user: UserId,
     role: Option<Role>,
 ) -> UserAdminOutcome {
+    set_role(context, user, GrantTarget::AllAssets, role).await
+}
+
+/// Whether `target` names something that exists: all vehicles, a group, or a vehicle.
+async fn target_exists(database: &Database, target: GrantTarget) -> Result<bool, String> {
+    match target {
+        GrantTarget::AllAssets => Ok(true),
+        GrantTarget::Group(id) => database
+            .groups()
+            .await
+            .map(|groups| groups.iter().any(|(group, _)| *group == id))
+            .map_err(|error| error.to_string()),
+        GrantTarget::Asset(id) => database
+            .asset(id)
+            .await
+            .map(|asset| asset.is_some())
+            .map_err(|error| error.to_string()),
+    }
+}
+
+/// Sets `user`'s role on `target`: all vehicles, a group, or one vehicle (`None` removes it,
+/// #058). Refused if it would leave no Admin.
+pub async fn set_role(
+    context: &AdminContext<'_>,
+    user: UserId,
+    target: GrantTarget,
+    role: Option<Role>,
+) -> UserAdminOutcome {
     if !context.allowed() {
         return UserAdminOutcome::NotAllowed;
+    }
+    match target_exists(context.database, target).await {
+        Ok(true) => {}
+        Ok(false) => return UserAdminOutcome::NotFound,
+        Err(error) => return unavailable("role", &error),
     }
     let (users, grants) = match (
         context.database.users().await,
@@ -257,14 +309,10 @@ pub async fn set_role_on_all(
     }
     let (theirs, others): (Vec<_>, Vec<_>) = grants
         .into_iter()
-        .partition(|(_, grant)| grant.user == user && grant.target == GrantTarget::AllAssets);
+        .partition(|(_, grant)| grant.user == user && grant.target == target);
     let mut after: Vec<RoleGrant> = others.iter().map(|(_, grant)| *grant).collect();
     if let Some(role) = role {
-        after.push(RoleGrant {
-            user,
-            target: GrantTarget::AllAssets,
-            role,
-        });
+        after.push(RoleGrant { user, target, role });
     }
     if !leaves_an_admin(&after, |id| is_enabled(&users, id)) {
         return UserAdminOutcome::LastAdmin;
@@ -279,11 +327,7 @@ pub async fn set_role_on_all(
         let Ok(id) = new_id(context.clock.now()) else {
             return unavailable("role", &"no random bytes for an ID");
         };
-        let grant = RoleGrant {
-            user,
-            target: GrantTarget::AllAssets,
-            role,
-        };
+        let grant = RoleGrant { user, target, role };
         if let Err(error) = context
             .issue_grant(Change::Create {
                 id,
@@ -294,7 +338,7 @@ pub async fn set_role_on_all(
             return unavailable("role", &error);
         }
     }
-    tracing::info!(target: log_area::AUTH, %user, ?role, by = %context.admin.user, "role on all vehicles changed");
+    tracing::info!(target: log_area::AUTH, %user, ?target, ?role, by = %context.admin.user, "role changed");
     UserAdminOutcome::Done
 }
 

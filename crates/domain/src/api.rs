@@ -265,8 +265,11 @@ pub struct UserSummary {
     pub display_name: String,
     /// Whether they can sign in, and with what.
     pub status: AccountStatus,
-    /// Their role on all vehicles, if any (per-vehicle roles arrive in milestone 4).
+    /// Their role on all vehicles, if any.
     pub role_on_all: Option<crate::access::Role>,
+    /// Every role they have: on all vehicles, a group, or one vehicle (#058), the highest
+    /// for each, in that order.
+    pub roles: Vec<(crate::access::GrantTarget, crate::access::Role)>,
     /// This is the signed-in Admin.
     pub is_you: bool,
     /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
@@ -360,6 +363,123 @@ pub enum PreferencesOutcome {
     },
     /// Household defaults need the household's Admin in Admin mode.
     NotAllowed,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// A group in the Garage, with how many of its vehicles the person can see.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GroupSummary {
+    /// Its ID.
+    pub id: crate::group::GroupId,
+    /// Its name and icon.
+    pub group: crate::group::Group,
+    /// How many of its vehicles the person can see.
+    pub vehicles: usize,
+}
+
+/// A vehicle the person can see, with their role on it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AssetSummary {
+    /// Its ID.
+    pub id: crate::asset::AssetId,
+    /// Its details.
+    pub asset: crate::asset::Asset,
+    /// The person's role on it.
+    pub role: crate::access::Role,
+}
+
+/// The Garage: the groups and vehicles the person can see, and what they may do.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GarageView {
+    /// Groups with at least one visible vehicle (every group, for the household's Admin), by
+    /// name.
+    pub groups: Vec<GroupSummary>,
+    /// The vehicles they can see, archived ones included, by name.
+    pub assets: Vec<AssetSummary>,
+    /// They may add vehicles (the household's Admin, in Admin mode).
+    pub can_add: bool,
+    /// They may manage groups and move vehicles (the household's Admin, in Admin mode).
+    pub can_manage_groups: bool,
+    /// How they sort the Garage (#056).
+    pub sort: crate::preferences::GarageSort,
+    /// Their custom order, for the Custom sort.
+    pub order: Vec<crate::asset::AssetId>,
+}
+
+/// One vehicle's page.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AssetView {
+    /// Its ID.
+    pub id: crate::asset::AssetId,
+    /// Its details.
+    pub asset: crate::asset::Asset,
+    /// The person's role on it.
+    pub role: crate::access::Role,
+    /// They may edit, archive, or delete it now (Admin role on it, in Admin mode).
+    pub can_manage: bool,
+    /// They may change its meters and custom fields now (Maintainer role, in Maintainer or
+    /// Admin mode).
+    pub can_configure: bool,
+    /// They may move it to another group (the household's Admin, in Admin mode).
+    pub can_move: bool,
+    /// Its meters.
+    pub meters: Vec<(crate::meter::MeterId, crate::meter::Meter)>,
+    /// Its custom field definitions.
+    pub fields: Vec<(
+        crate::custom_field::CustomFieldId,
+        crate::custom_field::CustomField,
+    )>,
+}
+
+/// How one person's access changes in a move, for the preview.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MoveChange {
+    /// Who.
+    pub user: crate::user::UserId,
+    /// Their display name.
+    pub display_name: String,
+    /// Their role on the vehicle now (`None`: no access).
+    pub before: Option<crate::access::Role>,
+    /// Their role on it after the move.
+    pub after: Option<crate::access::Role>,
+}
+
+/// The answer to a Garage, vehicle, or group request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum AssetsOutcome {
+    /// The Garage.
+    Garage {
+        /// What the person can see.
+        view: GarageView,
+    },
+    /// One vehicle.
+    Asset {
+        /// Its page.
+        view: Box<AssetView>,
+    },
+    /// A vehicle was added.
+    Added {
+        /// Its ID.
+        id: crate::asset::AssetId,
+    },
+    /// Who gains, loses, or changes access if the vehicle moves.
+    MovePreview {
+        /// The people affected (empty: nobody).
+        changes: Vec<MoveChange>,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, meter, field, or group (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The form was refused.
+    Invalid {
+        /// Why.
+        problem: crate::asset_form::Problem,
+    },
     /// The server couldn't do it right now.
     Unavailable,
 }

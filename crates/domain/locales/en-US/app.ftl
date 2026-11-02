@@ -28,8 +28,6 @@ open-squawk-count =
 ## Screens
 
 screen-vehicle-detail = Vehicle
-# $id (text): the vehicle's internal ID, until vehicles have names.
-vehicle-detail-id = ID: { $id }
 screen-log-event = Log
 screen-not-found = Page not found
 not-found-back = Back to the garage
@@ -197,6 +195,8 @@ admin-banner-text =
        *[other] Changes affect the whole household · ends after { $minutes } idle minutes
     }
 admin-banner-leave = Leave
+# $minutes (number): Admin mode's idle limit. The banner's text on phones.
+admin-banner-short = ends after { $minutes } idle min
 account-menu-label = Account
 account-change-password = Change password
 account-sign-out = Sign out
@@ -224,7 +224,6 @@ users-temporary = Temporary password
 users-role-summary = { $role } · all vehicles
 users-roles-heading = ROLES
 users-all-vehicles = All vehicles
-users-one-vehicle-later = One vehicle: available once vehicles exist (milestone 4).
 users-account-heading = ACCOUNT
 users-reset-password = Reset password…
 users-disable = Disable…
@@ -382,3 +381,261 @@ test-timers-tag = TEST TIMERS · { $minutes } min
 # $label (text): the normal choice, e.g. "After 1 hour"; $minutes (number): its test length.
 idle-sign-out-test = { $label } (test: { $minutes } min)
 
+
+## Assets, groups, and notes (decisions #052, #055)
+
+notes-too-long = That's too long: notes can have at most 10,000 characters.
+group-name-empty = Give the group a name.
+group-name-too-long = A group's name can have at most 40 characters.
+asset-name-empty = Give the vehicle a name.
+asset-name-too-long = A vehicle's name can have at most 40 characters.
+asset-text-too-long = That's too long: at most 64 characters.
+asset-year-out-of-range = That year doesn't look right.
+asset-identifier-empty = Enter the identifier, or remove it.
+asset-too-many-identifiers = A vehicle can have at most 10 identifiers.
+
+## Profiles, meters, and custom fields (decision #030). Profile names, identifiers, documents,
+## meters, and fields below are keys used by crates/domain/profiles/*.ron.
+
+profile-car = Car
+profile-truck = Truck
+profile-motorcycle = Motorcycle
+profile-trailer = Trailer
+profile-generator = Generator
+profile-other-equipment = Other equipment
+identifier-vin = VIN
+identifier-plate = License plate
+identifier-serial = Serial number
+document-title = Title
+document-registration = Registration
+document-insurance = Insurance
+meter-odometer = Odometer
+meter-run-hours = Run hours
+field-trip-time = Trip time
+field-trip-ev-distance = Trip EV distance
+event-kind-fuel = Fuel-up
+event-kind-reading = Reading
+event-kind-maintenance = Maintenance
+event-kind-repair = Repair
+unit-hours = hours
+label-empty = Enter a name.
+label-too-long = That's too long: at most 40 characters.
+meter-wrong-unit = That unit doesn't measure this meter (e.g. hours for a distance).
+meter-too-precise = A meter can show at most 2 decimal places.
+field-too-many-decimals = A number can have at most 4 decimal places.
+field-bad-choices = A choice list needs 1 to 30 choices.
+field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.
+group-not-empty = Move this group's vehicles to another group first.
+group-last = Every vehicle needs a group, so the last one can't be removed.
+name-mismatch = Type the vehicle's name exactly to delete it.
+group-default-name = Garage
+
+## Vehicles: All vehicles, a group's page, and adding a vehicle (decisions #052, #056)
+
+nav-all-vehicles = All vehicles
+vehicles-add = + Add vehicle
+vehicles-sort-label = Sort
+sort-newest-activity = Sort: Newest activity
+sort-name = Sort: Name (A–Z)
+sort-custom = Sort: Custom
+vehicles-arrange = Arrange
+vehicles-arrange-done = Done
+# $count (number): archived vehicles not shown.
+vehicles-show-archived = Show archived ({ $count })
+vehicles-hide-archived = Hide archived
+# $count (number): vehicles in a group.
+vehicles-count =
+    { $count ->
+        [one] { $count } vehicle
+       *[other] { $count } vehicles
+    }
+vehicles-empty = No vehicles yet.
+vehicles-empty-admin = Use + Add vehicle to add the first one.
+vehicles-empty-group = No vehicles in this group yet.
+vehicles-group-menu = Show
+vehicles-card-coming = Readings and due items arrive later.
+vehicles-move-up = Move up
+vehicles-move-down = Move down
+add-vehicle-title = Add a vehicle
+add-vehicle-kind = What kind?
+add-vehicle-add = Add
+add-vehicle-adding = Adding…
+add-vehicle-name = Name (on cards)
+add-vehicle-note = It starts with its kind's meters and custom fields; change them later on its Setup tab.
+field-make = Make
+field-model = Model
+field-year = Year
+field-colour = Colour
+field-group = Group
+status-in-service = In service
+status-spare = Spare
+status-out-for-service = Out for service
+status-retired = Retired
+status-disposed = Disposed
+vehicles-not-allowed = Your role or mode doesn't allow that. Switch mode, or ask your Admin.
+
+## A vehicle's page: tabs, Overview, and Setup (decision #057)
+
+vehicle-not-found = That vehicle isn't here, or you can't see it.
+vehicle-back-all = ← All vehicles
+# $group (text): the vehicle's group.
+vehicle-back-group = ← { $group }
+vehicle-tabs = Vehicle sections
+tab-overview = Overview
+tab-timeline = Timeline
+tab-maintenance = Maintenance
+tab-fuel = Fuel
+tab-documents = Documents
+tab-setup = Setup
+# $milestone (number): the Phase 2 milestone that fills the tab.
+tab-coming = This tab fills in with milestone { $milestone }.
+panel-ready = Ready to use?
+panel-ready-coming = Arrives with what's due (Phase 5).
+panel-due = Coming due
+panel-due-coming = Next services (Phase 5).
+panel-squawks = Open squawks
+panel-squawks-coming = Squawks arrive in milestone 7.
+panel-fuel = Latest fuel-ups
+panel-fuel-coming = Fuel-ups arrive in milestone 6.
+panel-meters = Meters
+meters-none = No meters yet.
+meters-readings-coming = Readings appear here from milestone 6.
+# $kinds (text): the event kinds, joined with commas.
+meter-required-for = Required for: { $kinds }
+meter-required-none = Not required for any event.
+precision-0 = whole
+precision-1 = tenths
+precision-2 = hundredths
+dimension-distance = Distance
+dimension-duration = Duration
+setup-details = Details
+setup-edit-details = Edit details
+setup-no-description = No description.
+setup-add-meter = + Add meter
+setup-fields = Custom fields
+setup-add-field = + Add field
+setup-fields-none = No custom fields yet.
+setup-required = Required readings
+setup-required-note = Which meters each kind of event must record.
+setup-group-status = Group and status
+setup-move = Move to another group…
+setup-status = Status
+setup-delete = Delete…
+setup-view-only = Changing this vehicle's setup needs Maintainer or Admin mode.
+action-edit = Edit
+action-remove = Remove
+action-save = Save
+action-saving = Saving…
+field-description = Description
+field-description-note = Plain text for now; **bold**, lists, and links show as typed (#055).
+meter-add-title = Add a meter
+meter-edit-title = Edit meter
+field-name = Name
+field-measures = Measures
+field-unit = Unit
+field-precision = Decimal places
+field-meter-description = What drives it (optional)
+meter-dimension-fixed = What a meter measures can't change once it exists.
+# $name (text): the meter's or field's name.
+remove-title = Remove { $name }?
+meter-remove-text = Its readings (from milestone 6) go with it.
+field-remove-text = To stop asking for it but keep its values, turn it off instead.
+field-add-title = Add a custom field
+field-edit-title = Edit field
+field-label = Label
+field-applies-to = On
+field-type = Type
+field-choices = Choices (one per line)
+field-enabled = Shown on forms
+field-off = Off
+field-range-min = Lowest likely
+field-range-max = Highest likely
+field-range-note = Values outside the range get a warning, never a refusal.
+field-range-bad-number = Enter a number for the range, or leave it empty.
+field-key = Key
+field-key-note = Formulas and reports use the key, so it never changes (#057).
+field-key-later = Made from the label when the field is added.
+field-kind-fixed = A field's type and event can't change once it exists.
+kind-text = Text
+kind-number = Number
+kind-date = Date
+kind-yes-no = Yes/No
+kind-choice = Choice list
+kind-distance = Distance
+kind-duration = Duration
+kind-volume = Volume
+kind-fuel-economy = Fuel economy
+# $name (text): the vehicle's name.
+move-title = Move { $name }
+move-to = To
+move-affected = Who's affected
+move-nobody = Nobody's access changes.
+# $name (text): a person; $before and $after (text): their role, or "no access".
+move-change = { $name }: { $before } → { $after }
+access-none = no access
+move-move = Move
+move-moving = Moving…
+move-no-other-group = There's no other group yet. The household's Admin adds groups.
+# $name (text): the vehicle's name.
+delete-title = Delete { $name }?
+delete-text = Only for a vehicle added by mistake: its records go with it. To keep its history, set its status to Retired or Disposed instead.
+# $name (text): the vehicle's name.
+delete-type = Type { $name } to confirm.
+delete-delete = Delete
+delete-deleting = Deleting…
+
+## Groups and roles on a group or one vehicle (decision #058)
+
+nav-groups = Groups
+# $role (text): a role; $target (text): what it's on.
+users-role-on = { $role } · { $target }
+# $count (number): how many roles.
+users-roles-count = { $count } roles
+roles-add = + Add role
+# $name (text): the person.
+roles-add-title = Add a role for { $name }
+roles-on = On
+roles-role = Role
+roles-add-button = Add
+# $name (text): the group.
+roles-on-group = { $name } · group
+# $name (text): the vehicle.
+roles-on-vehicle = { $name } · vehicle
+roles-groups = Groups
+roles-vehicles = Vehicles
+roles-removed = (removed)
+roles-remove = Remove this role
+roles-none = No roles: they can't see any vehicles yet.
+roles-note = Roles add up: on each vehicle, the highest one applies. Adding a role where they already have one replaces it.
+groups-add = + Add group
+groups-add-title = Add a group
+groups-icon = Icon
+groups-select-hint = Choose a group to see its vehicles and who sees it.
+groups-vehicles = Vehicles
+groups-no-vehicles = No vehicles in this group yet.
+groups-open = Open ›
+groups-who = Who sees it
+# $role (text): the role.
+groups-from-all = { $role } · all vehicles
+# $role (text): the role.
+groups-from-group = { $role } · this group
+# $role (text): the role; $vehicle (text): the vehicle.
+groups-from-vehicle = { $role } · { $vehicle } only
+groups-no-access = no access
+groups-delete = Delete group…
+# $name (text): the group.
+groups-delete-title = Delete { $name }?
+groups-delete-text = Roles on this group are removed with it.
+groups-delete-note = Only an empty group can be deleted, and never the last one.
+groups-saves-note = The name and icon save when changed. Roles are set on the Users screen.
+groups-saved = Saved.
+groups-not-allowed = Switch to Admin mode to manage groups.
+groups-back = ← Groups
+group-icon-garage = Garage
+group-icon-hangar = Hangar
+group-icon-boathouse = Boathouse
+group-icon-storage = Storage
+group-icon-warehouse = Warehouse
+group-icon-shop = Shop
+group-icon-farm = Farm
+group-icon-house = House

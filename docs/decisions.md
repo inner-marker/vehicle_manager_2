@@ -626,3 +626,44 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Visible:** a `TEST TIMERS ON` warning at startup, a **TEST TIMERS · N min** tag in the top bar, and each sign-out choice shows its test length.
 - **Why:** manual test plans had steps of an hour or a night; the human asked for 1–5 minute timers on milestone test builds. Two locks make sure a real install can't run them.
 
+### 055. Notes are a Markdown subset, shown as plain text until rendering arrives
+*Decided: 2026-11-01 · Plan: §3 Event, Squawks, Asset · Phase plan: phase-2.md milestone 4 · Was idea 8 in ideas-to-discuss.md*
+
+- **Decision:**
+  - Every free-text notes field (an asset's description first, then event notes, squawks, tasks, documents) is stored as **text in a small Markdown subset:** bold, italics, lists, and links.
+  - **For now it's entered and shown as plain text** (the Markdown characters show as typed). A Markdown editor and rendering (screens, PDF and Word reports) come later.
+  - Nothing else (no HTML, images, or tables); anything outside the subset shows as typed.
+- **Why:** changing the format later would mean converting every note; a subset keeps notes readable as plain text today and renderable later, in reports too (the idea's own suggestion, chosen by the human).
+
+### 056. Vehicles: groups in the sidebar, cards per group, a Sort menu, and adding a vehicle in two steps
+*Decided: 2026-11-01 · Plan: §5 UI direction (Home "Garage" screen) · Phase plan: phase-2.md step 4e · Sketches: `docs/ui-sketches/p2m4-garage-options.svg` (option A), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **Each group is a sidebar item,** with its icon and name, opening that group's own page (only its vehicles; **+ Add vehicle** starts in it). Above them, **All vehicles** shows every group as a section; it appears only when the person can see more than one group, so a one-group household sees just **Garage**. The screen called "Garage" goes away: "Garage" only ever means the group. The sidebar shows the groups the person can see a vehicle in (every group, for the household's Admin in Admin mode), in name order; on the icon-only sidebar, each group shows its icon with its name as a tooltip. The lower "Vehicles" placeholder becomes **Groups** (managing groups, the household's Admin, step 4g).
+  - **Phones:** the first bottom tab is **Vehicles**; a menu at the top picks All vehicles or a group, and the ☰ menu lists the groups too. Each group page has its own address, so bookmarks and Back work per group.
+  - **Cards in a grid, a section per group** (its icon, name, and count) on All vehicles. Cards show the name, kind with year, make, and model, and the plate or serial number; photos, readings, due items, and squawks fill them in as milestones 6–8 add them. **Show archived** adds retired and disposed vehicles, dimmed.
+  - **A Sort menu** instead of the earlier "urgency or My order" toggle: **Newest activity**, **Name (A–Z)**, or **Custom**. Custom shows **Arrange**, which puts ▲▼ buttons (48 px) on each card until **Done**. The sort applies within each group; groups stay in name order. The sort and the custom order are each person's own, saved like their other settings. **Urgency** joins the menu when vehicles have due items (Phase 5).
+  - **+ Add vehicle** (the household's Admin, in Admin mode) is a two-step dialog: the **kind** as large tiles, then the **details** (name, make, model, year, colour, that kind's identifiers, group).
+  - **Pinning** vehicles to the top of their group is for later (idea 15).
+- **Why:** the human chose option A, asked for the common Sort-menu convention, and asked for the groups in the sidebar (which also ends "Garage" meaning both a screen and a group); cards are where the Garage is heading (#040), and choosing the kind first keeps the details form to that kind's identifiers.
+
+### 057. A vehicle's page (header, tabs, Overview, Setup); stable field keys; calculations in Phase 5
+*Decided: 2026-11-01 · Plan: §3 Custom fields, §5 UI direction · Phase plan: phase-2.md step 4f · Sketch: `docs/ui-sketches/p2m4-vehicle-options.svg`, option A · Refines #040, #051*
+
+- **Decision:**
+  - **Layout (option A):** a header (name; kind, year, make, model, colour; identifiers and group as chips; status), then the tabs Overview, Timeline, Maintenance, Fuel, Documents, Setup across the top (scrolling sideways on phones). Tabs without content yet say which milestone fills them.
+  - **Overview** is the dashboard (#051) as panels: Ready to use? and Coming due (Phase 5), Open squawks (milestone 7), Latest fuel-ups (milestone 6), and the meters (now).
+  - **Setup** is one page of sections: Details (Edit details), Meters (+ Add meter; edit, remove), Custom fields (+ Add field; on/off, edit), Required readings (a grid of meters × event kinds), and Group and status (Move to another…, with who gains and loses access shown first; the status; Delete…, with the name typed).
+  - **Every custom field has a stable key** (e.g. `trip-ev-distance`) beside its label: from the profile (or later a catalogue) for built-in fields, made from the label (unique on the vehicle) for fields people add. Formulas, reports, comparisons across vehicles, and voice logging (idea 14) refer to fields by key, so renaming a label never breaks them. The key is shown, read-only, on Setup.
+  - **Calculated fields** (formulas over built-in and custom fields, unit-aware, worked out when shown and never stored) come in **Phase 5**, with fuel-economy statistics. A **catalogue of ready-made fields and sets** (e.g. "Trip computer (hybrid)": trip distance, time, EV distance, fuel economy) is idea 16.
+- **Why:** the human chose option A and asked for richer trip-computer fields and calculations; keys cost little before any field has values and would mean backfilling every vehicle later.
+
+
+### 058. Groups screen (list and detail) and roles as a list with + Add role
+*Decided: 2026-11-01 · Plan: §6 Roles · Phase plan: phase-2.md step 4g · Sketch: `docs/ui-sketches/p2m4-groups-roles-options.svg` (Groups option B, roles option A) · Refines #046, #052*
+
+- **Decision:**
+  - **Groups** is a screen under Manage (the household's Admin, in Admin mode), laid out like Users: the groups on the left (icon, name, count; **+ Add group**), the chosen group on the right: its **name and icon** (saved when changed), its **vehicles** (each opens its page), **who sees it** (each person's role there and where it comes from: all vehicles, this group, or one of its vehicles), and **Delete group**, only for an empty group that isn't the last (otherwise greyed out with the reason). On phones: the list, then a page per group. Moving a vehicle stays on its own Setup tab, with its preview (#057).
+  - **Roles on the Users screen** are a list of the roles the person has, each with its role menu and ✕: on **all vehicles**, **a group**, or **one vehicle**. **+ Add role** opens a dialog: what it's on (all vehicles, a group, or a vehicle) and the role; adding one where they already have a role replaces it. A note says roles add up: on each vehicle, the highest applies.
+  - The list of users summarises each person's roles (e.g. "Admin · all vehicles", or "Maintainer · Hangar" when they have one role elsewhere, or "3 roles").
+- **Why:** the human chose as recommended: seeing who can see a group belongs next to the group, and a short list of roles avoids menus that look like they lower a role but can't (the highest role always applies).

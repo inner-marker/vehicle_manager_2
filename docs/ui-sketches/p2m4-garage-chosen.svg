@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1990" viewBox="0 0 1560 1990" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1990" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 4e · Vehicles: the chosen layout (option A, a Sort menu, and groups in the sidebar)</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Chosen 2026-11-01 from docs/ui-sketches/p2m4-garage-options.svg. Each group is a sidebar item; All vehicles shows them all. Sort: Newest activity, Name (A–Z), or Custom (with Arrange). Pinning later (idea 15).</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">All vehicles: every group as a section (the sidebar lists the groups; the Sort menu open)</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode</text>
+<rect x="40" y="166" width="900" height="560" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="200" height="556" rx="0" fill="#1d2128"/>
+<rect x="50" y="180" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="202" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="202" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">All vehicles</text>
+<text x="62" y="240" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="240" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Garage</text>
+<text x="62" y="278" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">✈</text>
+<text x="86" y="278" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Hangar</text>
+<line x1="54" y1="298" x2="230" y2="298" stroke="#333a45" stroke-width="1"/>
+<text x="62" y="328" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="328" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<text x="62" y="366" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="366" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="62" y="404" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="404" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="62" y="442" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="442" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<line x1="54" y1="462" x2="230" y2="462" stroke="#333a45" stroke-width="1"/>
+<text x="62" y="492" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="492" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Groups</text>
+<text x="62" y="530" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="530" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Users</text>
+<text x="62" y="568" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="568" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<text x="62" y="606" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="606" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Diagnostics</text>
+<rect x="242" y="168" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">All vehicles</text>
+<rect x="762" y="178" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="197" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="178" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="262" y="232" width="140" height="34" rx="10" fill="#5aa9ff"/>
+<text x="332.0" y="254.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add vehicle</text>
+<rect x="418" y="232" width="220" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="430" y="254" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Sort: Newest activity</text>
+<text x="626" y="254" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="782" y="233" width="150" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="857" y="254" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="middle">Show archived (1)</text>
+<text x="262" y="302" font-size="12" fill="#9aa1ab" font-weight="800" text-anchor="start">⌂  GARAGE</text>
+<text x="918" y="302" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">3 vehicles</text>
+<line x1="262" y1="310" x2="918" y2="310" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="320" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="348" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="276" y="370" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="276" y="382" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="284" y="397" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<text x="276" y="456" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="484" y="320" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="498" y="348" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Civic</text>
+<text x="498" y="370" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Car · 2018 Honda Civic</text>
+<rect x="498" y="382" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="506" y="397" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XYZ 789</text>
+<text x="498" y="456" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="706" y="320" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="348" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Generator</text>
+<text x="720" y="370" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Generator · Honda EU2200i</text>
+<rect x="720" y="382" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="728" y="397" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">SN 4471</text>
+<text x="720" y="456" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<text x="262" y="510" font-size="12" fill="#9aa1ab" font-weight="800" text-anchor="start">✈  HANGAR</text>
+<text x="918" y="510" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">1 vehicle</text>
+<line x1="262" y1="518" x2="918" y2="518" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="528" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="556" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Cub</text>
+<text x="276" y="578" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Other equipment · Piper J-3</text>
+<rect x="276" y="590" width="61.0" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="284" y="605" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">N 1234</text>
+<text x="276" y="664" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="418" y="272" width="220" height="132" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<rect x="424" y="280" width="208" height="36" rx="8" fill="#1d2128"/>
+<text x="436" y="303" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">✓  Newest activity</text>
+<text x="436" y="343" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">    Name (A–Z)</text>
+<text x="436" y="383" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">    Custom</text>
+<text x="262" y="702" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Tap a card to open it. All vehicles shows only when you can see more than one group; groups in name order.</text>
+<text x="40" y="764" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">A group&#x27;s own page (Garage selected): Sort: Custom → Arrange</text>
+<text x="40" y="764" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start"></text>
+<rect x="40" y="776" width="900" height="300" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="778" width="200" height="296" rx="0" fill="#1d2128"/>
+<text x="62" y="812" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="812" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="828" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="850" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="850" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<text x="62" y="888" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">✈</text>
+<text x="86" y="888" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Hangar</text>
+<line x1="54" y1="908" x2="230" y2="908" stroke="#333a45" stroke-width="1"/>
+<text x="62" y="938" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="938" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<text x="62" y="976" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="976" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="62" y="1014" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="1014" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="62" y="1052" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">·</text>
+<text x="86" y="1052" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<line x1="54" y1="1072" x2="230" y2="1072" stroke="#333a45" stroke-width="1"/>
+<rect x="242" y="778" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="809" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="762" y="788" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="807" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="788" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="807" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="262" y="840" width="140" height="34" rx="10" fill="#5aa9ff"/>
+<text x="332.0" y="862.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add vehicle</text>
+<rect x="418" y="840" width="170" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="430" y="862" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Sort: Custom</text>
+<text x="576" y="862" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="598" y="841" width="96" height="32" rx="16" fill="#5aa9ff"/>
+<text x="646" y="862" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Done</text>
+<rect x="262" y="890" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="918" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="276" y="940" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="276" y="952" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="284" y="967" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<text x="276" y="1026" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="428" y="900" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="444" y="920" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▲</text>
+<rect x="428" y="934" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="444" y="954" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▼</text>
+<rect x="484" y="890" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="498" y="918" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Civic</text>
+<text x="498" y="940" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Car · 2018 Honda Civic</text>
+<rect x="498" y="952" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="506" y="967" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XYZ 789</text>
+<text x="498" y="1026" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="650" y="900" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="666" y="920" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▲</text>
+<rect x="650" y="934" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="666" y="954" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▼</text>
+<rect x="706" y="890" width="210" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="918" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Generator</text>
+<text x="720" y="940" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Generator · Honda EU2200i</text>
+<rect x="720" y="952" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="728" y="967" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">SN 4471</text>
+<text x="720" y="1026" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="872" y="900" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="920" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▲</text>
+<rect x="872" y="934" width="32" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="954" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">▼</text>
+<text x="980" y="796" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A group&#x27;s page: only its vehicles; + Add vehicle starts in it.</text>
+<text x="980" y="818" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Custom shows Arrange: ▲▼ on each card (48 px) until Done.</text>
+<text x="980" y="840" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The sort and the custom order are yours alone (#040).</text>
+<text x="980" y="872" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">One-group household: the sidebar shows just ⌂ Garage</text>
+<text x="980" y="894" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(no All vehicles), so nothing changes for them.</text>
+<text x="980" y="926" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Groups (Admin) manages groups (step 4g). Icon-only</text>
+<text x="980" y="948" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">sidebar: each group shows its icon, its name as a tooltip.</text>
+<text x="980" y="980" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Later (idea 15): pin vehicles to the top of their group.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Driver mode</text>
+<rect x="980" y="166" width="250" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">☰  Vehicles</text>
+<rect x="996" y="246" width="106" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="268" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">All vehicles</text>
+<text x="1090" y="268" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="1108" y="246" width="106" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1120" y="268" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Newest</text>
+<text x="1202" y="268" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="306" font-size="12" fill="#9aa1ab" font-weight="800" text-anchor="start">⌂  GARAGE</text>
+<text x="1214" y="306" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">3 vehicles</text>
+<line x1="996" y1="314" x2="1214" y2="314" stroke="#333a45" stroke-width="1"/>
+<rect x="996" y="320" width="218" height="108" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="348" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="1010" y="370" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="1010" y="382" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1018" y="397" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<text x="1010" y="414" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="996" y="438" width="218" height="108" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="466" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Civic</text>
+<text x="1010" y="488" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Car · 2018 Honda Civic</text>
+<rect x="1010" y="500" width="68.5" height="22" rx="6" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1018" y="515" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XYZ 789</text>
+<text x="1010" y="532" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Readings and due items: coming</text>
+<rect x="982" y="668" width="246" height="56" rx="0" fill="#1d2128"/>
+<line x1="982" y1="668" x2="1228" y2="668" stroke="#333a45" stroke-width="1"/>
+<text x="1022" y="702" font-size="11" fill="#5aa9ff" font-weight="700" text-anchor="middle">Vehicles</text>
+<text x="1104" y="702" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="middle">Due &amp; squawks</text>
+<text x="1186" y="702" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="middle">Messages</text>
+<text x="1262" y="196" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Phone: the first tab is Vehicles; the menu</text>
+<text x="1262" y="218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">at the top picks All vehicles or a group</text>
+<text x="1262" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(the ☰ menu lists the groups too).</text>
+<text x="40" y="1124" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">+ Add vehicle: step 1 (kind) and step 2 (details), in a dialog</text>
+<rect x="40" y="1136" width="440" height="330" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="1172" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Add a vehicle</text>
+<text x="456" y="1172" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="end">STEP 1 OF 2</text>
+<text x="64" y="1198" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">What kind?</text>
+<rect x="64" y="1216" width="124" height="80" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="126" y="1262" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Car</text>
+<rect x="198" y="1216" width="124" height="80" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="260" y="1262" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Truck</text>
+<rect x="332" y="1216" width="124" height="80" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="394" y="1262" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Motorcycle</text>
+<rect x="64" y="1308" width="124" height="80" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="126" y="1354" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Trailer</text>
+<rect x="198" y="1308" width="124" height="80" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="260" y="1354" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Generator</text>
+<rect x="332" y="1308" width="124" height="80" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="394" y="1354" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Other</text>
+<rect x="316" y="1414" width="140" height="38" rx="10" fill="#5aa9ff"/>
+<text x="386.0" y="1438.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Next</text>
+<rect x="520" y="1136" width="420" height="500" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="544" y="1172" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">A truck</text>
+<text x="916" y="1172" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="end">STEP 2 OF 2</text>
+<text x="544" y="1202" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Name (on cards)</text>
+<rect x="544" y="1210" width="372" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="556" y="1235" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Truck</text>
+<text x="544" y="1266" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Make</text>
+<rect x="544" y="1274" width="180" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="556" y="1299" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Ford</text>
+<text x="736" y="1266" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Model</text>
+<rect x="736" y="1274" width="180" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="748" y="1299" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">F-150</text>
+<text x="544" y="1330" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Year</text>
+<rect x="544" y="1338" width="100" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="556" y="1363" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">2021</text>
+<text x="656" y="1330" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Colour</text>
+<rect x="656" y="1338" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="668" y="1363" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Blue</text>
+<text x="544" y="1394" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">VIN</text>
+<rect x="544" y="1402" width="180" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="736" y="1394" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">License plate</text>
+<rect x="736" y="1402" width="180" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="748" y="1427" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">ABC 123</text>
+<text x="544" y="1468" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Group</text>
+<rect x="544" y="1476" width="372" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="556" y="1501" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Garage</text>
+<text x="904" y="1501" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="544" y="1540" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Starts with an Odometer (km, your preference) and the truck&#x27;s</text>
+<text x="544" y="1558" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">custom fields; change them later on its Setup tab.</text>
+<rect x="544" y="1580" width="110" height="38" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="599.0" y="1604.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">← Back</text>
+<rect x="796" y="1580" width="120" height="38" rx="10" fill="#5aa9ff"/>
+<text x="856.0" y="1604.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Add</text>
+</svg>

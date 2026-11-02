@@ -2,8 +2,9 @@
 //! (plan §6 "Users, roles & permissions", decisions #019, #045).
 //!
 //! - A **role** (Viewer < Driver < Maintainer < Admin) includes every lower one.
-//! - A **grant** gives a user a role on **one asset** or on **all assets** (#045). A user's
-//!   role on an asset is the highest of every grant that covers it.
+//! - A **grant** gives a user a role on **one asset**, on **one group** of assets (#052), or on
+//!   **all assets** (#045). A user's role on an asset is the highest of every grant that covers
+//!   it, so the check needs the asset's group too ([`AssetScope`]).
 //! - The **active mode** (Driver, Maintainer, Admin) caps what the user can do right now,
 //!   whatever their roles: least privilege by default. Sign-in starts in Driver mode.
 //! - **Admin-wide actions** (users, adding assets, server operations) need the Admin role on
@@ -16,13 +17,18 @@
 //! # Examples
 //!
 //! ```
-//! use domain::access::{ActiveMode, AssetAction, GrantTarget, Role, RoleGrant, permits_on_asset};
+//! use domain::access::{
+//!     ActiveMode, AssetAction, AssetScope, GrantTarget, Role, RoleGrant, permits_on_asset,
+//! };
 //! use domain::id::Id;
 //! use domain::time::UnixMillis;
 //!
 //! let at = UnixMillis::from_millis(1_700_000_000_000);
 //! let user = Id::generate(at, [1; 10]).unwrap();
-//! let truck = Id::generate(at, [2; 10]).unwrap();
+//! let truck = AssetScope {
+//!     id: Id::generate(at, [2; 10]).unwrap(),
+//!     group: Id::generate(at, [3; 10]).unwrap(),
+//! };
 //! let grants = [RoleGrant { user, target: GrantTarget::AllAssets, role: Role::Maintainer }];
 //!
 //! // A Maintainer can log maintenance, but only once they switch to Maintainer mode.
@@ -33,6 +39,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::command::{Patch, Record};
+use crate::group::GroupId;
 use crate::id::{AssetId, Id};
 use crate::user::UserId;
 
@@ -51,6 +58,9 @@ pub enum Role {
 }
 
 /// What a grant covers.
+// The serialized field holding the target's ID is named `asset` for every kind, a group's
+// too: it was named when only assets could be targets, and renaming it would break commands
+// already stored.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "asset", rename_all = "kebab-case")]
 pub enum GrantTarget {
@@ -58,15 +68,27 @@ pub enum GrantTarget {
     AllAssets,
     /// One asset.
     Asset(AssetId),
+    /// Every asset in one group, including ones added or moved there later (#052).
+    Group(GroupId),
+}
+
+/// An asset as the permission check sees it: its ID and the group it's in now.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AssetScope {
+    /// The asset.
+    pub id: AssetId,
+    /// Its group.
+    pub group: GroupId,
 }
 
 impl GrantTarget {
     /// Whether this target covers `asset`.
     #[must_use]
-    pub fn covers(self, asset: AssetId) -> bool {
+    pub fn covers(self, asset: AssetScope) -> bool {
         match self {
             Self::AllAssets => true,
-            Self::Asset(target) => target == asset,
+            Self::Asset(target) => target == asset.id,
+            Self::Group(group) => group == asset.group,
         }
     }
 }
@@ -149,6 +171,9 @@ pub enum AdminAction {
     ManageUsers,
     /// Add a new asset.
     AddAsset,
+    /// Add, rename, and remove groups, and move assets between them (which changes who can
+    /// see them).
+    ManageGroups,
     /// Change server-wide settings and defaults.
     ManageServerSettings,
     /// Server operations (e.g. rebuild from a device).
@@ -167,7 +192,7 @@ pub struct Actor {
 /// The user's role on `asset`: the highest of the grants that cover it, or `None`.
 /// `grants` are this user's own grants.
 #[must_use]
-pub fn role_on(grants: &[RoleGrant], asset: AssetId) -> Option<Role> {
+pub fn role_on(grants: &[RoleGrant], asset: AssetScope) -> Option<Role> {
     grants
         .iter()
         .filter(|grant| grant.target.covers(asset))
@@ -212,7 +237,7 @@ pub fn permits_on_asset(
     grants: &[RoleGrant],
     mode: ActiveMode,
     action: AssetAction,
-    asset: AssetId,
+    asset: AssetScope,
 ) -> bool {
     let Some(role) = role_on(grants, asset) else {
         return false;
@@ -244,6 +269,58 @@ pub fn leaves_an_admin(grants: &[RoleGrant], is_enabled: impl Fn(UserId) -> bool
             && grant.target == GrantTarget::AllAssets
             && is_enabled(grant.user)
     })
+}
+
+/// How one person's access to an asset changes when it moves to another group.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AccessChange {
+    /// Whose access.
+    pub user: UserId,
+    /// Their role on the asset in its current group (`None`: no access).
+    pub before: Option<Role>,
+    /// Their role on it in the new group.
+    pub after: Option<Role>,
+}
+
+/// Who gains, loses, or changes access when `asset` moves from group `from` to group `to`,
+/// shown before the move is confirmed (#052). `grants` are everyone's grants. People whose
+/// role doesn't change are left out; the list is in user order.
+#[must_use]
+pub fn access_change(
+    grants: &[RoleGrant],
+    asset: AssetId,
+    from: GroupId,
+    to: GroupId,
+) -> Vec<AccessChange> {
+    let before_scope = AssetScope {
+        id: asset,
+        group: from,
+    };
+    let after_scope = AssetScope {
+        id: asset,
+        group: to,
+    };
+    let mut users: Vec<UserId> = grants.iter().map(|grant| grant.user).collect();
+    users.sort_unstable();
+    users.dedup();
+    // Each person's role before and after, keeping only those it changes for.
+    users
+        .into_iter()
+        .filter_map(|user| {
+            let theirs: Vec<RoleGrant> = grants
+                .iter()
+                .filter(|grant| grant.user == user)
+                .copied()
+                .collect();
+            let before = role_on(&theirs, before_scope);
+            let after = role_on(&theirs, after_scope);
+            (before != after).then_some(AccessChange {
+                user,
+                before,
+                after,
+            })
+        })
+        .collect()
 }
 
 /// The changeable fields of a [`RoleGrant`]. Grants are created and deleted, never edited:
@@ -315,6 +392,16 @@ mod tests {
 
     const TRUCK: u32 = 10;
     const CAR: u32 = 11;
+    const GARAGE: u32 = 50;
+    const HANGAR: u32 = 51;
+
+    /// Asset `n` in the Garage.
+    fn scope(n: u32) -> AssetScope {
+        AssetScope {
+            id: test_id(n),
+            group: test_id(GARAGE),
+        }
+    }
 
     fn grant(target: GrantTarget, role: Role) -> RoleGrant {
         RoleGrant {
@@ -335,15 +422,15 @@ mod tests {
     #[test]
     fn the_highest_covering_grant_wins() {
         let grants = [everywhere(Role::Driver), on(TRUCK, Role::Maintainer)];
-        assert_eq!(role_on(&grants, test_id(TRUCK)), Some(Role::Maintainer));
-        assert_eq!(role_on(&grants, test_id(CAR)), Some(Role::Driver));
-        assert_eq!(role_on(&[on(TRUCK, Role::Admin)], test_id(CAR)), None);
+        assert_eq!(role_on(&grants, scope(TRUCK)), Some(Role::Maintainer));
+        assert_eq!(role_on(&grants, scope(CAR)), Some(Role::Driver));
+        assert_eq!(role_on(&[on(TRUCK, Role::Admin)], scope(CAR)), None);
     }
 
     #[test]
     fn all_assets_covers_assets_added_later() {
         let grants = [everywhere(Role::Maintainer)];
-        let new_asset = test_id(999);
+        let new_asset = scope(999);
         assert!(permits_on_asset(
             &grants,
             ActiveMode::Maintainer,
@@ -355,7 +442,7 @@ mod tests {
     #[test]
     fn the_mode_caps_what_a_role_can_do() {
         let grants = [everywhere(Role::Admin)];
-        let truck = test_id(TRUCK);
+        let truck = scope(TRUCK);
         assert!(permits_on_asset(
             &grants,
             ActiveMode::Driver,
@@ -396,26 +483,26 @@ mod tests {
             &grants,
             ActiveMode::Maintainer,
             AssetAction::LogMaintenance,
-            test_id(TRUCK)
+            scope(TRUCK)
         ));
         assert!(!permits_on_asset(
             &grants,
             ActiveMode::Maintainer,
             AssetAction::LogMaintenance,
-            test_id(CAR)
+            scope(CAR)
         ));
         assert!(permits_on_asset(
             &grants,
             ActiveMode::Maintainer,
             AssetAction::LogFuel,
-            test_id(CAR)
+            scope(CAR)
         ));
     }
 
     #[test]
     fn viewers_can_view_in_any_mode_and_do_nothing_else() {
         let grants = [everywhere(Role::Viewer)];
-        let truck = test_id(TRUCK);
+        let truck = scope(TRUCK);
         assert!(permits_on_asset(
             &grants,
             ActiveMode::Driver,
@@ -511,6 +598,81 @@ mod tests {
     }
 
     #[test]
+    fn a_group_grant_covers_its_assets_and_only_those() {
+        let grants = [grant(GrantTarget::Group(test_id(HANGAR)), Role::Maintainer)];
+        let in_hangar = AssetScope {
+            id: test_id(TRUCK),
+            group: test_id(HANGAR),
+        };
+        assert_eq!(role_on(&grants, in_hangar), Some(Role::Maintainer));
+        assert_eq!(
+            role_on(&grants, scope(CAR)),
+            None,
+            "the car is in the Garage"
+        );
+        let added_later = AssetScope {
+            id: test_id(999),
+            group: test_id(HANGAR),
+        };
+        assert_eq!(role_on(&grants, added_later), Some(Role::Maintainer));
+    }
+
+    #[test]
+    fn a_move_lists_who_gains_loses_and_changes_access() {
+        let (sam, alex, pat, stuart) = (test_id(2), test_id(3), test_id(4), test_id(1));
+        let grants = [
+            // Stuart: Admin everywhere, unchanged by any move.
+            RoleGrant {
+                user: stuart,
+                target: GrantTarget::AllAssets,
+                role: Role::Admin,
+            },
+            // Sam: Driver in the Garage only, so loses the truck.
+            RoleGrant {
+                user: sam,
+                target: GrantTarget::Group(test_id(GARAGE)),
+                role: Role::Driver,
+            },
+            // Alex: Maintainer in the Hangar, so gains it.
+            RoleGrant {
+                user: alex,
+                target: GrantTarget::Group(test_id(HANGAR)),
+                role: Role::Maintainer,
+            },
+            // Pat: Viewer everywhere, Maintainer on the truck itself: unchanged.
+            RoleGrant {
+                user: pat,
+                target: GrantTarget::AllAssets,
+                role: Role::Viewer,
+            },
+            RoleGrant {
+                user: pat,
+                target: GrantTarget::Asset(test_id(TRUCK)),
+                role: Role::Maintainer,
+            },
+        ];
+        let changes = access_change(&grants, test_id(TRUCK), test_id(GARAGE), test_id(HANGAR));
+        assert_eq!(
+            changes,
+            vec![
+                AccessChange {
+                    user: sam,
+                    before: Some(Role::Driver),
+                    after: None
+                },
+                AccessChange {
+                    user: alex,
+                    before: None,
+                    after: Some(Role::Maintainer)
+                },
+            ]
+        );
+        assert!(
+            access_change(&grants, test_id(TRUCK), test_id(GARAGE), test_id(GARAGE)).is_empty()
+        );
+    }
+
+    #[test]
     fn grants_round_trip_through_json() {
         let grant = on(TRUCK, Role::Maintainer);
         let json = serde_json::to_string(&grant).unwrap();
@@ -521,6 +683,10 @@ mod tests {
         assert_eq!(serde_json::from_str::<RoleGrant>(&json).unwrap(), grant);
         let all = serde_json::to_string(&GrantTarget::AllAssets).unwrap();
         assert_eq!(all, r#"{"kind":"all-assets"}"#);
+        let group = GrantTarget::Group(test_id(GARAGE));
+        let json = serde_json::to_string(&group).unwrap();
+        assert!(json.starts_with(r#"{"kind":"group","asset":"#), "{json}");
+        assert_eq!(serde_json::from_str::<GrantTarget>(&json).unwrap(), group);
     }
 
     // --- Properties ------------------------------------------------------------------
@@ -555,11 +721,12 @@ mod tests {
         ]
     }
 
-    /// A grant on all assets, or on one of three assets.
+    /// A grant on all assets, on one of three assets, or on one of two groups.
     fn any_grant() -> impl Strategy<Value = RoleGrant> {
-        (prop::option::of(0..3_u32), role()).prop_map(|(asset, role)| match asset {
-            None => everywhere(role),
-            Some(asset) => on(TRUCK + asset, role),
+        (0..6_u32, role()).prop_map(|(target, role)| match target {
+            0 => everywhere(role),
+            1..=3 => on(TRUCK + target - 1, role),
+            _ => grant(GrantTarget::Group(test_id(GARAGE + target - 4)), role),
         })
     }
 
@@ -572,11 +739,32 @@ mod tests {
             action in action(),
             asset in 0..3_u32,
         ) {
-            let asset = test_id(TRUCK + asset);
+            let asset = scope(TRUCK + asset);
             let before = permits_on_asset(&grants, mode, action, asset);
             let mut more = grants;
             more.push(extra);
             prop_assert!(!before || permits_on_asset(&more, mode, action, asset));
+        }
+
+        #[test]
+        fn a_move_changes_nothing_for_grants_on_all_assets_or_the_asset_itself(
+            role in role(),
+            on_the_asset in any::<bool>(),
+        ) {
+            let target = if on_the_asset { GrantTarget::Asset(test_id(TRUCK)) } else { GrantTarget::AllAssets };
+            let grants = [grant(target, role)];
+            prop_assert!(access_change(&grants, test_id(TRUCK), test_id(GARAGE), test_id(HANGAR)).is_empty());
+        }
+
+        #[test]
+        fn the_preview_matches_the_check_after_the_move(
+            grants in prop::collection::vec(any_grant(), 0..6),
+        ) {
+            let changes = access_change(&grants, test_id(TRUCK), test_id(GARAGE), test_id(HANGAR));
+            let moved = AssetScope { id: test_id(TRUCK), group: test_id(HANGAR) };
+            for change in changes {
+                prop_assert_eq!(change.after, role_on(&grants, moved));
+            }
         }
 
         #[test]
@@ -585,7 +773,7 @@ mod tests {
             action in action(),
             asset in 0..3_u32,
         ) {
-            let asset = test_id(TRUCK + asset);
+            let asset = scope(TRUCK + asset);
             let driver = permits_on_asset(&grants, ActiveMode::Driver, action, asset);
             let maintainer = permits_on_asset(&grants, ActiveMode::Maintainer, action, asset);
             let admin = permits_on_asset(&grants, ActiveMode::Admin, action, asset);
@@ -600,7 +788,7 @@ mod tests {
             asset in 0..3_u32,
         ) {
             if action.required_role() >= Role::Maintainer {
-                prop_assert!(!permits_on_asset(&grants, ActiveMode::Driver, action, test_id(TRUCK + asset)));
+                prop_assert!(!permits_on_asset(&grants, ActiveMode::Driver, action, scope(TRUCK + asset)));
             }
         }
     }

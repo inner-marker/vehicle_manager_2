@@ -1,0 +1,20 @@
+// Car (decision #030).
+(
+    id: "car",
+    version: 1,
+    name: "profile-car",
+    event_kinds: [fuel, reading, maintenance, repair],
+    sections: [r#fuel-economy],
+    identifiers: [
+        (kind: "vin", name: "identifier-vin"),
+        (kind: "plate", name: "identifier-plate"),
+    ],
+    documents: ["document-title", "document-registration", "document-insurance"],
+    meters: [
+        (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
+    ],
+    fields: [
+        (key: "trip-time", label: "field-trip-time", applies_to: fuel, kind: {"type": "duration"}, enabled: true, range: None),
+        (key: "trip-ev-distance", label: "field-trip-ev-distance", applies_to: fuel, kind: {"type": "distance"}, enabled: false, range: None),
+    ],
+)

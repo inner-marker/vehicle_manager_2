@@ -15,10 +15,12 @@ use domain::user::UserId;
 use crate::api;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::screens::problem_from_error;
+use crate::ui::screens::roles::{RolesSection, roles_summary};
+use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
 
 /// Every role, from least to most powerful, as the role menus list them.
-const ROLES: [Role; 4] = [Role::Viewer, Role::Driver, Role::Maintainer, Role::Admin];
+pub(super) const ROLES: [Role; 4] = [Role::Viewer, Role::Driver, Role::Maintainer, Role::Admin];
 
 /// A role's label.
 pub(crate) const fn role_label(role: Role) -> MessageId {
@@ -31,7 +33,7 @@ pub(crate) const fn role_label(role: Role) -> MessageId {
 }
 
 /// A role's `<option>` value, and back.
-const fn role_value(role: Option<Role>) -> &'static str {
+pub(super) const fn role_value(role: Option<Role>) -> &'static str {
     match role {
         None => "none",
         Some(Role::Viewer) => "viewer",
@@ -41,14 +43,14 @@ const fn role_value(role: Option<Role>) -> &'static str {
     }
 }
 
-fn role_from_value(value: &str) -> Option<Role> {
+pub(super) fn role_from_value(value: &str) -> Option<Role> {
     ROLES
         .into_iter()
         .find(|role| role_value(Some(*role)) == value)
 }
 
 /// The message for an answer that isn't the hoped-for one.
-fn outcome_message(outcome: &UserAdminOutcome) -> Option<String> {
+pub(super) fn outcome_message(outcome: &UserAdminOutcome) -> Option<String> {
     match outcome {
         UserAdminOutcome::Users { .. }
         | UserAdminOutcome::Done
@@ -64,7 +66,7 @@ fn outcome_message(outcome: &UserAdminOutcome) -> Option<String> {
     }
 }
 
-fn failure_message(error: &ServerFnError) -> String {
+pub(super) fn failure_message(error: &ServerFnError) -> String {
     tr(problem_from_error(error).message())
 }
 
@@ -179,15 +181,8 @@ pub(crate) fn Users() -> Element {
 )]
 #[component]
 fn UserRow(user: UserSummary, selected: bool, on_select: EventHandler<UserId>) -> Element {
-    let role = user.role_on_all.map_or_else(
-        || tr(messages::ROLE_NONE),
-        |role| {
-            tr_with(
-                messages::USERS_ROLE_SUMMARY,
-                &[("role", MessageArg::from(tr(role_label(role))))],
-            )
-        },
-    );
+    let context = use_vehicles();
+    let role = roles_summary(&user, context.garage.read().as_ref());
     let class = match (selected, user.status == AccountStatus::Disabled) {
         (true, _) => "user-row selected",
         (false, true) => "user-row disabled",
@@ -235,15 +230,6 @@ fn UserDetail(
 ) -> Element {
     let id = user.id;
     let disabled = user.status == AccountStatus::Disabled;
-    let set_role = move |role: Option<Role>| {
-        spawn(async move {
-            match api::set_user_role(id, role).await {
-                Ok(UserAdminOutcome::Done) => on_changed.call(()),
-                Ok(other) => on_error.call(outcome_message(&other).unwrap_or_default()),
-                Err(failure) => on_error.call(failure_message(&failure)),
-            }
-        });
-    };
     let enable = move |_| {
         spawn(async move {
             match api::set_user_disabled(id, false).await {
@@ -261,27 +247,7 @@ fn UserDetail(
         h2 { class: "user-name", {user.display_name.clone()} }
         p { class: "user-username", {user.username.as_str().to_owned()} }
 
-        h3 { class: "section-heading", {tr(messages::USERS_ROLES_HEADING)} }
-        div { class: "role-row",
-            span { {tr(messages::USERS_ALL_VEHICLES)} }
-            // Each option says whether it's selected: a `value` on the <select> itself can
-            // arrive before its options exist, and the browser then shows the first one.
-            select {
-                class: "role-select",
-                disabled: user.is_last_admin,
-                onchange: move |event| set_role(role_from_value(&event.value())),
-                option { value: "none", selected: user.role_on_all.is_none(), {tr(messages::ROLE_NONE)} }
-                for role in ROLES {
-                    option {
-                        key: "{role:?}",
-                        value: role_value(Some(role)),
-                        selected: user.role_on_all == Some(role),
-                        {tr(role_label(role))}
-                    }
-                }
-            }
-        }
-        p { class: "muted-note", {tr(messages::USERS_ONE_VEHICLE_LATER)} }
+        RolesSection { user: user.clone(), on_changed, on_error }
 
         h3 { class: "section-heading", {tr(messages::USERS_ACCOUNT_HEADING)} }
         div { class: "account-actions",

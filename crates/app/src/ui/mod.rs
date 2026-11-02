@@ -8,6 +8,8 @@
 //! - `account`: the mode chip, account chip, Admin dialog, and Admin banner (in the shell).
 //! - `idle`: leaving Admin mode and signing out when idle, and their notices (#049).
 //! - `inbox`: the person's messages, the unread badge, and the urgent banner (#050, #053).
+//! - `vehicles`: the groups and vehicles the person can see, and the sidebar's group links
+//!   (#052, #056).
 //! - `screens`: one component per screen; placeholders until their phase.
 //!
 //! Every visible string comes from `domain::i18n`; components never contain
@@ -23,6 +25,7 @@ pub(crate) mod routes;
 mod screens;
 mod shell;
 pub(crate) mod theme;
+pub(crate) mod vehicles;
 
 use dioxus::prelude::*;
 use domain::i18n::{MessageArg, MessageId, Translator};

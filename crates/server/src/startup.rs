@@ -106,6 +106,18 @@ pub async fn start(
                 }
                 Err(error) => tracing::error!(target: log_area::AUTH, %error, "can't count users; setup stays closed"),
             }
+            // Every vehicle needs a group (#052): make the default one on a database with none.
+            if let Some(device) = SERVER_DEVICE.get().copied()
+                && let Err(error) = crate::groups::ensure_default_group(
+                    &database,
+                    device,
+                    health::current(),
+                    clock.as_ref(),
+                )
+                .await
+            {
+                tracing::error!(target: log_area::APP, %error, "can't make the default group; vehicles can't be added until it exists");
+            }
             jobs::spawn(JobContext {
                 database: database.clone(),
                 clock,
