@@ -391,6 +391,12 @@ impl TimeZone {
             .ok_or(LocationError::TimeZoneInvalid)
     }
 
+    /// Coordinated Universal Time, when nothing better is known.
+    #[must_use]
+    pub fn utc() -> Self {
+        Self("UTC".to_owned())
+    }
+
     /// The name.
     #[must_use]
     pub fn as_str(&self) -> &str {

@@ -1287,4 +1287,134 @@ define_messages! {
     FIELD_REQUIRED_NOTE => "field-required-note",
     /// Setup: a required field's badge.
     FIELD_REQUIRED_BADGE => "field-required-badge",
+    /// The + Log chooser's title.
+    LOG_TITLE => "log-title",
+    /// The + Log chooser: the vehicle dropdown.
+    LOG_VEHICLE => "log-vehicle",
+    /// The + Log chooser: last time's vehicle.
+    LOG_LAST_TIME => "log-last-time",
+    /// The + Log chooser: under Fuel-up.
+    LOG_FUEL_DETAIL => "log-fuel-detail",
+    /// The + Log chooser: under Reading.
+    LOG_READING_DETAIL => "log-reading-detail",
+    /// The + Log chooser: a kind not built yet.
+    LOG_LATER => "log-later",
+    /// The + Log chooser: nothing to log for.
+    LOG_NO_VEHICLES => "log-no-vehicles",
+    /// Log form: the badge on a required item.
+    LOG_REQUIRED => "log-required",
+    /// Log form: a meter's latest reading.
+    LOG_LAST_READING => "log-last-reading",
+    /// Log form: skipping a required reading.
+    LOG_SKIP => "log-skip",
+    /// Log form: skipping a required field.
+    LOG_SKIP_FIELD => "log-skip-field",
+    /// Log form: a skipped item.
+    LOG_SKIPPED => "log-skipped",
+    /// Log form: the skip reason.
+    LOG_SKIP_REASON => "log-skip-reason",
+    /// Log form: stop skipping.
+    LOG_UNSKIP => "log-unskip",
+    /// Log form: the Admin's override box.
+    LOG_OVERRIDE_TITLE => "log-override-title",
+    /// Log form: the override reason.
+    LOG_OVERRIDE_REASON => "log-override-reason",
+    /// Log form: what the override does.
+    LOG_OVERRIDE_NOTE => "log-override-note",
+    /// Log form: a yes-or-no field's yes.
+    LOG_YES => "log-yes",
+    /// Log form: a yes-or-no field's no.
+    LOG_NO => "log-no",
+    /// Log form: the fuel section.
+    LOG_SECTION_FUEL => "log-section-fuel",
+    /// Log form: the fuel volume.
+    LOG_VOLUME => "log-volume",
+    /// Log form: the fuel's total price.
+    LOG_PRICE => "log-price",
+    /// Log form: the price per gallon or liter.
+    LOG_PER_UNIT => "log-per-unit",
+    /// Log form: full fill.
+    LOG_FILLED_FULL => "log-filled-full",
+    /// Log form: an earlier fill-up wasn't logged.
+    LOG_MISSED => "log-missed",
+    /// Log form: the when and where section.
+    LOG_SECTION_WHEN_WHERE => "log-section-when-where",
+    /// Log form: logged as now.
+    LOG_NOW => "log-now",
+    /// Log form: change the date or place.
+    LOG_CHANGE => "log-change",
+    /// Log form: the date.
+    LOG_DATE => "log-date",
+    /// Log form: the time.
+    LOG_TIME => "log-time",
+    /// Log form: the event's time zone.
+    LOG_ZONE => "log-zone",
+    /// Log form: choose one of your saved places.
+    LOG_SAVED_PLACE => "log-saved-place",
+    /// Log form: done choosing the place.
+    LOG_PLACE_DONE => "log-place-done",
+    /// Log form: no place at all.
+    LOG_NO_PLACE => "log-no-place",
+    /// Log form: the no-place reason.
+    LOG_NO_PLACE_REASON => "log-no-place-reason",
+    /// Log form: stop saying there's no place.
+    LOG_PLACE_AFTER_ALL => "log-place-after-all",
+    /// Log form: the driving section.
+    LOG_FOLD_DRIVING => "log-fold-driving",
+    /// Log form: the driving summary.
+    LOG_PCT_HIGHWAY => "log-pct-highway",
+    /// Log form: the driving summary.
+    LOG_PCT_TOWING => "log-pct-towing",
+    /// Log form: the driving summary.
+    LOG_PCT_HAULING => "log-pct-hauling",
+    /// Log form: the highway slider.
+    LOG_HIGHWAY => "log-highway",
+    /// Log form: the towing slider.
+    LOG_TOWING => "log-towing",
+    /// Log form: the hauling slider.
+    LOG_HAULING => "log-hauling",
+    /// Log form: the vehicles towed.
+    LOG_TOWED => "log-towed",
+    /// Log form: the other meters and fields.
+    LOG_FOLD_MORE => "log-fold-more",
+    /// Log form: nothing in a folded section.
+    LOG_FOLD_MORE_EMPTY => "log-fold-more-empty",
+    /// Log form: the fuel economy the vehicle shows.
+    LOG_REPORTED_ECONOMY => "log-reported-economy",
+    /// Log form: the who and notes section.
+    LOG_FOLD_WHO => "log-fold-who",
+    /// Log form: done by the person logging it (summary).
+    LOG_WHO_ME => "log-who-me",
+    /// Log form: the who summary without notes.
+    LOG_NOTES_NONE => "log-notes-none",
+    /// Log form: the who summary with notes.
+    LOG_NOTES_SOME => "log-notes-some",
+    /// Log form: who did it.
+    LOG_DONE_BY => "log-done-by",
+    /// Log form: done by the person logging it.
+    LOG_DONE_BY_ME => "log-done-by-me",
+    /// Log form: done by someone else.
+    LOG_DONE_BY_SOMEONE => "log-done-by-someone",
+    /// Log form: someone else's name.
+    LOG_THEIR_NAME => "log-their-name",
+    /// Log form: someone else's contact.
+    LOG_THEIR_CONTACT => "log-their-contact",
+    /// Log form: notes.
+    LOG_NOTES => "log-notes",
+    /// Log form: by Save.
+    LOG_DRAFT_NOTE => "log-draft-note",
+    /// Log form: save.
+    LOG_SAVE => "log-save",
+    /// Log form: while saving.
+    LOG_SAVING => "log-saving",
+    /// Log form: saved, with warnings.
+    LOG_SAVED => "log-saved",
+    /// Log form: a field above its range.
+    LOG_WARNING_ABOVE => "log-warning-above",
+    /// Log form: a field below its range.
+    LOG_WARNING_BELOW => "log-warning-below",
+    /// Log form: the Admin kept a reading.
+    LOG_WARNING_KEPT => "log-warning-kept",
+    /// Log form: leave after saving.
+    LOG_DONE => "log-done",
 }

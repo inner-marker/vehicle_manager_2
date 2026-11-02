@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1330" viewBox="0 0 1560 1330" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1330" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 6g · The + Log chooser: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">From + Log (the top bar, or the floating button on phones). Only what the person may log is offered (role and mode); squawks and maintenance come later.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One dialog: the vehicle at the top (last time&#x27;s chosen), then what to log</text>
+<text x="40" y="152" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide (web, desktop) · the page dims behind</text>
+<rect x="40" y="164" width="640" height="470" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="150" y="198" width="420" height="400" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="174" y="236" font-size="20" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<text x="174" y="264" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Vehicle</text>
+<rect x="174" y="272" width="372" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="186" y="297.0" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Truck  ·  same as last time</text>
+<text x="534" y="297.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="174" y="330" width="372" height="72" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="192" y="368" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="230" y="360" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<text x="230" y="380" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Odometer, fuel, and price</text>
+<rect x="174" y="414" width="372" height="72" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="192" y="452" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="230" y="444" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<text x="230" y="464" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Just the meters (odometer, hours)</text>
+<text x="174" y="516" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Viewers see no tiles: &quot;You can see this vehicle,</text>
+<text x="174" y="534" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">but not log for it.&quot;</text>
+<rect x="446" y="542" width="100" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="496.0" y="569.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="720" y="152" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · a sheet from the + button</text>
+<rect x="720" y="164" width="250" height="520" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="738" y="190" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="722" y="374" width="246" height="308" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="825" y="384" width="40" height="4" rx="2" fill="#9aa1ab"/>
+<text x="740" y="416" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="740" y="442" width="210" height="44" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="752" y="469.0" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Truck · last time</text>
+<text x="938" y="469.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="740" y="500" width="210" height="64" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="758" y="538" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="796" y="530" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<text x="796" y="550" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<rect x="740" y="574" width="210" height="64" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="758" y="612" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="796" y="604" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<text x="796" y="624" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="845" y="660" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="1010" y="204" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One screen: with the right vehicle</text>
+<text x="1010" y="226" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   already chosen, it&#x27;s one tap.</text>
+<text x="1010" y="248" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The vehicle is a plain dropdown.</text>
+<text x="1010" y="270" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ From a vehicle&#x27;s page, + Log</text>
+<text x="1010" y="292" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   chooses that vehicle.</text>
+<text x="1010" y="314" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Many vehicles make a long dropdown</text>
+<text x="1010" y="336" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (the last one is first).</text>
+<text x="40" y="724" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · Two steps: what to log first, then the vehicle (last time&#x27;s first, with its latest reading)</text>
+<text x="40" y="752" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · step 1</text>
+<rect x="40" y="764" width="250" height="520" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="790" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="58" y="824" font-size="20" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="58" y="848" width="214" height="84" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="886" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="114" y="878" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<text x="114" y="898" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<rect x="58" y="944" width="214" height="84" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="982" font-size="24" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="114" y="974" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<text x="114" y="994" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="165" y="1054" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="320" y="752" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · step 2</text>
+<rect x="320" y="764" width="250" height="520" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="338" y="790" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="338" y="816" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Fuel-up for…</text>
+<text x="338" y="852" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Which vehicle?</text>
+<rect x="338" y="870" width="214" height="58" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="352" y="895" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<text x="352" y="915" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">52,310 mi · Last time</text>
+<rect x="338" y="936" width="214" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="352" y="961" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Car</text>
+<text x="352" y="981" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">18,044 mi</text>
+<rect x="338" y="1002" width="214" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="352" y="1027" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Tractor</text>
+<text x="352" y="1047" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">1,204 h</text>
+<rect x="338" y="1068" width="214" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="352" y="1093" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Motorcycle</text>
+<text x="352" y="1113" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">9,870 mi</text>
+<text x="338" y="1154" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Only vehicles with fuel-ups, that</text>
+<text x="338" y="1172" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">the person may log for, are listed.</text>
+<text x="610" y="752" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the same two steps in a dialog</text>
+<rect x="610" y="764" width="380" height="300" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="640" y="790" width="320" height="250" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="660" y="824" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Log a fuel-up for…</text>
+<rect x="660" y="842" width="280" height="50" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="674" y="864" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<text x="674" y="882" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">52,310 mi · Last time</text>
+<rect x="660" y="900" width="280" height="50" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="674" y="922" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Car</text>
+<text x="674" y="940" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">18,044 mi</text>
+<rect x="660" y="958" width="280" height="50" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="674" y="980" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Tractor</text>
+<text x="674" y="998" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">1,204 h</text>
+<text x="1030" y="804" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Each step is big and simple;</text>
+<text x="1030" y="826" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   easy with gloves.</text>
+<text x="1030" y="848" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Each vehicle&#x27;s latest reading</text>
+<text x="1030" y="870" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   shows it&#x27;s the right one.</text>
+<text x="1030" y="892" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One vehicle: step 2 is skipped.</text>
+<text x="1030" y="914" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Always two taps, even for the</text>
+<text x="1030" y="936" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   same vehicle as last time.</text>
+</svg>

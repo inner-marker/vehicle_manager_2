@@ -15,7 +15,7 @@ use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::label::Label;
 use domain::meter::{EventKind, MAX_PRECISION, Meter, MeterDimension, MeterId, MeterUnit};
-use domain::preferences::{DistanceUnit, EconomyUnit, Preferences, VolumeUnit};
+use domain::preferences::Preferences;
 use domain::profile::profile;
 use domain::quantity::{
     QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
@@ -60,10 +60,7 @@ async fn changed(page: VehiclePage, vehicles: VehiclesContext) {
 
 /// The kinds of events a vehicle has, from its profile (all of them for an unknown kind).
 fn event_kinds(asset: &Asset) -> Vec<EventKind> {
-    profile(&asset.kind).map_or_else(
-        || EventKind::ALL.to_vec(),
-        |profile| profile.event_kinds.clone(),
-    )
+    domain::profile::event_kinds(&asset.kind)
 }
 
 /// A custom field type's name.
@@ -95,7 +92,7 @@ const KINDS: [(&str, MessageId); 9] = [
 ];
 
 /// An event kind's `<option>` value, and back.
-const fn event_value(kind: EventKind) -> &'static str {
+pub(super) const fn event_value(kind: EventKind) -> &'static str {
     match kind {
         EventKind::Fuel => "fuel",
         EventKind::Reading => "reading",
@@ -104,7 +101,7 @@ const fn event_value(kind: EventKind) -> &'static str {
     }
 }
 
-fn event_from_value(value: &str) -> Option<EventKind> {
+pub(super) fn event_from_value(value: &str) -> Option<EventKind> {
     EventKind::ALL
         .into_iter()
         .find(|kind| event_value(*kind) == value)
@@ -847,34 +844,6 @@ fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
     }
 }
 
-/// The unit a range is typed in, for its labels ("mi", "H:MM"), if any.
-fn range_unit(kind: &FieldKind, units: Preferences) -> Option<String> {
-    let tr_unit = |id| Some(tr(id));
-    match kind {
-        FieldKind::Distance => tr_unit(match units.distance {
-            DistanceUnit::Miles => messages::UNIT_ABBR_MI,
-            DistanceUnit::Kilometers => messages::UNIT_ABBR_KM,
-        }),
-        FieldKind::Duration => Some("H:MM".to_owned()),
-        FieldKind::Volume => tr_unit(match units.volume {
-            VolumeUnit::UsGallons => messages::UNIT_ABBR_GAL,
-            VolumeUnit::ImperialGallons => messages::UNIT_ABBR_GAL_UK,
-            VolumeUnit::Liters => messages::UNIT_ABBR_L,
-        }),
-        FieldKind::FuelEconomy => tr_unit(match units.economy {
-            EconomyUnit::MpgUs => messages::UNIT_ABBR_MPG,
-            EconomyUnit::MpgUk => messages::UNIT_ABBR_MPG_UK,
-            EconomyUnit::KmPerLiter => messages::UNIT_ABBR_KM_PER_L,
-            EconomyUnit::LitersPer100Km => messages::UNIT_ABBR_L_PER_100_KM,
-        }),
-        FieldKind::Number { .. }
-        | FieldKind::Text
-        | FieldKind::Date
-        | FieldKind::YesNo
-        | FieldKind::Choice { .. } => None,
-    }
-}
-
 /// The range as typed, for a numeric field, in the person's `units`. In L/100 km, more is
 /// worse, so the typed lowest and highest swap when stored (meters per liter).
 fn range_from_form(
@@ -1126,7 +1095,7 @@ fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Elem
         |field| field.kind.clone(),
     );
     let numeric = kind.is_numeric();
-    let unit = range_unit(&kind, (inputs.units)());
+    let unit = crate::ui::units::field_unit(&kind, (inputs.units)());
     let with_unit = |label| {
         unit.as_ref()
             .map_or_else(|| tr(label), |unit| format!("{} ({unit})", tr(label)))
@@ -1415,6 +1384,7 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use domain::preferences::{DistanceUnit, EconomyUnit, VolumeUnit};
 
     #[test]
     fn range_ends_are_typed_with_the_fields_decimals() {
@@ -1483,8 +1453,14 @@ mod tests {
             range_from_form(&FieldKind::Volume, ("lots", ""), miles),
             Err(messages::QUANTITY_NOT_A_NUMBER)
         );
-        assert_eq!(range_unit(&FieldKind::Volume, metric).as_deref(), Some("L"));
-        assert_eq!(range_unit(&FieldKind::Number { decimals: 0 }, metric), None);
+        assert_eq!(
+            crate::ui::units::field_unit(&FieldKind::Volume, metric).as_deref(),
+            Some("L")
+        );
+        assert_eq!(
+            crate::ui::units::field_unit(&FieldKind::Number { decimals: 0 }, metric),
+            None
+        );
     }
 
     #[test]

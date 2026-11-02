@@ -14,6 +14,7 @@ pub mod custom_field;
 pub mod dates;
 pub mod event;
 pub mod event_check;
+pub mod event_form;
 pub mod garage;
 pub mod group;
 pub mod hlc;

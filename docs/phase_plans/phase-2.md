@@ -506,7 +506,7 @@
 | 6d | ☑️ | `feat: required-for on custom fields` | Custom fields gain `required_for` (choice 5): domain, migration, storage, server; Setup's grid gives way to checkboxes in each meter's and field's Edit dialog | none |
 | 6e | ☑️ | `feat(storage): events` | Migration: events, reading sets and readings, fuel details, skipped readings and fields, corrections; writers (refusing changes to finalized events); queries (a vehicle's events by date, a meter's neighbouring readings, the latest readings) | none |
 | 6f | ☑️ | `feat(server): logging, finalizing, and corrections` | Add and edit drafts, **Finalize now**, correct (choices 2, 3, 10); the automatic finalize as a scheduled job (24 h, or the test minutes; #044, #054); server functions under `/api/v1/events` | none |
-| 6g | ⬜ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
+| 6g | ☑️ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
 | 6h | ⬜ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
 | 6i | ⬜ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
 | 6j | ⬜ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
@@ -591,3 +591,32 @@
     - after Finalize now, only a correction (once; never of a draft), and the correction's reading counts;
     - the server finalizes after the test minutes and after 24 hours.
   - **Checked on a running server:** a fuel-up saved over HTTP; a reading out of order was refused; a request without a session got 401; the `finalize-drafts` job was scheduled.
+- **6g layout (chosen 2026-11-02):**
+  - **The + Log chooser:** option A of [`p2m6-log-chooser-options.svg`](../ui-sketches/p2m6-log-chooser-options.svg). One dialog (a sheet on phones): the vehicle dropdown on top, with last time's vehicle chosen (or the vehicle whose page it's opened from), then a Fuel-up tile and a Reading tile.
+  - **The fuel-up and reading forms:** option B of [`p2m6-fuel-up-options.svg`](../ui-sketches/p2m6-fuel-up-options.svg). Each is its own page:
+    - open: the required items (odometer, fuel, any required field), and when and where;
+    - folded, each with a one-line summary: driving, trip and readings, and who and notes;
+    - Save fixed at the bottom.
+  - **Sliders** move in 5% steps, with marks at 0, 25, 50, 75, and 100.
+- **6g:** no new dependency.
+  - **+ Log** (the top bar's button and the phone's floating button) opens the chooser. It's a dialog, and a sheet from the bottom on phones.
+    - The vehicles listed are only those the person may log for, last time's first. The tiles are only the kinds that vehicle has and the person's role and mode allow (`loggable_kinds`; trailers have no fuel-ups).
+    - It starts on the vehicle whose page or form is open, otherwise last time's ("Truck · same as last time"). **Last time's vehicle is kept in the browser's local storage,** so it's per device and survives a reload.
+    - `/log` shows the chooser as a page, for a direct link.
+  - **The form** is its own page, `/vehicles/:id/log/fuel` or `…/reading`, titled "Fuel-up · Truck". It's built in `ui::screens::log_form`; what was typed becomes the `EventInput` in `log_input`, a plain function with tests.
+    - **Open:** the required meters (a reading shows every meter) with the last value as a hint ("last 52,644 · 2 Nov 2026"), required custom fields, the fuel (volume in the person's unit, total price in their currency, the price per gallon or liter worked out, full and missed fill), and when and where.
+    - **When** is "Now" until **Change** gives a date and a time in the event's zone. The zone is the place data's for the point, otherwise the browser's.
+    - **Where** is the location picker (#059, #061), plus a **Saved place** dropdown. Once a place is set it folds to one line with **Change**. **Can't give a place? Say why** takes a reason instead.
+    - **Folded, with summaries:** Driving (the highway slider; towing and hauling where the profile shows them, #033; towed vehicles appear once towing is above 0); Trip and readings (the other meters and fields, typed as their kind, and the vehicle's own fuel economy); Who and notes.
+    - **Done by** is "Me (the person logging it)", sent as nobody recorded, or **Someone else** with a name and optional contact. The app doesn't know the person's user ID, and choosing another household member waits for a users list everyone may see.
+    - **Skipping:** each required item has "Can't read it? Skip with a reason", which shows "Skipped" with the reason and "Enter it after all".
+    - **The readings check:** the server's refusal shows under the meter. For the Admin in Admin mode an orange **Keep it anyway** box asks why; saving then shows "Saved as a draft" with the warning that the reading was kept. Out-of-range field warnings show the same way. Without warnings, Save goes back to the vehicle's page.
+    - Every problem shows where it belongs: under the meter, field, fuel, date, or place.
+  - New in the domain: `event_form` (a custom field's value from what was typed, and back), `quantity::unit_price` and `show_reading` (thousands grouped), `TimeZone::utc`, and `profile::event_kinds` (Setup uses it too). `ui::units` gained the unit abbreviations, moved from Setup.
+  - 65 messages. 9 new tests (field values, the unit price, grouped readings, what can be logged, and the form's input: a typical fuel-up, where each problem shows, skipping and towing).
+  - **Checked in a real browser:**
+    - the chooser from a vehicle's page;
+    - a fuel-up with the device's location (Asheville) saved as a GPS draft, with 18.004 gal stored as 68,153 mL and $62.27 as 6,227 cents (shown as 3.459 USD per gal);
+    - the next time, the chooser said "same as last time";
+    - a lower odometer was refused, then kept by the Admin with a reason;
+    - on a phone: the sheet, a skipped odometer with its reason, 25% towing with the camper towed, and Save above the bottom tabs (the floating button is hidden on the form).

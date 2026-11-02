@@ -345,6 +345,28 @@ pub fn reading_value(raw: i64, unit: MeterUnit, precision: u8) -> String {
     fixed(shown, usize::from(precision))
 }
 
+/// A stored reading shown with thousands grouped: "52,310", "1,234.5" (for reading, not
+/// typing; [`reading_value`] is the typed form).
+#[must_use]
+pub fn show_reading(raw: i64, unit: MeterUnit, precision: u8) -> String {
+    let plain = reading_value(raw, unit, precision);
+    let (whole, fraction) = plain
+        .split_once('.')
+        .map_or((plain.as_str(), None), |(w, f)| (w, Some(f)));
+    let digits: Vec<char> = whole.chars().collect();
+    let mut grouped = String::new();
+    for (index, digit) in digits.iter().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            grouped.push(',');
+        }
+        grouped.push(*digit);
+    }
+    match fraction {
+        Some(fraction) => format!("{grouped}.{fraction}"),
+        None => grouped,
+    }
+}
+
 // --- Money -----------------------------------------------------------------------------------
 
 /// The currency's minor-unit decimals (ISO 4217): 0 for e.g. yen, 3 for e.g. Kuwaiti dinar,
@@ -386,11 +408,52 @@ pub fn show_money(minor: i64, currency: CurrencyCode) -> String {
     )
 }
 
+/// The price of one `unit` of fuel, shown with one more decimal than the currency (as pumps
+/// show it): "3.459". `None` for no fuel.
+#[must_use]
+pub fn unit_price(
+    cost_minor: i64,
+    volume_ml: i64,
+    currency: CurrencyCode,
+    unit: VolumeUnit,
+) -> Option<String> {
+    let amount = Volume::new::<milliliter>(float(volume_ml));
+    let units = match unit {
+        VolumeUnit::UsGallons => amount.get::<gallon>(),
+        VolumeUnit::ImperialGallons => amount.get::<gallon_imperial>(),
+        VolumeUnit::Liters => amount.get::<liter>(),
+    };
+    let places = currency_decimals(currency);
+    let cost = float(cost_minor) / 10_f64.powi(i32::from(places));
+    (units > 0.0).then(|| fixed(cost / units, usize::from(places) + 1))
+}
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 
     use super::*;
+
+    #[test]
+    fn readings_are_shown_with_thousands_grouped() {
+        let miles = parse_reading("52310", MeterUnit::Miles, 0).unwrap();
+        assert_eq!(show_reading(miles, MeterUnit::Miles, 0), "52,310");
+        let hours = parse_reading("1234.5", MeterUnit::Hours, 1).unwrap();
+        assert_eq!(show_reading(hours, MeterUnit::Hours, 1), "1,234.5");
+        assert_eq!(show_reading(0, MeterUnit::Hours, 0), "0");
+        let short = parse_reading("999", MeterUnit::Kilometers, 0).unwrap();
+        assert_eq!(show_reading(short, MeterUnit::Kilometers, 0), "999");
+    }
+
+    #[test]
+    fn a_unit_price_has_one_more_decimal_than_the_currency() {
+        let gallons = parse_volume("18.004", VolumeUnit::UsGallons).unwrap();
+        assert_eq!(
+            unit_price(6_227, gallons, usd(), VolumeUnit::UsGallons).as_deref(),
+            Some("3.459")
+        );
+        assert_eq!(unit_price(6_227, 0, usd(), VolumeUnit::Liters), None);
+    }
 
     fn usd() -> CurrencyCode {
         CurrencyCode::USD

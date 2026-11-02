@@ -2285,3 +2285,301 @@ textarea.field-input {
         margin-left: 0;
     }
 }
+
+/* ---------- + Log and the log forms (p2m6-log-chooser-options.svg A, p2m6-fuel-up-options.svg B) ---------- */
+
+/* + Log and the floating button are buttons (they open the chooser), styled as before. */
+.log-button,
+.fab {
+    border: none;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.log-tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.log-tile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 72px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.log-tile:hover,
+.log-tile:focus-visible {
+    border-color: var(--accent);
+}
+
+.log-tile-icon {
+    font-size: 1.6rem;
+}
+
+.log-tile-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.log-tile-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.log-tile-detail {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.log-chooser-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 420px;
+}
+
+/* On phones the chooser is a sheet from the bottom. */
+@media (max-width: 639px) {
+    .dialog-scrim:has(.log-chooser) {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .dialog.log-chooser {
+        margin: 0;
+        max-width: none;
+        border-radius: 18px 18px 0 0;
+    }
+}
+
+.log-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 560px;
+    /* Room for the Save bar. */
+    padding-bottom: 96px;
+}
+
+.log-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-item .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.required-badge {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+}
+
+.reading-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.field-input.big {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 52px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.field-input.invalid {
+    border-color: var(--error);
+}
+
+.reading-hint {
+    position: absolute;
+    right: 12px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.skipped-mark {
+    margin: 0;
+    padding: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.override-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--admin);
+    border-radius: 8px;
+    background: var(--admin-bg);
+}
+
+.override-title {
+    color: var(--admin);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.check-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+}
+
+.check-row .switch {
+    margin-left: 0;
+    color: var(--text);
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fold {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.fold-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 48px;
+    padding: 10px 14px;
+    cursor: pointer;
+    list-style-position: inside;
+}
+
+.fold-title {
+    font-weight: 700;
+}
+
+.fold-summary {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.fold[open] .fold-summary {
+    display: none;
+}
+
+.fold-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 14px 14px;
+}
+
+.slider input[type="range"] {
+    width: 100%;
+    min-height: 32px;
+    accent-color: var(--accent);
+}
+
+.slider-head {
+    display: flex;
+    justify-content: space-between;
+}
+
+.slider-marks {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.choice-chip {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.choice-chip.chosen {
+    border: 2px solid var(--accent);
+    font-weight: 700;
+}
+
+/* On a log form, Save is where the floating + Log button would be. */
+body:has(.log-form) .fab {
+    display: none;
+}
+
+/* Save stays at the bottom of the screen while the form scrolls. */
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.save-bar .primary-button {
+    min-width: 140px;
+}
+
+@media (max-width: 639px) {
+    .save-bar {
+        /* Above the bottom tabs. */
+        bottom: 64px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

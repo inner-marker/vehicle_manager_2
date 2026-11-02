@@ -141,7 +141,7 @@ impl Picker {
     }
 
     /// Sets new coordinates, then asks the server what it knows about them.
-    fn locate(
+    pub(crate) fn locate(
         mut self,
         coordinates: Coordinates,
         fix: Option<Fix>,
