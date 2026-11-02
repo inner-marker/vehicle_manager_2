@@ -403,7 +403,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Linux's WebKitGTK can't show PDFs itself, and one bundled viewer looks and works the same everywhere, with room for thumbnails and search later.
 
 ### 038. Offline geocoder: GeoNames cities1000 and Natural Earth 1:10m, nearest boundary as a fallback
-*Decided: 2026-10-29 · Plan: §3 Reverse geocoding, §10 Phase 2 open questions (geocoder dataset; geocoding on device vs. server)*
+*Decided: 2026-10-29 · Plan: §3 Reverse geocoding, §10 Phase 2 open questions (geocoder dataset; geocoding on device vs. server) · **Cities changed to cities500 by #059***
 
 - **Decision:**
   - **Cities:** GeoNames **cities1000** (every place with at least 1,000 people), nearest place wins.
@@ -667,3 +667,20 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Roles on the Users screen** are a list of the roles the person has, each with its role menu and ✕: on **all vehicles**, **a group**, or **one vehicle**. **+ Add role** opens a dialog: what it's on (all vehicles, a group, or a vehicle) and the role; adding one where they already have a role replaces it. A note says roles add up: on each vehicle, the highest applies.
   - The list of users summarises each person's roles (e.g. "Admin · all vehicles", or "Maintainer · Hangar" when they have one role elsewhere, or "3 roles").
 - **Why:** the human chose as recommended: seeing who can see a group belongs next to the group, and a short list of roles avoids menus that look like they lower a role but can't (the highest role always applies).
+
+### 059. Location: our own geocoder on a GeoPackage built with GDAL; saved places are each person's aliases
+*Decided: 2026-11-02 · Plan: §3 Event location, Saved places, Reverse geocoding · Phase plan: phase-2.md milestone 5 · Refines #038*
+
+- **Decision:**
+  - **The geocoder is our own,** with only what's needed: the containing country and state or province, the nearest boundary when a point is outside every polygon (#038), and the nearest city with its **IANA time zone** (milestone 6 needs one on every event). **Lookups go through a spatial index** (R-tree), never a scan.
+  - **The data file is a GeoPackage** (`.gpkg`, the OGC standard): a SQLite database with three layers (countries, states and provinces, cities), each with its R-tree index, and a metadata table (data version, sources, checksums, licences). The server reads it read-only through `sqlx`; no new dependency.
+  - **It's built in a short-lived Docker stage** from the official GDAL image (pinned version and digest): pinned GeoNames **`cities500`** and Natural Earth 1:10m downloads, refused unless their SHA-256 matches, then `ogr2ogr`. Only the `.gpkg` reaches the runtime image; GDAL never runs on the NAS. A development script does the same with `docker run --rm`. The file is never committed.
+  - **Cities: GeoNames `cities500`** (every place with at least 500 people), changed from #038's `cities1000`: the raw file grows from about 32 MB to 41 MB, for better accuracy in small places.
+  - **If the file is missing or broken,** the server still starts; location falls back to saved places and typed entry, and an Admin message says so.
+  - **Saved places are each person's own and act as aliases:** a name, coordinates, a radius (150 m by default, 25 m–2 km), and the city, state, and country. Choosing one, or being inside its radius, copies all of it into the event, so editing or removing a place never changes past events. Each person manages their own; no role is needed.
+  - **Places** is a screen under Manage for everyone; attribution goes in an **About** section on Diagnostics.
+- **Why:**
+  - The human asked for our own lookup with a good spatial index, and for common file formats where possible. GeoPackage is the standard, opens in QGIS and GDAL, and is SQLite, which the server already reads.
+  - SpatiaLite needs a native extension; FlatGeobuf needs one file per layer and two new crates; GeoJSON has no index; GDAL is the reference tool for writing GeoPackages, and a build stage keeps it off the NAS.
+  - `cities500`: the human's choice; it names more small places correctly, and the size is fine on the NAS (phones are post-MVP, #038's budget).
+  - Saved places as each person's aliases: the human's choice; copying keeps events unchanged when places change.
