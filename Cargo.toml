@@ -9,6 +9,7 @@ resolver = "3"                           # Rust 2024 edition resolver
 members = [
     "crates/domain",   # pure logic; no I/O; compiles to WASM
     "crates/storage",  # SQLite/sqlx, migrations, row <-> domain conversion; native only
+    "crates/geocoder", # offline place lookup from a GeoPackage (#059); native only
     "crates/server",   # sync engine, auth, integrity, admin ops (library); native only
     "crates/app",      # Dioxus UI (web/desktop/mobile) + thin server functions
 ]
@@ -26,6 +27,7 @@ rust-version = "1.95"           # matches rust-toolchain.toml
 # Internal crates (dependency direction: domain <- storage <- server <- app)
 domain = { path = "crates/domain" }
 storage = { path = "crates/storage" }
+geocoder = { path = "crates/geocoder" }
 server = { path = "crates/server" }
 
 # External crates

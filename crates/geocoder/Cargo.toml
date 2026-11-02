@@ -1,0 +1,21 @@
+[package]
+name = "geocoder"
+description = "Offline reverse geocoding: coordinates to city, state or province, country, and time zone, from a GeoPackage (decisions #038, #059). Native only."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+domain.workspace = true
+sqlx.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile.workspace = true
+tokio = { version = "1", features = ["macros", "rt"] }
+
+[lints]
+workspace = true
