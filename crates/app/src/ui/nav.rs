@@ -13,7 +13,7 @@ pub(crate) enum NavSection {
     Vehicles,
     /// Everyday screens: Due & squawks, Messages, Timeline, Reports.
     Main,
-    /// Below the divider: Users and Groups (Admins only), Settings, Diagnostics.
+    /// Below the divider: Users and Groups (Admins only), Places, Settings, Diagnostics.
     Manage,
 }
 
@@ -39,6 +39,12 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
         section,
         bottom_tab,
         admin_only: false,
+    };
+    // Below the divider; `admin` ones only for the household's Admin.
+    let manage = |route, label, icon| item(route, label, icon, NavSection::Manage, false);
+    let admin = |route, label, icon| NavItem {
+        admin_only: true,
+        ..manage(route, label, icon)
     };
     vec![
         item(
@@ -76,39 +82,14 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
             NavSection::Main,
             false,
         ),
-        NavItem {
-            admin_only: true,
-            ..item(
-                Route::Users {},
-                messages::NAV_USERS,
-                Icon::Users,
-                NavSection::Manage,
-                false,
-            )
-        },
-        NavItem {
-            admin_only: true,
-            ..item(
-                Route::Groups {},
-                messages::NAV_GROUPS,
-                Icon::Groups,
-                NavSection::Manage,
-                false,
-            )
-        },
-        item(
-            Route::Settings {},
-            messages::NAV_SETTINGS,
-            Icon::Settings,
-            NavSection::Manage,
-            false,
-        ),
-        item(
+        admin(Route::Users {}, messages::NAV_USERS, Icon::Users),
+        admin(Route::Groups {}, messages::NAV_GROUPS, Icon::Groups),
+        manage(Route::Places {}, messages::NAV_PLACES, Icon::Places),
+        manage(Route::Settings {}, messages::NAV_SETTINGS, Icon::Settings),
+        manage(
             Route::Diagnostics {},
             messages::NAV_DIAGNOSTICS,
             Icon::Diagnostics,
-            NavSection::Manage,
-            false,
         ),
     ]
 }
@@ -120,7 +101,7 @@ mod tests {
     #[test]
     fn every_nav_item_has_a_route_message_and_icon() {
         let items = nav_items();
-        assert_eq!(items.len(), 9);
+        assert_eq!(items.len(), 10);
         // The nav label and the top-bar title come from the same message, except the phone's
         // Vehicles tab, whose screen is titled "All vehicles".
         for item in items

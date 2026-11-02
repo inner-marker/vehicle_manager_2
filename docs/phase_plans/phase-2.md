@@ -338,7 +338,7 @@
   - **Asked for during the run:** the header chips aligned, and the sidebar and top bar pinned (above); ideas 17 (required checkboxes on each meter and field, in place of the grid) and 18 (cumulative and trip custom fields) noted for discussion.
 
 ### Milestone 5 plan: location
-*Approved 2026-11-02 (every choice below) · Branch: `milestone/p2-m5-location` · Milestone PR: not opened yet · Decisions #038, #039, #059*
+*Approved 2026-11-02 (every choice below) · Branch: `milestone/p2-m5-location` · Milestone PR: not opened yet · Decisions #038, #039, #059, #060*
 
 **Goal:** everything an event's location needs is ready before milestone 6 brings the first events. Any coordinates turn into a city, state or province, and country, offline on the server. The phone's browser can supply its location. The household can save named places ("Home garage", "Joe's Auto") that are recognised by distance. A **Places** screen uses all of it now. Milestone 6's event forms reuse the same location picker.
 
@@ -369,6 +369,8 @@
    - Choosing one, or being inside its radius, **copies** its name and location into the event. Editing or removing the place later never changes past events.
    - Each person adds, edits, and removes their own. No role is needed.
    - **Default radius 150 m**, adjustable from 25 m to 2 km.
+   - **Typed places are first-class** (asked for, 2026-11-02): the city and state or province are free text, never checked against GeoNames, so an unincorporated community or a military base that GeoNames doesn't list can be entered as it's known. Only the country must be a real ISO code. The geocoder's suggestion only pre-fills the fields.
+   - **Inside a saved place, its own city, state, and country win** over the geocoder's suggestion: the alias is what the person chose (milestone 6's event forms follow the same rule).
 5. **The Places screen:** under Manage, with **SVG options first**. Since places are each person's own, everyone sees it. A place can be added three ways:
    - **Use my location:** the browser's location, on phones.
    - **Typed coordinates:** for desktops without GPS, and for testing a coastal point.
@@ -384,11 +386,13 @@
 | 5c | ☑️ | `build: geocoder data file` | The GDAL Dockerfile stage (pinned image, URLs, and SHA-256; `ogr2ogr` imports, simplifies boundaries, builds the R-tree indexes, adds the metadata table); `scripts/geodata/fetch.sh` for development; the runtime image ships the file; the file's size and a few real lookups recorded. **Downloads only after you approve the sources and checksums** | none (GDAL only in a build stage) |
 | 5d | ☑️ | `feat(storage): saved places` | Migration `0008_saved_places.sql`; `SavedPlaceWriter`; queries | none |
 | 5e | ☑️ | `feat(server): place lookup and saved places` | Loads the data file at startup (logs its version, size, and load time; the Admin message if it's missing, point 7); `lookup(coordinates)` → suggested place and time zone; saved places: each person's own add, edit, remove, list, and nearest match (point 4). Server functions under `/api/v1/places` | none |
-| 5f | ⬜ | `feat(app): places and the location picker` | **SVG options first.** The Places screen (point 5); a reusable **location picker** (browser location through `document::eval`, typed coordinates, the geocoder's suggestion, the nearest saved place, manual city/state/country) that milestone 6's event forms reuse; About on Diagnostics (point 6) | none |
+| 5f | ☑️ | `feat(app): places and the location picker` | **SVG options first.** The Places screen (point 5); a reusable **location picker** (browser location through `document::eval`, typed coordinates, the geocoder's suggestion, the nearest saved place, manual city/state/country) that milestone 6's event forms reuse; About on Diagnostics (point 6) | none |
 | 5g | ⬜ | `docs: location test plan` | `docs/test-plans/p2m5-location.md` | none |
 | 5h | ⬜ | `docs: record the location test run` | Results of the test run | none |
 
 **Not in this milestone:** events and their location fields (milestone 6); the map picker and event map (#039, post-MVP); finer US detail from Census TIGER (plan §3, later); geocoding on phones (post-MVP, #038's 15–20 MB budget); place names in other languages (the translation layer has only English so far).
+
+**Places layout (5f, chosen 2026-11-02, #060):** Places A and dialog A of `docs/ui-sketches/p2m5-places-options.svg`: one list with **+ Add place**, Edit, and Remove; the place dialog (the location picker) puts **where** first, then the place (the suggestion fills editable fields), then the name and radius.
 
 **You can check on the NAS:** from a phone's browser, **Use my location** suggests the right city and state; typed coordinates for a coastal point (a beach or pier) still get a state and country; a saved place is recognised when you're inside its radius; saved places work from the desktop app; About shows the data version and the GeoNames credit.
 
@@ -430,3 +434,10 @@
   - `geocoder` gains a `test-support` feature: its small test map (`geocoder::test_map`) is shared with the server's tests.
   - 8 new tests: 5 server tests (each person's own places; checked, changed, and removed; refused while unhealthy; locating finds your saved place and the suggestion, and still matches without place data; countries and data info), the data file found in the right order, the environment variable's name, and the inbox's warning.
   - **Checked with the real server binary:** it found `.geodata/out` by itself; Asheville → Asheville, North Carolina, `America/New_York`; off the Wrightsville Beach pier → Wrightsville Beach (nearest country); a point 45 m from a saved place matched it; 239 countries. With `VEHICLEMANAGER_GEODATA_FILE` pointing nowhere: the server ran, lookups had no suggestion, saved places worked, and the Admin got the warning with the exact error.
+- **5f** (#060; Places A and dialog A of `docs/ui-sketches/p2m5-places-options.svg`):
+  - **`ui::location`, the location picker** (reused by milestone 6's events): `Picker` (its state as signals), `use_picker`, `WherePart` (**Use my location** through `document::eval` and the browser's geolocation, with its accuracy and age, and a stale warning past 20 minutes; or coordinates typed or pasted, "35.5951, -82.5515"), and `PlacePart` (the notes, then city, state or province, and country, all editable). **Inside a saved place, its own place fills the fields;** otherwise the suggestion does, unless the person has typed (then **Use the suggestion**). Notes: the suggestion with its time zone and data version; outside the map's coastline; "You're at …"; place lookup unavailable (then a two-letter country code instead of the list).
+  - **The Places screen** (`/places`, under Manage, for everyone; Lucide's "map-pin" shape, typed by hand): one list (name, place, radius; Edit, Remove; on phones, tap to edit), the place dialog (where, place, name and radius 25 m–2 km), and Remove with a note that past events keep their copy.
+  - **About on Diagnostics:** the app version, the place data version (or "Not available"), and the credits.
+  - 47 messages. 3 new app tests (the browser's answer as a fix or a reason; a fix's accuracy and age; distances in m and km); the nav test now counts Places.
+  - **Checked in a real browser** (dx web build, headless Chrome, its location set through the DevTools protocol), in Driver mode: Save with no location says to set it first (and clears once there is one); **Use my location** gave "± 12 m · just now", the Asheville suggestion with its time zone, and filled the fields; typed coordinates off the Wrightsville Beach pier gave the outside-the-coastline note; a typed city, "Camp Lejeune", was kept as typed; a point inside Home garage said so and used its place; editing Home with new coordinates kept Asheville until **Use the suggestion** gave Boone; Remove; location permission refused; the phone list; About. With the place data missing: the lookup-unavailable note, the country-code box, and the place saved (`us` → `US`).
+  - **Changed during the check:** the "offshore" note became "Outside the map's coastline (at sea, or on a wide river or bay)": Natural Earth's 1:10m coastline treats wide estuaries as sea (a point on the New River near Camp Lejeune was "outside"), so "offshore" read wrong.

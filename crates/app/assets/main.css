@@ -1602,6 +1602,122 @@ textarea.field-input {
     margin-left: auto;
 }
 
+/* ---------- Places and the location picker (p2m5-places-options.svg, decision #060) ---------- */
+
+.places {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 760px;
+}
+
+.places-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.place-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.place-row-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.place-radius {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.place-row-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.picker-buttons,
+.picker-typed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.picker-typed .field-input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.picker-locate {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.picker-fix {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.picker-note {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.picker-note.good {
+    border-color: #3fb950;
+}
+
+.picker-note.warn {
+    border-color: var(--warn);
+}
+
+.about {
+    margin: 8px 0 16px;
+}
+
+.about-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 18px;
+    margin: 8px 0 0;
+}
+
+.about-list dt {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.about-list dd {
+    margin: 0;
+}
+
 /* ---------- Messages (p2m3-messages-chosen.svg, decision #053) ---------- */
 
 /* Severity: a color stripe plus the word, never color alone. */
@@ -2008,6 +2124,11 @@ textarea.field-input {
 
     .chip-name-short {
         display: inline;
+    }
+
+    /* Places on phones: tap a place to edit it. */
+    .place-row-buttons {
+        display: none;
     }
 
     /* One line on phones, so the pinned banner stays small. */

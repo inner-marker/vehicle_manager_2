@@ -1039,4 +1039,98 @@ define_messages! {
     LOCATION_COUNTRY_INVALID => "location-country-invalid",
     /// Location: not an IANA time zone name.
     LOCATION_TIME_ZONE_INVALID => "location-time-zone-invalid",
+    /// Navigation: each person's saved places (#060).
+    NAV_PLACES => "nav-places",
+    /// Places: add a saved place.
+    PLACES_ADD => "places-add",
+    /// Places: what saved places are.
+    PLACES_INTRO => "places-intro",
+    /// Places: none yet.
+    PLACES_EMPTY => "places-empty",
+    /// Places: removing is safe for past events.
+    PLACES_REMOVE_NOTE => "places-remove-note",
+    /// A distance in meters; takes `meters` (number).
+    PLACES_METERS => "places-meters",
+    /// A distance in kilometers; takes `km` (number).
+    PLACES_KILOMETERS => "places-kilometers",
+    /// Dialog title: add a saved place.
+    PLACE_ADD_TITLE => "place-add-title",
+    /// Dialog title: edit a saved place.
+    PLACE_EDIT_TITLE => "place-edit-title",
+    /// Place dialog: the location part.
+    PLACE_STEP_WHERE => "place-step-where",
+    /// Place dialog: the city, state, and country part.
+    PLACE_STEP_PLACE => "place-step-place",
+    /// Place dialog: the name and radius part.
+    PLACE_STEP_NAME => "place-step-name",
+    /// Button: ask the device where it is.
+    PLACE_USE_LOCATION => "place-use-location",
+    /// Waiting for the device's location.
+    PLACE_LOCATING => "place-locating",
+    /// Button: type latitude and longitude instead.
+    PLACE_TYPE_COORDINATES => "place-type-coordinates",
+    /// Form field: typed or pasted coordinates.
+    PLACE_COORDINATES => "place-coordinates",
+    /// Form note: how to type coordinates.
+    PLACE_COORDINATES_HINT => "place-coordinates-hint",
+    /// Button: use the typed coordinates.
+    PLACE_COORDINATES_APPLY => "place-coordinates-apply",
+    /// A device location's accuracy, just taken; takes `meters` (number).
+    PLACE_FIX_NOW => "place-fix-now",
+    /// A device location's accuracy and age; takes `meters` and `minutes` (numbers).
+    PLACE_FIX_MINUTES => "place-fix-minutes",
+    /// The coordinates were typed, not from the device.
+    PLACE_FIX_TYPED => "place-fix-typed",
+    /// Warning: the device location is stale.
+    PLACE_FIX_STALE => "place-fix-stale",
+    /// Place dialog: nothing chosen yet.
+    PLACE_NO_LOCATION => "place-no-location",
+    /// The device location was refused.
+    PLACE_LOCATION_DENIED => "place-location-denied",
+    /// The device location couldn't be found.
+    PLACE_LOCATION_UNAVAILABLE => "place-location-unavailable",
+    /// The geocoder's suggestion; takes `place` (text).
+    PLACE_SUGGESTED => "place-suggested",
+    /// The suggestion's time zone and data version; takes `zone` and `version` (text).
+    PLACE_SUGGESTED_DETAIL => "place-suggested-detail",
+    /// The point is outside every country; takes `place` (text).
+    PLACE_OFFSHORE => "place-offshore",
+    /// Inside a saved place; takes `name` (text) and `meters` (number).
+    PLACE_AT_SAVED => "place-at-saved",
+    /// No suggestion: the server's place data is unavailable.
+    PLACE_LOOKUP_UNAVAILABLE => "place-lookup-unavailable",
+    /// Button: fill the place fields from the suggestion.
+    PLACE_USE_SUGGESTION => "place-use-suggestion",
+    /// Form field: the city.
+    PLACE_CITY => "place-city",
+    /// Form field: the state or province.
+    PLACE_REGION => "place-region",
+    /// Form field: the country.
+    PLACE_COUNTRY => "place-country",
+    /// Form field: a two-letter country code, when there's no country list.
+    PLACE_COUNTRY_CODE => "place-country-code",
+    /// Form note: the place can be typed.
+    PLACE_TYPED_NOTE => "place-typed-note",
+    /// Form field: the saved place's name.
+    PLACE_NAME => "place-name",
+    /// Form field: how close counts as being there.
+    PLACE_RADIUS => "place-radius",
+    /// Form error: no coordinates yet.
+    PLACE_NEEDS_LOCATION => "place-needs-location",
+    /// Confirm dialog title; takes `name` (text).
+    PLACE_REMOVE_TITLE => "place-remove-title",
+    /// Confirm dialog text: removing a place.
+    PLACE_REMOVE_TEXT => "place-remove-text",
+    /// Diagnostics section: the app and its data.
+    ABOUT_HEADING => "about-heading",
+    /// About: the app's version.
+    ABOUT_APP => "about-app",
+    /// About: the place data's version.
+    ABOUT_PLACE_DATA => "about-place-data",
+    /// About: the server couldn't open its place data.
+    ABOUT_PLACE_DATA_UNAVAILABLE => "about-place-data-unavailable",
+    /// About: data credits.
+    ABOUT_CREDITS => "about-credits",
+    /// About: the data credits when the server doesn't give them.
+    ABOUT_CREDITS_DEFAULT => "about-credits-default",
 }

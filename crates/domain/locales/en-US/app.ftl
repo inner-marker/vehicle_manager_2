@@ -653,3 +653,62 @@ location-region-empty = Enter the state or province.
 location-place-too-long = That's too long: at most 100 characters.
 location-country-invalid = Choose a country.
 location-time-zone-invalid = That time zone isn't recognised.
+
+## Places, the location picker, and About (decisions #059, #060)
+
+nav-places = Places
+places-add = + Add place
+places-intro = Your places: only you see them. When you're inside one, a new event uses it.
+places-empty = No places yet. Add the ones you go to often, like home or your usual fuel stop.
+places-remove-note = Removing a place never changes past events: each event keeps its own copy.
+# $meters: `meters` (number).
+places-meters = { $meters } m
+# $km: `km` (number).
+places-kilometers = { $km } km
+place-add-title = Add a place
+place-edit-title = Edit place
+place-step-where = 1 · Where
+place-step-place = 2 · Place
+place-step-name = 3 · Name
+place-use-location = Use my location
+place-locating = Finding your location…
+place-type-coordinates = Type coordinates
+place-coordinates = Latitude, longitude
+place-coordinates-hint = For example 35.5951, -82.5515 (as map apps copy them).
+place-coordinates-apply = Use these
+# $meters: `meters` (number).
+place-fix-now = ± { $meters } m · just now
+# $meters, $minutes: `meters` and `minutes` (numbers).
+place-fix-minutes = ± { $meters } m · { $minutes } min ago
+place-fix-typed = Typed coordinates
+place-fix-stale = This location is over 20 minutes old.
+place-no-location = No location yet: use yours, or type coordinates.
+place-location-denied = Location permission was refused. Allow it in the browser's settings, or type coordinates.
+place-location-unavailable = The location isn't available here. Type coordinates instead.
+# $place: `place` (text).
+place-suggested = Suggested: { $place }
+# $zone, $version: `zone` and `version` (text).
+place-suggested-detail = Time zone { $zone } · from place data { $version }
+# $place: `place` (text).
+place-offshore = Outside the map's coastline (at sea, or on a wide river or bay): the nearest place is { $place }. Check it.
+# $name, $meters: `name` (text) and `meters` (number).
+place-at-saved = You're at { $name } ({ $meters } m away). Its city, state, and country are used.
+place-lookup-unavailable = Place lookup isn't available: type the city, state, and country.
+place-use-suggestion = Use the suggestion
+place-city = City or town
+place-region = State or province
+place-country = Country
+place-country-code = Country code (e.g. US)
+place-typed-note = Type any city or state, e.g. a base that isn't in the list.
+place-name = Name
+place-radius = Radius
+place-needs-location = Set where it is first: use your location, or type coordinates.
+# $name: `name` (text).
+place-remove-title = Remove { $name }?
+place-remove-text = Past events keep their own copy of it.
+about-heading = About
+about-app = App
+about-place-data = Place data
+about-place-data-unavailable = Not available
+about-credits = Credits
+about-credits-default = Contains GeoNames data (CC BY 4.0, geonames.org). Boundaries: Natural Earth (public domain, naturalearthdata.com).

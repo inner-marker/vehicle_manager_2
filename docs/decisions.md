@@ -684,3 +684,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - SpatiaLite needs a native extension; FlatGeobuf needs one file per layer and two new crates; GeoJSON has no index; GDAL is the reference tool for writing GeoPackages, and a build stage keeps it off the NAS.
   - `cities500`: the human's choice; it names more small places correctly, and the size is fine on the NAS (phones are post-MVP, #038's budget).
   - Saved places as each person's aliases: the human's choice; copying keeps events unchanged when places change.
+
+### 060. Places: one list with a place dialog that puts "where" first
+*Decided: 2026-11-02 · Plan: §3 Event location, Saved places · Phase plan: phase-2.md step 5f · Sketch: `docs/ui-sketches/p2m5-places-options.svg` (Places A, dialog A) · Refines #059*
+
+- **Decision:**
+  - **Places** (under Manage, for everyone): one list of the person's saved places, each with its name, city, state, and country, its radius, **Edit**, and **Remove**; **+ Add place**. Phones show the same list; tapping a place edits it.
+  - **The place dialog is the location picker** milestone 6's events reuse, in three parts: **1 · Where** (**Use my location**, or **Type coordinates**, with the accuracy and age of the fix), **2 · Place** (the suggestion fills city, state or province, and country, all editable; any city or state can be typed), **3 · Name and radius**.
+  - **What it can say:** offshore ("nearest is …, check it"); inside a saved place ("You're at Home garage; its city, state, and country are used"); place lookup unavailable ("type the city, state, and country").
+  - **About** on Diagnostics: the app version, the place data version (or "not available"), and the GeoNames and Natural Earth credits.
+  - **Not built from the sketch:** its "typed" mark on places whose city isn't from the place data. A saved place doesn't record where its city came from, and the city as typed already shows.
+- **Why:** the human chose as recommended: places are short lists, one dialog serves adding, editing, and later events, and putting "where" first follows the plan's fallback order and shows where each value came from.
