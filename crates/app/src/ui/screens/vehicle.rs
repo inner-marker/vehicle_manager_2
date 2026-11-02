@@ -171,7 +171,7 @@ pub(super) const fn precision_label(precision: u8) -> MessageId {
 }
 
 /// "Required for: Fuel-up, Maintenance", or that nothing requires it.
-fn required_text(meter: &Meter) -> String {
+pub(super) fn required_text(meter: &Meter) -> String {
     if meter.required_for.is_empty() {
         return tr(messages::METER_REQUIRED_NONE);
     }

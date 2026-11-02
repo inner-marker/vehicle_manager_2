@@ -655,6 +655,7 @@ async fn add_field_to(
         label,
         kind: form.kind.clone(),
         enabled: form.enabled,
+        required: form.required,
         range: form.range,
     };
     let id: CustomFieldId = context.new_id()?;
@@ -671,7 +672,7 @@ async fn add_field_to(
     Ok(AssetsOutcome::Done)
 }
 
-/// Changes a custom field's label, on/off, or range (not its kind or event kind).
+/// Changes a custom field's label, on/off, required, or range (not its kind or event kind).
 pub async fn edit_field(
     context: &AssetsContext<'_>,
     id: CustomFieldId,
@@ -696,6 +697,7 @@ async fn edit_field_settings(
     let patch = CustomFieldPatch {
         label: (label != current.label).then_some(label),
         enabled: (checked.enabled != current.enabled).then_some(checked.enabled),
+        required: (checked.required != current.required).then_some(checked.required),
         range: (checked.range != current.range).then(|| Clearable::from_option(checked.range)),
         ..CustomFieldPatch::default()
     };

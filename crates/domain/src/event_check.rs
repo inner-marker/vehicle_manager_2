@@ -45,8 +45,6 @@ pub struct CheckContext<'a> {
     pub meters: &'a [(MeterId, Meter)],
     /// The vehicle's custom fields.
     pub fields: &'a [(CustomFieldId, CustomField)],
-    /// The fields required on this kind of event.
-    pub required_fields: &'a [CustomFieldId],
     /// Every other event's readings that count (not this event, nor an original that has been
     /// corrected): meter, when, value.
     pub history: &'a [(MeterId, UnixMillis, i64)],
@@ -208,10 +206,12 @@ fn check_required(event: &Event, context: &CheckContext<'_>) -> Result<(), Event
             return Err(EventProblem::Required(Requirement::Meter(*id)));
         }
     }
-    for field in context.required_fields {
-        let given = event.fields.iter().any(|value| value.field == *field);
-        if !given && !skipped(Requirement::Field(*field)) {
-            return Err(EventProblem::Required(Requirement::Field(*field)));
+    for (id, field) in context.fields {
+        if field.required_on(event.kind)
+            && !event.fields.iter().any(|value| value.field == *id)
+            && !skipped(Requirement::Field(*id))
+        {
+            return Err(EventProblem::Required(Requirement::Field(*id)));
         }
     }
     Ok(())

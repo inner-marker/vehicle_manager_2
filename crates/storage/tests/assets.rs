@@ -235,6 +235,7 @@ mod assets {
             label: Label::parse("Gallons pumped").unwrap(),
             kind: FieldKind::Number { decimals: 3 },
             enabled: true,
+            required: true,
             range: Some(FieldRange::new(Some(0), Some(40_000)).unwrap()),
         };
         let mut connection = database.pool().acquire().await.unwrap();
@@ -254,6 +255,7 @@ mod assets {
 
         let patch = CustomFieldPatch {
             enabled: Some(false),
+            required: Some(false),
             range: Some(Clearable::Clear),
             ..CustomFieldPatch::default()
         };
@@ -267,6 +269,7 @@ mod assets {
             .unwrap()
             .remove(0);
         assert!(!updated.enabled);
+        assert!(!updated.required);
         assert_eq!(updated.range, None);
         assert_eq!(updated.kind, FieldKind::Number { decimals: 3 }, "unchanged");
 

@@ -476,6 +476,7 @@ mod assets {
             label: "Trip time".into(),
             kind: FieldKind::Duration,
             enabled: true,
+            required: false,
             range: None,
         };
         assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
@@ -494,6 +495,7 @@ mod assets {
             .clone();
         let renamed = FieldForm {
             label: "Moving time".into(),
+            required: true,
             ..form.clone()
         };
         assert_eq!(
@@ -505,6 +507,7 @@ mod assets {
             (field.label.as_str(), field.key.as_str()),
             ("Moving time", "trip-time-2")
         );
+        assert!(field.required, "made required in Edit");
         assert_eq!(delete_field(&ctx, new_id).await, AssetsOutcome::Done);
         assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
         let page = the_asset(view(&ctx, id).await);

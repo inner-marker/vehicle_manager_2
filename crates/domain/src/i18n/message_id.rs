@@ -807,10 +807,6 @@ define_messages! {
     SETUP_ADD_FIELD => "setup-add-field",
     /// Setup: a vehicle with no custom fields.
     SETUP_FIELDS_NONE => "setup-fields-none",
-    /// Setup section: which meters each event kind needs.
-    SETUP_REQUIRED => "setup-required",
-    /// Setup: what the required readings grid means.
-    SETUP_REQUIRED_NOTE => "setup-required-note",
     /// Setup section: group, status, and deleting.
     SETUP_GROUP_STATUS => "setup-group-status",
     /// Setup: open the move dialog.
@@ -1279,4 +1275,14 @@ define_messages! {
     EVENT_FLAG_READING_OVERRIDE => "event-flag-reading-override",
     /// Event flag: it corrects another event.
     EVENT_FLAG_CORRECTION => "event-flag-correction",
+    /// Setup: the meter dialog's "Required for" heading.
+    METER_REQUIRED_LABEL => "meter-required-label",
+    /// Setup: what checking a kind means.
+    METER_REQUIRED_NOTE => "meter-required-note",
+    /// Setup: the field dialog's Required switch.
+    FIELD_REQUIRED => "field-required",
+    /// Setup: what Required means for a field.
+    FIELD_REQUIRED_NOTE => "field-required-note",
+    /// Setup: a required field's badge.
+    FIELD_REQUIRED_BADGE => "field-required-badge",
 }

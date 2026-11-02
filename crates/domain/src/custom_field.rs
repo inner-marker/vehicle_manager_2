@@ -227,8 +227,19 @@ pub struct CustomField {
     pub kind: FieldKind,
     /// Shown on forms (a profile's field can be turned off).
     pub enabled: bool,
+    /// Required on its kind of event: given, or skipped with a reason (choice 5). A field
+    /// that's turned off is never required.
+    pub required: bool,
     /// The sensible range, for numeric kinds.
     pub range: Option<FieldRange>,
+}
+
+impl CustomField {
+    /// Whether an event of `kind` must give this field (or skip it with a reason).
+    #[must_use]
+    pub fn required_on(&self, kind: EventKind) -> bool {
+        self.enabled && self.required && self.applies_to == kind
+    }
 }
 
 /// Why a custom field's settings were refused.
@@ -304,6 +315,9 @@ pub struct CustomFieldPatch {
     /// See [`CustomField::enabled`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    /// See [`CustomField::required`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
     /// See [`CustomField::range`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range: Option<Clearable<FieldRange>>,
@@ -320,19 +334,21 @@ impl CustomFieldPatch {
             label: Some(field.label),
             kind: Some(field.kind),
             enabled: Some(field.enabled),
+            required: Some(field.required),
             range: Some(Clearable::from_option(field.range)),
         }
     }
 }
 
 /// Every field name, in a fixed order.
-const CUSTOM_FIELD_FIELDS: [&str; 7] = [
+const CUSTOM_FIELD_FIELDS: [&str; 8] = [
     "asset",
     "applies_to",
     "key",
     "label",
     "kind",
     "enabled",
+    "required",
     "range",
 ];
 
@@ -345,6 +361,7 @@ impl Patch for CustomFieldPatch {
             self.label.is_some(),
             self.kind.is_some(),
             self.enabled.is_some(),
+            self.required.is_some(),
             self.range.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
@@ -374,6 +391,9 @@ impl Patch for CustomFieldPatch {
         }
         if !keep("enabled") {
             self.enabled = None;
+        }
+        if !keep("required") {
+            self.required = None;
         }
         if !keep("range") {
             self.range = None;
@@ -471,6 +491,7 @@ mod tests {
                 options: vec![Label::parse("Michelin").unwrap()],
             },
             enabled: true,
+            required: true,
             range: None,
         });
         assert_eq!(patch.changed_fields(), CUSTOM_FIELD_FIELDS.to_vec());

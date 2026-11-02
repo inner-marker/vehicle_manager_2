@@ -443,8 +443,8 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
         );
         sqlx::query(
             "INSERT INTO custom_fields (id, asset_id, applies_to, key, label, kind, enabled,
-                                        has_range, range_min, range_max, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                        required, has_range, range_min, range_max, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -459,6 +459,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
             "kind",
         )?)
         .bind(values.enabled.unwrap_or(true))
+        .bind(values.required.unwrap_or(false))
         .bind(has_range)
         .bind(min)
         .bind(max)
@@ -492,6 +493,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
                  label = coalesce(?, label),
                  kind = coalesce(?, kind),
                  enabled = coalesce(?, enabled),
+                 required = coalesce(?, required),
                  has_range = CASE WHEN ? THEN ? ELSE has_range END,
                  range_min = CASE WHEN ? THEN ? ELSE range_min END,
                  range_max = CASE WHEN ? THEN ? ELSE range_max END,
@@ -503,6 +505,7 @@ impl RecordWriter<CustomField> for CustomFieldWriter {
         .bind(patch.label.as_ref().map(|label| label.as_str().to_owned()))
         .bind(kind)
         .bind(patch.enabled)
+        .bind(patch.required)
         .bind(range_change.is_some())
         .bind(range_change.map(|(has, _, _)| has))
         .bind(range_change.is_some())
@@ -559,6 +562,7 @@ fn custom_field_from_row(row: &SqliteRow) -> Result<(CustomFieldId, CustomField)
             })?,
             kind: json_from_sql::<FieldKind>(&kind, "custom_fields.kind")?,
             enabled: row.try_get("enabled")?,
+            required: row.try_get("required")?,
             range: range.transpose()?,
         },
     ))
@@ -784,8 +788,8 @@ impl Database {
         id: CustomFieldId,
     ) -> Result<Option<CustomField>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, applies_to, key, label, kind, enabled, has_range, range_min,
-                    range_max
+            "SELECT id, asset_id, applies_to, key, label, kind, enabled, required, has_range,
+                    range_min, range_max
              FROM custom_fields WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))
@@ -806,8 +810,8 @@ impl Database {
         asset: AssetId,
     ) -> Result<Vec<(CustomFieldId, CustomField)>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, applies_to, key, label, kind, enabled, has_range, range_min,
-                    range_max
+            "SELECT id, asset_id, applies_to, key, label, kind, enabled, required, has_range,
+                    range_min, range_max
              FROM custom_fields WHERE asset_id = ? AND deleted = 0 ORDER BY label",
         )
         .bind(id_to_sql(asset))

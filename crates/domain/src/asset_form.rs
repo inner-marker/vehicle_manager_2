@@ -253,6 +253,8 @@ pub struct FieldForm {
     pub kind: FieldKind,
     /// Shown on forms.
     pub enabled: bool,
+    /// Required on its kind of event.
+    pub required: bool,
     /// Its sensible range, for numbers.
     pub range: Option<FieldRange>,
 }

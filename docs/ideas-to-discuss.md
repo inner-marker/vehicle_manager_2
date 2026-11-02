@@ -146,12 +146,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - **To discuss:** which fields and sets; whether catalogue fields can be edited or only turned off; vehicles with Trip A and Trip B (a set added twice with a suffix?); how it relates to the vehicle-reported fuel economy column (#030).
 
 
-### 17. Required readings as checkboxes on each meter and field 🟡
-*Raised by the human, 2026-11-02, after building the vehicle page (#057) · Suggested phase: undecided (before milestone 6's event forms use it, or with them)*
-
-- **Idea:** no separate **Required readings** section on Setup. Instead, each meter and each **custom field** has its own "Required for" checkboxes (Fuel-up, Reading, Maintenance, Repair), on its row or in its Edit dialog.
-- **What changes:** today only meters have `required_for` (#030); custom fields have just on/off. Fields would gain `required_for` too: a domain, storage, and server change, cheap now while no field has values.
-- **To discuss:** checkboxes on the row (always visible) or only in Edit; how "required" and "off" combine for a field (off wins?); whether a required field can be skipped with a reason, as a required reading can't today.
+### 17. Required readings as checkboxes on each meter and field ✅
+*Decided 2026-11-02: `docs/phase_plans/phase-2.md` milestone 6, choice 5 (checkboxes in each meter's and field's Edit dialog; off wins; a required field can be skipped with a reason, like a reading). Built in step 6d.*
 
 ### 18. Cumulative and trip custom fields 🟡
 *Raised by the human, 2026-11-02 · Suggested phase: milestone 6 (when fields get values), with Phase 5's calculations (#057)*

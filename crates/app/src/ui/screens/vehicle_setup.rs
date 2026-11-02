@@ -24,7 +24,7 @@ use domain::quantity::{
 
 use super::users::role_label;
 use super::vehicle::{
-    VehiclePage, identifier_name, meter_summary, precision_label, use_vehicle_page,
+    VehiclePage, identifier_name, meter_summary, precision_label, required_text, use_vehicle_page,
 };
 use super::vehicles::status_label;
 use crate::api;
@@ -184,7 +184,6 @@ pub(super) fn Setup(view: AssetView) -> Element {
             DetailsSection { view: view.clone() }
             MetersSection { view: view.clone() }
             FieldsSection { view: view.clone() }
-            RequiredReadings { view: view.clone() }
             GroupAndStatus { view }
         }
     }
@@ -429,6 +428,7 @@ enum Editing<I, T> {
 fn MetersSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<MeterId, Meter>>);
     let can = view.can_configure;
+    let kinds = event_kinds(&view.asset);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::PANEL_METERS,
@@ -444,6 +444,7 @@ fn MetersSection(view: AssetView) -> Element {
                     div { class: "setup-row-text",
                         span { class: "setup-row-name", {meter.name.as_str().to_owned()} }
                         span { class: "setup-row-detail", {meter_summary(&meter)} }
+                        span { class: "setup-row-detail", {required_text(&meter)} }
                     }
                     if can {
                         RowButtons {
@@ -463,10 +464,10 @@ fn MetersSection(view: AssetView) -> Element {
         match editing() {
             None => rsx! {},
             Some(Editing::Adding) => rsx! {
-                MeterDialog { asset: view.id, current: None, on_close: move |()| editing.set(None) }
+                MeterDialog { asset: view.id, kinds, current: None, on_close: move |()| editing.set(None) }
             },
             Some(Editing::Changing(id, meter)) => rsx! {
-                MeterDialog { asset: view.id, current: Some((id, meter)), on_close: move |()| editing.set(None) }
+                MeterDialog { asset: view.id, kinds, current: Some((id, meter)), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Meter(id), name, on_close: move |()| editing.set(None) }
@@ -498,7 +499,8 @@ fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
         .collect()
 }
 
-/// Add a meter, or change one (its name, unit, decimals, and description).
+/// Add a meter, or change one (its name, unit, decimals, description, and which kinds of
+/// event require it).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -506,6 +508,8 @@ fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
 #[component]
 fn MeterDialog(
     asset: AssetId,
+    /// The vehicle's kinds of events, for "Required for".
+    kinds: Vec<EventKind>,
     current: Option<(MeterId, Meter)>,
     on_close: EventHandler<()>,
 ) -> Element {
@@ -537,10 +541,12 @@ fn MeterDialog(
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
     let editing_id = current.as_ref().map(|(id, _)| *id);
-    let required_for = existing
-        .as_ref()
-        .map(|meter| meter.required_for.clone())
-        .unwrap_or_default();
+    let mut required_for = use_signal(|| {
+        existing
+            .as_ref()
+            .map(|meter| meter.required_for.clone())
+            .unwrap_or_default()
+    });
     let submit = move |event: FormEvent| {
         event.prevent_default();
         let form = MeterForm {
@@ -549,7 +555,7 @@ fn MeterDialog(
             unit: unit(),
             precision: precision(),
             description: description(),
-            required_for: required_for.clone(),
+            required_for: required_for(),
         };
         busy.set(true);
         spawn(async move {
@@ -614,6 +620,27 @@ fn MeterDialog(
                     }
                 }
                 Field { label: messages::FIELD_METER_DESCRIPTION, value: description }
+                fieldset { class: "field required-for",
+                    legend { class: "field-label", {tr(messages::METER_REQUIRED_LABEL)} }
+                    for kind in kinds {
+                        label { key: "{event_value(kind)}", class: "switch",
+                            input {
+                                r#type: "checkbox",
+                                checked: required_for().contains(&kind),
+                                onchange: move |event| {
+                                    let mut kinds = required_for();
+                                    kinds.retain(|have| *have != kind);
+                                    if event.checked() {
+                                        kinds.push(kind);
+                                    }
+                                    required_for.set(kinds);
+                                },
+                            }
+                            span { {tr(kind.label())} }
+                        }
+                    }
+                    p { class: "muted-note", {tr(messages::METER_REQUIRED_NOTE)} }
+                }
                 if !adding {
                     p { class: "muted-note", {tr(messages::METER_DIMENSION_FIXED)} }
                 }
@@ -714,6 +741,8 @@ fn FieldsSection(view: AssetView) -> Element {
                             {field.label.as_str().to_owned()}
                             if !field.enabled {
                                 span { class: "badge", {tr(messages::FIELD_OFF)} }
+                            } else if field.required {
+                                span { class: "badge", {tr(messages::FIELD_REQUIRED_BADGE)} }
                             }
                         }
                         span { class: "setup-row-detail", {field_summary(&field)} }
@@ -878,6 +907,7 @@ struct FieldInputs {
     decimals: Signal<u8>,
     choices: Signal<String>,
     enabled: Signal<bool>,
+    required: Signal<bool>,
     min: Signal<String>,
     max: Signal<String>,
     /// The person's units, for the range.
@@ -897,12 +927,13 @@ impl FieldInputs {
             label: (self.label)(),
             kind,
             enabled: (self.enabled)(),
+            required: (self.required)(),
             range,
         })
     }
 }
 
-/// Add a custom field, or change one (its label, on/off, and a number's range).
+/// Add a custom field, or change one (its label, on/off, required, and a number's range).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -958,6 +989,7 @@ fn FieldDialog(
         decimals: use_signal(|| decimals_now),
         choices: use_signal(String::new),
         enabled: use_signal(|| existing.as_ref().is_none_or(|field| field.enabled)),
+        required: use_signal(|| existing.as_ref().is_some_and(|field| field.required)),
         min: use_signal(|| start_min),
         max: use_signal(|| start_max),
         units: use_signal(|| units),
@@ -1087,6 +1119,7 @@ fn FieldTypeInputs(
 #[component]
 fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
     let mut enabled = inputs.enabled;
+    let mut required = inputs.required;
     // The field's kind (fixed once it exists; chosen while adding), for its range.
     let kind = existing.as_ref().map_or_else(
         || kind_from_form((inputs.kind)(), (inputs.decimals)(), "x").unwrap_or(FieldKind::Text),
@@ -1103,6 +1136,11 @@ fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Elem
             input { r#type: "checkbox", checked: enabled(), onchange: move |event| enabled.set(event.checked()) }
             span { {tr(messages::FIELD_ENABLED)} }
         }
+        label { class: "switch",
+            input { r#type: "checkbox", checked: required(), onchange: move |event| required.set(event.checked()) }
+            span { {tr(messages::FIELD_REQUIRED)} }
+        }
+        p { class: "muted-note", {tr(messages::FIELD_REQUIRED_NOTE)} }
         if numeric {
             div { class: "field-row",
                 Field { label: messages::FIELD_RANGE_MIN, label_text: with_unit(messages::FIELD_RANGE_MIN), value: inputs.min }
@@ -1119,104 +1157,6 @@ fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Elem
                 },
                 None => rsx! { span { class: "muted-note", {tr(messages::FIELD_KEY_LATER)} } },
             }
-        }
-    }
-}
-
-// --- Required readings -------------------------------------------------------------------
-
-/// Which meters each kind of event must record: a grid of meters by event kinds.
-#[component]
-fn RequiredReadings(view: AssetView) -> Element {
-    let page = use_vehicle_page();
-    let mut error = use_signal(|| None::<String>);
-    let kinds = event_kinds(&view.asset);
-    if view.meters.is_empty() {
-        return rsx! {};
-    }
-    let toggle = move |(id, meter, kind): (MeterId, Meter, EventKind)| {
-        let mut required_for = meter.required_for.clone();
-        if required_for.contains(&kind) {
-            required_for.retain(|have| *have != kind);
-        } else {
-            required_for.push(kind);
-        }
-        let form = MeterForm {
-            name: meter.name.as_str().to_owned(),
-            dimension: meter.dimension,
-            unit: meter.unit,
-            precision: meter.precision,
-            description: meter.description.clone().unwrap_or_default(),
-            required_for,
-        };
-        spawn(async move {
-            let result = api::edit_vehicle_meter(id, form).await;
-            error.set(failure(&result));
-            page.reload();
-        });
-    };
-    rsx! {
-        section { class: "setup-section",
-            SectionHeading { title: messages::SETUP_REQUIRED }
-            p { class: "muted-note", {tr(messages::SETUP_REQUIRED_NOTE)} }
-            div { class: "required-grid-scroll",
-                table { class: "required-grid",
-                    thead {
-                        tr {
-                            th {}
-                            for kind in kinds.iter() {
-                                th { key: "{event_value(*kind)}", scope: "col", {tr(kind.label())} }
-                            }
-                        }
-                    }
-                    tbody {
-                        for (meter_id, meter) in view.meters.clone() {
-                            tr { key: "{meter_id}",
-                                th { scope: "row", {meter.name.as_str().to_owned()} }
-                                for kind in kinds.clone() {
-                                    td { key: "{event_value(kind)}",
-                                        RequiredCell {
-                                            required: meter.required_for.contains(&kind),
-                                            can: view.can_configure,
-                                            label: format!("{} · {}", meter.name.as_str(), tr(kind.label())),
-                                            on_toggle: {
-                                                let meter = meter.clone();
-                                                move |()| toggle((meter_id, meter.clone(), kind))
-                                            },
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            FormError { message: error() }
-        }
-    }
-}
-
-/// One cell: a checkbox for someone who may change it, otherwise a ✓ or nothing.
-#[expect(
-    unused_qualifications,
-    reason = "false positive in rsx! event-handler expansion"
-)]
-#[component]
-fn RequiredCell(required: bool, can: bool, label: String, on_toggle: EventHandler<()>) -> Element {
-    if !can {
-        return rsx! {
-            if required {
-                span { "aria-label": label, "✓" }
-            }
-        };
-    }
-    rsx! {
-        input {
-            class: "required-check",
-            r#type: "checkbox",
-            "aria-label": label,
-            checked: required,
-            onchange: move |_| on_toggle.call(()),
         }
     }
 }

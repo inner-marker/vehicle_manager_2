@@ -517,8 +517,6 @@ setup-add-meter = + Add meter
 setup-fields = Custom fields
 setup-add-field = + Add field
 setup-fields-none = No custom fields yet.
-setup-required = Required readings
-setup-required-note = Which meters each kind of event must record.
 setup-group-status = Group and status
 setup-move = Move to another group…
 setup-status = Status
@@ -799,3 +797,11 @@ event-flag-missing-location = No location
 event-flag-skipped = Skipped items
 event-flag-reading-override = Reading kept by the Admin
 event-flag-correction = Correction
+
+## Required for (milestone 6, step 6d)
+
+meter-required-label = Required for
+meter-required-note = Events of a checked kind must record this meter, or skip it with a reason.
+field-required = Required
+field-required-note = Every event of its kind must fill it in, or skip it with a reason. A field that's turned off is never required.
+field-required-badge = Required

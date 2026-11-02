@@ -1494,29 +1494,13 @@ body:has(.dialog-scrim) {
     color: var(--error);
 }
 
-.required-grid-scroll {
-    overflow-x: auto;
-}
-
-.required-grid {
-    border-collapse: collapse;
-}
-
-.required-grid th,
-.required-grid td {
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--border);
-    text-align: center;
-}
-
-.required-grid tbody th {
-    text-align: left;
-}
-
-.required-check {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
+.required-for {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
 .dialog .switch {

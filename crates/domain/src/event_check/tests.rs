@@ -73,6 +73,8 @@ fn fields() -> Vec<(CustomFieldId, CustomField)> {
         label: Label::parse(label).unwrap(),
         kind,
         enabled,
+        // Trip time and the old field are required; the old one is off, so it never is.
+        required: key != "brand",
         range,
     };
     let brands = vec![
@@ -176,7 +178,6 @@ fn checked(event: &Event, admin: bool) -> Result<Vec<Warning>, EventProblem> {
             has_fuel: true,
             meters: &meters,
             fields: &fields,
-            required_fields: &[test_id(TRIP_TIME)],
             history: &history,
             location_rule: LocationRule::Required,
             may_override_readings: admin,
@@ -229,6 +230,31 @@ fn required_readings_and_fields_are_given_or_skipped_with_a_reason() {
             TRIP_TIME
         ))))
     );
+    event.skipped.push(Skipped {
+        item: Requirement::Field(test_id(TRIP_TIME)),
+        reason: reason("Forgot to reset the trip"),
+    });
+    assert_eq!(
+        checked(&event, false),
+        Ok(vec![]),
+        "the old field is required too, but it's off, so it isn't asked for"
+    );
+
+    // A required field on another kind of event isn't asked for on a fuel-up.
+    let (meters, mut fields, history) = (meters(), fields(), history());
+    fields[1].1.applies_to = EventKind::Reading;
+    fields[1].1.required = true;
+    let mut event = fuel_up();
+    event.fields.retain(|value| value.field != test_id(BRAND));
+    let context = CheckContext {
+        has_fuel: true,
+        meters: &meters,
+        fields: &fields,
+        history: &history,
+        location_rule: LocationRule::Required,
+        may_override_readings: false,
+    };
+    assert_eq!(check(&event, &context), Ok(vec![]));
 }
 
 #[test]
@@ -362,7 +388,6 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
         has_fuel: false,
         meters: &meters,
         fields: &fields,
-        required_fields: &[],
         history: &history,
         location_rule: LocationRule::Required,
         may_override_readings: false,
@@ -391,7 +416,6 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
         has_fuel: true,
         meters: &meters,
         fields: &fields,
-        required_fields: &[],
         history: &history,
         location_rule: LocationRule::Required,
         may_override_readings: false,
@@ -552,8 +576,7 @@ proptest! {
             has_fuel: true,
             meters: &meters,
             fields: &fields,
-            required_fields: &[],
-            history: &history,
+                history: &history,
             location_rule: LocationRule::Required,
             may_override_readings: false,
         });

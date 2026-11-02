@@ -111,6 +111,9 @@ pub struct ProfileField {
     pub kind: FieldKind,
     /// Whether it starts turned on.
     pub enabled: bool,
+    /// Whether it starts required (left out: not required).
+    #[serde(default)]
+    pub required: bool,
     /// Its sensible range, if any.
     pub range: Option<FieldRange>,
 }
@@ -204,6 +207,7 @@ impl Profile {
                     label: Label::parse(&translator.tr_key(&field.label)).ok()?,
                     kind: field.kind.clone(),
                     enabled: field.enabled,
+                    required: field.required,
                     range: field.range,
                 })
             })
