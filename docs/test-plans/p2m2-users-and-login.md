@@ -55,7 +55,7 @@
 | [x] | 4 | Enter `AAAA-AAAA-AAAA-AAAA` → **Next** | "That code isn't right." Still step 1. |
 | [x] | 5 | Enter the real code **in lowercase** → **Next** | STEP 2 OF 2: "✓ Code accepted. You'll be the Admin." Fields for username, name, and the password twice. |
 | [x] | 6 | Choose username `stuart`, your name, and a password; first try one of 11 characters, then two that differ, then a real one → **Create Admin and sign in** | First: "A password needs at least 12 characters…". Then: "The two passwords aren't the same." Then you're in the **Garage**, with chips **Driver** and your name. The sidebar shows **Users**. |
-| [x] | 7 | `sudo docker compose restart`, then `sudo docker logs --tail 20 vehiclemanager \| grep -i "setup code"` | Nothing: setup is closed once an Admin exists. Reload the browser: you're still signed in. |
+| [x] | 7 | `sudo docker compose restart`, then `sudo docker logs --tail 20 vehiclemanager 2>&1 \| grep -i "setup code"` | Nothing: setup is closed once an Admin exists. Reload the browser: you're still signed in. |
 | [x] | 8 | Diagnostics → **Run checks** | API version, **Signed in**, and Server health all **Pass**. |
 | [x] | 9 | **Driver ▾** → **Admin** → a wrong password | "That password isn't right." Still Driver. |
 | [x] | 10 | **Driver ▾** → **Admin** → your password | Orange **Admin** chip and the banner "ADMIN MODE · Changes affect the whole household · ends after 15 idle minutes" with **Leave**. |
@@ -77,7 +77,7 @@
 | [x] | 26 | Sign in as stuart | Garage in **Driver** mode. Diagnostics → **Run checks**: all **Pass**. |
 | [x] | 27 | Enter Admin mode in the desktop app → **Settings** → **Household** → **Kilometers** | Kilometers is selected. In the browser (still stuart), Settings → **You**: Kilometers shows as the household's value, with **Use household default** ticked. |
 | [x] | 28 | Restart the desktop app | **Sign in** again (the token was in memory only). `grep -ril "token\|password" ~/Library/Application\ Support/vehiclemanager/settings.json` prints nothing. |
-| [x] | 29 | **Browser, stuart:** account chip → **Sign out** → **Forgot your password?** → username `nobody` → **Continue**. Then `sudo docker logs --since 5m vehiclemanager \| grep -i "recovery code"` | "Ask your Admin for further instructions." with a code form. **No** recovery code in the log. |
+| [x] | 29 | **Browser, stuart:** account chip → **Sign out** → **Forgot your password?** → username `nobody` → **Continue**. Then `sudo docker logs --since 5m vehiclemanager 2>&1 \| grep -i "recovery code"` | "Ask your Admin for further instructions." with a code form. **No** recovery code in the log. |
 | [x] | 30 | ← Back → **Forgot your password?** → `stuart` → **Continue**, then the same `grep` | The **same** answer on screen. One `WARN` line with `recovery_code=XXXX-XXXX-XXXX-XXXX`. |
 | [x] | 31 | Enter `AAAA-AAAA-AAAA-AAAA` and a new password, then the real code (lowercase) and a new password → **Set password and sign in** | First: "That code isn't right, or it has expired." Then you're signed in to the Garage. The desktop app's session is gone (its next click goes to Sign in). |
 | [x] | 32 | Try the same recovery code once more (sign out first) | "That code isn't right, or it has expired." |

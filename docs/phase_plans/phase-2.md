@@ -261,7 +261,7 @@
 **You can check on the NAS:** a tab left in Admin mode drops to Driver after 15 minutes; with **Sign out when idle** at 1 hour, you're signed out; an unmounted snapshot folder gives an Admin message the next morning (like milestone 1, this needs a run past 07:00 UTC); mark read and dismiss work; the badge counts right; a Driver doesn't see Admin messages.
 
 ### Milestone 4 plan: assets, groups, profiles & meters
-*Approved 2026-11-01 (including `ron`, and every choice below) · Branch: `milestone/p2-m4-assets` · Milestone PR: not opened yet · Decisions #030, #040, #045, #051, #052, #055*
+*Approved 2026-11-01 (including `ron`, and every choice below) · Branch: `milestone/p2-m4-assets` · Milestone PR: not opened yet · Decisions #030, #040, #045, #051, #052, #055, #056, #057, #058*
 
 **Goal:** the household's real vehicles are in the app, each in a group, built from a profile, with its identifiers and meters. The Garage shows them by group; each vehicle has a detail page whose Overview tab starts its dashboard. Roles can be given on one group or one vehicle, not just all vehicles.
 
@@ -281,7 +281,7 @@
 | 4f | ☑️ | `feat(app): vehicle detail and setup` | **SVG options first.** Tabs Overview, Timeline, Maintenance, Fuel, Documents, Setup (#040), the empty ones saying which milestone fills them; Overview: details and the dashboard's "coming" sections (#051); Setup: meters, custom fields, required readings per event type, archive, move to another group | none |
 | 4g | ☑️ | `feat: groups and per-vehicle roles` | **SVG options first.** The server's grants on a group or one vehicle (moved here from 4d, with the screen that uses them); A **Groups** screen (Admin mode): add, rename, icon, which vehicles; the Users screen's roles on **all vehicles, one group, or one vehicle** | none |
 | 4h | ☑️ | `docs: assets and groups test plan` | `docs/test-plans/p2m4-assets-and-groups.md` | none |
-| 4i | ⬜ | `docs: record the assets and groups test run` | Results of the test run | none |
+| 4i | ☑️ | `docs: record the assets and groups test run` | Results of the test run | none |
 
 **Vehicles layout (4e, chosen 2026-11-01, #056):** option A of `docs/ui-sketches/p2m4-garage-options.svg` (cards per group; + Add vehicle as a two-step dialog), with a **Sort menu** (Newest activity, Name (A–Z), Custom with Arrange) instead of a toggle, and **each group in the sidebar** (with All vehicles above them when there's more than one; the Garage screen becomes All vehicles; the Vehicles placeholder becomes Groups; on phones, a Vehicles tab with a group menu), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg`. Pinning is idea 15, for later.
 
@@ -327,3 +327,6 @@
   - The Admin and URGENT banners stay pinned with the top bar.
   - On phones the Admin banner is one line ("ADMIN MODE · ends after 15 idle min · Leave").
   - Checked in a browser at wide, medium, and phone widths, with nine groups and a long page.
+- **4i:** the test plan passed on the NAS, the Mac (browser and desktop app), and a phone, 2026-11-02: all 24 steps. The upgrade from schema 5 to 7 backed up first, kept the database ID, and made the Garage group. Notes from the run:
+  - **Password recovery "gave no code":** the Admin account's username was `admin`, not `stuart`. Recovery rightly made no code for a name that isn't an Admin, and said nothing (by design). Two lessons, both fixed in the docs: the recovery greps in `p2m2-users-and-login.md` now include `2>&1`; and a request blocked by the attempt limit is silent too, which made it hard to tell the cases apart. A log line for a blocked request (no code, no username) was offered and not yet chosen.
+  - **Asked for during the run:** the header chips aligned, and the sidebar and top bar pinned (above); ideas 17 (required checkboxes on each meter and field, in place of the grid) and 18 (cumulative and trip custom fields) noted for discussion.
