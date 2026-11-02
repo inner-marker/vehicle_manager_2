@@ -31,6 +31,8 @@
 pub mod geometry;
 mod store;
 
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_map;
 #[cfg(test)]
 mod tests;
 

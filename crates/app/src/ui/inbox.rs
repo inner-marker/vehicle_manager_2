@@ -174,6 +174,7 @@ mod tests {
                 UnixMillis::from_millis(9),
             )),
             jobs: vec![],
+            place_lookup_problem: None,
         });
         let seen = inbox(&messages, &[], ActiveMode::Driver);
         let newest = newest_urgent(&seen).map(|item| item.message.raised_at);

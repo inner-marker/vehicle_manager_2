@@ -58,6 +58,7 @@ async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>,
             .problem
             .map(|(problem, since)| (server_problem(problem), since)),
         jobs,
+        place_lookup_problem: crate::places::lookup_problem(),
     };
     Ok(server_messages(&state))
 }

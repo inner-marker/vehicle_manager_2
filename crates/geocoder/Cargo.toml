@@ -7,6 +7,10 @@ license.workspace = true
 rust-version.workspace = true
 publish = false
 
+[features]
+# The small hand-made GeoPackage (`geocoder::test_map`), for other crates' tests.
+test-support = []
+
 [dependencies]
 domain.workspace = true
 sqlx.workspace = true

@@ -270,15 +270,16 @@ pub fn distance_to_boundary_m(polygons: &[Polygon], point: Point) -> f64 {
 }
 
 /// Writes a geometry as a GeoPackage blob (little-endian, no envelope, SRS 4326). Used to
-/// build test data.
-#[cfg(test)]
-pub(crate) fn to_gpkg(geometry: &Geometry) -> Vec<u8> {
+/// build test data (`crate::test_map`).
+#[cfg(any(test, feature = "test-support"))]
+#[must_use]
+pub fn to_gpkg(geometry: &Geometry) -> Vec<u8> {
     fn point(out: &mut Vec<u8>, p: Point) {
         out.extend(p.x.to_le_bytes());
         out.extend(p.y.to_le_bytes());
     }
     fn len(out: &mut Vec<u8>, n: usize) {
-        out.extend(u32::try_from(n).unwrap().to_le_bytes());
+        out.extend(u32::try_from(n).unwrap_or(u32::MAX).to_le_bytes());
     }
     fn polygon(out: &mut Vec<u8>, polygon: &Polygon) {
         out.push(1);
@@ -312,8 +313,9 @@ pub(crate) fn to_gpkg(geometry: &Geometry) -> Vec<u8> {
 }
 
 /// A closed rectangle as a polygon, for tests.
-#[cfg(test)]
-pub(crate) fn rectangle(x0: f64, y0: f64, x1: f64, y1: f64) -> Polygon {
+#[cfg(any(test, feature = "test-support"))]
+#[must_use]
+pub fn rectangle(x0: f64, y0: f64, x1: f64, y1: f64) -> Polygon {
     Polygon {
         exterior: vec![
             Point { x: x0, y: y0 },

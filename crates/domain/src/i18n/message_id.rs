@@ -535,6 +535,10 @@ define_messages! {
     INBOX_QUICK_CHECK_BODY => "inbox-quick-check-body",
     /// Message title: the server is refusing changes.
     INBOX_SERVER_UNHEALTHY => "inbox-server-unhealthy",
+    /// Inbox title: the server couldn't open its place data (#059).
+    INBOX_PLACE_LOOKUP_UNAVAILABLE => "inbox-place-lookup-unavailable",
+    /// Inbox text: place lookup unavailable, and what still works.
+    INBOX_PLACE_LOOKUP_BODY => "inbox-place-lookup-body",
     /// Message text: the database couldn't be opened.
     INBOX_DATABASE_UNAVAILABLE => "inbox-database-unavailable",
     /// Message text: the integrity check found problems.
