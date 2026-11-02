@@ -1017,4 +1017,22 @@ define_messages! {
     GROUP_ICON_FARM => "group-icon-farm",
     /// Group icon: house.
     GROUP_ICON_HOUSE => "group-icon-house",
+    /// Location: latitude out of range.
+    LOCATION_LATITUDE_RANGE => "location-latitude-range",
+    /// Location: longitude out of range.
+    LOCATION_LONGITUDE_RANGE => "location-longitude-range",
+    /// Location: typed coordinates aren't numbers.
+    LOCATION_NOT_COORDINATES => "location-not-coordinates",
+    /// Location: a saved place's radius out of range.
+    LOCATION_RADIUS_RANGE => "location-radius-range",
+    /// Location: no city.
+    LOCATION_CITY_EMPTY => "location-city-empty",
+    /// Location: no state or province.
+    LOCATION_REGION_EMPTY => "location-region-empty",
+    /// Location: a city or region name too long.
+    LOCATION_PLACE_TOO_LONG => "location-place-too-long",
+    /// Location: not a country code.
+    LOCATION_COUNTRY_INVALID => "location-country-invalid",
+    /// Location: not an IANA time zone name.
+    LOCATION_TIME_ZONE_INVALID => "location-time-zone-invalid",
 }

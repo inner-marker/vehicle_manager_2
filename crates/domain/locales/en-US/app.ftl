@@ -639,3 +639,15 @@ group-icon-warehouse = Warehouse
 group-icon-shop = Shop
 group-icon-farm = Farm
 group-icon-house = House
+
+## Location (decisions #038, #059)
+
+location-latitude-range = Latitude must be between -90 and 90.
+location-longitude-range = Longitude must be between -180 and 180.
+location-not-coordinates = Enter decimal degrees, e.g. 35.5951 and -82.5515.
+location-radius-range = The radius must be between 25 m and 2 km.
+location-city-empty = Enter the city or town.
+location-region-empty = Enter the state or province.
+location-place-too-long = That's too long: at most 100 characters.
+location-country-invalid = Choose a country.
+location-time-zone-invalid = That time zone isn't recognised.
