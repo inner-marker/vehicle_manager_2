@@ -144,6 +144,7 @@ The server keeps everything in `data/vehiclemanager.sqlite` and protects it thre
 - **Each snapshot is checked** after it's written. A snapshot that missed its time (the NAS was off) runs soon after the next start.
 - **Snapshots are in the same storage pool** as the database (decision #035). They protect against corruption, a bad upgrade, and mistakes, not against losing the NAS itself; offsite backups come later.
 - **Checking the last snapshot:** `ls -l data/snapshots/` over SSH shows them, newest last. The container log has a `job finished` line for each (or `job failed` with the reason).
+- **Place data:** the image carries its own (`/app/geodata/geodata-<version>.gpkg`, decision #059), so nothing needs setting. To use another file (e.g. a newer one), copy it into `data/` and set `VEHICLEMANAGER_GEODATA_FILE=/data/<file>.gpkg` in `.env`. If the file can't be opened, the server still runs: place lookup is off, saved places and typed places still work, and the Admin sees **Place lookup isn't available** in Messages.
 - **Another snapshot folder** (e.g. a USB disk, later): mount it in `compose.yaml` and set `VEHICLEMANAGER_SNAPSHOT_DIR` in `.env` to its path inside the container (see the comments in both files). That folder is never created by the server: if the disk isn't mounted, the snapshot is **skipped** and logged, rather than written to the pool.
 
 ### Restoring a snapshot
@@ -199,5 +200,6 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 - **`docker compose up` says "container name "/vehiclemanager" is already in use":** the `compose.yaml` in the Project folder is an old copy without the `name: vehiclemanager` line. Download it again (setup step 3), or add `-p vehiclemanager` to both update commands.
 - **Upgrading from Phase 1:** the `VEHICLEMANAGER_TEST_CREDENTIAL` line in an older `.env` is ignored now; delete it. Signing in replaces it.
 - **Diagnostics shows "Server health: Fail":** the database couldn't be opened or failed a check; nothing is being saved. The container log says which (`can't open the database` or `database integrity problem`). See "Database, backups, and snapshots".
+- **`can't open the place data`:** the file in `VEHICLEMANAGER_GEODATA_FILE` is missing or isn't place data; empty the setting to use the image's own, then `sudo docker compose up -d`.
 - **`job skipped` for the nightly snapshot:** the snapshot folder set in `VEHICLEMANAGER_SNAPSHOT_DIR` isn't there (e.g. the USB disk isn't mounted). The household's Admin also sees it in **Messages** (in Admin mode), as does a failed snapshot or hourly check; the message goes away once the cause is fixed.
 - **Pulls fail with "denied":** the GHCR package is still private (setup step 2).

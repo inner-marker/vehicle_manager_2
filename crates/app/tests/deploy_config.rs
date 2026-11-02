@@ -51,6 +51,22 @@ fn compose_passes_the_optional_snapshot_folder_and_leaves_it_empty_by_default() 
 }
 
 #[test]
+fn compose_passes_the_optional_place_data_file_and_leaves_it_empty_by_default() {
+    // server::places::GEODATA_FILE_ENV_NAME; its own test pins it to this name.
+    let geodata_file = env_var_name("GEODATA_FILE");
+    assert!(
+        COMPOSE.contains(&format!("{geodata_file}: ${{{geodata_file}:-}}")),
+        "compose.yaml must pass {geodata_file}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE
+            .lines()
+            .any(|line| line == format!("{geodata_file}=")),
+        ".env.example must list {geodata_file}, empty"
+    );
+}
+
+#[test]
 fn compose_passes_the_test_timers_setting_empty_by_default() {
     // main.rs's TEST_MINUTES_ENV_NAME (decision #054).
     let test_minutes = env_var_name("TEST_MINUTES");

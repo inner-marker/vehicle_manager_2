@@ -33,6 +33,9 @@ services:
       # Test images only: 1 to 5 shortens the idle and job timers to minutes (decisions.md
       # #054). Empty means normal timers; a release image ignores it.
       VEHICLEMANAGER_TEST_MINUTES: ${VEHICLEMANAGER_TEST_MINUTES:-}
+      # Optional: a place data file other than the one in the image (decisions.md #059), e.g.
+      # a newer one copied to /data. Empty means the image's own.
+      VEHICLEMANAGER_GEODATA_FILE: ${VEHICLEMANAGER_GEODATA_FILE:-}
 
     # The data folder: database, backups, snapshots, and logs. Must be a local NAS
     # volume, never a network share (decisions.md #002).

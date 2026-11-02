@@ -40,6 +40,14 @@ const PLACES: &[(&str, f64, f64, &str, &str)] = &[
     ("Point Roberts, WA", 48.9850, -123.0600, "US", "Washington"),
     ("Fiji, by the antimeridian", -16.7000, 179.9500, "FJ", ""),
     ("London", 51.5074, -0.1278, "GB", ""),
+    ("Paris", 48.8566, 2.3522, "FR", ""),
+    (
+        "near Camp Lejeune, on the New River",
+        34.6600,
+        -77.3500,
+        "US",
+        "North Carolina",
+    ),
     (
         "Kyrenia (Northern Cyprus, no code)",
         35.3400,
