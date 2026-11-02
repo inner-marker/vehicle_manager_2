@@ -525,6 +525,84 @@ impl EventPatch {
             correction_reason: Some(Clearable::from_option(event.correction_reason)),
         }
     }
+
+    /// The event a create sets up, if every field it needs is set (the name of the first
+    /// missing one otherwise).
+    ///
+    /// # Errors
+    ///
+    /// The missing field's name.
+    pub fn into_event(self) -> Result<Event, &'static str> {
+        Ok(Event {
+            asset: self.asset.ok_or("asset")?,
+            kind: self.kind.ok_or("kind")?,
+            dates: self.dates.ok_or("dates")?,
+            location: self.location.ok_or("location")?,
+            readings: self.readings.unwrap_or_default(),
+            skipped: self.skipped.unwrap_or_default(),
+            fields: self.fields.unwrap_or_default(),
+            notes: self.notes.unwrap_or_default(),
+            source: self.source.unwrap_or_default(),
+            logged_by: self.logged_by.ok_or("logged_by")?,
+            performed_by: self.performed_by.and_then(Clearable::into_option),
+            fuel: self.fuel.and_then(Clearable::into_option),
+            reading_override: self.reading_override.and_then(Clearable::into_option),
+            status: self.status.unwrap_or_default(),
+            last_edited_at: self.last_edited_at.ok_or("last_edited_at")?,
+            received_at: self.received_at.ok_or("received_at")?,
+            finalized: self.finalized.and_then(Clearable::into_option),
+            corrects: self.corrects.and_then(Clearable::into_option),
+            correction_reason: self.correction_reason.and_then(Clearable::into_option),
+        })
+    }
+}
+
+/// Sets `target` to `value`, if there is one.
+fn set<T>(target: &mut T, value: Option<T>) {
+    if let Some(value) = value {
+        *target = value;
+    }
+}
+
+/// Sets or clears `target` as `value` says, if there is one.
+fn clear<T>(target: &mut Option<T>, value: Option<Clearable<T>>) {
+    if let Some(value) = value {
+        *target = value.into_option();
+    }
+}
+
+impl Event {
+    /// Applies `patch`. What's fixed once an event exists (its vehicle, kind, source, who
+    /// logged it, when it was received, and what it corrects) is ignored.
+    pub fn apply(&mut self, patch: EventPatch) {
+        let EventPatch {
+            dates,
+            location,
+            readings,
+            skipped,
+            fields,
+            notes,
+            performed_by,
+            fuel,
+            reading_override,
+            status,
+            last_edited_at,
+            finalized,
+            ..
+        } = patch;
+        set(&mut self.dates, dates);
+        set(&mut self.location, location);
+        set(&mut self.readings, readings);
+        set(&mut self.skipped, skipped);
+        set(&mut self.fields, fields);
+        set(&mut self.notes, notes);
+        clear(&mut self.performed_by, performed_by);
+        clear(&mut self.fuel, fuel);
+        clear(&mut self.reading_override, reading_override);
+        set(&mut self.status, status);
+        set(&mut self.last_edited_at, last_edited_at);
+        clear(&mut self.finalized, finalized);
+    }
 }
 
 impl Record for Event {

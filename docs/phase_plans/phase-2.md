@@ -504,7 +504,7 @@
 | 6b | ☑️ | `feat(domain): quantities in the person's units` | Distance, duration, volume, and fuel economy between their stored integers and the person's units (#007): typed values parsed, values shown with display rounding; the unit fields' ranges become editable (4f's limit lifted) | `uom` (approved in principle) |
 | 6c | ☑️ | `feat(domain): events, readings, and fuel-ups` | The event spine (asset, kind, date, location with its rule, notes, **source**, logged by, performed by), drafts and finalizing (24 h after the last edit, or **Finalize now**; who and when; received at), corrections (linked, with a reason), reading sets, **fuel details** (volume, price and currency, full fill, missed fill, highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy), custom field values; the checks: required readings and fields with skipping (a reason, a flag), readings against their neighbours in time with the Admin's override, the location rule with its override, a vehicle can't tow itself. Test-first, with property tests | none |
 | 6d | ☑️ | `feat: required-for on custom fields` | Custom fields gain `required_for` (choice 5): domain, migration, storage, server; Setup's grid gives way to checkboxes in each meter's and field's Edit dialog | none |
-| 6e | ⬜ | `feat(storage): events` | Migration: events, reading sets and readings, fuel details, skipped readings and fields, corrections; writers (refusing changes to finalized events); queries (a vehicle's events by date, a meter's neighbouring readings, the latest readings) | none |
+| 6e | ☑️ | `feat(storage): events` | Migration: events, reading sets and readings, fuel details, skipped readings and fields, corrections; writers (refusing changes to finalized events); queries (a vehicle's events by date, a meter's neighbouring readings, the latest readings) | none |
 | 6f | ⬜ | `feat(server): logging, finalizing, and corrections` | Add and edit drafts, **Finalize now**, correct (choices 2, 3, 10); the automatic finalize as a scheduled job (24 h, or the test minutes; #044, #054); server functions under `/api/v1/events` | none |
 | 6g | ⬜ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
 | 6h | ⬜ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
@@ -557,3 +557,19 @@
     - Meter rows say what requires them ("Required for: Fuel-up"), and a required field's row has a **Required** badge.
   - 5 messages added and 2 removed. The tests are extended: the field round trip in domain, storage, and server; a skipped required field; a required field that's off, or on another kind of event, isn't asked for.
   - **Checked in a real browser:** ticking Reading on the odometer stored `["fuel","reading"]`; turning on Required for Trip time stored `required = 1`, and the row showed the badge. The dialog fits a phone.
+- **6e:** no new dependency.
+  - **Migration `0010_events.sql`:**
+    - `events`: the spine, with the place, coordinates, performer, and finalizing in their own columns, and checks that keep them whole (a place is all three parts or none; finalized exactly when it has a time and a finalizer; a user finalizer has a user);
+    - `event_readings` (by event and meter, indexed by meter), `event_field_values` (each value as JSON), and `fuel_details` (one row per fuel-up).
+    - **Skipped items are a JSON list on the event,** not their own table: they're short, only read with their event, and change as one list. A correction is two columns, `corrects_id` and `correction_reason`.
+  - **`storage::events::EventWriter`:**
+    - A change loads the stored event, applies the patch (the new `Event::apply`, which ignores what's fixed once made: vehicle, kind, source, who logged it, when it was received, what it corrects), and writes the whole row back. Readings, field values, and fuel details are rewritten only when the patch changes them.
+    - **It refuses any change to a finalized event, and any delete, with the new `StorageError::Finalized`.** A draft can be deleted (soft delete, like every record).
+    - A create needs the vehicle, kind, dates, location, who logged it, and both times (`EventPatch::into_event`).
+  - **Queries:**
+    - `event`, and `events_of` a vehicle (newest first, every part read in three queries for the whole vehicle);
+    - `readings_of` a vehicle: the readings that count, in time order. Readings on deleted events, and on events that have been corrected, are left out; the correction's count instead;
+    - `latest_readings` (each meter's latest that counts);
+    - `drafts_edited_before` a cutoff (for 6f's automatic finalize);
+    - `correction_of` an event.
+  - 5 tests against a real database: every part round-trips, in every shape (no place with a reason, a user or a named performer, nobody recorded); a draft changes until it's finalized, then refuses changes, finalizing again, and deleting; the server finalizes; deleted and corrected events' readings don't count.
