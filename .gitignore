@@ -22,3 +22,6 @@ dev-data/
 # Deployment secrets: the NAS's .env holds the credential (deploy/.env.example is the template)
 .env
 deploy/.env
+
+# Geocoder data for development (scripts/geodata/fetch.sh; decision #059)
+/.geodata/

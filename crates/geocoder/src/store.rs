@@ -201,21 +201,36 @@ pub(crate) async fn country(pool: &SqlitePool, at: Point) -> Result<Option<Count
     Ok(None)
 }
 
-/// Every country, by name.
+/// Every country, by name: one name per code, from its largest area (e.g. `FR` covers both
+/// France and Clipperton Island, and is listed as France).
 pub(crate) async fn countries(
     pool: &SqlitePool,
 ) -> Result<Vec<(domain::location::CountryCode, String)>, GeocoderError> {
-    let rows = sqlx::query("SELECT DISTINCT country_code, name FROM countries ORDER BY name")
-        .fetch_all(pool)
-        .await?;
-    Ok(rows
-        .iter()
-        .filter_map(|row| {
-            let code: String = row.try_get("country_code").ok()?;
-            let name: String = row.try_get("name").ok()?;
-            Some((domain::location::CountryCode::parse(&code).ok()?, name))
-        })
-        .collect())
+    let rows = sqlx::query(
+        "SELECT c.country_code, c.name FROM countries AS c
+         JOIN rtree_countries_geom AS r ON r.id = c.fid
+         ORDER BY c.country_code, (r.maxx - r.minx) * (r.maxy - r.miny) DESC",
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut list: Vec<(domain::location::CountryCode, String)> = Vec::new();
+    for row in &rows {
+        let (Ok(code), Ok(name)) = (
+            row.try_get::<String, _>("country_code"),
+            row.try_get::<String, _>("name"),
+        ) else {
+            continue;
+        };
+        let Ok(code) = domain::location::CountryCode::parse(&code) else {
+            continue;
+        };
+        // The largest area comes first for each code.
+        if list.last().is_none_or(|(last, _)| *last != code) {
+            list.push((code, name));
+        }
+    }
+    list.sort_by(|a, b| a.1.cmp(&b.1));
+    Ok(list)
 }
 
 // --- Regions -------------------------------------------------------------------------------

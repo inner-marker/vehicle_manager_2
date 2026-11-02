@@ -19,3 +19,5 @@ dist/
 *.jsonl
 .env
 deploy/.env
+# The geocoder data for development (the image builds its own, decision #059)
+.geodata/

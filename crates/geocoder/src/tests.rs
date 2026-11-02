@@ -160,6 +160,9 @@ async fn test_map(format: &str) -> (tempfile::TempDir, Result<Geocoder, Geocoder
         rectangle(32.0, 0.0, 33.0, 1.0),
     ];
     country(&pool, 4, "DD", "Dee Islands", islands).await;
+    // A small far-away territory sharing AA's code (like Clipperton Island and France).
+    let islet = vec![rectangle(40.0, 40.0, 40.1, 40.1)];
+    country(&pool, 5, "AA", "Aland Islet", islet).await;
     region(
         &pool,
         1,
@@ -339,6 +342,7 @@ async fn countries_are_listed_by_name() {
         .into_iter()
         .map(|(code, name)| format!("{} {name}", code.as_str()))
         .collect();
+    // One name per code, from its largest area.
     assert_eq!(
         names,
         ["AA Aland", "BB Bland", "CC Centre", "DD Dee Islands"]
