@@ -389,7 +389,7 @@
 | 5f | ☑️ | `feat(app): places and the location picker` | **SVG options first.** The Places screen (point 5); a reusable **location picker** (browser location through `document::eval`, typed coordinates, the geocoder's suggestion, the nearest saved place, manual city/state/country) that milestone 6's event forms reuse; About on Diagnostics (point 6) | none |
 | 5f.2 | ☑️ | `feat: nearby places in the location picker` | **Sketch first.** The data gains feature codes and population and drops abandoned and historical places (data `2026-11-02.2`, format 2); the geocoder's nearby lookup (up to 5 within 25 km, same country); the picker's list with distance, direction, and type; the default skips districts (#061). Then a short follow-up test of the steps it touches | none |
 | 5g | ☑️ | `docs: location test plan` | `docs/test-plans/p2m5-location.md` | none |
-| 5h | ⬜ | `docs: record the location test run` | Results of the test run | none |
+| 5h | ☑️ | `docs: record the location test run` | Results of the test run | none |
 
 **Not in this milestone:** events and their location fields (milestone 6); the map picker and event map (#039, post-MVP); finer US detail from Census TIGER (plan §3, later); geocoding on phones (post-MVP, #038's 15–20 MB budget); place names in other languages (the translation layer has only English so far).
 
@@ -454,3 +454,7 @@
   - **Found, then fixed (the human's choice):** GeoNames codes New York's neighbourhoods as districts (`PPLX`: Harlem, the Upper West Side) but Paris's arrondissements as ordinary places (`PPL`). A place whose name is a bigger place's within 25 km, a space, and a digit (`domain::location::is_numbered_part`: "Paris 04 Hôtel-de-Ville" beside Paris) now counts as a district too, in the nearby list and in the fallback; the check uses every place within 25 km, so it works even when the bigger place isn't among the five shown. Central Paris now suggests Paris, with the arrondissements labelled District; every other real place is unchanged. The test map gains "Alpha 02 Quay"; one domain test for the name rule.
   - **Checked in a real browser:** neither Where button blue at first, then only the chosen one; typed Paris coordinates listed five places in miles with the default marked, and tapping Paris filled it; the browser's location at Asheville listed Asheville (town, county seat) and four villages.
   - The test plan gains section 4, a 10-step follow-up (F1–F10) for this step and the dialog fixes.
+- **5h:** the test plan passed on the NAS, a phone, and the Mac (browser and desktop app), 2026-11-02: steps 1–23 on the first build, then the follow-up F1–F10 on the 5f.2 build (data `2026-11-02.2`). Notes from the run:
+  - **Found by the human on a phone:** dialogs didn't scroll and the page behind moved (fixed, above).
+  - **Asked for during the run:** nearby places to choose from (#061, 5f.2), only the chosen Where button highlighted, and numbered parts of a city ("Paris 04") counted as districts.
+  - **Found while writing the plan:** GeoNames lists big cities' districts as places; handled by the nearby list and the district rules.

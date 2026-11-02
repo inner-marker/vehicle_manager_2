@@ -95,16 +95,16 @@ No new migration: the schema stays at 8.
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | F1 | Push 5f.2 and wait for the "Dev image" workflow. Then `sudo docker compose pull && sudo docker compose up -d` and `sudo docker logs --tail 20 vehiclemanager 2>&1 \| grep -i "place data"` | `place data opened` with `path=/app/geodata/geodata-2026-11-02.2.gpkg`, `data_version=2026-11-02.2`, and `size_mb=59`. |
-| [ ] | F2 | **Diagnostics → ABOUT** | Place data `2026-11-02.2`. |
-| [ ] | F3 | **Places → + Add place** | Neither **Use my location** nor **Type coordinates** is blue. Choosing **Type coordinates** makes it blue; choosing **Use my location** afterwards moves the blue to it. |
-| [ ] | F4 | **Type coordinates** `35.5951, -82.5515` | <ul><li>"Nearby: choose the city or town", with **Asheville · 0.4 mi N · Town · county seat** first and marked.</li><li>Below it: Woodfin, Biltmore Forest, Bent Creek, Weaverville (villages), each with its distance and direction.</li><li>City or town says Asheville.</li></ul> |
-| [ ] | F5 | Tap **Woodfin** | It's marked, and City or town says Woodfin. Typing over the field still works. **Cancel**. |
-| [ ] | F6 | **+ Add place → Type coordinates** `48.8566, 2.3522` | **Paris · 0.3 mi SW · Capital** is marked, and City or town says Paris. The arrondissements ("Paris 04 Hôtel-de-Ville", "Paris 01 Louvre"…) are listed as **District**. **Cancel**. |
-| [ ] | F7 | **Phone:** **+ Add place → Use my location** | The button turns blue, and your nearby places are listed with the distance and direction from where you're standing. |
-| [ ] | F8 | **Settings → You → Distance → Kilometers**, then repeat F4 | The distances show in km, e.g. "Asheville · 0.7 km N". Put Distance back afterwards. |
-| [ ] | F9 | **Type coordinates** `-16.7000, 179.9500` (at sea, off Fiji) | No nearby list (nothing within 25 km). The suggestion still names the nearest place, Savusavu, with the coastline note. **Cancel**. |
-| [ ] | F10 | **Phone:** **+ Add place**, then swipe up and down on the dialog | The dialog scrolls to **Save** and **Cancel**, and the page behind it never moves. Two fields side by side (City and State) both fit on the screen. |
+| [x] | F1 | Push 5f.2 and wait for the "Dev image" workflow. Then `sudo docker compose pull && sudo docker compose up -d` and `sudo docker logs --tail 20 vehiclemanager 2>&1 \| grep -i "place data"` | `place data opened` with `path=/app/geodata/geodata-2026-11-02.2.gpkg`, `data_version=2026-11-02.2`, and `size_mb=59`. |
+| [x] | F2 | **Diagnostics → ABOUT** | Place data `2026-11-02.2`. |
+| [x] | F3 | **Places → + Add place** | Neither **Use my location** nor **Type coordinates** is blue. Choosing **Type coordinates** makes it blue; choosing **Use my location** afterwards moves the blue to it. |
+| [x] | F4 | **Type coordinates** `35.5951, -82.5515` | <ul><li>"Nearby: choose the city or town", with **Asheville · 0.4 mi N · Town · county seat** first and marked.</li><li>Below it: Woodfin, Biltmore Forest, Bent Creek, Weaverville (villages), each with its distance and direction.</li><li>City or town says Asheville.</li></ul> |
+| [x] | F5 | Tap **Woodfin** | It's marked, and City or town says Woodfin. Typing over the field still works. **Cancel**. |
+| [x] | F6 | **+ Add place → Type coordinates** `48.8566, 2.3522` | **Paris · 0.3 mi SW · Capital** is marked, and City or town says Paris. The arrondissements ("Paris 04 Hôtel-de-Ville", "Paris 01 Louvre"…) are listed as **District**. **Cancel**. |
+| [x] | F7 | **Phone:** **+ Add place → Use my location** | The button turns blue, and your nearby places are listed with the distance and direction from where you're standing. |
+| [x] | F8 | **Settings → You → Distance → Kilometers**, then repeat F4 | The distances show in km, e.g. "Asheville · 0.7 km N". Put Distance back afterwards. |
+| [x] | F9 | **Type coordinates** `-16.7000, 179.9500` (at sea, off Fiji) | No nearby list (nothing within 25 km). The suggestion still names the nearest place, Savusavu, with the coastline note. **Cancel**. |
+| [x] | F10 | **Phone:** **+ Add place**, then swipe up and down on the dialog | The dialog scrolls to **Save** and **Cancel**, and the page behind it never moves. Two fields side by side (City and State) both fit on the screen. |
 
 ## 4. If a step fails, capture
 
