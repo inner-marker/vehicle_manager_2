@@ -158,14 +158,14 @@ pub fn check(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning>, 
 ///
 /// # Errors
 ///
-/// The first [`EventProblem`] found; [`EventProblem::WrongKind`] for a fuel-up or reading
+/// The first [`EventProblem`] found; [`EventProblem::NotAJob`] for a fuel-up or reading
 /// (they're finalized, not finished).
 pub fn check_finish(
     event: &Event,
     context: &CheckContext<'_>,
 ) -> Result<Vec<Warning>, EventProblem> {
     if event.kind.finalizes_by_itself() {
-        return Err(EventProblem::WrongKind);
+        return Err(EventProblem::NotAJob);
     }
     let warnings = check(event, context)?;
     work::check_work(event, context, true)?;

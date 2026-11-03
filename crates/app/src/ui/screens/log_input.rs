@@ -73,6 +73,7 @@ impl Target {
             | EventProblem::ReasonTooLong
             | EventProblem::BadPerformer
             | EventProblem::WrongKind
+            | EventProblem::NotAJob
             | EventProblem::Finalized
             | EventProblem::NotFinalized
             | EventProblem::AlreadyCorrected

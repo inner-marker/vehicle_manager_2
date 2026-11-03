@@ -807,7 +807,7 @@
 | 7b | ☑️ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
 | 7c | ☑️ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
 | 7d | ☑️ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
-| 7e | ⬜ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
+| 7e | ☑️ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
 | 7f | ⬜ | `feat(app): squawks` | **SVG options first.** Opening a squawk (**+ Log**, the vehicle's page, an event's page); the Overview's squawks panel (High first, with its word); a squawk's page with its history | none |
 | 7g | ⬜ | `feat(app): requirements, bundles, and the Maintenance tab` | **SVG options first.** Setup's requirements (with their rules) and bundles; **Copy schedule**; the Maintenance tab with each requirement's last done | none |
 | 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
@@ -878,3 +878,21 @@
   - **`forgotten_jobs(cutoff)`:** maintenance and repair drafts untouched since `cutoff`; `drafts_edited_before` still never returns them.
   - The storage crate's `name` and `invalid` helpers, copied in five files, are now one each in `convert.rs`.
   - 8 new tests against a real database: a job's work round-trips and is rewritten or cleared whole; end readings count at the job's end; squawks stand where their counted dispositions put them (a draft doesn't count, and a finished correction replaces the original); a squawk's edits; requirements and bundles; done tasks from finished jobs only; forgotten jobs; and migrating existing readings to the start set.
+- **7e:** no new dependency, no migration.
+  - **Squawks** (`server::squawks`; `/api/v1/squawks`, `/view`, `/open`, `/edit`, `/delete`):
+    - a Driver or higher opens one, optionally found on one of that vehicle's events;
+    - anyone who can see the vehicle sees its squawks: status, current severity, the history that counts, and who opened it;
+    - **changing or removing one** is for whoever opened it, or a Maintainer, and only until a job names it (even a draft). After that its history stays, and the next job can change its severity (`SquawkProblem::Dispositioned`).
+  - **Maintenance and repairs** (`server::events`):
+    - a Maintainer logs and edits them like any event. The checks now get the vehicle's real requirements and outstanding squawks (milestone 6's `CheckContext` placeholders are gone);
+    - **outstanding squawks leave out the event being checked and the one it corrects,** so a correction dispositions them again;
+    - **Finish** (`/api/v1/events/finish`) runs `check_finish`, then locks the job. **Finalize now** is only for fuel-ups and readings, and Finish only for jobs (`EventProblem::NotAJob` either way).
+  - **Schedules** (`server::schedule`; `/api/v1/requirements`, `/add`, `/edit`, `/delete`, `/bundles/add`, `/bundles/edit`, `/bundles/delete`, `/copy`):
+    - the view lists each requirement with its last done, and the bundles. Changes need `ConfigureMaintenance` (Maintainer);
+    - rules and bundle items are checked against the vehicle's meters and requirements;
+    - **a requirement a task has done can't be removed** (`InUse`; turn it off instead). Removing one also takes it out of its bundles, and a bundle left empty goes too;
+    - **Copy schedule** copies onto a vehicle with no requirements yet (`ScheduleNotEmpty` otherwise), with new IDs, and maps the bundles to the new requirements. It answers with the counts and the meter rules left out.
+  - **The forgotten job:** a derived message (`MessageKind::ForgottenJob`, with an **Open the job** button) for a maintenance or repair draft untouched for 14 days (`Timers::forgotten_after_millis`; the test minutes with test timers). It goes to whoever logged it and anyone who may manage the vehicle's events in their current mode. Its key includes the last edit, so a later lapse is a new message. `MessagesContext` gained the database ID and the timers.
+  - 7 messages, and 4 new problems (`NotAJob`, `Dispositioned`, `InUse`, `ScheduleNotEmpty`). 6 new tests:
+    - a forgotten job's message and key (domain);
+    - against a real database: a Driver's squawks, changeable until a job names them; Finish needing every outstanding squawk, deferrals not carrying over, a correction dispositioning again, and last done; setting up a schedule (refusals, a requirement in use, removing one from its bundle); copying a schedule (new IDs, never twice); forgotten-job reminders (who gets them, normal and test timers).

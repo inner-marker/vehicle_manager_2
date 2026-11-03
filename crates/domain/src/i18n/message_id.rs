@@ -1611,4 +1611,18 @@ define_messages! {
     EVENT_NO_END_READINGS => "event-no-end-readings",
     /// Maintenance: an end reading below the start.
     EVENT_END_BELOW_START => "event-end-below-start",
+    /// Maintenance: Finish on a fuel-up or reading, or Finalize now on a job.
+    EVENT_FINISH_JOBS_ONLY => "event-finish-jobs-only",
+    /// Squawk: changing or removing one that a job has already dealt with.
+    SQUAWK_DISPOSITIONED => "squawk-dispositioned",
+    /// Requirement: removing one a task has done.
+    REQUIREMENT_IN_USE => "requirement-in-use",
+    /// Copy schedule: the vehicle already has requirements.
+    SCHEDULE_NOT_EMPTY => "schedule-not-empty",
+    /// Message title: a forgotten maintenance or repair draft.
+    INBOX_FORGOTTEN_JOB => "inbox-forgotten-job",
+    /// Message text: a forgotten maintenance or repair draft.
+    INBOX_FORGOTTEN_JOB_BODY => "inbox-forgotten-job-body",
+    /// Message button: open the forgotten job.
+    INBOX_OPEN_JOB => "inbox-open-job",
 }

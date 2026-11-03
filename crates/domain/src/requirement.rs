@@ -185,6 +185,10 @@ pub enum RequirementProblem {
     EmptyBundle,
     /// A bundle naming a requirement twice, or one that isn't this vehicle's.
     BadBundleItem,
+    /// Removing a requirement a task has done (turn it off instead; it stays in the history).
+    InUse,
+    /// Copying a schedule onto a vehicle that already has requirements.
+    ScheduleNotEmpty,
 }
 
 impl RequirementProblem {
@@ -199,6 +203,8 @@ impl RequirementProblem {
             Self::RepeatedRule => messages::REQUIREMENT_REPEATED_RULE,
             Self::EmptyBundle => messages::BUNDLE_EMPTY,
             Self::BadBundleItem => messages::BUNDLE_BAD_ITEM,
+            Self::InUse => messages::REQUIREMENT_IN_USE,
+            Self::ScheduleNotEmpty => messages::SCHEDULE_NOT_EMPTY,
         }
     }
 }

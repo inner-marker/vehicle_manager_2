@@ -1,21 +1,25 @@
 //! The message center on the server (decisions #040, #050).
 //!
-//! Messages are derived from the server's state each time they're asked for (its health and
-//! each job's latest run); only each person's read and dismissed marks are stored, one record
+//! Messages are derived from the server's state each time they're asked for (its health, each
+//! job's latest run, and the person's forgotten maintenance jobs, #034); only each person's
+//! read and dismissed marks are stored, one record
 //! per person and message, through the command pipeline. A person can only mark messages they
 //! can see.
 
 use domain::access::Actor;
 use domain::api::{InboxOutcome, MarkMessage};
 use domain::command::Change;
+use domain::id::DatabaseId;
 use domain::inbox::{
     Message, MessageKey, MessageMarkPatch, ServerProblem, ServerState, inbox, server_messages,
 };
 use domain::log_area;
 use domain::time::{Clock, UnixMillis};
+use domain::timers::Timers;
 use storage::Database;
 use storage::message_marks::MessageMarkWriter;
 
+use crate::assets::AssetsContext;
 use crate::health::{Health, HealthProblem};
 use crate::ids::new_id;
 use crate::sessions::SignedIn;
@@ -24,6 +28,8 @@ use crate::sessions::SignedIn;
 pub struct MessagesContext<'a> {
     /// The database.
     pub database: &'a Database,
+    /// Its ID (the household preferences' record ID).
+    pub database_id: DatabaseId,
     /// Who is asking.
     pub user: &'a SignedIn,
     /// The server's health (marks are changes, refused while unhealthy).
@@ -32,6 +38,8 @@ pub struct MessagesContext<'a> {
     pub problem: Option<(HealthProblem, UnixMillis)>,
     /// The real clock.
     pub clock: &'a (dyn Clock + Sync),
+    /// The server's timers (when a job counts as forgotten).
+    pub timers: Timers,
 }
 
 fn unavailable(error: &dyn std::fmt::Display) -> InboxOutcome {
@@ -46,7 +54,8 @@ const fn server_problem(problem: HealthProblem) -> ServerProblem {
     }
 }
 
-/// Every message the server's state gives right now (before choosing whose inbox).
+/// Every message the server's state gives the person right now (before their mode and marks
+/// are applied): the server's own, and their forgotten jobs.
 async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>, InboxOutcome> {
     let jobs = context
         .database
@@ -60,7 +69,19 @@ async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>,
         jobs,
         place_lookup_problem: crate::places::lookup_problem(),
     };
-    Ok(server_messages(&state))
+    let assets = AssetsContext {
+        database: context.database,
+        database_id: context.database_id,
+        user: context.user,
+        health: context.health,
+        clock: context.clock,
+    };
+    let forgotten = crate::events::forgotten_jobs_for(&assets, context.timers)
+        .await
+        .map_err(|_| InboxOutcome::Unavailable)?;
+    let mut messages = server_messages(&state);
+    messages.extend(forgotten);
+    Ok(messages)
 }
 
 /// The signed-in person's inbox: what they can see in their mode, with their marks applied.

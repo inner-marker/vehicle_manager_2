@@ -346,6 +346,9 @@ inbox-place-lookup-body = The server couldn't open its place data, so it can't s
 inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-open-diagnostics = Open Diagnostics
+inbox-forgotten-job = A job is still a draft
+inbox-forgotten-job-body = A maintenance or repair job on { $vehicle } hasn't been touched for a while. Finish it when the work is done, or delete it if it was a mistake.
+inbox-open-job = Open the job
 messages-filter-all = All
 messages-severity-urgent = URGENT
 messages-severity-warning = WARNING
@@ -977,6 +980,7 @@ squawk-description-too-long = That's too long: at most 500 characters.
 squawk-undispositioned = Sign off or defer every open squawk before finishing.
 squawk-dispositioned-twice = That squawk is already signed off or deferred in this job.
 squawk-not-outstanding = That squawk isn't open or deferred on this vehicle.
+squawk-dispositioned = A job has already dealt with this squawk, so it can't be changed or removed. Its next job can change its severity.
 
 ## Requirements and bundles (milestone 7)
 
@@ -985,6 +989,8 @@ requirement-bad-months = Every 1 to 600 months.
 requirement-repeated-rule = Each meter, the calendar, and the fixed date can be used once.
 bundle-empty = Choose at least one requirement.
 bundle-bad-item = Each requirement can be in a bundle once.
+requirement-in-use = A task has done this requirement, so it stays in the history. Turn it off instead.
+schedule-not-empty = This vehicle already has requirements. Copying a schedule is only for a vehicle without one.
 
 ## Maintenance and repairs (milestone 7)
 
@@ -992,3 +998,4 @@ event-bad-part = Each part needs a description (up to 100 characters), a part nu
 event-bad-next-due = A next due date goes only on a task whose requirement has a fixed-date rule, and must be a date.
 event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
 event-end-below-start = The end reading is lower than the start one. Check them.
+event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.

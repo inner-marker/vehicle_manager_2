@@ -444,7 +444,7 @@ mod tests {
         event.fuel = None;
         assert_eq!(
             checked(&event, &[], true).err(),
-            Some(EventProblem::WrongKind),
+            Some(EventProblem::NotAJob),
             "fuel-ups are finalized, not finished"
         );
     }

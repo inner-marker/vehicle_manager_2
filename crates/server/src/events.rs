@@ -1,17 +1,23 @@
-//! Fuel-ups and readings on the server (milestone 6; plan §3 Events, #034).
+//! Events on the server: fuel-ups and readings (milestone 6), and maintenance and repairs
+//! (milestone 7; plan §3 Events and Maintenance, #034).
 //!
-//! Who may do what (plan §6 roles; choice 10):
+//! Who may do what (plan §6 roles; milestone 6 choice 10, milestone 7 choice 10):
 //! - **See** a vehicle's events: any role that covers it.
-//! - **Log** a fuel-up or reading: the Driver role on it (or higher), in Driver mode or above.
-//! - **Edit, Finalize now, delete** a draft, and **correct** a finalized event: whoever logged
-//!   it (while they may still log that kind), or a Maintainer or Admin on the vehicle.
+//! - **Log** a fuel-up or reading: the Driver role on it (or higher), in Driver mode or above;
+//!   a maintenance or repair (and its squawk dispositions): the Maintainer role.
+//! - **Edit, delete** a draft, **Finalize now** a fuel-up or reading, **Finish** a job, and
+//!   **correct** a finalized event: whoever logged it (while they may still log that kind),
+//!   or a Maintainer or Admin on the vehicle.
 //! - **Keep a reading that doesn't fit** its neighbours in time, with a reason: the Admin role
 //!   on the vehicle, in Admin mode (choice 3). The event is flagged.
 //!
 //! Every event is checked (`domain::event_check`) against the vehicle's meters, fields, and
 //! the readings that count, then tidied so it's flagged only for what it really needs.
-//! Drafts finalize by themselves 24 hours after their last edit ([`finalize_due`], run by the
-//! scheduler; the test minutes with test timers, #054).
+//! Fuel-ups and readings finalize by themselves 24 hours after their last edit
+//! ([`finalize_due`], run by the scheduler; the test minutes with test timers, #054).
+//! Maintenance and repairs never do: **Finish** locks one, once every open or deferred squawk
+//! on the vehicle is signed off or deferred in it (choice 8). One left untouched for 14 days
+//! is a forgotten job, a reminder in Messages ([`forgotten_jobs_for`]).
 
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
 use domain::api::{AssetsOutcome, EventView, EventsOutcome, LatestReading};
@@ -21,12 +27,14 @@ use domain::event::{
     Reason, event_changes,
 };
 use domain::event_check::{
-    CheckContext, LocationRule, Warning, check, check_correction, finalize, tidy,
+    CheckContext, LocationRule, Warning, check, check_correction, check_finish, finalize, tidy,
 };
 use domain::id::DeviceId;
+use domain::inbox::{Message, forgotten_job_message};
 use domain::log_area;
 use domain::meter::EventKind;
 use domain::profile::event_kinds;
+use domain::squawk::{SquawkId, status};
 use domain::time::{Clock, UnixMillis};
 use domain::timers::Timers;
 use storage::events::EventWriter;
@@ -135,13 +143,47 @@ impl AssetsContext<'_> {
         })
     }
 
-    /// Checks `event` (leaving `leave_out`'s readings out of the history), then tidies it.
+    /// The vehicle's outstanding squawks (oldest first), leaving `leave_out`'s dispositions
+    /// out: the event being checked, and the one it corrects (its correction dispositions
+    /// them again).
+    async fn outstanding_squawks(
+        &self,
+        asset: domain::asset::AssetId,
+        leave_out: &[EventId],
+    ) -> Result<Vec<SquawkId>, EventsOutcome> {
+        let mut outstanding: Vec<SquawkId> = self
+            .database
+            .squawk_states_of(asset)
+            .await
+            .map_err(|error| failed("squawks", &error))?
+            .into_iter()
+            .filter(|state| {
+                let counted: Vec<_> = state
+                    .history
+                    .iter()
+                    .filter(|counted| !leave_out.contains(&counted.event))
+                    .cloned()
+                    .collect();
+                status(&counted).is_outstanding()
+            })
+            .map(|state| state.id)
+            .collect();
+        outstanding.reverse();
+        Ok(outstanding)
+    }
+
+    /// Checks `event` (leaving `leave_out`'s readings and dispositions out of the history,
+    /// and the event it corrects, if any), then tidies it. With `finishing`, the checks are
+    /// **Finish**'s.
     async fn checked(
         &self,
         event: &mut Event,
         scope: AssetScope,
         leave_out: &[EventId],
+        finishing: bool,
     ) -> Result<Vec<Warning>, EventsOutcome> {
+        let mut leave_out = leave_out.to_vec();
+        leave_out.extend(event.corrects);
         let asset = self
             .database
             .asset(event.asset)
@@ -168,6 +210,18 @@ impl AssetsContext<'_> {
             .map(|reading| (reading.meter, reading.at, reading.value))
             .collect();
         let kinds = event_kinds(&asset.kind);
+        // Only a job uses the schedule and squawks.
+        let (requirements, outstanding_squawks) = if event.kind.finalizes_by_itself() {
+            (Vec::new(), Vec::new())
+        } else {
+            let requirements = self
+                .database
+                .requirements_of(event.asset)
+                .await
+                .map_err(|error| failed("requirements", &error))?;
+            let outstanding = self.outstanding_squawks(event.asset, &leave_out).await?;
+            (requirements, outstanding)
+        };
         let context = CheckContext {
             kinds: &kinds,
             meters: &meters,
@@ -175,12 +229,15 @@ impl AssetsContext<'_> {
             history: &history,
             location_rule: LocationRule::Required,
             may_override_readings: self.permits(AssetAction::OverrideReadings, scope),
-            // Maintenance and repairs are served from 7e, with the vehicle's requirements and
-            // outstanding squawks.
-            requirements: &[],
-            outstanding_squawks: &[],
+            requirements: &requirements,
+            outstanding_squawks: &outstanding_squawks,
         };
-        let warnings = check(event, &context).map_err(invalid)?;
+        let warnings = if finishing {
+            check_finish(event, &context)
+        } else {
+            check(event, &context)
+        }
+        .map_err(invalid)?;
         tidy(event, &context, &warnings);
         self.check_references(event).await?;
         Ok(warnings)
@@ -368,7 +425,7 @@ async fn log_context_of(
 
 // --- Logging and changing ----------------------------------------------------------------
 
-/// Logs a fuel-up or reading, as a draft.
+/// Logs an event, as a draft.
 pub async fn add(context: &AssetsContext<'_>, input: EventInput) -> EventsOutcome {
     either(add_event(context, input).await)
 }
@@ -384,8 +441,9 @@ async fn add_event(
     if !context.permits(log_action(input.kind), scope) {
         return Err(EventsOutcome::NotAllowed);
     }
+    let kind = input.kind;
     let mut event = input.into_draft(context.user.user, context.clock.now());
-    let warnings = context.checked(&mut event, scope, &[]).await?;
+    let warnings = context.checked(&mut event, scope, &[], false).await?;
     let id: EventId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
     context
         .save_event(Change::Create {
@@ -393,7 +451,7 @@ async fn add_event(
             values: EventPatch::all(event),
         })
         .await?;
-    tracing::debug!(target: log_area::APP, event = %id, "event logged");
+    tracing::debug!(target: log_area::APP, event = %id, ?kind, "event logged");
     Ok(EventsOutcome::Saved { id, warnings })
 }
 
@@ -412,7 +470,7 @@ async fn edit_event(
         return Err(invalid(EventProblem::Finalized));
     }
     let mut event = input.edit(&current, context.clock.now());
-    let warnings = context.checked(&mut event, scope, &[id]).await?;
+    let warnings = context.checked(&mut event, scope, &[id], false).await?;
     context
         .save_event(Change::Update {
             id,
@@ -422,7 +480,8 @@ async fn edit_event(
     Ok(EventsOutcome::Saved { id, warnings })
 }
 
-/// **Finalize now**: locks a draft (#034).
+/// **Finalize now**: locks a fuel-up or reading draft (#034). A job is finished instead
+/// ([`finish`]).
 pub async fn finalize_now(context: &AssetsContext<'_>, id: EventId) -> EventsOutcome {
     either(finalize_event(context, id).await)
 }
@@ -435,6 +494,9 @@ async fn finalize_event(
     if current.status == EventStatus::Finalized {
         return Err(invalid(EventProblem::Finalized));
     }
+    if !current.kind.finalizes_by_itself() {
+        return Err(invalid(EventProblem::NotAJob));
+    }
     context
         .save_event(Change::Update {
             id,
@@ -442,6 +504,36 @@ async fn finalize_event(
         })
         .await?;
     tracing::debug!(target: log_area::APP, event = %id, "event finalized");
+    Ok(EventsOutcome::Done)
+}
+
+/// **Finish**: locks a maintenance or repair draft once it passes Finish's checks (choice 8):
+/// everything a save checks, and every outstanding squawk signed off or deferred in it.
+pub async fn finish(context: &AssetsContext<'_>, id: EventId) -> EventsOutcome {
+    either(finish_event(context, id).await)
+}
+
+async fn finish_event(
+    context: &AssetsContext<'_>,
+    id: EventId,
+) -> Result<EventsOutcome, EventsOutcome> {
+    let (current, scope) = context.managed_event(id).await?;
+    if current.status == EventStatus::Finalized {
+        return Err(invalid(EventProblem::Finalized));
+    }
+    if current.kind.finalizes_by_itself() {
+        return Err(invalid(EventProblem::NotAJob));
+    }
+    // Checked as stored; a save already tidied it.
+    let mut event = current;
+    context.checked(&mut event, scope, &[id], true).await?;
+    context
+        .save_event(Change::Update {
+            id,
+            patch: finalize(Finalizer::User(context.user.user), context.clock.now()),
+        })
+        .await?;
+    tracing::debug!(target: log_area::APP, event = %id, "job finished");
     Ok(EventsOutcome::Done)
 }
 
@@ -494,7 +586,9 @@ async fn correct_event(
     {
         return Err(invalid(EventProblem::AlreadyCorrected));
     }
-    let warnings = context.checked(&mut event, scope, &[original_id]).await?;
+    let warnings = context
+        .checked(&mut event, scope, &[original_id], false)
+        .await?;
     let id: EventId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
     context
         .save_event(Change::Create {
@@ -506,10 +600,59 @@ async fn correct_event(
     Ok(EventsOutcome::Saved { id, warnings })
 }
 
+// --- Forgotten jobs ----------------------------------------------------------------------
+
+/// The forgotten-job reminders (#034) for the signed-in person: maintenance and repair drafts
+/// untouched for the delay (14 days, or the test minutes), on vehicles they can see, that they
+/// logged or may manage.
+///
+/// # Errors
+///
+/// Unavailable if the drafts or their vehicles can't be read.
+pub async fn forgotten_jobs_for(
+    context: &AssetsContext<'_>,
+    timers: Timers,
+) -> Result<Vec<Message>, EventsOutcome> {
+    let delay = timers.forgotten_after_millis();
+    let cutoff = UnixMillis::from_millis(context.clock.now().as_millis() - delay);
+    let forgotten = context
+        .database
+        .forgotten_jobs(cutoff)
+        .await
+        .map_err(|error| failed("forgotten jobs", &error))?;
+    let mut messages = Vec::new();
+    for id in forgotten {
+        let Some(event) = context
+            .database
+            .event(id)
+            .await
+            .map_err(|error| failed("event", &error))?
+        else {
+            continue;
+        };
+        // Someone who can't see the vehicle (any more) gets nothing.
+        let Ok(scope) = context.visible(event.asset).await else {
+            continue;
+        };
+        if !context.may_manage(&event, scope) {
+            continue;
+        }
+        let vehicle = context
+            .database
+            .asset(event.asset)
+            .await
+            .map_err(|error| failed("asset", &error))?
+            .map(|asset| asset.name.as_str().to_owned())
+            .unwrap_or_default();
+        messages.push(forgotten_job_message(id, &event, &vehicle, delay));
+    }
+    Ok(messages)
+}
+
 // --- The automatic finalize --------------------------------------------------------------
 
-/// Finalizes every draft last edited at least the finalize delay before `now` (24 hours, or
-/// the test minutes), as the server. Returns how many were finalized.
+/// Finalizes every fuel-up and reading draft last edited at least the finalize delay before
+/// `now` (24 hours, or the test minutes), as the server. Returns how many were finalized.
 ///
 /// # Errors
 ///

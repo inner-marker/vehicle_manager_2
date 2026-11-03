@@ -298,6 +298,9 @@ pub enum SquawkProblem {
     DispositionedTwice(SquawkId),
     /// A disposition of a squawk that isn't outstanding on this vehicle.
     NotOutstanding(SquawkId),
+    /// Changing or removing a squawk a job has already dispositioned (its history stays; the
+    /// next job can change its severity).
+    Dispositioned,
 }
 
 impl SquawkProblem {
@@ -310,6 +313,7 @@ impl SquawkProblem {
             Self::Undispositioned(_) => messages::SQUAWK_UNDISPOSITIONED,
             Self::DispositionedTwice(_) => messages::SQUAWK_DISPOSITIONED_TWICE,
             Self::NotOutstanding(_) => messages::SQUAWK_NOT_OUTSTANDING,
+            Self::Dispositioned => messages::SQUAWK_DISPOSITIONED,
         }
     }
 }

@@ -10,8 +10,9 @@ mod messages {
     use domain::access::ActiveMode;
     use domain::api::{InboxOutcome, MarkMessage};
     use domain::inbox::{Inbox, MessageKey, Severity};
-    use domain::test_support::ManualClock;
+    use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
+    use domain::timers::Timers;
     use server::health::{Health, HealthProblem};
     use server::messages::{MessagesContext, mark, view};
     use server::sessions::SignedIn;
@@ -25,10 +26,12 @@ mod messages {
     ) -> MessagesContext<'a> {
         MessagesContext {
             database,
+            database_id: test_id(900),
             user,
             health: Health::Healthy,
             problem: None,
             clock,
+            timers: Timers::NORMAL,
         }
     }
 

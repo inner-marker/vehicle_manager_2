@@ -683,6 +683,9 @@ pub enum EventProblem {
     TowsItself,
     /// A kind of event this vehicle doesn't have (e.g. a fuel-up for a trailer).
     WrongKind,
+    /// **Finish** on a fuel-up or reading, or **Finalize now** on a maintenance or repair:
+    /// jobs are finished (with their checks), the others finalized.
+    NotAJob,
     /// A change to a finalized event.
     Finalized,
     /// A correction of an event that isn't finalized yet (edit the draft instead).
@@ -737,6 +740,7 @@ impl EventProblem {
             Self::BadPercent => messages::EVENT_BAD_PERCENT,
             Self::TowsItself => messages::EVENT_TOWS_ITSELF,
             Self::WrongKind => messages::EVENT_WRONG_KIND,
+            Self::NotAJob => messages::EVENT_FINISH_JOBS_ONLY,
             Self::Finalized => messages::EVENT_FINALIZED,
             Self::NotFinalized => messages::EVENT_NOT_FINALIZED,
             Self::AlreadyCorrected => messages::EVENT_ALREADY_CORRECTED,
