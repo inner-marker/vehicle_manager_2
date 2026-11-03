@@ -17,7 +17,9 @@ pub mod jobs;
 pub mod message_marks;
 pub mod places;
 pub mod preferences;
+pub mod requirements;
 pub mod snapshot;
+pub mod squawks;
 pub mod users;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};

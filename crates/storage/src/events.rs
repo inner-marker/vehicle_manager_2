@@ -1,10 +1,13 @@
 //! The `events`, `event_readings`, `event_field_values`, and `fuel_details` tables (milestone
-//! 6): the event writer for the command pipeline, and the queries the server needs.
+//! 6), and a maintenance or repair event's work (milestone 7): the event writer for
+//! the command pipeline, and the queries the server needs.
 //!
 //! **A finalized event never changes** (#034, choice 9): the writer refuses any change to one,
 //! and any delete, with [`StorageError::Finalized`], so nothing edits one even by mistake. A
 //! change to a draft is applied to the stored event and the whole row written back; a list that
-//! changed (readings, field values) and the fuel details are rewritten whole.
+//! changed (readings, field values) and the fuel details and work are rewritten whole.
+
+mod work;
 
 use std::collections::HashMap;
 
@@ -12,7 +15,7 @@ use domain::asset::AssetId;
 use domain::dates::EventDates;
 use domain::event::{
     Event, EventId, EventLocation, EventPatch, EventStatus, FieldValue, Finalized, Finalizer,
-    FuelDetails, Performer, Reading, Reason,
+    FuelDetails, Performer, Reading, ReadingSet, Reason,
 };
 use domain::id::Id;
 use domain::label::Label;
@@ -27,7 +30,7 @@ use sqlx::{Row, Sqlite, SqliteConnection};
 
 use crate::commands::RecordWriter;
 use crate::convert::{
-    id_from_sql, id_to_sql, json_from_sql, json_to_sql, name_to_sql, required_name,
+    id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name, required_name,
 };
 use crate::{Database, StorageError};
 
@@ -60,9 +63,10 @@ impl RecordWriter<Event> for EventWriter {
         bind_event(query, &event, sequence, id)?
             .execute(&mut *connection)
             .await?;
-        write_readings(connection, id, &event.readings).await?;
+        write_readings(connection, id, ReadingSet::Start, &event.readings).await?;
         write_fields(connection, id, &event.fields).await?;
-        write_fuel(connection, id, event.fuel.as_ref()).await
+        write_fuel(connection, id, event.fuel.as_ref()).await?;
+        work::write_work(connection, id, event.work.as_ref()).await
     }
 
     async fn update(
@@ -96,13 +100,16 @@ impl RecordWriter<Event> for EventWriter {
             .execute(&mut *connection)
             .await?;
         if patch.readings.is_some() {
-            write_readings(connection, id, &event.readings).await?;
+            write_readings(connection, id, ReadingSet::Start, &event.readings).await?;
         }
         if patch.fields.is_some() {
             write_fields(connection, id, &event.fields).await?;
         }
         if patch.fuel.is_some() {
             write_fuel(connection, id, event.fuel.as_ref()).await?;
+        }
+        if patch.work.is_some() {
+            work::write_work(connection, id, event.work.as_ref()).await?;
         }
         Ok(())
     }
@@ -129,11 +136,6 @@ impl RecordWriter<Event> for EventWriter {
             .await?;
         Ok(())
     }
-}
-
-/// A named value's column text (every enum here has a name).
-fn name(value: &impl serde::Serialize, column: &'static str) -> Result<String, StorageError> {
-    name_to_sql(value).ok_or(StorageError::InvalidValue { column })
 }
 
 fn reason_text(reason: Option<&Reason>) -> Option<String> {
@@ -205,22 +207,30 @@ fn bind_event<'q>(
         .bind(id_to_sql(id)))
 }
 
+/// Replaces one set of event `id`'s readings (the start ones, or a job's end ones).
 async fn write_readings(
     connection: &mut SqliteConnection,
     id: EventId,
+    set: ReadingSet,
     readings: &[Reading],
 ) -> Result<(), StorageError> {
-    sqlx::query("DELETE FROM event_readings WHERE event_id = ?")
+    let set = name(&set, "event_readings.reading_set")?;
+    sqlx::query("DELETE FROM event_readings WHERE event_id = ? AND reading_set = ?")
         .bind(id_to_sql(id))
+        .bind(set.clone())
         .execute(&mut *connection)
         .await?;
     for reading in readings {
-        sqlx::query("INSERT INTO event_readings (event_id, meter_id, value) VALUES (?, ?, ?)")
-            .bind(id_to_sql(id))
-            .bind(id_to_sql(reading.meter))
-            .bind(reading.value)
-            .execute(&mut *connection)
-            .await?;
+        sqlx::query(
+            "INSERT INTO event_readings (event_id, reading_set, meter_id, value)
+             VALUES (?, ?, ?, ?)",
+        )
+        .bind(id_to_sql(id))
+        .bind(set.clone())
+        .bind(id_to_sql(reading.meter))
+        .bind(reading.value)
+        .execute(&mut *connection)
+        .await?;
     }
     Ok(())
 }
@@ -279,11 +289,6 @@ async fn write_fuel(
 }
 
 // --- Reading events back -----------------------------------------------------------------
-
-/// Turns any conversion error into "this column holds an invalid value".
-fn invalid<E>(column: &'static str) -> impl Fn(E) -> StorageError {
-    move |_| StorageError::InvalidValue { column }
-}
 
 /// An optional reason column.
 fn reason_from(text: Option<String>, column: &'static str) -> Result<Option<Reason>, StorageError> {
@@ -357,8 +362,8 @@ fn finalized_from_row(row: &SqliteRow) -> Result<Option<Finalized>, StorageError
     }))
 }
 
-/// An event from its `events` row; its readings, field values, and fuel details are added by
-/// [`with_parts`].
+/// An event from its `events` row; its readings, field values, fuel details, and work are
+/// added by [`with_parts`].
 fn event_from_row(row: &SqliteRow) -> Result<(EventId, Event), StorageError> {
     let zone: String = row.try_get("zone")?;
     let skipped: String = row.try_get("skipped")?;
@@ -382,7 +387,6 @@ fn event_from_row(row: &SqliteRow) -> Result<(EventId, Event), StorageError> {
         logged_by: id_from_sql(row.try_get::<&[u8], _>("logged_by")?, "events.logged_by")?,
         performed_by: performer_from_row(row)?,
         fuel: None,
-        // Maintenance and repairs' work is stored from 7d.
         work: None,
         reading_override: reason_from(row.try_get("reading_override")?, "events.reading_override")?,
         status: required_name(row.try_get("status")?, "events.status")?,
@@ -437,7 +441,8 @@ impl Scope {
     }
 }
 
-/// Adds each event's readings, field values, and fuel details (all read in three queries).
+/// Adds each event's readings, field values, fuel details, and work (the work first, so end
+/// readings have somewhere to go).
 async fn with_parts(
     connection: &mut SqliteConnection,
     scope: Scope,
@@ -445,14 +450,14 @@ async fn with_parts(
 ) -> Result<Vec<(EventId, Event)>, StorageError> {
     let (readings_sql, fields_sql, fuel_sql) = match scope {
         Scope::Event(_) => (
-            "SELECT event_id, meter_id, value FROM event_readings WHERE event_id = ?
-             ORDER BY meter_id",
+            "SELECT event_id, reading_set, meter_id, value FROM event_readings
+             WHERE event_id = ? ORDER BY meter_id",
             "SELECT event_id, field_id, data FROM event_field_values WHERE event_id = ?
              ORDER BY field_id",
             "SELECT * FROM fuel_details WHERE event_id = ?",
         ),
         Scope::Asset(_) => (
-            "SELECT r.event_id, r.meter_id, r.value FROM event_readings r
+            "SELECT r.event_id, r.reading_set, r.meter_id, r.value FROM event_readings r
              JOIN events e ON e.id = r.event_id WHERE e.asset_id = ? AND e.deleted = 0
              ORDER BY r.meter_id",
             "SELECT v.event_id, v.field_id, v.data FROM event_field_values v
@@ -471,19 +476,22 @@ async fn with_parts(
         let id: EventId = id_from_sql(row.try_get::<&[u8], _>("event_id")?, "event_id")?;
         Ok(index.get(&id).copied())
     };
+    work::add_work(connection, scope, &mut events, &index).await?;
     for row in sqlx::query(readings_sql)
         .bind(scope.key())
         .fetch_all(&mut *connection)
         .await?
     {
         if let Some(position) = event_of(&row)? {
-            events[position].1.readings.push(Reading {
+            let reading = Reading {
                 meter: id_from_sql(
                     row.try_get::<&[u8], _>("meter_id")?,
                     "event_readings.meter_id",
                 )?,
                 value: row.try_get("value")?,
-            });
+            };
+            let set = required_name(row.try_get("reading_set")?, "event_readings.reading_set")?;
+            work::add_reading(&mut events, position, set, reading)?;
         }
     }
     for row in sqlx::query(fields_sql)
@@ -579,7 +587,8 @@ impl Database {
     }
 
     /// Every reading on one vehicle's events that counts, in time order: not on a deleted
-    /// event, nor on one that has been corrected (its correction's readings count instead).
+    /// event, nor on one that has been corrected (its correction's readings count instead). A
+    /// job's end readings are at its end (or its start, for a one-day job).
     /// The checks compare a new reading with its neighbours here (leave the event itself out,
     /// and for a correction, the event it corrects).
     ///
@@ -588,11 +597,13 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn readings_of(&self, asset: AssetId) -> Result<Vec<CountedReading>, StorageError> {
         sqlx::query(
-            "SELECT r.meter_id, r.event_id, e.start_ms, r.value
+            "SELECT r.meter_id, r.event_id, r.value,
+                    CASE r.reading_set WHEN 'end' THEN coalesce(e.end_ms, e.start_ms)
+                                       ELSE e.start_ms END AS at_ms
              FROM event_readings r JOIN events e ON e.id = r.event_id
              WHERE e.asset_id = ? AND e.deleted = 0
                AND NOT EXISTS (SELECT 1 FROM events c WHERE c.corrects_id = e.id AND c.deleted = 0)
-             ORDER BY e.start_ms, r.value",
+             ORDER BY at_ms, r.value",
         )
         .bind(id_to_sql(asset))
         .fetch_all(self.pool())
@@ -608,7 +619,7 @@ impl Database {
                     row.try_get::<&[u8], _>("event_id")?,
                     "event_readings.event_id",
                 )?,
-                at: UnixMillis::from_millis(row.try_get("start_ms")?),
+                at: UnixMillis::from_millis(row.try_get("at_ms")?),
                 value: row.try_get("value")?,
             })
         })
@@ -654,6 +665,48 @@ impl Database {
         .fetch_all(self.pool())
         .await?;
         ids.iter().map(|id| id_from_sql(id, "events.id")).collect()
+    }
+
+    /// The maintenance and repair drafts last edited at or before `cutoff` (forgotten jobs,
+    /// #034: only a reminder, they're never finalized by themselves).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored ID is invalid.
+    pub async fn forgotten_jobs(&self, cutoff: UnixMillis) -> Result<Vec<EventId>, StorageError> {
+        let ids: Vec<Vec<u8>> = sqlx::query_scalar(
+            "SELECT id FROM events
+             WHERE status = 'draft' AND deleted = 0 AND last_edited_ms <= ?
+               AND kind IN ('maintenance', 'repair')
+             ORDER BY last_edited_ms",
+        )
+        .bind(cutoff.as_millis())
+        .fetch_all(self.pool())
+        .await?;
+        ids.iter().map(|id| id_from_sql(id, "events.id")).collect()
+    }
+
+    /// One vehicle's finalized events that count, newest first: not deleted, and not corrected
+    /// by a finalized correction (that counts instead). Squawk dispositions and done tasks come
+    /// from these.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails or a stored value is invalid.
+    pub async fn counted_events_of(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(EventId, Event)>, StorageError> {
+        let events = self.events_of(asset).await?;
+        let corrected: Vec<EventId> = events
+            .iter()
+            .filter(|(_, event)| event.status == EventStatus::Finalized)
+            .filter_map(|(_, event)| event.corrects)
+            .collect();
+        Ok(events
+            .into_iter()
+            .filter(|(id, event)| event.status == EventStatus::Finalized && !corrected.contains(id))
+            .collect())
     }
 
     /// The event that corrects `original`, if any (not deleted).
