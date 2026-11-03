@@ -505,7 +505,7 @@ A **squawk** is an issue or broken item noted on a vehicle, to be dealt with lat
 - **Required disposition:** logging any **maintenance or repair event while squawks are open or deferred** requires each one to be either **signed off** or **deferred** (with a reason) before the event can be saved.
 - **Deferrals don't carry over:** a previously deferred squawk must be **re-dispositioned at every later maintenance or repair event**. Each deferral is recorded, building a history of how long an issue has been put off.
 - Deferred and open squawks show on the vehicle's overview and "what's due."
-- **Blocks use:** a squawk can be marked as keeping the asset out of use (e.g. brakes, a flat tire, an inoperative required instrument), when it's opened or at any disposition. The Readiness summary counts it (#051). It's captured from the start (Phase 2) because it can't be filled in afterwards.
+- **Severity: Low, Medium, or High** (`docs/decisions.md` #063). A new squawk starts at Low. **High keeps the asset out of use** (e.g. brakes, a flat tire, an inoperative required instrument), named by the kind's profile ("Not drivable", "Not towable", "Out of service"; for aircraft, "Grounding"). It can change when opened or at any disposition. The Readiness summary counts High squawks (#051). It's captured from the start (Phase 2) because it can't be filled in afterwards.
 - Like required readings, these rules are enforced in the `domain` crate, offline and again on the server at sync.
 
 ### Maintenance event → tasks (one-to-many)
@@ -692,7 +692,7 @@ Everything that must be done to an asset, whether your own schedule or an extern
 A per-asset summary of whether the records say the asset can be used, shown at the top of the vehicle's **Overview** tab (the per-vehicle dashboard) and as a badge on its Garage card (#051).
 
 - **Generic, from profiles:** the same idea covers "road-ready" for a car and "airworthy" for an aircraft. A requirement or official document can be marked **needed for use**; the profile sets the defaults, and each asset can change them. No kind-specific code.
-  - **Car:** registration and insurance current, no squawk that blocks use, nothing safety-related overdue.
+  - **Car:** registration and insurance current, no High squawk (#063), nothing safety-related overdue.
   - **Aircraft (later):** annual inspection within 12 calendar months (end-of-month rule), transponder and ELT checks, airworthiness directives complied with, and every open squawk fixed or properly deferred.
 - **Ready for what:** readiness depends on the intended use, so each profile lists **operation types** and the items each one adds. E.g. an aircraft's IFR adds the pitot-static and altimeter checks (24 calendar months) and a VOR check (30 days); "for hire" adds the 100-hour inspection; a trailer might have "heavy towing". The summary asks "ready for what?" when the profile has more than one.
 - **Shows why, not just a light:** each item with ✓ or ✗, its due date or meter value, and a link to the requirement, document, or squawk. Items due soon show as warnings before they block.
@@ -700,7 +700,7 @@ A per-asset summary of whether the records say the asset can be used, shown at t
 - **Later, next to it:** "is the **person** current?" (e.g. a pilot's flight review and medical), from the credentials on user profiles (post-MVP, with logbook entries).
 
 **Phasing**
-- **Phase 2:** the Overview tab's shell (milestone 4); squawks can be marked **blocks use** (milestone 7).
+- **Phase 2:** the Overview tab's shell (milestone 4); squawks get a **severity**, High keeping the asset out of use (milestone 7, #063).
 - **Phase 5:** the readiness summary, "needed for use" on requirements and documents, operation types in the profiles, time and distance until each major service on the Overview, and the Garage badge.
 - **Aircraft phase:** the aviation items and operation types (VFR day, night, IFR, for hire).
 

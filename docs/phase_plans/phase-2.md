@@ -29,7 +29,7 @@
 | 4 | **Assets, groups, profiles & meters** | ✅ | **Groups** (#052): every asset in exactly one, a default "Garage" made at setup, name and icon, roles granted on a group, moving an asset (showing who gains and loses access), a screen to manage groups; the six profiles as seed data (#030); assets with typed identifiers, lifecycle status, parent field, archive; meters (distance/duration); custom field definitions including quantity types (#030); **Garage** screen (urgency order, My order) and **vehicle detail** shell with tabs (#040), its Overview tab being the per-vehicle dashboard (#051) | Add the real vehicles with their meters; the Garage cards show them; give someone a role on one group only | `ron` (profile seed files; approved) |
 | 5 | **Location** | ✅ | Coordinates (degrees × 10⁷, accuracy, fix time), required city/state/country; browser location; saved places; the offline geocoder with cities500, Natural Earth 1:10m, and the nearest-boundary fallback (#038); geocoder data file and attribution | From a phone browser, a test location resolves to the right city and state, including a coastal point; saved places work on desktop | a geocoder crate or our own lookup (chosen in the step plan) |
 | 6 | **Events: fuel-ups & readings** | ✅ | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
-| 7 | **Maintenance, repairs & squawks** | ⬜ | Maintenance and repair events with tasks, labor, parts and labor cost (#032); complaint and cause; **Finish** with checks and confirmation; squawks with sign-off and required disposition; requirements with interval rules (meter, calendar with end-of-month, fixed date) and service bundles as data, "Copy schedule from another asset" (#031); forgotten-job reminder after 14 days; squawks can be marked **blocks use** (#051, for the Phase 5 readiness summary) | Log an oil change with two tasks, sign off a squawk, log a repair with complaint and cause; Finish refuses while a squawk is undispositioned | none expected |
+| 7 | **Maintenance, repairs & squawks** | 🔨 | Maintenance and repair events with tasks, labor, parts and labor cost (#032); complaint and cause; **Finish** with checks and confirmation; squawks with sign-off and required disposition; requirements with interval rules (meter, calendar with end-of-month, fixed date) and service bundles as data, "Copy schedule from another asset" (#031); forgotten-job reminder after 14 days; squawks have a **severity**, High keeping the asset out of use (#063, refining #051's blocks use; for the Phase 5 readiness summary) | Log an oil change with two tasks, sign off a squawk, log a repair with complaint and cause; Finish refuses while a squawk is undispositioned | none expected |
 | 8 | **Photos & documents** | ⬜ | Photo upload with the Small/Medium/Large picker, thumbnails, metadata fields, gated originals (#036); PDF upload with page count and the pdf.js viewer (#037); attachments on events, squawks, and assets; **official asset documents** (title, registration, insurance) with renewal history; Documents tab | Take a Large damage photo and a Small meter photo on the phone; open a PDF on web and desktop | `image` (+ HEIC support), pdf.js (bundled asset) |
 | 9 | **Asset lifecycle** | ⬜ | Acquisition and disposal records with attachments; status changes; send-out / return tracking; archive instead of delete; aircraft-ready groundwork that isn't already in place (reference documents, one-time and recurring requirements). **Also, before the `v0.2.0` release: show each person only what they may use** (raised 2026-11-02; see below) | Send a vehicle out for service and return it; archive one and find it again; as Sam, no Users, Groups, or household settings anywhere | none expected |
 
@@ -695,7 +695,7 @@
 
 ### Between milestones 6 and 7: a test server (idea 20, decision #062)
 
-*Asked for by the human on 2026-11-03, after milestone 6 merged: "the app is getting close to being actually usable". Its own branch (`milestone/p2-test-server`) and PR, before milestone 7.*
+*Asked for by the human on 2026-11-03, after milestone 6 merged: "the app is getting close to being actually usable". Its own branch (`milestone/p2-test-server`); merged into `dev` in PR #18, 2026-11-03.*
 
 **Reviewed against:** plan §7 (deployment), decisions #025, #026, #054, #059; `docs/deploying-nas.md`; the image workflows; idea 20. No sub-plan touches it.
 
@@ -708,10 +708,10 @@
 
 | Step | Status | Commit | What | New dependencies |
 |---|---|---|---|---|
-| T1 | ☑️ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
-| T2 | ☑️ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
-| T3 | ☑️ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
-| T4 | ☑️ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
+| T1 | ✅ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
+| T2 | ✅ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
+| T3 | ✅ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
+| T4 | ✅ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
 
 **Written so far**
 - **T1:** decision #062; AGENTS.md's migration rule; idea 20 closed. **The migration files' own headers still say "may change until v0.2.0" and must stay as they are:** sqlx checksums each applied migration, comments included, so editing even a comment would make every existing database refuse to open. New migrations get the new header instead (below).
@@ -746,3 +746,73 @@
     - main on `:dev` after the merge, ignoring test timers;
     - the secrets check.
 - **The switch-over on the NAS** (runbook Parts A and B) was done by the human on 2026-11-03: both servers are running, main empty with a new Admin, the test server with the old data.
+
+### Milestone 7 plan: maintenance, repairs & squawks
+*Approved 2026-11-03 (every choice below, and severity in place of "blocks use") · Branch: `milestone/p2-m7-maintenance` · Milestone PR: not opened yet · Decisions #030, #031, #032, #034, #040, #050, #051, #054, #062, #063*
+
+**Goal:** the household records real **maintenance and repairs** as work sessions: tasks with parts, labor, and costs, readings at the start (and end), and a **Finish** that checks everything and locks the event. **Squawks** (problems noticed on a vehicle) are opened by anyone who drives it, carry a **severity**, and must be signed off or deferred at every maintenance or repair. Each vehicle's **requirements** (what's done to it, and how often) and **service bundles** are set up as data, with when each was last done. "What's due" is Phase 5.
+
+**Reviewed against** the plan (§3 Squawks, Maintenance event → tasks, Recurring maintenance, Requirements & compliance, Readiness; §4 Meter readings), decisions #031, #032, #034, #051, ideas 1–20, and sub-plans 01–03, 2026-11-03. The human's answers (2026-11-03) are folded into the choices below.
+- **Sub-plan points, raised with the human (the main plan wins unless the human says otherwise):**
+  1. Sub-plan 02 (voice) asks whether squawks should have a **severity** ("ground it" vs "monitor"); the plan has a yes-or-no **blocks use** (#051). **The human chose severity** (choice 1), which changes the plan: a new decision, #063, refines #051.
+  2. Sub-plan 01 (signatures) signs tasks with initials, has an "inspected by" second sign-off, and hashes the event with its tasks and parts. **Not now** (sub-plan 01 isn't confirmed). The groundwork stays cheap: tasks and parts are part of the event, so they lock with it and a later hash covers them; **Finish** records who finished it and when, like Finalize now (choice 9).
+- **Ideas:** 16 (a field catalogue) may later offer ready-made parts and tasks; nothing now. 12 and 14 as above. No effect: 2, 3 (attachments are milestone 8), 4, 7, 10, 11, 13, 15, 19.
+- **Carried from earlier milestones:**
+  - maintenance and repair were refused by the event checks until now (6c);
+  - `LogMaintenance` and `DispositionSquawk` (Maintainer) and `OpenSquawk` (Driver) already exist in `domain::access`;
+  - custom fields can already be shown on maintenance and repairs;
+  - durations are typed as HH:MM digits (labor time);
+  - the forgotten-job reminder is a derived message (#050).
+- **Not from the plan, deferred:** #034's "the delays are defaults the Admin can change" (no setting yet; the 24 hours and 14 days stay fixed), reference documents (recalls, bulletins; milestone 9), and "what's due" (Phase 5).
+
+**Choices** (the human's answers 2026-11-03, and the plan's defaults):
+1. **Squawk severity: Low, Medium, or High** (the human). **High keeps the asset out of use;** Low and Medium don't. **A new squawk starts at Low** (the human: a squawk shouldn't block by default). Each kind's profile names High: **"Not drivable"** (car, truck, motorcycle), **"Not towable"** (trailer), **"Out of service"** (generator, other equipment); aircraft later, "Grounding". Shown as e.g. "High · Not drivable". Severity can change when opened or at any disposition. This replaces #051's yes-or-no flag (decision #063); Phase 5's readiness counts High.
+2. **Squawks are their own records,** with a history:
+   - **Opened** by a Driver or higher, standalone (from **+ Log**, the vehicle's page, or an event's page, which links it): a description, notes, severity, when, and by whom.
+   - **Dispositions** are recorded **inside a maintenance or repair event:** signed off (with resolution notes, and the task if any) or deferred (a required reason). **Deferrals don't carry over** (the plan): each later maintenance or repair asks again. A disposition counts once its event is finished.
+   - **Status** comes from the latest counted disposition: open, deferred, or resolved.
+3. **Parts with their own costs** (the human): each part has a description, an optional part number, a quantity, and a unit price. The task's parts cost is their total; labor is the task's own (time as HH:MM, and a cost), in one currency per event.
+4. **Requirements are rules plus "last done"** (the human):
+   - Setup defines each requirement (a name, notes, on or off) with **one or more interval rules**, whichever comes first (the plan): every N on a meter; every N months, with "due by end of month"; or a fixed next date.
+   - **Service bundles** (a name, and which requirements they include) can be applied to an event to add their tasks.
+   - The **Maintenance tab** lists each requirement with **when it was last done**: the date and reading, from the latest finished task that signed it off. No due dates until Phase 5.
+   - **Copy schedule from another vehicle** (#031): copies the requirements, rules, and bundles. Meter rules are matched by meter name and kind; one with no match is left out and listed.
+5. **Readings: a start set, plus an optional end** (the human): maintenance and repairs record readings at the start (the required ones) and, optionally, at the end, e.g. after a test drive. Fuel-ups and readings keep one set (the start). The end readings must be at or above the start ones, and both go through the readings check (6c). **A task resets its requirement from the start reading by default,** changeable per task (the plan).
+6. **Tasks:** a title (or a requirement's name), the requirement it signs off (optional, #032), notes, parts, labor, and whether it resets from start or end. **A fixed-date rule asks for the next due date** when its task is done, or "no next date" (the plan).
+7. **Repairs** are maintenance plus an optional **complaint** (what was wrong) and **cause** (the diagnosis); the tasks are the correction (#032).
+8. **Finish** (#034):
+   - maintenance and repairs never finalize by themselves;
+   - **Finish** checks the required readings and fields, the place, and that **every open or deferred squawk on the vehicle is signed off or deferred in this event** (the plan's required disposition), then asks "Finish and lock this event?";
+   - a finished event is corrected like any other (6h).
+   - **A forgotten job:** a draft untouched for **14 days** gets a reminder in Messages for whoever logged it and the vehicle's Maintainers (a derived message, #050; the test minutes with test timers, #054).
+9. **Signature groundwork:** who finished an event and when (as Finalize now records it), and tasks, parts, and dispositions locked with the event. Not now: initials, a second sign-off, hashes.
+10. **Who does what** (plan §6): a **Maintainer** (or higher) logs, edits, and finishes maintenance and repairs, and dispositions squawks; a **Driver** opens squawks; a Viewer sees them. Opening a squawk is in **+ Log** for Drivers; maintenance and repair tiles appear in Maintainer mode or above.
+11. **Screens (SVG options first, each):**
+    - squawks: opening one, and the list on Overview and its own tab;
+    - Setup's requirements and bundles, and the Maintenance tab;
+    - the maintenance and repair work log: items in any order, the plan's "work log";
+    - the event page and Timeline rows for maintenance and repairs.
+12. **One PR,** with **two checkpoint tests** on the test server (#062): after squawks and requirements, and at the end.
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 7.0 | ☑️ | `docs: Phase 2 milestone 7 plan` | This plan; decision #063 (squawk severity); the test server marked merged | none |
+| 7a | ⬜ | `feat(domain): squawks` | Squawk records (description, notes, severity, opened by and when, the event it was found on), dispositions (signed off or deferred, with notes or a reason, and a new severity), status from the latest counted one; profiles name High; checks. Test-first | none |
+| 7b | ⬜ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
+| 7c | ⬜ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
+| 7d | ⬜ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
+| 7e | ⬜ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
+| 7f | ⬜ | `feat(app): squawks` | **SVG options first.** Opening a squawk (**+ Log**, the vehicle's page, an event's page); the Overview's squawks panel (High first, with its word); a squawk's page with its history | none |
+| 7g | ⬜ | `feat(app): requirements, bundles, and the Maintenance tab` | **SVG options first.** Setup's requirements (with their rules) and bundles; **Copy schedule**; the Maintenance tab with each requirement's last done | none |
+| 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
+| 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
+| 7j | ⬜ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
+| 7k | ⬜ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
+| 7l | ⬜ | `docs: record the maintenance test runs` | Results of both runs | none |
+
+**Not in this milestone:** "what's due", due dates, and service countdowns (Phase 5); readiness (Phase 5; High squawks are counted then); reference documents, recalls, and bulletins (milestone 9); photos and documents on squawks and tasks (milestone 8); meter adjustments; signatures, initials, and logbook entries (sub-plan 01, post-MVP); Admin-changeable finalize delays.
+
+**You can check on the test server:** open a squawk from the phone (Low by default; High says "Not drivable"); set up oil every 7,500 mi or 12 months and a 10,000-mile service bundle, and copy them to a second vehicle; log an oil change with two tasks and their parts, readings at the start and end; **Finish refuses while a squawk is neither signed off nor deferred**; sign one off and defer another with a reason; log a repair with complaint and cause; the Maintenance tab shows each requirement's last done; a draft left for the test minutes brings a forgotten-job reminder.
+
+**Written so far**
+- **7.0:** decision #063 (squawk severity: Low, Medium, High; High keeps the asset out of use, named per kind; refines #051). The main plan's §3 Squawks and the milestone 7 row say severity instead of "blocks use".

@@ -725,3 +725,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the app is close to everyday use (the human, 2026-11-03). Tests write records that can't be deleted (finalized events are only corrected), and test timers change how a server behaves; neither belongs on the household's server. Waiting for the v0.2.0 release would keep Phase 2's work out of real use until the end of the phase.
 - **Unaffected:** releases (`:<version>`, `:latest`) and the release process; `main` still holds released code only.
 
+### 063. Squawks have a severity: Low, Medium, or High; High keeps the asset out of use
+*Decided: 2026-11-03 · Plan: §3 Squawks, Readiness · Phase plan: phase-2.md milestone 7, choice 1 · Refines #051 · Raised by sub-plan 02 (voice capture)*
+
+- **Decision:**
+  - **Every squawk has a severity: Low, Medium, or High.** **A new squawk starts at Low**: a squawk doesn't keep an asset out of use unless someone says so.
+  - **High keeps the asset out of use** (what aviation calls a grounding squawk). It replaces #051's yes-or-no "blocks use": Phase 5's readiness summary counts High squawks.
+  - **Each kind's profile names High:** "Not drivable" (car, truck, motorcycle), "Not towable" (trailer), "Out of service" (generator, other equipment); aircraft (later) "Grounding". Shown as e.g. "High · Not drivable". A new kind brings its own word.
+  - **Severity can change** when the squawk is opened and at any disposition (signed off or deferred), and each change is kept in its history.
+- **Why:** the human, 2026-11-03: "A squawk should not block by default. In aviation there are 'grounding' squawks. I like low/medium/high severity with high as 'grounding'." Sub-plan 02 had asked whether a spoken squawk should carry a severity; three levels answer that too, and one of them is what readiness needs.
+- **Unaffected:** the required disposition at every maintenance or repair (plan §3), and deferrals not carrying over.
+
