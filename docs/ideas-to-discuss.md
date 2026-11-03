@@ -149,15 +149,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 ### 17. Required readings as checkboxes on each meter and field ✅
 *Decided 2026-11-02: `docs/phase_plans/phase-2.md` milestone 6, choice 5 (checkboxes in each meter's and field's Edit dialog; off wins; a required field can be skipped with a reason, like a reading). Built in step 6d.*
 
-### 18. Cumulative and trip custom fields 🟡
-*Raised by the human, 2026-11-02 · Suggested phase: milestone 6 (when fields get values), with Phase 5's calculations (#057)*
-
-- **Idea:** a numeric custom field is either **cumulative**, a running total read off the vehicle (odometer, engine idle time, total EV miles), or **trip**, a value for one stretch (trip miles, trip time, trip MPG).
-- **Why it matters:** cumulative values only go up, so a lower one is a warning (like a meter reading), and the difference between two readings is a trip value. Trip values add up over a period. Formulas and statistics (Phase 5) treat them differently.
-- **To discuss:**
-  - **Overlap with meters:** a meter is already a cumulative distance or duration (#030). Is a cumulative field just a meter (one concept, so "idle time" becomes a meter), or are meters the required, built-in subset?
-  - Which types it applies to (distance, duration, volume, number), and whether it's chosen when the field is added and then fixed, like the type.
-  - How the catalogue (idea 16) marks its fields.
+### 18. Cumulative and trip custom fields ✅
+*Decided 2026-11-02: `docs/phase_plans/phase-2.md` milestone 6, choice 6 (meters are the cumulative values, which only go up; custom fields are per-event values such as trip miles and trip time; no new setting).*
 
 ### 19. Check for newer geocoder data and tell the Admin 🟡
 *Raised by the human, 2026-11-02, after freezing the geocoder's sources (#059) · Suggested phase: Phase 6 (Polish), or with the post-MVP reference data packs*

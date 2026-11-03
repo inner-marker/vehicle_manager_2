@@ -511,7 +511,7 @@
 | 6i | ☑️ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
 | 6j | ☑️ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
 | 6k | ☑️ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
-| 6l | ⬜ | `docs: record the events test runs` | Results of both runs | none |
+| 6l | ☑️ | `docs: record the events test runs` | Results of both runs | none |
 
 **Not in this milestone:** maintenance, repairs, squawks, and tasks (milestone 7); photos and documents on events (milestone 8); fuel-economy statistics and calculated fields (Phase 5); meter adjustments (replacement, rollover); voice logging (post-MVP, idea 14); an Admin setting to make location optional (groundwork only); the event map (post-MVP).
 
@@ -687,3 +687,8 @@
   - **An event's page links back to its tab too:** "‹ Test car" (the vehicle's Overview) and "‹ Fuel" for a fuel-up, "‹ Timeline" otherwise. A new route, `/vehicles/:asset_id/tab/:tab`, opens a vehicle on one tab.
   - **The Loading and sign-in page fits the visible screen on phones:** it was 100vh plus its padding, so it scrolled, and on iPhones 100vh is taller than what's visible. It's now `100dvh` with the padding inside (`box-sizing: border-box`), and so is the app's own minimum height. Checked at 390 × 664: "Loading…" sits at the exact middle, and nothing scrolls.
   - The test plan's part 2 gained both checks (steps 8b and 13a).
+- **6l:** both parts of `docs/test-plans/p2m6-events.md` passed on the NAS, a phone, and the Mac (browser and desktop app):
+  - **Part 1** (the halfway checkpoint, 6i), 2026-11-02: all 26 steps, steps 1–5 on the 6h build and 4b onwards after updating (schema 10 to 11).
+  - **Part 2** (6k), 2026-11-03: all 23 steps, with 8b and 13a on the build with the back links and the phone's Loading page.
+  - **Asked for by the human during the runs, and built:** custom fields shown on and required for kinds of events like meters; duration fields typed as digits with the `:` put in (the decimal pad had no `:`, a bug); an event's back link to its tab; the Loading page centred on phones without scrolling. Idea 20 (a separate test server) recorded for later.
+  - **Found by the checks before the human saw them:** an edit moving an event's time to the minute (round-trip test); the Fuel tab keeping the Timeline's filter (browser check); the test plan racing test timers (reordered before the run).
