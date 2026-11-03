@@ -215,15 +215,25 @@ impl AssetsContext<'_> {
         Ok(())
     }
 
-    /// A person's display name (empty if they're gone).
-    async fn name_of(&self, user: domain::user::UserId) -> Result<String, EventsOutcome> {
-        Ok(self
+    /// A person's display name (empty if they're gone), looked up once per request: `names`
+    /// keeps the ones already found.
+    async fn name_of(
+        &self,
+        user: domain::user::UserId,
+        names: &mut Vec<(domain::user::UserId, String)>,
+    ) -> Result<String, EventsOutcome> {
+        if let Some((_, name)) = names.iter().find(|(have, _)| *have == user) {
+            return Ok(name.clone());
+        }
+        let name = self
             .database
             .user(user)
             .await
             .map_err(|error| failed("user", &error))?
             .map(|stored| stored.user.display_name)
-            .unwrap_or_default())
+            .unwrap_or_default();
+        names.push((user, name.clone()));
+        Ok(name)
     }
 
     /// The person's view of one event.
@@ -233,11 +243,12 @@ impl AssetsContext<'_> {
         event: Event,
         scope: AssetScope,
         corrected_by: Option<EventId>,
+        names: &mut Vec<(domain::user::UserId, String)>,
     ) -> Result<EventView, EventsOutcome> {
         let manage = self.may_manage(&event, scope);
-        let logged_by_name = self.name_of(event.logged_by).await?;
+        let logged_by_name = self.name_of(event.logged_by, names).await?;
         let finalized_by_name = match event.finalized.map(|done| done.by) {
-            Some(Finalizer::User(user)) => Some(self.name_of(user).await?),
+            Some(Finalizer::User(user)) => Some(self.name_of(user, names).await?),
             Some(Finalizer::Server) | None => None,
         };
         Ok(EventView {
@@ -280,10 +291,11 @@ async fn list_events(
             .map(|(id, _)| *id)
     };
     let mut views = Vec::with_capacity(events.len());
+    let mut names = Vec::new();
     for (id, event) in &events {
         views.push(
             context
-                .view_of(*id, event.clone(), scope, corrected_by(*id))
+                .view_of(*id, event.clone(), scope, corrected_by(*id), &mut names)
                 .await?,
         );
     }
@@ -306,7 +318,11 @@ async fn view_event(
         .await
         .map_err(|error| failed("correction", &error))?;
     Ok(EventsOutcome::Event {
-        view: Box::new(context.view_of(id, event, scope, corrected_by).await?),
+        view: Box::new(
+            context
+                .view_of(id, event, scope, corrected_by, &mut Vec::new())
+                .await?,
+        ),
     })
 }
 

@@ -771,14 +771,10 @@ define_messages! {
     PANEL_SQUAWKS_COMING => "panel-squawks-coming",
     /// Overview panel: latest fuel-ups.
     PANEL_FUEL => "panel-fuel",
-    /// Overview panel: fuel-ups, not built yet.
-    PANEL_FUEL_COMING => "panel-fuel-coming",
     /// Overview panel and Setup section: meters.
     PANEL_METERS => "panel-meters",
     /// A vehicle with no meters.
     METERS_NONE => "meters-none",
-    /// Overview: meter readings, not built yet.
-    METERS_READINGS_COMING => "meters-readings-coming",
     /// A meter's required event kinds; takes `kinds` (text, a list).
     METER_REQUIRED_FOR => "meter-required-for",
     /// A meter no event kind requires.
@@ -1513,4 +1509,56 @@ define_messages! {
     FIELD_KIND_NOTE => "field-kind-note",
     /// Setup: what "Required for" means for a field.
     FIELD_REQUIRED_FOR_NOTE => "field-required-for-note",
+    /// A month's full name, for headings.
+    MONTH_LONG_1 => "month-long-1",
+    /// A month's full name, for headings.
+    MONTH_LONG_2 => "month-long-2",
+    /// A month's full name, for headings.
+    MONTH_LONG_3 => "month-long-3",
+    /// A month's full name, for headings.
+    MONTH_LONG_4 => "month-long-4",
+    /// A month's full name, for headings.
+    MONTH_LONG_5 => "month-long-5",
+    /// A month's full name, for headings.
+    MONTH_LONG_6 => "month-long-6",
+    /// A month's full name, for headings.
+    MONTH_LONG_7 => "month-long-7",
+    /// A month's full name, for headings.
+    MONTH_LONG_8 => "month-long-8",
+    /// A month's full name, for headings.
+    MONTH_LONG_9 => "month-long-9",
+    /// A month's full name, for headings.
+    MONTH_LONG_10 => "month-long-10",
+    /// A month's full name, for headings.
+    MONTH_LONG_11 => "month-long-11",
+    /// A month's full name, for headings.
+    MONTH_LONG_12 => "month-long-12",
+    /// Timeline: show every event.
+    TIMELINE_ALL => "timeline-all",
+    /// Timeline: only fuel-ups.
+    TIMELINE_FUEL_UPS => "timeline-fuel-ups",
+    /// Timeline: only readings.
+    TIMELINE_READINGS => "timeline-readings",
+    /// Timeline: no events.
+    TIMELINE_EMPTY => "timeline-empty",
+    /// Timeline: an original that was corrected.
+    TIMELINE_CORRECTED => "timeline-corrected",
+    /// Timeline: a draft.
+    TIMELINE_DRAFT => "timeline-draft",
+    /// Overview: no fuel-ups.
+    PANEL_FUEL_NONE => "panel-fuel-none",
+    /// Overview: open the Timeline.
+    PANEL_SEE_TIMELINE => "panel-see-timeline",
+    /// Overview: economy comes later.
+    PANEL_ECONOMY_LATER => "panel-economy-later",
+    /// Overview: the newest event.
+    PANEL_LAST_ACTIVITY => "panel-last-activity",
+    /// Overview: no events.
+    PANEL_NO_ACTIVITY => "panel-no-activity",
+    /// Overview: the newest event is finalized.
+    PANEL_FINALIZED => "panel-finalized",
+    /// Overview: when a meter's latest reading was.
+    PANEL_READING_WHEN => "panel-reading-when",
+    /// Overview: a meter with no readings.
+    PANEL_NO_READINGS => "panel-no-readings",
 }

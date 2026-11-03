@@ -15,6 +15,7 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
+use super::timeline::{OverviewPanels, Timeline};
 use super::vehicle_setup::Setup;
 use super::vehicles::{kind_name, status_label};
 use crate::api;
@@ -74,8 +75,7 @@ impl Tab {
     /// The milestone that fills a tab with no content yet.
     const fn coming_in(self) -> Option<i64> {
         match self {
-            Self::Overview | Self::Setup => None,
-            Self::Timeline | Self::Fuel => Some(6),
+            Self::Overview | Self::Setup | Self::Timeline | Self::Fuel => None,
             Self::Maintenance => Some(7),
             Self::Documents => Some(8),
         }
@@ -83,7 +83,7 @@ impl Tab {
 }
 
 /// Whether the vehicle's kind has fuel-ups (trailers don't).
-fn has_fuel(asset: &Asset) -> bool {
+pub(super) fn has_fuel(asset: &Asset) -> bool {
     profile(&asset.kind).is_none_or(|profile| profile.event_kinds.contains(&EventKind::Fuel))
 }
 
@@ -263,9 +263,11 @@ fn VehicleScreen(id: AssetId) -> Element {
             Header { view: view.clone() }
             TabBar { shown, current, on_pick: move |picked| tab.set(picked) }
             match current {
-                Tab::Overview => rsx! { Overview { view } },
+                Tab::Overview => rsx! { Overview { view, on_timeline: move |()| tab.set(Tab::Timeline) } },
                 Tab::Setup => rsx! { Setup { view } },
-                Tab::Timeline | Tab::Maintenance | Tab::Fuel | Tab::Documents => rsx! {
+                Tab::Timeline => rsx! { Timeline { view, only: None } },
+                Tab::Fuel => rsx! { Timeline { view, only: Some(EventKind::Fuel) } },
+                Tab::Maintenance | Tab::Documents => rsx! {
                     p { class: "placeholder",
                         {tr_with(messages::TAB_COMING, &[("milestone", MessageArg::from(current.coming_in().unwrap_or_default()))])}
                     }
@@ -345,32 +347,13 @@ fn TabBar(shown: Vec<Tab>, current: Tab, on_pick: EventHandler<Tab>) -> Element 
 
 /// Overview: the dashboard's panels (#051), each saying when it fills, and the meters.
 #[component]
-fn Overview(view: AssetView) -> Element {
-    let fuel = has_fuel(&view.asset);
+fn Overview(view: AssetView, on_timeline: EventHandler<()>) -> Element {
     rsx! {
         div { class: "vehicle-panels",
             Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
             Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
             Panel { title: messages::PANEL_SQUAWKS, note: messages::PANEL_SQUAWKS_COMING }
-            if fuel {
-                Panel { title: messages::PANEL_FUEL, note: messages::PANEL_FUEL_COMING }
-            }
-            section { class: "vehicle-panel wide",
-                h3 { class: "section-heading", {tr(messages::PANEL_METERS).to_uppercase()} }
-                if view.meters.is_empty() {
-                    p { class: "muted-note", {tr(messages::METERS_NONE)} }
-                }
-                div { class: "meter-tiles",
-                    for (meter_id, meter) in view.meters.iter() {
-                        div { key: "{meter_id}", class: "meter-tile",
-                            span { class: "meter-name", {meter.name.as_str().to_owned()} }
-                            span { class: "meter-unit", {meter_summary(meter)} }
-                            span { class: "meter-required", {required_text(meter)} }
-                        }
-                    }
-                }
-                p { class: "muted-note", {tr(messages::METERS_READINGS_COMING)} }
-            }
+            OverviewPanels { view, on_timeline }
         }
     }
 }

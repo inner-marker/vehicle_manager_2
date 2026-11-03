@@ -498,10 +498,8 @@ panel-due-coming = Next services (Phase 5).
 panel-squawks = Open squawks
 panel-squawks-coming = Squawks arrive in milestone 7.
 panel-fuel = Latest fuel-ups
-panel-fuel-coming = Fuel-ups arrive in milestone 6.
 panel-meters = Meters
 meters-none = No meters yet.
-meters-readings-coming = Readings appear here from milestone 6.
 # $kinds (text): the event kinds, joined with commas.
 meter-required-for = Required for: { $kinds }
 meter-required-none = Not required for any event.
@@ -928,3 +926,32 @@ field-no-kinds = Choose at least one kind of event to show it on.
 field-shown-on = Shown on
 field-kind-note = The kinds of events whose forms show it.
 field-required-for-note = Events of a checked kind must fill it in, or skip it with a reason. A field that's turned off is never required.
+
+## The Timeline and Overview (milestone 6, step 6j)
+
+month-long-1 = January
+month-long-2 = February
+month-long-3 = March
+month-long-4 = April
+month-long-5 = May
+month-long-6 = June
+month-long-7 = July
+month-long-8 = August
+month-long-9 = September
+month-long-10 = October
+month-long-11 = November
+month-long-12 = December
+timeline-all = All
+timeline-fuel-ups = Fuel-ups
+timeline-readings = Readings
+timeline-empty = Nothing logged yet. Use + Log to add a fuel-up or reading.
+timeline-corrected = Corrected
+timeline-draft = Draft
+panel-fuel-none = No fuel-ups yet.
+panel-see-timeline = See all on the Timeline ›
+panel-economy-later = Fuel economy arrives with Phase 5's reports.
+panel-last-activity = Last activity
+panel-no-activity = Nothing logged yet.
+panel-finalized = Finalized
+panel-reading-when = { $date } · { $kind }
+panel-no-readings = No readings yet

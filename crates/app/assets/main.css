@@ -2716,3 +2716,108 @@ body:has(.log-form) .fab {
     text-align: right;
     overflow-wrap: anywhere;
 }
+
+/* ---------- A vehicle's Timeline, and Overview's event panels (p2m6-timeline-options.svg A) ---------- */
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 760px;
+}
+
+.timeline-month {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 62px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.timeline-row:hover,
+.timeline-row:focus-visible {
+    border-color: var(--accent);
+}
+
+/* A corrected original: dimmed and set in, beneath its correction. */
+.timeline-row.corrected {
+    margin-left: 24px;
+    opacity: 0.6;
+}
+
+.timeline-icon {
+    font-size: 1.3rem;
+}
+
+.timeline-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.timeline-title {
+    font-weight: 700;
+}
+
+.timeline-numbers {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.timeline-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.panel-link {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.panel-link:hover {
+    color: var(--accent);
+}
+
+.meter-reading {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 639px) {
+    .timeline-row {
+        flex-wrap: wrap;
+    }
+
+    .timeline-chips {
+        justify-content: flex-start;
+        width: 100%;
+        padding-left: 36px;
+    }
+}
+
+/* Overview's latest fuel-ups: the date on one line, the numbers lighter. */
+.vehicle-panel .event-row dt {
+    white-space: nowrap;
+}
+
+.vehicle-panel .event-row dd {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.9rem;
+    font-weight: 500;
+}

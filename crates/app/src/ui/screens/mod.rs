@@ -13,6 +13,7 @@ mod placeholders;
 mod places;
 mod roles;
 mod settings;
+mod timeline;
 mod users;
 mod vehicle;
 mod vehicle_setup;

@@ -508,8 +508,8 @@
 | 6f | ☑️ | `feat(server): logging, finalizing, and corrections` | Add and edit drafts, **Finalize now**, correct (choices 2, 3, 10); the automatic finalize as a scheduled job (24 h, or the test minutes; #044, #054); server functions under `/api/v1/events` | none |
 | 6g | ☑️ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
 | 6h | ☑️ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
-| 6i | 🔨 | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
-| 6j | ⬜ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
+| 6i | ☑️ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
+| 6j | ☑️ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
 | 6k | ⬜ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
 | 6l | ⬜ | `docs: record the events test runs` | Results of both runs | none |
 
@@ -654,3 +654,21 @@
   - **Idea 20** records the human's wish for a separate test server and deployed server, for later.
   - 2 new tests (the field form's kinds; typing a duration); the field tests in domain, storage, server, and app use the lists. 505 workspace tests.
   - The test plan gained step 4b (after updating to this build) and the typing check in step 10.
+- **6i:** the human ran part 1 of `docs/test-plans/p2m6-events.md` on the NAS on 2026-11-02: **all 26 steps passed** (steps 1–5 on the 6h build, then 4b onwards after updating to the build with fields like meters and typed durations, which migrated the NAS from schema 10 to 11).
+- **6j layout (chosen 2026-11-02):** option A of [`p2m6-timeline-options.svg`](../ui-sketches/p2m6-timeline-options.svg): a list grouped by month, the same on phones, with All / Fuel-ups / Readings filters. A corrected original shows **dimmed, beneath its correction**. Overview's panels as drawn (Latest fuel-ups, Meters, Last activity).
+- **6j:** no new dependency.
+  - **The Timeline tab:**
+    - the vehicle's events newest first, grouped by month in each event's own zone (`dates::month_heading`, "November 2026"; an event at 10 pm on 31 October in New York is October's);
+    - **All / Fuel-ups / Readings** filters (a vehicle without fuel-ups has no Fuel-ups chip);
+    - each row: the kind, date, and time; the readings, and a fuel-up's volume and cost; a Draft chip and the flags. It opens the event's page;
+    - **a corrected original shows dimmed and set in, beneath its correction** (and what that corrected, in turn), marked "Corrected".
+    - The arranging is `timeline::arrange`, with a test.
+  - **The Fuel tab** is the same list, fuel-ups only (it said "milestone 6" before). Fuel economy by condition arrives with Phase 5's reports.
+  - **Overview:**
+    - **Latest fuel-ups** (the last three that count: date, volume, cost, and the price per unit), with **See all on the Timeline**;
+    - **Last activity** (the newest event, and whether it's a draft);
+    - **Meters**, each with its latest reading that counts, and when and on what kind of event (corrected originals never count).
+    - The panels that fill later still say when.
+  - **The server looks each person's name up once per list** (the 6h note).
+  - 26 messages added (12 month names among them), 2 removed. 3 new tests: the month heading's zone; the Timeline's grouping, corrections, and filter; the latest reading skipping corrected originals.
+  - **Checked in a real browser:** four events and a correction over three months. The Timeline grouped them, with the corrected original dimmed under its correction. Readings filtered to one. The Fuel tab listed the four fuel-ups (after a fix: it had kept the Timeline tab's filter). Overview showed the three latest fuel-ups, the last activity, and the odometer's 52,644 mi. A row opened its event. The list fits a phone.

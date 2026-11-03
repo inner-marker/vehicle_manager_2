@@ -180,6 +180,43 @@ pub fn format_time(
     Ok(format!("{hour12}:{:02} {half}", local.minute()))
 }
 
+/// The month and year of `at` in `zone`, for a heading: "November 2026", and the year and
+/// month as numbers, to group by.
+///
+/// # Errors
+///
+/// [`DateError`] if the zone isn't known or `at` is out of range.
+pub fn month_heading(
+    at: UnixMillis,
+    zone: &TimeZone,
+    translator: &Translator,
+) -> Result<(String, (i16, i8)), DateError> {
+    let date = zoned(at, zone)?.date();
+    let name = translator.tr(long_month_name(date.month()));
+    Ok((
+        format!("{name} {}", date.year()),
+        (date.year(), date.month()),
+    ))
+}
+
+/// A month's full name.
+const fn long_month_name(month: i8) -> MessageId {
+    match month {
+        1 => messages::MONTH_LONG_1,
+        2 => messages::MONTH_LONG_2,
+        3 => messages::MONTH_LONG_3,
+        4 => messages::MONTH_LONG_4,
+        5 => messages::MONTH_LONG_5,
+        6 => messages::MONTH_LONG_6,
+        7 => messages::MONTH_LONG_7,
+        8 => messages::MONTH_LONG_8,
+        9 => messages::MONTH_LONG_9,
+        10 => messages::MONTH_LONG_10,
+        11 => messages::MONTH_LONG_11,
+        _ => messages::MONTH_LONG_12,
+    }
+}
+
 /// An event's dates: when it started, when it ended if it spans several days, and the zone
 /// where it happened (plan §3 Event dates).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -301,6 +338,21 @@ mod tests {
         );
         assert!(is_known_zone(&zone("America/Argentina/Buenos_Aires")));
         assert!(!is_known_zone(&zone("Nowhere/Special")));
+    }
+
+    #[test]
+    fn a_month_heading_is_in_the_events_zone() {
+        let english = Translator::english();
+        // 1 Nov 2026 02:00 UTC is still 31 October in New York.
+        let at = UnixMillis::from_millis(1_793_498_400_000);
+        assert_eq!(
+            month_heading(at, &zone("UTC"), english).unwrap(),
+            ("November 2026".to_owned(), (2026, 11))
+        );
+        assert_eq!(
+            month_heading(at, &zone("America/New_York"), english).unwrap(),
+            ("October 2026".to_owned(), (2026, 10))
+        );
     }
 
     #[test]
