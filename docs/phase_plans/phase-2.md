@@ -643,3 +643,14 @@
     - a lower fuel-up got the new message;
     - correcting without a reason was refused ("Give a reason"); with one, the correction and the original each showed their link and reason, and the original offered no actions;
     - the page fits a phone.
+- **After 6h, from the human's first look at the checkpoint build (2026-11-02):**
+  - **Custom fields are shown on, and required for, lists of event kinds, like meters** (the human's choice, replacing 6d's one kind and yes-or-no). `CustomField.applies_to` became `shown_on`, and `required` became `required_for`; `required_on` and the new `shown` keep "off wins".
+    - `FieldForm::parse` now returns a `ParsedField`: at least one kind (else "Choose at least one kind of event to show it on."), sorted without repeats, and required only for kinds it's shown on.
+    - Which kinds a field is shown on can change after it's made; only what it holds is fixed.
+    - Migration `0011_field_kinds.sql` turns each field's one kind into a one-item list (a required field stays required for that kind), then drops the old columns. A new migration rather than a changed 0009, since the NAS has already applied 0009 and 0010. Checked on a schema-10 database: Trip time, required, became `["fuel"]` and `["fuel"]`.
+    - Profiles say `shown_on: [fuel]` (and may say `required_for`).
+    - **Setup:** a field's dialog has **Shown on** and **Required for** checkboxes (one component, `KindChecks`, now also used by the meter dialog), and its rows say where it's shown and what requires it, as a meter's do.
+  - **Duration fields are typed as digits:** a number pad (`inputmode="numeric"`), "HH:MM" as the hint and in the label, and the `:` put in as digits are typed, filling from the right (`quantity::duration_as_typed`: "340" is "3:40"). This fixes the bug: the decimal pad has no `:`, and a duration needs one. Setup's duration ranges do the same (`Field` gained a `duration` flag).
+  - **Idea 20** records the human's wish for a separate test server and deployed server, for later.
+  - 2 new tests (the field form's kinds; typing a duration); the field tests in domain, storage, server, and app use the lists. 505 workspace tests.
+  - The test plan gained step 4b (after updating to this build) and the typing check in step 10.

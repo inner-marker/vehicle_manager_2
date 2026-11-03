@@ -106,14 +106,14 @@ pub struct ProfileField {
     /// Its label (a message key).
     pub label: String,
     /// The kind of event it's on.
-    pub applies_to: EventKind,
+    pub shown_on: Vec<EventKind>,
     /// What it holds.
     pub kind: FieldKind,
     /// Whether it starts turned on.
     pub enabled: bool,
-    /// Whether it starts required (left out: not required).
+    /// The kinds of events it starts required for (left out: none).
     #[serde(default)]
-    pub required: bool,
+    pub required_for: Vec<EventKind>,
     /// Its sensible range, if any.
     pub range: Option<FieldRange>,
 }
@@ -212,12 +212,12 @@ impl Profile {
             .filter_map(|field| {
                 Some(CustomField {
                     asset,
-                    applies_to: field.applies_to,
+                    shown_on: field.shown_on.clone(),
                     key: field.key.clone(),
                     label: Label::parse(&translator.tr_key(&field.label)).ok()?,
                     kind: field.kind.clone(),
                     enabled: field.enabled,
-                    required: field.required,
+                    required_for: field.required_for.clone(),
                     range: field.range,
                 })
             })
@@ -323,7 +323,15 @@ mod tests {
                     field.label
                 );
                 assert!(
-                    profile.event_kinds.contains(&field.applies_to),
+                    !field.shown_on.is_empty()
+                        && field
+                            .shown_on
+                            .iter()
+                            .all(|kind| profile.event_kinds.contains(kind))
+                        && field
+                            .required_for
+                            .iter()
+                            .all(|kind| field.shown_on.contains(kind)),
                     "{}",
                     field.label
                 );

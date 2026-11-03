@@ -230,12 +230,12 @@ mod assets {
         let (_temp, database) = with_truck().await;
         let field = CustomField {
             asset: test_id(TRUCK),
-            applies_to: EventKind::Fuel,
+            shown_on: vec![EventKind::Fuel, EventKind::Reading],
             key: FieldKey::parse("gallons-pumped").unwrap(),
             label: Label::parse("Gallons pumped").unwrap(),
             kind: FieldKind::Number { decimals: 3 },
             enabled: true,
-            required: true,
+            required_for: vec![EventKind::Fuel],
             range: Some(FieldRange::new(Some(0), Some(40_000)).unwrap()),
         };
         let mut connection = database.pool().acquire().await.unwrap();
@@ -255,7 +255,8 @@ mod assets {
 
         let patch = CustomFieldPatch {
             enabled: Some(false),
-            required: Some(false),
+            required_for: Some(vec![]),
+            shown_on: Some(vec![EventKind::Reading]),
             range: Some(Clearable::Clear),
             ..CustomFieldPatch::default()
         };
@@ -269,7 +270,8 @@ mod assets {
             .unwrap()
             .remove(0);
         assert!(!updated.enabled);
-        assert!(!updated.required);
+        assert!(updated.required_for.is_empty());
+        assert_eq!(updated.shown_on, vec![EventKind::Reading]);
         assert_eq!(updated.range, None);
         assert_eq!(updated.kind, FieldKind::Number { decimals: 3 }, "unchanged");
 

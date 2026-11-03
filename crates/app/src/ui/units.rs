@@ -56,7 +56,7 @@ pub(crate) fn economy_abbr(unit: EconomyUnit) -> String {
 pub(crate) fn field_unit(kind: &FieldKind, units: Preferences) -> Option<String> {
     match kind {
         FieldKind::Distance => Some(distance_abbr(units.distance)),
-        FieldKind::Duration => Some("H:MM".to_owned()),
+        FieldKind::Duration => Some("HH:MM".to_owned()),
         FieldKind::Volume => Some(volume_abbr(units.volume)),
         FieldKind::FuelEconomy => Some(economy_abbr(units.economy)),
         FieldKind::Number { .. }

@@ -123,12 +123,12 @@ mod events {
         }
         let field = CustomField {
             asset: test_id(TRUCK),
-            applies_to: EventKind::Fuel,
+            shown_on: vec![EventKind::Fuel],
             key: FieldKey::parse("trip-time").unwrap(),
             label: Label::parse("Trip time").unwrap(),
             kind: FieldKind::Duration,
             enabled: true,
-            required: true,
+            required_for: vec![EventKind::Fuel],
             range: None,
         };
         CustomFieldWriter

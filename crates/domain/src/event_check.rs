@@ -280,7 +280,7 @@ fn check_fields(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning
             .iter()
             .find(|(id, _)| *id == value.field)
             .map(|(_, field)| field)
-            .filter(|field| field.enabled && field.applies_to == event.kind);
+            .filter(|field| field.shown(event.kind));
         let repeated = event.fields[..index]
             .iter()
             .any(|earlier| earlier.field == value.field);

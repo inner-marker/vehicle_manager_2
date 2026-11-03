@@ -168,3 +168,14 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Where the check runs.** On the server (the first outgoing internet request it would make, so opt-in, and off for a fully offline install), or as a scheduled **GitHub Actions** workflow that opens an issue, keeping the NAS offline.
   - **What counts as "newer".** Natural Earth has versioned releases (its GitHub releases). GeoNames is rebuilt every day without versions, so it needs a threshold (e.g. how many places changed) or a fixed schedule (e.g. a yearly snapshot).
   - Fits the server's background job system (idea 9) and the reference data packs' update path (plan §3).
+
+### 20. A separate test server and deployed server 🟡
+*Raised by the human, 2026-11-02, during milestone 6's checkpoint test · Suggested phase: before the first release people rely on (v0.2.0), or Phase 6 (Polish)*
+
+- **Idea:** keep the household's real server (the one the family uses day to day) apart from a **test server** for trying milestone and dev images, so a test never touches real data and a broken build never interrupts real use.
+- **Why:** milestone tests now write records that can't be deleted (finalized events can only be corrected), and test timers (#054) change how the server behaves. Today the same NAS install runs both, so tests use throwaway vehicles and the timers have to be switched back by hand.
+- **To discuss:**
+  - **Where the test server runs:** a second container on the same NAS (its own data folder, port, and Tailscale name), or the Mac.
+  - **Which images go where:** the deployed server follows releases (or `dev`); the test server follows `milestone-*` images, built with test timers (#054). Today one "Server image" workflow builds both kinds of tag.
+  - **Test data:** start the test server empty each time, or from a copy of a nightly snapshot (#035) so tests run against realistic data. A copy holds real people's data, so it stays on the NAS.
+  - How the test plans' setup steps change: they'd say which server to use, and stop needing test vehicles.

@@ -857,8 +857,6 @@ define_messages! {
     FIELD_EDIT_TITLE => "field-edit-title",
     /// Form field: a custom field's label.
     FIELD_LABEL => "field-label",
-    /// Form field: the kind of event a custom field is on.
-    FIELD_APPLIES_TO => "field-applies-to",
     /// Form field: what a custom field holds.
     FIELD_TYPE => "field-type",
     /// Form field: a choice list's choices.
@@ -1281,12 +1279,6 @@ define_messages! {
     METER_REQUIRED_LABEL => "meter-required-label",
     /// Setup: what checking a kind means.
     METER_REQUIRED_NOTE => "meter-required-note",
-    /// Setup: the field dialog's Required switch.
-    FIELD_REQUIRED => "field-required",
-    /// Setup: what Required means for a field.
-    FIELD_REQUIRED_NOTE => "field-required-note",
-    /// Setup: a required field's badge.
-    FIELD_REQUIRED_BADGE => "field-required-badge",
     /// The + Log chooser's title.
     LOG_TITLE => "log-title",
     /// The + Log chooser: the vehicle dropdown.
@@ -1513,4 +1505,12 @@ define_messages! {
     EVENT_DELETE_TITLE => "event-delete-title",
     /// Delete's confirmation.
     EVENT_DELETE_TEXT => "event-delete-text",
+    /// Setup: a field shown on no kind of event.
+    FIELD_NO_KINDS => "field-no-kinds",
+    /// Setup: the field dialog's "Shown on" checkboxes.
+    FIELD_SHOWN_ON => "field-shown-on",
+    /// Setup: what "Shown on" means for a field.
+    FIELD_KIND_NOTE => "field-kind-note",
+    /// Setup: what "Required for" means for a field.
+    FIELD_REQUIRED_FOR_NOTE => "field-required-for-note",
 }

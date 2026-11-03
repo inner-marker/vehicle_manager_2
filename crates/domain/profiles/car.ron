@@ -14,7 +14,7 @@
         (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
     ],
     fields: [
-        (key: "trip-time", label: "field-trip-time", applies_to: fuel, kind: {"type": "duration"}, enabled: true, range: None),
-        (key: "trip-ev-distance", label: "field-trip-ev-distance", applies_to: fuel, kind: {"type": "distance"}, enabled: false, range: None),
+        (key: "trip-time", label: "field-trip-time", shown_on: [fuel], kind: {"type": "duration"}, enabled: true, range: None),
+        (key: "trip-ev-distance", label: "field-trip-ev-distance", shown_on: [fuel], kind: {"type": "distance"}, enabled: false, range: None),
     ],
 )

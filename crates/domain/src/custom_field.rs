@@ -212,13 +212,13 @@ impl From<FieldKey> for String {
     }
 }
 
-/// One custom field on one asset's events of one kind.
+/// One custom field on one asset's events.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CustomField {
     /// Whose field.
     pub asset: AssetId,
-    /// The kind of event it's on.
-    pub applies_to: EventKind,
+    /// The kinds of events it's shown on (at least one), like a meter's.
+    pub shown_on: Vec<EventKind>,
     /// Its stable key (#057); fixed once the field exists.
     pub key: FieldKey,
     /// Its label on forms, e.g. "Trip time".
@@ -227,9 +227,9 @@ pub struct CustomField {
     pub kind: FieldKind,
     /// Shown on forms (a profile's field can be turned off).
     pub enabled: bool,
-    /// Required on its kind of event: given, or skipped with a reason (choice 5). A field
-    /// that's turned off is never required.
-    pub required: bool,
+    /// The kinds of events that require it (among those it's shown on): given, or skipped with
+    /// a reason (choice 5). A field that's turned off is never required.
+    pub required_for: Vec<EventKind>,
     /// The sensible range, for numeric kinds.
     pub range: Option<FieldRange>,
 }
@@ -238,7 +238,13 @@ impl CustomField {
     /// Whether an event of `kind` must give this field (or skip it with a reason).
     #[must_use]
     pub fn required_on(&self, kind: EventKind) -> bool {
-        self.enabled && self.required && self.applies_to == kind
+        self.shown(kind) && self.required_for.contains(&kind)
+    }
+
+    /// Whether events of `kind` show this field (it's on, and shown on that kind).
+    #[must_use]
+    pub fn shown(&self, kind: EventKind) -> bool {
+        self.enabled && self.shown_on.contains(&kind)
     }
 }
 
@@ -256,6 +262,8 @@ pub enum CustomFieldError {
     RangeReversed,
     /// A key that isn't 1–40 lowercase letters, digits, or `-`.
     BadKey,
+    /// Shown on no kind of event.
+    NoKinds,
 }
 
 impl CustomFieldError {
@@ -267,6 +275,7 @@ impl CustomFieldError {
             Self::BadChoices => messages::FIELD_BAD_CHOICES,
             Self::RangeNotNumeric | Self::RangeReversed => messages::FIELD_BAD_RANGE,
             Self::BadKey => messages::SOMETHING_WENT_WRONG,
+            Self::NoKinds => messages::FIELD_NO_KINDS,
         }
     }
 }
@@ -300,9 +309,9 @@ pub struct CustomFieldPatch {
     /// See [`CustomField::asset`] (set when created).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset: Option<AssetId>,
-    /// See [`CustomField::applies_to`] (set when created).
+    /// See [`CustomField::shown_on`] (the whole list).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub applies_to: Option<EventKind>,
+    pub shown_on: Option<Vec<EventKind>>,
     /// See [`CustomField::key`] (set when created).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<FieldKey>,
@@ -315,9 +324,9 @@ pub struct CustomFieldPatch {
     /// See [`CustomField::enabled`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    /// See [`CustomField::required`].
+    /// See [`CustomField::required_for`] (the whole list).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub required: Option<bool>,
+    pub required_for: Option<Vec<EventKind>>,
     /// See [`CustomField::range`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range: Option<Clearable<FieldRange>>,
@@ -329,12 +338,12 @@ impl CustomFieldPatch {
     pub fn all(field: CustomField) -> Self {
         Self {
             asset: Some(field.asset),
-            applies_to: Some(field.applies_to),
+            shown_on: Some(field.shown_on),
             key: Some(field.key),
             label: Some(field.label),
             kind: Some(field.kind),
             enabled: Some(field.enabled),
-            required: Some(field.required),
+            required_for: Some(field.required_for),
             range: Some(Clearable::from_option(field.range)),
         }
     }
@@ -343,12 +352,12 @@ impl CustomFieldPatch {
 /// Every field name, in a fixed order.
 const CUSTOM_FIELD_FIELDS: [&str; 8] = [
     "asset",
-    "applies_to",
+    "shown_on",
     "key",
     "label",
     "kind",
     "enabled",
-    "required",
+    "required_for",
     "range",
 ];
 
@@ -356,12 +365,12 @@ impl Patch for CustomFieldPatch {
     fn changed_fields(&self) -> Vec<&'static str> {
         let set = [
             self.asset.is_some(),
-            self.applies_to.is_some(),
+            self.shown_on.is_some(),
             self.key.is_some(),
             self.label.is_some(),
             self.kind.is_some(),
             self.enabled.is_some(),
-            self.required.is_some(),
+            self.required_for.is_some(),
             self.range.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
@@ -377,8 +386,8 @@ impl Patch for CustomFieldPatch {
         if !keep("asset") {
             self.asset = None;
         }
-        if !keep("applies_to") {
-            self.applies_to = None;
+        if !keep("shown_on") {
+            self.shown_on = None;
         }
         if !keep("key") {
             self.key = None;
@@ -392,8 +401,8 @@ impl Patch for CustomFieldPatch {
         if !keep("enabled") {
             self.enabled = None;
         }
-        if !keep("required") {
-            self.required = None;
+        if !keep("required_for") {
+            self.required_for = None;
         }
         if !keep("range") {
             self.range = None;
@@ -484,14 +493,14 @@ mod tests {
     fn a_create_sets_every_field_and_survives_the_trip() {
         let patch = CustomFieldPatch::all(CustomField {
             asset: test_id(1),
-            applies_to: EventKind::Fuel,
+            shown_on: vec![EventKind::Fuel, EventKind::Reading],
             key: FieldKey::parse("tire-brand").unwrap(),
             label: Label::parse("Tire brand").unwrap(),
             kind: FieldKind::Choice {
                 options: vec![Label::parse("Michelin").unwrap()],
             },
             enabled: true,
-            required: true,
+            required_for: vec![EventKind::Fuel],
             range: None,
         });
         assert_eq!(patch.changed_fields(), CUSTOM_FIELD_FIELDS.to_vec());

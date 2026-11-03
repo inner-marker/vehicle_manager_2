@@ -54,6 +54,10 @@ pub(crate) fn Field(
     #[props(default = "off")] autocomplete: &'static str,
     #[props(default)] mono: bool,
     #[props(default)] autofocus: bool,
+    /// A duration: typed as digits on a number pad, with its `:` put in as they're typed
+    /// (number pads have none), and "HH:MM" as the hint.
+    #[props(default)]
+    duration: bool,
 ) -> Element {
     let mut value = value;
     rsx! {
@@ -65,8 +69,13 @@ pub(crate) fn Field(
                 autocomplete,
                 autofocus,
                 spellcheck: "false",
+                inputmode: duration.then_some("numeric"),
+                placeholder: duration.then_some("HH:MM"),
                 value: value(),
-                oninput: move |event| value.set(event.value()),
+                oninput: move |event| {
+                    let typed = event.value();
+                    value.set(if duration { domain::quantity::duration_as_typed(&typed) } else { typed });
+                },
             }
         }
     }

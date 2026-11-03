@@ -68,13 +68,17 @@ fn meters() -> Vec<(MeterId, Meter)> {
 fn fields() -> Vec<(CustomFieldId, CustomField)> {
     let field = |key: &str, label: &str, kind, enabled, range| CustomField {
         asset: test_id(TRUCK),
-        applies_to: EventKind::Fuel,
+        shown_on: vec![EventKind::Fuel],
         key: FieldKey::parse(key).unwrap(),
         label: Label::parse(label).unwrap(),
         kind,
         enabled,
         // Trip time and the old field are required; the old one is off, so it never is.
-        required: key != "brand",
+        required_for: if key == "brand" {
+            vec![]
+        } else {
+            vec![EventKind::Fuel]
+        },
         range,
     };
     let brands = vec![
@@ -242,8 +246,8 @@ fn required_readings_and_fields_are_given_or_skipped_with_a_reason() {
 
     // A required field on another kind of event isn't asked for on a fuel-up.
     let (meters, mut fields, history) = (meters(), fields(), history());
-    fields[1].1.applies_to = EventKind::Reading;
-    fields[1].1.required = true;
+    fields[1].1.shown_on = vec![EventKind::Fuel, EventKind::Reading];
+    fields[1].1.required_for = vec![EventKind::Reading];
     let mut event = fuel_up();
     event.fields.retain(|value| value.field != test_id(BRAND));
     let context = CheckContext {

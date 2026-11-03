@@ -543,7 +543,6 @@ field-remove-text = To stop asking for it but keep its values, turn it off inste
 field-add-title = Add a custom field
 field-edit-title = Edit field
 field-label = Label
-field-applies-to = On
 field-type = Type
 field-choices = Choices (one per line)
 field-enabled = Shown on forms
@@ -555,7 +554,7 @@ field-range-bad-number = Enter a number for the range, or leave it empty.
 field-key = Key
 field-key-note = Formulas and reports use the key, so it never changes (#057).
 field-key-later = Made from the label when the field is added.
-field-kind-fixed = A field's type and event can't change once it exists.
+field-kind-fixed = A field's type can't change once it exists.
 kind-text = Text
 kind-number = Number
 kind-date = Date
@@ -803,9 +802,6 @@ event-flag-correction = Correction
 
 meter-required-label = Required for
 meter-required-note = Events of a checked kind must record this meter, or skip it with a reason.
-field-required = Required
-field-required-note = Every event of its kind must fill it in, or skip it with a reason. A field that's turned off is never required.
-field-required-badge = Required
 
 ## + Log and the log forms (milestone 6, step 6g)
 
@@ -925,3 +921,10 @@ event-finalize-text = Afterwards it can't be edited or deleted; a mistake is fix
 event-finalize = Finalize
 event-delete-title = Delete this draft?
 event-delete-text = It's removed for good, and its readings no longer count.
+
+## Custom fields shown on several kinds (milestone 6, after the checkpoint)
+
+field-no-kinds = Choose at least one kind of event to show it on.
+field-shown-on = Shown on
+field-kind-note = The kinds of events whose forms show it.
+field-required-for-note = Events of a checked kind must fill it in, or skip it with a reason. A field that's turned off is never required.

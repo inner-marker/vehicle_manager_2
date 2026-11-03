@@ -30,7 +30,7 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::Preferences;
 use domain::profile::{Section, profile};
-use domain::quantity::{parse_money, parse_volume, show_reading, unit_price};
+use domain::quantity::{duration_as_typed, parse_money, parse_volume, show_reading, unit_price};
 use domain::time::Clock;
 
 use super::log_chooser::use_log_chooser;
@@ -825,7 +825,18 @@ fn FieldInput(
                         },
                         FieldKind::Date => rsx! { input { class: "field-input", r#type: "date", value, oninput: set } },
                         FieldKind::Text => rsx! { input { class: "field-input", autocomplete: "off", value, oninput: set } },
-                        FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Duration | FieldKind::Volume | FieldKind::FuelEconomy => rsx! {
+                        // Digits only, with the `:` put in as they're typed (number pads have none).
+                        FieldKind::Duration => rsx! {
+                            input {
+                                class: "field-input",
+                                inputmode: "numeric",
+                                autocomplete: "off",
+                                placeholder: "HH:MM",
+                                value,
+                                oninput: move |event: FormEvent| set_text(inputs.fields, &id, duration_as_typed(&event.value())),
+                            }
+                        },
+                        FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Volume | FieldKind::FuelEconomy => rsx! {
                             input { class: "field-input", inputmode: "decimal", autocomplete: "off", value, oninput: set }
                         },
                     }
@@ -1186,11 +1197,7 @@ fn MoreFold(
     let fields: Vec<(CustomFieldId, CustomField)> = view
         .fields
         .iter()
-        .filter(|(id, field)| {
-            field.enabled
-                && field.applies_to == kind
-                && !required.contains(&Requirement::Field(*id))
-        })
+        .filter(|(id, field)| field.shown(kind) && !required.contains(&Requirement::Field(*id)))
         .cloned()
         .collect();
     if meters.is_empty() && fields.is_empty() && kind != EventKind::Fuel {

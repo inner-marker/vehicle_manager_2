@@ -300,6 +300,24 @@ pub fn parse_duration(text: &str) -> Result<i64, QuantityError> {
     Ok(hours * 3_600 + minutes * 60 + seconds)
 }
 
+/// What a duration field shows as digits are typed: the digits fill from the right, minutes
+/// first, and the `:` goes in by itself (phone number pads have no `:`). "3" is "0:03", "34" is
+/// "0:34", "340" is "3:40", "1230" is "12:30"; anything but digits is ignored, and nothing stays
+/// nothing.
+#[must_use]
+pub fn duration_as_typed(text: &str) -> String {
+    let digits: String = text.chars().filter(char::is_ascii_digit).collect();
+    let digits = digits.trim_start_matches('0');
+    if text.chars().all(|c| !c.is_ascii_digit()) {
+        return String::new();
+    }
+    // At most 9 digits of hours, as the parser accepts.
+    let digits = &digits[..digits.len().min(11)];
+    let padded = format!("{digits:0>3}");
+    let (hours, minutes) = padded.split_at(padded.len() - 2);
+    format!("{hours}:{minutes}")
+}
+
 /// A duration as "1:30" (or "1:30:15" when it has seconds).
 #[must_use]
 pub fn show_duration(seconds: i64) -> String {
@@ -443,6 +461,29 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+
+    #[test]
+    fn a_duration_fills_in_its_colon_as_digits_are_typed() {
+        for (typed, shown) in [
+            ("", ""),
+            ("3", "0:03"),
+            ("34", "0:34"),
+            ("340", "3:40"),
+            ("1230", "12:30"),
+            ("0:340", "3:40"),
+            ("3:4", "0:34"),
+            ("0", "0:00"),
+            ("a", ""),
+        ] {
+            assert_eq!(duration_as_typed(typed), shown, "{typed}");
+        }
+        assert_eq!(parse_duration(&duration_as_typed("340")), Ok(13_200));
+        assert_eq!(
+            duration_as_typed(&duration_as_typed("1230")),
+            "12:30",
+            "stable"
+        );
+    }
 
     #[test]
     fn readings_are_shown_with_thousands_grouped() {

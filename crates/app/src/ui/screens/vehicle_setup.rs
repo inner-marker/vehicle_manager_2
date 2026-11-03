@@ -538,7 +538,7 @@ fn MeterDialog(
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
     let editing_id = current.as_ref().map(|(id, _)| *id);
-    let mut required_for = use_signal(|| {
+    let required_for = use_signal(|| {
         existing
             .as_ref()
             .map(|meter| meter.required_for.clone())
@@ -617,27 +617,7 @@ fn MeterDialog(
                     }
                 }
                 Field { label: messages::FIELD_METER_DESCRIPTION, value: description }
-                fieldset { class: "field required-for",
-                    legend { class: "field-label", {tr(messages::METER_REQUIRED_LABEL)} }
-                    for kind in kinds {
-                        label { key: "{event_value(kind)}", class: "switch",
-                            input {
-                                r#type: "checkbox",
-                                checked: required_for().contains(&kind),
-                                onchange: move |event| {
-                                    let mut kinds = required_for();
-                                    kinds.retain(|have| *have != kind);
-                                    if event.checked() {
-                                        kinds.push(kind);
-                                    }
-                                    required_for.set(kinds);
-                                },
-                            }
-                            span { {tr(kind.label())} }
-                        }
-                    }
-                    p { class: "muted-note", {tr(messages::METER_REQUIRED_NOTE)} }
-                }
+                KindChecks { label: messages::METER_REQUIRED_LABEL, kinds, chosen: required_for, note: messages::METER_REQUIRED_NOTE }
                 if !adding {
                     p { class: "muted-note", {tr(messages::METER_DIMENSION_FIXED)} }
                 }
@@ -701,13 +681,64 @@ fn ConfirmRemove(target: Removal, name: String, on_close: EventHandler<()>) -> E
 
 // --- Custom fields -----------------------------------------------------------------------
 
-/// "Fuel-ups · Duration", and Off when it's turned off.
+/// "Fuel-up, Reading · Duration": where it's shown, and what it holds.
 fn field_summary(field: &CustomField) -> String {
-    format!(
-        "{} · {}",
-        tr(field.applies_to.label()),
-        tr(kind_label(&field.kind))
+    let kinds: Vec<String> = field.shown_on.iter().map(|kind| tr(kind.label())).collect();
+    format!("{} · {}", kinds.join(", "), tr(kind_label(&field.kind)))
+}
+
+/// "Required for: Fuel-up", or that nothing requires it.
+fn field_required_text(field: &CustomField) -> String {
+    if field.required_for.is_empty() {
+        return tr(messages::METER_REQUIRED_NONE);
+    }
+    let kinds: Vec<String> = field
+        .required_for
+        .iter()
+        .map(|kind| tr(kind.label()))
+        .collect();
+    tr_with(
+        messages::METER_REQUIRED_FOR,
+        &[("kinds", MessageArg::from(kinds.join(", ")))],
     )
+}
+
+/// Checkboxes for kinds of events (a meter's or field's Required for, a field's Shown on).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn KindChecks(
+    label: MessageId,
+    kinds: Vec<EventKind>,
+    chosen: Signal<Vec<EventKind>>,
+    note: MessageId,
+) -> Element {
+    let mut chosen = chosen;
+    rsx! {
+        fieldset { class: "field required-for",
+            legend { class: "field-label", {tr(label)} }
+            for kind in kinds {
+                label { key: "{event_value(kind)}", class: "switch",
+                    input {
+                        r#type: "checkbox",
+                        checked: chosen().contains(&kind),
+                        onchange: move |event| {
+                            let mut list = chosen();
+                            list.retain(|have| *have != kind);
+                            if event.checked() {
+                                list.push(kind);
+                            }
+                            chosen.set(list);
+                        },
+                    }
+                    span { {tr(kind.label())} }
+                }
+            }
+            p { class: "muted-note", {tr(note)} }
+        }
+    }
 }
 
 /// Custom fields: each with its event, type, and key; Edit and Remove.
@@ -738,11 +769,10 @@ fn FieldsSection(view: AssetView) -> Element {
                             {field.label.as_str().to_owned()}
                             if !field.enabled {
                                 span { class: "badge", {tr(messages::FIELD_OFF)} }
-                            } else if field.required {
-                                span { class: "badge", {tr(messages::FIELD_REQUIRED_BADGE)} }
                             }
                         }
                         span { class: "setup-row-detail", {field_summary(&field)} }
+                        span { class: "setup-row-detail", {field_required_text(&field)} }
                         span { class: "setup-row-key mono", {field.key.as_str().to_owned()} }
                     }
                     if can {
@@ -870,13 +900,13 @@ fn range_from_form(
 /// The field form's values, as signals.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct FieldInputs {
-    applies_to: Signal<EventKind>,
+    shown_on: Signal<Vec<EventKind>>,
     label: Signal<String>,
     kind: Signal<&'static str>,
     decimals: Signal<u8>,
     choices: Signal<String>,
     enabled: Signal<bool>,
-    required: Signal<bool>,
+    required_for: Signal<Vec<EventKind>>,
     min: Signal<String>,
     max: Signal<String>,
     /// The person's units, for the range.
@@ -892,17 +922,18 @@ impl FieldInputs {
         };
         let range = range_from_form(&kind, (&(self.min)(), &(self.max)()), (self.units)())?;
         Ok(FieldForm {
-            applies_to: kept.map_or((self.applies_to)(), |field| field.applies_to),
+            shown_on: (self.shown_on)(),
             label: (self.label)(),
             kind,
             enabled: (self.enabled)(),
-            required: (self.required)(),
+            required_for: (self.required_for)(),
             range,
         })
     }
 }
 
-/// Add a custom field, or change one (its label, on/off, required, and a number's range).
+/// Add a custom field, or change one (its label, where it's shown and required, on/off, and a
+/// number's range).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -943,7 +974,12 @@ fn FieldDialog(
     let start_min = range_end(true);
     let start_max = range_end(false);
     let inputs = FieldInputs {
-        applies_to: use_signal(|| kinds.first().copied().unwrap_or(EventKind::Fuel)),
+        shown_on: use_signal(|| {
+            existing.as_ref().map_or_else(
+                || kinds.first().copied().into_iter().collect(),
+                |field| field.shown_on.clone(),
+            )
+        }),
         label: use_signal(|| {
             existing
                 .as_ref()
@@ -958,7 +994,12 @@ fn FieldDialog(
         decimals: use_signal(|| decimals_now),
         choices: use_signal(String::new),
         enabled: use_signal(|| existing.as_ref().is_none_or(|field| field.enabled)),
-        required: use_signal(|| existing.as_ref().is_some_and(|field| field.required)),
+        required_for: use_signal(|| {
+            existing
+                .as_ref()
+                .map(|field| field.required_for.clone())
+                .unwrap_or_default()
+        }),
         min: use_signal(|| start_min),
         max: use_signal(|| start_max),
         units: use_signal(|| units),
@@ -995,8 +1036,8 @@ fn FieldDialog(
             form { class: "dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
                 h2 { class: "dialog-title", {tr(if existing.is_none() { messages::FIELD_ADD_TITLE } else { messages::FIELD_EDIT_TITLE })} }
                 Field { label: messages::FIELD_LABEL, value: inputs.label, autofocus: true }
-                FieldTypeInputs { inputs, kinds, existing: existing.clone() }
-                FieldOptionInputs { inputs, existing }
+                FieldTypeInputs { inputs, existing: existing.clone() }
+                FieldOptionInputs { inputs, kinds, existing }
                 FormError { message: error() }
                 SaveButtons { busy: busy(), on_close }
             }
@@ -1010,13 +1051,8 @@ fn FieldDialog(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FieldTypeInputs(
-    inputs: FieldInputs,
-    kinds: Vec<EventKind>,
-    existing: Option<CustomField>,
-) -> Element {
+fn FieldTypeInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
     let FieldInputs {
-        mut applies_to,
         mut kind,
         mut decimals,
         mut choices,
@@ -1024,26 +1060,12 @@ fn FieldTypeInputs(
     } = inputs;
     if let Some(field) = existing {
         return rsx! {
-            p { {field_summary(&field)} }
+            p { {tr(kind_label(&field.kind))} }
             p { class: "muted-note", {tr(messages::FIELD_KIND_FIXED)} }
         };
     }
     rsx! {
         div { class: "field-row",
-            label { class: "field",
-                span { class: "field-label", {tr(messages::FIELD_APPLIES_TO)} }
-                select {
-                    class: "field-input",
-                    onchange: move |event| {
-                        if let Some(chosen) = event_from_value(&event.value()) {
-                            applies_to.set(chosen);
-                        }
-                    },
-                    for choice in kinds {
-                        option { key: "{event_value(choice)}", value: event_value(choice), selected: applies_to() == choice, {tr(choice.label())} }
-                    }
-                }
-            }
             label { class: "field",
                 span { class: "field-label", {tr(messages::FIELD_TYPE)} }
                 select {
@@ -1086,15 +1108,27 @@ fn FieldTypeInputs(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
+fn FieldOptionInputs(
+    inputs: FieldInputs,
+    /// The vehicle's kinds of events.
+    kinds: Vec<EventKind>,
+    existing: Option<CustomField>,
+) -> Element {
     let mut enabled = inputs.enabled;
-    let mut required = inputs.required;
+    // Only kinds it's shown on can require it.
+    let shown: Vec<EventKind> = kinds
+        .iter()
+        .copied()
+        .filter(|kind| (inputs.shown_on)().contains(kind))
+        .collect();
     // The field's kind (fixed once it exists; chosen while adding), for its range.
     let kind = existing.as_ref().map_or_else(
         || kind_from_form((inputs.kind)(), (inputs.decimals)(), "x").unwrap_or(FieldKind::Text),
         |field| field.kind.clone(),
     );
     let numeric = kind.is_numeric();
+    // A duration is typed as digits, with its `:` put in (phone number pads have none).
+    let duration = matches!(kind, FieldKind::Duration);
     let unit = crate::ui::units::field_unit(&kind, (inputs.units)());
     let with_unit = |label| {
         unit.as_ref()
@@ -1105,15 +1139,14 @@ fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Elem
             input { r#type: "checkbox", checked: enabled(), onchange: move |event| enabled.set(event.checked()) }
             span { {tr(messages::FIELD_ENABLED)} }
         }
-        label { class: "switch",
-            input { r#type: "checkbox", checked: required(), onchange: move |event| required.set(event.checked()) }
-            span { {tr(messages::FIELD_REQUIRED)} }
+        KindChecks { label: messages::FIELD_SHOWN_ON, kinds, chosen: inputs.shown_on, note: messages::FIELD_KIND_NOTE }
+        if !shown.is_empty() {
+            KindChecks { label: messages::METER_REQUIRED_LABEL, kinds: shown, chosen: inputs.required_for, note: messages::FIELD_REQUIRED_FOR_NOTE }
         }
-        p { class: "muted-note", {tr(messages::FIELD_REQUIRED_NOTE)} }
         if numeric {
             div { class: "field-row",
-                Field { label: messages::FIELD_RANGE_MIN, label_text: with_unit(messages::FIELD_RANGE_MIN), value: inputs.min }
-                Field { label: messages::FIELD_RANGE_MAX, label_text: with_unit(messages::FIELD_RANGE_MAX), value: inputs.max }
+                Field { label: messages::FIELD_RANGE_MIN, label_text: with_unit(messages::FIELD_RANGE_MIN), value: inputs.min, duration }
+                Field { label: messages::FIELD_RANGE_MAX, label_text: with_unit(messages::FIELD_RANGE_MAX), value: inputs.max, duration }
             }
             p { class: "muted-note", {tr(messages::FIELD_RANGE_NOTE)} }
         }

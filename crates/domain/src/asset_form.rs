@@ -242,33 +242,58 @@ impl MeterForm {
     }
 }
 
-/// A custom field's settings as typed (its kind and event kind are fixed once it exists).
+/// A custom field's settings as typed (its kind is fixed once it exists).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FieldForm {
-    /// The kind of event it's on.
-    pub applies_to: EventKind,
+    /// The kinds of events it's shown on.
+    pub shown_on: Vec<EventKind>,
     /// Its label.
     pub label: String,
     /// What it holds.
     pub kind: FieldKind,
     /// Shown on forms.
     pub enabled: bool,
-    /// Required on its kind of event.
-    pub required: bool,
+    /// The kinds of events that require it.
+    pub required_for: Vec<EventKind>,
     /// Its sensible range, for numbers.
     pub range: Option<FieldRange>,
 }
 
+/// A custom field form, checked.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParsedField {
+    /// Its label.
+    pub label: Label,
+    /// The kinds it's shown on, without repeats, in order.
+    pub shown_on: Vec<EventKind>,
+    /// The kinds that require it: only kinds it's shown on, without repeats, in order.
+    pub required_for: Vec<EventKind>,
+}
+
 impl FieldForm {
-    /// The label, after checking the whole form.
+    /// The form, checked.
     ///
     /// # Errors
     ///
     /// The first [`Problem`] found.
-    pub fn parse(&self) -> Result<Label, Problem> {
+    pub fn parse(&self) -> Result<ParsedField, Problem> {
         let label = Label::parse(&self.label).map_err(Problem::Label)?;
         check_field(&self.kind, self.range).map_err(Problem::Field)?;
-        Ok(label)
+        let mut shown_on = self.shown_on.clone();
+        shown_on.sort_unstable();
+        shown_on.dedup();
+        if shown_on.is_empty() {
+            return Err(Problem::Field(CustomFieldError::NoKinds));
+        }
+        let mut required_for = self.required_for.clone();
+        required_for.retain(|kind| shown_on.contains(kind));
+        required_for.sort_unstable();
+        required_for.dedup();
+        Ok(ParsedField {
+            label,
+            shown_on,
+            required_for,
+        })
     }
 }
 
@@ -358,6 +383,29 @@ mod tests {
             ..truck_form()
         };
         assert_eq!(long_notes.parse(), Err(Problem::Notes(NotesError::TooLong)));
+    }
+
+    #[test]
+    fn a_field_form_needs_a_kind_and_is_required_only_where_its_shown() {
+        let form = FieldForm {
+            shown_on: vec![EventKind::Reading, EventKind::Fuel, EventKind::Reading],
+            label: "Trip time".into(),
+            kind: FieldKind::Duration,
+            enabled: true,
+            required_for: vec![EventKind::Repair, EventKind::Fuel],
+            range: None,
+        };
+        let parsed = form.parse().unwrap();
+        assert_eq!(parsed.shown_on, vec![EventKind::Fuel, EventKind::Reading]);
+        assert_eq!(parsed.required_for, vec![EventKind::Fuel]);
+        let nowhere = FieldForm {
+            shown_on: vec![],
+            ..form
+        };
+        assert_eq!(
+            nowhere.parse(),
+            Err(Problem::Field(CustomFieldError::NoKinds))
+        );
     }
 
     #[test]

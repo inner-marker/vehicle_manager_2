@@ -263,7 +263,7 @@ fn fields(typed: &Typed, context: &Context<'_>) -> Result<Vec<FieldValue>, Probl
             .skipped
             .iter()
             .any(|(item, _)| *item == Requirement::Field(*id));
-        if skipping || !field.enabled || field.applies_to != context.kind {
+        if skipping || !field.shown(context.kind) {
             continue;
         }
         if let Some(data) =
@@ -499,12 +499,12 @@ mod tests {
             test_id(TRIP),
             CustomField {
                 asset: test_id(1),
-                applies_to: EventKind::Fuel,
+                shown_on: vec![EventKind::Fuel],
                 key: FieldKey::parse("trip-time").unwrap(),
                 label: Label::parse("Trip time").unwrap(),
                 kind: FieldKind::Duration,
                 enabled: true,
-                required: false,
+                required_for: vec![],
                 range: None,
             },
         )]
@@ -675,7 +675,7 @@ mod tests {
             required_items(EventKind::Fuel, &meters(), &fields),
             vec![Requirement::Meter(test_id(ODOMETER))]
         );
-        fields[0].1.required = true;
+        fields[0].1.required_for = vec![EventKind::Fuel];
         assert_eq!(required_items(EventKind::Fuel, &meters(), &fields).len(), 2);
         assert!(required_items(EventKind::Reading, &meters(), &fields).is_empty());
     }
