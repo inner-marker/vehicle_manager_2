@@ -15,11 +15,16 @@ use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::label::Label;
 use domain::meter::{EventKind, MAX_PRECISION, Meter, MeterDimension, MeterId, MeterUnit};
+use domain::preferences::Preferences;
 use domain::profile::profile;
+use domain::quantity::{
+    QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
+    parse_duration, parse_economy, parse_volume, show_duration, volume_value,
+};
 
 use super::users::role_label;
 use super::vehicle::{
-    VehiclePage, identifier_name, meter_summary, precision_label, use_vehicle_page,
+    VehiclePage, identifier_name, meter_summary, precision_label, required_text, use_vehicle_page,
 };
 use super::vehicles::status_label;
 use crate::api;
@@ -55,10 +60,7 @@ async fn changed(page: VehiclePage, vehicles: VehiclesContext) {
 
 /// The kinds of events a vehicle has, from its profile (all of them for an unknown kind).
 fn event_kinds(asset: &Asset) -> Vec<EventKind> {
-    profile(&asset.kind).map_or_else(
-        || EventKind::ALL.to_vec(),
-        |profile| profile.event_kinds.clone(),
-    )
+    domain::profile::event_kinds(&asset.kind)
 }
 
 /// A custom field type's name.
@@ -90,7 +92,7 @@ const KINDS: [(&str, MessageId); 9] = [
 ];
 
 /// An event kind's `<option>` value, and back.
-const fn event_value(kind: EventKind) -> &'static str {
+pub(super) const fn event_value(kind: EventKind) -> &'static str {
     match kind {
         EventKind::Fuel => "fuel",
         EventKind::Reading => "reading",
@@ -99,7 +101,7 @@ const fn event_value(kind: EventKind) -> &'static str {
     }
 }
 
-fn event_from_value(value: &str) -> Option<EventKind> {
+pub(super) fn event_from_value(value: &str) -> Option<EventKind> {
     EventKind::ALL
         .into_iter()
         .find(|kind| event_value(*kind) == value)
@@ -179,7 +181,6 @@ pub(super) fn Setup(view: AssetView) -> Element {
             DetailsSection { view: view.clone() }
             MetersSection { view: view.clone() }
             FieldsSection { view: view.clone() }
-            RequiredReadings { view: view.clone() }
             GroupAndStatus { view }
         }
     }
@@ -424,6 +425,7 @@ enum Editing<I, T> {
 fn MetersSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<MeterId, Meter>>);
     let can = view.can_configure;
+    let kinds = event_kinds(&view.asset);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::PANEL_METERS,
@@ -439,6 +441,7 @@ fn MetersSection(view: AssetView) -> Element {
                     div { class: "setup-row-text",
                         span { class: "setup-row-name", {meter.name.as_str().to_owned()} }
                         span { class: "setup-row-detail", {meter_summary(&meter)} }
+                        span { class: "setup-row-detail", {required_text(&meter)} }
                     }
                     if can {
                         RowButtons {
@@ -458,10 +461,10 @@ fn MetersSection(view: AssetView) -> Element {
         match editing() {
             None => rsx! {},
             Some(Editing::Adding) => rsx! {
-                MeterDialog { asset: view.id, current: None, on_close: move |()| editing.set(None) }
+                MeterDialog { asset: view.id, kinds, current: None, on_close: move |()| editing.set(None) }
             },
             Some(Editing::Changing(id, meter)) => rsx! {
-                MeterDialog { asset: view.id, current: Some((id, meter)), on_close: move |()| editing.set(None) }
+                MeterDialog { asset: view.id, kinds, current: Some((id, meter)), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Meter(id), name, on_close: move |()| editing.set(None) }
@@ -493,7 +496,8 @@ fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
         .collect()
 }
 
-/// Add a meter, or change one (its name, unit, decimals, and description).
+/// Add a meter, or change one (its name, unit, decimals, description, and which kinds of
+/// event require it).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -501,6 +505,8 @@ fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
 #[component]
 fn MeterDialog(
     asset: AssetId,
+    /// The vehicle's kinds of events, for "Required for".
+    kinds: Vec<EventKind>,
     current: Option<(MeterId, Meter)>,
     on_close: EventHandler<()>,
 ) -> Element {
@@ -532,10 +538,12 @@ fn MeterDialog(
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
     let editing_id = current.as_ref().map(|(id, _)| *id);
-    let required_for = existing
-        .as_ref()
-        .map(|meter| meter.required_for.clone())
-        .unwrap_or_default();
+    let required_for = use_signal(|| {
+        existing
+            .as_ref()
+            .map(|meter| meter.required_for.clone())
+            .unwrap_or_default()
+    });
     let submit = move |event: FormEvent| {
         event.prevent_default();
         let form = MeterForm {
@@ -544,7 +552,7 @@ fn MeterDialog(
             unit: unit(),
             precision: precision(),
             description: description(),
-            required_for: required_for.clone(),
+            required_for: required_for(),
         };
         busy.set(true);
         spawn(async move {
@@ -609,6 +617,7 @@ fn MeterDialog(
                     }
                 }
                 Field { label: messages::FIELD_METER_DESCRIPTION, value: description }
+                KindChecks { label: messages::METER_REQUIRED_LABEL, kinds, chosen: required_for, note: messages::METER_REQUIRED_NOTE }
                 if !adding {
                     p { class: "muted-note", {tr(messages::METER_DIMENSION_FIXED)} }
                 }
@@ -672,13 +681,64 @@ fn ConfirmRemove(target: Removal, name: String, on_close: EventHandler<()>) -> E
 
 // --- Custom fields -----------------------------------------------------------------------
 
-/// "Fuel-ups · Duration", and Off when it's turned off.
+/// "Fuel-up, Reading · Duration": where it's shown, and what it holds.
 fn field_summary(field: &CustomField) -> String {
-    format!(
-        "{} · {}",
-        tr(field.applies_to.label()),
-        tr(kind_label(&field.kind))
+    let kinds: Vec<String> = field.shown_on.iter().map(|kind| tr(kind.label())).collect();
+    format!("{} · {}", kinds.join(", "), tr(kind_label(&field.kind)))
+}
+
+/// "Required for: Fuel-up", or that nothing requires it.
+fn field_required_text(field: &CustomField) -> String {
+    if field.required_for.is_empty() {
+        return tr(messages::METER_REQUIRED_NONE);
+    }
+    let kinds: Vec<String> = field
+        .required_for
+        .iter()
+        .map(|kind| tr(kind.label()))
+        .collect();
+    tr_with(
+        messages::METER_REQUIRED_FOR,
+        &[("kinds", MessageArg::from(kinds.join(", ")))],
     )
+}
+
+/// Checkboxes for kinds of events (a meter's or field's Required for, a field's Shown on).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn KindChecks(
+    label: MessageId,
+    kinds: Vec<EventKind>,
+    chosen: Signal<Vec<EventKind>>,
+    note: MessageId,
+) -> Element {
+    let mut chosen = chosen;
+    rsx! {
+        fieldset { class: "field required-for",
+            legend { class: "field-label", {tr(label)} }
+            for kind in kinds {
+                label { key: "{event_value(kind)}", class: "switch",
+                    input {
+                        r#type: "checkbox",
+                        checked: chosen().contains(&kind),
+                        onchange: move |event| {
+                            let mut list = chosen();
+                            list.retain(|have| *have != kind);
+                            if event.checked() {
+                                list.push(kind);
+                            }
+                            chosen.set(list);
+                        },
+                    }
+                    span { {tr(kind.label())} }
+                }
+            }
+            p { class: "muted-note", {tr(note)} }
+        }
+    }
 }
 
 /// Custom fields: each with its event, type, and key; Edit and Remove.
@@ -689,6 +749,7 @@ fn field_summary(field: &CustomField) -> String {
 #[component]
 fn FieldsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<CustomFieldId, CustomField>>);
+    let units = crate::ui::units::use_units();
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     rsx! {
@@ -711,6 +772,7 @@ fn FieldsSection(view: AssetView) -> Element {
                             }
                         }
                         span { class: "setup-row-detail", {field_summary(&field)} }
+                        span { class: "setup-row-detail", {field_required_text(&field)} }
                         span { class: "setup-row-key mono", {field.key.as_str().to_owned()} }
                     }
                     if can {
@@ -731,10 +793,10 @@ fn FieldsSection(view: AssetView) -> Element {
         match editing() {
             None => rsx! {},
             Some(Editing::Adding) => rsx! {
-                FieldDialog { asset: view.id, kinds, current: None, on_close: move |()| editing.set(None) }
+                FieldDialog { asset: view.id, kinds, current: None, units: units(), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Changing(id, field)) => rsx! {
-                FieldDialog { asset: view.id, kinds, current: Some((id, field)), on_close: move |()| editing.set(None) }
+                FieldDialog { asset: view.id, kinds, current: Some((id, field)), units: units(), on_close: move |()| editing.set(None) }
             },
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
@@ -773,18 +835,60 @@ fn kind_value(kind: &FieldKind) -> &'static str {
         .map_or("text", |(value, _)| value)
 }
 
-/// The range as typed, for a number field; other fields keep the range they have.
+/// A range end as typed for a field of `kind`, in the person's `units`, as the stored value
+/// (`None` when empty). Numbers keep their decimals; distances, durations, volumes, and fuel
+/// economy are typed in the person's units (#007).
+fn parse_range_end(
+    kind: &FieldKind,
+    text: &str,
+    units: Preferences,
+) -> Result<Option<i64>, MessageId> {
+    if text.trim().is_empty() {
+        return Ok(None);
+    }
+    let quantity =
+        |result: Result<i64, QuantityError>| result.map(Some).map_err(QuantityError::message);
+    match kind {
+        FieldKind::Number { decimals } => {
+            parse_scaled(text, *decimals).map_err(|()| messages::FIELD_RANGE_BAD_NUMBER)
+        }
+        FieldKind::Distance => quantity(parse_distance(text, units.distance)),
+        FieldKind::Duration => quantity(parse_duration(text)),
+        FieldKind::Volume => quantity(parse_volume(text, units.volume)),
+        FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
+        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => Ok(None),
+    }
+}
+
+/// A stored range end for a field of `kind`, as the person types it in their `units`.
+fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
+    match kind {
+        FieldKind::Number { decimals } => show_scaled(value, *decimals),
+        FieldKind::Distance => distance_value(value, units.distance),
+        FieldKind::Duration => show_duration(value),
+        FieldKind::Volume => volume_value(value, units.volume),
+        FieldKind::FuelEconomy => economy_value(value, units.economy),
+        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => {
+            String::new()
+        }
+    }
+}
+
+/// The range as typed, for a numeric field, in the person's `units`. In L/100 km, more is
+/// worse, so the typed lowest and highest swap when stored (meters per liter).
 fn range_from_form(
     kind: &FieldKind,
     (min, max): (&str, &str),
-    kept: Option<FieldRange>,
+    units: Preferences,
 ) -> Result<Option<FieldRange>, MessageId> {
-    let FieldKind::Number { decimals } = kind else {
-        return Ok(kept.filter(|_| kind.is_numeric()));
-    };
-    let bad = |()| messages::FIELD_RANGE_BAD_NUMBER;
-    let low = parse_scaled(min, *decimals).map_err(bad)?;
-    let high = parse_scaled(max, *decimals).map_err(bad)?;
+    if !kind.is_numeric() {
+        return Ok(None);
+    }
+    let mut low = parse_range_end(kind, min, units)?;
+    let mut high = parse_range_end(kind, max, units)?;
+    if matches!(kind, FieldKind::FuelEconomy) && economy_is_inverse(units.economy) {
+        core::mem::swap(&mut low, &mut high);
+    }
     if low.is_none() && high.is_none() {
         return Ok(None);
     }
@@ -796,14 +900,17 @@ fn range_from_form(
 /// The field form's values, as signals.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct FieldInputs {
-    applies_to: Signal<EventKind>,
+    shown_on: Signal<Vec<EventKind>>,
     label: Signal<String>,
     kind: Signal<&'static str>,
     decimals: Signal<u8>,
     choices: Signal<String>,
     enabled: Signal<bool>,
+    required_for: Signal<Vec<EventKind>>,
     min: Signal<String>,
     max: Signal<String>,
+    /// The person's units, for the range.
+    units: Signal<Preferences>,
 }
 
 impl FieldInputs {
@@ -813,22 +920,20 @@ impl FieldInputs {
             Some(field) => field.kind.clone(),
             None => kind_from_form((self.kind)(), (self.decimals)(), &(self.choices)())?,
         };
-        let range = range_from_form(
-            &kind,
-            (&(self.min)(), &(self.max)()),
-            kept.and_then(|field| field.range),
-        )?;
+        let range = range_from_form(&kind, (&(self.min)(), &(self.max)()), (self.units)())?;
         Ok(FieldForm {
-            applies_to: kept.map_or((self.applies_to)(), |field| field.applies_to),
+            shown_on: (self.shown_on)(),
             label: (self.label)(),
             kind,
             enabled: (self.enabled)(),
+            required_for: (self.required_for)(),
             range,
         })
     }
 }
 
-/// Add a custom field, or change one (its label, on/off, and a number's range).
+/// Add a custom field, or change one (its label, where it's shown and required, on/off, and a
+/// number's range).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -838,6 +943,8 @@ fn FieldDialog(
     asset: AssetId,
     kinds: Vec<EventKind>,
     current: Option<(CustomFieldId, CustomField)>,
+    /// The person's units (loaded with Setup), for the range.
+    units: Preferences,
     on_close: EventHandler<()>,
 ) -> Element {
     let page = use_vehicle_page();
@@ -846,18 +953,33 @@ fn FieldDialog(
         Some(FieldKind::Number { decimals }) => *decimals,
         _ => 0,
     };
-    let range_end = |end: fn(&FieldRange) -> Option<i64>| {
+    // In L/100 km the stored lowest is the typed highest (more is worse).
+    let inverse = existing
+        .as_ref()
+        .is_some_and(|field| matches!(field.kind, FieldKind::FuelEconomy))
+        && economy_is_inverse(units.economy);
+    let range_end = |low: bool| {
+        let end = |range: &FieldRange| if low == inverse { range.max } else { range.min };
         existing
             .as_ref()
-            .and_then(|field| field.range.as_ref())
-            .and_then(end)
-            .map(|value| show_scaled(value, decimals_now))
+            .and_then(|field| {
+                field
+                    .range
+                    .as_ref()
+                    .and_then(end)
+                    .map(|value| range_end_text(&field.kind, value, units))
+            })
             .unwrap_or_default()
     };
-    let start_min = range_end(|range| range.min);
-    let start_max = range_end(|range| range.max);
+    let start_min = range_end(true);
+    let start_max = range_end(false);
     let inputs = FieldInputs {
-        applies_to: use_signal(|| kinds.first().copied().unwrap_or(EventKind::Fuel)),
+        shown_on: use_signal(|| {
+            existing.as_ref().map_or_else(
+                || kinds.first().copied().into_iter().collect(),
+                |field| field.shown_on.clone(),
+            )
+        }),
         label: use_signal(|| {
             existing
                 .as_ref()
@@ -872,8 +994,15 @@ fn FieldDialog(
         decimals: use_signal(|| decimals_now),
         choices: use_signal(String::new),
         enabled: use_signal(|| existing.as_ref().is_none_or(|field| field.enabled)),
+        required_for: use_signal(|| {
+            existing
+                .as_ref()
+                .map(|field| field.required_for.clone())
+                .unwrap_or_default()
+        }),
         min: use_signal(|| start_min),
         max: use_signal(|| start_max),
+        units: use_signal(|| units),
     };
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
@@ -907,8 +1036,8 @@ fn FieldDialog(
             form { class: "dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
                 h2 { class: "dialog-title", {tr(if existing.is_none() { messages::FIELD_ADD_TITLE } else { messages::FIELD_EDIT_TITLE })} }
                 Field { label: messages::FIELD_LABEL, value: inputs.label, autofocus: true }
-                FieldTypeInputs { inputs, kinds, existing: existing.clone() }
-                FieldOptionInputs { inputs, existing }
+                FieldTypeInputs { inputs, existing: existing.clone() }
+                FieldOptionInputs { inputs, kinds, existing }
                 FormError { message: error() }
                 SaveButtons { busy: busy(), on_close }
             }
@@ -922,13 +1051,8 @@ fn FieldDialog(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FieldTypeInputs(
-    inputs: FieldInputs,
-    kinds: Vec<EventKind>,
-    existing: Option<CustomField>,
-) -> Element {
+fn FieldTypeInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
     let FieldInputs {
-        mut applies_to,
         mut kind,
         mut decimals,
         mut choices,
@@ -936,26 +1060,12 @@ fn FieldTypeInputs(
     } = inputs;
     if let Some(field) = existing {
         return rsx! {
-            p { {field_summary(&field)} }
+            p { {tr(kind_label(&field.kind))} }
             p { class: "muted-note", {tr(messages::FIELD_KIND_FIXED)} }
         };
     }
     rsx! {
         div { class: "field-row",
-            label { class: "field",
-                span { class: "field-label", {tr(messages::FIELD_APPLIES_TO)} }
-                select {
-                    class: "field-input",
-                    onchange: move |event| {
-                        if let Some(chosen) = event_from_value(&event.value()) {
-                            applies_to.set(chosen);
-                        }
-                    },
-                    for choice in kinds {
-                        option { key: "{event_value(choice)}", value: event_value(choice), selected: applies_to() == choice, {tr(choice.label())} }
-                    }
-                }
-            }
             label { class: "field",
                 span { class: "field-label", {tr(messages::FIELD_TYPE)} }
                 select {
@@ -998,21 +1108,45 @@ fn FieldTypeInputs(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Element {
+fn FieldOptionInputs(
+    inputs: FieldInputs,
+    /// The vehicle's kinds of events.
+    kinds: Vec<EventKind>,
+    existing: Option<CustomField>,
+) -> Element {
     let mut enabled = inputs.enabled;
-    let is_number = existing.as_ref().map_or_else(
-        || (inputs.kind)() == "number",
-        |field| matches!(field.kind, FieldKind::Number { .. }),
+    // Only kinds it's shown on can require it.
+    let shown: Vec<EventKind> = kinds
+        .iter()
+        .copied()
+        .filter(|kind| (inputs.shown_on)().contains(kind))
+        .collect();
+    // The field's kind (fixed once it exists; chosen while adding), for its range.
+    let kind = existing.as_ref().map_or_else(
+        || kind_from_form((inputs.kind)(), (inputs.decimals)(), "x").unwrap_or(FieldKind::Text),
+        |field| field.kind.clone(),
     );
+    let numeric = kind.is_numeric();
+    // A duration is typed as digits, with its `:` put in (phone number pads have none).
+    let duration = matches!(kind, FieldKind::Duration);
+    let unit = crate::ui::units::field_unit(&kind, (inputs.units)());
+    let with_unit = |label| {
+        unit.as_ref()
+            .map_or_else(|| tr(label), |unit| format!("{} ({unit})", tr(label)))
+    };
     rsx! {
         label { class: "switch",
             input { r#type: "checkbox", checked: enabled(), onchange: move |event| enabled.set(event.checked()) }
             span { {tr(messages::FIELD_ENABLED)} }
         }
-        if is_number {
+        KindChecks { label: messages::FIELD_SHOWN_ON, kinds, chosen: inputs.shown_on, note: messages::FIELD_KIND_NOTE }
+        if !shown.is_empty() {
+            KindChecks { label: messages::METER_REQUIRED_LABEL, kinds: shown, chosen: inputs.required_for, note: messages::FIELD_REQUIRED_FOR_NOTE }
+        }
+        if numeric {
             div { class: "field-row",
-                Field { label: messages::FIELD_RANGE_MIN, value: inputs.min }
-                Field { label: messages::FIELD_RANGE_MAX, value: inputs.max }
+                Field { label: messages::FIELD_RANGE_MIN, label_text: with_unit(messages::FIELD_RANGE_MIN), value: inputs.min, duration }
+                Field { label: messages::FIELD_RANGE_MAX, label_text: with_unit(messages::FIELD_RANGE_MAX), value: inputs.max, duration }
             }
             p { class: "muted-note", {tr(messages::FIELD_RANGE_NOTE)} }
         }
@@ -1025,104 +1159,6 @@ fn FieldOptionInputs(inputs: FieldInputs, existing: Option<CustomField>) -> Elem
                 },
                 None => rsx! { span { class: "muted-note", {tr(messages::FIELD_KEY_LATER)} } },
             }
-        }
-    }
-}
-
-// --- Required readings -------------------------------------------------------------------
-
-/// Which meters each kind of event must record: a grid of meters by event kinds.
-#[component]
-fn RequiredReadings(view: AssetView) -> Element {
-    let page = use_vehicle_page();
-    let mut error = use_signal(|| None::<String>);
-    let kinds = event_kinds(&view.asset);
-    if view.meters.is_empty() {
-        return rsx! {};
-    }
-    let toggle = move |(id, meter, kind): (MeterId, Meter, EventKind)| {
-        let mut required_for = meter.required_for.clone();
-        if required_for.contains(&kind) {
-            required_for.retain(|have| *have != kind);
-        } else {
-            required_for.push(kind);
-        }
-        let form = MeterForm {
-            name: meter.name.as_str().to_owned(),
-            dimension: meter.dimension,
-            unit: meter.unit,
-            precision: meter.precision,
-            description: meter.description.clone().unwrap_or_default(),
-            required_for,
-        };
-        spawn(async move {
-            let result = api::edit_vehicle_meter(id, form).await;
-            error.set(failure(&result));
-            page.reload();
-        });
-    };
-    rsx! {
-        section { class: "setup-section",
-            SectionHeading { title: messages::SETUP_REQUIRED }
-            p { class: "muted-note", {tr(messages::SETUP_REQUIRED_NOTE)} }
-            div { class: "required-grid-scroll",
-                table { class: "required-grid",
-                    thead {
-                        tr {
-                            th {}
-                            for kind in kinds.iter() {
-                                th { key: "{event_value(*kind)}", scope: "col", {tr(kind.label())} }
-                            }
-                        }
-                    }
-                    tbody {
-                        for (meter_id, meter) in view.meters.clone() {
-                            tr { key: "{meter_id}",
-                                th { scope: "row", {meter.name.as_str().to_owned()} }
-                                for kind in kinds.clone() {
-                                    td { key: "{event_value(kind)}",
-                                        RequiredCell {
-                                            required: meter.required_for.contains(&kind),
-                                            can: view.can_configure,
-                                            label: format!("{} · {}", meter.name.as_str(), tr(kind.label())),
-                                            on_toggle: {
-                                                let meter = meter.clone();
-                                                move |()| toggle((meter_id, meter.clone(), kind))
-                                            },
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            FormError { message: error() }
-        }
-    }
-}
-
-/// One cell: a checkbox for someone who may change it, otherwise a ✓ or nothing.
-#[expect(
-    unused_qualifications,
-    reason = "false positive in rsx! event-handler expansion"
-)]
-#[component]
-fn RequiredCell(required: bool, can: bool, label: String, on_toggle: EventHandler<()>) -> Element {
-    if !can {
-        return rsx! {
-            if required {
-                span { "aria-label": label, "✓" }
-            }
-        };
-    }
-    rsx! {
-        input {
-            class: "required-check",
-            r#type: "checkbox",
-            "aria-label": label,
-            checked: required,
-            onchange: move |_| on_toggle.call(()),
         }
     }
 }
@@ -1381,6 +1417,7 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use domain::preferences::{DistanceUnit, EconomyUnit, VolumeUnit};
 
     #[test]
     fn range_ends_are_typed_with_the_fields_decimals() {
@@ -1400,23 +1437,63 @@ mod tests {
 
     #[test]
     fn a_number_fields_range_comes_from_the_form() {
+        let units = Preferences::default();
         let number = FieldKind::Number { decimals: 1 };
         assert_eq!(
-            range_from_form(&number, ("0", "40.5"), None),
+            range_from_form(&number, ("0", "40.5"), units),
             Ok(Some(FieldRange::new(Some(0), Some(405)).unwrap()))
         );
-        assert_eq!(range_from_form(&number, ("", ""), None), Ok(None));
+        assert_eq!(range_from_form(&number, ("", ""), units), Ok(None));
         assert_eq!(
-            range_from_form(&number, ("9", "1"), None),
+            range_from_form(&number, ("9", "1"), units),
             Err(messages::FIELD_BAD_RANGE)
         );
-        // Other numeric fields keep their range until entering their units arrives.
-        let kept = FieldRange::new(Some(1), None).ok();
         assert_eq!(
-            range_from_form(&FieldKind::Duration, ("", ""), kept),
-            Ok(kept)
+            range_from_form(&FieldKind::Text, ("1", "2"), units),
+            Ok(None)
         );
-        assert_eq!(range_from_form(&FieldKind::Text, ("", ""), kept), Ok(None));
+    }
+
+    #[test]
+    fn unit_fields_ranges_are_typed_in_the_persons_units() {
+        let miles = Preferences::default();
+        let metric = Preferences {
+            distance: DistanceUnit::Kilometers,
+            volume: VolumeUnit::Liters,
+            economy: EconomyUnit::LitersPer100Km,
+            ..Preferences::default()
+        };
+        // A trip distance up to 300 mi, stored in meters, shown back in km.
+        let range = range_from_form(&FieldKind::Distance, ("", "300"), miles)
+            .unwrap()
+            .unwrap();
+        assert_eq!(range.max, Some(482_803));
+        assert_eq!(
+            range_end_text(&FieldKind::Distance, 482_803, metric),
+            "482.8"
+        );
+        // Durations as H:MM.
+        let range = range_from_form(&FieldKind::Duration, ("0:05", "12:00"), miles)
+            .unwrap()
+            .unwrap();
+        assert_eq!((range.min, range.max), (Some(300), Some(43_200)));
+        // In L/100 km, the typed lowest (4) is the stored highest (25,000 m/L).
+        let range = range_from_form(&FieldKind::FuelEconomy, ("4", "20"), metric)
+            .unwrap()
+            .unwrap();
+        assert_eq!((range.min, range.max), (Some(5_000), Some(25_000)));
+        assert_eq!(
+            range_from_form(&FieldKind::Volume, ("lots", ""), miles),
+            Err(messages::QUANTITY_NOT_A_NUMBER)
+        );
+        assert_eq!(
+            crate::ui::units::field_unit(&FieldKind::Volume, metric).as_deref(),
+            Some("L")
+        );
+        assert_eq!(
+            crate::ui::units::field_unit(&FieldKind::Number { decimals: 0 }, metric),
+            None
+        );
     }
 
     #[test]

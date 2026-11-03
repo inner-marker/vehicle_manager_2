@@ -146,22 +146,11 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - **To discuss:** which fields and sets; whether catalogue fields can be edited or only turned off; vehicles with Trip A and Trip B (a set added twice with a suffix?); how it relates to the vehicle-reported fuel economy column (#030).
 
 
-### 17. Required readings as checkboxes on each meter and field 🟡
-*Raised by the human, 2026-11-02, after building the vehicle page (#057) · Suggested phase: undecided (before milestone 6's event forms use it, or with them)*
+### 17. Required readings as checkboxes on each meter and field ✅
+*Decided 2026-11-02: `docs/phase_plans/phase-2.md` milestone 6, choice 5 (checkboxes in each meter's and field's Edit dialog; off wins; a required field can be skipped with a reason, like a reading). Built in step 6d.*
 
-- **Idea:** no separate **Required readings** section on Setup. Instead, each meter and each **custom field** has its own "Required for" checkboxes (Fuel-up, Reading, Maintenance, Repair), on its row or in its Edit dialog.
-- **What changes:** today only meters have `required_for` (#030); custom fields have just on/off. Fields would gain `required_for` too: a domain, storage, and server change, cheap now while no field has values.
-- **To discuss:** checkboxes on the row (always visible) or only in Edit; how "required" and "off" combine for a field (off wins?); whether a required field can be skipped with a reason, as a required reading can't today.
-
-### 18. Cumulative and trip custom fields 🟡
-*Raised by the human, 2026-11-02 · Suggested phase: milestone 6 (when fields get values), with Phase 5's calculations (#057)*
-
-- **Idea:** a numeric custom field is either **cumulative**, a running total read off the vehicle (odometer, engine idle time, total EV miles), or **trip**, a value for one stretch (trip miles, trip time, trip MPG).
-- **Why it matters:** cumulative values only go up, so a lower one is a warning (like a meter reading), and the difference between two readings is a trip value. Trip values add up over a period. Formulas and statistics (Phase 5) treat them differently.
-- **To discuss:**
-  - **Overlap with meters:** a meter is already a cumulative distance or duration (#030). Is a cumulative field just a meter (one concept, so "idle time" becomes a meter), or are meters the required, built-in subset?
-  - Which types it applies to (distance, duration, volume, number), and whether it's chosen when the field is added and then fixed, like the type.
-  - How the catalogue (idea 16) marks its fields.
+### 18. Cumulative and trip custom fields ✅
+*Decided 2026-11-02: `docs/phase_plans/phase-2.md` milestone 6, choice 6 (meters are the cumulative values, which only go up; custom fields are per-event values such as trip miles and trip time; no new setting).*
 
 ### 19. Check for newer geocoder data and tell the Admin 🟡
 *Raised by the human, 2026-11-02, after freezing the geocoder's sources (#059) · Suggested phase: Phase 6 (Polish), or with the post-MVP reference data packs*
@@ -172,3 +161,14 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Where the check runs.** On the server (the first outgoing internet request it would make, so opt-in, and off for a fully offline install), or as a scheduled **GitHub Actions** workflow that opens an issue, keeping the NAS offline.
   - **What counts as "newer".** Natural Earth has versioned releases (its GitHub releases). GeoNames is rebuilt every day without versions, so it needs a threshold (e.g. how many places changed) or a fixed schedule (e.g. a yearly snapshot).
   - Fits the server's background job system (idea 9) and the reference data packs' update path (plan §3).
+
+### 20. A separate test server and deployed server 🟡
+*Raised by the human, 2026-11-02, during milestone 6's checkpoint test · Suggested phase: before the first release people rely on (v0.2.0), or Phase 6 (Polish)*
+
+- **Idea:** keep the household's real server (the one the family uses day to day) apart from a **test server** for trying milestone and dev images, so a test never touches real data and a broken build never interrupts real use.
+- **Why:** milestone tests now write records that can't be deleted (finalized events can only be corrected), and test timers (#054) change how the server behaves. Today the same NAS install runs both, so tests use throwaway vehicles and the timers have to be switched back by hand.
+- **To discuss:**
+  - **Where the test server runs:** a second container on the same NAS (its own data folder, port, and Tailscale name), or the Mac.
+  - **Which images go where:** the deployed server follows releases (or `dev`); the test server follows `milestone-*` images, built with test timers (#054). Today one "Server image" workflow builds both kinds of tag.
+  - **Test data:** start the test server empty each time, or from a copy of a nightly snapshot (#035) so tests run against realistic data. A copy holds real people's data, so it stays on the NAS.
+  - How the test plans' setup steps change: they'd say which server to use, and stop needing test vehicles.

@@ -15,6 +15,7 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
+use super::timeline::{OverviewPanels, Timeline};
 use super::vehicle_setup::Setup;
 use super::vehicles::{kind_name, status_label};
 use crate::api;
@@ -50,7 +51,7 @@ pub(super) fn use_vehicle_page() -> VehiclePage {
 
 /// The tabs, in order (#040).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Tab {
+pub(super) enum Tab {
     Overview,
     Timeline,
     Maintenance,
@@ -60,7 +61,33 @@ enum Tab {
 }
 
 impl Tab {
-    const fn label(self) -> MessageId {
+    /// Every tab, in order.
+    const ALL: [Self; 6] = [
+        Self::Overview,
+        Self::Timeline,
+        Self::Maintenance,
+        Self::Fuel,
+        Self::Documents,
+        Self::Setup,
+    ];
+
+    /// Its name in an address (`/vehicles/:id/tab/fuel`).
+    pub(super) const fn slug(self) -> &'static str {
+        match self {
+            Self::Overview => "overview",
+            Self::Timeline => "timeline",
+            Self::Maintenance => "maintenance",
+            Self::Fuel => "fuel",
+            Self::Documents => "documents",
+            Self::Setup => "setup",
+        }
+    }
+
+    fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.slug() == slug)
+    }
+
+    pub(super) const fn label(self) -> MessageId {
         match self {
             Self::Overview => messages::TAB_OVERVIEW,
             Self::Timeline => messages::TAB_TIMELINE,
@@ -74,8 +101,7 @@ impl Tab {
     /// The milestone that fills a tab with no content yet.
     const fn coming_in(self) -> Option<i64> {
         match self {
-            Self::Overview | Self::Setup => None,
-            Self::Timeline | Self::Fuel => Some(6),
+            Self::Overview | Self::Setup | Self::Timeline | Self::Fuel => None,
             Self::Maintenance => Some(7),
             Self::Documents => Some(8),
         }
@@ -83,7 +109,7 @@ impl Tab {
 }
 
 /// Whether the vehicle's kind has fuel-ups (trailers don't).
-fn has_fuel(asset: &Asset) -> bool {
+pub(super) fn has_fuel(asset: &Asset) -> bool {
     profile(&asset.kind).is_none_or(|profile| profile.event_kinds.contains(&EventKind::Fuel))
 }
 
@@ -171,7 +197,7 @@ pub(super) const fn precision_label(precision: u8) -> MessageId {
 }
 
 /// "Required for: Fuel-up, Maintenance", or that nothing requires it.
-fn required_text(meter: &Meter) -> String {
+pub(super) fn required_text(meter: &Meter) -> String {
     if meter.required_for.is_empty() {
         return tr(messages::METER_REQUIRED_NONE);
     }
@@ -190,8 +216,18 @@ fn required_text(meter: &Meter) -> String {
 #[component]
 pub(crate) fn VehicleDetail(asset_id: String) -> Element {
     match asset_id.parse::<AssetId>() {
-        Ok(id) => rsx! { VehicleScreen { id } },
+        Ok(id) => rsx! { VehicleScreen { id, start: Tab::Overview } },
         Err(_) => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/vehicles/:asset_id/tab/:tab`: the vehicle's page, opened on one tab (e.g. back from an
+/// event to the Fuel tab).
+#[component]
+pub(crate) fn VehicleTab(asset_id: String, tab: String) -> Element {
+    match (asset_id.parse::<AssetId>(), Tab::from_slug(&tab)) {
+        (Ok(id), Some(start)) => rsx! { VehicleScreen { id, start } },
+        _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
 
@@ -219,14 +255,14 @@ async fn load(mut page: VehiclePage, id: AssetId) {
 
 /// The page: header, tabs, and the chosen tab.
 #[component]
-fn VehicleScreen(id: AssetId) -> Element {
+fn VehicleScreen(id: AssetId, start: Tab) -> Element {
     let auth = use_auth();
     let page = use_context_provider(|| VehiclePage {
         view: Signal::new(None),
         problem: Signal::new(None),
         reloads: Signal::new(0),
     });
-    let mut tab = use_signal(|| Tab::Overview);
+    let mut tab = use_signal(|| start);
     // What the person may change depends on their mode, so a mode change loads it again.
     let mode = use_memo(move || match auth() {
         AuthState::SignedIn(session) => Some(session.mode),
@@ -240,10 +276,10 @@ fn VehicleScreen(id: AssetId) -> Element {
         let _ = ((page.reloads)(), mode());
         spawn(load(page, id));
     }));
-    // Back on Overview when it's another vehicle.
-    use_effect(use_reactive!(|id| {
+    // On the asked-for tab (Overview, unless the address names one) for another vehicle.
+    use_effect(use_reactive!(|id, start| {
         let _ = id;
-        tab.set(Tab::Overview);
+        tab.set(start);
     }));
 
     if let Some(problem) = (page.problem)() {
@@ -263,9 +299,11 @@ fn VehicleScreen(id: AssetId) -> Element {
             Header { view: view.clone() }
             TabBar { shown, current, on_pick: move |picked| tab.set(picked) }
             match current {
-                Tab::Overview => rsx! { Overview { view } },
+                Tab::Overview => rsx! { Overview { view, on_timeline: move |()| tab.set(Tab::Timeline) } },
                 Tab::Setup => rsx! { Setup { view } },
-                Tab::Timeline | Tab::Maintenance | Tab::Fuel | Tab::Documents => rsx! {
+                Tab::Timeline => rsx! { Timeline { view, only: None } },
+                Tab::Fuel => rsx! { Timeline { view, only: Some(EventKind::Fuel) } },
+                Tab::Maintenance | Tab::Documents => rsx! {
                     p { class: "placeholder",
                         {tr_with(messages::TAB_COMING, &[("milestone", MessageArg::from(current.coming_in().unwrap_or_default()))])}
                     }
@@ -345,32 +383,13 @@ fn TabBar(shown: Vec<Tab>, current: Tab, on_pick: EventHandler<Tab>) -> Element 
 
 /// Overview: the dashboard's panels (#051), each saying when it fills, and the meters.
 #[component]
-fn Overview(view: AssetView) -> Element {
-    let fuel = has_fuel(&view.asset);
+fn Overview(view: AssetView, on_timeline: EventHandler<()>) -> Element {
     rsx! {
         div { class: "vehicle-panels",
             Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
             Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
             Panel { title: messages::PANEL_SQUAWKS, note: messages::PANEL_SQUAWKS_COMING }
-            if fuel {
-                Panel { title: messages::PANEL_FUEL, note: messages::PANEL_FUEL_COMING }
-            }
-            section { class: "vehicle-panel wide",
-                h3 { class: "section-heading", {tr(messages::PANEL_METERS).to_uppercase()} }
-                if view.meters.is_empty() {
-                    p { class: "muted-note", {tr(messages::METERS_NONE)} }
-                }
-                div { class: "meter-tiles",
-                    for (meter_id, meter) in view.meters.iter() {
-                        div { key: "{meter_id}", class: "meter-tile",
-                            span { class: "meter-name", {meter.name.as_str().to_owned()} }
-                            span { class: "meter-unit", {meter_summary(meter)} }
-                            span { class: "meter-required", {required_text(meter)} }
-                        }
-                    }
-                }
-                p { class: "muted-note", {tr(messages::METERS_READINGS_COMING)} }
-            }
+            OverviewPanels { view, on_timeline }
         }
     }
 }

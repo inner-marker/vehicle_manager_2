@@ -33,12 +33,6 @@ pub(crate) fn Reports() -> Element {
     rsx! { ComingSoon {} }
 }
 
-/// Logging a fuel-up, reading, squawk, or maintenance (Phase 2).
-#[component]
-pub(crate) fn LogEvent() -> Element {
-    rsx! { ComingSoon {} }
-}
-
 /// No screen at this address.
 #[component]
 pub(crate) fn NotFound(segments: Vec<String>) -> Element {

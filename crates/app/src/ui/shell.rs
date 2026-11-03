@@ -39,6 +39,7 @@ pub(crate) fn Shell() -> Element {
     let auth = use_auth();
     let inbox = provide_inbox_context();
     let vehicles = provide_vehicles_context();
+    let chooser = super::screens::provide_log_chooser();
     // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
     // minutes (or a session it ended) stops showing.
     use_effect(use_reactive!(|route| {
@@ -71,20 +72,55 @@ pub(crate) fn Shell() -> Element {
         // With one group, All vehicles is that group, so it's titled with its name.
         Route::AllVehicles {} => only_group_name(vehicles).unwrap_or_else(|| tr(route.title())),
         // A vehicle's page is titled with its name.
-        Route::VehicleDetail { asset_id } => {
+        Route::VehicleDetail { asset_id } | Route::VehicleTab { asset_id, .. } => {
             vehicle_name(vehicles, asset_id).unwrap_or_else(|| tr(route.title()))
+        }
+        // A log form: "Fuel-up · Truck".
+        Route::LogForm { asset_id, kind } => {
+            let kind = if kind == "fuel" {
+                messages::EVENT_KIND_FUEL
+            } else {
+                messages::EVENT_KIND_READING
+            };
+            vehicle_name(vehicles, asset_id)
+                .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
         }
         Route::Due {}
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}
         | Route::LogEvent {}
+        | Route::EventDetail { .. }
+        | Route::EditEvent { .. }
+        | Route::CorrectEvent { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => tr(route.title()),
+    };
+    // + Log starts on the vehicle whose page (or form) this is.
+    let here = match &route {
+        Route::VehicleDetail { asset_id }
+        | Route::VehicleTab { asset_id, .. }
+        | Route::LogForm { asset_id, .. } => asset_id.parse().ok(),
+        Route::AllVehicles {}
+        | Route::Due {}
+        | Route::Messages {}
+        | Route::Timeline {}
+        | Route::Reports {}
+        | Route::GroupVehicles { .. }
+        | Route::LogEvent {}
+        | Route::EventDetail { .. }
+        | Route::EditEvent { .. }
+        | Route::CorrectEvent { .. }
+        | Route::Users {}
+        | Route::Groups {}
+        | Route::Places {}
+        | Route::Settings {}
+        | Route::Diagnostics {}
+        | Route::NotFound { .. } => None,
     };
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
@@ -162,7 +198,7 @@ pub(crate) fn Shell() -> Element {
                         span { class: "sync-status-label", {tr(messages::SYNC_STATUS_UNKNOWN)} }
                     }
                     div { class: "topbar-theme", ThemeToggle {} }
-                    Link { class: "log-button", to: Route::LogEvent {},
+                    button { class: "log-button", r#type: "button", onclick: move |_| chooser.open(here),
                         IconView { icon: Icon::Add }
                         span { {tr(messages::ACTION_LOG)} }
                     }
@@ -198,9 +234,10 @@ pub(crate) fn Shell() -> Element {
                     }
                 }
             }
-            Link { class: "fab", to: Route::LogEvent {}, aria_label: tr(messages::ACTION_LOG),
+            button { class: "fab", r#type: "button", "aria-label": tr(messages::ACTION_LOG), onclick: move |_| chooser.open(here),
                 IconView { icon: Icon::Add }
             }
+            super::screens::LogChooserDialog {}
         }
     }
 }

@@ -27,8 +27,8 @@
 | 2 | **Users, login & roles** | ✅ | Users, argon2 passwords, session cookies, rate-limited login, first-Admin setup code (#028); **retires the test credential** (#024); per-asset roles and active mode with the Admin-mode confirmation; desktop sign-in; settings records for server defaults and per-user preferences (#029); locale formatting of dates, numbers, and units | Create the Admin with the setup code; add a second user; sign in on web and desktop; a wrong password and a Driver doing Admin work are refused | `argon2`, a rate limiter (e.g. `tower_governor`) |
 | 3 | **Message center** | ✅ | **Starts with the idle watcher** (#049): leave Admin mode after 15 idle minutes, sign out after a chosen idle time (8 hours by default), each with a short notice. Then: inbox with severity, read/dismiss, one action per message, filters (#040); system messages from earlier milestones (snapshot failed, integrity problem, "app update required") | A tab left in Admin mode drops to Driver by itself after 15 minutes; a forced snapshot failure shows an Admin message; mark read and dismiss work | none expected |
 | 4 | **Assets, groups, profiles & meters** | ✅ | **Groups** (#052): every asset in exactly one, a default "Garage" made at setup, name and icon, roles granted on a group, moving an asset (showing who gains and loses access), a screen to manage groups; the six profiles as seed data (#030); assets with typed identifiers, lifecycle status, parent field, archive; meters (distance/duration); custom field definitions including quantity types (#030); **Garage** screen (urgency order, My order) and **vehicle detail** shell with tabs (#040), its Overview tab being the per-vehicle dashboard (#051) | Add the real vehicles with their meters; the Garage cards show them; give someone a role on one group only | `ron` (profile seed files; approved) |
-| 5 | **Location** | 🔨 | Coordinates (degrees × 10⁷, accuracy, fix time), required city/state/country; browser location; saved places; the offline geocoder with cities500, Natural Earth 1:10m, and the nearest-boundary fallback (#038); geocoder data file and attribution | From a phone browser, a test location resolves to the right city and state, including a coastal point; saved places work on desktop | a geocoder crate or our own lookup (chosen in the step plan) |
-| 6 | **Events: fuel-ups & readings** | ⬜ | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
+| 5 | **Location** | ✅ | Coordinates (degrees × 10⁷, accuracy, fix time), required city/state/country; browser location; saved places; the offline geocoder with cities500, Natural Earth 1:10m, and the nearest-boundary fallback (#038); geocoder data file and attribution | From a phone browser, a test location resolves to the right city and state, including a coastal point; saved places work on desktop | a geocoder crate or our own lookup (chosen in the step plan) |
+| 6 | **Events: fuel-ups & readings** | 🔨 | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
 | 7 | **Maintenance, repairs & squawks** | ⬜ | Maintenance and repair events with tasks, labor, parts and labor cost (#032); complaint and cause; **Finish** with checks and confirmation; squawks with sign-off and required disposition; requirements with interval rules (meter, calendar with end-of-month, fixed date) and service bundles as data, "Copy schedule from another asset" (#031); forgotten-job reminder after 14 days; squawks can be marked **blocks use** (#051, for the Phase 5 readiness summary) | Log an oil change with two tasks, sign off a squawk, log a repair with complaint and cause; Finish refuses while a squawk is undispositioned | none expected |
 | 8 | **Photos & documents** | ⬜ | Photo upload with the Small/Medium/Large picker, thumbnails, metadata fields, gated originals (#036); PDF upload with page count and the pdf.js viewer (#037); attachments on events, squawks, and assets; **official asset documents** (title, registration, insurance) with renewal history; Documents tab | Take a Large damage photo and a Small meter photo on the phone; open a PDF on web and desktop | `image` (+ HEIC support), pdf.js (bundled asset) |
 | 9 | **Asset lifecycle** | ⬜ | Acquisition and disposal records with attachments; status changes; send-out / return tracking; archive instead of delete; aircraft-ready groundwork that isn't already in place (reference documents, one-time and recurring requirements). **Also, before the `v0.2.0` release: show each person only what they may use** (raised 2026-11-02; see below) | Send a vehicle out for service and return it; archive one and find it again; as Sam, no Users, Groups, or household settings anywhere | none expected |
@@ -338,7 +338,7 @@
   - **Asked for during the run:** the header chips aligned, and the sidebar and top bar pinned (above); ideas 17 (required checkboxes on each meter and field, in place of the grid) and 18 (cumulative and trip custom fields) noted for discussion.
 
 ### Milestone 5 plan: location
-*Approved 2026-11-02 (every choice below) · Branch: `milestone/p2-m5-location` · Milestone PR: not opened yet · Decisions #038, #039, #059, #060, #061*
+*Approved 2026-11-02 (every choice below) · Branch: `milestone/p2-m5-location` · Milestone PR: **#13, merged 2026-11-02** (merge commit, steps 5.0–5h; reopened after its branch was deleted before the merge) · Decisions #038, #039, #059, #060, #061*
 
 **Goal:** everything an event's location needs is ready before milestone 6 brings the first events. Any coordinates turn into a city, state or province, and country, offline on the server. The phone's browser can supply its location. The household can save named places ("Home garage", "Joe's Auto") that are recognised by distance. A **Places** screen uses all of it now. Milestone 6's event forms reuse the same location picker.
 
@@ -380,16 +380,16 @@
 
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
-| 5.0 | ☑️ | `docs: Phase 2 milestone 5 plan` | This plan; milestone 4 marked merged; plan §3 and §4 updated (saved places per person, as aliases) | none |
-| 5a | ☑️ | `feat(domain): locations and saved places` | `Coordinates` (latitude and longitude as degrees × 10⁷, range-checked); accuracy in meters; fix time with a stale check (over 20 minutes); `LocationSource` (GPS, saved place, map, manual); `Place` (city, region, ISO country code, time zone); the `SavedPlace` record and patch (owned by one person); distance between points (haversine) and the nearest saved place whose radius contains a point. Test-first, with property tests (degrees round-trip through e7; distance is symmetric and never negative; the match is the nearest containing place) | none |
-| 5b | ☑️ | `feat(geocoder): offline place lookup` | A new crate, `geocoder`: opens the GeoPackage read-only (checking its metadata and version); our own WKB reader; the containing country and state (R-tree candidates, then point-in-polygon); the nearest boundary outside every polygon (a widening R-tree search); the nearest city and its time zone (the same way). Geometry is pure functions, tested on their own, including property tests. Lookups tested on a small hand-made GeoPackage (made in the test through `sqlx`), including a point off the coast and points on both sides of a border | none |
-| 5c | ☑️ | `build: geocoder data file` | The GDAL Dockerfile stage (pinned image, URLs, and SHA-256; `ogr2ogr` imports, simplifies boundaries, builds the R-tree indexes, adds the metadata table); `scripts/geodata/fetch.sh` for development; the runtime image ships the file; the file's size and a few real lookups recorded. **Downloads only after you approve the sources and checksums** | none (GDAL only in a build stage) |
-| 5d | ☑️ | `feat(storage): saved places` | Migration `0008_saved_places.sql`; `SavedPlaceWriter`; queries | none |
-| 5e | ☑️ | `feat(server): place lookup and saved places` | Loads the data file at startup (logs its version, size, and load time; the Admin message if it's missing, point 7); `lookup(coordinates)` → suggested place and time zone; saved places: each person's own add, edit, remove, list, and nearest match (point 4). Server functions under `/api/v1/places` | none |
-| 5f | ☑️ | `feat(app): places and the location picker` | **SVG options first.** The Places screen (point 5); a reusable **location picker** (browser location through `document::eval`, typed coordinates, the geocoder's suggestion, the nearest saved place, manual city/state/country) that milestone 6's event forms reuse; About on Diagnostics (point 6) | none |
-| 5f.2 | ☑️ | `feat: nearby places in the location picker` | **Sketch first.** The data gains feature codes and population and drops abandoned and historical places (data `2026-11-02.2`, format 2); the geocoder's nearby lookup (up to 5 within 25 km, same country); the picker's list with distance, direction, and type; the default skips districts (#061). Then a short follow-up test of the steps it touches | none |
-| 5g | ☑️ | `docs: location test plan` | `docs/test-plans/p2m5-location.md` | none |
-| 5h | ☑️ | `docs: record the location test run` | Results of the test run | none |
+| 5.0 | ✅ | `docs: Phase 2 milestone 5 plan` | This plan; milestone 4 marked merged; plan §3 and §4 updated (saved places per person, as aliases) | none |
+| 5a | ✅ | `feat(domain): locations and saved places` | `Coordinates` (latitude and longitude as degrees × 10⁷, range-checked); accuracy in meters; fix time with a stale check (over 20 minutes); `LocationSource` (GPS, saved place, map, manual); `Place` (city, region, ISO country code, time zone); the `SavedPlace` record and patch (owned by one person); distance between points (haversine) and the nearest saved place whose radius contains a point. Test-first, with property tests (degrees round-trip through e7; distance is symmetric and never negative; the match is the nearest containing place) | none |
+| 5b | ✅ | `feat(geocoder): offline place lookup` | A new crate, `geocoder`: opens the GeoPackage read-only (checking its metadata and version); our own WKB reader; the containing country and state (R-tree candidates, then point-in-polygon); the nearest boundary outside every polygon (a widening R-tree search); the nearest city and its time zone (the same way). Geometry is pure functions, tested on their own, including property tests. Lookups tested on a small hand-made GeoPackage (made in the test through `sqlx`), including a point off the coast and points on both sides of a border | none |
+| 5c | ✅ | `build: geocoder data file` | The GDAL Dockerfile stage (pinned image, URLs, and SHA-256; `ogr2ogr` imports, simplifies boundaries, builds the R-tree indexes, adds the metadata table); `scripts/geodata/fetch.sh` for development; the runtime image ships the file; the file's size and a few real lookups recorded. **Downloads only after you approve the sources and checksums** | none (GDAL only in a build stage) |
+| 5d | ✅ | `feat(storage): saved places` | Migration `0008_saved_places.sql`; `SavedPlaceWriter`; queries | none |
+| 5e | ✅ | `feat(server): place lookup and saved places` | Loads the data file at startup (logs its version, size, and load time; the Admin message if it's missing, point 7); `lookup(coordinates)` → suggested place and time zone; saved places: each person's own add, edit, remove, list, and nearest match (point 4). Server functions under `/api/v1/places` | none |
+| 5f | ✅ | `feat(app): places and the location picker` | **SVG options first.** The Places screen (point 5); a reusable **location picker** (browser location through `document::eval`, typed coordinates, the geocoder's suggestion, the nearest saved place, manual city/state/country) that milestone 6's event forms reuse; About on Diagnostics (point 6) | none |
+| 5f.2 | ✅ | `feat: nearby places in the location picker` | **Sketch first.** The data gains feature codes and population and drops abandoned and historical places (data `2026-11-02.2`, format 2); the geocoder's nearby lookup (up to 5 within 25 km, same country); the picker's list with distance, direction, and type; the default skips districts (#061). Then a short follow-up test of the steps it touches | none |
+| 5g | ✅ | `docs: location test plan` | `docs/test-plans/p2m5-location.md` | none |
+| 5h | ✅ | `docs: record the location test run` | Results of the test run | none |
 
 **Not in this milestone:** events and their location fields (milestone 6); the map picker and event map (#039, post-MVP); finer US detail from Census TIGER (plan §3, later); geocoding on phones (post-MVP, #038's 15–20 MB budget); place names in other languages (the translation layer has only English so far).
 
@@ -458,3 +458,237 @@
   - **Found by the human on a phone:** dialogs didn't scroll and the page behind moved (fixed, above).
   - **Asked for during the run:** nearby places to choose from (#061, 5f.2), only the chosen Where button highlighted, and numbered parts of a city ("Paris 04") counted as districts.
   - **Found while writing the plan:** GeoNames lists big cities' districts as places; handled by the nearby list and the district rules.
+
+### Milestone 6 plan: events, fuel-ups & readings
+*Approved 2026-11-02 (every choice below, including `jiff` and `uom`, and the sub-plan conflicts going the plan's way) · Branch: `milestone/p2-m6-events` · Milestone PR: not opened yet · Decisions #004, #006, #007, #008, #029, #030, #033, #034, #040, #042, #043, #044, #048, #054, #055, #059, #060, #061*
+
+**Goal:** the household logs real **fuel-ups and meter readings** from the phone. Each is an event with a date (in the place's time zone), a location from the picker, readings checked against the vehicle's history, notes, and who did it. Events stay drafts for 24 hours, then lock; a mistake after that is fixed with a **correction** that says why. A vehicle's **Timeline** tab and Overview show them.
+
+**Reviewed against** ideas 1–19, sub-plans 01–03, and Phase 2's open questions (none), 2026-11-02. The human's answers (2026-11-02) are folded into the choices below.
+- **Sub-plan conflicts: the main plan is followed** (the human's rule: sub-plans were partly written apart from the plan, so a conflict goes the plan's way, but each is listed for the human to confirm; **confirmed 2026-11-02**):
+  1. Sub-plan 01 says an event's place is "optional for cars"; the plan requires it on every event. **Plan:** required, with groundwork for making it optional later (choice 1).
+  2. Sub-plan 01 corrects an entry by cloning it as a draft that **supersedes** the original; the plan adds a **linked entry** that says what changed and why. **Plan:** a linked correction (choice 2), chosen by the human.
+  3. Sub-plan 01 has records go `draft → signed → superseded | voided`; the plan has `draft → finalized`. **Plan:** draft and finalized; signing comes when sub-plan 01 is confirmed (choice 9 lays groundwork).
+  4. Sub-plan 01 blocks changes to signed records with **SQLite triggers**; the plan writes everything through the command pipeline. **Plan:** the storage writer itself refuses changes to a finalized event (choice 9), so no triggers.
+  5. Sub-plan 01 adds an **audit log table**; the plan's command log already records who changed what and when. **Plan:** no new table now.
+  6. Sub-plan 01 uses `OffsetDateTime`; the plan stores UTC milliseconds plus an IANA time zone (#008). **Plan:** UTC plus zone.
+  7. Sub-plan 02 (voice) keeps voice entries as drafts until reviewed; the plan finalizes fuel-ups and readings after 24 hours (#034). **Plan:** 24 hours for every event now; voice drafts are reconsidered when voice is planned.
+  8. Sub-plan 02 only **warns** about a lower meter value; the plan **refuses** it. **Plan, as the human refined it:** refused, except the Admin gets a warning and an override (choice 3).
+- **Ideas:** 14 (voice) gets its groundwork, an event **source** (choice 4); 17 (required checkboxes on meters and fields) is built here (choice 5); 18 (cumulative and trip fields) is settled and closed (choice 6); 16 (field catalogue) and 19 (newer place data) are unaffected; idea 12's signature groundwork is choice 9.
+- **No effect now:** ideas 2, 3 (attachments, milestone 8), 4, 7, 10, 11, 13, 15; sub-plan 03.
+- **Carried from earlier milestones:** date formatting by each person's preference (#048) and unit entry for distance, duration, volume, and fuel economy (including those fields' ranges, 4f) arrive here; the scheduler's job times stay in UTC (a local-time schedule could use the new time-zone library later).
+
+**Choices** (answered or approved by the human 2026-11-02):
+1. **A location is required on every event,** with the plan's guarded override (no place at all: a confirmation, a reason, and the event is flagged). **Groundwork for making it optional later** (asked for): the forms check against a location rule whose only value now is "required", and the table allows an empty place only together with an override reason, so a future Admin setting changes one check and no data.
+2. **Corrections are linked entries** (the plan): a correction is a new event linked to the one it corrects (`amends_event_id`), holding the corrected values and a **required reason**. The original stays visible, marked as corrected, and the correction is what counts from then on (totals, due dates, the readings check). What changed is shown by comparing the two.
+3. **Readings are checked against their neighbours in time,** not the latest entry: a reading that fits between the ones before and after it (by the event's date) is accepted for anyone, so back-dated entries just work. One that doesn't fit is **refused**, except for the **Admin in Admin mode**, who gets a **warning** and an **override** with a reason; the event is flagged. (Meter replacements and rollovers, the plan's "meter adjustments", come later.)
+4. **Every event records its source:** `typed` now; `voice` and `import` later (idea 14), with no migration then.
+5. **"Required for" checkboxes on each meter and custom field** (idea 17): in each one's Edit dialog, replacing the Setup tab's grid. A field that's turned off is never required. A required field can be skipped like a required reading: a confirmation and a reason, and the event is flagged.
+6. **Meters are the cumulative values** (odometer, engine hours, idle time; they only go up); **custom fields are per-event values** (trip miles, trip time, trip MPG). No new setting; idea 18 closes with this rule.
+7. **`jiff`** for time zones and dates (approved), and **`uom`** for quantities (approved in principle; moved here from milestone 4). Versions checked: `jiff` 0.2.39 (MIT or Unlicense), `uom` 0.38.0 (MIT or Apache-2.0); each step that adds one measures what it adds to the app's size and runs `cargo deny`.
+8. **Test timers shorten the 24-hour finalize** to the test minutes (#054), so the NAS test needn't wait a day.
+9. **signature groundwork** (sub-plan 01 isn't confirmed, so only what's cheap and unlikely to change):
+   - who finalized an event (the person for **Finalize now**, the server for the automatic finalize) and when;
+   - when the server first received it (separate from the event's own date);
+   - the storage writer refuses any change to a finalized event, so nothing edits one even by mistake;
+   - corrections link to what they correct (choice 2).
+   - Not now: hash chains, content hashes, signature fields, an audit table (each can be added later without migrating events).
+10. **who logs what** (plan §6 roles): a **Driver** (or higher) on a vehicle logs its fuel-ups and readings, in Driver mode or above; a Viewer sees them only. **Finalize now** and corrections are for whoever logged the event, or a Maintainer or Admin on that vehicle.
+11. **dates and times:** entered in the time zone of the event's place (from the picker's suggestion or the saved place), or the device's when there's no place yet; shown in each person's date format (#048). One date by default, with **Spans multiple days** for an end date (end ≥ start).
+12. **One PR**, with **two checkpoint tests on the NAS**: one halfway (after logging, finalizing, and an event's page) and one at the end.
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 6.0 | ☑️ | `docs: Phase 2 milestone 6 plan` | This plan; milestone 5 marked merged | none |
+| 6a | ☑️ | `feat(domain): dates and time zones` | An event's date: UTC plus its IANA zone (#008); local date and time ↔ UTC; one date or a range (end ≥ start); formatting by the person's date format (#048); `TimeZone` checked against the real zone database. Test-first, with property tests (local → UTC → local round-trips, across daylight-saving changes) | `jiff` (approved) |
+| 6b | ☑️ | `feat(domain): quantities in the person's units` | Distance, duration, volume, and fuel economy between their stored integers and the person's units (#007): typed values parsed, values shown with display rounding; the unit fields' ranges become editable (4f's limit lifted) | `uom` (approved in principle) |
+| 6c | ☑️ | `feat(domain): events, readings, and fuel-ups` | The event spine (asset, kind, date, location with its rule, notes, **source**, logged by, performed by), drafts and finalizing (24 h after the last edit, or **Finalize now**; who and when; received at), corrections (linked, with a reason), reading sets, **fuel details** (volume, price and currency, full fill, missed fill, highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy), custom field values; the checks: required readings and fields with skipping (a reason, a flag), readings against their neighbours in time with the Admin's override, the location rule with its override, a vehicle can't tow itself. Test-first, with property tests | none |
+| 6d | ☑️ | `feat: required-for on custom fields` | Custom fields gain `required_for` (choice 5): domain, migration, storage, server; Setup's grid gives way to checkboxes in each meter's and field's Edit dialog | none |
+| 6e | ☑️ | `feat(storage): events` | Migration: events, reading sets and readings, fuel details, skipped readings and fields, corrections; writers (refusing changes to finalized events); queries (a vehicle's events by date, a meter's neighbouring readings, the latest readings) | none |
+| 6f | ☑️ | `feat(server): logging, finalizing, and corrections` | Add and edit drafts, **Finalize now**, correct (choices 2, 3, 10); the automatic finalize as a scheduled job (24 h, or the test minutes; #044, #054); server functions under `/api/v1/events` | none |
+| 6g | ☑️ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
+| 6h | ☑️ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
+| 6i | ☑️ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
+| 6j | ☑️ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
+| 6k | ☑️ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
+| 6l | ☑️ | `docs: record the events test runs` | Results of both runs | none |
+
+**Not in this milestone:** maintenance, repairs, squawks, and tasks (milestone 7); photos and documents on events (milestone 8); fuel-economy statistics and calculated fields (Phase 5); meter adjustments (replacement, rollover); voice logging (post-MVP, idea 14); an Admin setting to make location optional (groundwork only); the event map (post-MVP).
+
+**You can check on the NAS:** log fuel-ups and readings from the phone, with your location and the nearby places; a back-dated fuel-up between two others is accepted, while a reading lower than an earlier one is refused (and the Admin can override it, with a reason); an event locks after the test minutes and can then only be corrected, with a reason; the Timeline and Overview show it all.
+
+**Written so far**
+- **6a:** `jiff` 0.2.39, with default features off and `std` plus `tzdb-bundle-always`: **the IANA zone database is built into the program** (207 KB of zone data, in `jiff-tzdb`), so the NAS image (Debian slim has no `tzdata`), the desktop app, and the browser use the same rules; `cargo deny` passes; it brings `jiff-core` and `jiff-tzdb`. What it adds to the browser bundle is measured in 6g, when the app first uses it (unused code isn't linked).
+  - `domain::dates`: `local_to_utc` (a local date and time in a zone; a time in the hour skipped when clocks go forward moves past the gap, and a time that happens twice means the first, the usual "compatible" rule), `utc_to_local` (for forms), `format_date` by the person's date format (#048: "30 Oct 2026", "10/30/2026", "30/10/2026", "2026-10-30", in the event's zone), `format_time` ("3:30 pm"), `EventDates` (start, an optional end at or after it, and a known zone; formats as "3 Mar 2026 – 12 Mar 2026"), `today` in a zone, and `is_known_zone` (checked against the database). Years 1900–2200.
+  - **Times are shown in 12-hour form** ("3:30 pm"): there's no time-format preference yet (#048 covers dates), and en-US is the only language; a 24-hour choice can join the preferences later.
+  - 21 messages (the errors, am/pm, the twelve months). 7 tests, including a property test that local times round-trip through UTC in six zones (among them Lord Howe Island's half-hour daylight-saving change and Chatham's +12:45) from 1900 to 2100, except a skipped time, which only ever moves forward by up to two hours.
+- **6b:** `uom` 0.38.0 with only `std`, `si`, and `f64` (no `serde`: values are stored as whole numbers); it brings `num-traits` and `typenum`; `cargo deny` passes.
+  - `domain::quantity`: distances (meters), volumes (milliliters), fuel economy (meters per liter; L/100 km is the inverse, so a range's ends swap), durations (seconds, typed and shown as "H:MM" or "H:MM:SS"), meter readings (in the meter's own unit, refused with more decimals than it shows), and money (the currency's minor unit: 0 decimals for e.g. JPY, 3 for e.g. KWD, otherwise 2). Typed numbers ignore commas and are never negative. Shown with display rounding: distances and economy to one decimal, US and imperial gallons to thousandths (as pumps show them), liters to hundredths, money as "45.67 USD". All conversion factors come from `uom`.
+  - **Setup's custom field ranges** now work for distance, duration, volume, and fuel economy fields too, typed in the person's units with the unit in the label ("Highest likely (mi)"); `ui::units::use_units` loads the person's settings once (the location picker uses it too).
+  - 15 messages. 8 new tests, including property tests (a reading shown and typed again is unchanged; a distance survives the round trip to within a meter; money exactly).
+  - **Checked in a real browser:** a distance field's range of 300 mi was stored as 482,803 m and shown as 482.8 km once the person's distance setting was kilometers; "x" was refused.
+- **6c:** no new dependency.
+  - `domain::event`: the `Event` record (asset, kind, `EventDates`, location, readings, skipped items, custom field values, notes, **source** (typed, voice, import), logged by, performed by (a user, or a name with optional contact details), fuel details, the reading override, status, last edited at, **received at**, finalized by and at, and **`corrects`** plus a correction reason). `EventPatch` is generated from the same field list as the record, so a field can't be added without being listed (field-level last-write-wins, #043).
+  - **The location** keeps the place (or none), the coordinates, accuracy, fix time, source, the saved place's name and ID if one was used (copied in), the geocoder data version, and a **missing reason**.
+  - **Fuel details:** volume (mL), cost in the currency's minor unit, the currency, full fill, missed previous fill, highway/towing/hauling %, towed vehicles, and the vehicle's own fuel economy reading.
+  - **Flags,** worked out from the event and not stored: no location, skipped items, reading kept by the Admin, correction.
+  - `domain::event_check::check` takes the event and a `CheckContext`: whether the vehicle has fuel, its meters and fields, the required fields, the meter history, the **`LocationRule`** (only `Required` for now: the groundwork for a server-level option later), and whether the person may override readings.
+  - **What it checks:**
+    - the kind: fuel-ups only for vehicles with fuel; maintenance and repair are refused until milestone 7;
+    - a place, or a reason;
+    - each required reading and field is given, or skipped with a reason;
+    - readings belong to the vehicle's meters, once each, and **fit their neighbours in time**. The nearest earlier reading is at or before the event, and the nearest later one is after it. A reading that doesn't fit is refused, except the Admin in Admin mode keeps it with a reason, as a warning, and the event is flagged;
+    - custom field values match their field's type and choices. Out-of-range values are **warnings**, never refusals (#030);
+    - fuel details: present only on fuel-ups, fuel more than zero, percentages up to 100, no negative cost, and **a vehicle can't tow itself**;
+    - a named performer has a name of at most 100 characters; reasons are at most 500.
+  - **Drafts and finalizing (signature groundwork):**
+    - `may_change` refuses any change to a finalized event;
+    - `finalize` gives the patch that records who (a user, or the server after 24 hours) and when;
+    - `Event::finalize_due` is true 24 hours after the last edit, and 6f's test timer shortens that;
+    - `check_correction`: the original must be finalized, and the correction must be for the same vehicle and kind, name the original, and give a reason.
+  - 18 messages. 16 tests, including a property test that a reading is accepted exactly when it fits between its neighbours.
+- **6d:** no new dependency.
+  - **A field is `required`, a yes or no, not a `required_for` list:** each custom field is on one kind of event (`applies_to`), so a list could only ever hold that kind. Meters keep their list, since one meter serves every kind.
+  - `CustomField::required_on(kind)`: on, required, and on that kind. **Off wins:** a field that's turned off is never asked for. `event_check::check` now reads this from the vehicle's fields, so `CheckContext` lost its separate list of required fields.
+  - Migration `0009_field_required.sql`: `custom_fields.required`, 0 by default, so existing fields stay optional. Profiles may set `required` (left out: not required); none does yet. The field form, the storage writer and reader, and the server's add and edit carry it.
+  - **Setup:** the Required readings grid is gone.
+    - Each meter's Edit (and Add) dialog has "Required for" checkboxes for the vehicle's kinds of events.
+    - Each field's dialog has a **Required** switch under "Shown on forms".
+    - Meter rows say what requires them ("Required for: Fuel-up"), and a required field's row has a **Required** badge.
+  - 5 messages added and 2 removed. The tests are extended: the field round trip in domain, storage, and server; a skipped required field; a required field that's off, or on another kind of event, isn't asked for.
+  - **Checked in a real browser:** ticking Reading on the odometer stored `["fuel","reading"]`; turning on Required for Trip time stored `required = 1`, and the row showed the badge. The dialog fits a phone.
+- **6e:** no new dependency.
+  - **Migration `0010_events.sql`:**
+    - `events`: the spine, with the place, coordinates, performer, and finalizing in their own columns, and checks that keep them whole (a place is all three parts or none; finalized exactly when it has a time and a finalizer; a user finalizer has a user);
+    - `event_readings` (by event and meter, indexed by meter), `event_field_values` (each value as JSON), and `fuel_details` (one row per fuel-up).
+    - **Skipped items are a JSON list on the event,** not their own table: they're short, only read with their event, and change as one list. A correction is two columns, `corrects_id` and `correction_reason`.
+  - **`storage::events::EventWriter`:**
+    - A change loads the stored event, applies the patch (the new `Event::apply`, which ignores what's fixed once made: vehicle, kind, source, who logged it, when it was received, what it corrects), and writes the whole row back. Readings, field values, and fuel details are rewritten only when the patch changes them.
+    - **It refuses any change to a finalized event, and any delete, with the new `StorageError::Finalized`.** A draft can be deleted (soft delete, like every record).
+    - A create needs the vehicle, kind, dates, location, who logged it, and both times (`EventPatch::into_event`).
+  - **Queries:**
+    - `event`, and `events_of` a vehicle (newest first, every part read in three queries for the whole vehicle);
+    - `readings_of` a vehicle: the readings that count, in time order. Readings on deleted events, and on events that have been corrected, are left out; the correction's count instead;
+    - `latest_readings` (each meter's latest that counts);
+    - `drafts_edited_before` a cutoff (for 6f's automatic finalize);
+    - `correction_of` an event.
+  - 5 tests against a real database: every part round-trips, in every shape (no place with a reason, a user or a named performer, nobody recorded); a draft changes until it's finalized, then refuses changes, finalizing again, and deleting; the server finalizes; deleted and corrected events' readings don't count.
+- **6f:** no new dependency.
+  - **`server::events`:** `list`, `view`, `log_context` (each meter's latest reading, and whether the person may keep one that doesn't fit), `add`, `edit`, `finalize_now`, `delete` (drafts only), and `correct`. They're under `/api/v1/events` (`events`, `view`, `log-context`, `add`, `edit`, `finalize`, `delete`, `correct`), all behind the auth layer.
+  - **Who may do what (choice 10),** with two new asset actions:
+    - **Log:** the Driver role on the vehicle, in Driver mode or above.
+    - **Edit, Finalize now, delete a draft, or correct:** whoever logged the event, while they may still log that kind, or anyone with `ManageEvents` (Maintainer, in Maintainer mode or above).
+    - **Keep a reading that doesn't fit:** `OverrideReadings` (the Admin role, in Admin mode; choice 3).
+  - **Every save is checked, then tidied.** The checks use the vehicle's meters and fields, and the readings that count, leaving out the event itself and, for a correction, its original. `event_check::tidy` then drops skip reasons for items that aren't required (or were given) and an override reason no reading needed, so an event is flagged only for what it really needs. The app sends an `EventInput`; the server sets who logged it, the received and edited times, and the status.
+  - **References are checked:** a user performer must exist; towed vehicles must be ones the person can see; a saved place that's gone, or isn't the person's, is dropped (it's only a hint).
+  - **A finalized event** is refused for edit, Finalize now, and delete with "This event is finalized: correct it instead"; the storage writer's refusal maps to the same message. **A correction** needs a finalized original, the same vehicle and kind, and a reason, and an event can be corrected only once (then correct the correction: the new "already corrected" message).
+  - **The automatic finalize** is a new scheduled job, `finalize-drafts`, every 10 minutes (with test timers, every N minutes). Drafts last edited 24 hours ago (or N minutes, `Timers::finalize_after_millis`) are finalized by the server, so a draft finalizes at most 10 minutes late. The job context now carries the server's device ID.
+  - 4 server tests, through the command pipeline:
+    - a Driver logs a draft, and it's tidied;
+    - required readings and the place, given or skipped with a reason;
+    - only the Admin in Admin mode keeps a reading that doesn't fit;
+    - edits by the logger or a Maintainer, not another Driver;
+    - after Finalize now, only a correction (once; never of a draft), and the correction's reading counts;
+    - the server finalizes after the test minutes and after 24 hours.
+  - **Checked on a running server:** a fuel-up saved over HTTP; a reading out of order was refused; a request without a session got 401; the `finalize-drafts` job was scheduled.
+- **6g layout (chosen 2026-11-02):**
+  - **The + Log chooser:** option A of [`p2m6-log-chooser-options.svg`](../ui-sketches/p2m6-log-chooser-options.svg). One dialog (a sheet on phones): the vehicle dropdown on top, with last time's vehicle chosen (or the vehicle whose page it's opened from), then a Fuel-up tile and a Reading tile.
+  - **The fuel-up and reading forms:** option B of [`p2m6-fuel-up-options.svg`](../ui-sketches/p2m6-fuel-up-options.svg). Each is its own page:
+    - open: the required items (odometer, fuel, any required field), and when and where;
+    - folded, each with a one-line summary: driving, trip and readings, and who and notes;
+    - Save fixed at the bottom.
+  - **Sliders** move in 5% steps, with marks at 0, 25, 50, 75, and 100.
+- **6g:** no new dependency.
+  - **+ Log** (the top bar's button and the phone's floating button) opens the chooser. It's a dialog, and a sheet from the bottom on phones.
+    - The vehicles listed are only those the person may log for, last time's first. The tiles are only the kinds that vehicle has and the person's role and mode allow (`loggable_kinds`; trailers have no fuel-ups).
+    - It starts on the vehicle whose page or form is open, otherwise last time's ("Truck · same as last time"). **Last time's vehicle is kept in the browser's local storage,** so it's per device and survives a reload.
+    - `/log` shows the chooser as a page, for a direct link.
+  - **The form** is its own page, `/vehicles/:id/log/fuel` or `…/reading`, titled "Fuel-up · Truck". It's built in `ui::screens::log_form`; what was typed becomes the `EventInput` in `log_input`, a plain function with tests.
+    - **Open:** the required meters (a reading shows every meter) with the last value as a hint ("last 52,644 · 2 Nov 2026"), required custom fields, the fuel (volume in the person's unit, total price in their currency, the price per gallon or liter worked out, full and missed fill), and when and where.
+    - **When** is "Now" until **Change** gives a date and a time in the event's zone. The zone is the place data's for the point, otherwise the browser's.
+    - **Where** is the location picker (#059, #061), plus a **Saved place** dropdown. Once a place is set it folds to one line with **Change**. **Can't give a place? Say why** takes a reason instead.
+    - **Folded, with summaries:** Driving (the highway slider; towing and hauling where the profile shows them, #033; towed vehicles appear once towing is above 0); Trip and readings (the other meters and fields, typed as their kind, and the vehicle's own fuel economy); Who and notes.
+    - **Done by** is "Me (the person logging it)", sent as nobody recorded, or **Someone else** with a name and optional contact. The app doesn't know the person's user ID, and choosing another household member waits for a users list everyone may see.
+    - **Skipping:** each required item has "Can't read it? Skip with a reason", which shows "Skipped" with the reason and "Enter it after all".
+    - **The readings check:** the server's refusal shows under the meter. For the Admin in Admin mode an orange **Keep it anyway** box asks why; saving then shows "Saved as a draft" with the warning that the reading was kept. Out-of-range field warnings show the same way. Without warnings, Save goes back to the vehicle's page.
+    - Every problem shows where it belongs: under the meter, field, fuel, date, or place.
+  - New in the domain: `event_form` (a custom field's value from what was typed, and back), `quantity::unit_price` and `show_reading` (thousands grouped), `TimeZone::utc`, and `profile::event_kinds` (Setup uses it too). `ui::units` gained the unit abbreviations, moved from Setup.
+  - 65 messages. 9 new tests (field values, the unit price, grouped readings, what can be logged, and the form's input: a typical fuel-up, where each problem shows, skipping and towing).
+  - **Checked in a real browser:**
+    - the chooser from a vehicle's page;
+    - a fuel-up with the device's location (Asheville) saved as a GPS draft, with 18.004 gal stored as 68,153 mL and $62.27 as 6,227 cents (shown as 3.459 USD per gal);
+    - the next time, the chooser said "same as last time";
+    - a lower odometer was refused, then kept by the Admin with a reason;
+    - on a phone: the sheet, a skipped odometer with its reason, 25% towing with the camper towed, and Save above the bottom tabs (the floating button is hidden on the form).
+- **6h layout (chosen 2026-11-02):** option A of [`p2m6-event-options.svg`](../ui-sketches/p2m6-event-options.svg). One column: the kind and date, the status and flags, the actions, the big numbers, then each part as a short list. The human also chose to **name the clashing reading** in the readings check's message.
+- **6h:** no new dependency.
+  - **An event's page,** `/events/:id`, opens after Save (and from the Timeline in 6j). It shows:
+    - the title, "Fuel-up · 2 Nov 2026, 3:30 pm", in the event's own zone;
+    - a status chip: "Draft · locks in 23 h", counted from the last edit with the server's finalize delay, so test timers show minutes; or "Finalized · 3 Nov 2026";
+    - a chip for each flag;
+    - tiles for each reading, the fuel (filled to full or not), and the price with the price per gallon;
+    - short lists: when and where (the place or why there's none, where it came from with its accuracy, the zone), driving, trip and readings (field values, skipped items with their reasons, the vehicle's own fuel economy), who and notes (and the Admin's reason for keeping a reading), and the record (logged by whom, when, and how; last edited; finalized by whom, or by the server, and when).
+  - **Actions,** as the server allows (`may_change`, `may_correct`): **Edit**, **Finalize now** (with the confirmation #034 asks for: "Afterwards it can't be edited or deleted; a mistake is fixed with a correction"), and **Delete** (with its own confirmation) on a draft; **Correct…** on a finalized event that hasn't been corrected yet.
+  - **The link between an original and its correction:** the original says "Corrected on 4 Nov by Stuart: "…"" with **See the correction**; the correction says "Correction of the fuel-up on 2 Nov: "…"" with **See the original**.
+  - **Edit and Correct** reuse the log form, filled in from the event (`log_input::typed_from`, the reverse of `build`, with a test that an event typed back in builds the same event).
+    - **Correct** adds a required **Why?** at the top and saves a new, linked draft.
+    - Both keep the event's own zone. **They keep its location as it was** (its source, accuracy, and saved place) unless the point or the place changed, and **its time to the millisecond** unless the date or time changed: the form shows minutes, and the round-trip test caught an edit moving the time.
+  - **The readings check names the clash** ("Lower than 52,644 mi on 2 Nov 2026. Check it, or correct that event."). `EventProblem::ReadingOutOfOrder` now carries a `ReadingClash`: the meter, the side (below the one before, or above the one after), and that reading's time and value. `event_check::neighbours` returns each neighbour's time too.
+  - **The server sends names:** `EventView` gained `logged_by_name` and `finalized_by_name`, since the app can't turn user IDs into names. The list looks each one up per event; 6j's Timeline, which lists many events, should look each person up once.
+  - `quantity::money_value` (an amount as typed, "62.27"). 48 messages. 2 new tests (an edit keeping its location; an event typed back into the form), and the domain, server, and money tests extended (the clash's side and reading, names, money as typed).
+  - **Checked in a real browser:**
+    - a fuel-up opened its page ("Draft · locks in 23 h", the tiles);
+    - **Edit** came filled in, and saving a note kept the GPS source and its ± 12 m;
+    - **Finalize now** asked first, then showed "Finalized" with only **Correct…** left;
+    - a lower fuel-up got the new message;
+    - correcting without a reason was refused ("Give a reason"); with one, the correction and the original each showed their link and reason, and the original offered no actions;
+    - the page fits a phone.
+- **After 6h, from the human's first look at the checkpoint build (2026-11-02):**
+  - **Custom fields are shown on, and required for, lists of event kinds, like meters** (the human's choice, replacing 6d's one kind and yes-or-no). `CustomField.applies_to` became `shown_on`, and `required` became `required_for`; `required_on` and the new `shown` keep "off wins".
+    - `FieldForm::parse` now returns a `ParsedField`: at least one kind (else "Choose at least one kind of event to show it on."), sorted without repeats, and required only for kinds it's shown on.
+    - Which kinds a field is shown on can change after it's made; only what it holds is fixed.
+    - Migration `0011_field_kinds.sql` turns each field's one kind into a one-item list (a required field stays required for that kind), then drops the old columns. A new migration rather than a changed 0009, since the NAS has already applied 0009 and 0010. Checked on a schema-10 database: Trip time, required, became `["fuel"]` and `["fuel"]`.
+    - Profiles say `shown_on: [fuel]` (and may say `required_for`).
+    - **Setup:** a field's dialog has **Shown on** and **Required for** checkboxes (one component, `KindChecks`, now also used by the meter dialog), and its rows say where it's shown and what requires it, as a meter's do.
+  - **Duration fields are typed as digits:** a number pad (`inputmode="numeric"`), "HH:MM" as the hint and in the label, and the `:` put in as digits are typed, filling from the right (`quantity::duration_as_typed`: "340" is "3:40"). This fixes the bug: the decimal pad has no `:`, and a duration needs one. Setup's duration ranges do the same (`Field` gained a `duration` flag).
+  - **Idea 20** records the human's wish for a separate test server and deployed server, for later.
+  - 2 new tests (the field form's kinds; typing a duration); the field tests in domain, storage, server, and app use the lists. 505 workspace tests.
+  - The test plan gained step 4b (after updating to this build) and the typing check in step 10.
+- **6i:** the human ran part 1 of `docs/test-plans/p2m6-events.md` on the NAS on 2026-11-02: **all 26 steps passed** (steps 1–5 on the 6h build, then 4b onwards after updating to the build with fields like meters and typed durations, which migrated the NAS from schema 10 to 11).
+- **6j layout (chosen 2026-11-02):** option A of [`p2m6-timeline-options.svg`](../ui-sketches/p2m6-timeline-options.svg): a list grouped by month, the same on phones, with All / Fuel-ups / Readings filters. A corrected original shows **dimmed, beneath its correction**. Overview's panels as drawn (Latest fuel-ups, Meters, Last activity).
+- **6j:** no new dependency.
+  - **The Timeline tab:**
+    - the vehicle's events newest first, grouped by month in each event's own zone (`dates::month_heading`, "November 2026"; an event at 10 pm on 31 October in New York is October's);
+    - **All / Fuel-ups / Readings** filters (a vehicle without fuel-ups has no Fuel-ups chip);
+    - each row: the kind, date, and time; the readings, and a fuel-up's volume and cost; a Draft chip and the flags. It opens the event's page;
+    - **a corrected original shows dimmed and set in, beneath its correction** (and what that corrected, in turn), marked "Corrected".
+    - The arranging is `timeline::arrange`, with a test.
+  - **The Fuel tab** is the same list, fuel-ups only (it said "milestone 6" before). Fuel economy by condition arrives with Phase 5's reports.
+  - **Overview:**
+    - **Latest fuel-ups** (the last three that count: date, volume, cost, and the price per unit), with **See all on the Timeline**;
+    - **Last activity** (the newest event, and whether it's a draft);
+    - **Meters**, each with its latest reading that counts, and when and on what kind of event (corrected originals never count).
+    - The panels that fill later still say when.
+  - **The server looks each person's name up once per list** (the 6h note).
+  - 26 messages added (12 month names among them), 2 removed. 3 new tests: the month heading's zone; the Timeline's grouping, corrections, and filter; the latest reading skipping corrected originals.
+  - **Checked in a real browser:** four events and a correction over three months. The Timeline grouped them, with the corrected original dimmed under its correction. Readings filtered to one. The Fuel tab listed the four fuel-ups (after a fix: it had kept the Timeline tab's filter). Overview showed the three latest fuel-ups, the last activity, and the odometer's 52,644 mi. A row opened its event. The list fits a phone.
+- **6k:** part 2 of `docs/test-plans/p2m6-events.md`, 21 steps on a new `Test car`:
+  - the empty Overview and Timeline;
+  - three events over two months (one back-dated), the Timeline's months and filters;
+  - a correction shown dimmed under it, with Overview counting only the correction's values (latest fuel-ups, the odometer);
+  - the Fuel tab;
+  - the phone layout;
+  - the desktop app (logging with typed coordinates, editing);
+  - Sam's view and his own draft;
+  - a trailer's missing fuel parts;
+  - a restart.
+  - The Timeline also gained room at the bottom so the phone's floating + doesn't cover its last row.
+- **After 6k, from the human's use of the 6j build (2026-11-03):**
+  - **An event's page links back to its tab too:** "‹ Test car" (the vehicle's Overview) and "‹ Fuel" for a fuel-up, "‹ Timeline" otherwise. A new route, `/vehicles/:asset_id/tab/:tab`, opens a vehicle on one tab.
+  - **The Loading and sign-in page fits the visible screen on phones:** it was 100vh plus its padding, so it scrolled, and on iPhones 100vh is taller than what's visible. It's now `100dvh` with the padding inside (`box-sizing: border-box`), and so is the app's own minimum height. Checked at 390 × 664: "Loading…" sits at the exact middle, and nothing scrolls.
+  - The test plan's part 2 gained both checks (steps 8b and 13a).
+- **6l:** both parts of `docs/test-plans/p2m6-events.md` passed on the NAS, a phone, and the Mac (browser and desktop app):
+  - **Part 1** (the halfway checkpoint, 6i), 2026-11-02: all 26 steps, steps 1–5 on the 6h build and 4b onwards after updating (schema 10 to 11).
+  - **Part 2** (6k), 2026-11-03: all 23 steps, with 8b and 13a on the build with the back links and the phone's Loading page.
+  - **Asked for by the human during the runs, and built:** custom fields shown on and required for kinds of events like meters; duration fields typed as digits with the `:` put in (the decimal pad had no `:`, a bug); an event's back link to its tab; the Loading page centred on phones without scrolling. Idea 20 (a separate test server) recorded for later.
+  - **Found by the checks before the human saw them:** an edit moving an event's time to the minute (round-trip test); the Fuel tab keeping the Timeline's filter (browser check); the test plan racing test timers (reordered before the run).

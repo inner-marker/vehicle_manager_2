@@ -28,6 +28,7 @@ mod scheduler {
             clock: Arc::clone(&clock) as Arc<dyn Clock + Send + Sync>,
             snapshot_dir,
             timers: Timers::NORMAL,
+            server_device: test_id(2),
         };
         (context, clock)
     }

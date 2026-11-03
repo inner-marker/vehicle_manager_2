@@ -11,6 +11,7 @@ pub mod commands;
 pub mod convert;
 pub mod database;
 mod error;
+pub mod events;
 mod integrity;
 pub mod jobs;
 pub mod message_marks;

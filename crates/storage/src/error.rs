@@ -17,6 +17,8 @@ pub enum StorageError {
         /// Which column held it.
         column: &'static str,
     },
+    /// A change to a finalized event, which never changes (#034).
+    Finalized,
     /// SQLite reported an error.
     Sqlx(sqlx::Error),
     /// A migration failed (it rolled back).
@@ -33,6 +35,7 @@ impl fmt::Display for StorageError {
                 "the database has schema version {database}, newer than this app's {app}; update the app"
             ),
             Self::InvalidValue { column } => write!(formatter, "invalid value in column {column}"),
+            Self::Finalized => write!(formatter, "the event is finalized, so it can't change"),
             Self::Sqlx(error) => write!(formatter, "database error: {error}"),
             Self::Migrate(error) => write!(formatter, "migration failed: {error}"),
             Self::Io(error) => write!(formatter, "file error: {error}"),
@@ -46,7 +49,7 @@ impl std::error::Error for StorageError {
             Self::Sqlx(error) => Some(error),
             Self::Migrate(error) => Some(error),
             Self::Io(error) => Some(error),
-            Self::NewerSchema { .. } | Self::InvalidValue { .. } => None,
+            Self::NewerSchema { .. } | Self::InvalidValue { .. } | Self::Finalized => None,
         }
     }
 }

@@ -93,7 +93,7 @@ impl AssetsContext<'_> {
     }
 
     /// The vehicle as the permission check sees it, if it exists and the person can see it.
-    async fn visible(&self, id: AssetId) -> Result<AssetScope, AssetsOutcome> {
+    pub(crate) async fn visible(&self, id: AssetId) -> Result<AssetScope, AssetsOutcome> {
         let scope = self
             .database
             .asset_scope(id)
@@ -642,7 +642,8 @@ async fn add_field_to(
     context
         .allowed(asset, AssetAction::ConfigureMaintenance)
         .await?;
-    let label = form.parse().map_err(invalid)?;
+    let parsed = form.parse().map_err(invalid)?;
+    let label = parsed.label;
     let taken = context
         .database
         .field_keys_of(asset)
@@ -650,11 +651,12 @@ async fn add_field_to(
         .map_err(|error| unavailable("field keys", &error))?;
     let field = CustomField {
         asset,
-        applies_to: form.applies_to,
+        shown_on: parsed.shown_on,
         key: FieldKey::from_label(&label, &taken),
         label,
         kind: form.kind.clone(),
         enabled: form.enabled,
+        required_for: parsed.required_for,
         range: form.range,
     };
     let id: CustomFieldId = context.new_id()?;
@@ -671,7 +673,8 @@ async fn add_field_to(
     Ok(AssetsOutcome::Done)
 }
 
-/// Changes a custom field's label, on/off, or range (not its kind or event kind).
+/// Changes a custom field's label, kinds of events, on/off, required-for, or range (not what it
+/// holds).
 pub async fn edit_field(
     context: &AssetsContext<'_>,
     id: CustomFieldId,
@@ -686,16 +689,17 @@ async fn edit_field_settings(
     form: &FieldForm,
 ) -> Result<AssetsOutcome, AssetsOutcome> {
     let current = existing_field(context, id).await?;
-    // Its kind and event kind are fixed: values depend on them.
+    // What it holds is fixed: values depend on it.
     let checked = FieldForm {
-        applies_to: current.applies_to,
         kind: current.kind.clone(),
         ..form.clone()
     };
-    let label = checked.parse().map_err(invalid)?;
+    let parsed = checked.parse().map_err(invalid)?;
     let patch = CustomFieldPatch {
-        label: (label != current.label).then_some(label),
+        label: (parsed.label != current.label).then_some(parsed.label),
+        shown_on: (parsed.shown_on != current.shown_on).then_some(parsed.shown_on),
         enabled: (checked.enabled != current.enabled).then_some(checked.enabled),
+        required_for: (parsed.required_for != current.required_for).then_some(parsed.required_for),
         range: (checked.range != current.range).then(|| Clearable::from_option(checked.range)),
         ..CustomFieldPatch::default()
     };

@@ -9,9 +9,11 @@ publish = false
 
 [dependencies]
 fluent-bundle.workspace = true
+jiff.workspace = true
 ron.workspace = true
 serde.workspace = true
 unic-langid.workspace = true
+uom.workspace = true
 uuid.workspace = true
 
 [features]

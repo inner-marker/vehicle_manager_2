@@ -133,12 +133,17 @@ pub async fn start(
             }
             // The place data (#059): missing or broken data never stops the server.
             crate::places::load(paths.geodata_file.clone(), clock.now()).await;
-            jobs::spawn(JobContext {
-                database: database.clone(),
-                clock,
-                snapshot_dir: paths.snapshot_dir.clone(),
-                timers,
-            });
+            if let Some(server_device) = SERVER_DEVICE.get().copied() {
+                jobs::spawn(JobContext {
+                    database: database.clone(),
+                    clock,
+                    snapshot_dir: paths.snapshot_dir.clone(),
+                    timers,
+                    server_device,
+                });
+            } else {
+                tracing::error!(target: log_area::DATABASE, "no server device ID; scheduled jobs not started");
+            }
             tracing::info!(target: log_area::DATABASE, snapshot_dir = %paths.snapshot_dir.path.display(), "scheduled jobs started");
             Some(database)
         })

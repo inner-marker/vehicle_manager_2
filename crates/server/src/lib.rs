@@ -9,6 +9,7 @@ pub mod assets;
 pub mod auth;
 pub mod codes;
 pub mod commands;
+pub mod events;
 pub mod groups;
 pub mod health;
 pub mod ids;

@@ -561,6 +561,80 @@ pub enum AssetsOutcome {
     Unavailable,
 }
 
+/// One event as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventView {
+    /// Its ID.
+    pub id: crate::event::EventId,
+    /// The event.
+    pub event: crate::event::Event,
+    /// The event that corrects it, if any (then the correction's values count).
+    pub corrected_by: Option<crate::event::EventId>,
+    /// The person may edit it or **Finalize now** (a draft they may manage).
+    pub may_change: bool,
+    /// The person may correct it (finalized, not yet corrected, and they may manage it).
+    pub may_correct: bool,
+    /// Who logged it, by their display name.
+    pub logged_by_name: String,
+    /// Who finalized it, by their display name (`None`: not yet, or the server did).
+    pub finalized_by_name: Option<String>,
+}
+
+/// A meter's latest reading that counts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LatestReading {
+    /// Which meter.
+    pub meter: crate::meter::MeterId,
+    /// When (the event's start).
+    pub at: crate::time::UnixMillis,
+    /// The value, in the meter's stored unit.
+    pub value: i64,
+}
+
+/// The answer to an events request (milestone 6).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum EventsOutcome {
+    /// One vehicle's events, newest first.
+    Events {
+        /// Each event.
+        events: Vec<EventView>,
+    },
+    /// One event.
+    Event {
+        /// It (boxed: much larger than the other answers).
+        view: Box<EventView>,
+    },
+    /// What the log form needs beyond the vehicle's page.
+    LogContext {
+        /// Each meter's latest reading.
+        latest: Vec<LatestReading>,
+        /// The person may keep a reading that doesn't fit, with a reason (the Admin, in Admin
+        /// mode).
+        may_override_readings: bool,
+    },
+    /// An event was saved (added, edited, or a correction made).
+    Saved {
+        /// Its ID.
+        id: crate::event::EventId,
+        /// What's worth telling the person (it was saved anyway).
+        warnings: Vec<crate::event_check::Warning>,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle or event (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The event was refused.
+    Invalid {
+        /// Why.
+        problem: crate::event::EventProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// What to do with a message (decision #050).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

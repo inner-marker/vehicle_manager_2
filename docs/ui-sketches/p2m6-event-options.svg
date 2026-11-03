@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1830" viewBox="0 0 1560 1830" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1830" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 6h · An event&#x27;s page, Finalize now, and Correct: two options for the page</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Opened after Save, and from the Timeline (6j). A draft can be edited, finalized, or deleted; a finalized event can only be corrected.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One column: a header with the status, the big numbers, then each part as a short list; actions at the top</text>
+<text x="40" y="152" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a draft</text>
+<rect x="40" y="164" width="620" height="820" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="70" y="204" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Truck</text>
+<text x="70" y="238" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Fuel-up · 2 Nov 2026, 3:30 pm</text>
+<rect x="70" y="252" width="173.20000000000002" height="26" rx="13" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="156.60000000000002" y="270" font-size="11.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">DRAFT · locks in 23 h</text>
+<rect x="251.20000000000002" y="252" width="130.0" height="26" rx="13" fill="#3a2615" stroke="#f0883e" stroke-width="1.5"/>
+<text x="316.20000000000005" y="270" font-size="11.5" fill="#f0883e" font-weight="700" text-anchor="middle">⚑ Skipped items</text>
+<rect x="70" y="294" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="120.0" y="319.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Edit</text>
+<rect x="180" y="294" width="150" height="40" rx="10" fill="#5aa9ff"/>
+<text x="255.0" y="319.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finalize now</text>
+<rect x="340" y="294" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="390.0" y="319.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Delete</text>
+<rect x="70" y="352" width="178" height="74" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="84" y="384" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">52,644 mi</text>
+<text x="84" y="408" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">odometer</text>
+<rect x="260" y="352" width="178" height="74" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="384" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">18.004 gal</text>
+<text x="274" y="408" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">filled to full</text>
+<rect x="450" y="352" width="178" height="74" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="464" y="384" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">62.27 USD</text>
+<text x="464" y="408" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">3.459 per gal</text>
+<text x="70" y="458" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHERE</text>
+<text x="70" y="482" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Place</text>
+<text x="630" y="482" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Asheville, North Carolina, US</text>
+<line x1="70" y1="492" x2="630" y2="492" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="510" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">From</text>
+<text x="630" y="510" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Device location · ± 12 m</text>
+<line x1="70" y1="520" x2="630" y2="520" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="538" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Time zone</text>
+<text x="630" y="538" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">America/New_York</text>
+<text x="70" y="580" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DRIVING</text>
+<text x="70" y="604" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Highway</text>
+<text x="630" y="604" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">75%</text>
+<line x1="70" y1="614" x2="630" y2="614" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="632" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Towing</text>
+<text x="630" y="632" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">25% · Camper</text>
+<line x1="70" y1="642" x2="630" y2="642" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="660" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Hauling</text>
+<text x="630" y="660" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">0%</text>
+<text x="70" y="702" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TRIP AND READINGS</text>
+<text x="70" y="726" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Trip time</text>
+<text x="630" y="726" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">3:40</text>
+<line x1="70" y1="736" x2="630" y2="736" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="754" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Engine hours</text>
+<text x="630" y="754" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Skipped: &quot;Hour meter is broken&quot;</text>
+<text x="70" y="796" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO AND NOTES</text>
+<text x="70" y="820" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Done by</text>
+<text x="630" y="820" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart (logged it)</text>
+<line x1="70" y1="830" x2="630" y2="830" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="848" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
+<text x="630" y="848" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Pump 4 was slow</text>
+<text x="70" y="890" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">RECORD</text>
+<text x="70" y="914" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Logged</text>
+<text x="630" y="914" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart · 2 Nov, 3:31 pm · typed</text>
+<line x1="70" y1="924" x2="630" y2="924" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="942" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Last edited</text>
+<text x="630" y="942" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">2 Nov, 3:35 pm</text>
+<text x="700" y="204" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The numbers that matter first, big.</text>
+<text x="700" y="226" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Every part in the same short-list style</text>
+<text x="700" y="248" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   as the Setup tab.</text>
+<text x="700" y="270" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The actions are seen without scrolling.</text>
+<text x="700" y="292" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A long page for a busy fuel-up.</text>
+<text x="700" y="332" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · finalized</text>
+<rect x="700" y="344" width="250" height="600" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="718" y="370" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="718" y="402" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Truck</text>
+<text x="718" y="430" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Fuel-up · 2 Nov</text>
+<rect x="718" y="442" width="144.4" height="26" rx="13" fill="#262b34" stroke="#3fb950" stroke-width="1.5"/>
+<text x="790.2" y="460" font-size="11.5" fill="#3fb950" font-weight="700" text-anchor="middle">FINALIZED · 3 Nov</text>
+<rect x="718" y="480" width="214" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="825.0" y="505.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Correct…</text>
+<rect x="718" y="532" width="214" height="64" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="730" y="560" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">52,644 mi</text>
+<text x="730" y="582" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">odometer</text>
+<rect x="718" y="604" width="214" height="64" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="730" y="632" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">18.004 gal · 62.27</text>
+<text x="730" y="654" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">USD · 3.459 per gal</text>
+<text x="718" y="698" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">RECORD</text>
+<text x="718" y="722" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Finalized</text>
+<text x="932" y="722" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="end">by the server</text>
+<line x1="718" y1="732" x2="932" y2="732" stroke="#333a45" stroke-width="1"/>
+<text x="718" y="750" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Locked</text>
+<text x="932" y="750" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="end">3 Nov, 3:35 pm</text>
+<text x="718" y="800" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Finalized: only a correction</text>
+<text x="718" y="818" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">can change what counts.</text>
+<text x="40" y="1024" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A summary card with the actions, then the details beside a history of what happened to it</text>
+<text x="40" y="1052" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a draft</text>
+<rect x="40" y="1064" width="900" height="460" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="70" y="1094" width="840" height="150" rx="14" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="90" y="1128" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">Fuel-up · Truck</text>
+<text x="90" y="1152" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov 2026, 3:30 pm · Asheville, NC</text>
+<rect x="90" y="1166" width="173.20000000000002" height="26" rx="13" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="176.60000000000002" y="1184" font-size="11.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">DRAFT · locks in 23 h</text>
+<text x="90" y="1230" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">52,644</text>
+<text x="171.0" y="1230" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">mi</text>
+<text x="230" y="1230" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">18.004</text>
+<text x="311.0" y="1230" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">gal</text>
+<text x="370" y="1230" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">62.27</text>
+<text x="438.5" y="1230" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">USD</text>
+<rect x="590" y="1114" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="640.0" y="1139.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Edit</text>
+<rect x="700" y="1114" width="190" height="40" rx="10" fill="#5aa9ff"/>
+<text x="795.0" y="1139.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finalize now</text>
+<text x="770" y="1224" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Delete draft</text>
+<text x="70" y="1280" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DETAILS</text>
+<text x="70" y="1304" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Place</text>
+<text x="550" y="1304" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Asheville, NC, US · device</text>
+<line x1="70" y1="1314" x2="550" y2="1314" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1332" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Driving</text>
+<text x="550" y="1332" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">75% highway · 25% towing</text>
+<line x1="70" y1="1342" x2="550" y2="1342" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1360" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Towed</text>
+<text x="550" y="1360" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Camper</text>
+<line x1="70" y1="1370" x2="550" y2="1370" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1388" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Trip time</text>
+<text x="550" y="1388" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">3:40</text>
+<line x1="70" y1="1398" x2="550" y2="1398" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1416" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Engine hours</text>
+<text x="550" y="1416" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Skipped: &quot;Hour meter is broken&quot;</text>
+<line x1="70" y1="1426" x2="550" y2="1426" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1444" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Done by</text>
+<text x="550" y="1444" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart</text>
+<line x1="70" y1="1454" x2="550" y2="1454" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1472" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
+<text x="550" y="1472" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Pump 4 was slow</text>
+<text x="610" y="1280" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">HISTORY</text>
+<circle cx="618" cy="1308" r="6" fill="#5aa9ff"/>
+<line x1="618" y1="1314" x2="618" y2="1360" stroke="#333a45" stroke-width="2"/>
+<text x="634" y="1313" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Logged by Stuart (typed)</text>
+<text x="634" y="1332" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov, 3:31 pm</text>
+<circle cx="618" cy="1366" r="6" fill="#5aa9ff"/>
+<line x1="618" y1="1372" x2="618" y2="1418" stroke="#333a45" stroke-width="2"/>
+<text x="634" y="1371" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Edited by Stuart</text>
+<text x="634" y="1390" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov, 3:35 pm</text>
+<circle cx="618" cy="1424" r="6" fill="#9aa1ab"/>
+<text x="634" y="1429" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Locks: then only a correction</text>
+<text x="634" y="1448" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">3 Nov, 3:35 pm</text>
+<text x="980" y="1104" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The card answers &quot;what, when,</text>
+<text x="980" y="1126" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   how much&quot; at a glance.</text>
+<text x="980" y="1148" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ History makes drafts, finalizing,</text>
+<text x="980" y="1170" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   and corrections easy to follow.</text>
+<text x="980" y="1192" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two columns become one on phones</text>
+<text x="980" y="1214" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (history goes under details).</text>
+<text x="980" y="1236" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− More to build.</text>
+<text x="40" y="1564" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both options · Finalize now&#x27;s confirmation (#034), the correction links, and correcting</text>
+<rect x="40" y="1594" width="380" height="196" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="1630" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Finalize this event?</text>
+<text x="64" y="1658" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Afterwards it can&#x27;t be edited or deleted;</text>
+<text x="64" y="1678" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">a mistake is fixed with a correction.</text>
+<rect x="196" y="1724" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="246.0" y="1749.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="306" y="1724" width="94" height="40" rx="10" fill="#5aa9ff"/>
+<text x="353.0" y="1749.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finalize</text>
+<rect x="450" y="1594" width="500" height="64" rx="10" fill="#3a2615" stroke="#f0883e" stroke-width="1.5"/>
+<text x="468" y="1620" font-size="12.5" fill="#f0883e" font-weight="700" text-anchor="start">Corrected on 4 Nov by Stuart: &quot;Typed 809,000 for 802,000&quot;</text>
+<text x="468" y="1642" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">See the correction ›</text>
+<rect x="450" y="1672" width="500" height="64" rx="10" fill="#1d2128" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="468" y="1698" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="start">⚑ Correction of the fuel-up on 2 Nov: &quot;Typed 809,000 …&quot;</text>
+<text x="468" y="1720" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">See the original ›</text>
+<text x="450" y="1760" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On the original (its values no longer count), and on the correction.</text>
+<text x="990" y="1582" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Correct: the form, filled in</text>
+<rect x="990" y="1594" width="250" height="200" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="1008" y="1620" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="1008" y="1650" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Correct fuel-up · Truck</text>
+<text x="1008" y="1674" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Why? (required)</text>
+<rect x="1008" y="1682" width="214" height="40" rx="8" fill="#14171c" stroke="#5aa9ff" stroke-width="2"/>
+<text x="1020" y="1707" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Typed 809,000 for 802,000</text>
+<text x="1008" y="1748" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Then the fuel-up form, with</text>
+<text x="1008" y="1766" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">the original&#x27;s values to fix.</text>
+</svg>

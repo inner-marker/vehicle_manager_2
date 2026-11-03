@@ -26,6 +26,7 @@ pub(crate) mod routes;
 mod screens;
 mod shell;
 pub(crate) mod theme;
+pub(crate) mod units;
 pub(crate) mod vehicles;
 
 use dioxus::prelude::*;

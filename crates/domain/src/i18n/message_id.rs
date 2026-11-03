@@ -771,14 +771,10 @@ define_messages! {
     PANEL_SQUAWKS_COMING => "panel-squawks-coming",
     /// Overview panel: latest fuel-ups.
     PANEL_FUEL => "panel-fuel",
-    /// Overview panel: fuel-ups, not built yet.
-    PANEL_FUEL_COMING => "panel-fuel-coming",
     /// Overview panel and Setup section: meters.
     PANEL_METERS => "panel-meters",
     /// A vehicle with no meters.
     METERS_NONE => "meters-none",
-    /// Overview: meter readings, not built yet.
-    METERS_READINGS_COMING => "meters-readings-coming",
     /// A meter's required event kinds; takes `kinds` (text, a list).
     METER_REQUIRED_FOR => "meter-required-for",
     /// A meter no event kind requires.
@@ -807,10 +803,6 @@ define_messages! {
     SETUP_ADD_FIELD => "setup-add-field",
     /// Setup: a vehicle with no custom fields.
     SETUP_FIELDS_NONE => "setup-fields-none",
-    /// Setup section: which meters each event kind needs.
-    SETUP_REQUIRED => "setup-required",
-    /// Setup: what the required readings grid means.
-    SETUP_REQUIRED_NOTE => "setup-required-note",
     /// Setup section: group, status, and deleting.
     SETUP_GROUP_STATUS => "setup-group-status",
     /// Setup: open the move dialog.
@@ -861,8 +853,6 @@ define_messages! {
     FIELD_EDIT_TITLE => "field-edit-title",
     /// Form field: a custom field's label.
     FIELD_LABEL => "field-label",
-    /// Form field: the kind of event a custom field is on.
-    FIELD_APPLIES_TO => "field-applies-to",
     /// Form field: what a custom field holds.
     FIELD_TYPE => "field-type",
     /// Form field: a choice list's choices.
@@ -1175,4 +1165,400 @@ define_messages! {
     COMPASS_W => "compass-w",
     /// Compass: northwest.
     COMPASS_NW => "compass-nw",
+    /// Date: not a date.
+    DATE_BAD_DATE => "date-bad-date",
+    /// Date: not a time.
+    DATE_BAD_TIME => "date-bad-time",
+    /// Date: the zone isn't in the database.
+    DATE_UNKNOWN_ZONE => "date-unknown-zone",
+    /// Date: a multi-day event ending before it starts.
+    DATE_END_BEFORE_START => "date-end-before-start",
+    /// Date: outside 1900–2200.
+    DATE_OUT_OF_RANGE => "date-out-of-range",
+    /// Time: before noon.
+    TIME_AM => "time-am",
+    /// Time: noon and after.
+    TIME_PM => "time-pm",
+    /// A month's short name: Jan.
+    MONTH_1 => "month-1",
+    /// A month's short name: Feb.
+    MONTH_2 => "month-2",
+    /// A month's short name: Mar.
+    MONTH_3 => "month-3",
+    /// A month's short name: Apr.
+    MONTH_4 => "month-4",
+    /// A month's short name: May.
+    MONTH_5 => "month-5",
+    /// A month's short name: Jun.
+    MONTH_6 => "month-6",
+    /// A month's short name: Jul.
+    MONTH_7 => "month-7",
+    /// A month's short name: Aug.
+    MONTH_8 => "month-8",
+    /// A month's short name: Sep.
+    MONTH_9 => "month-9",
+    /// A month's short name: Oct.
+    MONTH_10 => "month-10",
+    /// A month's short name: Nov.
+    MONTH_11 => "month-11",
+    /// A month's short name: Dec.
+    MONTH_12 => "month-12",
+    /// Quantity: not a number.
+    QUANTITY_NOT_A_NUMBER => "quantity-not-a-number",
+    /// Quantity: negative.
+    QUANTITY_NEGATIVE => "quantity-negative",
+    /// Quantity: too large to store (or zero L/100 km).
+    QUANTITY_TOO_LARGE => "quantity-too-large",
+    /// Quantity: more decimals than allowed.
+    QUANTITY_TOO_PRECISE => "quantity-too-precise",
+    /// Quantity: not a duration.
+    QUANTITY_NOT_A_DURATION => "quantity-not-a-duration",
+    /// Unit abbreviation: miles.
+    UNIT_ABBR_MI => "unit-abbr-mi",
+    /// Unit abbreviation: kilometers.
+    UNIT_ABBR_KM => "unit-abbr-km",
+    /// Unit abbreviation: US gallons.
+    UNIT_ABBR_GAL => "unit-abbr-gal",
+    /// Unit abbreviation: imperial gallons.
+    UNIT_ABBR_GAL_UK => "unit-abbr-gal-uk",
+    /// Unit abbreviation: liters.
+    UNIT_ABBR_L => "unit-abbr-l",
+    /// Unit abbreviation: miles per US gallon.
+    UNIT_ABBR_MPG => "unit-abbr-mpg",
+    /// Unit abbreviation: miles per imperial gallon.
+    UNIT_ABBR_MPG_UK => "unit-abbr-mpg-uk",
+    /// Unit abbreviation: kilometers per liter.
+    UNIT_ABBR_KM_PER_L => "unit-abbr-km-per-l",
+    /// Unit abbreviation: liters per 100 kilometers.
+    UNIT_ABBR_L_PER_100_KM => "unit-abbr-l-per-100-km",
+    /// Unit abbreviation: hours.
+    UNIT_ABBR_H => "unit-abbr-h",
+    /// Event: a reason is needed (skip, override, correction).
+    EVENT_REASON_EMPTY => "event-reason-empty",
+    /// Event: a reason over 500 characters.
+    EVENT_REASON_TOO_LONG => "event-reason-too-long",
+    /// Event: the performer's name is empty or too long.
+    EVENT_BAD_PERFORMER => "event-bad-performer",
+    /// Event: no place and no reason.
+    EVENT_LOCATION_REQUIRED => "event-location-required",
+    /// Event: a required reading or field is missing.
+    EVENT_REQUIRED => "event-required",
+    /// Event: a reading that doesn't fit its neighbours in time.
+    EVENT_READING_OUT_OF_ORDER => "event-reading-out-of-order",
+    /// Event: a field value of the wrong type or choice.
+    EVENT_WRONG_VALUE => "event-wrong-value",
+    /// Event: a fuel-up of zero.
+    EVENT_NO_VOLUME => "event-no-volume",
+    /// Event: a negative cost or zero fuel economy.
+    EVENT_BAD_AMOUNT => "event-bad-amount",
+    /// Event: a percentage over 100.
+    EVENT_BAD_PERCENT => "event-bad-percent",
+    /// Event: the vehicle is among its own towed vehicles.
+    EVENT_TOWS_ITSELF => "event-tows-itself",
+    /// Event: e.g. a fuel-up for a trailer.
+    EVENT_WRONG_KIND => "event-wrong-kind",
+    /// Event: a change to a finalized event.
+    EVENT_FINALIZED => "event-finalized",
+    /// Event: a correction of a draft.
+    EVENT_NOT_FINALIZED => "event-not-finalized",
+    /// Event: a correction of an event that was already corrected.
+    EVENT_ALREADY_CORRECTED => "event-already-corrected",
+    /// Event flag: no place could be given.
+    EVENT_FLAG_MISSING_LOCATION => "event-flag-missing-location",
+    /// Event flag: a required reading or field was skipped.
+    EVENT_FLAG_SKIPPED => "event-flag-skipped",
+    /// Event flag: a reading out of order was kept.
+    EVENT_FLAG_READING_OVERRIDE => "event-flag-reading-override",
+    /// Event flag: it corrects another event.
+    EVENT_FLAG_CORRECTION => "event-flag-correction",
+    /// Setup: the meter dialog's "Required for" heading.
+    METER_REQUIRED_LABEL => "meter-required-label",
+    /// Setup: what checking a kind means.
+    METER_REQUIRED_NOTE => "meter-required-note",
+    /// The + Log chooser's title.
+    LOG_TITLE => "log-title",
+    /// The + Log chooser: the vehicle dropdown.
+    LOG_VEHICLE => "log-vehicle",
+    /// The + Log chooser: last time's vehicle.
+    LOG_LAST_TIME => "log-last-time",
+    /// The + Log chooser: under Fuel-up.
+    LOG_FUEL_DETAIL => "log-fuel-detail",
+    /// The + Log chooser: under Reading.
+    LOG_READING_DETAIL => "log-reading-detail",
+    /// The + Log chooser: a kind not built yet.
+    LOG_LATER => "log-later",
+    /// The + Log chooser: nothing to log for.
+    LOG_NO_VEHICLES => "log-no-vehicles",
+    /// Log form: the badge on a required item.
+    LOG_REQUIRED => "log-required",
+    /// Log form: a meter's latest reading.
+    LOG_LAST_READING => "log-last-reading",
+    /// Log form: skipping a required reading.
+    LOG_SKIP => "log-skip",
+    /// Log form: skipping a required field.
+    LOG_SKIP_FIELD => "log-skip-field",
+    /// Log form: a skipped item.
+    LOG_SKIPPED => "log-skipped",
+    /// Log form: the skip reason.
+    LOG_SKIP_REASON => "log-skip-reason",
+    /// Log form: stop skipping.
+    LOG_UNSKIP => "log-unskip",
+    /// Log form: the Admin's override box.
+    LOG_OVERRIDE_TITLE => "log-override-title",
+    /// Log form: the override reason.
+    LOG_OVERRIDE_REASON => "log-override-reason",
+    /// Log form: what the override does.
+    LOG_OVERRIDE_NOTE => "log-override-note",
+    /// Log form: a yes-or-no field's yes.
+    LOG_YES => "log-yes",
+    /// Log form: a yes-or-no field's no.
+    LOG_NO => "log-no",
+    /// Log form: the fuel section.
+    LOG_SECTION_FUEL => "log-section-fuel",
+    /// Log form: the fuel volume.
+    LOG_VOLUME => "log-volume",
+    /// Log form: the fuel's total price.
+    LOG_PRICE => "log-price",
+    /// Log form: the price per gallon or liter.
+    LOG_PER_UNIT => "log-per-unit",
+    /// Log form: full fill.
+    LOG_FILLED_FULL => "log-filled-full",
+    /// Log form: an earlier fill-up wasn't logged.
+    LOG_MISSED => "log-missed",
+    /// Log form: the when and where section.
+    LOG_SECTION_WHEN_WHERE => "log-section-when-where",
+    /// Log form: logged as now.
+    LOG_NOW => "log-now",
+    /// Log form: change the date or place.
+    LOG_CHANGE => "log-change",
+    /// Log form: the date.
+    LOG_DATE => "log-date",
+    /// Log form: the time.
+    LOG_TIME => "log-time",
+    /// Log form: the event's time zone.
+    LOG_ZONE => "log-zone",
+    /// Log form: choose one of your saved places.
+    LOG_SAVED_PLACE => "log-saved-place",
+    /// Log form: done choosing the place.
+    LOG_PLACE_DONE => "log-place-done",
+    /// Log form: no place at all.
+    LOG_NO_PLACE => "log-no-place",
+    /// Log form: the no-place reason.
+    LOG_NO_PLACE_REASON => "log-no-place-reason",
+    /// Log form: stop saying there's no place.
+    LOG_PLACE_AFTER_ALL => "log-place-after-all",
+    /// Log form: the driving section.
+    LOG_FOLD_DRIVING => "log-fold-driving",
+    /// Log form: the driving summary.
+    LOG_PCT_HIGHWAY => "log-pct-highway",
+    /// Log form: the driving summary.
+    LOG_PCT_TOWING => "log-pct-towing",
+    /// Log form: the driving summary.
+    LOG_PCT_HAULING => "log-pct-hauling",
+    /// Log form: the highway slider.
+    LOG_HIGHWAY => "log-highway",
+    /// Log form: the towing slider.
+    LOG_TOWING => "log-towing",
+    /// Log form: the hauling slider.
+    LOG_HAULING => "log-hauling",
+    /// Log form: the vehicles towed.
+    LOG_TOWED => "log-towed",
+    /// Log form: the other meters and fields.
+    LOG_FOLD_MORE => "log-fold-more",
+    /// Log form: nothing in a folded section.
+    LOG_FOLD_MORE_EMPTY => "log-fold-more-empty",
+    /// Log form: the fuel economy the vehicle shows.
+    LOG_REPORTED_ECONOMY => "log-reported-economy",
+    /// Log form: the who and notes section.
+    LOG_FOLD_WHO => "log-fold-who",
+    /// Log form: done by the person logging it (summary).
+    LOG_WHO_ME => "log-who-me",
+    /// Log form: the who summary without notes.
+    LOG_NOTES_NONE => "log-notes-none",
+    /// Log form: the who summary with notes.
+    LOG_NOTES_SOME => "log-notes-some",
+    /// Log form: who did it.
+    LOG_DONE_BY => "log-done-by",
+    /// Log form: done by the person logging it.
+    LOG_DONE_BY_ME => "log-done-by-me",
+    /// Log form: done by someone else.
+    LOG_DONE_BY_SOMEONE => "log-done-by-someone",
+    /// Log form: someone else's name.
+    LOG_THEIR_NAME => "log-their-name",
+    /// Log form: someone else's contact.
+    LOG_THEIR_CONTACT => "log-their-contact",
+    /// Log form: notes.
+    LOG_NOTES => "log-notes",
+    /// Log form: by Save.
+    LOG_DRAFT_NOTE => "log-draft-note",
+    /// Log form: save.
+    LOG_SAVE => "log-save",
+    /// Log form: while saving.
+    LOG_SAVING => "log-saving",
+    /// Log form: saved, with warnings.
+    LOG_SAVED => "log-saved",
+    /// Log form: a field above its range.
+    LOG_WARNING_ABOVE => "log-warning-above",
+    /// Log form: a field below its range.
+    LOG_WARNING_BELOW => "log-warning-below",
+    /// Log form: the Admin kept a reading.
+    LOG_WARNING_KEPT => "log-warning-kept",
+    /// Log form: leave after saving.
+    LOG_DONE => "log-done",
+    /// Screen title: one event.
+    SCREEN_EVENT => "screen-event",
+    /// Screen title: editing a draft.
+    SCREEN_EDIT_EVENT => "screen-edit-event",
+    /// Screen title: correcting an event.
+    SCREEN_CORRECT_EVENT => "screen-correct-event",
+    /// An event that isn't there.
+    EVENT_NOT_FOUND => "event-not-found",
+    /// Log form: a reading below the one before.
+    LOG_CLASH_BELOW => "log-clash-below",
+    /// Log form: a reading above the one after.
+    LOG_CLASH_ABOVE => "log-clash-above",
+    /// Correct form: what correcting does.
+    LOG_CORRECT_NOTE => "log-correct-note",
+    /// Correct form: the reason.
+    LOG_CORRECT_REASON => "log-correct-reason",
+    /// Event page: a draft's status.
+    EVENT_STATUS_DRAFT => "event-status-draft",
+    /// Event page: a finalized event's status.
+    EVENT_STATUS_FINALIZED => "event-status-finalized",
+    /// Event page: hours until a draft locks.
+    EVENT_LOCKS_HOURS => "event-locks-hours",
+    /// Event page: minutes until a draft locks.
+    EVENT_LOCKS_MINUTES => "event-locks-minutes",
+    /// Event page: a draft due to lock now.
+    EVENT_LOCKS_SOON => "event-locks-soon",
+    /// Event page: finalize a draft.
+    EVENT_FINALIZE_NOW => "event-finalize-now",
+    /// Event page: delete a draft.
+    EVENT_DELETE => "event-delete",
+    /// Event page: correct a finalized event.
+    EVENT_CORRECT => "event-correct",
+    /// Event page: on an original that was corrected.
+    EVENT_CORRECTED_BY => "event-corrected-by",
+    /// Event page: link to the correction.
+    EVENT_SEE_CORRECTION => "event-see-correction",
+    /// Event page: on a correction.
+    EVENT_CORRECTS => "event-corrects",
+    /// Event page: link to the original.
+    EVENT_SEE_ORIGINAL => "event-see-original",
+    /// Event page: a full fill.
+    EVENT_FILLED_FULL => "event-filled-full",
+    /// Event page: not a full fill.
+    EVENT_PARTIAL_FILL => "event-partial-fill",
+    /// Event page: the place's name.
+    EVENT_PLACE_NAME => "event-place-name",
+    /// Event page: the city, state, and country.
+    EVENT_PLACE => "event-place",
+    /// Event page: why there's no place.
+    EVENT_NO_PLACE => "event-no-place",
+    /// Event page: where the location came from.
+    EVENT_FROM => "event-from",
+    /// Event page: from the device.
+    EVENT_SOURCE_GPS => "event-source-gps",
+    /// Event page: from a saved place.
+    EVENT_SOURCE_SAVED => "event-source-saved",
+    /// Event page: picked on a map.
+    EVENT_SOURCE_MAP => "event-source-map",
+    /// Event page: typed in.
+    EVENT_SOURCE_MANUAL => "event-source-manual",
+    /// Event page: the event's zone.
+    EVENT_ZONE => "event-zone",
+    /// Event page: a skipped item.
+    EVENT_SKIPPED_BECAUSE => "event-skipped-because",
+    /// Event page: the economy the vehicle showed.
+    EVENT_REPORTED_ECONOMY => "event-reported-economy",
+    /// Event page: done by the person who logged it.
+    EVENT_DONE_BY_LOGGER => "event-done-by-logger",
+    /// Event page: the Admin's override reason.
+    EVENT_OVERRIDE => "event-override",
+    /// Event page: the event was typed.
+    EVENT_TYPED => "event-typed",
+    /// Event page: the event was spoken.
+    EVENT_VOICE => "event-voice",
+    /// Event page: the event was imported.
+    EVENT_IMPORTED => "event-imported",
+    /// Event page: the record section.
+    EVENT_RECORD => "event-record",
+    /// Event page: who logged it and when.
+    EVENT_LOGGED => "event-logged",
+    /// Event page: when it last changed.
+    EVENT_LAST_EDITED => "event-last-edited",
+    /// Event page: who finalized it and when.
+    EVENT_FINALIZED_ROW => "event-finalized-row",
+    /// Event page: finalized automatically.
+    EVENT_BY_SERVER => "event-by-server",
+    /// Finalize now's confirmation.
+    EVENT_FINALIZE_TITLE => "event-finalize-title",
+    /// Finalize now's confirmation.
+    EVENT_FINALIZE_TEXT => "event-finalize-text",
+    /// Finalize now's confirmation: the button.
+    EVENT_FINALIZE => "event-finalize",
+    /// Delete's confirmation.
+    EVENT_DELETE_TITLE => "event-delete-title",
+    /// Delete's confirmation.
+    EVENT_DELETE_TEXT => "event-delete-text",
+    /// Setup: a field shown on no kind of event.
+    FIELD_NO_KINDS => "field-no-kinds",
+    /// Setup: the field dialog's "Shown on" checkboxes.
+    FIELD_SHOWN_ON => "field-shown-on",
+    /// Setup: what "Shown on" means for a field.
+    FIELD_KIND_NOTE => "field-kind-note",
+    /// Setup: what "Required for" means for a field.
+    FIELD_REQUIRED_FOR_NOTE => "field-required-for-note",
+    /// A month's full name, for headings.
+    MONTH_LONG_1 => "month-long-1",
+    /// A month's full name, for headings.
+    MONTH_LONG_2 => "month-long-2",
+    /// A month's full name, for headings.
+    MONTH_LONG_3 => "month-long-3",
+    /// A month's full name, for headings.
+    MONTH_LONG_4 => "month-long-4",
+    /// A month's full name, for headings.
+    MONTH_LONG_5 => "month-long-5",
+    /// A month's full name, for headings.
+    MONTH_LONG_6 => "month-long-6",
+    /// A month's full name, for headings.
+    MONTH_LONG_7 => "month-long-7",
+    /// A month's full name, for headings.
+    MONTH_LONG_8 => "month-long-8",
+    /// A month's full name, for headings.
+    MONTH_LONG_9 => "month-long-9",
+    /// A month's full name, for headings.
+    MONTH_LONG_10 => "month-long-10",
+    /// A month's full name, for headings.
+    MONTH_LONG_11 => "month-long-11",
+    /// A month's full name, for headings.
+    MONTH_LONG_12 => "month-long-12",
+    /// Timeline: show every event.
+    TIMELINE_ALL => "timeline-all",
+    /// Timeline: only fuel-ups.
+    TIMELINE_FUEL_UPS => "timeline-fuel-ups",
+    /// Timeline: only readings.
+    TIMELINE_READINGS => "timeline-readings",
+    /// Timeline: no events.
+    TIMELINE_EMPTY => "timeline-empty",
+    /// Timeline: an original that was corrected.
+    TIMELINE_CORRECTED => "timeline-corrected",
+    /// Timeline: a draft.
+    TIMELINE_DRAFT => "timeline-draft",
+    /// Overview: no fuel-ups.
+    PANEL_FUEL_NONE => "panel-fuel-none",
+    /// Overview: open the Timeline.
+    PANEL_SEE_TIMELINE => "panel-see-timeline",
+    /// Overview: economy comes later.
+    PANEL_ECONOMY_LATER => "panel-economy-later",
+    /// Overview: the newest event.
+    PANEL_LAST_ACTIVITY => "panel-last-activity",
+    /// Overview: no events.
+    PANEL_NO_ACTIVITY => "panel-no-activity",
+    /// Overview: the newest event is finalized.
+    PANEL_FINALIZED => "panel-finalized",
+    /// Overview: when a meter's latest reading was.
+    PANEL_READING_WHEN => "panel-reading-when",
+    /// Overview: a meter with no readings.
+    PANEL_NO_READINGS => "panel-no-readings",
 }

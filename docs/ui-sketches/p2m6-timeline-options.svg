@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1750" viewBox="0 0 1560 1750" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1750" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 6j · A vehicle&#x27;s Timeline tab, and Overview&#x27;s latest fuel-ups: two options for the Timeline</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Newest first. Each event opens its page. A corrected event stays, marked, with its correction beside it; only the correction&#x27;s values count.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · A list grouped by month: one row per event, the numbers on a second line</text>
+<text x="40" y="152" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the Timeline tab</text>
+<rect x="40" y="164" width="680" height="580" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="70" y="204" font-size="13.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Overview   Timeline   Maintenance   Fuel   Documents   Setup</text>
+<line x1="148" y1="214" x2="216" y2="214" stroke="#5aa9ff" stroke-width="3"/>
+<rect x="70" y="232" width="48.2" height="32" rx="16" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="94.1" y="253" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">All</text>
+<rect x="126.2" y="232" width="85.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="168.8" y="253" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Fuel-ups</text>
+<rect x="219.4" y="232" width="85.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="262.0" y="253" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Readings</text>
+<text x="70" y="294" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">NOVEMBER 2026</text>
+<rect x="70" y="306" width="620" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="84" y="344" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="118" y="332" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · 2 Nov · 3:30 pm</text>
+<text x="118" y="352" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">52,644 mi · 18.004 gal · 62.27 USD</text>
+<rect x="621.5" y="325" width="54.5" height="24" rx="12.0" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="648.75" y="341.0" font-size="11" fill="#5aa9ff" font-weight="700" text-anchor="middle">Draft</text>
+<text x="676" y="344" font-size="1" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<text x="70" y="402" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">OCTOBER 2026</text>
+<rect x="70" y="414" width="620" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="84" y="452" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="118" y="440" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · 28 Oct · 8:10 am</text>
+<text x="118" y="460" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">52,301 mi · 16.2 gal · 55.10 USD</text>
+<rect x="573.2" y="433" width="102.80000000000001" height="24" rx="12.0" fill="#3a2615" stroke="#f0883e" stroke-width="1.5"/>
+<text x="624.6" y="449.0" font-size="11" fill="#f0883e" font-weight="700" text-anchor="middle">⚑ Correction</text>
+<text x="676" y="452" font-size="1" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<rect x="94" y="482" width="596" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5" opacity="0.55"/>
+<text x="108" y="520" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="142" y="508" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">Fuel-up · 28 Oct · 8:10 am</text>
+<text x="142" y="528" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">52,310 mi · 16.2 gal · 55.10 USD</text>
+<rect x="593.9" y="501" width="82.1" height="24" rx="12.0" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="634.9499999999999" y="517.0" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="middle">Corrected</text>
+<text x="676" y="520" font-size="1" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<text x="76" y="518" font-size="14" fill="#9aa1ab" font-weight="600" text-anchor="start">↳</text>
+<rect x="70" y="550" width="620" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="84" y="588" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="118" y="576" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Reading · 20 Oct · 6:02 pm</text>
+<text x="118" y="596" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">52,118 mi</text>
+<text x="676" y="588" font-size="1" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<rect x="70" y="618" width="620" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="84" y="656" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="118" y="644" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · 14 Oct · 7:45 am</text>
+<text x="118" y="664" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">51,880 mi · 17.5 gal · 59.36 USD</text>
+<rect x="552.5" y="637" width="123.5" height="24" rx="12.0" fill="#3a2615" stroke="#f0883e" stroke-width="1.5"/>
+<text x="614.25" y="653.0" font-size="11" fill="#f0883e" font-weight="700" text-anchor="middle">⚑ Skipped items</text>
+<text x="676" y="656" font-size="1" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<text x="760" y="204" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Easy to scan; months give a sense of time.</text>
+<text x="760" y="226" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The correction sits right above what it</text>
+<text x="760" y="248" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   corrects, which is dimmed and indented.</text>
+<text x="760" y="270" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Same rows on a phone, just narrower.</text>
+<text x="760" y="292" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− The numbers don&#x27;t line up in columns.</text>
+<text x="760" y="332" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the same list</text>
+<rect x="760" y="344" width="250" height="460" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="778" y="370" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="776" y="394" width="35.2" height="32" rx="16" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="793.6" y="415" font-size="11.5" fill="#e8eaed" font-weight="700" text-anchor="middle">All</text>
+<rect x="817.2" y="394" width="67.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="850.8000000000001" y="415" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Fuel-ups</text>
+<rect x="890.4000000000001" y="394" width="67.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="924.0000000000001" y="415" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Readings</text>
+<text x="776" y="454" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">NOVEMBER 2026</text>
+<rect x="776" y="466" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="788" y="492" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">⛽ Fuel-up · 2 Nov</text>
+<text x="788" y="512" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">52,644 mi · 18.004 gal</text>
+<rect x="934" y="476" width="54.5" height="22" rx="11.0" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="961.25" y="491.0" font-size="10" fill="#5aa9ff" font-weight="700" text-anchor="middle">Draft</text>
+<text x="776" y="560" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">OCTOBER 2026</text>
+<rect x="776" y="572" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="788" y="598" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">⛽ Fuel-up · 28 Oct</text>
+<text x="788" y="618" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">52,301 mi · ⚑ Correction</text>
+<rect x="794" y="640" width="200" height="56" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5" opacity="0.55"/>
+<text x="806" y="664" font-size="12.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Fuel-up · 28 Oct</text>
+<text x="806" y="682" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Corrected</text>
+<text x="40" y="844" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A table on wide screens (columns line up), cards on phones</text>
+<text x="40" y="872" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the Timeline tab</text>
+<rect x="40" y="884" width="900" height="420" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="70" y="912" width="48.2" height="32" rx="16" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="94.1" y="933" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">All</text>
+<rect x="126.2" y="912" width="85.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="168.8" y="933" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Fuel-ups</text>
+<rect x="219.4" y="912" width="85.2" height="32" rx="16" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="262.0" y="933" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Readings</text>
+<text x="70" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DATE</text>
+<text x="220" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TYPE</text>
+<text x="340" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">ODOMETER</text>
+<text x="470" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">FUEL</text>
+<text x="570" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">COST</text>
+<text x="680" y="976" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">STATUS</text>
+<line x1="70" y1="986" x2="910" y2="986" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1016" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">2 Nov 2026</text>
+<text x="220" y="1016" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Fuel-up</text>
+<text x="340" y="1016" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">52,644 mi</text>
+<text x="470" y="1016" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">18.004 gal</text>
+<text x="570" y="1016" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">62.27 USD</text>
+<text x="680" y="1016" font-size="12" fill="#5aa9ff" font-weight="700" text-anchor="start">Draft</text>
+<line x1="70" y1="1032" x2="910" y2="1032" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1060" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">28 Oct 2026</text>
+<text x="220" y="1060" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Fuel-up</text>
+<text x="340" y="1060" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">52,301 mi</text>
+<text x="470" y="1060" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">16.2 gal</text>
+<text x="570" y="1060" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">55.10 USD</text>
+<text x="680" y="1060" font-size="12" fill="#f0883e" font-weight="700" text-anchor="start">⚑ Correction</text>
+<line x1="70" y1="1076" x2="910" y2="1076" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1104" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">28 Oct 2026</text>
+<line x1="70" y1="1100" x2="142.6" y2="1100" stroke="#9aa1ab" stroke-width="1"/>
+<text x="220" y="1104" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Fuel-up</text>
+<line x1="220" y1="1100" x2="266.2" y2="1100" stroke="#9aa1ab" stroke-width="1"/>
+<text x="340" y="1104" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">52,310 mi</text>
+<line x1="340" y1="1100" x2="399.4" y2="1100" stroke="#9aa1ab" stroke-width="1"/>
+<text x="470" y="1104" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">16.2 gal</text>
+<line x1="470" y1="1100" x2="522.8" y2="1100" stroke="#9aa1ab" stroke-width="1"/>
+<text x="570" y="1104" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">55.10 USD</text>
+<line x1="570" y1="1100" x2="629.4" y2="1100" stroke="#9aa1ab" stroke-width="1"/>
+<text x="680" y="1104" font-size="12" fill="#9aa1ab" font-weight="700" text-anchor="start">Corrected ↑</text>
+<line x1="70" y1="1120" x2="910" y2="1120" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1148" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">20 Oct 2026</text>
+<text x="220" y="1148" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Reading</text>
+<text x="340" y="1148" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">52,118 mi</text>
+<text x="470" y="1148" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<text x="570" y="1148" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start"></text>
+<line x1="70" y1="1164" x2="910" y2="1164" stroke="#333a45" stroke-width="1"/>
+<text x="70" y="1192" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">14 Oct 2026</text>
+<text x="220" y="1192" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Fuel-up</text>
+<text x="340" y="1192" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">51,880 mi</text>
+<text x="470" y="1192" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">17.5 gal</text>
+<text x="570" y="1192" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">59.36 USD</text>
+<text x="680" y="1192" font-size="12" fill="#f0883e" font-weight="700" text-anchor="start">⚑ Skipped items</text>
+<line x1="70" y1="1208" x2="910" y2="1208" stroke="#333a45" stroke-width="1"/>
+<text x="980" y="924" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Numbers line up: easy to compare</text>
+<text x="980" y="946" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   fill-ups by eye.</text>
+<text x="980" y="968" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Familiar from spreadsheets.</text>
+<text x="980" y="990" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two layouts (table, cards).</text>
+<text x="980" y="1012" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Gets crowded when maintenance</text>
+<text x="980" y="1034" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   and repairs join (milestone 7).</text>
+<text x="980" y="1056" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A corrected row is struck through,</text>
+<text x="980" y="1078" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   the correction just above it.</text>
+<text x="40" y="1344" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both options · Overview: the Latest fuel-ups panel, and each meter&#x27;s latest reading</text>
+<text x="40" y="1372" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Overview (the panels that fill in this milestone)</text>
+<rect x="40" y="1384" width="900" height="330" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="70" y="1414" width="410" height="270" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="88" y="1442" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">LATEST FUEL-UPS</text>
+<text x="88" y="1476" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">2 Nov</text>
+<text x="170" y="1476" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">18.004 gal</text>
+<text x="270" y="1476" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">62.27 USD</text>
+<text x="462" y="1476" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">3.459 /gal</text>
+<line x1="88" y1="1494" x2="462" y2="1494" stroke="#333a45" stroke-width="1"/>
+<text x="88" y="1524" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">28 Oct</text>
+<text x="170" y="1524" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">16.2 gal</text>
+<text x="270" y="1524" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">55.10 USD</text>
+<text x="462" y="1524" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">3.401 /gal</text>
+<line x1="88" y1="1542" x2="462" y2="1542" stroke="#333a45" stroke-width="1"/>
+<text x="88" y="1572" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">14 Oct</text>
+<text x="170" y="1572" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">17.5 gal</text>
+<text x="270" y="1572" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">59.36 USD</text>
+<text x="462" y="1572" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">3.392 /gal</text>
+<line x1="88" y1="1590" x2="462" y2="1590" stroke="#333a45" stroke-width="1"/>
+<text x="88" y="1644" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">See all on the Timeline ›</text>
+<text x="88" y="1668" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Fuel economy arrives with Phase 5&#x27;s reports.</text>
+<rect x="510" y="1414" width="400" height="150" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="528" y="1442" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="528" y="1476" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Odometer</text>
+<text x="892" y="1476" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="end">52,644 mi</text>
+<text x="528" y="1496" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov 2026 · fuel-up</text>
+<text x="528" y="1532" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Engine hours</text>
+<text x="892" y="1532" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="end">No readings yet</text>
+<rect x="510" y="1578" width="400" height="106" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="528" y="1606" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">LAST ACTIVITY</text>
+<text x="528" y="1638" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · 2 Nov, 3:30 pm</text>
+<text x="528" y="1662" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Draft · locks in 23 h</text>
+<text x="980" y="1424" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The other Overview panels (ready to use,</text>
+<text x="980" y="1446" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">coming due, squawks) stay as they are</text>
+<text x="980" y="1468" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">until their milestones.</text>
+</svg>

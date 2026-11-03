@@ -472,10 +472,11 @@ mod assets {
 
         // A second "Trip time" gets a key of its own.
         let form = FieldForm {
-            applies_to: EventKind::Fuel,
+            shown_on: vec![EventKind::Fuel],
             label: "Trip time".into(),
             kind: FieldKind::Duration,
             enabled: true,
+            required_for: vec![],
             range: None,
         };
         assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
@@ -494,6 +495,8 @@ mod assets {
             .clone();
         let renamed = FieldForm {
             label: "Moving time".into(),
+            shown_on: vec![EventKind::Reading, EventKind::Fuel, EventKind::Fuel],
+            required_for: vec![EventKind::Fuel, EventKind::Repair],
             ..form.clone()
         };
         assert_eq!(
@@ -504,6 +507,14 @@ mod assets {
         assert_eq!(
             (field.label.as_str(), field.key.as_str()),
             ("Moving time", "trip-time-2")
+        );
+        assert_eq!(
+            (field.shown_on, field.required_for),
+            (
+                vec![EventKind::Fuel, EventKind::Reading],
+                vec![EventKind::Fuel]
+            ),
+            "sorted, without repeats, and required only where it's shown"
         );
         assert_eq!(delete_field(&ctx, new_id).await, AssetsOutcome::Done);
         assert_eq!(add_field(&ctx, id, &form).await, AssetsOutcome::Done);
