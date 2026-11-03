@@ -1593,4 +1593,14 @@ define_messages! {
     SQUAWK_DISPOSITIONED_TWICE => "squawk-dispositioned-twice",
     /// A disposition of a squawk that isn't outstanding.
     SQUAWK_NOT_OUTSTANDING => "squawk-not-outstanding",
+    /// Requirement: a meter rule of zero or less.
+    REQUIREMENT_BAD_INTERVAL => "requirement-bad-interval",
+    /// Requirement: a calendar rule out of range.
+    REQUIREMENT_BAD_MONTHS => "requirement-bad-months",
+    /// Requirement: two rules of one kind.
+    REQUIREMENT_REPEATED_RULE => "requirement-repeated-rule",
+    /// Bundle: no requirements.
+    BUNDLE_EMPTY => "bundle-empty",
+    /// Bundle: a repeated or unknown requirement.
+    BUNDLE_BAD_ITEM => "bundle-bad-item",
 }

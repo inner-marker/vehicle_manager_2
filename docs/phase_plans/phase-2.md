@@ -804,7 +804,7 @@
 |---|---|---|---|---|
 | 7.0 | ☑️ | `docs: Phase 2 milestone 7 plan` | This plan; decision #063 (squawk severity); the test server marked merged | none |
 | 7a | ☑️ | `feat(domain): squawks` | Squawk records (description, notes, severity, opened by and when, the event it was found on), dispositions (signed off or deferred, with notes or a reason, and a new severity), status from the latest counted one; profiles name High; checks. Test-first | none |
-| 7b | ⬜ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
+| 7b | ☑️ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
 | 7c | ⬜ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
 | 7d | ⬜ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
 | 7e | ⬜ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
@@ -830,3 +830,17 @@
   - **`check_dispositions`:** each disposition is for an outstanding squawk on the vehicle, at most once; when finishing, every outstanding squawk must be there (the required disposition).
   - **Profiles name High** (`high_severity`, a message key; each profile's version goes up by one): "Not drivable" (car, truck, motorcycle), "Not towable" (trailer), "Out of service" (generator, other equipment, and kinds without a profile; `profile::high_severity_name`).
   - 14 messages. 6 new tests: the description's limits; severity's default and order; status and severity from the history, in any order; finishing needs every outstanding squawk, once; a squawk's patch and a disposition round-trip; each kind's word for High.
+- **7b:** no new dependency.
+  - **`domain::requirement`:** the `Requirement` record (the vehicle, a name, notes, on or off, and its interval rules) and the `Bundle` record (a name, and the requirements it covers, in order). Both patches come from `record_patch!`.
+  - **Interval rules**, whichever comes due first:
+    - every N on a meter, in its stored unit;
+    - every 1–600 months, optionally due by the end of that month;
+    - a fixed date, with an optional first date. Each sign-off then gives the next one (7c), or none.
+    - A requirement with no rules is "done when needed".
+  - **Checks:** a meter rule names one of the vehicle's meters and is more than zero; each meter, the calendar, and the fixed date are used once; a bundle has at least one of the vehicle's requirements, none twice.
+  - **`calendar_due`** (for Phase 5): the same day N months later, the month's last day when it's shorter (31 Jan + 1 month = 28 Feb), or the last day with end-of-month. A property test from 1950 to about 2114 checks that it's exactly N months later, after the start, and on the right day.
+  - **`last_done`:** the latest finished task for a requirement, by its event's time. It carries the readings it resets from and the next due date it gave (`DoneTask`, filled in by 7c's tasks).
+  - **`copy_schedule`** (#031): copies, never links.
+    - A meter rule moves to the new vehicle's meter with the same name (ignoring case) and dimension; one with no match is left out, and listed as "requirement: meter".
+    - Bundles still name the old requirement IDs, for the server to map to the new ones (7e).
+  - 5 messages. 7 new tests: the rules' checks; a bundle's; the calendar arithmetic (leap years, short months); its property test; last done; copying a schedule (a renamed-case odometer matched, engine hours left out); the patches' round trip.

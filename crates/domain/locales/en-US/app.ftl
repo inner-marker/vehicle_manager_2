@@ -977,3 +977,11 @@ squawk-description-too-long = That's too long: at most 500 characters.
 squawk-undispositioned = Sign off or defer every open squawk before finishing.
 squawk-dispositioned-twice = That squawk is already signed off or deferred in this job.
 squawk-not-outstanding = That squawk isn't open or deferred on this vehicle.
+
+## Requirements and bundles (milestone 7)
+
+requirement-bad-interval = Enter how far apart, more than zero.
+requirement-bad-months = Every 1 to 600 months.
+requirement-repeated-rule = Each meter, the calendar, and the fixed date can be used once.
+bundle-empty = Choose at least one requirement.
+bundle-bad-item = Each requirement can be in a bundle once.
