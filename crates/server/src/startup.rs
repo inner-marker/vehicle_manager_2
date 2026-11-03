@@ -281,6 +281,15 @@ mod tests {
     }
 
     #[test]
+    fn instance_env_var_comes_from_app_id() {
+        // deploy/compose.yaml and .env.example repeat this name (crates/app/tests/deploy_config.rs).
+        assert_eq!(
+            domain::identity::env_var_name(INSTANCE_ENV_NAME),
+            "VEHICLEMANAGER_INSTANCE"
+        );
+    }
+
+    #[test]
     fn snapshots_default_to_the_data_dir_and_an_override_is_never_created() {
         let default = ServerPaths::new(PathBuf::from("/data"), None);
         assert_eq!(default.snapshot_dir.path, PathBuf::from("/data/snapshots"));

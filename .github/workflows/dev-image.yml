@@ -2,9 +2,11 @@
 # Dockerfile, or the deploy files change on `dev` or a milestone branch, and on demand
 # ("Run workflow", which GitHub offers only once this file is on the default branch, `dev`).
 # Publishes ghcr.io/inner-marker/vehicle_manager_2 with:
-#   :dev                         newest build of `dev` (what the NAS normally pulls)
-#   :milestone-<phase>-<m>-...   newest build of a milestone branch, to try it on the NAS
-#                                before its PR (e.g. :milestone-p1-m3-nas-web)
+#   :dev                         newest build of `dev`: what the household's main server runs
+#                                (decision #062), so it's built WITHOUT test timers
+#   :milestone-<phase>-<m>-...   newest build of a milestone branch, for the test server
+#                                before its PR (e.g. :milestone-p1-m3-nas-web), WITH test
+#                                timers (#054)
 #   :sha-<commit>                this exact build (pin or roll back)
 name: Server image
 
@@ -33,18 +35,34 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Publish development image
+  # `dev`: the main server's image, so no test timers (#062).
+  publish-dev:
+    name: Publish dev image
+    if: github.ref_name == 'dev'
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/server-image.yml
     with:
       push: true
-      # Test images can shorten their timers with VEHICLEMANAGER_TEST_MINUTES (#054).
+      test-timers: false
+      tags: |
+        type=ref,event=branch
+        type=sha,prefix=sha-,format=short
+
+  # A milestone branch: the test server's image. Test timers are built in, and switched on
+  # only by VEHICLEMANAGER_TEST_MINUTES (#054).
+  publish-milestone:
+    name: Publish milestone image
+    if: github.ref_name != 'dev'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/server-image.yml
+    with:
+      push: true
       test-timers: true
-      # The branch name as a tag ("/" becomes "-"): `dev` on dev, the milestone's name on
-      # a milestone branch; plus the commit.
+      # The branch name as a tag ("/" becomes "-"): the milestone's name; plus the commit.
       tags: |
         type=ref,event=branch
         type=sha,prefix=sha-,format=short

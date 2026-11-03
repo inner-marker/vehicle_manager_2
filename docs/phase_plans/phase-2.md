@@ -710,7 +710,7 @@
 |---|---|---|---|---|
 | T1 | ☑️ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
 | T2 | ☑️ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
-| T3 | ⬜ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
+| T3 | ☑️ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
 | T4 | ⬜ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
 
 **Written so far**
@@ -723,3 +723,12 @@
   - **The tag:** "TEST SERVER" in the top bar and on the sign-in, setup, and password cards; just "TEST" in a phone's top bar, where the full tag pushed the account chip off the screen. The browser tab's title is "test server". A main server shows nothing.
   - 2 messages, 1 new test (names and their cookies).
   - **Checked in a real browser:** a main server on 127.0.0.1:8412 and a `test` one on :8413, set up and signed in to in one Chrome profile. Each kept its own sign-in (mainadmin and testadmin, cookies `vehiclemanager_session` and `vehiclemanager_test_session` on the same host); only the test one showed the tag and the title; the phone top bar fits.
+- **T3:** no new dependency.
+  - **`dev-image.yml`** has two jobs:
+    - `publish-dev` (only on `dev`) builds **without** test timers, the main server's image;
+    - `publish-milestone` (only on milestone branches) builds **with** them, the test server's.
+    - Tags are unchanged.
+  - **`compose.yaml`** takes the Project and container name from `VEHICLEMANAGER_PROJECT_NAME` (default `vehiclemanager`; `vehiclemanager-test` for the test server) and passes `VEHICLEMANAGER_INSTANCE` (empty by default).
+  - **`.env.example`** lists both and says which values each server uses (ports 8410 and 8411; `dev` or a milestone image).
+  - **Tests:** `deploy_config` checks that only the milestone job builds in test timers, the names come from `.env` with the app ID as the default, and the instance name is passed, empty. A server test pins `VEHICLEMANAGER_INSTANCE`.
+  - Both YAML files parse. Compose isn't installed on the Mac, so the T4 runbook starts with `sudo docker compose config` on the NAS, which checks the interpolation for real.
