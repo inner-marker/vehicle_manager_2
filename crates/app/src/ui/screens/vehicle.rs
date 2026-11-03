@@ -51,7 +51,7 @@ pub(super) fn use_vehicle_page() -> VehiclePage {
 
 /// The tabs, in order (#040).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Tab {
+pub(super) enum Tab {
     Overview,
     Timeline,
     Maintenance,
@@ -61,7 +61,33 @@ enum Tab {
 }
 
 impl Tab {
-    const fn label(self) -> MessageId {
+    /// Every tab, in order.
+    const ALL: [Self; 6] = [
+        Self::Overview,
+        Self::Timeline,
+        Self::Maintenance,
+        Self::Fuel,
+        Self::Documents,
+        Self::Setup,
+    ];
+
+    /// Its name in an address (`/vehicles/:id/tab/fuel`).
+    pub(super) const fn slug(self) -> &'static str {
+        match self {
+            Self::Overview => "overview",
+            Self::Timeline => "timeline",
+            Self::Maintenance => "maintenance",
+            Self::Fuel => "fuel",
+            Self::Documents => "documents",
+            Self::Setup => "setup",
+        }
+    }
+
+    fn from_slug(slug: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.slug() == slug)
+    }
+
+    pub(super) const fn label(self) -> MessageId {
         match self {
             Self::Overview => messages::TAB_OVERVIEW,
             Self::Timeline => messages::TAB_TIMELINE,
@@ -190,8 +216,18 @@ pub(super) fn required_text(meter: &Meter) -> String {
 #[component]
 pub(crate) fn VehicleDetail(asset_id: String) -> Element {
     match asset_id.parse::<AssetId>() {
-        Ok(id) => rsx! { VehicleScreen { id } },
+        Ok(id) => rsx! { VehicleScreen { id, start: Tab::Overview } },
         Err(_) => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/vehicles/:asset_id/tab/:tab`: the vehicle's page, opened on one tab (e.g. back from an
+/// event to the Fuel tab).
+#[component]
+pub(crate) fn VehicleTab(asset_id: String, tab: String) -> Element {
+    match (asset_id.parse::<AssetId>(), Tab::from_slug(&tab)) {
+        (Ok(id), Some(start)) => rsx! { VehicleScreen { id, start } },
+        _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
 
@@ -219,14 +255,14 @@ async fn load(mut page: VehiclePage, id: AssetId) {
 
 /// The page: header, tabs, and the chosen tab.
 #[component]
-fn VehicleScreen(id: AssetId) -> Element {
+fn VehicleScreen(id: AssetId, start: Tab) -> Element {
     let auth = use_auth();
     let page = use_context_provider(|| VehiclePage {
         view: Signal::new(None),
         problem: Signal::new(None),
         reloads: Signal::new(0),
     });
-    let mut tab = use_signal(|| Tab::Overview);
+    let mut tab = use_signal(|| start);
     // What the person may change depends on their mode, so a mode change loads it again.
     let mode = use_memo(move || match auth() {
         AuthState::SignedIn(session) => Some(session.mode),
@@ -240,10 +276,10 @@ fn VehicleScreen(id: AssetId) -> Element {
         let _ = ((page.reloads)(), mode());
         spawn(load(page, id));
     }));
-    // Back on Overview when it's another vehicle.
-    use_effect(use_reactive!(|id| {
+    // On the asked-for tab (Overview, unless the address names one) for another vehicle.
+    use_effect(use_reactive!(|id, start| {
         let _ = id;
-        tab.set(Tab::Overview);
+        tab.set(start);
     }));
 
     if let Some(problem) = (page.problem)() {

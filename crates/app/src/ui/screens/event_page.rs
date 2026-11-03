@@ -19,6 +19,7 @@ use domain::preferences::Preferences;
 use domain::quantity::{economy_value, show_money, show_reading, show_volume, unit_price};
 use domain::time::{Clock, UnixMillis};
 
+use super::vehicle::Tab;
 use super::{FormError, problem_from_error};
 use crate::api;
 use crate::logging::SystemClock;
@@ -184,7 +185,7 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
     let finalized = event.status == EventStatus::Finalized;
     rsx! {
         div { class: "event-page",
-            Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: vehicle.id.to_string() }, {format!("‹ {}", vehicle.asset.name.as_str())} }
+            BackLinks { vehicle: vehicle.clone(), kind: event.kind }
             h2 { class: "event-title", {format!("{} · {}", tr(event.kind.label()), at_text(event.dates.start, &zone, &units))} }
             div { class: "chip-row",
                 span { class: if finalized { "status-chip finalized" } else { "status-chip draft" }, {status} }
@@ -208,6 +209,27 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
         }
         if let Some(what) = confirm() {
             ConfirmDialog { what, id: view.id, asset: event.asset, reloads, on_close: move |()| confirm.set(None) }
+        }
+    }
+}
+
+/// Back to the vehicle, and to the tab the event is listed on: "‹ Test car  ‹ Fuel" for a
+/// fuel-up, "‹ Timeline" otherwise.
+#[component]
+fn BackLinks(vehicle: AssetView, kind: EventKind) -> Element {
+    let tab = if kind == EventKind::Fuel && super::vehicle::has_fuel(&vehicle.asset) {
+        Tab::Fuel
+    } else {
+        Tab::Timeline
+    };
+    rsx! {
+        div { class: "back-links",
+            Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: vehicle.id.to_string() }, {format!("‹ {}", vehicle.asset.name.as_str())} }
+            Link {
+                class: "vehicle-back",
+                to: Route::VehicleTab { asset_id: vehicle.id.to_string(), tab: tab.slug().to_owned() },
+                {format!("‹ {}", tr(tab.label()))}
+            }
         }
     }
 }

@@ -85,6 +85,8 @@ body {
 
 .app {
     min-height: 100vh;
+    /* The visible height on phones (`vh` includes the space under the address bar). */
+    min-height: 100dvh;
     background: var(--bg);
     color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -477,7 +479,11 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Exactly the visible screen, padding included, so Loading and a short card sit in the
+       middle without scrolling; a taller card (setup) still grows and scrolls. */
+    box-sizing: border-box;
     min-height: 100vh;
+    min-height: 100dvh;
     padding: 24px 16px;
     background: var(--bg);
 }
@@ -2595,6 +2601,12 @@ body:has(.log-form) .fab {
 }
 
 /* ---------- An event's page (p2m6-event-options.svg, option A) ---------- */
+
+.back-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+}
 
 .event-page {
     display: flex;

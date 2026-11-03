@@ -6,7 +6,7 @@ use domain::i18n::{MessageId, messages};
 use super::screens::{
     AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
     LogEvent, LogForm, Messages, NotFound, Places, Reports, Settings, Timeline, Users,
-    VehicleDetail,
+    VehicleDetail, VehicleTab,
 };
 use super::shell::Shell;
 
@@ -35,6 +35,9 @@ pub(crate) enum Route {
         #[route("/log")]
         LogEvent {},
         // A fuel-up or reading form for one vehicle (step 6g).
+        // A vehicle's page on one tab (e.g. back from an event to the Fuel tab).
+        #[route("/vehicles/:asset_id/tab/:tab")]
+        VehicleTab { asset_id: String, tab: String },
         #[route("/vehicles/:asset_id/log/:kind")]
         LogForm { asset_id: String, kind: String },
         // One event, and changing or correcting it (step 6h).
@@ -72,7 +75,7 @@ impl Route {
             Self::Messages {} => messages::NAV_MESSAGES,
             Self::Timeline {} => messages::NAV_TIMELINE,
             Self::Reports {} => messages::NAV_REPORTS,
-            Self::VehicleDetail { .. } => messages::SCREEN_VEHICLE_DETAIL,
+            Self::VehicleDetail { .. } | Self::VehicleTab { .. } => messages::SCREEN_VEHICLE_DETAIL,
             Self::LogEvent {} | Self::LogForm { .. } => messages::SCREEN_LOG_EVENT,
             Self::EventDetail { .. } => messages::SCREEN_EVENT,
             Self::EditEvent { .. } => messages::SCREEN_EDIT_EVENT,
@@ -107,6 +110,10 @@ mod tests {
                 asset_id: "0192f3a4".to_owned(),
             },
             Route::LogEvent {},
+            Route::VehicleTab {
+                asset_id: "0192f3a4".to_owned(),
+                tab: "fuel".to_owned(),
+            },
             Route::LogForm {
                 asset_id: "0192f3a4".to_owned(),
                 kind: "fuel".to_owned(),

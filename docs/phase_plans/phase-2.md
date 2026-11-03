@@ -683,3 +683,7 @@
   - a trailer's missing fuel parts;
   - a restart.
   - The Timeline also gained room at the bottom so the phone's floating + doesn't cover its last row.
+- **After 6k, from the human's use of the 6j build (2026-11-03):**
+  - **An event's page links back to its tab too:** "‹ Test car" (the vehicle's Overview) and "‹ Fuel" for a fuel-up, "‹ Timeline" otherwise. A new route, `/vehicles/:asset_id/tab/:tab`, opens a vehicle on one tab.
+  - **The Loading and sign-in page fits the visible screen on phones:** it was 100vh plus its padding, so it scrolled, and on iPhones 100vh is taller than what's visible. It's now `100dvh` with the padding inside (`box-sizing: border-box`), and so is the app's own minimum height. Checked at 390 × 664: "Loading…" sits at the exact middle, and nothing scrolls.
+  - The test plan's part 2 gained both checks (steps 8b and 13a).

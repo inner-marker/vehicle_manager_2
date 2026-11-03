@@ -72,7 +72,7 @@ pub(crate) fn Shell() -> Element {
         // With one group, All vehicles is that group, so it's titled with its name.
         Route::AllVehicles {} => only_group_name(vehicles).unwrap_or_else(|| tr(route.title())),
         // A vehicle's page is titled with its name.
-        Route::VehicleDetail { asset_id } => {
+        Route::VehicleDetail { asset_id } | Route::VehicleTab { asset_id, .. } => {
             vehicle_name(vehicles, asset_id).unwrap_or_else(|| tr(route.title()))
         }
         // A log form: "Fuel-up · Truck".
@@ -102,9 +102,9 @@ pub(crate) fn Shell() -> Element {
     };
     // + Log starts on the vehicle whose page (or form) this is.
     let here = match &route {
-        Route::VehicleDetail { asset_id } | Route::LogForm { asset_id, .. } => {
-            asset_id.parse().ok()
-        }
+        Route::VehicleDetail { asset_id }
+        | Route::VehicleTab { asset_id, .. }
+        | Route::LogForm { asset_id, .. } => asset_id.parse().ok(),
         Route::AllVehicles {}
         | Route::Due {}
         | Route::Messages {}
