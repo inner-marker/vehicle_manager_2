@@ -14,11 +14,14 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetSummary, AssetView, AssetsOutcome, EventsOutcome, LatestReading, PlacesOutcome,
+    PreferencesOutcome,
 };
 use domain::asset::AssetId;
 use domain::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
 use domain::dates::{format_date, utc_to_local};
-use domain::event::{EventProblem, Requirement};
+use domain::event::{
+    ClashSide, Event, EventId, EventInput, EventLocation, EventProblem, ReadingClash, Requirement,
+};
 use domain::event_check::Warning;
 use domain::event_form::{NO, YES};
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
@@ -31,28 +34,83 @@ use domain::quantity::{parse_money, parse_volume, show_reading, unit_price};
 use domain::time::Clock;
 
 use super::log_chooser::use_log_chooser;
-use super::log_input::{Context, Target, Typed, build, required_items, zone};
+use super::log_input::{Context, Target, Typed, build, required_items, typed_from, zone};
 use super::vehicle_setup::event_from_value;
 use super::{FormError, problem_from_error};
 use crate::api;
 use crate::logging::SystemClock;
 use crate::ui::location::{Picker, PlacePart, WherePart, place_text, use_picker};
 use crate::ui::routes::Route;
-use crate::ui::units::{economy_abbr, field_unit, use_units, volume_abbr};
+use crate::ui::units::{economy_abbr, field_unit, volume_abbr};
 use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
 
 /// The browser's own time zone, for an event with no place data.
 const ZONE_SCRIPT: &str = "return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';";
 
+/// What the form is for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Mode {
+    /// A new event.
+    New,
+    /// Changing a draft.
+    Edit(EventId),
+    /// Correcting a finalized event (a new event, linked, with a reason).
+    Correct(EventId),
+}
+
 /// `/vehicles/:asset_id/log/:kind`.
 #[component]
 pub(crate) fn LogForm(asset_id: String, kind: String) -> Element {
     match (asset_id.parse::<AssetId>(), event_from_value(&kind)) {
         (Ok(asset), Some(kind @ (EventKind::Fuel | EventKind::Reading))) => {
-            rsx! { LogScreen { asset, kind } }
+            rsx! { LogScreen { asset, kind, mode: Mode::New, original: None } }
         }
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/events/:event_id/edit`: the form, filled in with a draft.
+#[component]
+pub(crate) fn EditEvent(event_id: String) -> Element {
+    rsx! { ExistingForm { event_id, correct: false } }
+}
+
+/// `/events/:event_id/correct`: the form, filled in with a finalized event, and a reason.
+#[component]
+pub(crate) fn CorrectEvent(event_id: String) -> Element {
+    rsx! { ExistingForm { event_id, correct: true } }
+}
+
+/// Loads an event, then shows its form to edit or correct it.
+#[component]
+fn ExistingForm(event_id: String, correct: bool) -> Element {
+    let mut loaded = use_signal(|| None::<Result<(EventId, Event), MessageId>>);
+    use_effect(use_reactive!(|event_id| {
+        spawn(async move {
+            let answer = match event_id.parse::<EventId>() {
+                Err(_) => Err(messages::EVENT_NOT_FOUND),
+                Ok(id) => match api::event_view(id).await {
+                    Ok(EventsOutcome::Event { view }) => Ok((id, view.event)),
+                    Ok(EventsOutcome::NotFound) => Err(messages::EVENT_NOT_FOUND),
+                    Ok(_) => Err(messages::SOMETHING_WENT_WRONG),
+                    Err(error) => Err(problem_from_error(&error).message()),
+                },
+            };
+            loaded.set(Some(answer));
+        });
+    }));
+    match loaded() {
+        None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
+        Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
+        Some(Ok((id, event))) => {
+            let mode = if correct {
+                Mode::Correct(id)
+            } else {
+                Mode::Edit(id)
+            };
+            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event) } }
+        }
     }
 }
 
@@ -65,6 +123,7 @@ struct Loaded {
     places: Vec<(SavedPlaceId, SavedPlace)>,
     countries: Vec<(CountryCode, String)>,
     zone: TimeZone,
+    units: Preferences,
 }
 
 async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
@@ -94,6 +153,10 @@ async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
         Ok(PlacesOutcome::Countries { countries }) => countries,
         _ => Vec::new(),
     };
+    let units = match api::get_preferences().await {
+        Ok(PreferencesOutcome::Preferences { view }) => view.effective,
+        _ => Preferences::default(),
+    };
     let zone = document::eval(ZONE_SCRIPT)
         .join::<String>()
         .await
@@ -108,11 +171,12 @@ async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
         places,
         countries,
         zone,
+        units,
     })
 }
 
 #[component]
-fn LogScreen(asset: AssetId, kind: EventKind) -> Element {
+fn LogScreen(asset: AssetId, kind: EventKind, mode: Mode, original: Option<Event>) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
     use_effect(use_reactive!(|asset| {
         spawn(async move {
@@ -122,7 +186,19 @@ fn LogScreen(asset: AssetId, kind: EventKind) -> Element {
     match loaded() {
         None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
         Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
-        Some(Ok(data)) => rsx! { FormBody { kind, data } },
+        Some(Ok(data)) => {
+            let start = original.as_ref().map_or_else(Typed::default, |event| {
+                typed_from(event, &data.view.meters, &data.view.fields, &data.units)
+            });
+            // An edit or correction keeps the event's own zone when the place data has none.
+            let data = Loaded {
+                zone: original
+                    .as_ref()
+                    .map_or(data.zone.clone(), |event| event.dates.zone.clone()),
+                ..data
+            };
+            rsx! { FormBody { kind, data, mode, start } }
+        }
     }
 }
 
@@ -148,6 +224,8 @@ struct Inputs {
     someone: Signal<Option<(String, String)>>,
     notes: Signal<String>,
     override_reason: Signal<Option<String>>,
+    original_location: Signal<Option<EventLocation>>,
+    original_start: Signal<Option<domain::time::UnixMillis>>,
     picker: Picker,
     /// The problem shown, and where.
     problem: Signal<Option<(Target, String)>>,
@@ -179,6 +257,8 @@ impl Inputs {
             someone: (self.someone)(),
             notes: (self.notes)(),
             override_reason: (self.override_reason)(),
+            original_location: (self.original_location)(),
+            original_start: (self.original_start)(),
         }
     }
 
@@ -193,26 +273,52 @@ impl Inputs {
     }
 }
 
-fn use_inputs() -> Inputs {
+/// The form's signals, starting from `start` (empty for a new event).
+fn use_inputs(start: &Typed) -> Inputs {
+    let place = super::log_input::place(start).ok().flatten();
+    let mut picker = use_picker(start.coordinates.zip(place.as_ref()), None);
+    // A place without coordinates (typed by hand) still fills the place fields.
+    let (city, region, country) = (
+        start.city.clone(),
+        start.region.clone(),
+        start.country.clone(),
+    );
+    use_hook(move || {
+        if (picker.coordinates)().is_none() && !city.is_empty() {
+            picker.city.set(city);
+            picker.region.set(region);
+            picker.country.set(country);
+            picker.typed.set(true);
+        }
+    });
+    let start = start.clone();
     Inputs {
-        readings: use_signal(Vec::new),
-        fields: use_signal(Vec::new),
-        skipped: use_signal(Vec::new),
-        volume: use_signal(String::new),
-        price: use_signal(String::new),
-        filled_full: use_signal(|| true),
-        missed_previous: use_signal(|| false),
-        highway: use_signal(|| 50),
-        towing: use_signal(|| 0),
-        hauling: use_signal(|| 0),
-        towed: use_signal(Vec::new),
-        economy: use_signal(String::new),
-        when: use_signal(|| None),
-        no_place_reason: use_signal(|| None),
-        someone: use_signal(|| None),
-        notes: use_signal(String::new),
-        override_reason: use_signal(|| None),
-        picker: use_picker(None, None),
+        readings: use_signal(|| start.readings.clone()),
+        fields: use_signal(|| start.fields.clone()),
+        skipped: use_signal(|| start.skipped.clone()),
+        volume: use_signal(|| start.volume.clone()),
+        price: use_signal(|| start.price.clone()),
+        filled_full: use_signal(|| start.original_location.is_none() || start.filled_full),
+        missed_previous: use_signal(|| start.missed_previous),
+        highway: use_signal(|| {
+            if start.original_location.is_none() {
+                50
+            } else {
+                start.highway
+            }
+        }),
+        towing: use_signal(|| start.towing),
+        hauling: use_signal(|| start.hauling),
+        towed: use_signal(|| start.towed.clone()),
+        economy: use_signal(|| start.economy.clone()),
+        when: use_signal(|| start.when.clone()),
+        no_place_reason: use_signal(|| start.no_place_reason.clone()),
+        someone: use_signal(|| start.someone.clone()),
+        notes: use_signal(|| start.notes.clone()),
+        override_reason: use_signal(|| start.override_reason.clone()),
+        original_location: use_signal(|| start.original_location.clone()),
+        original_start: use_signal(|| start.original_start),
+        picker,
         problem: use_signal(|| None),
     }
 }
@@ -241,21 +347,89 @@ fn set_text<K: PartialEq + Clone + 'static>(
 
 // --- The page ----------------------------------------------------------------------------
 
-/// What the person sees after a save with warnings (otherwise the page closes).
+/// What the person sees after a save with warnings (otherwise the event's page opens).
 #[derive(Debug, Clone, PartialEq)]
-struct SavedWith(Vec<String>);
+struct SavedWith(EventId, Vec<String>);
+
+/// Sends the event as `mode` says.
+async fn send(
+    mode: Mode,
+    input: EventInput,
+    reason: String,
+) -> Result<EventsOutcome, ServerFnError> {
+    match mode {
+        Mode::New => api::add_event(input).await,
+        Mode::Edit(id) => api::edit_event(id, input).await,
+        Mode::Correct(original) => api::correct_event(original, input, reason).await,
+    }
+}
+
+/// "Lower than 52,310 mi on 1 Mar 2026. Check it, or correct that event."
+fn clash_text(
+    clash: ReadingClash,
+    meters: &[(MeterId, Meter)],
+    units: &Preferences,
+    zone: &TimeZone,
+) -> String {
+    let Some((_, meter)) = meters.iter().find(|(id, _)| *id == clash.meter) else {
+        return tr(messages::EVENT_READING_OUT_OF_ORDER);
+    };
+    let date =
+        format_date(clash.at, zone, units.date_format, Translator::english()).unwrap_or_default();
+    let id = match clash.side {
+        ClashSide::BelowEarlier => messages::LOG_CLASH_BELOW,
+        ClashSide::AboveLater => messages::LOG_CLASH_ABOVE,
+    };
+    tr_with(
+        id,
+        &[
+            (
+                "value",
+                MessageArg::from(show_reading(clash.value, meter.unit, meter.precision)),
+            ),
+            ("unit", MessageArg::from(meter_abbr(meter.unit))),
+            ("date", MessageArg::from(date)),
+        ],
+    )
+}
+
+/// Where the server's refusal shows, and what it says.
+fn refusal(
+    refused: EventProblem,
+    mode: Mode,
+    meters: &[(MeterId, Meter)],
+    units: &Preferences,
+    zone: &TimeZone,
+) -> (Target, String) {
+    if let EventProblem::ReadingOutOfOrder(clash) = refused {
+        return (
+            Target::Meter(clash.meter),
+            clash_text(clash, meters, units, zone),
+        );
+    }
+    // A correction's own reason (the others are checked as they're typed).
+    let reason = matches!(
+        refused,
+        EventProblem::ReasonEmpty | EventProblem::ReasonTooLong
+    );
+    if reason && matches!(mode, Mode::Correct(_)) {
+        return (Target::Correction, tr(refused.message()));
+    }
+    (Target::of_problem(refused), tr(refused.message()))
+}
 
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FormBody(kind: EventKind, data: Loaded) -> Element {
-    let inputs = use_inputs();
-    let units = use_units();
+fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element {
+    let inputs = use_inputs(&start);
+    let units = data.units;
     let mut busy = use_signal(|| false);
     let mut saved = use_signal(|| None::<SavedWith>);
     let mut show_override = use_signal(|| None::<MeterId>);
+    let mut reason = use_signal(String::new);
     let chooser = use_log_chooser();
     let navigator = use_navigator();
     let view = data.view.clone();
@@ -276,13 +450,12 @@ fn FormBody(kind: EventKind, data: Loaded) -> Element {
     let (meters, fields, fallback) = (view.meters.clone(), view.fields.clone(), data.zone.clone());
     let may_override = data.may_override;
     let save = move |_| {
-        let preferences = units();
         let context = Context {
             asset,
             kind,
             meters: &meters,
             fields: &fields,
-            units: &preferences,
+            units: &units,
             fallback_zone: &fallback,
             now: SystemClock.now(),
         };
@@ -294,35 +467,35 @@ fn FormBody(kind: EventKind, data: Loaded) -> Element {
                 return;
             }
         };
+        let zone = input.dates.zone.clone();
         let names = (meters.clone(), fields.clone());
         busy.set(true);
         spawn(async move {
-            let result = api::add_event(input).await;
+            let result = send(mode, input, reason()).await;
             busy.set(false);
             match result {
-                Ok(EventsOutcome::Saved { warnings, .. }) => {
+                Ok(EventsOutcome::Saved { id, warnings }) => {
                     chooser.remember(asset);
-                    tracing::debug!(target: log_area::UI, %asset, warnings = warnings.len(), "event saved");
+                    tracing::debug!(target: log_area::UI, event = %id, warnings = warnings.len(), "event saved");
                     if warnings.is_empty() {
-                        navigator.replace(Route::VehicleDetail {
-                            asset_id: asset.to_string(),
+                        navigator.replace(Route::EventDetail {
+                            event_id: id.to_string(),
                         });
                     } else {
-                        saved.set(Some(SavedWith(
-                            warnings
-                                .iter()
-                                .map(|w| warning_text(*w, &names.0, &names.1))
-                                .collect(),
-                        )));
+                        let texts = warnings
+                            .iter()
+                            .map(|w| warning_text(*w, &names.0, &names.1))
+                            .collect();
+                        saved.set(Some(SavedWith(id, texts)));
                     }
                 }
                 Ok(EventsOutcome::Invalid { problem: refused }) => {
-                    if let EventProblem::ReadingOutOfOrder(meter) = refused
+                    if let EventProblem::ReadingOutOfOrder(clash) = refused
                         && may_override
                     {
-                        show_override.set(Some(meter));
+                        show_override.set(Some(clash.meter));
                     }
-                    problem.set(Some((Target::of_problem(refused), tr(refused.message()))));
+                    problem.set(Some(refusal(refused, mode, &names.0, &units, &zone)));
                 }
                 Ok(EventsOutcome::NotAllowed) => {
                     problem.set(Some((Target::General, tr(messages::VEHICLES_NOT_ALLOWED))));
@@ -338,14 +511,24 @@ fn FormBody(kind: EventKind, data: Loaded) -> Element {
             }
         });
     };
-    if let Some(SavedWith(warnings)) = saved() {
-        return rsx! { SavedNotice { asset, warnings } };
+    if let Some(SavedWith(id, warnings)) = saved() {
+        return rsx! { SavedNotice { event: id, warnings } };
     }
     let latest = data.latest.clone();
     let zone_now = zone(&inputs.typed(), &data.zone);
     rsx! {
         div { class: "log-form",
             Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: asset.to_string() }, {format!("‹ {}", view.asset.name.as_str())} }
+            if let Mode::Correct(_) = mode {
+                div { class: "log-item",
+                    p { class: "muted-note", {tr(messages::LOG_CORRECT_NOTE)} }
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::LOG_CORRECT_REASON)} }
+                        input { class: "field-input", autocomplete: "off", value: reason(), oninput: move |event| reason.set(event.value()) }
+                    }
+                    FormError { message: inputs.problem_at(Target::Correction) }
+                }
+            }
             for (id, meter) in open_meters {
                 MeterInput {
                     key: "{id}",
@@ -354,20 +537,20 @@ fn FormBody(kind: EventKind, data: Loaded) -> Element {
                     required: required.contains(&Requirement::Meter(id)),
                     show_override: show_override() == Some(id),
                     zone: zone_now.clone(),
-                    units: units(),
+                    units,
                 }
             }
             for (id, field) in required_fields {
-                FieldInput { key: "{id}", inputs, id, field, required: true, units: units() }
+                FieldInput { key: "{id}", inputs, id, field, required: true, units }
             }
             if kind == EventKind::Fuel {
-                FuelPart { inputs, units: units() }
+                FuelPart { inputs, units }
             }
             WhenWherePart { inputs, places: data.places.clone(), countries: data.countries, zone: zone_now.clone() }
             if kind == EventKind::Fuel {
                 DrivingFold { inputs, view: view.clone() }
             }
-            MoreFold { inputs, kind, view: view, required: required, units: units(), zone: zone_now }
+            MoreFold { inputs, kind, view, required, units, zone: zone_now }
             WhoFold { inputs }
             FormError { message: inputs.problem_at(Target::General) }
             div { class: "save-bar",
@@ -415,14 +598,14 @@ fn warning_text(
 
 /// "Saved as a draft", with the warnings, and Done.
 #[component]
-fn SavedNotice(asset: AssetId, warnings: Vec<String>) -> Element {
+fn SavedNotice(event: EventId, warnings: Vec<String>) -> Element {
     rsx! {
         div { class: "log-form",
             p { class: "picker-note good", {tr(messages::LOG_SAVED)} }
             for warning in warnings {
                 p { key: "{warning}", class: "picker-note warn", {warning} }
             }
-            Link { class: "primary-button", to: Route::VehicleDetail { asset_id: asset.to_string() }, {tr(messages::LOG_DONE)} }
+            Link { class: "primary-button", to: Route::EventDetail { event_id: event.to_string() }, {tr(messages::LOG_DONE)} }
         }
     }
 }
@@ -795,7 +978,13 @@ fn WhereRows(
     countries: Vec<(CountryCode, String)>,
 ) -> Element {
     let picker = inputs.picker;
-    let mut changing = use_signal(|| true);
+    // Folded once there's a place (an edit or correction starts with one).
+    let mut changing = use_signal(|| {
+        super::log_input::place(&inputs.typed())
+            .ok()
+            .flatten()
+            .is_none()
+    });
     let mut no_place = inputs.no_place_reason;
     let error = use_signal(|| None::<String>);
     let place = super::log_input::place(&inputs.typed()).ok().flatten();

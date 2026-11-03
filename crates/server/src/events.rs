@@ -215,22 +215,40 @@ impl AssetsContext<'_> {
         Ok(())
     }
 
+    /// A person's display name (empty if they're gone).
+    async fn name_of(&self, user: domain::user::UserId) -> Result<String, EventsOutcome> {
+        Ok(self
+            .database
+            .user(user)
+            .await
+            .map_err(|error| failed("user", &error))?
+            .map(|stored| stored.user.display_name)
+            .unwrap_or_default())
+    }
+
     /// The person's view of one event.
-    fn view_of(
+    async fn view_of(
         &self,
         id: EventId,
         event: Event,
         scope: AssetScope,
         corrected_by: Option<EventId>,
-    ) -> EventView {
+    ) -> Result<EventView, EventsOutcome> {
         let manage = self.may_manage(&event, scope);
-        EventView {
+        let logged_by_name = self.name_of(event.logged_by).await?;
+        let finalized_by_name = match event.finalized.map(|done| done.by) {
+            Some(Finalizer::User(user)) => Some(self.name_of(user).await?),
+            Some(Finalizer::Server) | None => None,
+        };
+        Ok(EventView {
             id,
             may_change: manage && event.status == EventStatus::Draft,
             may_correct: manage && event.status == EventStatus::Finalized && corrected_by.is_none(),
             corrected_by,
+            logged_by_name,
+            finalized_by_name,
             event,
-        }
+        })
     }
 }
 
@@ -261,10 +279,14 @@ async fn list_events(
             .find(|(_, event)| event.corrects == Some(original))
             .map(|(id, _)| *id)
     };
-    let views = events
-        .iter()
-        .map(|(id, event)| context.view_of(*id, event.clone(), scope, corrected_by(*id)))
-        .collect();
+    let mut views = Vec::with_capacity(events.len());
+    for (id, event) in &events {
+        views.push(
+            context
+                .view_of(*id, event.clone(), scope, corrected_by(*id))
+                .await?,
+        );
+    }
     Ok(EventsOutcome::Events { events: views })
 }
 
@@ -284,7 +306,7 @@ async fn view_event(
         .await
         .map_err(|error| failed("correction", &error))?;
     Ok(EventsOutcome::Event {
-        view: Box::new(context.view_of(id, event, scope, corrected_by)),
+        view: Box::new(context.view_of(id, event, scope, corrected_by).await?),
     })
 }
 

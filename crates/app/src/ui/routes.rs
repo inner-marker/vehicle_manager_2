@@ -4,8 +4,9 @@ use dioxus::prelude::*;
 use domain::i18n::{MessageId, messages};
 
 use super::screens::{
-    AllVehicles, Diagnostics, Due, GroupVehicles, Groups, LogEvent, LogForm, Messages, NotFound,
-    Places, Reports, Settings, Timeline, Users, VehicleDetail,
+    AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
+    LogEvent, LogForm, Messages, NotFound, Places, Reports, Settings, Timeline, Users,
+    VehicleDetail,
 };
 use super::shell::Shell;
 
@@ -36,6 +37,13 @@ pub(crate) enum Route {
         // A fuel-up or reading form for one vehicle (step 6g).
         #[route("/vehicles/:asset_id/log/:kind")]
         LogForm { asset_id: String, kind: String },
+        // One event, and changing or correcting it (step 6h).
+        #[route("/events/:event_id")]
+        EventDetail { event_id: String },
+        #[route("/events/:event_id/edit")]
+        EditEvent { event_id: String },
+        #[route("/events/:event_id/correct")]
+        CorrectEvent { event_id: String },
         #[route("/users")]
         Users {},
         // Managing groups (#058).
@@ -66,6 +74,9 @@ impl Route {
             Self::Reports {} => messages::NAV_REPORTS,
             Self::VehicleDetail { .. } => messages::SCREEN_VEHICLE_DETAIL,
             Self::LogEvent {} | Self::LogForm { .. } => messages::SCREEN_LOG_EVENT,
+            Self::EventDetail { .. } => messages::SCREEN_EVENT,
+            Self::EditEvent { .. } => messages::SCREEN_EDIT_EVENT,
+            Self::CorrectEvent { .. } => messages::SCREEN_CORRECT_EVENT,
             Self::Users {} => messages::NAV_USERS,
             Self::Groups {} => messages::NAV_GROUPS,
             Self::Places {} => messages::NAV_PLACES,
@@ -99,6 +110,15 @@ mod tests {
             Route::LogForm {
                 asset_id: "0192f3a4".to_owned(),
                 kind: "fuel".to_owned(),
+            },
+            Route::EventDetail {
+                event_id: "0192f3a5".to_owned(),
+            },
+            Route::EditEvent {
+                event_id: "0192f3a5".to_owned(),
+            },
+            Route::CorrectEvent {
+                event_id: "0192f3a5".to_owned(),
             },
             Route::Groups {},
             Route::Places {},

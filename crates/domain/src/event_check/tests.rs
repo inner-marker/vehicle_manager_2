@@ -7,8 +7,8 @@ use super::*;
 use crate::custom_field::{FieldKey, FieldRange};
 use crate::dates::{EventDates, local_to_utc};
 use crate::event::{
-    Event, EventLocation, EventSource, FieldData, FieldValue, Flag, FuelDetails, Reading, Reason,
-    Skipped,
+    ClashSide, Event, EventLocation, EventSource, FieldData, FieldValue, Flag, FuelDetails,
+    Reading, ReadingClash, Reason, Skipped,
 };
 use crate::label::Label;
 use crate::location::{LocationSource, Place, TimeZone};
@@ -269,10 +269,18 @@ fn a_back_dated_reading_that_fits_is_fine_for_anyone() {
 
 #[test]
 fn a_reading_that_doesnt_fit_is_refused_except_the_admin_may_keep_it() {
-    for value in [49_000, 53_000] {
+    for (value, side, at, other) in [
+        (49_000, ClashSide::BelowEarlier, on("2026-01-01"), 50_000),
+        (53_000, ClashSide::AboveLater, on("2026-03-01"), 52_000),
+    ] {
         let mut event = fuel_up();
         event.readings[0].value = value;
-        let refused = Err(EventProblem::ReadingOutOfOrder(test_id(ODOMETER)));
+        let refused = Err(EventProblem::ReadingOutOfOrder(ReadingClash {
+            meter: test_id(ODOMETER),
+            side,
+            at,
+            value: other,
+        }));
         assert_eq!(checked(&event, false), refused, "a Driver, {value}");
         assert_eq!(
             checked(&event, true),
@@ -529,20 +537,23 @@ fn neighbours_are_the_nearest_readings_either_side() {
     let odometer = test_id(ODOMETER);
     assert_eq!(
         neighbours(&history, odometer, on("2026-02-01")),
-        (Some(50_000), Some(52_000))
+        (
+            Some((on("2026-01-01"), 50_000)),
+            Some((on("2026-03-01"), 52_000))
+        )
     );
     assert_eq!(
         neighbours(&history, odometer, on("2025-12-01")),
-        (None, Some(50_000))
+        (None, Some((on("2026-01-01"), 50_000)))
     );
     assert_eq!(
         neighbours(&history, odometer, on("2026-04-01")),
-        (Some(52_000), None)
+        (Some((on("2026-03-01"), 52_000)), None)
     );
     // A reading at the same moment counts as before.
     assert_eq!(
         neighbours(&history, odometer, on("2026-03-01")),
-        (Some(52_000), None)
+        (Some((on("2026-03-01"), 52_000)), None)
     );
     assert_eq!(
         neighbours(&history, test_id(HOURS), on("2026-02-01")),
@@ -568,6 +579,7 @@ proptest! {
             .collect();
         let at = UnixMillis::from_millis(start + day * day_ms + 1);
         let (before, after) = neighbours(&history, test_id(ODOMETER), at);
+        let (before, after) = (before.map(|(_, v)| v), after.map(|(_, v)| v));
         let mut event = fuel_up();
         event.dates = EventDates::new(at, None, utc()).unwrap();
         event.readings[0].value = value;

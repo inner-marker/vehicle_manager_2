@@ -21,8 +21,9 @@ use serde::{Deserialize, Serialize};
 use crate::command::Clearable;
 use crate::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
 use crate::event::{
-    Event, EventId, EventPatch, EventProblem, EventStatus, FieldData, FieldValue, Finalized,
-    Finalizer, FuelDetails, PERFORMER_MAX_CHARS, Performer, Requirement, Skipped,
+    ClashSide, Event, EventId, EventPatch, EventProblem, EventStatus, FieldData, FieldValue,
+    Finalized, Finalizer, FuelDetails, PERFORMER_MAX_CHARS, Performer, ReadingClash, Requirement,
+    Skipped,
 };
 use crate::meter::{EventKind, Meter, MeterId};
 use crate::time::UnixMillis;
@@ -72,6 +73,9 @@ pub enum Warning {
     },
 }
 
+/// One neighbouring reading: when, and its value.
+pub type Neighbour = (UnixMillis, i64);
+
 /// The readings either side of `at` for `meter`: the latest at or before it, and the earliest
 /// after it.
 #[must_use]
@@ -79,18 +83,40 @@ pub fn neighbours(
     history: &[(MeterId, UnixMillis, i64)],
     meter: MeterId,
     at: UnixMillis,
-) -> (Option<i64>, Option<i64>) {
+) -> (Option<Neighbour>, Option<Neighbour>) {
     let of_meter = history.iter().filter(|(id, _, _)| *id == meter);
     let before = of_meter
         .clone()
         .filter(|(_, when, _)| *when <= at)
         .max_by_key(|(_, when, _)| *when)
-        .map(|(_, _, value)| *value);
+        .map(|(_, when, value)| (*when, *value));
     let after = of_meter
         .filter(|(_, when, _)| *when > at)
         .min_by_key(|(_, when, _)| *when)
-        .map(|(_, _, value)| *value);
+        .map(|(_, when, value)| (*when, *value));
     (before, after)
+}
+
+/// How `value` clashes with its neighbours for `meter`, if it does: below the one before, or
+/// above the one after.
+#[must_use]
+pub fn clash(
+    meter: MeterId,
+    value: i64,
+    before: Option<Neighbour>,
+    after: Option<Neighbour>,
+) -> Option<ReadingClash> {
+    let clash = |side, (at, other): Neighbour| ReadingClash {
+        meter,
+        side,
+        at,
+        value: other,
+    };
+    match (before, after) {
+        (Some(earlier), _) if value < earlier.1 => Some(clash(ClashSide::BelowEarlier, earlier)),
+        (_, Some(later)) if value > later.1 => Some(clash(ClashSide::AboveLater, later)),
+        _ => None,
+    }
 }
 
 /// Whether `value` fits between its neighbours (either may be missing).
@@ -230,15 +256,15 @@ fn check_readings(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warni
             return Err(EventProblem::UnknownMeter(reading.meter));
         }
         let (before, after) = neighbours(context.history, reading.meter, event.dates.start);
-        if reading_fits(reading.value, before, after) {
+        let Some(clash) = clash(reading.meter, reading.value, before, after) else {
             continue;
-        }
+        };
         if context.may_override_readings && event.reading_override.is_some() {
             warnings.push(Warning::ReadingKept {
                 meter: reading.meter,
             });
         } else {
-            return Err(EventProblem::ReadingOutOfOrder(reading.meter));
+            return Err(EventProblem::ReadingOutOfOrder(clash));
         }
     }
     Ok(warnings)

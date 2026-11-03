@@ -1417,4 +1417,100 @@ define_messages! {
     LOG_WARNING_KEPT => "log-warning-kept",
     /// Log form: leave after saving.
     LOG_DONE => "log-done",
+    /// Screen title: one event.
+    SCREEN_EVENT => "screen-event",
+    /// Screen title: editing a draft.
+    SCREEN_EDIT_EVENT => "screen-edit-event",
+    /// Screen title: correcting an event.
+    SCREEN_CORRECT_EVENT => "screen-correct-event",
+    /// An event that isn't there.
+    EVENT_NOT_FOUND => "event-not-found",
+    /// Log form: a reading below the one before.
+    LOG_CLASH_BELOW => "log-clash-below",
+    /// Log form: a reading above the one after.
+    LOG_CLASH_ABOVE => "log-clash-above",
+    /// Correct form: what correcting does.
+    LOG_CORRECT_NOTE => "log-correct-note",
+    /// Correct form: the reason.
+    LOG_CORRECT_REASON => "log-correct-reason",
+    /// Event page: a draft's status.
+    EVENT_STATUS_DRAFT => "event-status-draft",
+    /// Event page: a finalized event's status.
+    EVENT_STATUS_FINALIZED => "event-status-finalized",
+    /// Event page: hours until a draft locks.
+    EVENT_LOCKS_HOURS => "event-locks-hours",
+    /// Event page: minutes until a draft locks.
+    EVENT_LOCKS_MINUTES => "event-locks-minutes",
+    /// Event page: a draft due to lock now.
+    EVENT_LOCKS_SOON => "event-locks-soon",
+    /// Event page: finalize a draft.
+    EVENT_FINALIZE_NOW => "event-finalize-now",
+    /// Event page: delete a draft.
+    EVENT_DELETE => "event-delete",
+    /// Event page: correct a finalized event.
+    EVENT_CORRECT => "event-correct",
+    /// Event page: on an original that was corrected.
+    EVENT_CORRECTED_BY => "event-corrected-by",
+    /// Event page: link to the correction.
+    EVENT_SEE_CORRECTION => "event-see-correction",
+    /// Event page: on a correction.
+    EVENT_CORRECTS => "event-corrects",
+    /// Event page: link to the original.
+    EVENT_SEE_ORIGINAL => "event-see-original",
+    /// Event page: a full fill.
+    EVENT_FILLED_FULL => "event-filled-full",
+    /// Event page: not a full fill.
+    EVENT_PARTIAL_FILL => "event-partial-fill",
+    /// Event page: the place's name.
+    EVENT_PLACE_NAME => "event-place-name",
+    /// Event page: the city, state, and country.
+    EVENT_PLACE => "event-place",
+    /// Event page: why there's no place.
+    EVENT_NO_PLACE => "event-no-place",
+    /// Event page: where the location came from.
+    EVENT_FROM => "event-from",
+    /// Event page: from the device.
+    EVENT_SOURCE_GPS => "event-source-gps",
+    /// Event page: from a saved place.
+    EVENT_SOURCE_SAVED => "event-source-saved",
+    /// Event page: picked on a map.
+    EVENT_SOURCE_MAP => "event-source-map",
+    /// Event page: typed in.
+    EVENT_SOURCE_MANUAL => "event-source-manual",
+    /// Event page: the event's zone.
+    EVENT_ZONE => "event-zone",
+    /// Event page: a skipped item.
+    EVENT_SKIPPED_BECAUSE => "event-skipped-because",
+    /// Event page: the economy the vehicle showed.
+    EVENT_REPORTED_ECONOMY => "event-reported-economy",
+    /// Event page: done by the person who logged it.
+    EVENT_DONE_BY_LOGGER => "event-done-by-logger",
+    /// Event page: the Admin's override reason.
+    EVENT_OVERRIDE => "event-override",
+    /// Event page: the event was typed.
+    EVENT_TYPED => "event-typed",
+    /// Event page: the event was spoken.
+    EVENT_VOICE => "event-voice",
+    /// Event page: the event was imported.
+    EVENT_IMPORTED => "event-imported",
+    /// Event page: the record section.
+    EVENT_RECORD => "event-record",
+    /// Event page: who logged it and when.
+    EVENT_LOGGED => "event-logged",
+    /// Event page: when it last changed.
+    EVENT_LAST_EDITED => "event-last-edited",
+    /// Event page: who finalized it and when.
+    EVENT_FINALIZED_ROW => "event-finalized-row",
+    /// Event page: finalized automatically.
+    EVENT_BY_SERVER => "event-by-server",
+    /// Finalize now's confirmation.
+    EVENT_FINALIZE_TITLE => "event-finalize-title",
+    /// Finalize now's confirmation.
+    EVENT_FINALIZE_TEXT => "event-finalize-text",
+    /// Finalize now's confirmation: the button.
+    EVENT_FINALIZE => "event-finalize",
+    /// Delete's confirmation.
+    EVENT_DELETE_TITLE => "event-delete-title",
+    /// Delete's confirmation.
+    EVENT_DELETE_TEXT => "event-delete-text",
 }

@@ -507,7 +507,7 @@
 | 6e | ☑️ | `feat(storage): events` | Migration: events, reading sets and readings, fuel details, skipped readings and fields, corrections; writers (refusing changes to finalized events); queries (a vehicle's events by date, a meter's neighbouring readings, the latest readings) | none |
 | 6f | ☑️ | `feat(server): logging, finalizing, and corrections` | Add and edit drafts, **Finalize now**, correct (choices 2, 3, 10); the automatic finalize as a scheduled job (24 h, or the test minutes; #044, #054); server functions under `/api/v1/events` | none |
 | 6g | ☑️ | `feat(app): + Log, fuel-ups, and readings` | **SVG options first.** The **+ Log** chooser (fuel-up or reading; the last vehicle remembered; limited by role and mode); the fuel-up form (odometer first, then volume and price, #040; full and missed fill; the % sliders with detents where the profile shows them, #033; towed vehicles; reported economy; custom fields; the location picker; date and time; notes; performed by); the reading form; required items first, skipping with a reason; the readings check's message and the Admin's override | none |
-| 6h | ⬜ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
+| 6h | ☑️ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
 | 6i | ⬜ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
 | 6j | ⬜ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
 | 6k | ⬜ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
@@ -620,3 +620,26 @@
     - the next time, the chooser said "same as last time";
     - a lower odometer was refused, then kept by the Admin with a reason;
     - on a phone: the sheet, a skipped odometer with its reason, 25% towing with the camper towed, and Save above the bottom tabs (the floating button is hidden on the form).
+- **6h layout (chosen 2026-11-02):** option A of [`p2m6-event-options.svg`](../ui-sketches/p2m6-event-options.svg). One column: the kind and date, the status and flags, the actions, the big numbers, then each part as a short list. The human also chose to **name the clashing reading** in the readings check's message.
+- **6h:** no new dependency.
+  - **An event's page,** `/events/:id`, opens after Save (and from the Timeline in 6j). It shows:
+    - the title, "Fuel-up · 2 Nov 2026, 3:30 pm", in the event's own zone;
+    - a status chip: "Draft · locks in 23 h", counted from the last edit with the server's finalize delay, so test timers show minutes; or "Finalized · 3 Nov 2026";
+    - a chip for each flag;
+    - tiles for each reading, the fuel (filled to full or not), and the price with the price per gallon;
+    - short lists: when and where (the place or why there's none, where it came from with its accuracy, the zone), driving, trip and readings (field values, skipped items with their reasons, the vehicle's own fuel economy), who and notes (and the Admin's reason for keeping a reading), and the record (logged by whom, when, and how; last edited; finalized by whom, or by the server, and when).
+  - **Actions,** as the server allows (`may_change`, `may_correct`): **Edit**, **Finalize now** (with the confirmation #034 asks for: "Afterwards it can't be edited or deleted; a mistake is fixed with a correction"), and **Delete** (with its own confirmation) on a draft; **Correct…** on a finalized event that hasn't been corrected yet.
+  - **The link between an original and its correction:** the original says "Corrected on 4 Nov by Stuart: "…"" with **See the correction**; the correction says "Correction of the fuel-up on 2 Nov: "…"" with **See the original**.
+  - **Edit and Correct** reuse the log form, filled in from the event (`log_input::typed_from`, the reverse of `build`, with a test that an event typed back in builds the same event).
+    - **Correct** adds a required **Why?** at the top and saves a new, linked draft.
+    - Both keep the event's own zone. **They keep its location as it was** (its source, accuracy, and saved place) unless the point or the place changed, and **its time to the millisecond** unless the date or time changed: the form shows minutes, and the round-trip test caught an edit moving the time.
+  - **The readings check names the clash** ("Lower than 52,644 mi on 2 Nov 2026. Check it, or correct that event."). `EventProblem::ReadingOutOfOrder` now carries a `ReadingClash`: the meter, the side (below the one before, or above the one after), and that reading's time and value. `event_check::neighbours` returns each neighbour's time too.
+  - **The server sends names:** `EventView` gained `logged_by_name` and `finalized_by_name`, since the app can't turn user IDs into names. The list looks each one up per event; 6j's Timeline, which lists many events, should look each person up once.
+  - `quantity::money_value` (an amount as typed, "62.27"). 48 messages. 2 new tests (an edit keeping its location; an event typed back into the form), and the domain, server, and money tests extended (the clash's side and reading, names, money as typed).
+  - **Checked in a real browser:**
+    - a fuel-up opened its page ("Draft · locks in 23 h", the tiles);
+    - **Edit** came filled in, and saving a note kept the GPS source and its ± 12 m;
+    - **Finalize now** asked first, then showed "Finalized" with only **Correct…** left;
+    - a lower fuel-up got the new message;
+    - correcting without a reason was refused ("Give a reason"); with one, the correction and the original each showed their link and reason, and the original offered no actions;
+    - the page fits a phone.

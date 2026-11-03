@@ -7,18 +7,21 @@
 use domain::api::Located;
 use domain::asset::AssetId;
 use domain::custom_field::{CustomField, CustomFieldId};
-use domain::dates::{EventDates, local_to_utc};
+use domain::dates::{EventDates, local_to_utc, utc_to_local};
 use domain::event::{
-    EventInput, EventLocation, EventProblem, EventSource, FieldValue, FuelDetails, Performer,
-    Reading, Reason, Requirement, Skipped,
+    Event, EventInput, EventLocation, EventProblem, EventSource, FieldValue, FuelDetails,
+    Performer, Reading, Reason, Requirement, Skipped,
 };
-use domain::event_form::parse_field;
+use domain::event_form::{field_text, parse_field};
 use domain::i18n::{MessageId, messages};
 use domain::location::{Coordinates, Fix, LocationSource, Place, TimeZone};
 use domain::meter::{EventKind, Meter, MeterId};
 use domain::notes::Notes;
 use domain::preferences::Preferences;
-use domain::quantity::{QuantityError, parse_economy, parse_money, parse_reading, parse_volume};
+use domain::quantity::{
+    QuantityError, economy_value, money_value, parse_economy, parse_money, parse_reading,
+    parse_volume, reading_value, volume_value,
+};
 use domain::time::UnixMillis;
 
 /// Where on the form a problem shows.
@@ -34,6 +37,8 @@ pub(super) enum Target {
     When,
     /// Under the place.
     Where,
+    /// Under a correction's reason.
+    Correction,
     /// Above Save.
     General,
 }
@@ -51,9 +56,8 @@ impl Target {
     pub(super) const fn of_problem(problem: EventProblem) -> Self {
         match problem {
             EventProblem::Required(item) => Self::of(item),
-            EventProblem::ReadingOutOfOrder(meter) | EventProblem::UnknownMeter(meter) => {
-                Self::Meter(meter)
-            }
+            EventProblem::ReadingOutOfOrder(clash) => Self::Meter(clash.meter),
+            EventProblem::UnknownMeter(meter) => Self::Meter(meter),
             EventProblem::UnknownField(field) | EventProblem::WrongValue(field) => {
                 Self::Field(field)
             }
@@ -126,6 +130,12 @@ pub(super) struct Typed {
     pub notes: String,
     /// The Admin's reason for keeping a reading that doesn't fit.
     pub override_reason: Option<String>,
+    /// The location of the event being edited or corrected, kept as it was (with its source,
+    /// accuracy, and saved place) unless the point or the place changed.
+    pub original_location: Option<EventLocation>,
+    /// The start of the event being edited or corrected, kept to the millisecond unless the
+    /// date or time typed changed (the form shows minutes).
+    pub original_start: Option<UnixMillis>,
 }
 
 /// What building the event needs besides what was typed.
@@ -183,6 +193,16 @@ fn location(typed: &Typed) -> Result<EventLocation, Problem> {
         (None, Some(text)) => Some(reason(text, Target::Where)?),
         (None, None) => return Err((Target::Where, messages::EVENT_LOCATION_REQUIRED)),
     };
+    if let Some(original) = &typed.original_location
+        && typed.located.is_none()
+        && typed.coordinates == original.coordinates
+        && place == original.place
+    {
+        return Ok(EventLocation {
+            missing_reason,
+            ..original.clone()
+        });
+    }
     let saved = typed
         .located
         .as_ref()
@@ -295,9 +315,13 @@ fn fuel(typed: &Typed, context: &Context<'_>) -> Result<Option<FuelDetails>, Pro
 /// The first [`Problem`] found, with where it shows.
 pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, Problem> {
     let zone = zone(typed, context.fallback_zone);
-    let start = match &typed.when {
-        None => context.now,
-        Some((date, time)) => {
+    let unchanged = typed
+        .original_start
+        .filter(|start| utc_to_local(*start, &zone).ok() == typed.when);
+    let start = match (&typed.when, unchanged) {
+        (_, Some(start)) => start,
+        (None, None) => context.now,
+        (Some((date, time)), None) => {
             local_to_utc(date, time, &zone).map_err(|error| (Target::When, error.message()))?
         }
     };
@@ -338,6 +362,89 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
             .map(|text| reason(text, Target::General))
             .transpose()?,
     })
+}
+
+/// What the form starts with to edit or correct `event`: its values as they're typed, in the
+/// person's `units` (the reverse of [`build`]).
+pub(super) fn typed_from(
+    event: &Event,
+    meters: &[(MeterId, Meter)],
+    fields: &[(CustomFieldId, CustomField)],
+    units: &Preferences,
+) -> Typed {
+    let readings = event
+        .readings
+        .iter()
+        .filter_map(|reading| {
+            let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
+            Some((
+                reading.meter,
+                reading_value(reading.value, meter.unit, meter.precision),
+            ))
+        })
+        .collect();
+    let values = event
+        .fields
+        .iter()
+        .filter_map(|value| {
+            let (_, field) = fields.iter().find(|(id, _)| *id == value.field)?;
+            Some((value.field, field_text(&field.kind, &value.data, units)))
+        })
+        .collect();
+    let fuel = event.fuel.as_ref();
+    let place = event.location.place.as_ref();
+    let part =
+        |get: fn(&Place) -> &str| place.map(|place| get(place).to_owned()).unwrap_or_default();
+    Typed {
+        readings,
+        fields: values,
+        skipped: event
+            .skipped
+            .iter()
+            .map(|skip| (skip.item, skip.reason.as_str().to_owned()))
+            .collect(),
+        volume: fuel
+            .map(|fuel| volume_value(fuel.volume_ml, units.volume))
+            .unwrap_or_default(),
+        price: fuel
+            .and_then(|fuel| fuel.cost_minor.map(|cost| money_value(cost, fuel.currency)))
+            .unwrap_or_default(),
+        filled_full: fuel.is_none_or(|fuel| fuel.filled_full),
+        missed_previous: fuel.is_some_and(|fuel| fuel.missed_previous),
+        highway: fuel.map_or(50, |fuel| fuel.highway_pct),
+        towing: fuel.map_or(0, |fuel| fuel.towing_pct),
+        hauling: fuel.map_or(0, |fuel| fuel.hauling_pct),
+        towed: fuel.map(|fuel| fuel.towed.clone()).unwrap_or_default(),
+        economy: fuel
+            .and_then(|fuel| fuel.reported_economy)
+            .map(|economy| economy_value(economy, units.economy))
+            .unwrap_or_default(),
+        when: utc_to_local(event.dates.start, &event.dates.zone).ok(),
+        city: part(|place| place.city.as_str()),
+        region: part(|place| place.region.as_str()),
+        country: part(|place| place.country.as_str()),
+        coordinates: event.location.coordinates,
+        fix: None,
+        located: None,
+        no_place_reason: event
+            .location
+            .missing_reason
+            .as_ref()
+            .map(|reason| reason.as_str().to_owned()),
+        someone: match &event.performed_by {
+            Some(Performer::Named { name, contact }) => {
+                Some((name.clone(), contact.clone().unwrap_or_default()))
+            }
+            Some(Performer::User { .. }) | None => None,
+        },
+        notes: event.notes.as_str().to_owned(),
+        override_reason: event
+            .reading_override
+            .as_ref()
+            .map(|reason| reason.as_str().to_owned()),
+        original_location: Some(event.location.clone()),
+        original_start: Some(event.dates.start),
+    }
 }
 
 /// The meters and fields that are required on `kind`, in the form's order.
@@ -511,6 +618,54 @@ mod tests {
                 messages::EVENT_REASON_EMPTY
             ))
         );
+    }
+
+    #[test]
+    fn an_event_typed_back_into_the_form_builds_the_same_event() {
+        let first = built(&typed()).unwrap();
+        let (meters, fields) = (meters(), fields());
+        let units = Preferences {
+            distance: DistanceUnit::Miles,
+            volume: VolumeUnit::UsGallons,
+            ..Preferences::default()
+        };
+        let event = first
+            .clone()
+            .into_draft(test_id(5), UnixMillis::from_millis(1_700_000_000_000));
+        let again = typed_from(&event, &meters, &fields, &units);
+        assert_eq!(
+            again.readings,
+            vec![(test_id(ODOMETER), "52644".to_owned())]
+        );
+        assert_eq!(
+            (again.volume.as_str(), again.price.as_str()),
+            ("18.004", "62.27")
+        );
+        let rebuilt = built(&again).unwrap();
+        assert_eq!(rebuilt, first);
+    }
+
+    #[test]
+    fn an_edit_keeps_the_original_location_unless_it_changed() {
+        let original = EventLocation {
+            place: Some(Place::parse("Asheville", "North Carolina", "US").unwrap()),
+            coordinates: Some(Coordinates::from_degrees(35.5951, -82.5515).unwrap()),
+            accuracy_m: Some(12),
+            fix_time: Some(UnixMillis::from_millis(1_700_000_000_000)),
+            source: LocationSource::Gps,
+            place_name: None,
+            saved_place: None,
+            geocoder_version: Some("2026-11-02.2".into()),
+            missing_reason: None,
+        };
+        let mut editing = typed();
+        editing.coordinates = original.coordinates;
+        editing.original_location = Some(original.clone());
+        assert_eq!(built(&editing).unwrap().location, original);
+        editing.city = "Weaverville".into();
+        let changed = built(&editing).unwrap().location;
+        assert_eq!(changed.source, LocationSource::Manual, "typed by hand now");
+        assert_eq!(changed.place.unwrap().city.as_str(), "Weaverville");
     }
 
     #[test]

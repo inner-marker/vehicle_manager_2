@@ -90,6 +90,9 @@ pub(crate) fn Shell() -> Element {
         | Route::Timeline {}
         | Route::Reports {}
         | Route::LogEvent {}
+        | Route::EventDetail { .. }
+        | Route::EditEvent { .. }
+        | Route::CorrectEvent { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
@@ -109,6 +112,9 @@ pub(crate) fn Shell() -> Element {
         | Route::Reports {}
         | Route::GroupVehicles { .. }
         | Route::LogEvent {}
+        | Route::EventDetail { .. }
+        | Route::EditEvent { .. }
+        | Route::CorrectEvent { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}

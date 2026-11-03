@@ -608,6 +608,16 @@ html {
     color: var(--text);
 }
 
+/* A link that looks like a button (Edit, Correct, Done) centres its text the same way. */
+a.primary-button,
+a.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
 .link-button {
     align-self: flex-start;
     min-height: 44px;
@@ -2582,4 +2592,127 @@ body:has(.log-form) .fab {
         flex-direction: column;
         align-items: stretch;
     }
+}
+
+/* ---------- An event's page (p2m6-event-options.svg, option A) ---------- */
+
+.event-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 640px;
+    /* Room below the last row for the floating + Log button on phones. */
+    padding-bottom: 80px;
+}
+
+.event-title {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.status-chip.draft {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.status-chip.finalized {
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.status-chip.flag {
+    border-color: var(--admin);
+    background: var(--admin-bg);
+    color: var(--admin);
+}
+
+.link-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.link-banner.corrected {
+    border-color: var(--admin);
+    background: var(--admin-bg);
+    color: var(--admin);
+}
+
+.link-banner.correction {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.link-banner a {
+    align-self: flex-start;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.event-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+.event-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.event-tile strong {
+    font-size: 1.25rem;
+}
+
+.event-tile span {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.event-rows {
+    display: flex;
+    flex-direction: column;
+    margin: 6px 0 0;
+}
+
+.event-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.event-row:last-child {
+    border-bottom: none;
+}
+
+.event-row dt {
+    color: var(--text-muted);
+}
+
+.event-row dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
 }

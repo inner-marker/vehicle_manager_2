@@ -3,6 +3,7 @@
 mod account;
 mod connection;
 mod diagnostics;
+mod event_page;
 mod groups;
 mod log_chooser;
 mod log_form;
@@ -22,9 +23,10 @@ pub(crate) use account::{
 };
 pub(crate) use connection::{ConnectionPanel, problem_from_error};
 pub(crate) use diagnostics::Diagnostics;
+pub(crate) use event_page::EventDetail;
 pub(crate) use groups::Groups;
 pub(crate) use log_chooser::{LogChooserDialog, LogEvent, provide_log_chooser};
-pub(crate) use log_form::LogForm;
+pub(crate) use log_form::{CorrectEvent, EditEvent, LogForm};
 pub(crate) use messages::Messages;
 pub(crate) use placeholders::{Due, NotFound, Reports, Timeline};
 pub(crate) use places::Places;

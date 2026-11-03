@@ -471,6 +471,30 @@ impl Event {
     }
 }
 
+/// Which side a reading that doesn't fit clashes on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ClashSide {
+    /// Lower than the reading before it.
+    BelowEarlier,
+    /// Higher than the reading after it.
+    AboveLater,
+}
+
+/// The reading a new one doesn't fit with, so the form can say which ("lower than 52,310 mi on
+/// 1 Mar").
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ReadingClash {
+    /// The meter.
+    pub meter: MeterId,
+    /// Below the one before, or above the one after.
+    pub side: ClashSide,
+    /// When the other reading was.
+    pub at: UnixMillis,
+    /// The other reading's value, in the meter's stored unit.
+    pub value: i64,
+}
+
 /// Why an event (or a change to one) was refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "problem", content = "item", rename_all = "kebab-case")]
@@ -485,8 +509,8 @@ pub enum EventProblem {
     LocationRequired,
     /// A required reading or field missing, with no skip reason.
     Required(Requirement),
-    /// A reading lower than an earlier one, or higher than a later one (the meter in question).
-    ReadingOutOfOrder(MeterId),
+    /// A reading lower than the one before it, or higher than the one after (which one).
+    ReadingOutOfOrder(ReadingClash),
     /// A reading for a meter that isn't this vehicle's.
     UnknownMeter(MeterId),
     /// A value for a field that isn't this vehicle's (or isn't on this kind of event, or is off).

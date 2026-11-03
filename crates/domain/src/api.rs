@@ -574,6 +574,10 @@ pub struct EventView {
     pub may_change: bool,
     /// The person may correct it (finalized, not yet corrected, and they may manage it).
     pub may_correct: bool,
+    /// Who logged it, by their display name.
+    pub logged_by_name: String,
+    /// Who finalized it, by their display name (`None`: not yet, or the server did).
+    pub finalized_by_name: Option<String>,
 }
 
 /// A meter's latest reading that counts.

@@ -13,8 +13,8 @@ mod events {
     use domain::asset_form::AssetForm;
     use domain::dates::EventDates;
     use domain::event::{
-        EventId, EventInput, EventLocation, EventProblem, EventSource, EventStatus, Finalizer,
-        Flag, FuelDetails, Reading, Reason, Requirement, Skipped,
+        ClashSide, EventId, EventInput, EventLocation, EventProblem, EventSource, EventStatus,
+        Finalizer, Flag, FuelDetails, Reading, ReadingClash, Reason, Requirement, Skipped,
     };
     use domain::event_check::Warning;
     use domain::location::{LocationSource, Place, TimeZone};
@@ -179,6 +179,8 @@ mod events {
         assert_eq!(seen.event.location.saved_place, None);
         assert!(seen.event.flags().is_empty());
         assert!(seen.may_change && !seen.may_correct);
+        assert_eq!(seen.logged_by_name, "sam");
+        assert_eq!(seen.finalized_by_name, None);
 
         // A required reading, given or skipped with a reason; a place, or a reason.
         let mut no_odometer = fuel_up(truck, odometer, 1, 50_300);
@@ -238,7 +240,12 @@ mod events {
         // Above the later one: refused, even with a reason, except for the Admin in Admin mode.
         let mut wrong = fuel_up(truck, odometer, 6, 52_000);
         wrong.reading_override = Some(reason("Odometer was replaced"));
-        let out_of_order = refused(EventProblem::ReadingOutOfOrder(odometer));
+        let out_of_order = refused(EventProblem::ReadingOutOfOrder(ReadingClash {
+            meter: odometer,
+            side: ClashSide::AboveLater,
+            at: UnixMillis::from_millis(NOW.as_millis() + 10 * DAY),
+            value: 51_000 * MILE,
+        }));
         assert_eq!(add(&sam_context, wrong.clone()).await, out_of_order);
         let stuart_driver = context(&database, &stuart, &clock);
         assert_eq!(add(&stuart_driver, wrong.clone()).await, out_of_order);
@@ -299,6 +306,7 @@ mod events {
             Some(Finalizer::User(sam.user))
         );
         assert!(!finalized.may_change && finalized.may_correct);
+        assert_eq!(finalized.finalized_by_name.as_deref(), Some("sam"));
         let locked = refused(EventProblem::Finalized);
         assert_eq!(edit(&sam_context, id, changed.clone()).await, locked);
         assert_eq!(finalize_now(&sam_context, id).await, locked);

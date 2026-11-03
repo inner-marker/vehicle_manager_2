@@ -396,6 +396,16 @@ pub fn parse_money(text: &str, currency: CurrencyCode) -> Result<i64, QuantityEr
     whole(value * 10_f64.powi(i32::from(places)))
 }
 
+/// An amount as typed, without its currency: "45.67".
+#[must_use]
+pub fn money_value(minor: i64, currency: CurrencyCode) -> String {
+    let places = currency_decimals(currency);
+    fixed(
+        float(minor) / 10_f64.powi(i32::from(places)),
+        usize::from(places),
+    )
+}
+
 /// An amount as "45.67 USD".
 #[must_use]
 pub fn show_money(minor: i64, currency: CurrencyCode) -> String {
@@ -453,6 +463,8 @@ mod tests {
             Some("3.459")
         );
         assert_eq!(unit_price(6_227, 0, usd(), VolumeUnit::Liters), None);
+        assert_eq!(money_value(6_227, usd()), "62.27");
+        assert_eq!(parse_money(&money_value(6_227, usd()), usd()), Ok(6_227));
     }
 
     fn usd() -> CurrencyCode {
