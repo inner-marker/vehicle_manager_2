@@ -711,7 +711,7 @@
 | T1 | ☑️ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
 | T2 | ☑️ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
 | T3 | ☑️ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
-| T4 | ⬜ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
+| T4 | ☑️ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
 
 **Written so far**
 - **T1:** decision #062; AGENTS.md's migration rule; idea 20 closed. **The migration files' own headers still say "may change until v0.2.0" and must stay as they are:** sqlx checksums each applied migration, comments included, so editing even a comment would make every existing database refuse to open. New migrations get the new header instead (below).
@@ -732,3 +732,16 @@
   - **`.env.example`** lists both and says which values each server uses (ports 8410 and 8411; `dev` or a milestone image).
   - **Tests:** `deploy_config` checks that only the milestone job builds in test timers, the names come from `.env` with the app ID as the default, and the instance name is passed, empty. A server test pins `VEHICLEMANAGER_INSTANCE`.
   - Both YAML files parse. Compose isn't installed on the Mac, so the T4 runbook starts with `sudo docker compose config` on the NAS, which checks the interpolation for real.
+- **T4:**
+  - **`docs/deploying-nas.md`:**
+    - the two servers at a glance (Project, folder, port, address, image, `.env`), and the image tags and test timers sections updated;
+    - **"Splitting into a main server and a test server"**, a 10-step runbook. Part A moves today's install to `vehicle_manager_test` (Compose down, the old Project's entry removed, the folder moved, the new `compose.yaml`, `.env`, a `docker compose config` check, the new Project, and Tailscale on 8443, or 8444 if the app was already on 8443). Part B sets up the new main (the folder, `.env`, the Project, its first Admin), then moves main to `:dev` once this merges;
+    - **"Copying the main server's data into the test server"** (main's newest snapshot in; the test server's own set aside, and how to go back; it keeps main's database ID);
+    - two troubleshooting entries (being signed out of one server by the other, and a TEST SERVER tag on main).
+  - **`docs/test-plans/p2-test-server.md`**, 12 steps:
+    - Tailscale and the two containers;
+    - signed in to both at once, in one browser and on a phone;
+    - data kept apart, and test timers only on test;
+    - copying main into test;
+    - main on `:dev` after the merge, ignoring test timers;
+    - the secrets check.
