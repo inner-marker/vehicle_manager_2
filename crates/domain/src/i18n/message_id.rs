@@ -1603,4 +1603,12 @@ define_messages! {
     BUNDLE_EMPTY => "bundle-empty",
     /// Bundle: a repeated or unknown requirement.
     BUNDLE_BAD_ITEM => "bundle-bad-item",
+    /// Maintenance: a part that doesn't fit.
+    EVENT_BAD_PART => "event-bad-part",
+    /// Maintenance: a misplaced or invalid next due date.
+    EVENT_BAD_NEXT_DUE => "event-bad-next-due",
+    /// Maintenance: resetting from end readings that don't exist.
+    EVENT_NO_END_READINGS => "event-no-end-readings",
+    /// Maintenance: an end reading below the start.
+    EVENT_END_BELOW_START => "event-end-below-start",
 }

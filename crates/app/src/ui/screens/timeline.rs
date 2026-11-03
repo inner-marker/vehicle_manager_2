@@ -454,6 +454,7 @@ mod tests {
                 logged_by: test_id(5),
                 performed_by: None,
                 fuel: None,
+                work: None,
                 reading_override: None,
                 status: EventStatus::Finalized,
                 last_edited_at: at,

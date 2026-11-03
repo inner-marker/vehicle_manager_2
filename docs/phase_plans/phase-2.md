@@ -805,7 +805,7 @@
 | 7.0 | ☑️ | `docs: Phase 2 milestone 7 plan` | This plan; decision #063 (squawk severity); the test server marked merged | none |
 | 7a | ☑️ | `feat(domain): squawks` | Squawk records (description, notes, severity, opened by and when, the event it was found on), dispositions (signed off or deferred, with notes or a reason, and a new severity), status from the latest counted one; profiles name High; checks. Test-first | none |
 | 7b | ☑️ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
-| 7c | ⬜ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
+| 7c | ☑️ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
 | 7d | ⬜ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
 | 7e | ⬜ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
 | 7f | ⬜ | `feat(app): squawks` | **SVG options first.** Opening a squawk (**+ Log**, the vehicle's page, an event's page); the Overview's squawks panel (High first, with its word); a squawk's page with its history | none |
@@ -844,3 +844,29 @@
     - A meter rule moves to the new vehicle's meter with the same name (ignoring case) and dimension; one with no match is left out, and listed as "requirement: meter".
     - Bundles still name the old requirement IDs, for the server to map to the new ones (7e).
   - 5 messages. 7 new tests: the rules' checks; a bundle's; the calendar arithmetic (leap years, short months); its property test; last done; copying a schedule (a renamed-case odometer matched, engine hours left out); the patches' round trip.
+- **7c:** no new dependency.
+  - **`WorkDetails`, the event's new `work` field** (maintenance and repairs only):
+    - the tasks, in order;
+    - the end readings (the start ones stay the event's own readings, so `Reading` is unchanged and fuel-ups are untouched);
+    - the squawk dispositions;
+    - the costs' currency;
+    - a repair's complaint and cause.
+    - `total_cost_minor` adds every task's parts and labor (#032).
+  - **`Task`:** a title, the requirement it does (optional), notes, parts, labor time (seconds) and cost, whether it resets from the start or end readings (start by default), and a fixed-date rule's next due date.
+  - **`Part`:** a description (1–100 characters), a part number (up to 40), a quantity in thousandths (5.5 quarts is 5,500), and a unit price. Its cost is quantity × price, rounded to the cent (5.5 × $8.99 = $49.45).
+  - **The checks** (`event_check::work`):
+    - only maintenance and repairs have work, and only repairs a complaint or cause;
+    - each task's requirement is the vehicle's;
+    - each part has a description and a quantity, and nothing costs less than zero;
+    - a next due date only on a task whose requirement has a fixed-date rule;
+    - resetting from the end needs end readings, and each end reading is at or above its start;
+    - squawk dispositions as 7a, naming real tasks.
+    - End readings also go through the readings check, at the event's end (or start, for a one-day job).
+  - **`check_finish`:** everything `check` does, plus every outstanding squawk signed off or deferred. Fuel-ups and readings are refused ("finalized, not finished").
+  - **`CheckContext`:**
+    - `has_fuel` became `kinds` (the vehicle's kinds of events), and the kind check uses it. Maintenance and repairs are no longer refused as "milestone 7";
+    - it gained `requirements` and `outstanding_squawks`. The server passes empty ones until 7e.
+  - **Finalizing:** `EventKind::finalizes_by_itself` (fuel-ups and readings). `Event::finalize_due` and the server's drafts query skip maintenance and repairs, which lock only at Finish.
+  - **The forgotten job:** `Event::forgotten`, a maintenance or repair draft untouched for 14 days (`FORGOTTEN_AFTER_MILLIS`).
+  - **Last done:** `Event::done_tasks`, a finished event's tasks for requirements, with the readings they reset from (7b's `DoneTask`).
+  - 10 new problems, 4 new messages. 5 new tests: an oil change with two tasks and its costs; Finish needing every outstanding squawk (deferred, then signed off with a task); each check refusing what it should (a repair's complaint and cause allowed); never finalizing by itself, and forgotten after 14 days; a finished task counted with its end readings. The 6c tests follow the new context; the event patch has 20 fields.

@@ -131,6 +131,7 @@ mod events {
                 towed: vec![],
                 reported_economy: None,
             }),
+            work: None,
             reading_override: None,
         }
     }

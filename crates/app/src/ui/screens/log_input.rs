@@ -57,7 +57,9 @@ impl Target {
         match problem {
             EventProblem::Required(item) => Self::of(item),
             EventProblem::ReadingOutOfOrder(clash) => Self::Meter(clash.meter),
-            EventProblem::UnknownMeter(meter) => Self::Meter(meter),
+            EventProblem::UnknownMeter(meter) | EventProblem::EndBelowStart(meter) => {
+                Self::Meter(meter)
+            }
             EventProblem::UnknownField(field) | EventProblem::WrongValue(field) => {
                 Self::Field(field)
             }
@@ -73,7 +75,16 @@ impl Target {
             | EventProblem::WrongKind
             | EventProblem::Finalized
             | EventProblem::NotFinalized
-            | EventProblem::AlreadyCorrected => Self::General,
+            | EventProblem::AlreadyCorrected
+            | EventProblem::WorkDetails
+            | EventProblem::RepairOnly
+            | EventProblem::UnknownRequirement
+            | EventProblem::BadPart
+            | EventProblem::BadCost
+            | EventProblem::BadNextDue
+            | EventProblem::NoEndReadings
+            | EventProblem::UnknownTask
+            | EventProblem::Squawk(_) => Self::General,
         }
     }
 }
@@ -356,6 +367,7 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
         source: EventSource::Typed,
         performed_by,
         fuel: fuel(typed, context)?,
+        work: None,
         reading_override: typed
             .override_reason
             .as_deref()

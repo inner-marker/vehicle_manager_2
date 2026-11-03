@@ -167,13 +167,18 @@ impl AssetsContext<'_> {
             .filter(|reading| !leave_out.contains(&reading.event))
             .map(|reading| (reading.meter, reading.at, reading.value))
             .collect();
+        let kinds = event_kinds(&asset.kind);
         let context = CheckContext {
-            has_fuel: event_kinds(&asset.kind).contains(&EventKind::Fuel),
+            kinds: &kinds,
             meters: &meters,
             fields: &fields,
             history: &history,
             location_rule: LocationRule::Required,
             may_override_readings: self.permits(AssetAction::OverrideReadings, scope),
+            // Maintenance and repairs are served from 7e, with the vehicle's requirements and
+            // outstanding squawks.
+            requirements: &[],
+            outstanding_squawks: &[],
         };
         let warnings = check(event, &context).map_err(invalid)?;
         tidy(event, &context, &warnings);

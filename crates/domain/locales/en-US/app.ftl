@@ -985,3 +985,10 @@ requirement-bad-months = Every 1 to 600 months.
 requirement-repeated-rule = Each meter, the calendar, and the fixed date can be used once.
 bundle-empty = Choose at least one requirement.
 bundle-bad-item = Each requirement can be in a bundle once.
+
+## Maintenance and repairs (milestone 7)
+
+event-bad-part = Each part needs a description (up to 100 characters), a part number of up to 40, and a quantity above zero.
+event-bad-next-due = A next due date goes only on a task whose requirement has a fixed-date rule, and must be a date.
+event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
+event-end-below-start = The end reading is lower than the start one. Check them.

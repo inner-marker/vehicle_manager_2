@@ -382,6 +382,8 @@ fn event_from_row(row: &SqliteRow) -> Result<(EventId, Event), StorageError> {
         logged_by: id_from_sql(row.try_get::<&[u8], _>("logged_by")?, "events.logged_by")?,
         performed_by: performer_from_row(row)?,
         fuel: None,
+        // Maintenance and repairs' work is stored from 7d.
+        work: None,
         reading_override: reason_from(row.try_get("reading_override")?, "events.reading_override")?,
         status: required_name(row.try_get("status")?, "events.status")?,
         last_edited_at: UnixMillis::from_millis(row.try_get("last_edited_ms")?),
@@ -643,7 +645,9 @@ impl Database {
         cutoff: UnixMillis,
     ) -> Result<Vec<EventId>, StorageError> {
         let ids: Vec<Vec<u8>> = sqlx::query_scalar(
-            "SELECT id FROM events WHERE status = 'draft' AND deleted = 0 AND last_edited_ms <= ?
+            "SELECT id FROM events
+             WHERE status = 'draft' AND deleted = 0 AND last_edited_ms <= ?
+               AND kind IN ('fuel', 'reading')
              ORDER BY last_edited_ms",
         )
         .bind(cutoff.as_millis())
