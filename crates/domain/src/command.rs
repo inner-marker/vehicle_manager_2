@@ -212,6 +212,44 @@ impl<R: Record> Clone for Command<R> {
     }
 }
 
+/// Declares a record's patch: one optional value per field (field-level last-write-wins,
+/// #043), with its field names, so a field can't be added without being listed. Used by
+/// records with many fields (events, squawks).
+macro_rules! record_patch {
+    ($(#[$meta:meta])* $name:ident { $($(#[$doc:meta])* $field:ident: $ty:ty,)+ }) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+        pub struct $name {
+            $(
+                $(#[$doc])*
+                #[serde(skip_serializing_if = "Option::is_none")]
+                pub $field: Option<$ty>,
+            )+
+        }
+
+        impl $crate::command::Patch for $name {
+            fn changed_fields(&self) -> Vec<&'static str> {
+                let mut fields = Vec::new();
+                $(
+                    if self.$field.is_some() {
+                        fields.push(stringify!($field));
+                    }
+                )+
+                fields
+            }
+
+            fn keep_only(&mut self, fields: &[&str]) {
+                $(
+                    if !fields.contains(&stringify!($field)) {
+                        self.$field = None;
+                    }
+                )+
+            }
+        }
+    };
+}
+pub(crate) use record_patch;
+
 #[cfg(test)]
 mod tests {
     use super::*;

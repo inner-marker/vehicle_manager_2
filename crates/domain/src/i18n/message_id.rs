@@ -1565,4 +1565,32 @@ define_messages! {
     INSTANCE_TAG => "instance-tag",
     /// The instance tag's tooltip.
     INSTANCE_TAG_NOTE => "instance-tag-note",
+    /// Squawk severity: minor.
+    SEVERITY_LOW => "severity-low",
+    /// Squawk severity: get it looked at.
+    SEVERITY_MEDIUM => "severity-medium",
+    /// Squawk severity: keeps it out of use.
+    SEVERITY_HIGH => "severity-high",
+    /// What High means for a car, truck, or motorcycle.
+    SQUAWK_HIGH_NOT_DRIVABLE => "squawk-high-not-drivable",
+    /// What High means for a trailer.
+    SQUAWK_HIGH_NOT_TOWABLE => "squawk-high-not-towable",
+    /// What High means for equipment, and kinds without a profile.
+    SQUAWK_HIGH_OUT_OF_SERVICE => "squawk-high-out-of-service",
+    /// Squawk status: not dealt with yet.
+    SQUAWK_STATUS_OPEN => "squawk-status-open",
+    /// Squawk status: put off at the latest maintenance.
+    SQUAWK_STATUS_DEFERRED => "squawk-status-deferred",
+    /// Squawk status: signed off.
+    SQUAWK_STATUS_RESOLVED => "squawk-status-resolved",
+    /// Squawk: no description.
+    SQUAWK_DESCRIPTION_EMPTY => "squawk-description-empty",
+    /// Squawk: a description over 500 characters.
+    SQUAWK_DESCRIPTION_TOO_LONG => "squawk-description-too-long",
+    /// Finish: an outstanding squawk left as it was.
+    SQUAWK_UNDISPOSITIONED => "squawk-undispositioned",
+    /// A squawk dispositioned twice in one event.
+    SQUAWK_DISPOSITIONED_TWICE => "squawk-dispositioned-twice",
+    /// A disposition of a squawk that isn't outstanding.
+    SQUAWK_NOT_OUTSTANDING => "squawk-not-outstanding",
 }

@@ -960,3 +960,20 @@ panel-no-readings = No readings yet
 
 instance-tag = { $name } server
 instance-tag-note = Not the household's main server: for testing. What's saved here stays here.
+
+## Squawks (milestone 7)
+
+severity-low = Low
+severity-medium = Medium
+severity-high = High
+squawk-high-not-drivable = Not drivable
+squawk-high-not-towable = Not towable
+squawk-high-out-of-service = Out of service
+squawk-status-open = Open
+squawk-status-deferred = Deferred
+squawk-status-resolved = Resolved
+squawk-description-empty = Say what's wrong.
+squawk-description-too-long = That's too long: at most 500 characters.
+squawk-undispositioned = Sign off or defer every open squawk before finishing.
+squawk-dispositioned-twice = That squawk is already signed off or deferred in this job.
+squawk-not-outstanding = That squawk isn't open or deferred on this vehicle.

@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetId;
-use crate::command::{Clearable, Patch, Record};
+use crate::command::{Clearable, Record, record_patch};
 use crate::custom_field::CustomFieldId;
 use crate::dates::EventDates;
 use crate::i18n::{MessageId, messages};
@@ -564,43 +564,10 @@ impl EventProblem {
     }
 }
 
-/// Declares [`EventPatch`]: one optional value per field (field-level last-write-wins, #043),
-/// with its field names, so a field can't be added without being listed.
-macro_rules! event_patch {
-    ($($(#[$doc:meta])* $field:ident: $ty:ty,)+) => {
-        /// The changeable fields of an [`Event`]; `Some` means "set to this".
-        #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-        pub struct EventPatch {
-            $(
-                $(#[$doc])*
-                #[serde(skip_serializing_if = "Option::is_none")]
-                pub $field: Option<$ty>,
-            )+
-        }
-
-        impl Patch for EventPatch {
-            fn changed_fields(&self) -> Vec<&'static str> {
-                let mut fields = Vec::new();
-                $(
-                    if self.$field.is_some() {
-                        fields.push(stringify!($field));
-                    }
-                )+
-                fields
-            }
-
-            fn keep_only(&mut self, fields: &[&str]) {
-                $(
-                    if !fields.contains(&stringify!($field)) {
-                        self.$field = None;
-                    }
-                )+
-            }
-        }
-    };
-}
-
-event_patch! {
+record_patch! {
+    /// The changeable fields of an [`Event`]; `Some` means "set to this".
+    EventPatch
+    {
     /// See [`Event::asset`] (set when created).
     asset: AssetId,
     /// See [`Event::kind`] (set when created).
@@ -639,6 +606,7 @@ event_patch! {
     corrects: Clearable<EventId>,
     /// See [`Event::correction_reason`] (set when created).
     correction_reason: Clearable<Reason>,
+    }
 }
 
 impl EventPatch {

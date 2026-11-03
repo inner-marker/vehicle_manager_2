@@ -33,6 +33,7 @@ pub mod preferences;
 pub mod profile;
 pub mod quantity;
 pub mod server_address;
+pub mod squawk;
 pub mod time;
 pub mod time_utils;
 pub mod timers;

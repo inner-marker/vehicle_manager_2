@@ -797,7 +797,7 @@
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
 | 7.0 | ☑️ | `docs: Phase 2 milestone 7 plan` | This plan; decision #063 (squawk severity); the test server marked merged | none |
-| 7a | ⬜ | `feat(domain): squawks` | Squawk records (description, notes, severity, opened by and when, the event it was found on), dispositions (signed off or deferred, with notes or a reason, and a new severity), status from the latest counted one; profiles name High; checks. Test-first | none |
+| 7a | ☑️ | `feat(domain): squawks` | Squawk records (description, notes, severity, opened by and when, the event it was found on), dispositions (signed off or deferred, with notes or a reason, and a new severity), status from the latest counted one; profiles name High; checks. Test-first | none |
 | 7b | ⬜ | `feat(domain): requirements, interval rules, and bundles` | Requirements with meter, calendar (end-of-month), and fixed-date rules; bundles; "last done" from finished tasks; copying a schedule (meters matched by name and kind). Test-first, with property tests for the end-of-month rule | none |
 | 7c | ⬜ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
 | 7d | ⬜ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
@@ -816,3 +816,11 @@
 
 **Written so far**
 - **7.0:** decision #063 (squawk severity: Low, Medium, High; High keeps the asset out of use, named per kind; refines #051). The main plan's §3 Squawks and the milestone 7 row say severity instead of "blocks use".
+- **7a:** no new dependency.
+  - **`domain::squawk`:** the `Squawk` record: the vehicle, a description (1–500 characters), notes, severity (as opened), when and by whom, the event it was found on (if any), and when the server received it. `SquawkPatch` comes from the patch generator events use, now shared (`command::record_patch!`, moved out of `event.rs`).
+  - **`Severity`:** Low (the default), Medium, High; only High `keeps_out_of_use`.
+  - **Dispositions:** signed off (resolution notes, and the task by its place in the event's list) or deferred (a required reason), each with an optional new severity. They're kept in the maintenance or repair event (7c), and count once it's finished (`CountedDisposition`).
+  - **Status and severity now come from the latest counted disposition,** by the event's time: open until the first, then deferred or resolved. Severity is as opened until a disposition changes it.
+  - **`check_dispositions`:** each disposition is for an outstanding squawk on the vehicle, at most once; when finishing, every outstanding squawk must be there (the required disposition).
+  - **Profiles name High** (`high_severity`, a message key; each profile's version goes up by one): "Not drivable" (car, truck, motorcycle), "Not towable" (trailer), "Out of service" (generator, other equipment, and kinds without a profile; `profile::high_severity_name`).
+  - 14 messages. 6 new tests: the description's limits; severity's default and order; status and severity from the history, in any order; finishing needs every outstanding squawk, once; a squawk's patch and a disposition round-trip; each kind's word for High.

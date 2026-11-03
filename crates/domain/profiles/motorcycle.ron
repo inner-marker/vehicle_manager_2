@@ -1,7 +1,7 @@
 // Motorcycle (decision #030).
 (
     id: "motorcycle",
-    version: 1,
+    version: 2,
     name: "profile-motorcycle",
     event_kinds: [fuel, reading, maintenance, repair],
     sections: [r#fuel-economy],
@@ -9,6 +9,8 @@
         (kind: "vin", name: "identifier-vin"),
         (kind: "plate", name: "identifier-plate"),
     ],
+    // What a High squawk means for this kind (#063).
+    high_severity: "squawk-high-not-drivable",
     documents: ["document-title", "document-registration", "document-insurance"],
     meters: [
         (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),

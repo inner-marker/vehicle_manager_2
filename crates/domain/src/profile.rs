@@ -23,7 +23,7 @@ use serde::Deserialize;
 
 use crate::asset::{AssetId, AssetKind, IdentifierKind};
 use crate::custom_field::{CustomField, FieldKey, FieldKind, FieldRange};
-use crate::i18n::Translator;
+use crate::i18n::{Translator, messages};
 use crate::label::Label;
 use crate::meter::{EventKind, Meter, MeterDimension, MeterUnit};
 use crate::preferences::DistanceUnit;
@@ -56,6 +56,8 @@ pub struct Profile {
     pub sections: Vec<Section>,
     /// The identifiers it offers.
     pub identifiers: Vec<ProfileIdentifier>,
+    /// What a High squawk means for this kind (a message key, #063): e.g. "Not drivable".
+    pub high_severity: String,
     /// The official documents expected (message keys; documents arrive in milestone 8).
     pub documents: Vec<String>,
     /// The meters a new asset starts with.
@@ -165,6 +167,16 @@ pub fn event_kinds(kind: &AssetKind) -> Vec<EventKind> {
     )
 }
 
+/// What a High squawk means for an asset of `kind` (#063): its profile's word, e.g. "Not
+/// drivable", or "Out of service" for a kind without a profile.
+#[must_use]
+pub fn high_severity_name(kind: &AssetKind, translator: &Translator) -> String {
+    profile(kind).map_or_else(
+        || translator.tr(messages::SQUAWK_HIGH_OUT_OF_SERVICE),
+        |profile| translator.tr_key(&profile.high_severity),
+    )
+}
+
 /// The profile for `kind`, if there is one (and the profiles could be read).
 #[must_use]
 pub fn profile(kind: &AssetKind) -> Option<&'static Profile> {
@@ -257,6 +269,23 @@ mod tests {
     }
 
     #[test]
+    fn each_kind_names_its_high_squawks() {
+        let english = Translator::english();
+        let name = |id: &str| high_severity_name(&AssetKind::parse(id).unwrap(), english);
+        for (id, word) in [
+            ("car", "Not drivable"),
+            ("truck", "Not drivable"),
+            ("motorcycle", "Not drivable"),
+            ("trailer", "Not towable"),
+            ("generator", "Out of service"),
+            ("other-equipment", "Out of service"),
+            ("boat", "Out of service"),
+        ] {
+            assert_eq!(name(id), word, "{id}");
+        }
+    }
+
+    #[test]
     fn each_file_is_named_after_its_kind() {
         for ((file, _), profile) in SOURCES.iter().zip(all()) {
             assert_eq!(*file, format!("{}.ron", profile.id.as_str()));
@@ -268,7 +297,8 @@ mod tests {
     fn every_name_is_a_message_in_the_catalog() {
         let english = Translator::english();
         for profile in all() {
-            let keys = std::iter::once(&profile.name)
+            let keys = [&profile.name, &profile.high_severity]
+                .into_iter()
                 .chain(
                     profile
                         .identifiers
