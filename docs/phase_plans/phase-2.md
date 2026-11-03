@@ -709,9 +709,17 @@
 | Step | Status | Commit | What | New dependencies |
 |---|---|---|---|---|
 | T1 | ☑️ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
-| T2 | ⬜ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the handshake, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
+| T2 | ☑️ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
 | T3 | ⬜ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
 | T4 | ⬜ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
 
 **Written so far**
 - **T1:** decision #062; AGENTS.md's migration rule; idea 20 closed. **The migration files' own headers still say "may change until v0.2.0" and must stay as they are:** sqlx checksums each applied migration, comments included, so editing even a comment would make every existing database refuse to open. New migrations get the new header instead (below).
+- **T2:** no new dependency.
+  - **The name:** `domain::identity::InstanceName`, 1–16 lowercase letters and digits. An empty setting is the main server; an invalid one is ignored with a warning, and the server runs as main.
+  - **Startup:** `VEHICLEMANAGER_INSTANCE` is read before the router is built (`server::startup::set_instance`), and a named server says so in its log ("this is a second server, not the household's main one").
+  - **The cookie:** `domain::identity::session_cookie_name`: `vehiclemanager_session` on main, `vehiclemanager_test_session` on test. Both the auth layer and sign-in use it, through `server::auth::session_cookie_name`.
+  - **The app learns the name from the session check** (`SessionState::instance`), which works before sign-in and runs on every navigation. That's simpler than the handshake the plan named, which only Diagnostics calls.
+  - **The tag:** "TEST SERVER" in the top bar and on the sign-in, setup, and password cards; just "TEST" in a phone's top bar, where the full tag pushed the account chip off the screen. The browser tab's title is "test server". A main server shows nothing.
+  - 2 messages, 1 new test (names and their cookies).
+  - **Checked in a real browser:** a main server on 127.0.0.1:8412 and a `test` one on :8413, set up and signed in to in one Chrome profile. Each kept its own sign-in (mainadmin and testadmin, cookies `vehiclemanager_session` and `vehiclemanager_test_session` on the same host); only the test one showed the tag and the title; the phone top bar fits.

@@ -42,10 +42,20 @@ pub(crate) fn use_auth() -> Signal<AuthState> {
     use_context::<Signal<AuthState>>()
 }
 
+/// The server's instance name (`None`: the household's main server; decision #062), from the
+/// last session check. Shown as the **TEST SERVER** tag.
+pub(crate) static SERVER_INSTANCE: GlobalSignal<Option<String>> = Signal::global(|| None);
+
 /// Asks the server who is signed in, and updates `state`.
 pub(crate) async fn refresh(mut state: Signal<AuthState>) {
     client::apply_request_headers();
-    let next = match api::session().await {
+    let answer = api::session().await;
+    if let Ok(session) = &answer
+        && *SERVER_INSTANCE.peek() != session.instance
+    {
+        SERVER_INSTANCE.write().clone_from(&session.instance);
+    }
+    let next = match answer {
         Ok(session) if session.setup_needed => AuthState::NeedsSetup,
         Ok(session) => session
             .signed_in
@@ -63,6 +73,27 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
     if *state.peek() != next {
         tracing::debug!(target: log_area::AUTH, signed_in = matches!(next, AuthState::SignedIn(_)), "session state changed");
         state.set(next);
+    }
+}
+
+/// The **TEST SERVER** tag (and the tab's title), on a server that isn't the household's main
+/// one; nothing on the main server.
+#[component]
+pub(crate) fn InstanceTag() -> Element {
+    let Some(name) = SERVER_INSTANCE() else {
+        return rsx! {};
+    };
+    let label = crate::ui::tr_with(
+        domain::i18n::messages::INSTANCE_TAG,
+        &[("name", domain::i18n::MessageArg::from(name.as_str()))],
+    );
+    rsx! {
+        Title { {label.clone()} }
+        span { class: "instance-tag", title: tr(domain::i18n::messages::INSTANCE_TAG_NOTE),
+            // The full "TEST SERVER", or just "TEST" in a phone's crowded top bar.
+            span { class: "instance-tag-full", {label} }
+            span { class: "instance-tag-short", {name} }
+        }
     }
 }
 

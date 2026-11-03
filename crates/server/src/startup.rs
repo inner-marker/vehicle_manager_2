@@ -28,6 +28,25 @@ static SERVER_DEVICE: std::sync::OnceLock<DeviceId> = std::sync::OnceLock::new()
 /// This database's ID (also the household preferences' record ID, #048).
 static DATABASE_ID: std::sync::OnceLock<domain::id::DatabaseId> = std::sync::OnceLock::new();
 
+/// This server's instance name (`None`: the main server; decision #062).
+static INSTANCE: std::sync::OnceLock<Option<domain::identity::InstanceName>> =
+    std::sync::OnceLock::new();
+
+/// The environment variable naming a second server's instance, without the app prefix.
+pub const INSTANCE_ENV_NAME: &str = "INSTANCE";
+
+/// Sets this server's instance name, once, before the router is built (later calls, e.g. hot
+/// reloads, keep the first).
+pub fn set_instance(instance: Option<domain::identity::InstanceName>) {
+    let _ = INSTANCE.set(instance);
+}
+
+/// This server's instance name (`None`: the main server).
+#[must_use]
+pub fn instance() -> Option<&'static domain::identity::InstanceName> {
+    INSTANCE.get().and_then(Option::as_ref)
+}
+
 /// The timer lengths for this run (normal, or test timers on a test build; #054).
 static TIMERS: std::sync::OnceLock<Timers> = std::sync::OnceLock::new();
 

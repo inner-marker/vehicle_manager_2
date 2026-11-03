@@ -184,6 +184,10 @@ pub struct SessionState {
     pub signed_in: Option<SessionInfo>,
     /// No users exist yet: the app should offer first-Admin setup instead of sign-in.
     pub setup_needed: bool,
+    /// The server's instance name, e.g. `test` (decision #062); `None` on the main server, and
+    /// from servers before it existed.
+    #[serde(default)]
+    pub instance: Option<String>,
 }
 
 /// The answer to a first-Admin setup attempt.

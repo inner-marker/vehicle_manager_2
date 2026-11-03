@@ -955,3 +955,8 @@ panel-no-activity = Nothing logged yet.
 panel-finalized = Finalized
 panel-reading-when = { $date } · { $kind }
 panel-no-readings = No readings yet
+
+## A test server beside the main one (decision #062)
+
+instance-tag = { $name } server
+instance-tag-note = Not the household's main server: for testing. What's saved here stays here.

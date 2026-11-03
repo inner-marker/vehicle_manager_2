@@ -72,6 +72,8 @@ fn launch(log_handles: Option<LogHandles>) {
         std::sync::Arc::new(logging::SystemClock),
     ));
     let paths = server_paths();
+    // Before the router: the auth layer names the session cookie after it.
+    server::startup::set_instance(server_instance());
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {
         let log_handles = log_handles.clone();
@@ -154,6 +156,26 @@ fn server_timers() -> domain::timers::Timers {
         Err(error) => {
             tracing::warn!(target: log_area::APP, env_var = %env_var, %error, "test timers setting ignored");
             domain::timers::Timers::NORMAL
+        }
+    }
+}
+
+/// This server's instance name from `VEHICLEMANAGER_INSTANCE` (decision #062): empty for the
+/// main server, `test` for the test server beside it. An invalid name is ignored, with a
+/// warning, and the server runs as the main one.
+#[cfg(feature = "server")]
+fn server_instance() -> Option<domain::identity::InstanceName> {
+    let env_var = domain::identity::env_var_name(server::startup::INSTANCE_ENV_NAME);
+    let setting = std::env::var(&env_var).unwrap_or_default();
+    match domain::identity::InstanceName::parse(&setting) {
+        Ok(Some(instance)) => {
+            tracing::warn!(target: log_area::APP, instance = instance.as_str(), "this is a second server, not the household's main one");
+            Some(instance)
+        }
+        Ok(None) => None,
+        Err(error) => {
+            tracing::warn!(target: log_area::APP, env_var = %env_var, %error, "instance name ignored; running as the main server");
+            None
         }
     }
 }
