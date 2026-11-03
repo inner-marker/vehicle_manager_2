@@ -510,7 +510,7 @@
 | 6h | ☑️ | `feat(app): an event's page and corrections` | **SVG options first.** An event's page (everything it holds; draft or finalized, and when it locks; flags); **Finalize now** with its confirmation; **Correct** (the form, pre-filled, with a required reason) and the link between an original and its correction | none |
 | 6i | ☑️ | `docs: events checkpoint test` | `docs/test-plans/p2m6-events.md`, part 1 (logging, finalizing with test timers, the readings check, an event's page, corrections); **the human runs it on the NAS** | none |
 | 6j | ☑️ | `feat(app): the Timeline tab and Overview's fuel-ups` | **SVG options first.** A vehicle's **Timeline** (newest first, by type, ranges for multi-day events, corrections beside what they correct); Overview's **Latest fuel-ups** panel and each meter's latest reading (#051) | none |
-| 6k | ⬜ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
+| 6k | ☑️ | `docs: events test plan, part 2` | The rest of the test plan (Timeline, Overview, required fields, the whole flow on the phone and desktop app) | none |
 | 6l | ⬜ | `docs: record the events test runs` | Results of both runs | none |
 
 **Not in this milestone:** maintenance, repairs, squawks, and tasks (milestone 7); photos and documents on events (milestone 8); fuel-economy statistics and calculated fields (Phase 5); meter adjustments (replacement, rollover); voice logging (post-MVP, idea 14); an Admin setting to make location optional (groundwork only); the event map (post-MVP).
@@ -672,3 +672,14 @@
   - **The server looks each person's name up once per list** (the 6h note).
   - 26 messages added (12 month names among them), 2 removed. 3 new tests: the month heading's zone; the Timeline's grouping, corrections, and filter; the latest reading skipping corrected originals.
   - **Checked in a real browser:** four events and a correction over three months. The Timeline grouped them, with the corrected original dimmed under its correction. Readings filtered to one. The Fuel tab listed the four fuel-ups (after a fix: it had kept the Timeline tab's filter). Overview showed the three latest fuel-ups, the last activity, and the odometer's 52,644 mi. A row opened its event. The list fits a phone.
+- **6k:** part 2 of `docs/test-plans/p2m6-events.md`, 21 steps on a new `Test car`:
+  - the empty Overview and Timeline;
+  - three events over two months (one back-dated), the Timeline's months and filters;
+  - a correction shown dimmed under it, with Overview counting only the correction's values (latest fuel-ups, the odometer);
+  - the Fuel tab;
+  - the phone layout;
+  - the desktop app (logging with typed coordinates, editing);
+  - Sam's view and his own draft;
+  - a trailer's missing fuel parts;
+  - a restart.
+  - The Timeline also gained room at the bottom so the phone's floating + doesn't cover its last row.

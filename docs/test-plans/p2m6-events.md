@@ -2,7 +2,7 @@
 
 *Phase 2, milestone 6 · `docs/phase_plans/phase-2.md` · decisions #008, #030, #033, #034, #040; choices 1–12*
 
-**Part 1** is the halfway checkpoint (step 6i): logging, the readings check, an event's page, finalizing, and corrections. **Part 2** (step 6k) adds the Timeline and Overview.
+**Part 1** is the halfway checkpoint (step 6i): logging, the readings check, an event's page, finalizing, and corrections. **Part 2** (step 6k) adds the Timeline, the Fuel tab, and Overview, and the desktop app.
 
 ## 1. Intended behavior
 
@@ -76,6 +76,37 @@
 | [x] | 24 | **When done:** empty `VEHICLEMANAGER_TEST_MINUTES=` in `.env` and run `sudo docker compose up -d`. *(Optional)* In Admin mode, `Test truck` → **Setup** → **Delete**, and the same for `Test camper` | The test-timers tag is gone. |
 | [x] | 25 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
 
-**Not covered by hand in part 1:**
-- The Timeline and the Overview's latest fill-ups (part 2, step 6k).
-- The desktop app: covered in part 2.
+## 4. Checklist (part 2)
+
+*Step 6k: the Timeline, the Fuel tab, Overview, and the whole flow on the phone and the desktop app. A new test vehicle keeps the numbers simple.*
+
+**Setup:** the "Server image" run for "feat(app): the Timeline tab and Overview's fuel-ups" (or newer) finished successfully; `VEHICLEMANAGER_TEST_MINUTES=` is empty. For the desktop app (steps 14–15), on the Mac: `cd crates/app` in the repository, then `dx serve --platform desktop`, with the NAS address saved.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager 2>&1` | `database open` with `schema_now=11` (no migration this time, so no backup line), `database integrity check passed`, and no `ERROR` lines. |
+| [ ] | 2 | **Mac**, Admin mode: **+ Add vehicle** → **Car**, named `Test car` → **Leave** Admin mode → open `Test car` | **Overview**: **LATEST FUEL-UPS** "No fuel-ups yet.", **LAST ACTIVITY** "Nothing logged yet.", and **METERS**: Odometer "No readings yet". **Timeline**: "Nothing logged yet. Use + Log to add a fuel-up or reading." |
+| [ ] | 3 | **Phone**: `Test car` → **+** → **Fuel-up** → Odometer `1000`, volume `10`, price `35.00`, place (**Use my location** → **Use this place**) → **Save** | The event's page. Back on `Test car`'s **Overview**: the fuel-up under **LATEST FUEL-UPS** ("10.000 gal · 35.00 USD", then "3.500 /gal"), **LAST ACTIVITY** "Fuel-up · today …" and "Draft", and the Odometer "1,000 mi" with today's date and "fuel-up" (e.g. "3 Nov 2026 · fuel-up"). |
+| [ ] | 4 | **+** → **Reading** → **When**: **Change** → a date **last month** → Odometer `900`, place → **Save** | It saves (900 is before 1,000 in time). |
+| [ ] | 5 | **+** → **Fuel-up** → **When**: **Change** → **yesterday** → Odometer `980`, volume `9`, price `31.50`, place → **Save** | It saves. |
+| [ ] | 6 | `Test car` → **Timeline** | <ul><li>**This month**: Fuel-up today (1,000 mi · 10.000 gal · 35.00 USD), then yesterday's (980 mi …), each with **Draft**.</li><li>**Last month**: the Reading (900 mi), **Draft**.</li><li>Newest first, under month headings like "NOVEMBER 2026".</li></ul> |
+| [ ] | 7 | **Fuel-ups**, then **Readings**, then **All** | Only the two fuel-ups; only the reading; all three. |
+| [ ] | 8 | Tap today's fuel-up → **Finalize now** → **Finalize** → **Correct…** → Why: `It said 990` → Odometer `990` → **Save** | The correction's page, with **⚑ Correction**. |
+| [ ] | 9 | Back to `Test car` → **Timeline** | Today's correction (990 mi, **Draft**, **⚑ Correction**), and beneath it, **dimmed and set in**, the original (1,000 mi, **Corrected**). Tapping the dimmed one opens the original, which says "Corrected on today by you". |
+| [ ] | 10 | **Overview** | **LATEST FUEL-UPS**: today's correction (990's fuel-up) and yesterday's: the original isn't listed again. **METERS**: Odometer "990 mi", not 1,000 (only the correction's values count). |
+| [ ] | 11 | **Fuel** tab | The fuel-ups only: the correction with its original beneath, then yesterday's. No filter chips. Switch to **Timeline** and back: still all fuel-ups. |
+| [ ] | 12 | **See all on the Timeline ›** on Overview | Opens the Timeline tab. |
+| [ ] | 13 | **Phone layout:** the Timeline, scrolled to the bottom | One column; each row's chips wrap under its text; the last row isn't hidden by the floating **+**. |
+| [ ] | 14 | **Desktop app**: sign in → `Test car` → **+ Log** (top bar) → **Reading** → Odometer `1010` → **Type coordinates** `35.5951, -82.5515` → **Use this place** → **Save** | <ul><li>The chooser starts on `Test car`.</li><li>**Use my location** may say the location isn't available here; typed coordinates work.</li><li>The event's page opens; the Timeline lists it first; Overview's Odometer says "1,010 mi".</li></ul> |
+| [ ] | 15 | **Desktop app**: on that reading → **Edit** → Odometer `1005` → **Save** | The page says 1,005 mi; **Last edited** is now. |
+| [ ] | 16 | **Sam** (Driver): `Test car` → **Timeline** and **Overview** | The same events and panels. Opening one of yours shows no **Edit**, **Finalize now**, **Delete**, or **Correct…**. |
+| [ ] | 17 | **Sam**: **+ Log** → **Reading** on `Test car` → Odometer `1020`, place → **Save** → **Edit** → **Save** | Sam can log, and edit his own draft. |
+| [ ] | 18 | **A trailer:** `Test camper` (from part 1, or add one) | No **Fuel** tab, no **Fuel-ups** filter on its Timeline, and no **LATEST FUEL-UPS** panel. |
+| [ ] | 19 | `sudo docker compose restart`, then reload | The Timeline and Overview are unchanged. |
+| [ ] | 20 | *(Optional)* **Clean up:** Admin mode → each test vehicle → **Setup** → **Delete** | They leave the Garage. |
+| [ ] | 21 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |
+
+**Not covered by hand:**
+- Maintenance and repair events, squawks, and their Timeline rows (milestone 7).
+- Fuel economy and the Fuel tab's breakdown by driving condition (Phase 5's reports).
+- Voice and imported events (later; the source field is already kept).

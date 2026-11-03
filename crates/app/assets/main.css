@@ -2724,6 +2724,8 @@ body:has(.log-form) .fab {
     flex-direction: column;
     gap: 16px;
     max-width: 760px;
+    /* Room below the last row for the floating + Log button on phones. */
+    padding-bottom: 80px;
 }
 
 .timeline-month {
