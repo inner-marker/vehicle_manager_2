@@ -1996,6 +1996,40 @@ textarea.field-input {
 
 /* ---------- Test timers (decision #054): never in a release ---------- */
 
+/* A second server's tag (decision #062): "TEST SERVER", loud enough not to miss. */
+.instance-tag {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--warn);
+    color: #1a1204;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.auth-card .instance-tag {
+    display: inline-block;
+    margin-bottom: 16px;
+}
+
+.instance-tag-short {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .topbar .instance-tag-full {
+        display: none;
+    }
+
+    .topbar .instance-tag-short {
+        display: inline;
+    }
+}
+
 .test-timers-tag {
     flex-shrink: 0;
     padding: 4px 10px;

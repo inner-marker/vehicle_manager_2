@@ -21,7 +21,6 @@
 use std::fmt;
 use std::sync::Arc;
 
-use domain::identity::APP_ID;
 use domain::time::Clock;
 use storage::Database;
 
@@ -55,10 +54,12 @@ pub const PUBLIC_API_PATHS: &[&str] = &[
     "/api/v1/recovery/complete",
 ];
 
-/// The session cookie's name, from the app ID: `vehiclemanager_session`.
+/// The session cookie's name, from the app ID and this server's instance name:
+/// `vehiclemanager_session` on the main server, `vehiclemanager_test_session` on the `test`
+/// instance (decision #062).
 #[must_use]
 pub fn session_cookie_name() -> String {
-    format!("{APP_ID}_session")
+    domain::identity::session_cookie_name(crate::startup::instance())
 }
 
 /// Where the gate finds sessions: the database (once open) and the real clock.

@@ -141,6 +141,7 @@ pub(crate) async fn session() -> ServerFnResult<SessionState> {
     Ok(SessionState {
         signed_in: server_side::signed_in().map(|signed_in| server_side::session_info(&signed_in)),
         setup_needed: ::server::setup::is_open(),
+        instance: ::server::startup::instance().map(|instance| instance.as_str().to_owned()),
     })
 }
 

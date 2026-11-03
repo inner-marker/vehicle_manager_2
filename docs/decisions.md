@@ -707,3 +707,21 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Layout:** option A of `docs/ui-sketches/p2m5-nearby-options.svg`: a list of tappable rows above **City or town** ("Nearby: choose the city or town"), the chosen one marked; typing over the field still works.
   - **Where's buttons show the choice:** **Use my location** and **Type coordinates** are both plain until one is chosen; the chosen one is highlighted (asked for during the test run).
 - **Why:** the human asked for choices on "my location"; the nearest GeoNames place can be a district in a big city or a small locality, and seeing the few nearest, labelled, lets the person pick the name they use.
+
+### 062. A test server beside the everyday ("main") server; migrations freeze in `dev`
+*Decided: 2026-11-03 · Plan: §7 Deployment · Phase plan: phase-2.md, between milestones 6 and 7 · Closes idea 20 · Refines #026, #054*
+
+- **Decision:**
+  - **Two servers on the NAS, each its own Container Manager Project with its own data folder:**
+    - **Main**, the one the household uses: `/volume1/docker/vehicle_manager`, port 8410, `https://<nas>.<tailnet>.ts.net`. It runs **`:dev`**.
+    - **Test**: `/volume1/docker/vehicle_manager_test`, port 8411, `https://<nas>.<tailnet>.ts.net:8443`. It runs **`:milestone-<name>`** images (or `:dev`, or a `:sha-` build), and test plans run on it from now on.
+    - **Today's install becomes the test server** (its test vehicles and events with it); **main starts empty**, with a new Admin.
+  - **`:dev` is built without test timers;** milestone images keep them (#054). So main can't run test timers even by mistake, and test timers stay a test-server thing.
+  - **A server instance name,** `VEHICLEMANAGER_INSTANCE` (empty on main; `test` on the test server):
+    - it names the session cookie (`vehiclemanager_session` on main, `vehiclemanager_test_session` on test). Both servers answer on the same NAS hostname, and browsers share cookies across ports, so they'd otherwise sign each other out;
+    - the app shows a **TEST SERVER** tag in the top bar and on the sign-in card, and the browser tab's title says "(test)".
+  - **The test server keeps its own data.** When a test needs real data, a documented step copies main's newest nightly snapshot in (it stays on the NAS). The copy keeps main's database ID, which doesn't matter until sync arrives (Phase 3).
+  - **Migrations freeze once merged into `dev`:** main runs `dev`, so a merged migration never changes. One on a milestone branch may still change until its PR merges. This replaces "may change until v0.2.0". **Existing migration files keep their old header comment:** sqlx checksums each applied migration, comments included, so editing one would make existing databases refuse to open. New migrations start with: `-- Final once merged into dev (decision #062).`
+- **Why:** the app is close to everyday use (the human, 2026-11-03). Tests write records that can't be deleted (finalized events are only corrected), and test timers change how a server behaves; neither belongs on the household's server. Waiting for the v0.2.0 release would keep Phase 2's work out of real use until the end of the phase.
+- **Unaffected:** releases (`:<version>`, `:latest`) and the release process; `main` still holds released code only.
+

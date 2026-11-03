@@ -28,7 +28,7 @@
 | 3 | **Message center** | ✅ | **Starts with the idle watcher** (#049): leave Admin mode after 15 idle minutes, sign out after a chosen idle time (8 hours by default), each with a short notice. Then: inbox with severity, read/dismiss, one action per message, filters (#040); system messages from earlier milestones (snapshot failed, integrity problem, "app update required") | A tab left in Admin mode drops to Driver by itself after 15 minutes; a forced snapshot failure shows an Admin message; mark read and dismiss work | none expected |
 | 4 | **Assets, groups, profiles & meters** | ✅ | **Groups** (#052): every asset in exactly one, a default "Garage" made at setup, name and icon, roles granted on a group, moving an asset (showing who gains and loses access), a screen to manage groups; the six profiles as seed data (#030); assets with typed identifiers, lifecycle status, parent field, archive; meters (distance/duration); custom field definitions including quantity types (#030); **Garage** screen (urgency order, My order) and **vehicle detail** shell with tabs (#040), its Overview tab being the per-vehicle dashboard (#051) | Add the real vehicles with their meters; the Garage cards show them; give someone a role on one group only | `ron` (profile seed files; approved) |
 | 5 | **Location** | ✅ | Coordinates (degrees × 10⁷, accuracy, fix time), required city/state/country; browser location; saved places; the offline geocoder with cities500, Natural Earth 1:10m, and the nearest-boundary fallback (#038); geocoder data file and attribution | From a phone browser, a test location resolves to the right city and state, including a coastal point; saved places work on desktop | a geocoder crate or our own lookup (chosen in the step plan) |
-| 6 | **Events: fuel-ups & readings** | 🔨 | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
+| 6 | **Events: fuel-ups & readings** | ✅ | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
 | 7 | **Maintenance, repairs & squawks** | ⬜ | Maintenance and repair events with tasks, labor, parts and labor cost (#032); complaint and cause; **Finish** with checks and confirmation; squawks with sign-off and required disposition; requirements with interval rules (meter, calendar with end-of-month, fixed date) and service bundles as data, "Copy schedule from another asset" (#031); forgotten-job reminder after 14 days; squawks can be marked **blocks use** (#051, for the Phase 5 readiness summary) | Log an oil change with two tasks, sign off a squawk, log a repair with complaint and cause; Finish refuses while a squawk is undispositioned | none expected |
 | 8 | **Photos & documents** | ⬜ | Photo upload with the Small/Medium/Large picker, thumbnails, metadata fields, gated originals (#036); PDF upload with page count and the pdf.js viewer (#037); attachments on events, squawks, and assets; **official asset documents** (title, registration, insurance) with renewal history; Documents tab | Take a Large damage photo and a Small meter photo on the phone; open a PDF on web and desktop | `image` (+ HEIC support), pdf.js (bundled asset) |
 | 9 | **Asset lifecycle** | ⬜ | Acquisition and disposal records with attachments; status changes; send-out / return tracking; archive instead of delete; aircraft-ready groundwork that isn't already in place (reference documents, one-time and recurring requirements). **Also, before the `v0.2.0` release: show each person only what they may use** (raised 2026-11-02; see below) | Send a vehicle out for service and return it; archive one and find it again; as Sam, no Users, Groups, or household settings anywhere | none expected |
@@ -692,3 +692,57 @@
   - **Part 2** (6k), 2026-11-03: all 23 steps, with 8b and 13a on the build with the back links and the phone's Loading page.
   - **Asked for by the human during the runs, and built:** custom fields shown on and required for kinds of events like meters; duration fields typed as digits with the `:` put in (the decimal pad had no `:`, a bug); an event's back link to its tab; the Loading page centred on phones without scrolling. Idea 20 (a separate test server) recorded for later.
   - **Found by the checks before the human saw them:** an edit moving an event's time to the minute (round-trip test); the Fuel tab keeping the Timeline's filter (browser check); the test plan racing test timers (reordered before the run).
+
+### Between milestones 6 and 7: a test server (idea 20, decision #062)
+
+*Asked for by the human on 2026-11-03, after milestone 6 merged: "the app is getting close to being actually usable". Its own branch (`milestone/p2-test-server`) and PR, before milestone 7.*
+
+**Reviewed against:** plan §7 (deployment), decisions #025, #026, #054, #059; `docs/deploying-nas.md`; the image workflows; idea 20. No sub-plan touches it.
+
+**The human's choices:**
+- main runs `:dev`, built without test timers;
+- today's install becomes the test server, and main starts fresh;
+- the test server keeps its own data, with an optional copy of main's newest snapshot.
+
+**What changes:** see #062. Also, **migrations freeze once merged into `dev`.**
+
+| Step | Status | Commit | What | New dependencies |
+|---|---|---|---|---|
+| T1 | ☑️ | `docs: a test server beside the main server` | This plan, decision #062, the migration rule (AGENTS.md), idea 20 closed, milestone 6 ✅ | none |
+| T2 | ☑️ | `feat: a server instance name for the test server` | `VEHICLEMANAGER_INSTANCE`: the session cookie's name, the name in the session check, the **TEST SERVER** tag (top bar, sign-in card) and "(test)" in the tab's title; tests | none |
+| T3 | ☑️ | `ci: dev images without test timers` | `dev` builds with `test-timers: false`, milestone branches keep it; `compose.yaml` takes the Project and container name from `.env` and passes `VEHICLEMANAGER_INSTANCE`; `.env.example` | none |
+| T4 | ☑️ | `docs: two servers on the NAS` | `deploying-nas.md`: two servers, the switch-over runbook, copying main into test; `docs/test-plans/p2-test-server.md` | none |
+
+**Written so far**
+- **T1:** decision #062; AGENTS.md's migration rule; idea 20 closed. **The migration files' own headers still say "may change until v0.2.0" and must stay as they are:** sqlx checksums each applied migration, comments included, so editing even a comment would make every existing database refuse to open. New migrations get the new header instead (below).
+- **T2:** no new dependency.
+  - **The name:** `domain::identity::InstanceName`, 1–16 lowercase letters and digits. An empty setting is the main server; an invalid one is ignored with a warning, and the server runs as main.
+  - **Startup:** `VEHICLEMANAGER_INSTANCE` is read before the router is built (`server::startup::set_instance`), and a named server says so in its log ("this is a second server, not the household's main one").
+  - **The cookie:** `domain::identity::session_cookie_name`: `vehiclemanager_session` on main, `vehiclemanager_test_session` on test. Both the auth layer and sign-in use it, through `server::auth::session_cookie_name`.
+  - **The app learns the name from the session check** (`SessionState::instance`), which works before sign-in and runs on every navigation. That's simpler than the handshake the plan named, which only Diagnostics calls.
+  - **The tag:** "TEST SERVER" in the top bar and on the sign-in, setup, and password cards; just "TEST" in a phone's top bar, where the full tag pushed the account chip off the screen. The browser tab's title is "test server". A main server shows nothing.
+  - 2 messages, 1 new test (names and their cookies).
+  - **Checked in a real browser:** a main server on 127.0.0.1:8412 and a `test` one on :8413, set up and signed in to in one Chrome profile. Each kept its own sign-in (mainadmin and testadmin, cookies `vehiclemanager_session` and `vehiclemanager_test_session` on the same host); only the test one showed the tag and the title; the phone top bar fits.
+- **T3:** no new dependency.
+  - **`dev-image.yml`** has two jobs:
+    - `publish-dev` (only on `dev`) builds **without** test timers, the main server's image;
+    - `publish-milestone` (only on milestone branches) builds **with** them, the test server's.
+    - Tags are unchanged.
+  - **`compose.yaml`** takes the Project and container name from `VEHICLEMANAGER_PROJECT_NAME` (default `vehiclemanager`; `vehiclemanager-test` for the test server) and passes `VEHICLEMANAGER_INSTANCE` (empty by default).
+  - **`.env.example`** lists both and says which values each server uses (ports 8410 and 8411; `dev` or a milestone image).
+  - **Tests:** `deploy_config` checks that only the milestone job builds in test timers, the names come from `.env` with the app ID as the default, and the instance name is passed, empty. A server test pins `VEHICLEMANAGER_INSTANCE`.
+  - Both YAML files parse. Compose isn't installed on the Mac, so the T4 runbook starts with `sudo docker compose config` on the NAS, which checks the interpolation for real.
+- **T4:**
+  - **`docs/deploying-nas.md`:**
+    - the two servers at a glance (Project, folder, port, address, image, `.env`), and the image tags and test timers sections updated;
+    - **"Splitting into a main server and a test server"**, a 10-step runbook. Part A moves today's install to `vehicle_manager_test` (Compose down, the old Project's entry removed, the folder moved, the new `compose.yaml`, `.env`, a `docker compose config` check, the new Project, and Tailscale on 8443, or 8444 if the app was already on 8443). Part B sets up the new main (the folder, `.env`, the Project, its first Admin), then moves main to `:dev` once this merges;
+    - **"Copying the main server's data into the test server"** (main's newest snapshot in; the test server's own set aside, and how to go back; it keeps main's database ID);
+    - two troubleshooting entries (being signed out of one server by the other, and a TEST SERVER tag on main).
+  - **`docs/test-plans/p2-test-server.md`**, 12 steps:
+    - Tailscale and the two containers;
+    - signed in to both at once, in one browser and on a phone;
+    - data kept apart, and test timers only on test;
+    - copying main into test;
+    - main on `:dev` after the merge, ignoring test timers;
+    - the secrets check.
+- **The switch-over on the NAS** (runbook Parts A and B) was done by the human on 2026-11-03: both servers are running, main empty with a new Admin, the test server with the old data.

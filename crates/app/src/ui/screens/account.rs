@@ -96,7 +96,10 @@ pub(crate) fn FormError(message: Option<String>) -> Element {
 fn AuthCard(children: Element) -> Element {
     rsx! {
         div { class: "auth-page",
-            div { class: "auth-card", {children} }
+            div { class: "auth-card",
+                crate::ui::auth::InstanceTag {}
+                {children}
+            }
         }
     }
 }

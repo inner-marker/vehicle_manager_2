@@ -46,7 +46,7 @@ The workspace has four crates. **Dependencies flow one way:** `domain` ← `stor
 | Sync commands and upcasters | `domain` | The **only** way data is changed |
 | HLC | `domain` | |
 | Row structs, `TryFrom` row ↔ domain, queries, snapshots | `storage` | The **only** place unit conversion and rounding happen |
-| Migrations | `storage` (`migrations/`) | Numbered, forward-only, **never edit a released migration** |
+| Migrations | `storage` (`migrations/`) | Numbered, forward-only. **Never edit a migration once it's merged into `dev`, not even a comment** (the main server runs `dev`, decision #062; sqlx checksums each applied file, so any edit makes existing databases refuse to open); one on a milestone branch may change until its PR merges |
 | Sync engine, auth/permission enforcement, integrity checks, admin ops | `server` (library) | Used by the NAS server and (later) desktop host mode |
 | UI components | `app` | Never touches the database directly; never contains business rules |
 | Server functions | `app` (server feature) | Thin: authenticate, call into `server`/`domain`, respond |
@@ -159,7 +159,7 @@ Add **useful `tracing` messages** at debug level in new code paths (never loggin
 
 - **One focused task per change.** Don't refactor, rename, or reformat unrelated code.
 - **No new dependencies without approval.** Propose them in your plan with a reason.
-- Don't modify generated code, released migrations, or `Cargo.lock` by hand.
+- Don't modify generated code, migrations merged into `dev`, or `Cargo.lock` by hand.
 - Keep commits small, with clear messages describing *why*.
 
 ## 8a. Branches, commits, and pull requests

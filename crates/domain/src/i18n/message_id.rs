@@ -1561,4 +1561,8 @@ define_messages! {
     PANEL_READING_WHEN => "panel-reading-when",
     /// Overview: a meter with no readings.
     PANEL_NO_READINGS => "panel-no-readings",
+    /// The tag on a server that isn't the household's main one, e.g. "test server".
+    INSTANCE_TAG => "instance-tag",
+    /// The instance tag's tooltip.
+    INSTANCE_TAG_NOTE => "instance-tag-note",
 }

@@ -83,10 +83,21 @@ fn compose_passes_the_test_timers_setting_empty_by_default() {
 }
 
 #[test]
-fn only_the_dev_image_workflow_builds_in_test_timers() {
+fn only_milestone_images_build_in_test_timers() {
+    // `dev` is the main server's image (decision #062): its job builds without them.
+    let job = |name: &str| -> &str {
+        let start = DEV_IMAGE_WORKFLOW
+            .find(&format!("  {name}:\n"))
+            .unwrap_or_else(|| panic!("no {name} job"));
+        let rest = &DEV_IMAGE_WORKFLOW[start + name.len() + 4..];
+        rest.find("\n  publish-").map_or(rest, |end| &rest[..end])
+    };
+    let dev = job("publish-dev");
+    assert!(dev.contains("if: github.ref_name == 'dev'") && dev.contains("test-timers: false"));
+    let milestone = job("publish-milestone");
     assert!(
-        DEV_IMAGE_WORKFLOW.contains("test-timers: true"),
-        "dev and milestone images build in test timers"
+        milestone.contains("if: github.ref_name != 'dev'")
+            && milestone.contains("test-timers: true")
     );
     for (name, workflow) in [
         ("release", RELEASE_WORKFLOW),
@@ -131,17 +142,41 @@ fn compose_publishes_the_port_on_loopback_only() {
 }
 
 #[test]
-fn compose_project_and_container_are_named_after_the_app_id() {
+fn compose_project_and_container_are_named_from_env_after_the_app_id() {
     // The project name must match the Container Manager Project (docs/deploying-nas.md),
     // so `docker compose` over SSH updates that Project's container instead of clashing
-    // with it.
+    // with it. The main server is the app ID; the test server sets its own (#062).
+    let project = env_var_name("PROJECT_NAME");
+    let named = format!("${{{project}:-{APP_ID}}}");
     assert!(
-        COMPOSE.contains(&format!("\nname: {APP_ID}\n")),
-        "compose.yaml must set the project name to {APP_ID}"
+        COMPOSE.contains(&format!("\nname: {named}\n")),
+        "compose.yaml must set the project name to {named}"
     );
     assert!(
-        COMPOSE.contains(&format!("container_name: {APP_ID}\n")),
-        "compose.yaml must name the container {APP_ID}"
+        COMPOSE.contains(&format!("container_name: {named}\n")),
+        "compose.yaml must name the container {named}"
+    );
+    assert!(
+        ENV_EXAMPLE
+            .lines()
+            .any(|line| line == format!("{project}={APP_ID}")),
+        ".env.example must list {project}={APP_ID}"
+    );
+}
+
+#[test]
+fn compose_passes_the_instance_name_empty_by_default() {
+    // server::startup::INSTANCE_ENV_NAME (decision #062); empty is the main server.
+    let instance = env_var_name("INSTANCE");
+    assert!(
+        COMPOSE.contains(&format!("{instance}: ${{{instance}:-}}")),
+        "compose.yaml must pass {instance}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE
+            .lines()
+            .any(|line| line == format!("{instance}=")),
+        ".env.example must list {instance}, empty"
     );
 }
 
