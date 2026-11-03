@@ -745,3 +745,4 @@
     - copying main into test;
     - main on `:dev` after the merge, ignoring test timers;
     - the secrets check.
+- **The switch-over on the NAS** (runbook Parts A and B) was done by the human on 2026-11-03: both servers are running, main empty with a new Admin, the test server with the old data.
