@@ -1808,6 +1808,13 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
 - **Phase 5: Maintenance intelligence.** **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 - **Phase 6: Polish.** Import/export, pairing flow, reports, **multi-page document capture in the web UI**, and **standalone mode** (single device, no server, local backups, upgrade path to a server).
+- **Phase 7: Security.** Full audit and hardening (as required) of all components. Ensure industry standards and best practices are followed for authentication, authorization, data storage, and network communication. Penetration testing and code review for security vulnerabilities.
+
+Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are post-MVP, and will be v1.1.0, 1.2.0, etc.
+
+### Post-MVP (Post v1.0.0) ideas
+
+- **Post-MVP: Public APIs** NHTSA’s vPIC (Product Information Catalog and Vehicle Listing), NHTSA recalls: `recallsByVehicle`
 - **Post-MVP: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of **voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
 - **Post-MVP: Offsite backups.** Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
