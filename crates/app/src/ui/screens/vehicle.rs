@@ -17,6 +17,7 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
+use super::attachments::AttachmentStrip;
 use super::maintenance::{MaintenanceTab, MaintenanceView};
 use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawks};
 use super::timeline::{OverviewPanels, Shown, Timeline};
@@ -29,6 +30,7 @@ use crate::ui::routes::Route;
 use crate::ui::screens::problem_from_error;
 use crate::ui::vehicles::{group_icon, use_vehicles};
 use crate::ui::{tr, tr_with};
+use domain::attachment::{AttachmentOwner, PhotoSize};
 
 /// The page's state, in context for the Setup sections.
 #[derive(Debug, Clone, Copy)]
@@ -441,6 +443,14 @@ fn Overview(
             SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
             Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
             Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
+            section { class: "vehicle-panel vehicle-photos",
+                AttachmentStrip {
+                    asset: view.id,
+                    owner: AttachmentOwner::Vehicle,
+                    heading: messages::ATTACHMENT_PHOTOS,
+                    default_size: PhotoSize::Medium,
+                }
+            }
             OverviewPanels { view, on_timeline }
         }
     }

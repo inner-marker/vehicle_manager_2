@@ -2062,4 +2062,74 @@ define_messages! {
     INBOX_FILE_CHECK_FAILED => "inbox-file-check-failed",
     /// Messages: the file check's text.
     INBOX_FILE_CHECK_BODY => "inbox-file-check-body",
+    /// Attachments: a squawk's, a vehicle's, or a fuel-up's heading.
+    ATTACHMENT_PHOTOS => "attachment-photos",
+    /// Attachments: a task's heading.
+    ATTACHMENT_TASK_PHOTOS => "attachment-task-photos",
+    /// Attachments: a job's own heading.
+    ATTACHMENT_JOB_PHOTOS => "attachment-job-photos",
+    /// Attachments: the tile that adds one.
+    ATTACHMENT_ADD => "attachment-add",
+    /// Attachments: a PDF tile's page count; takes `count`.
+    ATTACHMENT_PDF_PAGES => "attachment-pdf-pages",
+    /// Attachments: the add sheet's title.
+    ATTACHMENT_ADD_PHOTO => "attachment-add-photo",
+    /// Attachments: take one with the camera.
+    ATTACHMENT_TAKE_PHOTO => "attachment-take-photo",
+    /// Attachments: under Take photo.
+    ATTACHMENT_TAKE_PHOTO_HINT => "attachment-take-photo-hint",
+    /// Attachments: choose existing ones.
+    ATTACHMENT_CHOOSE_PHOTOS => "attachment-choose-photos",
+    /// Attachments: under Choose photos.
+    ATTACHMENT_CHOOSE_PHOTOS_HINT => "attachment-choose-photos-hint",
+    /// Attachments: the size picker's heading, and a photo's size.
+    ATTACHMENT_SIZE => "attachment-size",
+    /// Photo size: about how big Small is.
+    PHOTO_SIZE_SMALL_HINT => "photo-size-small-hint",
+    /// Photo size: about how big Medium is.
+    PHOTO_SIZE_MEDIUM_HINT => "photo-size-medium-hint",
+    /// Photo size: about how big Large is.
+    PHOTO_SIZE_LARGE_HINT => "photo-size-large-hint",
+    /// Attachments: keep the file as taken (#036).
+    ATTACHMENT_KEEP_ORIGINAL => "attachment-keep-original",
+    /// Attachments: adding several; takes `at` and `count`.
+    ATTACHMENT_ADDING => "attachment-adding",
+    /// Attachments: one that wasn't added; takes `name` and `problem`.
+    ATTACHMENT_FAILED => "attachment-failed",
+    /// Attachments: closes the sheet after a problem.
+    ATTACHMENT_DONE => "attachment-done",
+    /// Attachments: leaves the viewer.
+    ATTACHMENT_BACK => "attachment-back",
+    /// Attachments: which one in the viewer; takes `at` and `count`.
+    ATTACHMENT_POSITION => "attachment-position",
+    /// Attachments: the previous one.
+    ATTACHMENT_PREVIOUS => "attachment-previous",
+    /// Attachments: the next one.
+    ATTACHMENT_NEXT => "attachment-next",
+    /// Attachments: a PDF in the viewer before the PDF viewer.
+    ATTACHMENT_PDF_LATER => "attachment-pdf-later",
+    /// Attachments: when a photo was taken.
+    ATTACHMENT_TAKEN => "attachment-taken",
+    /// Attachments: where a photo was taken.
+    ATTACHMENT_WHERE => "attachment-where",
+    /// Attachments: the camera.
+    ATTACHMENT_CAMERA => "attachment-camera",
+    /// Attachments: who added it and when.
+    ATTACHMENT_ADDED => "attachment-added",
+    /// Attachments: takes `name` and `date`.
+    ATTACHMENT_ADDED_BY => "attachment-added-by",
+    /// Attachments: save the file.
+    ATTACHMENT_DOWNLOAD => "attachment-download",
+    /// Attachments: save the original as taken.
+    ATTACHMENT_ORIGINAL => "attachment-original",
+    /// Attachments: where a download went (desktop); takes `path`.
+    ATTACHMENT_SAVED_TO => "attachment-saved-to",
+    /// Attachments: the remove dialog's title.
+    ATTACHMENT_REMOVE_TITLE => "attachment-remove-title",
+    /// Attachments: the remove dialog's text.
+    ATTACHMENT_REMOVE_TEXT => "attachment-remove-text",
+    /// Attachments: on a new job, before it's saved.
+    ATTACHMENT_SAVE_FIRST => "attachment-save-first",
+    /// Attachments: tasks were removed since the last save.
+    ATTACHMENT_SAVE_TO_SEE => "attachment-save-to-see",
 }

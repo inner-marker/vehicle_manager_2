@@ -3612,3 +3612,244 @@ a.squawk-history-job {
         display: none;
     }
 }
+
+/* ---------- Photos (p2m8-photos-options.svg, option A) ---------- */
+
+.attachment-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.attachment-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.attachment-tile,
+.attachment-add {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    cursor: pointer;
+}
+
+.attachment-tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-tile-pdf {
+    background: #e9e4d8;
+}
+
+.attachment-tile-badge {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #b3261e;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.attachment-add {
+    border: 1.5px dashed var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 700;
+}
+
+/* The vehicle's photos panel shows only when the strip does (an Admin, or photos to see). */
+.vehicle-photos:not(:has(.attachment-strip)) {
+    display: none;
+}
+
+.attachment-sheet .sheet-choice {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+/* The file input covers its row, invisible, so tapping anywhere opens the picker. */
+.attachment-sheet .sheet-choice input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.sheet-choice-label {
+    font-weight: 700;
+}
+
+.sheet-choice-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.photo-sizes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.photo-size {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.photo-size-on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.photo-size-name {
+    font-weight: 800;
+}
+
+.photo-size-hint {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.photo-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 24px;
+    overflow-y: auto;
+    background: #05070a;
+    color: #e8eaed;
+    outline: none;
+}
+
+body:has(.photo-viewer) {
+    overflow: hidden;
+}
+
+.photo-viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.photo-viewer-body {
+    display: grid;
+    grid-template-columns: 1fr minmax(220px, 300px);
+    gap: 24px;
+    align-items: start;
+}
+
+.photo-viewer-image {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.photo-viewer-image img {
+    max-width: 100%;
+    max-height: calc(100dvh - 120px);
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.photo-viewer-step {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 22px;
+    background: rgb(0 0 0 / 55%);
+    color: #ffffff;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+
+.photo-viewer-previous {
+    left: 8px;
+}
+
+.photo-viewer-next {
+    right: 8px;
+}
+
+.photo-viewer-name {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+    overflow-wrap: anywhere;
+}
+
+.photo-viewer-details dl {
+    margin: 0 0 12px;
+}
+
+.photo-viewer-details dt {
+    margin-top: 10px;
+    color: #9aa1ab;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.photo-viewer-details dd {
+    margin: 2px 0 0;
+}
+
+/* The remove dialog sits over the viewer. */
+.dialog-scrim.viewer-dialog {
+    z-index: 50;
+}
+
+@media (max-width: 639px) {
+    .photo-viewer {
+        padding: 12px;
+    }
+
+    .photo-viewer-body {
+        grid-template-columns: 1fr;
+    }
+
+    .attachment-tile,
+    .attachment-add {
+        width: 72px;
+        height: 72px;
+    }
+}
+

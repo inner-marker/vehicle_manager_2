@@ -23,6 +23,7 @@ pub(crate) mod idle;
 pub(crate) mod inbox;
 pub(crate) mod location;
 pub(crate) mod nav;
+pub(crate) mod photos;
 pub(crate) mod routes;
 mod screens;
 mod shell;

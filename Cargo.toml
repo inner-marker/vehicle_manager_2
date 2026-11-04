@@ -57,6 +57,9 @@ serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
 # Photos: JPEG and PNG only, pure Rust (phase-2.md 8d, #036; approved 2026-11-04).
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }
+# Photo metadata (time, GPS, camera) read in the app before resizing (phase-2.md 8e, #036;
+# approved 2026-11-04). Pure Rust, so it works in the browser too.
+kamadak-exif = "0.6.1"
 # PDFs: checked and their pages counted (phase-2.md 8d, #037; approved 2026-11-04).
 lopdf = { version = "0.47.0", default-features = false }
 tower = { version = "0.5.3", default-features = false }
