@@ -3768,13 +3768,15 @@ body:has(.photo-viewer) {
 
 .photo-viewer-body {
     display: grid;
-    grid-template-columns: 1fr minmax(220px, 300px);
+    /* minmax(0, …): a zoomed PDF scrolls inside its column rather than widening it. */
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
     gap: 24px;
     align-items: start;
 }
 
 .photo-viewer-image {
     position: relative;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3832,6 +3834,95 @@ body:has(.photo-viewer) {
     margin: 2px 0 0;
 }
 
+/* ---------- PDFs (p2m8-pdf-viewer-options.svg, option A; pages drawn by pdf.js) ---------- */
+
+.pdf-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 16px;
+}
+
+.pdf-tools .secondary-button {
+    min-width: 36px;
+    padding: 6px 10px;
+}
+
+.photo-viewer-image:has(.pdf-pages) {
+    align-items: stretch;
+}
+
+.pdf-pages {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    /* Centred by the pages' own margins, so a zoomed page still scrolls to its left edge. */
+    align-items: flex-start;
+    gap: 12px;
+    height: calc(100dvh - 110px);
+    overflow: auto;
+    padding: 4px 16px 24px;
+}
+
+.pdf-page {
+    position: relative;
+    flex-shrink: 0;
+    margin: 0 auto;
+    background: #ffffff;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 50%);
+}
+
+.pdf-page canvas {
+    display: block;
+}
+
+/* pdf.js's text layer: the page's text, invisible, over the drawing, so it can be selected
+   (the rules pdf.js's own viewer uses for it, pdf_viewer.css, Apache-2.0). */
+.pdf-page .textLayer {
+    position: absolute;
+    inset: 0;
+    overflow: clip;
+    line-height: 1;
+    text-align: initial;
+    transform-origin: 0 0;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    forced-color-adjust: none;
+    --min-font-size: 1;
+    --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+    --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-page .textLayer :is(span, br) {
+    position: absolute;
+    color: transparent;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    user-select: text;
+}
+
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+    z-index: 1;
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-page .textLayer .markedContent {
+    display: contents;
+}
+
+.pdf-page .textLayer ::selection {
+    background: rgb(90 169 255 / 35%);
+    color: transparent;
+}
+
 /* The remove dialog sits over the viewer. */
 .dialog-scrim.viewer-dialog {
     z-index: 50;
@@ -3843,13 +3934,22 @@ body:has(.photo-viewer) {
     }
 
     .photo-viewer-body {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .attachment-tile,
     .attachment-add {
         width: 72px;
         height: 72px;
+    }
+
+    .pdf-tools {
+        margin-right: 8px;
+    }
+
+    .pdf-pages {
+        height: calc(100dvh - 160px);
+        padding: 4px 0 16px;
     }
 }
 

@@ -447,7 +447,7 @@ fn Overview(
                 AttachmentStrip {
                     asset: view.id,
                     owner: AttachmentOwner::Vehicle,
-                    heading: messages::ATTACHMENT_PHOTOS,
+                    heading: messages::ATTACHMENT_JOB_PHOTOS,
                     default_size: PhotoSize::Medium,
                 }
             }

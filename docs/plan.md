@@ -386,6 +386,8 @@ The core abstraction is a single **event** type covering everything that happens
   - **Documents:** **multi-page PDFs,** e.g. recall paperwork, dealer invoices, receipts, warranty documents.
 - **Documents open in a document viewer** (scroll or swipe through pages, zoom), not as a stack of separate images.
   - **Every platform:** the bundled **pdf.js** viewer, plus Download / Open in system viewer (`docs/decisions.md` #037).
+  - **Phase 2 (milestone 8f):** the app's own viewer, drawn with pdf.js's core library (the human's pick, `docs/ui-sketches/p2m8-pdf-viewer-options.svg` option A, 2026-11-04): pages one under another, zoom (− / Fit width / +), "Page 2 of 12", text that can be selected, Download.
+  - **Post-MVP (the human, 2026-11-04):** **search** (pdf.js's own find, or the app's over each page's text), a **page-thumbnail sidebar** (drawn small as you scroll; a strip or page grid on a phone), and other viewer extras (e.g. printing, rotating). They build on the same core, so nothing in 8f needs to change.
   - **Limit:** 50 MB per PDF, no page limit; the server checks the type and records the page count (#037).
   - Mobile apps (post-MVP): the same pdf.js viewer.
 - Lists show a **thumbnail of the first page** and the page count.
@@ -1889,6 +1891,8 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 - **Post-MVP (later): Logbook label and other page formats.**
 - **Post-MVP (after reports): Vehicle transfer to the next owner.** 
   - Importable vehicle package for another server running the app.
+- **Post-MVP: PDF viewer extras** (the human, 2026-11-04).
+  - Search, a page-thumbnail sidebar, printing and rotating, on the milestone 8 viewer (see §3 Attachments).
 - **Post-MVP: Event map.** 
   - Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
 - **Post-MVP: Alternative hosting.** 

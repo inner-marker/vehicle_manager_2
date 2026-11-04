@@ -1287,7 +1287,7 @@ attachment-task-photos = Photos & receipts
 attachment-job-photos = Photos & documents
 attachment-add = + Add
 attachment-pdf-pages = { $count } p
-attachment-add-photo = Add a photo
+attachment-add-photo = Add a photo or PDF
 attachment-take-photo = Take photo
 attachment-take-photo-hint = with the camera
 attachment-choose-photos = Choose photos
@@ -1304,7 +1304,6 @@ attachment-back = ‹ Back
 attachment-position = { $at } of { $count }
 attachment-previous = Previous
 attachment-next = Next
-attachment-pdf-later = Use Download to open this PDF.
 attachment-taken = Taken
 attachment-where = Where
 attachment-camera = Camera
@@ -1317,3 +1316,13 @@ attachment-remove-title = Remove this file?
 attachment-remove-text = It's taken off here for everyone.
 attachment-save-first = Save the draft to add photos and documents.
 attachment-save-to-see = Save the draft to see each task's photos again.
+
+## PDFs in the app (milestone 8, step 8f)
+
+attachment-choose-pdf = Choose a PDF
+attachment-choose-pdf-hint = up to 50 MB
+attachment-pdf-cant-show = This PDF can't be shown here. Use Download to open it.
+pdf-zoom-out = Zoom out
+pdf-zoom-in = Zoom in
+pdf-fit-width = Fit width
+pdf-page-of = Page { $page } of { $pages }

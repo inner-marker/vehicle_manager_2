@@ -2072,7 +2072,7 @@ define_messages! {
     ATTACHMENT_ADD => "attachment-add",
     /// Attachments: a PDF tile's page count; takes `count`.
     ATTACHMENT_PDF_PAGES => "attachment-pdf-pages",
-    /// Attachments: the add sheet's title.
+    /// Attachments: the add sheet's title (photos and PDFs).
     ATTACHMENT_ADD_PHOTO => "attachment-add-photo",
     /// Attachments: take one with the camera.
     ATTACHMENT_TAKE_PHOTO => "attachment-take-photo",
@@ -2106,8 +2106,6 @@ define_messages! {
     ATTACHMENT_PREVIOUS => "attachment-previous",
     /// Attachments: the next one.
     ATTACHMENT_NEXT => "attachment-next",
-    /// Attachments: a PDF in the viewer before the PDF viewer.
-    ATTACHMENT_PDF_LATER => "attachment-pdf-later",
     /// Attachments: when a photo was taken.
     ATTACHMENT_TAKEN => "attachment-taken",
     /// Attachments: where a photo was taken.
@@ -2132,4 +2130,18 @@ define_messages! {
     ATTACHMENT_SAVE_FIRST => "attachment-save-first",
     /// Attachments: tasks were removed since the last save.
     ATTACHMENT_SAVE_TO_SEE => "attachment-save-to-see",
+    /// Attachments: choose a PDF.
+    ATTACHMENT_CHOOSE_PDF => "attachment-choose-pdf",
+    /// Attachments: under Choose a PDF.
+    ATTACHMENT_CHOOSE_PDF_HINT => "attachment-choose-pdf-hint",
+    /// Attachments: a PDF the viewer couldn't open.
+    ATTACHMENT_PDF_CANT_SHOW => "attachment-pdf-cant-show",
+    /// PDF viewer: smaller.
+    PDF_ZOOM_OUT => "pdf-zoom-out",
+    /// PDF viewer: bigger.
+    PDF_ZOOM_IN => "pdf-zoom-in",
+    /// PDF viewer: the page as wide as the viewer.
+    PDF_FIT_WIDTH => "pdf-fit-width",
+    /// PDF viewer: the page in view; takes `page` and `pages`.
+    PDF_PAGE_OF => "pdf-page-of",
 }

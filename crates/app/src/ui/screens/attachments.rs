@@ -18,8 +18,11 @@ use domain::api::{
 };
 use domain::asset::AssetId;
 use domain::attachment::{
-    AttachmentId, AttachmentOwner, Content, FileName, FileType, Original, PhotoSize,
+    AttachmentId, AttachmentOwner, Content, FileName, FileType, Original, PDF_MAX_BYTES, PhotoSize,
 };
+
+/// [`ZOOMS`]'s "fit the width" step.
+const FIT_WIDTH: usize = 2;
 use domain::dates::{format_date, format_time};
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::log_area;
@@ -29,6 +32,7 @@ use super::squawks::use_device_zone;
 use crate::api;
 use crate::files;
 use crate::ui::location::place_text;
+use crate::ui::pdfs::{PdfPages, PdfState, ZOOMS, first_page_thumbnail};
 use crate::ui::photos::{read_metadata, shrink};
 use crate::ui::units::use_units;
 use crate::ui::{tr, tr_with};
@@ -324,6 +328,54 @@ async fn add_photo(
     }
 }
 
+/// Everything about adding one PDF: upload it (the server checks it and counts its pages),
+/// draw and upload its first page as the thumbnail, then add it to `owner`.
+async fn add_pdf(
+    asset: AssetId,
+    owner: AttachmentOwner,
+    file: dioxus::html::FileData,
+) -> Result<(), MessageId> {
+    let name = FileName::from_upload(&file.name())
+        .map_err(domain::attachment::AttachmentProblem::message)?;
+    // Refused here before sending 60 MB for the server to refuse.
+    if file.size() > PDF_MAX_BYTES {
+        return Err(messages::ATTACHMENT_PDF_TOO_LARGE);
+    }
+    let bytes = file
+        .read_bytes()
+        .await
+        .map_err(|_| messages::ATTACHMENT_UNREADABLE)?
+        .to_vec();
+    let thumbnail = first_page_thumbnail(&bytes).await;
+    let uploaded = send(UploadPurpose::Document, bytes).await?;
+    let thumbnail = match thumbnail {
+        // A thumbnail that doesn't upload isn't worth losing the PDF over: it shows a page tile.
+        Some(jpeg) => send(UploadPurpose::DocumentThumbnail, jpeg)
+            .await
+            .ok()
+            .map(|uploaded| uploaded.file),
+        None => None,
+    };
+    let input = AttachmentInput {
+        asset,
+        owner,
+        name,
+        file: uploaded.file,
+        thumbnail,
+        content: Content::Document {
+            pages: uploaded.pages.unwrap_or(1),
+        },
+    };
+    match api::add_attachment(input).await {
+        Ok(AttachmentsOutcome::Saved { id }) => {
+            tracing::debug!(target: log_area::UI, attachment = %id, "PDF added");
+            Ok(())
+        }
+        Ok(other) => Err(refusal(&other)),
+        Err(error) => Err(problem_from_error(&error).message()),
+    }
+}
+
 /// How big each size is, for the picker.
 const fn size_hint(size: PhotoSize) -> MessageId {
     match size {
@@ -351,7 +403,7 @@ fn AddSheet(
     let mut progress = use_signal(|| None::<(usize, usize)>);
     let mut problems = use_signal(Vec::<String>::new);
     let busy = progress().is_some();
-    let mut chosen = move |files: Vec<dioxus::html::FileData>| {
+    let mut chosen = move |files: Vec<dioxus::html::FileData>, pdf: bool| {
         if files.is_empty() {
             return;
         }
@@ -362,7 +414,12 @@ fn AddSheet(
             for (index, file) in files.into_iter().enumerate() {
                 progress.set(Some((index + 1, count)));
                 let name = file.name();
-                if let Err(problem) = add_photo(asset, owner, file, size(), keep_original()).await {
+                let added = if pdf {
+                    add_pdf(asset, owner, file).await
+                } else {
+                    add_photo(asset, owner, file, size(), keep_original()).await
+                };
+                if let Err(problem) = added {
                     failed.push(tr_with(
                         messages::ATTACHMENT_FAILED,
                         &[
@@ -394,7 +451,7 @@ fn AddSheet(
                         accept: "image/*",
                         capture: "environment",
                         disabled: busy,
-                        onchange: move |event| chosen(event.files()),
+                        onchange: move |event| chosen(event.files(), false),
                     }
                     span { class: "sheet-choice-label", {tr(messages::ATTACHMENT_TAKE_PHOTO)} }
                     span { class: "sheet-choice-hint", {tr(messages::ATTACHMENT_TAKE_PHOTO_HINT)} }
@@ -405,10 +462,21 @@ fn AddSheet(
                         accept: "image/*",
                         multiple: true,
                         disabled: busy,
-                        onchange: move |event| chosen(event.files()),
+                        onchange: move |event| chosen(event.files(), false),
                     }
                     span { class: "sheet-choice-label", {tr(messages::ATTACHMENT_CHOOSE_PHOTOS)} }
                     span { class: "sheet-choice-hint", {tr(messages::ATTACHMENT_CHOOSE_PHOTOS_HINT)} }
+                }
+                label { class: "sheet-choice",
+                    input {
+                        r#type: "file",
+                        accept: "application/pdf,.pdf",
+                        multiple: true,
+                        disabled: busy,
+                        onchange: move |event| chosen(event.files(), true),
+                    }
+                    span { class: "sheet-choice-label", {tr(messages::ATTACHMENT_CHOOSE_PDF)} }
+                    span { class: "sheet-choice-hint", {tr(messages::ATTACHMENT_CHOOSE_PDF_HINT)} }
                 }
                 h3 { class: "section-heading", {tr(messages::ATTACHMENT_SIZE).to_uppercase()} }
                 div { class: "photo-sizes", role: "radiogroup",
@@ -530,6 +598,8 @@ fn Viewer(
     let mut note = use_signal(|| None::<String>);
     let mut url = use_signal(|| None::<String>);
     let mut place = use_signal(|| None::<String>);
+    let mut zoom = use_signal(|| FIT_WIDTH);
+    let mut pdf_state = use_signal(PdfState::default);
     let count = attachments.len();
     let Some(view) = attachments.get(index).cloned() else {
         return rsx! {};
@@ -551,11 +621,14 @@ fn Viewer(
         ),
         Content::Document { .. } => (FileType::Pdf.mime(), None, None, None, false),
     };
+    let is_pdf = mime == FileType::Pdf.mime();
     let coordinates = metadata.as_ref().and_then(|metadata| metadata.coordinates);
     use_effect(use_reactive!(|id, coordinates| {
         url.set(None);
         place.set(None);
         note.set(None);
+        zoom.set(FIT_WIDTH);
+        pdf_state.set(PdfState::default());
         spawn(async move {
             url.set(fetched(id, AttachmentPart::File, mime).await);
         });
@@ -647,11 +720,28 @@ fn Viewer(
             },
             div { class: "photo-viewer-bar",
                 button { class: "link-button", r#type: "button", onclick: move |_| on_close.call(false), {tr(messages::ATTACHMENT_BACK)} }
-                span { class: "muted-note",
-                    {tr_with(messages::ATTACHMENT_POSITION, &[
-                        ("at", MessageArg::from(i64::try_from(index + 1).unwrap_or(i64::MAX))),
-                        ("count", MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX))),
-                    ])}
+                if is_pdf {
+                    div { class: "pdf-tools",
+                        button { class: "secondary-button", r#type: "button", disabled: zoom() == 0, "aria-label": tr(messages::PDF_ZOOM_OUT), onclick: move |_| zoom.set(zoom().saturating_sub(1)), "−" }
+                        button { class: "secondary-button", r#type: "button", onclick: move |_| zoom.set(FIT_WIDTH), {tr(messages::PDF_FIT_WIDTH)} }
+                        button { class: "secondary-button", r#type: "button", disabled: zoom() + 1 >= ZOOMS.len(), "aria-label": tr(messages::PDF_ZOOM_IN), onclick: move |_| zoom.set((zoom() + 1).min(ZOOMS.len() - 1)), "+" }
+                        if pdf_state().pages > 0 {
+                            span { class: "muted-note",
+                                {tr_with(messages::PDF_PAGE_OF, &[
+                                    ("page", MessageArg::from(i64::from(pdf_state().page))),
+                                    ("pages", MessageArg::from(i64::from(pdf_state().pages))),
+                                ])}
+                            }
+                        }
+                    }
+                }
+                if count > 1 {
+                    span { class: "muted-note",
+                        {tr_with(messages::ATTACHMENT_POSITION, &[
+                            ("at", MessageArg::from(i64::try_from(index + 1).unwrap_or(i64::MAX))),
+                            ("count", MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX))),
+                        ])}
+                    }
                 }
             }
             div { class: "photo-viewer-body",
@@ -661,7 +751,16 @@ fn Viewer(
                     }
                     match url() {
                         Some(src) if mime == FileType::Jpeg.mime() => rsx! { img { src: "{src}", alt: "{name}" } },
-                        Some(_) => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_PDF_LATER)} } },
+                        Some(_) if pdf_state().failed => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_PDF_CANT_SHOW)} } },
+                        Some(src) => rsx! {
+                            PdfPages {
+                                key: "{id}",
+                                container: format!("pdf-{id}"),
+                                data: src.split_once(',').map(|(_, data)| data.to_owned()).unwrap_or_default(),
+                                zoom,
+                                state: pdf_state,
+                            }
+                        },
                         None => rsx! { p { class: "muted-note", {tr(messages::LOADING)} } },
                     }
                     if let Some(next) = next {
