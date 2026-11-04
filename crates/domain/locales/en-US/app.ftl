@@ -1248,3 +1248,26 @@ attachment-no-pages = That PDF has no pages.
 attachment-no-such-task = That task isn't on this job any more.
 attachment-bad-hash = That file reference isn't valid.
 attachment-unchangeable = An attachment can only be moved; to change it, remove it and add it again.
+
+## Official documents and license plates (milestone 8)
+
+document-status-current = Current
+document-status-expired = Expired
+document-status-superseded = Superseded
+document-unknown-type = That isn't a document type the app knows.
+document-number-too-long = The number can be up to 60 characters.
+document-issuer-too-long = Who issued it can be up to 100 characters.
+document-expires-before-issued = It expires before it's issued or takes effect. Check the dates.
+document-renews-unknown = The document it renews isn't on this vehicle.
+document-renews-other-type = A renewal must be of the same kind of document.
+document-already-renewed = That document has already been renewed. Renew the newer one.
+document-plate-not-registration = Only a registration is linked to a license plate.
+document-unknown-plate = That license plate isn't on this vehicle.
+plate-number-empty = Enter the plate's number.
+plate-number-too-long = A plate's number can be up to 15 characters.
+plate-needs-authority = Choose who issued the plate: a state or province, a country, or another authority.
+plate-unknown-region = Choose a state or province from the list.
+plate-bad-country = A country is its two-letter code, e.g. DE or MX.
+plate-authority-empty = Enter who issued the plate.
+plate-authority-too-long = Who issued the plate can be up to 60 characters.
+plate-retired-before-issued = The plate stopped being used before it was issued. Check the dates.

@@ -1080,7 +1080,7 @@
 |---|---|---|---|---|
 | 8.0 | ☑️ | `docs: Phase 2 milestone 8 plan` | This plan; decisions #065 (files on disk by SHA-256; closes idea 3) and #066 (license plates); the plan's §4 and §7 follow | none |
 | 8a | ☑️ | `feat(domain): attachments` | Files by SHA-256; attachments (owner, kind, size, page count, name, photo metadata, original); limits, size picker, permissions. Test-first | none |
-| 8b | ⬜ | `feat(domain): official documents and license plates` | Documents with supersession; plates with an authority and dates; renewal updates the plate. Test-first | none |
+| 8b | ☑️ | `feat(domain): official documents and license plates` | Documents with supersession; plates with an authority and dates; renewal updates the plate. Test-first | none |
 | 8c | ⬜ | `feat(storage): files, attachments, documents, and plates` | Migration 0014; the file store; moving existing plate identifiers | none |
 | 8d | ⬜ | `feat(server): uploads, documents, and plates` | Upload and download (checked type, size, dimensions; PDF page count); thumbnails for photos; documents and plates commands; the integrity check covers files | `image` (JPEG and thumbnails), a PDF reader (e.g. `lopdf`) |
 | 8e | ⬜ | `feat(app): photos` | **SVG options first.** Take or pick a photo, the size picker, resizing and metadata in the app; photo strips on events, squawks, tasks, and vehicles | an EXIF reader (e.g. `kamadak-exif`) |
@@ -1101,4 +1101,15 @@
   - **Defaults:** `PhotoSize::default_for` (Small on fuel-ups and readings, Medium on jobs; choice 8); a profile's `photo_sizes` can change one (none do yet), through `Profile::photo_size`.
   - **Permissions:** `AssetAction::KeepOriginals` and `ManageDocuments`, both Maintainer. The household's switch for originals (#036) comes with its column in 8c.
   - 17 messages. 13 new tests: file types from their bytes (an MP4 isn't HEIC); sizes shrink and never enlarge; the defaults per kind of event; hashes; file names; uploads by type and size; originals; the details and task checks; removing a task; a correction's attachments; the files an attachment uses; a round trip and only moving; a profile's photo size.
+- **8b:** no new dependency.
+  - **`dates::CalendarDate`:** a date with no time or zone (`2026-11-30`, 1900–2200), sorting in date order; used for documents' and plates' dates.
+  - **`domain::plate`** (#066): `LicensePlate` (the vehicle, an `Authority`, a `PlateNumber`, issued, expires, and retired dates, notes, who added it and when). `Authority` is a US or Canadian region from `REGIONS` (50 states, DC, 5 territories, 13 provinces and territories), a country by its two-letter code, or another authority by name. Numbers are trimmed and in capitals, up to 15 characters.
+    - **Expires and retired are separate:** a plate *expires* when its registration does, and is *retired* when a new plate replaces it. #066's "from / until dates" are the issued and retired dates.
+    - `current` (the one not retired), `retire_for` (adding a plate retires the current one on the new one's issue date, or today), `check` (a new plate needs an authority; one moved over may wait), `from_identifiers` (splits `plate` identifiers out for 8c's migration; one too long for a plate number stays an identifier).
+  - **`domain::document`:** `AssetDocument` (the vehicle, a `DocumentType`, a number up to 60 characters, an issuer up to 100, issued, effective, and expiry dates, what it renews, a registration's plate, notes, who added it and when). `DocumentType` is a profile key (`document-registration`) or the household's own name.
+    - **Status is worked out, not stored** (the plan's sketch had it stored): superseded if a later document renews it, expired after its expiry day, otherwise current.
+    - `renewal_of` (the same type, number, issuer, and plate, superseding it, dates blank), `plate_follows` (a registration nothing renews sets its plate's expiry), `check` (lengths; expiry not before it's issued or takes effect; a renewal is of the vehicle's own document of the same type, which nothing else renews; only a registration has a plate, the vehicle's own).
+  - **Attachments:** a new owner, `Document`, for a document's scans.
+  - 20 messages. 14 new tests: calendar dates; authorities; plate numbers; the current plate; a new plate retiring the old; authority required on new plates only; plate identifiers moving out; document types; status from renewals and the date; a renewal's starting point; a registration setting its plate's expiry; the document checks; renewing once and of the same type; a round trip.
+  - **Left for 8c:** the profiles' `plate` identifier goes when the migration moves plates into records (until 8h, plates can't be typed in the app).
 

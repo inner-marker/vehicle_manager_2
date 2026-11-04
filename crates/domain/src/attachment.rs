@@ -1,4 +1,5 @@
-//! Attachments: photos and PDFs on a vehicle, an event (or one of its tasks), or a squawk
+//! Attachments: photos and PDFs on a vehicle, an event (or one of its tasks), a squawk, or an
+//! official document
 //! (milestone 8; plan §3 Attachments, Photos from the web UI; decisions #036, #037, #065).
 //!
 //! **Files are stored by their SHA-256** ([`FileHash`]) and never change once written, so the
@@ -29,6 +30,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetId;
 use crate::command::{Record, record_patch};
+use crate::document::AssetDocumentId;
 use crate::event::EventId;
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
@@ -354,6 +356,11 @@ pub enum AttachmentOwner {
         /// Which squawk.
         squawk: SquawkId,
     },
+    /// An official document (its scans).
+    Document {
+        /// Which document.
+        document: AssetDocumentId,
+    },
 }
 
 impl AttachmentOwner {
@@ -362,7 +369,7 @@ impl AttachmentOwner {
     pub const fn event(self) -> Option<EventId> {
         match self {
             Self::Event { event, .. } => Some(event),
-            Self::Vehicle | Self::Squawk { .. } => None,
+            Self::Vehicle | Self::Squawk { .. } | Self::Document { .. } => None,
         }
     }
 
@@ -382,7 +389,9 @@ impl AttachmentOwner {
                     Some(task - 1)
                 },
             },
-            Self::Vehicle | Self::Event { .. } | Self::Squawk { .. } => self,
+            Self::Vehicle | Self::Event { .. } | Self::Squawk { .. } | Self::Document { .. } => {
+                self
+            }
         }
     }
 }
@@ -550,7 +559,9 @@ pub fn for_correction(original: &[Attachment], correction: EventId) -> Vec<Attac
                 },
                 ..attachment.clone()
             }),
-            AttachmentOwner::Vehicle | AttachmentOwner::Squawk { .. } => None,
+            AttachmentOwner::Vehicle
+            | AttachmentOwner::Squawk { .. }
+            | AttachmentOwner::Document { .. } => None,
         })
         .collect()
 }
@@ -654,7 +665,8 @@ pub fn check(attachment: &Attachment, tasks: usize) -> Result<(), AttachmentProb
         } if usize::from(task) >= tasks => Err(AttachmentProblem::NoSuchTask),
         AttachmentOwner::Vehicle
         | AttachmentOwner::Event { .. }
-        | AttachmentOwner::Squawk { .. } => Ok(()),
+        | AttachmentOwner::Squawk { .. }
+        | AttachmentOwner::Document { .. } => Ok(()),
     }
 }
 

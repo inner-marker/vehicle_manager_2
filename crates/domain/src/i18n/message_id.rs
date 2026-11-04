@@ -2006,4 +2006,44 @@ define_messages! {
     ATTACHMENT_BAD_HASH => "attachment-bad-hash",
     /// Attachment: changing anything but where it is.
     ATTACHMENT_UNCHANGEABLE => "attachment-unchangeable",
+    /// Document status: in force.
+    DOCUMENT_STATUS_CURRENT => "document-status-current",
+    /// Document status: past its expiry.
+    DOCUMENT_STATUS_EXPIRED => "document-status-expired",
+    /// Document status: renewed.
+    DOCUMENT_STATUS_SUPERSEDED => "document-status-superseded",
+    /// Document: a type that isn't known.
+    DOCUMENT_UNKNOWN_TYPE => "document-unknown-type",
+    /// Document: a number over 60 characters.
+    DOCUMENT_NUMBER_TOO_LONG => "document-number-too-long",
+    /// Document: an issuer over 100 characters.
+    DOCUMENT_ISSUER_TOO_LONG => "document-issuer-too-long",
+    /// Document: expires before it's issued or takes effect.
+    DOCUMENT_EXPIRES_BEFORE_ISSUED => "document-expires-before-issued",
+    /// Document: renews one the vehicle doesn't have.
+    DOCUMENT_RENEWS_UNKNOWN => "document-renews-unknown",
+    /// Document: renews another type.
+    DOCUMENT_RENEWS_OTHER_TYPE => "document-renews-other-type",
+    /// Document: renews one that's already renewed.
+    DOCUMENT_ALREADY_RENEWED => "document-already-renewed",
+    /// Document: a plate on something other than a registration.
+    DOCUMENT_PLATE_NOT_REGISTRATION => "document-plate-not-registration",
+    /// Document: a plate that isn't this vehicle's.
+    DOCUMENT_UNKNOWN_PLATE => "document-unknown-plate",
+    /// Plate: no number.
+    PLATE_NUMBER_EMPTY => "plate-number-empty",
+    /// Plate: a number over 15 characters.
+    PLATE_NUMBER_TOO_LONG => "plate-number-too-long",
+    /// Plate: no issuing authority.
+    PLATE_NEEDS_AUTHORITY => "plate-needs-authority",
+    /// Plate: a state or province that isn't in the list.
+    PLATE_UNKNOWN_REGION => "plate-unknown-region",
+    /// Plate: a country code that isn't two letters.
+    PLATE_BAD_COUNTRY => "plate-bad-country",
+    /// Plate: an other authority with no name.
+    PLATE_AUTHORITY_EMPTY => "plate-authority-empty",
+    /// Plate: an authority's name over 60 characters.
+    PLATE_AUTHORITY_TOO_LONG => "plate-authority-too-long",
+    /// Plate: retired before it was issued.
+    PLATE_RETIRED_BEFORE_ISSUED => "plate-retired-before-issued",
 }

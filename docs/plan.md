@@ -866,14 +866,15 @@ LicensePlate         # a vehicle's plate (#066)
  ├─ id, asset_id
  ├─ authority?       # US state, Canadian province, country, or other; none only for plates moved from identifiers
  ├─ number
- └─ from_on?, until_on?        # date-only; until_on follows the linked registration
+ ├─ issued_on?, expires_on?    # date-only; expires_on follows the linked registration
+ └─ retired_on?      # when a new plate replaced it; none while current
 
 AssetDocument        # official document about an asset: title, registration, insurance, certificate, ...
  ├─ id, asset_id
  ├─ doc_type         # from the asset profile, or a custom type
  ├─ number?, issuer?
  ├─ issued_on?, effective_on?, expires_on?   # date-only; no expires_on = never expires
- ├─ status           # current | expired | superseded
+ ├─ status           # current | expired | superseded (worked out, not stored)
  ├─ supersedes_id?   # → AssetDocument (the previous record this renewal replaces)
  ├─ plate_id?        # a registration's plate (#066)
  ├─ reminder_lead_days?
