@@ -767,8 +767,6 @@ define_messages! {
     PANEL_DUE_COMING => "panel-due-coming",
     /// Overview panel: open squawks.
     PANEL_SQUAWKS => "panel-squawks",
-    /// Overview panel: squawks, not built yet.
-    PANEL_SQUAWKS_COMING => "panel-squawks-coming",
     /// Overview panel: latest fuel-ups.
     PANEL_FUEL => "panel-fuel",
     /// Overview panel and Setup section: meters.
@@ -1638,6 +1636,76 @@ define_messages! {
     SETTING_SQUAWK_WORD => "setting-squawk-word",
     /// Settings: one choice of what squawks are called, e.g. "Issues".
     SQUAWK_WORD_CHOICE => "squawk-word-choice",
+    /// Vehicle tab: its squawks.
+    TAB_SQUAWKS => "tab-squawks",
+    /// Vehicle tab: its squawks, with how many are outstanding; takes `count`.
+    TAB_SQUAWKS_COUNT => "tab-squawks-count",
+    /// Top bar title: one squawk's page.
+    SCREEN_SQUAWK => "screen-squawk",
+    /// Button: open a new squawk.
+    SQUAWK_NEW => "squawk-new",
+    /// Event page button: open a squawk found on this event.
+    SQUAWK_REPORT => "squawk-report",
+    /// Sheet title for a new squawk; takes `vehicle`.
+    SQUAWK_SHEET_TITLE => "squawk-sheet-title",
+    /// Sheet title when changing a squawk.
+    SQUAWK_SHEET_EDIT_TITLE => "squawk-sheet-edit-title",
+    /// Sheet: the description's label.
+    SQUAWK_DESCRIPTION_LABEL => "squawk-description-label",
+    /// Sheet: the severity's label.
+    SQUAWK_SEVERITY_LABEL => "squawk-severity-label",
+    /// Sheet: what High means; takes `word` (e.g. Not drivable).
+    SQUAWK_HIGH_NOTE => "squawk-high-note",
+    /// Sheet: unfold the notes and when it was noticed.
+    SQUAWK_MORE => "squawk-more",
+    /// Sheet: the notes' label.
+    SQUAWK_NOTES_LABEL => "squawk-notes-label",
+    /// Sheet: the date it was noticed.
+    SQUAWK_NOTICED_DATE => "squawk-noticed-date",
+    /// A squawk that's gone, or can't be seen.
+    SQUAWK_NOT_FOUND => "squawk-not-found",
+    /// Overview card: nothing outstanding.
+    SQUAWKS_NONE_OUTSTANDING => "squawks-none-outstanding",
+    /// Overview card: to the Squawks tab.
+    SQUAWKS_ALL => "squawks-all",
+    /// Squawks tab filter; takes `count`.
+    SQUAWKS_FILTER_OUTSTANDING => "squawks-filter-outstanding",
+    /// Squawks tab filter; takes `count`.
+    SQUAWKS_FILTER_RESOLVED => "squawks-filter-resolved",
+    /// Squawks tab filter: everything.
+    SQUAWKS_FILTER_ALL => "squawks-filter-all",
+    /// Squawks tab: nothing under this filter.
+    SQUAWKS_NONE_HERE => "squawks-none-here",
+    /// Squawks tab: nothing chosen yet.
+    SQUAWKS_SELECT_HINT => "squawks-select-hint",
+    /// A squawk's page: who opened it; takes `name` and `date`.
+    SQUAWK_OPENED_BY => "squawk-opened-by",
+    /// A squawk's page: the event it was found on; takes `event`.
+    SQUAWK_FOUND_ON => "squawk-found-on",
+    /// The found-on event, until it's loaded.
+    SQUAWK_FOUND_ON_EVENT => "squawk-found-on-event",
+    /// A squawk's page: its notes.
+    SQUAWK_NOTES_HEADING => "squawk-notes-heading",
+    /// A squawk's page: its history.
+    SQUAWK_HISTORY_HEADING => "squawk-history-heading",
+    /// History: opened; takes `severity`.
+    SQUAWK_HISTORY_OPENED => "squawk-history-opened",
+    /// History: a job signed it off.
+    SQUAWK_HISTORY_SIGNED_OFF => "squawk-history-signed-off",
+    /// History: a job deferred it; takes `reason`.
+    SQUAWK_HISTORY_DEFERRED => "squawk-history-deferred",
+    /// History: the job, linked; takes `date`.
+    SQUAWK_HISTORY_JOB => "squawk-history-job",
+    /// A squawk a job has dealt with.
+    SQUAWK_LOCKED_NOTE => "squawk-locked-note",
+    /// Button: remove a squawk opened by mistake.
+    SQUAWK_REMOVE => "squawk-remove",
+    /// Remove dialog: its title.
+    SQUAWK_REMOVE_TITLE => "squawk-remove-title",
+    /// Remove dialog: what it does.
+    SQUAWK_REMOVE_TEXT => "squawk-remove-text",
+    /// + Log: the squawk tile's line.
+    LOG_SQUAWK_DETAIL => "log-squawk-detail",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
 }

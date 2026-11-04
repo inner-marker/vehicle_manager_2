@@ -3,7 +3,8 @@
 //!
 //! One dialog (a sheet on phones): the vehicle at the top, with last time's chosen (or the
 //! vehicle whose page it's opened from), then a tile for each kind of event the person may log
-//! on it, by their role and mode. Squawks and maintenance join in milestones 7 and 8.
+//! on it, by their role and mode, and a **Squawk** tile for Drivers and up (it opens the squawk
+//! sheet, step 7f). Maintenance and repairs join in step 7i.
 //!
 //! **Last time's vehicle** is remembered on this device (the browser's local storage), so it
 //! survives a reload.
@@ -17,6 +18,7 @@ use domain::log_area;
 use domain::meter::EventKind;
 use domain::profile::event_kinds;
 
+use super::squawks::{may_open_squawks, use_squawk_sheet};
 use super::vehicle_setup::event_value;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::routes::Route;
@@ -151,6 +153,7 @@ pub(crate) fn LogChooserDialog() -> Element {
 #[component]
 fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
     let chooser = use_log_chooser();
+    let sheet = use_squawk_sheet();
     let vehicles = use_vehicles();
     let auth = use_auth();
     let navigator = use_navigator();
@@ -178,11 +181,15 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
     if choices.is_empty() {
         return rsx! { p { class: "muted-note", {tr(messages::LOG_NO_VEHICLES)} } };
     }
-    let kinds = choices
+    let chosen_vehicle = choices
         .iter()
         .find(|vehicle| Some(vehicle.id) == chosen)
+        .cloned();
+    let kinds = chosen_vehicle
+        .as_ref()
         .map(|vehicle| loggable_kinds(vehicle, mode))
         .unwrap_or_default();
+    let squawkable = chosen_vehicle.filter(|vehicle| may_open_squawks(vehicle.role, mode));
     rsx! {
         label { class: "field",
             span { class: "field-label", {tr(messages::LOG_VEHICLE)} }
@@ -223,6 +230,22 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
                     span { class: "log-tile-text",
                         span { class: "log-tile-name", {tr(kind.label())} }
                         span { class: "log-tile-detail", {tr(kind_detail(kind))} }
+                    }
+                }
+            }
+            if let Some(vehicle) = squawkable {
+                button {
+                    class: "log-tile",
+                    r#type: "button",
+                    onclick: move |_| {
+                        tracing::debug!(target: log_area::UI, asset = %vehicle.id, "squawk sheet opened");
+                        sheet.open_new(vehicle.id, &vehicle.asset, None);
+                        on_done.call(());
+                    },
+                    span { class: "log-tile-icon", "⚠" }
+                    span { class: "log-tile-text",
+                        span { class: "log-tile-name", {tr(messages::SCREEN_SQUAWK)} }
+                        span { class: "log-tile-detail", {tr(messages::LOG_SQUAWK_DETAIL)} }
                     }
                 }
             }

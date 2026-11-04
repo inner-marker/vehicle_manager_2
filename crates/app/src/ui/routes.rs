@@ -5,8 +5,8 @@ use domain::i18n::{MessageId, messages};
 
 use super::screens::{
     AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
-    LogEvent, LogForm, Messages, NotFound, Places, Reports, Settings, Timeline, Users,
-    VehicleDetail, VehicleTab,
+    LogEvent, LogForm, Messages, NotFound, Places, Reports, Settings, SquawkDetail, Timeline,
+    Users, VehicleDetail, VehicleTab,
 };
 use super::shell::Shell;
 
@@ -47,6 +47,9 @@ pub(crate) enum Route {
         EditEvent { event_id: String },
         #[route("/events/:event_id/correct")]
         CorrectEvent { event_id: String },
+        // One squawk (step 7f).
+        #[route("/squawks/:squawk_id")]
+        SquawkDetail { squawk_id: String },
         #[route("/users")]
         Users {},
         // Managing groups (#058).
@@ -80,6 +83,7 @@ impl Route {
             Self::EventDetail { .. } => messages::SCREEN_EVENT,
             Self::EditEvent { .. } => messages::SCREEN_EDIT_EVENT,
             Self::CorrectEvent { .. } => messages::SCREEN_CORRECT_EVENT,
+            Self::SquawkDetail { .. } => messages::SCREEN_SQUAWK,
             Self::Users {} => messages::NAV_USERS,
             Self::Groups {} => messages::NAV_GROUPS,
             Self::Places {} => messages::NAV_PLACES,
@@ -126,6 +130,9 @@ mod tests {
             },
             Route::CorrectEvent {
                 event_id: "0192f3a5".to_owned(),
+            },
+            Route::SquawkDetail {
+                squawk_id: "0192f3a6".to_owned(),
             },
             Route::Groups {},
             Route::Places {},

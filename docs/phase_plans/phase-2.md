@@ -811,7 +811,7 @@
 | 7d | ☑️ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
 | 7e | ☑️ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
 | 7f.0 | ☑️ | `feat: what the household calls squawks` | Choice 13 (#064): the household preference (Issues, Squawks, Faults, Write-ups; a new column, migration `0013`); the translator fills in the word, plural, capital, and article for every message that names them; Settings' household section offers it (Admin mode) | none |
-| 7f | ⬜ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
+| 7f | ☑️ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
 | 7g | ⬜ | `feat(app): requirements, bundles, and the Maintenance tab` | **SVG options first.** Setup's requirements (with their rules) and bundles; **Copy schedule**; the Maintenance tab with each requirement's last done | none |
 | 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
@@ -911,3 +911,23 @@
     - a new household's sidebar says "Due & issues";
     - choosing Squawks on the Household tab changes it to "Due & squawks" at once, and it's stored and kept after a reload;
     - the You tab shows "Squawks" and who chooses it.
+- **7f:** no new dependency (`crates/app/src/ui/screens/squawks.rs`).
+  - **The sheet** (a dialog, opened from anywhere through the shell's `SquawkSheet` context):
+    - what's wrong, and Low / Medium / High. Picking High says what it means for the kind ("shown as Not drivable");
+    - "▸ Notes, when noticed" unfolds the notes, and the date and time (the browser's zone; now by default);
+    - it opens from **+ Log**'s new tile (Drivers and up), the Overview card and the Squawks tab ("+ Issue"), and an event's page (**Report an issue**, found on that event). A squawk's page and the tab's detail use it to change one.
+  - **The Overview's card** comes first: the outstanding ones, High first then newest, each with its severity chip ("HIGH · Not drivable"), status, what's wrong, and who and when. It ends with **All issues ›**, to the tab.
+  - **The Squawks tab** follows Overview. Its label counts the outstanding ones ("Issues · 2").
+    - Filters: Outstanding (High first), Resolved, All;
+    - on wide screens the list and the chosen one side by side; on phones the list, then one squawk with "‹ Issues".
+  - **A squawk's page** (`/squawks/:id`, linked from the card): ‹ vehicle ‹ Issues, the chips, who opened it and when, the event it was found on (linked), notes, and the history.
+    - The history is newest first: each job (linked) with "Deferred: reason" or "Signed off", and the severity change ("Low → Medium"); then its opening.
+    - **Edit** and **Remove** (with a confirmation) while it may change; otherwise "A job has dealt with it…".
+  - 23 messages; Overview's "Squawks arrive in milestone 7" is gone. 4 new tests: the outstanding order; the history's entries and severity changes; who may open them; the sheet's input (trimmed, now or as typed, an empty one refused).
+  - **Browser check** (1200 × 1000 and a 390 × 844 phone), on a new household (so "Issues"):
+    - + Log's tiles: Fuel-up, Reading, Issue;
+    - the sheet: High's note, and one saved with notes from the card;
+    - the card, High first, and the tab saying "Issues · 2";
+    - a job through the API deferring both (one made Medium), then finished: the tab's detail shows the history with "Low → Medium" and the locked note;
+    - an event's **Report an issue**: the squawk's page shows "Found on: Fuel-up · 3 Nov 2026 ›", Edit opens "Change this issue", Remove goes back to the tab;
+    - on the phone, the list, then the detail with its back link. The card's rows ran past its edge; fixed and measured.

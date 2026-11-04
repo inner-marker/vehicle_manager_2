@@ -356,42 +356,28 @@ mod tests {
         let english = Translator::english();
         let count = [("count", MessageArg::from(1))];
         let cases = [
-            (
-                SquawkWord::Issue,
-                "Due & issues",
-                "1 open issue",
-                "Issues arrive",
-            ),
+            (SquawkWord::Issue, "Due & issues", "1 open issue", "Issues"),
             (
                 SquawkWord::Squawk,
                 "Due & squawks",
                 "1 open squawk",
-                "Squawks arrive",
+                "Squawks",
             ),
-            (
-                SquawkWord::Fault,
-                "Due & faults",
-                "1 open fault",
-                "Faults arrive",
-            ),
+            (SquawkWord::Fault, "Due & faults", "1 open fault", "Faults"),
             (
                 SquawkWord::WriteUp,
                 "Due & write-ups",
                 "1 open write-up",
-                "Write-ups arrive",
+                "Write-ups",
             ),
         ];
-        for (word, nav, one, coming) in cases {
+        for (word, nav, one, tab) in cases {
             assert_eq!(english.tr_for(word, messages::NAV_DUE_AND_SQUAWKS), nav);
             assert_eq!(
                 english.tr_with_for(word, messages::OPEN_SQUAWK_COUNT, &count),
                 one
             );
-            assert!(
-                english
-                    .tr_for(word, messages::PANEL_SQUAWKS_COMING)
-                    .starts_with(coming)
-            );
+            assert_eq!(english.tr_for(word, messages::TAB_SQUAWKS), tab);
         }
         let forms = english.squawk_forms(SquawkWord::Issue).unwrap();
         assert_eq!(forms[4], "an issue");

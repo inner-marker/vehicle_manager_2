@@ -19,6 +19,7 @@ use domain::preferences::Preferences;
 use domain::quantity::{economy_value, show_money, show_reading, show_volume, unit_price};
 use domain::time::{Clock, UnixMillis};
 
+use super::squawks::ReportSquawk;
 use super::vehicle::Tab;
 use super::{FormError, problem_from_error};
 use crate::api;
@@ -203,6 +204,7 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
                 if view.may_correct {
                     Link { class: "secondary-button", to: Route::CorrectEvent { event_id: view.id.to_string() }, {tr(messages::EVENT_CORRECT)} }
                 }
+                ReportSquawk { vehicle: vehicle.clone(), event: view.id }
             }
             Tiles { event: event.clone(), vehicle: vehicle.clone(), units }
             Details { view: view.clone(), vehicle, units }

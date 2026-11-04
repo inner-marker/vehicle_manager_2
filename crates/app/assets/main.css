@@ -2869,3 +2869,263 @@ body:has(.log-form) .fab {
     font-size: 0.9rem;
     font-weight: 500;
 }
+
+/* ---------- Squawks (step 7f; docs/ui-sketches/p2m7-squawks-options.svg) ---------- */
+
+/* Severity: Low in the accent colour, Medium amber, High red (it keeps the vehicle out of use). */
+.severity-low {
+    --severity: var(--accent);
+}
+
+.severity-medium {
+    --severity: var(--warn);
+}
+
+.severity-high {
+    --severity: var(--error);
+}
+
+.severity-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border: 1.5px solid var(--severity);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--severity) 16%, transparent);
+    color: var(--severity);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.squawk-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-raised);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.squawk-status.deferred {
+    color: var(--warn);
+}
+
+.squawk-status.resolved {
+    color: #3fb950;
+}
+
+/* The sheet's severity buttons take the chosen severity's colours. */
+.severity-buttons .choice.on {
+    border-color: var(--severity);
+    background: color-mix(in srgb, var(--severity) 18%, transparent);
+    color: var(--severity);
+}
+
+.squawk-high-note {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    background: var(--urgent-bg);
+    color: var(--error);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.squawk-more {
+    align-self: flex-start;
+}
+
+.dialog.squawk-sheet {
+    width: min(440px, 100%);
+}
+
+.panel-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.squawks-card .link-button:last-child {
+    align-self: flex-start;
+}
+
+/* One squawk in a list: severity and status, what's wrong, who and when. */
+.squawk-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.squawk-row:hover,
+.squawk-row:focus-visible {
+    border-color: var(--accent);
+}
+
+.squawk-row.selected {
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+}
+
+.squawk-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.squawk-row-text {
+    font-weight: 700;
+}
+
+.squawk-row-meta {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* The Squawks tab: the list beside the chosen one, like Messages. */
+.squawks {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.squawks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.squawks-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.squawks-detail {
+    min-width: 0;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.squawks-back {
+    display: none;
+}
+
+.squawk-body,
+.squawk-detail-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.squawk-title {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.squawk-body .muted-note,
+.squawk-notes {
+    margin: 0;
+}
+
+.squawk-notes {
+    white-space: pre-wrap;
+}
+
+.squawk-found-on {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.squawk-history {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.squawk-history-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.squawk-history-job {
+    font-weight: 700;
+}
+
+a.squawk-history-job {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.squawk-history-change {
+    color: var(--warn);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.squawk-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 640px;
+}
+
+@media (max-width: 639px) {
+    /* Squawks on phones: the list, or one squawk with a way back. */
+    .squawks {
+        display: block;
+    }
+
+    .squawks .squawks-detail {
+        display: none;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    .squawks.has-selection .squawks-list {
+        display: none;
+    }
+
+    .squawks.has-selection .squawks-detail {
+        display: block;
+    }
+
+    .squawks-back {
+        display: inline-flex;
+        align-self: flex-start;
+    }
+}

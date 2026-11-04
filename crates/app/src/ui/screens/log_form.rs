@@ -46,7 +46,8 @@ use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
 
 /// The browser's own time zone, for an event with no place data.
-const ZONE_SCRIPT: &str = "return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';";
+pub(super) const ZONE_SCRIPT: &str =
+    "return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';";
 
 /// What the form is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

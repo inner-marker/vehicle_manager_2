@@ -4,8 +4,9 @@
 //! identifiers, group, status) and tabs across the top. **Overview** starts the per-vehicle
 //! dashboard: its panels say when they fill, and the meters are listed. **Setup** holds the
 //! details, meters, custom fields, required readings, the group, and the status (see
-//! `vehicle_setup`). The other tabs say which milestone fills them. On phones the tabs
-//! scroll sideways.
+//! `vehicle_setup`). **Squawks** (milestone 7) lists them all, and the Overview's card the
+//! outstanding ones (see `squawks`). The other tabs say which milestone fills them. On phones
+//! the tabs scroll sideways.
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, AssetsOutcome};
@@ -15,6 +16,7 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
+use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawks};
 use super::timeline::{OverviewPanels, Timeline};
 use super::vehicle_setup::Setup;
 use super::vehicles::{kind_name, status_label};
@@ -53,6 +55,7 @@ pub(super) fn use_vehicle_page() -> VehiclePage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Tab {
     Overview,
+    Squawks,
     Timeline,
     Maintenance,
     Fuel,
@@ -62,8 +65,9 @@ pub(super) enum Tab {
 
 impl Tab {
     /// Every tab, in order.
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::Overview,
+        Self::Squawks,
         Self::Timeline,
         Self::Maintenance,
         Self::Fuel,
@@ -75,6 +79,7 @@ impl Tab {
     pub(super) const fn slug(self) -> &'static str {
         match self {
             Self::Overview => "overview",
+            Self::Squawks => "squawks",
             Self::Timeline => "timeline",
             Self::Maintenance => "maintenance",
             Self::Fuel => "fuel",
@@ -90,6 +95,7 @@ impl Tab {
     pub(super) const fn label(self) -> MessageId {
         match self {
             Self::Overview => messages::TAB_OVERVIEW,
+            Self::Squawks => messages::TAB_SQUAWKS,
             Self::Timeline => messages::TAB_TIMELINE,
             Self::Maintenance => messages::TAB_MAINTENANCE,
             Self::Fuel => messages::TAB_FUEL,
@@ -101,7 +107,7 @@ impl Tab {
     /// The milestone that fills a tab with no content yet.
     const fn coming_in(self) -> Option<i64> {
         match self {
-            Self::Overview | Self::Setup | Self::Timeline | Self::Fuel => None,
+            Self::Overview | Self::Squawks | Self::Setup | Self::Timeline | Self::Fuel => None,
             Self::Maintenance => Some(7),
             Self::Documents => Some(8),
         }
@@ -117,6 +123,7 @@ pub(super) fn has_fuel(asset: &Asset) -> bool {
 fn tabs(asset: &Asset) -> Vec<Tab> {
     [
         Tab::Overview,
+        Tab::Squawks,
         Tab::Timeline,
         Tab::Maintenance,
         Tab::Fuel,
@@ -263,6 +270,7 @@ fn VehicleScreen(id: AssetId, start: Tab) -> Element {
         reloads: Signal::new(0),
     });
     let mut tab = use_signal(|| start);
+    let squawks = use_vehicle_squawks(id);
     // What the person may change depends on their mode, so a mode change loads it again.
     let mode = use_memo(move || match auth() {
         AuthState::SignedIn(session) => Some(session.mode),
@@ -297,9 +305,17 @@ fn VehicleScreen(id: AssetId, start: Tab) -> Element {
     rsx! {
         div { class: "vehicle-page",
             Header { view: view.clone() }
-            TabBar { shown, current, on_pick: move |picked| tab.set(picked) }
+            TabBar { shown, current, squawks: squawks().as_ref().map(VehicleSquawks::outstanding), on_pick: move |picked| tab.set(picked) }
             match current {
-                Tab::Overview => rsx! { Overview { view, on_timeline: move |()| tab.set(Tab::Timeline) } },
+                Tab::Overview => rsx! {
+                    Overview {
+                        view,
+                        squawks: squawks(),
+                        on_timeline: move |()| tab.set(Tab::Timeline),
+                        on_squawks: move |()| tab.set(Tab::Squawks),
+                    }
+                },
+                Tab::Squawks => rsx! { SquawksTab { vehicle: view, squawks: squawks() } },
                 Tab::Setup => rsx! { Setup { view } },
                 Tab::Timeline => rsx! { Timeline { view, only: None } },
                 Tab::Fuel => rsx! { Timeline { view, only: Some(EventKind::Fuel) } },
@@ -364,7 +380,12 @@ fn Header(view: AssetView) -> Element {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn TabBar(shown: Vec<Tab>, current: Tab, on_pick: EventHandler<Tab>) -> Element {
+fn TabBar(
+    shown: Vec<Tab>,
+    current: Tab,
+    squawks: Option<usize>,
+    on_pick: EventHandler<Tab>,
+) -> Element {
     rsx! {
         div { class: "vehicle-tabs", role: "tablist", "aria-label": tr(messages::VEHICLE_TABS),
             for tab in shown {
@@ -374,21 +395,33 @@ fn TabBar(shown: Vec<Tab>, current: Tab, on_pick: EventHandler<Tab>) -> Element 
                     role: "tab",
                     "aria-selected": if tab == current { "true" } else { "false" },
                     onclick: move |_| on_pick.call(tab),
-                    {tr(tab.label())}
+                    match (tab, squawks) {
+                        (Tab::Squawks, Some(count)) if count > 0 => tr_with(
+                            messages::TAB_SQUAWKS_COUNT,
+                            &[("count", MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX)))],
+                        ),
+                        _ => tr(tab.label()),
+                    }
                 }
             }
         }
     }
 }
 
-/// Overview: the dashboard's panels (#051), each saying when it fills, and the meters.
+/// Overview: the dashboard's panels (#051): the outstanding squawks first, then the ones that
+/// fill later (each saying when), the latest events, and the meters.
 #[component]
-fn Overview(view: AssetView, on_timeline: EventHandler<()>) -> Element {
+fn Overview(
+    view: AssetView,
+    squawks: Option<VehicleSquawks>,
+    on_timeline: EventHandler<()>,
+    on_squawks: EventHandler<()>,
+) -> Element {
     rsx! {
         div { class: "vehicle-panels",
+            SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
             Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
             Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
-            Panel { title: messages::PANEL_SQUAWKS, note: messages::PANEL_SQUAWKS_COMING }
             OverviewPanels { view, on_timeline }
         }
     }
@@ -446,7 +479,7 @@ mod tests {
     fn trailers_have_no_fuel_tab() {
         assert!(tabs(&asset("truck")).contains(&Tab::Fuel));
         assert!(!tabs(&asset("trailer")).contains(&Tab::Fuel));
-        assert_eq!(tabs(&asset("trailer")).len(), 5);
+        assert_eq!(tabs(&asset("trailer")).len(), 6);
     }
 
     #[test]
