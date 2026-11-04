@@ -18,6 +18,7 @@ use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
 use super::attachments::AttachmentStrip;
+use super::documents::DocumentsTab;
 use super::maintenance::{MaintenanceTab, MaintenanceView};
 use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawks};
 use super::timeline::{OverviewPanels, Shown, Timeline};
@@ -113,19 +114,6 @@ impl Tab {
             Self::Fuel => messages::TAB_FUEL,
             Self::Documents => messages::TAB_DOCUMENTS,
             Self::Setup => messages::TAB_SETUP,
-        }
-    }
-
-    /// The milestone that fills a tab with no content yet.
-    const fn coming_in(self) -> Option<i64> {
-        match self {
-            Self::Overview
-            | Self::Squawks
-            | Self::Setup
-            | Self::Timeline
-            | Self::Fuel
-            | Self::Maintenance => None,
-            Self::Documents => Some(8),
         }
     }
 }
@@ -340,11 +328,7 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
                 Tab::Timeline => rsx! { Timeline { view, only: None } },
                 Tab::Fuel => rsx! { Timeline { view, only: Some(Shown::FuelUps) } },
                 Tab::Maintenance => rsx! { MaintenanceTab { vehicle: view, start: maintenance_view } },
-                Tab::Documents => rsx! {
-                    p { class: "placeholder",
-                        {tr_with(messages::TAB_COMING, &[("milestone", MessageArg::from(current.coming_in().unwrap_or_default()))])}
-                    }
-                },
+                Tab::Documents => rsx! { DocumentsTab { vehicle: view } },
             }
         }
     }
@@ -380,6 +364,9 @@ fn Header(view: AssetView) -> Element {
             h2 { class: "vehicle-name", {asset.name.as_str().to_owned()} }
             p { class: "vehicle-subtitle", {subtitle(asset)} }
             div { class: "vehicle-chips",
+                if let Some(plate) = view.plate.clone() {
+                    span { class: "vehicle-card-identifier vehicle-plate", {plate} }
+                }
                 for identifier in asset.identifiers.iter() {
                     span { key: "{identifier.kind.as_str()}", class: "vehicle-card-identifier", {identifier_text(asset, identifier)} }
                 }

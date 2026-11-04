@@ -4002,6 +4002,8 @@ body:has(.photo-viewer) {
         height: calc(100dvh - 160px);
         padding: 4px 0 16px;
     }
+}
+
 /* An end reading's "Copy from start" (the human's M7 note), under its field. */
 .copy-start {
     align-self: flex-start;
@@ -4033,3 +4035,141 @@ body:has(.photo-viewer) {
     max-width: 260px;
 }
 
+
+/* ---------- The Documents tab (p2m8-documents-options.svg, option A) ---------- */
+
+.documents-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.documents-tab .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+}
+
+.documents-tab .section-head .section-heading {
+    margin: 0;
+}
+
+.status-chip.ok {
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.status-chip.warn {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.status-chip.bad {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.plate-card,
+.document-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.plate-card-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 200px;
+}
+
+.plate-card-text .form-error {
+    margin: 0;
+}
+
+/* The current plate, drawn like one. */
+.plate-picture {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 150px;
+    min-height: 62px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #f4f1ea;
+    color: #111111;
+}
+
+.plate-picture-by {
+    color: #1c3f7a;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.plate-picture-number {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.document-card {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.document-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.document-card-type {
+    font-size: 1.05rem;
+}
+
+.document-card-line,
+.document-card .muted-note {
+    margin: 0;
+}
+
+.document-card .attachment-strip {
+    margin-top: 0;
+}
+
+.document-card-buttons {
+    justify-content: flex-end;
+}
+
+.documents-earlier {
+    margin: -4px 0 4px 4px;
+}
+
+.documents-earlier summary {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.documents-earlier-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0 0 16px;
+}

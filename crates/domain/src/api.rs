@@ -391,6 +391,9 @@ pub struct AssetSummary {
     pub asset: crate::asset::Asset,
     /// The person's role on it.
     pub role: crate::access::Role,
+    /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
+    #[serde(default)]
+    pub plate: Option<String>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -434,6 +437,9 @@ pub struct AssetView {
         crate::custom_field::CustomFieldId,
         crate::custom_field::CustomField,
     )>,
+    /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
+    #[serde(default)]
+    pub plate: Option<String>,
 }
 
 /// How one person's access changes in a move, for the preview.

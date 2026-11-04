@@ -330,6 +330,7 @@ mod tests {
                     identifiers: vec![],
                 },
                 role: Role::Admin,
+                plate: None,
             }],
             can_add: true,
             can_manage_groups: true,

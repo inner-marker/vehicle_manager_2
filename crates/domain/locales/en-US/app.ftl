@@ -1334,3 +1334,66 @@ pdf-fit-width = Fit width
 pdf-page-of = Page { $page } of { $pages }
 work-copy-from-start = Copy from start
 log-currency = Currency
+
+## The Documents tab and license plates (milestone 8, step 8h)
+
+documents-heading = Documents
+documents-add = + Document
+documents-none = No documents yet.
+documents-plate = License plate
+documents-add-plate = + Plate
+documents-no-plate = No license plate yet.
+documents-earlier-plates = Earlier plates ({ $count })
+documents-earlier = Earlier ({ $count })
+documents-scans = Scans
+documents-renew = Renew…
+document-issued-on = Issued { $date }
+document-effective-on = from { $date }
+document-expires-on = expires { $date }
+document-never-expires = never expires
+document-expires-in = { $days ->
+    [0] Expires today
+    [one] Expires tomorrow
+   *[other] Expires in { $days } days
+}
+documents-add-title = Add a document
+documents-renew-title = Renew it
+documents-edit-title = Change the document
+documents-renew-note = A new record; the one it renews is kept as history.
+documents-renew-save = Renew
+documents-type = Type
+documents-type-other = Other…
+documents-type-name = What it is
+documents-name-needed = Say what it is (up to 40 characters).
+documents-number = Number
+documents-issuer = Issued by
+documents-issued = Issued
+documents-effective = Takes effect
+documents-expires = Expires
+documents-plate-field = License plate
+documents-no-plate-choice = None
+documents-plate-follows = Its expiry becomes the plate's.
+documents-notes = Notes
+documents-notes-too-long = The notes are too long.
+documents-scans-later = Add its scans on its card once it's saved.
+documents-remove-confirm = Remove it and its scans
+plate-add-title = Add a license plate
+plate-edit-title = Change the license plate
+plate-add-note = The current plate (if any) is retired on the new one's issue date, or today.
+plate-add-save = Add
+plate-issued-by = Issued by
+plate-by-state = US state
+plate-by-province = Canadian province
+plate-by-country = Country
+plate-by-other = Other
+plate-state = State
+plate-province = Province or territory
+plate-country = Country
+plate-other = Who issued it
+plate-number = Number
+plate-retired = Retired
+plate-since = Since { $date }
+plate-retired-on = until { $date }
+plate-from-registration = (from its registration)
+plate-choose-authority = Choose who issued it: Edit.
+plate-remove-confirm = Remove the plate

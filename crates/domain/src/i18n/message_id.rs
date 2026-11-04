@@ -2160,4 +2160,116 @@ define_messages! {
     WORK_COPY_FROM_START => "work-copy-from-start",
     /// Log form: the currency its amounts are in.
     LOG_CURRENCY => "log-currency",
+    /// Documents tab: the documents' heading.
+    DOCUMENTS_HEADING => "documents-heading",
+    /// Documents tab: add one.
+    DOCUMENTS_ADD => "documents-add",
+    /// Documents tab: none yet.
+    DOCUMENTS_NONE => "documents-none",
+    /// Documents tab: the plate's heading.
+    DOCUMENTS_PLATE => "documents-plate",
+    /// Documents tab: add a plate.
+    DOCUMENTS_ADD_PLATE => "documents-add-plate",
+    /// Documents tab: no plate yet.
+    DOCUMENTS_NO_PLATE => "documents-no-plate",
+    /// Documents tab: earlier plates, folded; takes `count`.
+    DOCUMENTS_EARLIER_PLATES => "documents-earlier-plates",
+    /// Documents tab: what a document renewed, folded; takes `count`.
+    DOCUMENTS_EARLIER => "documents-earlier",
+    /// Documents tab: a document's scans.
+    DOCUMENTS_SCANS => "documents-scans",
+    /// Documents tab: renew one.
+    DOCUMENTS_RENEW => "documents-renew",
+    /// Documents: when issued; takes `date`.
+    DOCUMENT_ISSUED_ON => "document-issued-on",
+    /// Documents: when it takes effect; takes `date`.
+    DOCUMENT_EFFECTIVE_ON => "document-effective-on",
+    /// Documents and plates: when it expires; takes `date`.
+    DOCUMENT_EXPIRES_ON => "document-expires-on",
+    /// Documents: no expiry.
+    DOCUMENT_NEVER_EXPIRES => "document-never-expires",
+    /// Documents: a current one close to its expiry; takes `days`.
+    DOCUMENT_EXPIRES_IN => "document-expires-in",
+    /// Documents: the add dialog's title.
+    DOCUMENTS_ADD_TITLE => "documents-add-title",
+    /// Documents: the renew dialog's title.
+    DOCUMENTS_RENEW_TITLE => "documents-renew-title",
+    /// Documents: the edit dialog's title.
+    DOCUMENTS_EDIT_TITLE => "documents-edit-title",
+    /// Documents: what renewing does.
+    DOCUMENTS_RENEW_NOTE => "documents-renew-note",
+    /// Documents: save a renewal.
+    DOCUMENTS_RENEW_SAVE => "documents-renew-save",
+    /// Documents: its type.
+    DOCUMENTS_TYPE => "documents-type",
+    /// Documents: a type of the household's own.
+    DOCUMENTS_TYPE_OTHER => "documents-type-other",
+    /// Documents: the household's own type's name.
+    DOCUMENTS_TYPE_NAME => "documents-type-name",
+    /// Documents: an own type with no name.
+    DOCUMENTS_NAME_NEEDED => "documents-name-needed",
+    /// Documents: its number.
+    DOCUMENTS_NUMBER => "documents-number",
+    /// Documents: who issued it.
+    DOCUMENTS_ISSUER => "documents-issuer",
+    /// Documents and plates: the issue date.
+    DOCUMENTS_ISSUED => "documents-issued",
+    /// Documents: when it takes effect.
+    DOCUMENTS_EFFECTIVE => "documents-effective",
+    /// Documents and plates: the expiry date.
+    DOCUMENTS_EXPIRES => "documents-expires",
+    /// Documents: a registration's plate.
+    DOCUMENTS_PLATE_FIELD => "documents-plate-field",
+    /// Documents: a registration with no plate.
+    DOCUMENTS_NO_PLATE_CHOICE => "documents-no-plate-choice",
+    /// Documents: what a registration's expiry does.
+    DOCUMENTS_PLATE_FOLLOWS => "documents-plate-follows",
+    /// Documents and plates: notes.
+    DOCUMENTS_NOTES => "documents-notes",
+    /// Documents and plates: notes too long.
+    DOCUMENTS_NOTES_TOO_LONG => "documents-notes-too-long",
+    /// Documents: where scans are added.
+    DOCUMENTS_SCANS_LATER => "documents-scans-later",
+    /// Documents: remove, for good.
+    DOCUMENTS_REMOVE_CONFIRM => "documents-remove-confirm",
+    /// Plates: the add dialog's title.
+    PLATE_ADD_TITLE => "plate-add-title",
+    /// Plates: the edit dialog's title.
+    PLATE_EDIT_TITLE => "plate-edit-title",
+    /// Plates: what adding one does.
+    PLATE_ADD_NOTE => "plate-add-note",
+    /// Plates: save a new one.
+    PLATE_ADD_SAVE => "plate-add-save",
+    /// Plates: who issued it.
+    PLATE_ISSUED_BY => "plate-issued-by",
+    /// Plates: a US state.
+    PLATE_BY_STATE => "plate-by-state",
+    /// Plates: a Canadian province or territory.
+    PLATE_BY_PROVINCE => "plate-by-province",
+    /// Plates: a country.
+    PLATE_BY_COUNTRY => "plate-by-country",
+    /// Plates: another authority.
+    PLATE_BY_OTHER => "plate-by-other",
+    /// Plates: the state.
+    PLATE_STATE => "plate-state",
+    /// Plates: the province or territory.
+    PLATE_PROVINCE => "plate-province",
+    /// Plates: the country.
+    PLATE_COUNTRY => "plate-country",
+    /// Plates: another authority's name.
+    PLATE_OTHER => "plate-other",
+    /// Plates: its number.
+    PLATE_NUMBER => "plate-number",
+    /// Plates: when it stopped being used.
+    PLATE_RETIRED => "plate-retired",
+    /// Plates: since when; takes `date`.
+    PLATE_SINCE => "plate-since",
+    /// Plates: retired; takes `date`.
+    PLATE_RETIRED_ON => "plate-retired-on",
+    /// Plates: the expiry comes from the registration.
+    PLATE_FROM_REGISTRATION => "plate-from-registration",
+    /// Plates: one moved over with no authority yet.
+    PLATE_CHOOSE_AUTHORITY => "plate-choose-authority",
+    /// Plates: remove, for good.
+    PLATE_REMOVE_CONFIRM => "plate-remove-confirm",
 }

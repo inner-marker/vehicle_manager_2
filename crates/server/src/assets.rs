@@ -154,16 +154,24 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
         .map_err(|error| unavailable("assets", &error))?;
     let grants = &context.user.grants;
     // Each vehicle the person's grants cover, with their role on it.
-    let assets: Vec<AssetSummary> = all
+    let mut assets: Vec<AssetSummary> = all
         .into_iter()
         .filter_map(|(id, asset)| {
             let scope = AssetScope {
                 id,
                 group: asset.group,
             };
-            role_on(grants, scope).map(|role| AssetSummary { id, asset, role })
+            role_on(grants, scope).map(|role| AssetSummary {
+                id,
+                asset,
+                role,
+                plate: None,
+            })
         })
         .collect();
+    for summary in &mut assets {
+        summary.plate = current_plate(database, summary.id).await?;
+    }
     let can_manage_groups = context.may(AdminAction::ManageGroups);
     // Each group with how many visible vehicles it has; empty ones only for the Admin.
     let groups: Vec<GroupSummary> = groups
@@ -233,8 +241,18 @@ async fn asset_view(
             can_move: context.may(AdminAction::ManageGroups),
             meters,
             fields,
+            plate: current_plate(database, id).await?,
         }),
     })
+}
+
+/// A vehicle's current license plate, as shown ("NC · NCX 4471").
+async fn current_plate(database: &Database, id: AssetId) -> Result<Option<String>, AssetsOutcome> {
+    let plates = database
+        .plates_of(id)
+        .await
+        .map_err(|error| unavailable("plates", &error))?;
+    Ok(domain::plate::current(&plates).map(|(_, plate)| domain::plate::label(plate)))
 }
 
 /// Saves the person's custom Garage order (#056): their own, so anyone signed in may.

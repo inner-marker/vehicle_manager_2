@@ -336,6 +336,22 @@ impl Record for LicensePlate {
     type Patch = LicensePlatePatch;
 }
 
+/// A plate as the header and Garage card show it: "NC · NCX 4471", "DE · B AB 123",
+/// "Cherokee Nation · X 12", or just the number until its authority is chosen.
+#[must_use]
+pub fn label(plate: &LicensePlate) -> String {
+    let by = match &plate.authority {
+        Some(Authority::Region { region, .. }) => Some(region.as_str()),
+        Some(Authority::Country { country }) => Some(country.as_str()),
+        Some(Authority::Other { name }) => Some(name.as_str()),
+        None => None,
+    };
+    by.map_or_else(
+        || plate.number.as_str().to_owned(),
+        |by| format!("{by} · {}", plate.number.as_str()),
+    )
+}
+
 /// The vehicle's current plate among `plates` (all one vehicle's): one not retired, the most
 /// recently issued (then the newest ID) if there are several.
 #[must_use]
@@ -503,6 +519,16 @@ pub(crate) mod tests {
         };
         assert_eq!(lower.check(), Err(PlateProblem::UnknownRegion));
         assert_eq!(REGIONS.len(), 56 + 13);
+    }
+
+    #[test]
+    fn a_plates_label_names_who_issued_it() {
+        assert_eq!(label(&plate("NCX 4471", "2024-06-01")), "NC · NCX 4471");
+        let mut moved = plate("NCX 4471", "2024-06-01");
+        moved.authority = None;
+        assert_eq!(label(&moved), "NCX 4471");
+        moved.authority = Some(Authority::country("de").unwrap());
+        assert_eq!(label(&moved), "DE · NCX 4471");
     }
 
     #[test]
