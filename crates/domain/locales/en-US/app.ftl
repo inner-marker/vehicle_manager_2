@@ -329,6 +329,79 @@ squawk-remove = Remove
 squawk-remove-title = Remove this { $squawk }?
 squawk-remove-text = Only for one opened by mistake: it's gone for everyone.
 log-squawk-detail = Something's wrong
+
+## The Maintenance tab (milestone 7 step 7g)
+
+setup-schedule-moved = The maintenance schedule is under Maintenance › Set up ›
+maintenance-schedule = Schedule
+maintenance-jobs = Jobs
+maintenance-set-up = Set up
+timeline-in-progress = In progress
+timeline-task-count = { $count ->
+        [one] 1 task
+       *[other] { $count } tasks
+    }
+jobs-empty = No maintenance or repairs logged yet.
+schedule-every = Every { $rules }
+schedule-or = or
+schedule-months = { $count ->
+        [one] month
+       *[other] { $count } months
+    }
+schedule-months-end = { $count ->
+        [one] month
+       *[other] { $count } months
+    }, by the month's end
+schedule-fixed = On a fixed date
+schedule-fixed-next = On a fixed date · next { $date }
+schedule-when-needed = When needed
+schedule-last-done = Last done
+schedule-not-done = Not done yet
+schedule-the-job = The job ›
+schedule-turned-off = Turned off: { $names }
+schedule-bundles = Service bundles
+schedule-requirements = Requirements
+schedule-empty-title = No schedule yet
+schedule-empty-hint = Track oil, tires, inspections, and anything else done to it.
+schedule-nothing-tracked = Nothing is tracked yet.
+schedule-set-it-up = Set it up
+schedule-copy-from = Copy from…
+schedule-add-requirement = + Requirement
+schedule-add-bundle = + Bundle
+schedule-none-yet = No requirements yet.
+schedule-no-bundles = No bundles. A bundle is a service done as one, e.g. a 5,000-mile service.
+schedule-off = Off
+schedule-remove-note = A requirement a job has done can't be removed (turn it off instead). Removing one takes it out of its bundles.
+schedule-add-requirement-title = New requirement
+schedule-name = Name
+schedule-in-use = In use
+schedule-due-when = Due when, whichever comes first
+schedule-add-meter-rule = + Meter rule
+schedule-add-calendar-rule = + Calendar rule
+schedule-add-fixed-rule = + Fixed date
+schedule-rules-hint = No rules: done when needed. A fixed date's first date is optional; each job gives the next.
+schedule-every-label = every
+schedule-calendar = Calendar
+schedule-months-label = months
+schedule-end-of-month = by the month's end
+schedule-fixed-label = Fixed date
+schedule-first-due = first due
+schedule-add-bundle-title = New bundle
+schedule-edit-bundle-title = Change this bundle
+schedule-bundle-covers = What it covers
+schedule-remove-title = Remove { $name }?
+schedule-copy-title = Copy a schedule to { $vehicle }
+schedule-copy-from-label = From
+schedule-copy-no-vehicles = There's no other vehicle to copy from.
+schedule-copy-summary = { $requirements ->
+        [one] 1 requirement
+       *[other] { $requirements } requirements
+    } and { $bundles ->
+        [one] 1 bundle
+       *[other] { $bundles } bundles
+    }. Copies, never links.
+schedule-copy-left-out = Left out (no matching meter on { $vehicle }):
+schedule-copy = Copy
 unit-miles = Miles
 unit-kilometers = Kilometers
 unit-us-gallons = US gal

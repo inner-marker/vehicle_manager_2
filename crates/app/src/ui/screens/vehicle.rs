@@ -5,8 +5,9 @@
 //! dashboard: its panels say when they fill, and the meters are listed. **Setup** holds the
 //! details, meters, custom fields, required readings, the group, and the status (see
 //! `vehicle_setup`). **Squawks** (milestone 7) lists them all, and the Overview's card the
-//! outstanding ones (see `squawks`). The other tabs say which milestone fills them. On phones
-//! the tabs scroll sideways.
+//! outstanding ones (see `squawks`). **Maintenance** holds the schedule, the jobs, and setting
+//! the schedule up (see `maintenance`). Documents says which milestone fills it. On phones the
+//! tabs scroll sideways.
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, AssetsOutcome};
@@ -16,8 +17,9 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
 use domain::profile::profile;
 
+use super::maintenance::{MaintenanceTab, MaintenanceView};
 use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawks};
-use super::timeline::{OverviewPanels, Timeline};
+use super::timeline::{OverviewPanels, Shown, Timeline};
 use super::vehicle_setup::Setup;
 use super::vehicles::{kind_name, status_label};
 use crate::api;
@@ -88,8 +90,16 @@ impl Tab {
         }
     }
 
-    fn from_slug(slug: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.slug() == slug)
+    /// The tab an address names, and the Maintenance tab's view (`jobs` and `set-up` are
+    /// the Maintenance tab too).
+    fn from_slug(slug: &str) -> Option<(Self, MaintenanceView)> {
+        if let Some(view) = MaintenanceView::from_slug(slug) {
+            return Some((Self::Maintenance, view));
+        }
+        Self::ALL
+            .into_iter()
+            .find(|tab| tab.slug() == slug)
+            .map(|tab| (tab, MaintenanceView::Schedule))
     }
 
     pub(super) const fn label(self) -> MessageId {
@@ -107,8 +117,12 @@ impl Tab {
     /// The milestone that fills a tab with no content yet.
     const fn coming_in(self) -> Option<i64> {
         match self {
-            Self::Overview | Self::Squawks | Self::Setup | Self::Timeline | Self::Fuel => None,
-            Self::Maintenance => Some(7),
+            Self::Overview
+            | Self::Squawks
+            | Self::Setup
+            | Self::Timeline
+            | Self::Fuel
+            | Self::Maintenance => None,
             Self::Documents => Some(8),
         }
     }
@@ -223,7 +237,9 @@ pub(super) fn required_text(meter: &Meter) -> String {
 #[component]
 pub(crate) fn VehicleDetail(asset_id: String) -> Element {
     match asset_id.parse::<AssetId>() {
-        Ok(id) => rsx! { VehicleScreen { id, start: Tab::Overview } },
+        Ok(id) => {
+            rsx! { VehicleScreen { id, start: Tab::Overview, maintenance_view: MaintenanceView::Schedule } }
+        }
         Err(_) => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
@@ -233,7 +249,9 @@ pub(crate) fn VehicleDetail(asset_id: String) -> Element {
 #[component]
 pub(crate) fn VehicleTab(asset_id: String, tab: String) -> Element {
     match (asset_id.parse::<AssetId>(), Tab::from_slug(&tab)) {
-        (Ok(id), Some(start)) => rsx! { VehicleScreen { id, start } },
+        (Ok(id), Some((start, maintenance_view))) => {
+            rsx! { VehicleScreen { id, start, maintenance_view } }
+        }
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
@@ -262,7 +280,7 @@ async fn load(mut page: VehiclePage, id: AssetId) {
 
 /// The page: header, tabs, and the chosen tab.
 #[component]
-fn VehicleScreen(id: AssetId, start: Tab) -> Element {
+fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> Element {
     let auth = use_auth();
     let page = use_context_provider(|| VehiclePage {
         view: Signal::new(None),
@@ -318,8 +336,9 @@ fn VehicleScreen(id: AssetId, start: Tab) -> Element {
                 Tab::Squawks => rsx! { SquawksTab { vehicle: view, squawks: squawks() } },
                 Tab::Setup => rsx! { Setup { view } },
                 Tab::Timeline => rsx! { Timeline { view, only: None } },
-                Tab::Fuel => rsx! { Timeline { view, only: Some(EventKind::Fuel) } },
-                Tab::Maintenance | Tab::Documents => rsx! {
+                Tab::Fuel => rsx! { Timeline { view, only: Some(Shown::FuelUps) } },
+                Tab::Maintenance => rsx! { MaintenanceTab { vehicle: view, start: maintenance_view } },
+                Tab::Documents => rsx! {
                     p { class: "placeholder",
                         {tr_with(messages::TAB_COMING, &[("milestone", MessageArg::from(current.coming_in().unwrap_or_default()))])}
                     }

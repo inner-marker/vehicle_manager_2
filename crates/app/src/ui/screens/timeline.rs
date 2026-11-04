@@ -4,7 +4,8 @@
 //! **The Timeline** lists the vehicle's events newest first, grouped by month (in each event's
 //! own zone), with All / Fuel-ups / Readings filters. Each row opens the event's page. **A
 //! corrected original stays, dimmed, beneath its correction:** only the correction's values
-//! count. The Fuel tab is the same list, fuel-ups only (fuel economy arrives in Phase 5).
+//! count. The Fuel tab is the same list, fuel-ups only (fuel economy arrives in Phase 5); the
+//! Maintenance tab's Jobs view is maintenance and repairs only, drafts first (step 7g).
 //!
 //! **Overview** gains three panels: the latest fuel-ups, each meter's latest reading, and the
 //! last activity.
@@ -65,14 +66,45 @@ pub(super) struct Row {
     pub corrected: bool,
 }
 
-/// The events to list for `filter` (`None`: all), newest first, grouped by month: each event
-/// that counts, then beneath it whatever it corrects (and what that corrected, in turn).
-pub(super) fn arrange(events: &[EventView], filter: Option<EventKind>) -> Vec<(String, Vec<Row>)> {
+/// Which events a list shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Shown {
+    /// Everything (the Timeline tab), or one kind (its filter chips).
+    Kind(Option<EventKind>),
+    /// Fuel-ups only (the Fuel tab).
+    FuelUps,
+    /// Maintenance and repairs, drafts first (the Maintenance tab's Jobs).
+    Jobs,
+}
+
+impl Shown {
+    fn shows(self, kind: EventKind) -> bool {
+        match self {
+            Self::Kind(filter) => filter.is_none_or(|only| only == kind),
+            Self::FuelUps => kind == EventKind::Fuel,
+            Self::Jobs => !kind.finalizes_by_itself(),
+        }
+    }
+}
+
+/// The events `shown`, newest first, grouped by month: each event that counts, then beneath it
+/// whatever it corrects (and what that corrected, in turn). For jobs, the drafts come first,
+/// under "In progress".
+pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Row>)> {
     let by_id = |id: EventId| events.iter().find(|view| view.id == id);
+    let drafts_first = shown == Shown::Jobs;
     let mut months: Vec<((i16, i8), String, Vec<Row>)> = Vec::new();
+    let mut drafts: Vec<Row> = Vec::new();
     // `events` comes newest first; originals that were corrected show under their correction.
     for view in events.iter().filter(|view| view.corrected_by.is_none()) {
-        if filter.is_some_and(|kind| view.event.kind != kind) {
+        if !shown.shows(view.event.kind) {
+            continue;
+        }
+        if drafts_first && view.event.status == EventStatus::Draft {
+            drafts.push(Row {
+                view: view.clone(),
+                corrected: false,
+            });
             continue;
         }
         let zone = &view.event.dates.zone;
@@ -97,9 +129,10 @@ pub(super) fn arrange(events: &[EventView], filter: Option<EventKind>) -> Vec<(S
             None => months.push((key, heading, rows)),
         }
     }
-    months
+    let in_progress = (!drafts.is_empty()).then(|| (tr(messages::TIMELINE_IN_PROGRESS), drafts));
+    in_progress
         .into_iter()
-        .map(|(_, heading, rows)| (heading, rows))
+        .chain(months.into_iter().map(|(_, heading, rows)| (heading, rows)))
         .collect()
 }
 
@@ -130,6 +163,21 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
         parts.push(show_volume(fuel.volume_ml, units.volume));
         parts.extend(fuel.cost_minor.map(|cost| show_money(cost, fuel.currency)));
     }
+    // A job: its first task, how many, and what it cost.
+    if let Some(work) = &event.work {
+        if let Some(first) = work.tasks.first() {
+            parts.push(first.title.as_str().to_owned());
+        }
+        let count = i64::try_from(work.tasks.len()).unwrap_or(i64::MAX);
+        parts.push(tr_with(
+            messages::TIMELINE_TASK_COUNT,
+            &[("count", MessageArg::from(count))],
+        ));
+        let total = work.total_cost_minor();
+        if total > 0 {
+            parts.push(show_money(total, work.currency));
+        }
+    }
     parts.join(" · ")
 }
 
@@ -157,15 +205,15 @@ const fn filter_label(filter: Option<EventKind>) -> MessageId {
     }
 }
 
-/// The Timeline tab (or the Fuel tab, with `only` fuel-ups).
+/// The Timeline tab (or the Fuel tab, or the Maintenance tab's Jobs, with `only`).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-pub(super) fn Timeline(view: AssetView, only: Option<EventKind>) -> Element {
+pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
     let loaded = use_vehicle_events(view.id);
-    let mut filter = use_signal(|| only);
+    let mut filter = use_signal(|| None::<EventKind>);
     let Some(answer) = loaded() else {
         return rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } };
     };
@@ -173,9 +221,9 @@ pub(super) fn Timeline(view: AssetView, only: Option<EventKind>) -> Element {
         Ok(data) => data,
         Err(problem) => return rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
     };
-    // The Fuel tab always shows fuel-ups (the same component as the Timeline tab, so its own
-    // filter may still hold the Timeline's choice).
-    let months = arrange(&data.events, only.or(filter()));
+    // The Fuel tab and Jobs always show their own (the same component as the Timeline tab, so
+    // its own filter may still hold the Timeline's choice).
+    let months = arrange(&data.events, only.unwrap_or(Shown::Kind(filter())));
     let choices: Vec<Option<EventKind>> = if only.is_some() {
         Vec::new()
     } else {
@@ -202,7 +250,9 @@ pub(super) fn Timeline(view: AssetView, only: Option<EventKind>) -> Element {
                 }
             }
             if months.is_empty() {
-                p { class: "placeholder", {tr(messages::TIMELINE_EMPTY)} }
+                p { class: "placeholder",
+                    if only == Some(Shown::Jobs) { {tr(messages::JOBS_EMPTY)} } else { {tr(messages::TIMELINE_EMPTY)} }
+                }
             }
             for (heading, rows) in months {
                 section { key: "{heading}", class: "timeline-month",
@@ -219,10 +269,10 @@ pub(super) fn Timeline(view: AssetView, only: Option<EventKind>) -> Element {
 #[component]
 fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> Element {
     let event = &row.view.event;
-    let icon = if event.kind == EventKind::Fuel {
-        "⛽"
-    } else {
-        "⏱"
+    let icon = match event.kind {
+        EventKind::Fuel => "⛽",
+        EventKind::Reading => "⏱",
+        EventKind::Maintenance | EventKind::Repair => "🔧",
     };
     let title = format!(
         "{} · {}",
@@ -501,7 +551,7 @@ mod tests {
     #[test]
     fn the_timeline_groups_by_month_and_puts_originals_under_their_corrections() {
         assert_eq!(
-            ids(&arrange(&events(), None)),
+            ids(&arrange(&events(), Shown::Kind(None))),
             vec![
                 ("November 2026".to_owned(), vec![(10, false)]),
                 (
@@ -511,8 +561,24 @@ mod tests {
             ]
         );
         assert_eq!(
-            ids(&arrange(&events(), Some(EventKind::Reading))),
+            ids(&arrange(&events(), Shown::Kind(Some(EventKind::Reading)))),
             vec![("October 2026".to_owned(), vec![(13, false)])]
+        );
+    }
+
+    #[test]
+    fn jobs_show_only_maintenance_and_repairs_with_drafts_first() {
+        let mut events = events();
+        let mut draft = view(14, EventKind::Repair, 20, 52_000);
+        draft.event.status = EventStatus::Draft;
+        events.push(draft);
+        events.push(view(15, EventKind::Maintenance, 1, 52_600));
+        assert_eq!(
+            ids(&arrange(&events, Shown::Jobs)),
+            vec![
+                ("In progress".to_owned(), vec![(14, false)]),
+                ("November 2026".to_owned(), vec![(15, false)]),
+            ]
         );
     }
 

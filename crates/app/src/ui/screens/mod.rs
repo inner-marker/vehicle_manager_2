@@ -8,6 +8,7 @@ mod groups;
 mod log_chooser;
 mod log_form;
 mod log_input;
+mod maintenance;
 mod messages;
 mod placeholders;
 mod places;

@@ -149,7 +149,7 @@ pub(crate) fn SquawkSheetDialog() -> Element {
 }
 
 /// The browser's time zone (UTC until it's known).
-fn use_device_zone() -> Signal<TimeZone> {
+pub(super) fn use_device_zone() -> Signal<TimeZone> {
     let mut zone = use_signal(TimeZone::utc);
     use_effect(move || {
         spawn(async move {

@@ -800,6 +800,11 @@
     - the event page and Timeline rows for maintenance and repairs.
 12. **One PR,** with **two checkpoint tests** on the test server (#062): after squawks and requirements, and at the end.
 13. **What squawks are called** (the human, 2026-11-03; decision #064): the Admin chooses one word for the household (**Issues** by default, Squawks, Faults, or Write-ups). Only the words on screen change; the code and documents keep "squawk".
+15. **The Maintenance tab** (the human's pick, `docs/ui-sketches/p2m7-schedule-options-2.svg`, 2026-11-03; it revises `p2m7-schedule-options.svg`'s option A): one tab, with a segmented control (like Settings' You / Household):
+    - **Schedule** (everyone): each requirement as a card, with its rules and **last done** (date, reading, and the job); turned-off ones and the bundles below. With nothing set up, Maintainers get **Set it up** and **Copy from…**.
+    - **Jobs** (everyone): the vehicle's maintenance and repairs, drafts first: the Timeline's rows, for jobs only. Filled in by 7i.
+    - **Set up** (Maintainers, in Maintainer or Admin mode): option A's requirement and bundle sections and dialogs (rule rows: a meter rule, a calendar rule, a fixed date), and **Copy from…** while there are no requirements.
+    - Setup's tab keeps meters and fields, with a link to Maintenance › Set up; the address keeps the view.
 14. **The squawk screens** (the human's pick from `docs/ui-sketches/p2m7-squawks-options.svg`, 2026-11-03): a **summary card on the Overview** listing the outstanding ones, High first (option A's panel); a **Squawks tab** with Outstanding / Resolved / All filters, the list and the chosen squawk side by side on wide screens (option B); **opening one is a quick sheet** with notes and the time folded away (option B).
 
 | Step | Status | Commit title | Contents | New dependencies |
@@ -812,7 +817,7 @@
 | 7e | ☑️ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
 | 7f.0 | ☑️ | `feat: what the household calls squawks` | Choice 13 (#064): the household preference (Issues, Squawks, Faults, Write-ups; a new column, migration `0013`); the translator fills in the word, plural, capital, and article for every message that names them; Settings' household section offers it (Admin mode) | none |
 | 7f | ☑️ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
-| 7g | ⬜ | `feat(app): requirements, bundles, and the Maintenance tab` | **SVG options first.** Setup's requirements (with their rules) and bundles; **Copy schedule**; the Maintenance tab with each requirement's last done | none |
+| 7g | ☑️ | `feat(app): requirements, bundles, and the Maintenance tab` | SVG options done (choice 15). The Maintenance tab's Schedule (last done), Jobs, and Set up (requirements with their rules, bundles, **Copy from…**) | none |
 | 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
 | 7j | ⬜ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
@@ -931,3 +936,28 @@
     - a job through the API deferring both (one made Medium), then finished: the tab's detail shows the history with "Low → Medium" and the locked note;
     - an event's **Report an issue**: the squawk's page shows "Found on: Fuel-up · 3 Nov 2026 ›", Edit opens "Change this issue", Remove goes back to the tab;
     - on the phone, the list, then the detail with its back link. The card's rows ran past its edge; fixed and measured.
+- **7g:** no new dependency (`crates/app/src/ui/screens/maintenance.rs`). The Maintenance tab (choice 15):
+  - **A segmented control:** Schedule, Jobs, and Set up (Set up only when the person may configure the vehicle: Maintainer, in Maintainer or Admin mode). The address keeps the view: `…/tab/maintenance`, `…/tab/jobs`, `…/tab/set-up`. Setup's tab links to Set up.
+  - **Schedule:** a card per requirement in use, with its rules as one line ("Every 5,000 mi or 6 months", "When needed", "On a fixed date · next 30 Nov 2026"). Its **last done** shows the date, the reading of its meter rule's meter (or the first reading), and **The job ›**.
+    - Turned-off ones and the bundles are listed below.
+    - With none, Maintainers get **Set it up** and **Copy from…**; others see "Nothing is tracked yet."
+  - **Jobs:** the Timeline's rows for maintenance and repairs only, drafts first under **In progress** (`Shown::Jobs`; the Timeline's kind filter became `Shown`). A job's row adds its first task, its task count, and its cost.
+  - **Set up:** Setup's section style.
+    - **Requirements** (+ Requirement, and Copy from… while there are none), each with Edit and Remove.
+    - **The requirement dialog:** name, notes, In use, and "Due when, whichever comes first". Each rule is a row with ✕:
+      - a meter rule (the meter, and every N in its unit);
+      - a calendar rule (months, and by the month's end);
+      - a fixed date (its optional first date).
+      - Each kind is offered while it's still possible, and the rules are checked before saving.
+    - **Service bundles**, and **the bundle dialog:** a name and a checklist, saved in the schedule's order.
+    - **Remove** asks first; the server's refusal (a requirement a job has done) shows in the dialog.
+  - **Copy from…:** pick a vehicle. It previews "3 requirements and 1 bundle. Copies, never links." and any meter rules left out (`copy_schedule` in the app, on both vehicles' meters), then copies.
+  - 56 messages. 5 new tests: the rules' one line (and a fixed date's next date from the last job); last done's reading; typed rules checked, and a stored rule typed back; each view's address; Jobs' order (drafts first).
+  - **Browser check** (1200 × 1000 and a 390 × 844 phone):
+    - a truck's empty Schedule, and Jobs' "none logged yet";
+    - Set up: three requirements through the dialog (a 0-month rule refused) and a bundle;
+    - a finished oil change through the API: Schedule shows "1 Nov 2026 · 52,641 mi · The job ›";
+    - Remove refused for a requirement a job did; turning one off moves it to "Turned off";
+    - Jobs: the draft repair under In progress, then the finished one, with "Engine oil & filter · 2 tasks · 115.98 USD";
+    - Copy onto a van: the preview, then its Schedule;
+    - Setup's link lands on Set up; Driver mode shows only Schedule and Jobs; the phone's cards fit.

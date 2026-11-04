@@ -3129,3 +3129,168 @@ a.squawk-history-job {
         align-self: flex-start;
     }
 }
+
+/* ---------- The Maintenance tab (step 7g; docs/ui-sketches/p2m7-schedule-options-2.svg) ---------- */
+
+.maintenance {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Three views: narrower segments than Settings' two. */
+.maintenance-views .segment {
+    min-width: 0;
+}
+
+.schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* One requirement: its name and rules on the left, when it was last done on the right. */
+.schedule-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.schedule-card-text,
+.schedule-card-last {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.schedule-card-last {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.schedule-card-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.schedule-card-rules {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.schedule-card-label {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.schedule-card-when {
+    font-weight: 600;
+}
+
+.schedule-card-when.muted {
+    color: var(--text-muted);
+}
+
+.schedule-card-job {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.schedule-bundle {
+    margin: 0;
+}
+
+.schedule-empty {
+    align-items: center;
+    text-align: center;
+}
+
+.schedule-empty-title {
+    margin: 0;
+}
+
+/* The requirement dialog's rules: one row each, with ✕ to remove it. */
+.dialog.requirement-dialog {
+    width: min(560px, 100%);
+}
+
+.rule-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.rule-inputs {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.rule-inputs > .field-input {
+    width: auto;
+}
+
+.rule-inputs .rule-number {
+    width: 7em;
+}
+
+.rule-kind {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.rule-remove {
+    font-size: 1rem;
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.copy-left-out {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+    color: var(--warn);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 639px) {
+    /* Phones: the last-done line goes under the name. */
+    .schedule-card-last {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .maintenance-views {
+        align-self: stretch;
+        display: flex;
+    }
+
+    .maintenance-views .segment {
+        flex: 1;
+        padding: 0 8px;
+    }
+}

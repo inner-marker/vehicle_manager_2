@@ -1706,6 +1706,116 @@ define_messages! {
     SQUAWK_REMOVE_TEXT => "squawk-remove-text",
     /// + Log: the squawk tile's line.
     LOG_SQUAWK_DETAIL => "log-squawk-detail",
+    /// Setup: where the maintenance schedule is.
+    SETUP_SCHEDULE_MOVED => "setup-schedule-moved",
+    /// Maintenance tab view: what's tracked.
+    MAINTENANCE_SCHEDULE => "maintenance-schedule",
+    /// Maintenance tab view: the maintenance and repairs.
+    MAINTENANCE_JOBS => "maintenance-jobs",
+    /// Maintenance tab view: setting the schedule up.
+    MAINTENANCE_SET_UP => "maintenance-set-up",
+    /// Jobs: the drafts' heading.
+    TIMELINE_IN_PROGRESS => "timeline-in-progress",
+    /// A job's row: how many tasks; takes `count`.
+    TIMELINE_TASK_COUNT => "timeline-task-count",
+    /// Jobs: none yet.
+    JOBS_EMPTY => "jobs-empty",
+    /// Rules: periodic ones; takes `rules` (e.g. 5,000 mi or 6 months).
+    SCHEDULE_EVERY => "schedule-every",
+    /// Rules: between two rules.
+    SCHEDULE_OR => "schedule-or",
+    /// Rules: a calendar rule; takes `count`.
+    SCHEDULE_MONTHS => "schedule-months",
+    /// Rules: a calendar rule due by the month's end; takes `count`.
+    SCHEDULE_MONTHS_END => "schedule-months-end",
+    /// Rules: a fixed date with no date yet.
+    SCHEDULE_FIXED => "schedule-fixed",
+    /// Rules: a fixed date; takes `date`.
+    SCHEDULE_FIXED_NEXT => "schedule-fixed-next",
+    /// Rules: none.
+    SCHEDULE_WHEN_NEEDED => "schedule-when-needed",
+    /// Schedule card: when it was last done.
+    SCHEDULE_LAST_DONE => "schedule-last-done",
+    /// Schedule card: never done.
+    SCHEDULE_NOT_DONE => "schedule-not-done",
+    /// Schedule card: the job that last did it.
+    SCHEDULE_THE_JOB => "schedule-the-job",
+    /// Schedule: turned-off requirements; takes `names`.
+    SCHEDULE_TURNED_OFF => "schedule-turned-off",
+    /// Schedule and Set up: the bundles.
+    SCHEDULE_BUNDLES => "schedule-bundles",
+    /// Set up: the requirements.
+    SCHEDULE_REQUIREMENTS => "schedule-requirements",
+    /// Schedule: nothing set up.
+    SCHEDULE_EMPTY_TITLE => "schedule-empty-title",
+    /// Schedule: what to set up.
+    SCHEDULE_EMPTY_HINT => "schedule-empty-hint",
+    /// Schedule: nothing set up, for those who can't.
+    SCHEDULE_NOTHING_TRACKED => "schedule-nothing-tracked",
+    /// Schedule: to Set up.
+    SCHEDULE_SET_IT_UP => "schedule-set-it-up",
+    /// Button: copy a schedule from another vehicle.
+    SCHEDULE_COPY_FROM => "schedule-copy-from",
+    /// Button: add a requirement.
+    SCHEDULE_ADD_REQUIREMENT => "schedule-add-requirement",
+    /// Button: add a bundle.
+    SCHEDULE_ADD_BUNDLE => "schedule-add-bundle",
+    /// Set up: no requirements.
+    SCHEDULE_NONE_YET => "schedule-none-yet",
+    /// Set up: no bundles.
+    SCHEDULE_NO_BUNDLES => "schedule-no-bundles",
+    /// Set up: a requirement turned off.
+    SCHEDULE_OFF => "schedule-off",
+    /// Set up: about removing.
+    SCHEDULE_REMOVE_NOTE => "schedule-remove-note",
+    /// Requirement dialog: adding one.
+    SCHEDULE_ADD_REQUIREMENT_TITLE => "schedule-add-requirement-title",
+    /// Requirement and bundle dialogs: the name.
+    SCHEDULE_NAME => "schedule-name",
+    /// Requirement dialog: whether it's on.
+    SCHEDULE_IN_USE => "schedule-in-use",
+    /// Requirement dialog: the rules' heading.
+    SCHEDULE_DUE_WHEN => "schedule-due-when",
+    /// Requirement dialog: add a meter rule.
+    SCHEDULE_ADD_METER_RULE => "schedule-add-meter-rule",
+    /// Requirement dialog: add a calendar rule.
+    SCHEDULE_ADD_CALENDAR_RULE => "schedule-add-calendar-rule",
+    /// Requirement dialog: add a fixed date.
+    SCHEDULE_ADD_FIXED_RULE => "schedule-add-fixed-rule",
+    /// Requirement dialog: about the rules.
+    SCHEDULE_RULES_HINT => "schedule-rules-hint",
+    /// A rule's inputs: every.
+    SCHEDULE_EVERY_LABEL => "schedule-every-label",
+    /// A rule's kind: the calendar.
+    SCHEDULE_CALENDAR => "schedule-calendar",
+    /// A calendar rule's unit.
+    SCHEDULE_MONTHS_LABEL => "schedule-months-label",
+    /// A calendar rule: due by the month's end.
+    SCHEDULE_END_OF_MONTH => "schedule-end-of-month",
+    /// A rule's kind: a fixed date.
+    SCHEDULE_FIXED_LABEL => "schedule-fixed-label",
+    /// A fixed date's first date.
+    SCHEDULE_FIRST_DUE => "schedule-first-due",
+    /// Bundle dialog: adding one.
+    SCHEDULE_ADD_BUNDLE_TITLE => "schedule-add-bundle-title",
+    /// Bundle dialog: changing one.
+    SCHEDULE_EDIT_BUNDLE_TITLE => "schedule-edit-bundle-title",
+    /// Bundle dialog: its requirements.
+    SCHEDULE_BUNDLE_COVERS => "schedule-bundle-covers",
+    /// Remove dialog; takes `name`.
+    SCHEDULE_REMOVE_TITLE => "schedule-remove-title",
+    /// Copy dialog; takes `vehicle`.
+    SCHEDULE_COPY_TITLE => "schedule-copy-title",
+    /// Copy dialog: the vehicle to copy from.
+    SCHEDULE_COPY_FROM_LABEL => "schedule-copy-from-label",
+    /// Copy dialog: no other vehicles.
+    SCHEDULE_COPY_NO_VEHICLES => "schedule-copy-no-vehicles",
+    /// Copy dialog: what comes; takes `requirements` and `bundles`.
+    SCHEDULE_COPY_SUMMARY => "schedule-copy-summary",
+    /// Copy dialog: meter rules left out; takes `vehicle`.
+    SCHEDULE_COPY_LEFT_OUT => "schedule-copy-left-out",
+    /// Copy dialog's button.
+    SCHEDULE_COPY => "schedule-copy",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
 }
