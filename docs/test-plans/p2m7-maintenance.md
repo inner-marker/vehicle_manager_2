@@ -147,7 +147,7 @@ Everything runs on the **test server** (decision #062): its own folder, port 844
 - **Schedule:** the service bundles should be cards like the requirements. Now each is a card with what it covers.
 - **For a later phase:** chained meter intervals ("after the first 100,000 miles, then every 50,000"), recorded as idea 21 in `docs/ideas-to-discuss.md`.
 
-**Part 2** (the human, on the test server, 2026-11-04): 29 of 30 steps ticked. **Step 8** ("Resets the requirement from: End readings" opening the end readings) isn't ticked; to confirm in milestone 8's run. The human's notes, as written, and what came of each:
+**Part 2** (the human, on the test server, 2026-11-04): all 30 steps passed. The human's notes, as written, and what came of each:
 
 - *"On the phone web browser, in a maintenance event, the labels above each field (what, part number, quantity, unit price) are not visible."* On a phone the parts table hides its column headings to fit, and the fields had labels only for screen readers. **Fixed:** each field now has its own label on a phone (What, Part number, Quantity, Unit price); a wide screen keeps the headings.
 - *"Can we display a currency symbol ($, £, €, etc.) in front of the unit price and total cost fields?"* Then: *a drop-down with a list of currencies, with the household's default currency at the top as the first item and the default.* **Done:**
