@@ -88,7 +88,7 @@ impl AssetsContext<'_> {
     }
 
     /// Whether the person may change, finalize, or correct `event`.
-    fn may_manage(&self, event: &Event, scope: AssetScope) -> bool {
+    pub(crate) fn may_manage(&self, event: &Event, scope: AssetScope) -> bool {
         self.permits(AssetAction::ManageEvents, scope)
             || (event.logged_by == self.user.user && self.permits(log_action(event.kind), scope))
     }
@@ -471,12 +471,16 @@ async fn edit_event(
     }
     let mut event = input.edit(&current, context.clock.now());
     let warnings = context.checked(&mut event, scope, &[id], false).await?;
+    let tasks = event.work.as_ref().map_or(0, |work| work.tasks.len());
     context
         .save_event(Change::Update {
             id,
             patch: event_changes(&current, &event),
         })
         .await?;
+    crate::attachments::settle_tasks(context, current.asset, id, tasks)
+        .await
+        .map_err(|_| EventsOutcome::Unavailable)?;
     Ok(EventsOutcome::Saved { id, warnings })
 }
 
@@ -596,6 +600,10 @@ async fn correct_event(
             values: EventPatch::all(event),
         })
         .await?;
+    // The correction starts with the original's photos and documents (choice 6).
+    crate::attachments::copy_to_correction(context, original.asset, original_id, id)
+        .await
+        .map_err(|_| EventsOutcome::Unavailable)?;
     tracing::debug!(target: log_area::APP, event = %id, original = %original_id, "event corrected");
     Ok(EventsOutcome::Saved { id, warnings })
 }

@@ -12,8 +12,8 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, EventsOutcome, Handshake,
-    InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
+    AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, EventsOutcome,
+    Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
     ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome,
     UserAdminOutcome,
 };
@@ -1033,6 +1033,68 @@ pub(crate) async fn delete_squawk(id: domain::squawk::SquawkId) -> ServerFnResul
     )
 }
 
+/// What's attached to something on a vehicle (an event's includes its tasks'), oldest first.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments")]
+pub(crate) async fn attachments(
+    asset: domain::asset::AssetId,
+    owner: domain::attachment::AttachmentOwner,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::list(&context, asset, owner).await
+    })
+    .await)
+}
+
+/// Adds an attachment from files already uploaded (`domain::api::UPLOAD_PATH`).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/add")]
+pub(crate) async fn add_attachment(
+    input: domain::api::AttachmentInput,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, store| {
+        ::server::attachments::add(&context, store, input).await
+    })
+    .await)
+}
+
+/// Moves an attachment to another task of its event (or to the event itself).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/move")]
+pub(crate) async fn move_attachment(
+    id: domain::attachment::AttachmentId,
+    task: Option<u16>,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::move_to(&context, id, task).await
+    })
+    .await)
+}
+
+/// Removes an attachment.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/delete")]
+pub(crate) async fn remove_attachment(
+    id: domain::attachment::AttachmentId,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::remove(&context, id).await
+    })
+    .await)
+}
+
 /// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
 /// bundles.
 ///
@@ -1439,6 +1501,26 @@ mod server_side {
             return domain::api::SquawksOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context and the file store for an
+    /// attachments request, or answers that it's unavailable (no database or files folder, or
+    /// nobody signed in).
+    pub(super) async fn with_attachments(
+        action: impl AsyncFnOnce(
+            server::assets::AssetsContext<'_>,
+            &'static storage::files::FileStore,
+        ) -> domain::api::AttachmentsOutcome,
+    ) -> domain::api::AttachmentsOutcome {
+        let (Some(database), Some(database_id), Some(user), Some(store)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+            server::startup::file_store(),
+        ) else {
+            return domain::api::AttachmentsOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user), store).await
     }
 
     /// Runs `action` with the signed-in person's vehicles context for a schedule request, or

@@ -55,6 +55,10 @@ uom = { version = "0.38.0", default-features = false, features = ["std", "si", "
 sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
+# Photos: JPEG and PNG only, pure Rust (phase-2.md 8d, #036; approved 2026-11-04).
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }
+# PDFs: checked and their pages counted (phase-2.md 8d, #037; approved 2026-11-04).
+lopdf = { version = "0.47.0", default-features = false }
 tower = { version = "0.5.3", default-features = false }
 tracing = "0.1.44"
 # No env-filter: per-area levels use the lighter `Targets` filter. No ansi: colored

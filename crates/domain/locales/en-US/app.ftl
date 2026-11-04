@@ -1248,6 +1248,10 @@ attachment-no-pages = That PDF has no pages.
 attachment-no-such-task = That task isn't on this job any more.
 attachment-bad-hash = That file reference isn't valid.
 attachment-unchangeable = An attachment can only be moved; to change it, remove it and add it again.
+attachment-unreadable = The server couldn't read that file. It may be damaged, or a PDF it can't open.
+attachment-not-uploaded = That file didn't finish uploading. Try adding it again.
+attachment-originals-off = The household doesn't keep originals. The photo can still be added without it.
+attachment-event-finished = This event is locked. To add or remove a photo or document, correct the event.
 
 ## Official documents and license plates (milestone 8)
 

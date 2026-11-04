@@ -63,7 +63,7 @@ impl AssetsContext<'_> {
     }
 
     /// Whether the person may change or remove `squawk` (ignoring its history).
-    fn may_change_squawk(&self, squawk: &Squawk, scope: AssetScope) -> bool {
+    pub(crate) fn may_change_squawk(&self, squawk: &Squawk, scope: AssetScope) -> bool {
         self.permits_squawk(AssetAction::ManageEvents, scope)
             || (squawk.opened_by == self.user.user
                 && self.permits_squawk(AssetAction::OpenSquawk, scope))

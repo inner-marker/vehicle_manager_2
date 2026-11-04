@@ -181,6 +181,27 @@ impl Database {
         )
     }
 
+    /// One listed file, with its size, if the store lists it.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or the stored size is invalid.
+    pub async fn stored_file(&self, hash: &FileHash) -> Result<Option<StoredFile>, StorageError> {
+        let bytes: Option<i64> =
+            sqlx::query_scalar("SELECT bytes FROM stored_files WHERE sha256 = ?")
+                .bind(hash.as_str())
+                .fetch_optional(self.pool())
+                .await?;
+        bytes
+            .map(|bytes| {
+                Ok(StoredFile {
+                    hash: hash.clone(),
+                    bytes: u64::try_from(bytes).map_err(invalid("stored_files.bytes"))?,
+                })
+            })
+            .transpose()
+    }
+
     /// Every listed file, for the integrity check.
     ///
     /// # Errors

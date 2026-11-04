@@ -2046,4 +2046,12 @@ define_messages! {
     PLATE_AUTHORITY_TOO_LONG => "plate-authority-too-long",
     /// Plate: retired before it was issued.
     PLATE_RETIRED_BEFORE_ISSUED => "plate-retired-before-issued",
+    /// Attachment: a photo or PDF the server couldn't read.
+    ATTACHMENT_UNREADABLE => "attachment-unreadable",
+    /// Attachment: a file that wasn't uploaded first.
+    ATTACHMENT_NOT_UPLOADED => "attachment-not-uploaded",
+    /// Attachment: an original while the household has them off.
+    ATTACHMENT_ORIGINALS_OFF => "attachment-originals-off",
+    /// Attachment: on a finished event.
+    ATTACHMENT_EVENT_FINISHED => "attachment-event-finished",
 }

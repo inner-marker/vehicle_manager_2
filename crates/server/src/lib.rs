@@ -6,6 +6,7 @@
 //! same code. Native only: the web (WASM) build must never depend on this crate.
 
 pub mod assets;
+pub mod attachments;
 pub mod auth;
 pub mod codes;
 pub mod commands;

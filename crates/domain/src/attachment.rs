@@ -702,6 +702,14 @@ pub enum AttachmentProblem {
     BadHash,
     /// A change to an attachment other than moving it (the rest is set when it's added).
     Unchangeable,
+    /// A photo or PDF the server couldn't read (damaged, or a PDF it can't open).
+    Unreadable,
+    /// A file that wasn't uploaded first (or not with that size).
+    NotUploaded,
+    /// Keeping an original while the household has them off (#036).
+    OriginalsOff,
+    /// An attachment on a finished event (correct the event instead, choice 6).
+    EventFinished,
 }
 
 impl AttachmentProblem {
@@ -723,6 +731,10 @@ impl AttachmentProblem {
             Self::NoSuchTask => messages::ATTACHMENT_NO_SUCH_TASK,
             Self::BadHash => messages::ATTACHMENT_BAD_HASH,
             Self::Unchangeable => messages::ATTACHMENT_UNCHANGEABLE,
+            Self::Unreadable => messages::ATTACHMENT_UNREADABLE,
+            Self::NotUploaded => messages::ATTACHMENT_NOT_UPLOADED,
+            Self::OriginalsOff => messages::ATTACHMENT_ORIGINALS_OFF,
+            Self::EventFinished => messages::ATTACHMENT_EVENT_FINISHED,
         }
     }
 }
