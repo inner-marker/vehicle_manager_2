@@ -826,7 +826,7 @@
 | 7h | ☑️ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ☑️ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
 | 7j | ☑️ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
-| 7k | ⬜ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
+| 7k | ☑️ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
 | 7l | ⬜ | `docs: record the maintenance test runs` | Results of both runs | none |
 
 **Not in this milestone:** "what's due", due dates, and service countdowns (Phase 5); readiness (Phase 5; High squawks are counted then); reference documents, recalls, and bulletins (milestone 9); photos and documents on squawks and tasks (milestone 8); meter adjustments; signatures, initials, and logbook entries (sub-plan 01, post-MVP); Admin-changeable finalize delays.
@@ -1010,3 +1010,15 @@
     - **Correct…:** the form had its tasks and squawks. Finish refused until the squawk found during the job was dealt with too (outstanding now), then the correction's page linked back to the original;
     - **the forgotten-job message**, from a repair draft backdated 15 days in the database: "A job is still a draft … on Truck" and **Open the job** opened it ("Draft · finish it when the work is done");
     - the phone's tiles, tasks, and table fit.
+- **7k:** `docs/test-plans/p2m7-maintenance.md`, part 2 (29 steps), on part 1's `Test truck`:
+  - the work log: a bundle's tasks, parts and labor, resets from the end, a fixed date's next due, a sign-off by a task;
+  - Save draft, then **Finish** refusing the undecided squawks; deferring one (made High) and finishing;
+  - the job's page, the squawks' statuses, the schedule's last done (from the end reading), and Remove refused;
+  - **Repair this** and a repair's complaint and cause;
+  - a squawk found during a job; correcting a job (dealing with the new squawk too);
+  - the forgotten job with test timers (and not for Sam);
+  - the phone, the desktop app, the household's word, a restart, and the secrets check.
+  - **Fixed while writing it:** a correction of an older job listed the squawks the original dispositioned, even one a later job had since resolved. The server would refuse that disposition, and undeciding it left Finish waiting.
+    - The work log now works out which squawks are outstanding as the server does: from each squawk's history, leaving out the job itself and the one it corrects (`work_log::job_squawks`).
+    - A save sends only the dispositions of the squawks shown.
+    - 1 new test. Checked in the browser: a job deferring the rattle, then a repair signing it off, then a correction of the first job: the correction listed the brake lights and the coolant smell (not the rattle), finished, and the rattle stayed resolved.
