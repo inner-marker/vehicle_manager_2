@@ -85,7 +85,37 @@ Everything runs on the **test server** (decision #062). **Start only once milest
 
 ## 4. Checklist (part 2)
 
-*Written in step 8i: the Documents tab, license plates (giving the plate from step 1 its state), renewals, and the desktop app (its uploads, Downloads, and HEIC from Photos).*
+*Step 8i: the Documents tab, license plates (giving the truck's moved plate its state, then moving it to a new one), renewals, who may change them, and the desktop app (its uploads, Downloads, the PDF viewer, and HEIC from Photos). It carries on from part 1's `Test truck`.*
+
+**Setup:** the "Server image" run for "feat(app): the Documents tab and license plates" (or newer) finished successfully; `VEHICLEMANAGER_TEST_MINUTES=` is empty. Have ready: a PDF or photo of a **registration** card, an **insurance** card, and a **title** (any will do; nothing is shared). For the desktop app (steps 21–25), on the Mac: `cd crates/app` in the repository, then `dx serve --platform desktop`, with the test server's address (`:8443`) saved.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager-test 2>&1` | `database open` with `schema_now=14` (no migration this time), `database integrity check passed`, no `ERROR` lines. |
+| [ ] | 2 | **Mac**, `admin`: `Test truck` | The header shows the plate from part 1's step 1, **as just its number** (no state yet). The Garage card shows it too. |
+| [ ] | 3 | **Documents** tab | **LICENSE PLATE**: the plate drawn like one, "Choose who issued it: Edit." in red. **DOCUMENTS**: "No documents yet." **+ Plate** and **+ Document** show only in Maintainer or Admin mode. |
+| [ ] | 4 | **Maintainer mode** → the plate's **Edit** | **Change the license plate**: "Issued by" with **none chosen** and "Choose who issued it", the number, and empty dates. |
+| [ ] | 5 | **US state** → **North Carolina** (or your state); its issue date → **Save** | The card: "North Carolina · <number>", "Since …". The header and Garage card: "NC · <number>". |
+| [ ] | 6 | **Edit** again → **Other**, leave the name empty → **Save** | "Enter who issued the plate." Cancel. *(A plate that has a state keeps one.)* |
+| [ ] | 7 | **+ Document** | **Add a document**: **Type** (Title, Registration, Insurance, Other…), Number, Issued by, Issued, Takes effect, Expires, **License plate** (the NC plate chosen), "Its expiry becomes the plate's.", Notes, "Add its scans on its card once it's saved." |
+| [ ] | 8 | **Registration**: a number, `NC DMV`, issued a year ago, **expires in 3 weeks** → **Save** | A **Registration** card: number · NC DMV, the dates, a yellow **Expires in N days** chip, **SCANS** with **+ Add**, **Renew…** and **Edit**. The plate's card now says "expires … (from its registration)". |
+| [ ] | 9 | On its **SCANS**: **+ Add** → **Choose a PDF** (or a photo) → the registration card | Its tile shows, first page as the thumbnail. Open it: it reads. |
+| [ ] | 10 | **+ Document** → **Insurance** (expires in 6 months, no plate menu), then **Title** (no expiry) | Each its own card: Insurance **Current** with **Renew…**; Title "never expires", **Current**, and **Edit** only (nothing to renew). |
+| [ ] | 11 | **+ Document** → **Other…** → name `Parking permit`, expires before it's issued → **Save** | "It expires before it's issued or takes effect. Check the dates." Fix the dates → **Save**: a **Parking permit** card. |
+| [ ] | 12 | The registration's **Renew…** | **Renew it**: "A new record; the one it renews is kept as history." Type (fixed), number, issuer, and plate filled in; **dates empty**. |
+| [ ] | 13 | Issued today, expires in a year → **Renew** | One **Registration** card, **Current**, with the new dates, and **▸ Earlier (1)** below it. The plate's expiry moved to the new one. The scan stayed with the earlier one (open **Earlier (1)**). |
+| [ ] | 14 | **Earlier (1)** → **Edit** → **Remove** → **Remove it and its scans** | "A later document renews this one. Remove that one first." Cancel. |
+| [ ] | 15 | The plate's **Edit** → **Remove** → **Remove the plate** | "A registration names this plate. Change the registration first." Cancel. |
+| [ ] | 16 | **The truck moves to Virginia:** **+ Plate** → **US state** → **Virginia**, a new number, issued today → **Add** | The new plate is the current one; **▸ Earlier plates (1)** has the NC one, "… – today". The header and Garage card show "VA · …". |
+| [ ] | 17 | The registration's **Edit** → **License plate**: the new VA plate → **Save** | Saved. The VA plate's card now shows the registration's expiry. |
+| [ ] | 18 | The **Parking permit**'s **Edit** → **Remove** → **Remove it and its scans** | The card goes. |
+| [ ] | 19 | **Phone**, as **Sam** (Driver): `Test truck` → **Documents** | The plate and the cards, with their chips and scans (which open), and **no** + Plate, + Document, Renew, or Edit. |
+| [ ] | 20 | **Phone**, `admin`, **Maintainer mode**: the insurance card's **SCANS** → **+ Add** → **Take photo** → photograph the insurance card | Added, Medium. Open it: readable. |
+| [ ] | 21 | **Desktop app:** sign in → `Test truck` → **Overview** (Admin mode) → **+ Add** → **Choose photos** → the **HEIC** photo from part 1 | Added as a JPEG (the Mac's webview reads HEIC). Open it: upright, with its **Taken** and **Camera**. |
+| [ ] | 22 | In the viewer: **Download** | "Saved to …/Downloads/<name>". The file is there and opens. |
+| [ ] | 23 | **Documents** → the registration's earlier scan | The PDF viewer: its pages, zoom, "Page 1 of N". |
+| [ ] | 24 | A job draft (Maintainer mode) → a task → **+ Add** → **Choose a PDF** | Added, with its first page as the tile. |
+| [ ] | 25 | Quit and reopen the desktop app; open the same photo | It shows (fetched again from the server with the app's session). |
 
 ## 5. If a step fails, capture
 

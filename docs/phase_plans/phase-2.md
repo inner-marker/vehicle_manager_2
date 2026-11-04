@@ -1096,7 +1096,7 @@
 | 8f | ☑️ | `feat(app): PDFs and the viewer` | **SVG options first.** Upload a PDF, the first-page thumbnail, pdf.js viewer, Download | pdf.js (bundled) |
 | 8g | ☑️ | `docs: photos and documents checkpoint test` | Part 1, on the test server once M7 is signed off | none |
 | 8h | ☑️ | `feat(app): the Documents tab and license plates` | **SVG options first.** Documents and renewals; plates and their history | none |
-| 8i | ⬜ | `docs: photos and documents test plan, part 2` | The rest, phone and desktop | none |
+| 8i | ☑️ | `docs: photos and documents test plan, part 2` | The rest, phone and desktop | none |
 | 8j | ⬜ | `docs: record the photos and documents test runs` | Results | none |
 
 **Written so far**
@@ -1187,4 +1187,5 @@
   - **Found on the way:** the merge of milestone 7 into 8 left the photos' phone-only CSS block unclosed, so everything after it (the money fields, Copy from start, this tab) was styled only on phones. Closed, and **a test now checks the stylesheet's braces balance**.
   - **Checked in the browser:** an empty tab; a plate (NC), a registration expiring in 20 days on it ("Expires in 20 days", and the plate's expiry following); renewing (one card, "Earlier (1)", Current); a second plate (VA) retiring the first ("Earlier plates (1)"); the header and Garage card; wide and phone. **Not checked by me:** the tab with a plate moved over on the test server (the test plan, 8i), scans on a document in the browser (the strip is 8e's), and the desktop app.
   - 56 messages. 6 new tests: a plate's label; each current document with what it renewed; the chip close to expiry; a plate's authority from the dialog (and a moved plate's none); a renewal's starting point and a bad date; the stylesheet's braces.
+- **8i:** `docs/test-plans/p2m8-photos-documents.md`, part 2 (25 steps), on part 1's `Test truck`: its moved plate (just a number, "Choose who issued it", then a state; a plate with a state keeps one); a registration expiring soon (the chip, the plate's expiry following, a scan); insurance, a title, and the household's own type (with dates the wrong way round); renewing (one card, Earlier, the plate's expiry moving); removing refused (a renewed document, a plate a registration names); moving to another state (the old plate retired, the registration moved to the new one); a Driver seeing but not changing; a photo of a card from the phone; and the desktop app (HEIC from Photos, Download to Downloads, the PDF viewer, a job's PDF, reopening).
 
