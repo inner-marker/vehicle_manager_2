@@ -18,7 +18,7 @@ use domain::i18n::{MessageId, messages};
 use domain::location::{Coordinates, Fix, LocationSource, Place, TimeZone};
 use domain::meter::{EventKind, Meter, MeterId};
 use domain::notes::Notes;
-use domain::preferences::Preferences;
+use domain::preferences::{CurrencyCode, Preferences};
 use domain::quantity::{
     QuantityError, economy_value, money_value, parse_economy, parse_money, parse_reading,
     parse_volume, reading_value, volume_value,
@@ -157,6 +157,8 @@ pub(super) struct Typed {
     pub original_start: Option<UnixMillis>,
     /// A maintenance or repair job's work log.
     pub work: TypedWork,
+    /// The currency its amounts are in (`None`: the person's).
+    pub currency: Option<CurrencyCode>,
 }
 
 /// What building the event needs besides what was typed.
@@ -304,6 +306,7 @@ fn fuel(typed: &Typed, context: &Context<'_>) -> Result<Option<FuelDetails>, Pro
         return Err((Target::Fuel, messages::EVENT_NO_VOLUME));
     }
     let units = context.units;
+    let currency = typed.currency.unwrap_or(units.currency);
     let volume_ml = parse_volume(&typed.volume, units.volume).map_err(quantity(Target::Fuel))?;
     let optional = |text: &str, parse: &dyn Fn(&str) -> Result<i64, QuantityError>| {
         let text = text.trim();
@@ -313,8 +316,8 @@ fn fuel(typed: &Typed, context: &Context<'_>) -> Result<Option<FuelDetails>, Pro
     };
     Ok(Some(FuelDetails {
         volume_ml,
-        cost_minor: optional(&typed.price, &|text| parse_money(text, units.currency))?,
-        currency: units.currency,
+        cost_minor: optional(&typed.price, &|text| parse_money(text, currency))?,
+        currency,
         filled_full: typed.filled_full,
         missed_previous: typed.missed_previous,
         highway_pct: typed.highway,
@@ -383,7 +386,7 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
                     &typed.work,
                     context.kind,
                     context.meters,
-                    context.units.currency,
+                    typed.currency.unwrap_or(context.units.currency),
                 )
             })
             .transpose()?,
@@ -480,7 +483,17 @@ pub(super) fn typed_from(
             .as_ref()
             .map(|work| typed_work(work, meters))
             .unwrap_or_default(),
+        currency: event_currency(event),
     }
+}
+
+/// The currency an event's amounts are in: its fuel's, or its work's.
+fn event_currency(event: &Event) -> Option<CurrencyCode> {
+    event
+        .fuel
+        .as_ref()
+        .map(|fuel| fuel.currency)
+        .or_else(|| event.work.as_ref().map(|work| work.currency))
 }
 
 /// The meters and fields that are required on `kind`, in the form's order.

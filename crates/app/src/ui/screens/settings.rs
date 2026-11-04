@@ -293,6 +293,7 @@ fn apply(
             error.set(None);
             idle.sign_out.set(next.effective.idle_sign_out);
             set_squawk_word(next.effective.squawk_word);
+            crate::ui::set_home_currency(next.effective.currency);
             view.set(Some(next));
         }
         Ok(PreferencesOutcome::NotAllowed) => {

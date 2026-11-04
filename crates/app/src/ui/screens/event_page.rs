@@ -20,7 +20,7 @@ use domain::location::{LocationSource, TimeZone};
 use domain::log_area;
 use domain::meter::EventKind;
 use domain::preferences::Preferences;
-use domain::quantity::{economy_value, show_money, show_reading, show_volume, unit_price};
+use domain::quantity::{economy_value, show_reading, show_volume, unit_price};
 use domain::time::{Clock, UnixMillis};
 
 use super::job_page::{JobSections, JobTiles};
@@ -337,7 +337,10 @@ fn Tiles(event: Event, vehicle: AssetView, units: Preferences) -> Element {
                     ],
                 )
             });
-            tiles.push((show_money(cost, fuel.currency), per.unwrap_or_default()));
+            tiles.push((
+                crate::ui::money(cost, fuel.currency),
+                per.unwrap_or_default(),
+            ));
         }
     }
     rsx! {

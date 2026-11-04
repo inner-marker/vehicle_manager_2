@@ -17,7 +17,7 @@ use domain::event::{Event, EventId, EventStatus};
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::Preferences;
-use domain::quantity::{show_money, show_reading, show_volume, unit_price};
+use domain::quantity::{show_reading, show_volume, unit_price};
 use domain::time::UnixMillis;
 
 use super::problem_from_error;
@@ -161,7 +161,10 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
         .collect();
     if let Some(fuel) = &event.fuel {
         parts.push(show_volume(fuel.volume_ml, units.volume));
-        parts.extend(fuel.cost_minor.map(|cost| show_money(cost, fuel.currency)));
+        parts.extend(
+            fuel.cost_minor
+                .map(|cost| crate::ui::money(cost, fuel.currency)),
+        );
     }
     // A job: its first task, how many, and what it cost.
     if let Some(work) = &event.work {
@@ -175,7 +178,7 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
         ));
         let total = work.total_cost_minor();
         if total > 0 {
-            parts.push(show_money(total, work.currency));
+            parts.push(crate::ui::money(total, work.currency));
         }
         // What it did about squawks: "1 signed off · 1 deferred".
         let (signed, deferred) = work
@@ -416,7 +419,10 @@ fn FuelUpRow(view: EventView, units: Preferences) -> Element {
     )
     .unwrap_or_default();
     let mut amount = vec![show_volume(fuel.volume_ml, units.volume)];
-    amount.extend(fuel.cost_minor.map(|cost| show_money(cost, fuel.currency)));
+    amount.extend(
+        fuel.cost_minor
+            .map(|cost| crate::ui::money(cost, fuel.currency)),
+    );
     let per = fuel.cost_minor.and_then(|cost| {
         unit_price(cost, fuel.volume_ml, fuel.currency, units.volume)
             .map(|price| format!("{price} /{}", volume_abbr(units.volume)))

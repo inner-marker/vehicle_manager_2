@@ -2534,12 +2534,34 @@ textarea.field-input {
 
 .fold-head {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 10px;
     min-height: 48px;
     padding: 10px 14px;
     cursor: pointer;
-    list-style-position: inside;
+    list-style: none;
+}
+
+.fold-head::-webkit-details-marker {
+    display: none;
+}
+
+/* The same ▸ / ▾ as a task card's (the work log). */
+.fold-toggle {
+    color: var(--accent);
+    font-size: 1.35rem;
+    line-height: 1;
+    transition: transform 0.15s;
+}
+
+.fold[open] .fold-toggle {
+    transform: rotate(90deg);
+}
+
+.fold-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .fold-title {
@@ -3348,6 +3370,16 @@ a.squawk-history-job {
     font-weight: 600;
 }
 
+/* On a wide screen the headings name the columns, so each field's own label is hidden and the
+   field is the grid's cell. */
+.part-field {
+    display: contents;
+}
+
+.part-label {
+    display: none;
+}
+
 /* A task folded to one line. */
 .task-folded {
     display: flex;
@@ -3468,6 +3500,25 @@ a.squawk-history-job {
 
     .parts-table .parts-head {
         display: none;
+    }
+
+    .parts-table .part-field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .parts-table .part-label {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* The ✕ lines up with the fields, not their labels. */
+    .parts-table > .rule-remove {
+        align-self: end;
+        padding-bottom: 10px;
     }
 
     .parts-table > :nth-child(5n + 6) {
@@ -3612,3 +3663,35 @@ a.squawk-history-job {
         display: none;
     }
 }
+
+/* An end reading's "Copy from start" (the human's M7 note), under its field. */
+.copy-start {
+    align-self: flex-start;
+    font-size: 0.85rem;
+}
+
+/* An amount's field with its currency's symbol in front (the human's M7 note). */
+.money-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.money-symbol {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.money-input .field-input {
+    width: 100%;
+    padding-left: calc(10px + var(--money-symbol-width, 2ch));
+}
+
+.currency-pick {
+    max-width: 260px;
+}
+

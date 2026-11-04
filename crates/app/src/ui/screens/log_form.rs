@@ -34,11 +34,9 @@ use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::location::{CountryCode, SavedPlace, SavedPlaceId, TimeZone};
 use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
-use domain::preferences::Preferences;
+use domain::preferences::{CurrencyCode, Preferences};
 use domain::profile::{Section, profile};
-use domain::quantity::{
-    duration_as_typed, parse_money, parse_volume, show_money, show_reading, unit_price,
-};
+use domain::quantity::{duration_as_typed, parse_money, parse_volume, show_reading, unit_price};
 use domain::requirement::{Bundle, BundleId};
 use domain::squawk::SquawkId;
 use domain::time::Clock;
@@ -328,6 +326,8 @@ struct Inputs {
     picker: Picker,
     /// A job's work log.
     work: Signal<TypedWork>,
+    /// The currency its amounts are in (`None`: the person's).
+    currency: Signal<Option<CurrencyCode>>,
     /// The problem shown, and where.
     problem: Signal<Option<(Target, String)>>,
 }
@@ -361,6 +361,7 @@ impl Inputs {
             original_location: (self.original_location)(),
             original_start: (self.original_start)(),
             work: (self.work)(),
+            currency: (self.currency)(),
         }
     }
 
@@ -417,6 +418,7 @@ fn use_inputs(start: &Typed) -> Inputs {
         no_place_reason: use_signal(|| start.no_place_reason.clone()),
         someone: use_signal(|| start.someone.clone()),
         notes: use_signal(|| start.notes.clone()),
+        currency: use_signal(|| start.currency),
         override_reason: use_signal(|| start.override_reason.clone()),
         original_location: use_signal(|| start.original_location.clone()),
         original_start: use_signal(|| start.original_start),
@@ -679,7 +681,7 @@ fn FormBody(
         &leave_out,
     );
     let checks = finish_checks(&inputs, &required, &shown_squawks);
-    let currency = units.currency;
+    let currency = (inputs.currency)().unwrap_or(units.currency);
     let work_problem = |target: Target| inputs.problem_at(target);
     let end_problem = (inputs.problem)().and_then(|(at, text)| match at {
         Target::EndReading(meter) => Some((meter, text)),
@@ -724,6 +726,9 @@ fn FormBody(
                 FuelPart { inputs, units }
             }
             if job {
+                div { class: "log-item",
+                    CurrencyPick { inputs, home: units.currency }
+                }
                 WorkLog {
                     kind,
                     work: inputs.work,
@@ -735,6 +740,7 @@ fn FormBody(
                     work_problem: work_problem(Target::Work),
                     squawk_problem: work_problem(Target::Squawks),
                     end_problem,
+                    start_readings: (inputs.readings)(),
                 }
             }
             WhenWherePart { inputs, places: data.places.clone(), countries: data.countries, zone: zone_now.clone() }
@@ -748,7 +754,7 @@ fn FormBody(
                 div { class: "save-bar job-bar",
                     div { class: "job-total",
                         span { class: "section-heading", {tr(messages::WORK_TOTAL).to_uppercase()} }
-                        strong { {show_money(total_minor(&(inputs.work)(), currency), currency)} }
+                        strong { {crate::ui::money(total_minor(&(inputs.work)(), currency), currency)} }
                     }
                     div { class: "form-buttons",
                         button { class: "secondary-button", r#type: "button", disabled: busy(), onclick: move |_| submit.call(false),
@@ -1165,9 +1171,10 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
         messages::LOG_VOLUME,
         &[("unit", MessageArg::from(volume_abbr(units.volume)))],
     );
+    let currency = (inputs.currency)().unwrap_or(units.currency);
     let price_label = tr_with(
         messages::LOG_PRICE,
-        &[("currency", MessageArg::from(units.currency.as_str()))],
+        &[("currency", MessageArg::from(currency.as_str()))],
     );
     rsx! {
         div { class: "log-item",
@@ -1179,9 +1186,10 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
                 }
                 label { class: "field",
                     span { class: "field-label", {price_label} }
-                    input { class: "field-input big", inputmode: "decimal", autocomplete: "off", value: price(), oninput: move |event| price.set(event.value()) }
+                    MoneyInput { currency, value: price(), big: true, on_input: move |text: String| price.set(text) }
                 }
             }
+            CurrencyPick { inputs, home: units.currency }
             if let Some(text) = per_unit(&inputs, &units) {
                 p { class: "muted-note", {text} }
             }
@@ -1210,11 +1218,31 @@ fn WhenWherePart(
     countries: Vec<(CountryCode, String)>,
     zone: TimeZone,
 ) -> Element {
+    let when = (inputs.when)().map_or_else(
+        || tr(messages::LOG_NOW),
+        |(date, time)| format!("{date} {time}"),
+    );
+    let city = (inputs.picker.city)();
+    let region = (inputs.picker.region)();
+    let place = if !city.trim().is_empty() {
+        [city.trim(), region.trim()]
+            .into_iter()
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join(", ")
+    } else if (inputs.no_place_reason)().is_some() {
+        tr(messages::LOG_NO_PLACE_SUMMARY)
+    } else {
+        tr(messages::LOG_PLACE_NEEDED)
+    };
+    // Open while the place (required) is still missing; folded once there is one.
+    let open = city.trim().is_empty() && (inputs.no_place_reason)().is_none();
     rsx! {
         div { class: "log-item",
-            Heading { text: tr(messages::LOG_SECTION_WHEN_WHERE), required: false }
-            WhenRow { inputs, zone }
-            WhereRows { inputs, places, countries }
+            Fold { title: tr(messages::LOG_SECTION_WHEN_WHERE), summary: format!("{when} · {place}"), open,
+                WhenRow { inputs, zone }
+                WhereRows { inputs, places, countries }
+            }
         }
     }
 }
@@ -1344,14 +1372,89 @@ fn WhereRows(
 
 // --- The folded sections -----------------------------------------------------------------
 
-/// A folded section: its title and one-line summary, then what's in it.
+/// The currency an event's amounts are in: the person's first (and chosen until changed), then
+/// the common ones, then the event's own if it's none of those (the human's M7 note).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
 #[component]
-fn Fold(title: String, summary: String, children: Element) -> Element {
+fn CurrencyPick(inputs: Inputs, home: CurrencyCode) -> Element {
+    let mut chosen = inputs.currency;
+    let current = chosen().unwrap_or(home);
     rsx! {
-        details { class: "fold",
+        label { class: "field currency-pick",
+            span { class: "field-label", {tr(messages::LOG_CURRENCY)} }
+            select {
+                class: "field-input",
+                onchange: move |event: FormEvent| {
+                    if let Ok(code) = CurrencyCode::parse(&event.value()) {
+                        chosen.set(Some(code));
+                    }
+                },
+                for code in CurrencyCode::menu(home, current) {
+                    option { key: "{code}", value: "{code}", selected: code == current,
+                        {format!("{code} ({})", code.symbol(home).trim_end())}
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// An amount's field, with its currency's symbol in front ("$", "CA$", "€").
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(super) fn MoneyInput(
+    currency: CurrencyCode,
+    value: String,
+    #[props(default)] big: bool,
+    #[props(default)] label: Option<String>,
+    on_input: EventHandler<String>,
+) -> Element {
+    let symbol = currency.symbol(crate::ui::home_currency());
+    // Room for the symbol in front of the amount: "$" needs less than "CA$" or "CHF".
+    let room = format!(
+        "--money-symbol-width: {}ch",
+        symbol.trim_end().chars().count() + 1
+    );
+    rsx! {
+        span { class: "money-input", style: "{room}",
+            span { class: "money-symbol", "aria-hidden": "true", {symbol.trim_end().to_owned()} }
+            input {
+                class: if big { "field-input big" } else { "field-input" },
+                inputmode: "decimal",
+                autocomplete: "off",
+                "aria-label": label,
+                value,
+                oninput: move |event| on_input.call(event.value()),
+            }
+        }
+    }
+}
+
+/// A folded section: ▸ (▾ when open), its title and one-line summary, then what's in it.
+/// `open` is how it starts; after that the person folds and unfolds it.
+#[component]
+fn Fold(
+    title: String,
+    summary: String,
+    #[props(default)] open: bool,
+    children: Element,
+) -> Element {
+    // Only the first value counts, so a change elsewhere never folds it under the person.
+    let open = use_signal(|| open);
+    rsx! {
+        details { class: "fold", open: open(),
             summary { class: "fold-head",
-                span { class: "fold-title", {title} }
-                span { class: "fold-summary", {summary} }
+                span { class: "fold-toggle", "aria-hidden": "true", "▸" }
+                span { class: "fold-text",
+                    span { class: "fold-title", {title} }
+                    span { class: "fold-summary", {summary} }
+                }
             }
             div { class: "fold-body", {children} }
         }

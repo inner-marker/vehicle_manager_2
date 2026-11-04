@@ -1972,4 +1972,12 @@ define_messages! {
     TIMELINE_DEFERRED => "timeline-deferred",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
+    /// Log form: the When and where fold's summary with no place yet.
+    LOG_PLACE_NEEDED => "log-place-needed",
+    /// Log form: the When and where fold's summary with no place, and why.
+    LOG_NO_PLACE_SUMMARY => "log-no-place-summary",
+    /// Work log: an end reading the same as the start one.
+    WORK_COPY_FROM_START => "work-copy-from-start",
+    /// Log form: the currency its amounts are in.
+    LOG_CURRENCY => "log-currency",
 }

@@ -827,7 +827,7 @@
 | 7i | ☑️ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
 | 7j | ☑️ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
 | 7k | ☑️ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
-| 7l | ⬜ | `docs: record the maintenance test runs` | Results of both runs | none |
+| 7l | ☑️ | `docs: record the maintenance test runs` | Results of both runs | none |
 
 **Not in this milestone:** "what's due", due dates, and service countdowns (Phase 5); readiness (Phase 5; High squawks are counted then); reference documents, recalls, and bulletins (milestone 9); photos and documents on squawks and tasks (milestone 8); meter adjustments; signatures, initials, and logbook entries (sub-plan 01, post-MVP); Admin-changeable finalize delays.
 
@@ -1029,3 +1029,12 @@
   - **Schedule:** each service bundle is a card like a requirement's ("Covers …", "SERVICE BUNDLE · 2 requirements").
   - **Idea 21** (chained meter intervals: "after the first 100,000 miles, then every 50,000") for Phase 5, in `docs/ideas-to-discuss.md`.
   - 2 new tests (days and years; a rule stored before units). Checked in the browser: each unit, the range refusal, the bundle card, the work log's order and toggle, and the squawk page's row.
+- **7l, after part 2 (run by the human, 2026-11-04):** both runs recorded in the test plan's Results. The human's notes, each done:
+  - **The parts on a phone:** each field has its own label (the headings are hidden there).
+  - **Currency:** amounts show their symbol (`CurrencyCode::symbol`: "$" for the person's own dollars, "CA$" and so on for others; `show_money` takes the person's currency, through `ui::money`); jobs and fuel-ups have a **Currency** menu (`CurrencyCode::menu`: the person's first and chosen), and a saved event keeps its own. Money fields show the symbol in front (`MoneyInput`).
+  - **When and where** is a fold like Who and notes (open while the place is missing), and every fold has the task cards' ▸ / ▾.
+  - **Copy from start** under each end reading.
+  - **Labor rates** added to Phase 6 in the plan, with whose rate it is as an open question.
+  - Step 8 of part 2 wasn't ticked; it's to confirm in milestone 8's run.
+  - 4 messages. 1 new test (symbols and the menu's order); the job page's test now reads "$12.99". Checked in the browser at a phone's width.
+

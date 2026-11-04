@@ -448,15 +448,17 @@ pub fn money_value(minor: i64, currency: CurrencyCode) -> String {
     )
 }
 
-/// An amount as "45.67 USD".
+/// An amount with its currency's symbol, seen by someone whose currency is `home`: "$45.67",
+/// "CA$45.67", "€45.67", "-$5.00" (see [`CurrencyCode::symbol`]).
 #[must_use]
-pub fn show_money(minor: i64, currency: CurrencyCode) -> String {
+pub fn show_money(minor: i64, currency: CurrencyCode, home: CurrencyCode) -> String {
     let places = currency_decimals(currency);
-    let value = float(minor) / 10_f64.powi(i32::from(places));
+    let value = float(minor.abs()) / 10_f64.powi(i32::from(places));
     format!(
-        "{} {}",
-        fixed(value, usize::from(places)),
-        currency.as_str()
+        "{}{}{}",
+        if minor < 0 { "-" } else { "" },
+        currency.symbol(home),
+        fixed(value, usize::from(places))
     )
 }
 
@@ -642,8 +644,9 @@ mod tests {
         assert_eq!(parse_money("5000.5", yen), Err(QuantityError::TooPrecise));
         let dinar = CurrencyCode::parse("KWD").unwrap();
         assert_eq!(parse_money("1.250", dinar), Ok(1_250));
-        assert_eq!(show_money(4_567, usd()), "45.67 USD");
-        assert_eq!(show_money(5_000, yen), "5000 JPY");
+        assert_eq!(show_money(4_567, usd(), usd()), "$45.67");
+        assert_eq!(show_money(5_000, yen, usd()), "¥5000");
+        assert_eq!(show_money(-500, usd(), usd()), "-$5.00");
     }
 
     proptest! {
@@ -672,8 +675,8 @@ mod tests {
 
         #[test]
         fn money_survives_a_round_trip_exactly(cents in 0i64..1_000_000_000) {
-            let text = show_money(cents, CurrencyCode::USD);
-            let number = text.trim_end_matches(" USD");
+            let text = show_money(cents, CurrencyCode::USD, CurrencyCode::USD);
+            let number = text.trim_start_matches('$');
             prop_assert_eq!(parse_money(number, CurrencyCode::USD), Ok(cents));
         }
     }
