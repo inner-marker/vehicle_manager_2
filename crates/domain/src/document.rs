@@ -372,6 +372,8 @@ pub enum DocumentProblem {
     PlateNotRegistration,
     /// A plate that isn't this vehicle's.
     UnknownPlate,
+    /// Removing a document a later one renews (remove the latest first).
+    Renewed,
 }
 
 impl DocumentProblem {
@@ -388,6 +390,7 @@ impl DocumentProblem {
             Self::AlreadyRenewed => messages::DOCUMENT_ALREADY_RENEWED,
             Self::PlateNotRegistration => messages::DOCUMENT_PLATE_NOT_REGISTRATION,
             Self::UnknownPlate => messages::DOCUMENT_UNKNOWN_PLATE,
+            Self::Renewed => messages::DOCUMENT_RENEWED,
         }
     }
 }

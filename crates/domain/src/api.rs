@@ -922,6 +922,119 @@ pub enum AttachmentsOutcome {
     Unavailable,
 }
 
+// --- Official documents and license plates (milestone 8) --------------------------------
+
+/// An official document as typed in (renewals name what they renew separately).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DocumentInput {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// What kind.
+    pub doc_type: crate::document::DocumentType,
+    /// Its number.
+    pub number: Option<String>,
+    /// Who issued it.
+    pub issuer: Option<String>,
+    /// When it was issued.
+    pub issued_on: Option<crate::dates::CalendarDate>,
+    /// When it takes effect, if not when issued.
+    pub effective_on: Option<crate::dates::CalendarDate>,
+    /// When it expires (none: never).
+    pub expires_on: Option<crate::dates::CalendarDate>,
+    /// A registration's plate.
+    pub plate: Option<crate::plate::LicensePlateId>,
+    /// Notes.
+    pub notes: crate::notes::Notes,
+}
+
+/// A license plate as typed in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlateInput {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Who issued it.
+    pub authority: Option<crate::plate::Authority>,
+    /// Its number.
+    pub number: crate::plate::PlateNumber,
+    /// When it was issued.
+    pub issued_on: Option<crate::dates::CalendarDate>,
+    /// When it expires.
+    pub expires_on: Option<crate::dates::CalendarDate>,
+    /// When it stopped being used.
+    pub retired_on: Option<crate::dates::CalendarDate>,
+    /// Notes.
+    pub notes: crate::notes::Notes,
+}
+
+/// One official document as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DocumentView {
+    /// Its ID.
+    pub id: crate::document::AssetDocumentId,
+    /// The document.
+    pub document: crate::document::AssetDocument,
+    /// Where it stands on the day asked about.
+    pub status: crate::document::DocumentStatus,
+    /// The document that renews it, if any.
+    pub renewed_by: Option<crate::document::AssetDocumentId>,
+}
+
+/// One license plate as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlateView {
+    /// Its ID.
+    pub id: crate::plate::LicensePlateId,
+    /// The plate.
+    pub plate: crate::plate::LicensePlate,
+    /// It's the vehicle's current plate.
+    pub current: bool,
+}
+
+/// The answer to a documents or plates request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DocumentsOutcome {
+    /// One vehicle's documents (oldest first) and plates (the current one last).
+    Documents {
+        /// Each document.
+        documents: Vec<DocumentView>,
+        /// Each plate.
+        plates: Vec<PlateView>,
+        /// The document types the vehicle's profile lists (message keys).
+        listed_types: Vec<String>,
+        /// The person may add, renew, change, and remove them (a Maintainer, in that mode).
+        may_change: bool,
+    },
+    /// A document was added, renewed, or changed.
+    SavedDocument {
+        /// Its ID.
+        id: crate::document::AssetDocumentId,
+    },
+    /// A plate was added or changed.
+    SavedPlate {
+        /// Its ID.
+        id: crate::plate::LicensePlateId,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, document, or plate (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The document was refused.
+    InvalidDocument {
+        /// Why.
+        problem: crate::document::DocumentProblem,
+    },
+    /// The plate was refused.
+    InvalidPlate {
+        /// Why.
+        problem: crate::plate::PlateProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// One requirement as the app shows it, with when it was last done.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RequirementView {

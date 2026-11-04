@@ -2054,4 +2054,8 @@ define_messages! {
     ATTACHMENT_ORIGINALS_OFF => "attachment-originals-off",
     /// Attachment: on a finished event.
     ATTACHMENT_EVENT_FINISHED => "attachment-event-finished",
+    /// Document: removing one a later one renews.
+    DOCUMENT_RENEWED => "document-renewed",
+    /// Plate: removing one a registration names.
+    PLATE_IN_USE => "plate-in-use",
 }

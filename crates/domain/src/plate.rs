@@ -424,6 +424,8 @@ pub enum PlateProblem {
     AuthorityTooLong,
     /// Retired before it was issued.
     RetiredBeforeIssued,
+    /// Removing a plate a registration names.
+    InUse,
 }
 
 impl PlateProblem {
@@ -439,6 +441,7 @@ impl PlateProblem {
             Self::AuthorityEmpty => messages::PLATE_AUTHORITY_EMPTY,
             Self::AuthorityTooLong => messages::PLATE_AUTHORITY_TOO_LONG,
             Self::RetiredBeforeIssued => messages::PLATE_RETIRED_BEFORE_ISSUED,
+            Self::InUse => messages::PLATE_IN_USE,
         }
     }
 }

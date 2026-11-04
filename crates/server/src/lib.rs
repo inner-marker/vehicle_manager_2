@@ -10,6 +10,7 @@ pub mod attachments;
 pub mod auth;
 pub mod codes;
 pub mod commands;
+pub mod documents;
 pub mod events;
 pub mod groups;
 pub mod health;
