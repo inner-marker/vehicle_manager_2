@@ -1762,6 +1762,8 @@ Every agent change is reviewed as a diff before merging.
 
 *Each phase's agreed work plan (PR sequence, status, and detailed PR plans) lives in `docs/phase_plans/` and is linked from that phase below.*
 
+Each phase has open questions in section 10 that must be resolved before work on that phase starts.
+
 ### Phase 1: Walking skeleton
 
 **Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md) · **Complete:** exit criteria met 2026-10-29; released as `v0.1.0`
@@ -1799,39 +1801,84 @@ Every agent change is reviewed as a diff before merging.
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
 
-### Later phases (tentative)
+### Phase 2: Data model & server storage.
 
-Each phase has open questions in section 10 that must be resolved before work on that phase starts.
+- *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 
-- **Phase 2: Data model & server storage.** *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
-- *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
-- **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
-- **Phase 5: Maintenance intelligence.** **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
-- **Phase 6: Polish.** Import/export, pairing flow, reports, **multi-page document capture in the web UI**, and **standalone mode** (single device, no server, local backups, upgrade path to a server).
+### Phase 3: Local-first & sync.** 
+- Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
+- **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
+- Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
+
+### Phase 4: Mobile (Moved to post-MVP)
+*Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
+
+### Phase 5: Maintenance intelligence.
+- **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). 
+- The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. 
+- What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
+
+### Phase 6: Polish.
+- **Phase 6: Polish.** Import/export, pairing flow, reports
+- **multi-page document capture in the web UI**
+- **standalone mode** (single device, no server, local backups, upgrade path to a server).
+- Built-in Help Documents
+  - What format do we store the documents?
+- Info pop-ups (circled question marks that pops up a small help window with summary, with links to the full Help Documents)
+
+### Phase 7: Security.
 - **Phase 7: Security.** Full audit and hardening (as required) of all components. Ensure industry standards and best practices are followed for authentication, authorization, data storage, and network communication. Penetration testing and code review for security vulnerabilities.
 
 Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are post-MVP, and will be v1.1.0, 1.2.0, etc.
 
 ### Post-MVP (Post v1.0.0) ideas
 
-- **Post-MVP: Public APIs** NHTSA’s vPIC (Product Information Catalog and Vehicle Listing), NHTSA recalls: `recallsByVehicle`
-- **Post-MVP: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of **voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
+- **Post-MVP: Public APIs** 
+  - NHTSA’s vPIC (Product Information Catalog and Vehicle Listing)
+  - NHTSA recalls: `recallsByVehicle`
+- **Post-MVP: Mobile.** 
+  - Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, 
+  - **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of *
+  - *voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
-- **Post-MVP: Offsite backups.** Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
-- **Post-MVP: OBD-II scans.** USB OBD-II reading on desktop (trouble codes, freeze frame, readiness, VIN, odometer), saved with events, before/after comparison; Bluetooth on mobile later.
-- **Post-MVP: Reference data packs, full-text search, and a scoped read API** (see Extensibility groundwork).
-- **Post-MVP: Components.** Installation history with positions, install/remove workflow, spare and out-for-service components, component meters linked to the parent, permission inheritance.
-- **Post-MVP: Reference data import.** Recall suggestions from NHTSA data by VIN; automatic applicability matching by model and serial range.
-- **Post-MVP: Measurements.** Structured measurements with positions, multiple values, limits, and auto-squawks.
+- **Post-MVP: Offsite backups.** 
+  - Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
+- **Post-MVP: OBD-II scans.** 
+  - USB OBD-II reading on desktop (trouble codes, freeze frame, readiness, VIN, odometer), saved with events, before/after comparison; 
+  - Bluetooth on mobile later. (e.g. OBDLink MX+)
+- **Post-MVP: Reference data packs, full-text search, and a scoped read API** 
+  - (see Extensibility groundwork).
+- **Post-MVP: Components.** 
+  - Installation history with positions (left vs. right engine), install/remove workflow, spare and out-for-service components, component meters linked to the parent, permission inheritance.
+- **Post-MVP: Reference data import.** 
+  - Recall suggestions from NHTSA data by VIN; automatic applicability matching by model and serial range.
+- **Post-MVP: Measurements.** 
+  - Structured measurements with positions, multiple values, limits, and auto-squawks.
 - **Post-MVP: Human-friendly record numbers** (e.g. "F-150 entry 42"), assigned by the server at finalize, with reports or logbooks (#042).
-- **Post-MVP: Vehicle history reports.** Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
-- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. **Signatures wait for the human's records and signatures standards plan to be confirmed** (`docs/sub-plans/01-signatures-and-records.md`, idea 12).
+- **Post-MVP: Vehicle history reports.** 
+  - Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
+  - What is included is by template, then customisable. Templates for sale, insurance, full-archive. Check boxes for what to include. Can deviate from template. Templates can be customized.
+- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** 
+  - One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. 
+  - **Signatures wait for the human's records and signatures standards plan to be confirmed** (`docs/sub-plans/01-signatures-and-records.md`, idea 12).
 - **Post-MVP (later): Logbook label and other page formats.**
-- **Post-MVP (after reports): Vehicle transfer to the next owner.** Importable vehicle package for another server running the app.
-- **Post-MVP: Event map.** Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
-- **Post-MVP: Alternative hosting.** Plain binary/installer running as a background service, and **desktop app host mode.**
-- **Post-MVP: OS notifications.** Desktop and mobile system notifications, starting with locally scheduled ones and then push notifications (which need Apple/Google push services).
-- **Long-term aspiration: Aircraft.** Aviation component specifics, the FAA statement library, aviation record layouts, and an electronic-signature acceptability review. Not planned yet; see Aircraft-ready groundwork.
+- **Post-MVP (after reports): Vehicle transfer to the next owner.** 
+  - Importable vehicle package for another server running the app.
+- **Post-MVP: Event map.** 
+  - Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
+- **Post-MVP: Alternative hosting.** 
+  - Plain binary/installer running as a background service, and **desktop app host mode.**
+  - Raspbery Pi is prioritized due to cost.
+  - Other NAS (TrueNAS, QNAP, Synology, HexOS) and cloud hosting (AWS, GCP, Azure) are lower priority.
+- **Post-MVP: OS notifications.** 
+  - Desktop and mobile system notifications, starting with locally scheduled ones and then push notifications (which need Apple/Google push services).
+- **Long-term aspiration: Aircraft.** 
+  - Aviation component specifics, the FAA statement library, aviation record layouts, and an electronic-signature acceptability review. Not planned yet; see Aircraft-ready groundwork.
+
+### Long-Term
+
+- **Parallel app focused on Small Maintenance Business**
+  - Expected to handle many customer vehicles, with a single user account and multiple employees. The app will have a somewhat different UI and workflow, but share the parts of the backend and sync engine. It may be a seperate repo, or it may be another sub-crate in this workspace; to be decided farther down the road.
 
 ---
 
