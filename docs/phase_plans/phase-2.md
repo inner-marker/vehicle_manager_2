@@ -799,6 +799,8 @@
     - the maintenance and repair work log: items in any order, the plan's "work log";
     - the event page and Timeline rows for maintenance and repairs.
 12. **One PR,** with **two checkpoint tests** on the test server (#062): after squawks and requirements, and at the end.
+13. **What squawks are called** (the human, 2026-11-03; decision #064): the Admin chooses one word for the household (**Issues** by default, Squawks, Faults, or Write-ups). Only the words on screen change; the code and documents keep "squawk".
+14. **The squawk screens** (the human's pick from `docs/ui-sketches/p2m7-squawks-options.svg`, 2026-11-03): a **summary card on the Overview** listing the outstanding ones, High first (option A's panel); a **Squawks tab** with Outstanding / Resolved / All filters, the list and the chosen squawk side by side on wide screens (option B); **opening one is a quick sheet** with notes and the time folded away (option B).
 
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
@@ -808,7 +810,8 @@
 | 7c | ☑️ | `feat(domain): maintenance and repair events` | Tasks (title, requirement, notes, parts with unit prices, labor time and cost, reset from start or end, next due date for a fixed-date rule), repair details (complaint, cause), start and end readings, squawk dispositions in the event; the checks, including Finish's required disposition; the forgotten-job rule. Test-first | none |
 | 7d | ☑️ | `feat(storage): maintenance, squawks, and requirements` | One migration: squawks and dispositions, tasks and parts, repair details, a reading's set (start or end; existing readings are start), requirements, rules, and bundles; writers and queries (a vehicle's squawks, each requirement's last done) | none |
 | 7e | ☑️ | `feat(server): maintenance, repairs, squawks, and schedules` | Open and change squawks; log, edit, and **Finish** maintenance and repairs (choices 8, 10); requirements and bundles; copy a schedule; the forgotten-job message; server functions under `/api/v1/squawks`, `/api/v1/events`, and `/api/v1/requirements` | none |
-| 7f | ⬜ | `feat(app): squawks` | **SVG options first.** Opening a squawk (**+ Log**, the vehicle's page, an event's page); the Overview's squawks panel (High first, with its word); a squawk's page with its history | none |
+| 7f.0 | ☑️ | `feat: what the household calls squawks` | Choice 13 (#064): the household preference (Issues, Squawks, Faults, Write-ups; a new column, migration `0013`); the translator fills in the word, plural, capital, and article for every message that names them; Settings' household section offers it (Admin mode) | none |
+| 7f | ⬜ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
 | 7g | ⬜ | `feat(app): requirements, bundles, and the Maintenance tab` | **SVG options first.** Setup's requirements (with their rules) and bundles; **Copy schedule**; the Maintenance tab with each requirement's last done | none |
 | 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
@@ -896,3 +899,15 @@
   - 7 messages, and 4 new problems (`NotAJob`, `Dispositioned`, `InUse`, `ScheduleNotEmpty`). 6 new tests:
     - a forgotten job's message and key (domain);
     - against a real database: a Driver's squawks, changeable until a job names them; Finish needing every outstanding squawk, deferrals not carrying over, a correction dispositioning again, and last done; setting up a schedule (refusals, a requirement in use, removing one from its bundle); copying a schedule (new IDs, never twice); forgotten-job reminders (who gets them, normal and test timers).
+- **7f.0:** no new dependency. Migration `0013_squawk_word` (a `squawk_word` column on `preferences`).
+  - **`SquawkWord`** (Issue, the default; Squawk; Fault; WriteUp) is a household preference. `Preferences::resolve` takes it from the household only, and the server refuses it in a person's own patch.
+  - **The translator** reads each word's forms from the catalog (`squawk-word-issue` and its `.plural`, `.title`, `.title-plural`, and `.article` attributes). Every lookup gets them as `{ $squawk }`, `{ $squawks }`, `{ $Squawk }`, `{ $Squawks }`, and `{ $a-squawk }`.
+    - `tr` and `tr_with` use the default word; `tr_for` and `tr_with_for` take one.
+    - The app's `tr` uses the household's word, set from the preferences it loads at sign-in and after a Settings change. The shell re-renders when it changes, so the navigation updates at once; other screens pick it up when they next render.
+  - **Settings:** "Call problems" on the Household tab (Issues, Squawks, Faults, Write-ups; Admin mode). The You tab shows the word, and that the household's Admin chooses it.
+  - **Every message that named squawks now writes them through the word.** A test checks that no message says "squawk" when the word is Issues.
+  - 5 new tests: the household-only rule; each word's forms in three messages; no stray "squawk"; the Admin's choice reaching everyone (and a person's refused); the Settings patch.
+  - **Browser check** (1200 × 1300):
+    - a new household's sidebar says "Due & issues";
+    - choosing Squawks on the Household tab changes it to "Due & squawks" at once, and it's stored and kept after a reload;
+    - the You tab shows "Squawks" and who chooses it.

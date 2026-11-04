@@ -12,8 +12,9 @@
 //!   (#052, #056).
 //! - `screens`: one component per screen; placeholders until their phase.
 //!
-//! Every visible string comes from `domain::i18n`; components never contain
-//! business rules or touch the database.
+//! Every visible string comes from `domain::i18n` (through `tr` and `tr_with`, which call
+//! squawks by the household's word, #064); components never contain business rules or touch
+//! the database.
 
 mod account;
 pub(crate) mod auth;
@@ -29,8 +30,11 @@ pub(crate) mod theme;
 pub(crate) mod units;
 pub(crate) mod vehicles;
 
+use std::sync::atomic::{AtomicU8, Ordering};
+
 use dioxus::prelude::*;
 use domain::i18n::{MessageArg, MessageId, Translator};
+use domain::preferences::SquawkWord;
 
 use routes::Route;
 use theme::ThemeChoice;
@@ -56,12 +60,40 @@ pub fn App() -> Element {
     }
 }
 
+/// What the household calls squawks (#064), as its place in [`SquawkWord::ALL`]: read by
+/// every [`tr`] (outside a component too), so a plain atomic rather than a signal.
+static SQUAWK_WORD_INDEX: AtomicU8 = AtomicU8::new(0);
+
+/// The same word, for the shell to re-render when it changes.
+pub(crate) static SQUAWK_WORD: GlobalSignal<SquawkWord> = Signal::global(SquawkWord::default);
+
+/// The household's word for squawks, as last loaded.
+fn squawk_word() -> SquawkWord {
+    SquawkWord::ALL
+        .get(usize::from(SQUAWK_WORD_INDEX.load(Ordering::Relaxed)))
+        .copied()
+        .unwrap_or_default()
+}
+
+/// Uses `word` for squawks from now on (from the preferences the server sends).
+pub(crate) fn set_squawk_word(word: SquawkWord) {
+    let index = SquawkWord::ALL
+        .iter()
+        .position(|each| *each == word)
+        .and_then(|index| u8::try_from(index).ok())
+        .unwrap_or(0);
+    SQUAWK_WORD_INDEX.store(index, Ordering::Relaxed);
+    if *SQUAWK_WORD.peek() != word {
+        *SQUAWK_WORD.write() = word;
+    }
+}
+
 /// The English text of a message (the only language so far; decision #022).
 fn tr(id: MessageId) -> String {
-    Translator::english().tr(id)
+    Translator::english().tr_for(squawk_word(), id)
 }
 
 /// The English text of a message with arguments filled in.
 fn tr_with(id: MessageId, args: &[(&str, MessageArg)]) -> String {
-    Translator::english().tr_with(id, args)
+    Translator::english().tr_with_for(squawk_word(), id, args)
 }

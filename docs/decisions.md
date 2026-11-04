@@ -736,3 +736,12 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the human, 2026-11-03: "A squawk should not block by default. In aviation there are 'grounding' squawks. I like low/medium/high severity with high as 'grounding'." Sub-plan 02 had asked whether a spoken squawk should carry a severity; three levels answer that too, and one of them is what readiness needs.
 - **Unaffected:** the required disposition at every maintenance or repair (plan §3), and deferrals not carrying over.
 
+### 064. The household chooses what squawks are called: Issues (the default), Squawks, Faults, or Write-ups
+*Decided: 2026-11-03 · Plan: §3 Squawks, §5 Preferences · Phase plan: phase-2.md milestone 7, choice 13 · Refines #051, #063*
+
+- **Decision:**
+  - **The Admin chooses one word for the whole household,** in Settings' household section: **Issues** (the default for a new household), **Squawks**, **Faults**, or **Write-ups**. People can't choose their own; every screen, message, and button uses the household's word.
+  - **Only the words on screen change.** The code, the API, the database, and these documents keep saying "squawk" (AGENTS.md terminology).
+  - Messages that name them get the word, its plural, a capitalized form, and its article ("an issue", "a squawk") from the translator, so no screen has to pass it.
+- **Why:** the human, 2026-11-03: "Squawk is familiar in the aviation community, but might not be outside of it." One household-wide word keeps lists that mix vehicles consistent; per-kind words were considered and turned down.
+- **Unaffected:** what squawks are and do (#051, #063).

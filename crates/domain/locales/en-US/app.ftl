@@ -8,7 +8,7 @@
 ## Navigation (plan §5 UI direction)
 
 nav-garage = Garage
-nav-due-and-squawks = Due & squawks
+nav-due-and-squawks = Due & { $squawks }
 nav-messages = Messages
 nav-timeline = Timeline
 nav-reports = Reports
@@ -21,8 +21,8 @@ nav-diagnostics = Diagnostics
 # $count (number): open squawks across the shown vehicles.
 open-squawk-count =
     { $count ->
-        [one] { $count } open squawk
-       *[other] { $count } open squawks
+        [one] { $count } open { $squawk }
+       *[other] { $count } open { $squawks }
     }
 
 ## Screens
@@ -288,6 +288,9 @@ setting-pressure = Pressure
 setting-date-format = Date format
 setting-currency = Currency
 setting-language = Language
+setting-squawk-word = Call problems
+setting-squawk-word-household = The household's Admin chooses this, for everyone.
+squawk-word-choice = { $Squawks }
 unit-miles = Miles
 unit-kilometers = Kilometers
 unit-us-gallons = US gal
@@ -498,8 +501,8 @@ panel-ready = Ready to use?
 panel-ready-coming = Arrives with what's due (Phase 5).
 panel-due = Coming due
 panel-due-coming = Next services (Phase 5).
-panel-squawks = Open squawks
-panel-squawks-coming = Squawks arrive in milestone 7.
+panel-squawks = Open { $squawks }
+panel-squawks-coming = { $Squawks } arrive in milestone 7.
 panel-fuel = Latest fuel-ups
 panel-meters = Meters
 meters-none = No meters yet.
@@ -966,6 +969,30 @@ instance-tag-note = Not the household's main server: for testing. What's saved h
 
 ## Squawks (milestone 7)
 
+# What the household calls squawks (#064). Every message gets these as { $squawk },
+# { $squawks }, { $Squawk }, { $Squawks }, and { $a-squawk }: write "squawk" through them,
+# never as a word.
+squawk-word-issue = issue
+    .plural = issues
+    .title = Issue
+    .title-plural = Issues
+    .article = an issue
+squawk-word-squawk = squawk
+    .plural = squawks
+    .title = Squawk
+    .title-plural = Squawks
+    .article = a squawk
+squawk-word-fault = fault
+    .plural = faults
+    .title = Fault
+    .title-plural = Faults
+    .article = a fault
+squawk-word-write-up = write-up
+    .plural = write-ups
+    .title = Write-up
+    .title-plural = Write-ups
+    .article = a write-up
+
 severity-low = Low
 severity-medium = Medium
 severity-high = High
@@ -977,10 +1004,10 @@ squawk-status-deferred = Deferred
 squawk-status-resolved = Resolved
 squawk-description-empty = Say what's wrong.
 squawk-description-too-long = That's too long: at most 500 characters.
-squawk-undispositioned = Sign off or defer every open squawk before finishing.
-squawk-dispositioned-twice = That squawk is already signed off or deferred in this job.
-squawk-not-outstanding = That squawk isn't open or deferred on this vehicle.
-squawk-dispositioned = A job has already dealt with this squawk, so it can't be changed or removed. Its next job can change its severity.
+squawk-undispositioned = Sign off or defer every open { $squawk } before finishing.
+squawk-dispositioned-twice = That { $squawk } is already signed off or deferred in this job.
+squawk-not-outstanding = That { $squawk } isn't open or deferred on this vehicle.
+squawk-dispositioned = A job has already dealt with this { $squawk }, so it can't be changed or removed. Its next job can change its severity.
 
 ## Requirements and bundles (milestone 7)
 

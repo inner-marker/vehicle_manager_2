@@ -40,6 +40,8 @@ pub(crate) fn Shell() -> Element {
     let inbox = provide_inbox_context();
     let vehicles = provide_vehicles_context();
     let chooser = super::screens::provide_log_chooser();
+    // The household's word for squawks (#064) is in the navigation's labels.
+    let _word = super::SQUAWK_WORD();
     // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
     // minutes (or a session it ended) stops showing.
     use_effect(use_reactive!(|route| {

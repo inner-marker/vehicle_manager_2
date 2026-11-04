@@ -1,6 +1,7 @@
 //! Display preferences on the server (decisions #029, #048).
 //!
-//! - **Anyone signed in** changes their own (any mode: they're the user's, not the household's).
+//! - **Anyone signed in** changes their own (any mode: they're the user's, not the household's),
+//!   except what squawks are called, which is the household's alone (#064).
 //! - **The household's Admin, in Admin mode,** changes the household defaults.
 //!
 //! The household's record ID is the database's ID; each user's is their user ID. The first
@@ -68,11 +69,15 @@ pub async fn view(context: &PreferencesContext<'_>) -> PreferencesOutcome {
     }
 }
 
-/// Changes the signed-in user's own preferences.
+/// Changes the signed-in user's own preferences (never what squawks are called).
 pub async fn set_mine(
     context: &PreferencesContext<'_>,
     patch: PreferencesPatch,
 ) -> PreferencesOutcome {
+    if patch.squawk_word.is_some() {
+        tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: the squawk word is the household's");
+        return PreferencesOutcome::NotAllowed;
+    }
     change(context, context.mine_id(), patch).await
 }
 

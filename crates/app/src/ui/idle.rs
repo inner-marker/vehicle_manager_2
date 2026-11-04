@@ -127,6 +127,7 @@ async fn load_setting(mut idle: IdleContext) {
     match api::get_preferences().await {
         Ok(PreferencesOutcome::Preferences { view }) => {
             idle.sign_out.set(view.effective.idle_sign_out);
+            crate::ui::set_squawk_word(view.effective.squawk_word);
         }
         Ok(other) => {
             tracing::debug!(target: log_area::AUTH, ?other, "idle watcher: no preferences; using the default sign-out time");

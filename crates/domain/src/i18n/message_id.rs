@@ -1625,4 +1625,19 @@ define_messages! {
     INBOX_FORGOTTEN_JOB_BODY => "inbox-forgotten-job-body",
     /// Message button: open the forgotten job.
     INBOX_OPEN_JOB => "inbox-open-job",
+    /// What squawks are called (#064): "issue", with its plural, capitalized forms, and article
+    /// as attributes.
+    SQUAWK_WORD_ISSUE => "squawk-word-issue",
+    /// What squawks are called: "squawk".
+    SQUAWK_WORD_SQUAWK => "squawk-word-squawk",
+    /// What squawks are called: "fault".
+    SQUAWK_WORD_FAULT => "squawk-word-fault",
+    /// What squawks are called: "write-up".
+    SQUAWK_WORD_WRITE_UP => "squawk-word-write-up",
+    /// Settings: what squawks are called.
+    SETTING_SQUAWK_WORD => "setting-squawk-word",
+    /// Settings: one choice of what squawks are called, e.g. "Issues".
+    SQUAWK_WORD_CHOICE => "squawk-word-choice",
+    /// Settings: the word is the household's, set by its Admin.
+    SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
 }
