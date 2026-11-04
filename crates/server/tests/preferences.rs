@@ -10,7 +10,7 @@ mod preferences {
     use domain::api::{PreferencesOutcome, PreferencesView};
     use domain::preferences::{
         Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, GarageSort, IdleSignOut,
-        Language, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
+        Language, Originals, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
     };
     use domain::test_support::{ManualClock, test_id};
     use server::health::Health;
@@ -164,6 +164,7 @@ mod preferences {
                 idle_sign_out: None,
                 garage_sort: None,
                 squawk_word: None,
+                originals: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -242,5 +243,33 @@ mod preferences {
             let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
             assert_eq!(sams.effective.squawk_word, chosen);
         }
+    }
+
+    #[tokio::test]
+    async fn keeping_originals_is_the_households_switch() {
+        let (_temp, database, mut stuart, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let originals = |choice| PreferencesPatch {
+            originals: Some(Choice::Set(choice)),
+            ..PreferencesPatch::default()
+        };
+        assert_eq!(
+            set_mine(&context(&database, &sam, &clock), originals(Originals::Off)).await,
+            PreferencesOutcome::NotAllowed,
+            "a person can't switch it"
+        );
+        let view = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(view.effective.originals, Originals::Allowed, "the default");
+
+        stuart.mode = ActiveMode::Admin;
+        unwrap_view(
+            set_household(
+                &context(&database, &stuart, &clock),
+                originals(Originals::Off),
+            )
+            .await,
+        );
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(sams.effective.originals, Originals::Off);
     }
 }

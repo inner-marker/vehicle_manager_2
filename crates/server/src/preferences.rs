@@ -69,13 +69,14 @@ pub async fn view(context: &PreferencesContext<'_>) -> PreferencesOutcome {
     }
 }
 
-/// Changes the signed-in user's own preferences (never what squawks are called).
+/// Changes the signed-in user's own preferences (never what squawks are called, or whether
+/// originals may be kept).
 pub async fn set_mine(
     context: &PreferencesContext<'_>,
     patch: PreferencesPatch,
 ) -> PreferencesOutcome {
-    if patch.squawk_word.is_some() {
-        tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: the squawk word is the household's");
+    if patch.squawk_word.is_some() || patch.originals.is_some() {
+        tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: a household-only setting");
         return PreferencesOutcome::NotAllowed;
     }
     change(context, context.mine_id(), patch).await
