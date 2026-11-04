@@ -235,7 +235,8 @@ mod maintenance {
                     every: 5_000 * MILE,
                 },
                 IntervalRule::Calendar {
-                    months: 6,
+                    every: 6,
+                    unit: domain::requirement::CalendarUnit::Months,
                     end_of_month: false,
                 },
             ],

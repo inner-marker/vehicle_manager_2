@@ -1022,3 +1022,10 @@
     - The work log now works out which squawks are outstanding as the server does: from each squawk's history, leaving out the job itself and the one it corrects (`work_log::job_squawks`).
     - A save sends only the dispositions of the squawks shown.
     - 1 new test. Checked in the browser: a job deferring the rattle, then a repair signing it off, then a correction of the first job: the correction listed the brake lights and the coolant smell (not the rattle), finished, and the rattle stayed resolved.
+- **After the checkpoint (7h, part 1 run by the human, 2026-11-03):** the human's notes, each done:
+  - **The work log:** + Task and the requirement and bundle menus now sit below the last task, so a new task joins at the bottom. The triangle is the toggle: ▸ on a folded task opens it, ▾ on the open one folds it.
+  - **A squawk's page:** **Repair this** sits with Edit and Remove, in one row.
+  - **Calendar rules count days, months, or years:** `IntervalRule::Calendar { every, unit, end_of_month }` with `CalendarUnit` (1–3,650 days, 1–600 months, 1–50 years; by the month's end for months and years only). `calendar_due` takes the unit. A rule stored before units (`"months": 6`) reads as 6 months, so no migration. `RequirementProblem::BadMonths` became `BadCalendar`. The dialog has a unit menu, and "Every 90 days", "Every 2 years".
+  - **Schedule:** each service bundle is a card like a requirement's ("Covers …", "SERVICE BUNDLE · 2 requirements").
+  - **Idea 21** (chained meter intervals: "after the first 100,000 miles, then every 50,000") for Phase 5, in `docs/ideas-to-discuss.md`.
+  - 2 new tests (days and years; a rule stored before units). Checked in the browser: each unit, the range refusal, the bundle card, the work log's order and toggle, and the squawk page's row.

@@ -78,14 +78,13 @@ pub(super) fn remove_task(work: &mut TypedWork, index: usize) {
     }
 }
 
-/// A folded task's title: "▸ Engine oil & filter" (or that it has none yet).
+/// A folded task's title, or that it has none yet.
 fn folded_title(task: &TypedTask) -> String {
-    let title = if task.title.trim().is_empty() {
+    if task.title.trim().is_empty() {
         tr(messages::WORK_UNTITLED_TASK)
     } else {
         task.title.clone()
-    };
-    format!("▸ {title}")
+    }
 }
 
 /// A task folded to one line: "2 parts · 0:30 · $107.44".
@@ -172,7 +171,29 @@ pub(super) fn WorkLog(
         // Tasks.
         section { class: "log-item work-tasks",
             h3 { class: "section-heading", {tr(messages::WORK_TASKS).to_uppercase()} }
-            div { class: "check-row",
+            if typed.tasks.is_empty() {
+                p { class: "muted-note", {tr(messages::WORK_NO_TASKS)} }
+            }
+            for (index, task) in typed.tasks.iter().cloned().enumerate() {
+                if open() == Some(index) {
+                    TaskCard { key: "{index}", work, index, task, requirements: requirements.clone(), currency, on_collapse: move |()| open.set(None) }
+                } else {
+                    button {
+                        key: "{index}",
+                        class: "task-folded",
+                        r#type: "button",
+                        "aria-expanded": "false",
+                        onclick: move |_| open.set(Some(index)),
+                        span { class: "task-folded-title",
+                            span { class: "task-toggle", "aria-hidden": "true", "▸" }
+                            {folded_title(&task)}
+                        }
+                        span { class: "task-folded-summary", {task_summary(&task, currency)} }
+                    }
+                }
+            }
+            // New tasks go at the bottom, so these sit below the last one.
+            div { class: "check-row work-adds",
                 if !free.is_empty() {
                     select {
                         class: "field-input work-add",
@@ -217,23 +238,6 @@ pub(super) fn WorkLog(
                         open.set(Some(typed.tasks.len() - 1));
                     },
                     {tr(messages::WORK_ADD_TASK)}
-                }
-            }
-            if typed.tasks.is_empty() {
-                p { class: "muted-note", {tr(messages::WORK_NO_TASKS)} }
-            }
-            for (index, task) in typed.tasks.iter().cloned().enumerate() {
-                if open() == Some(index) {
-                    TaskCard { key: "{index}", work, index, task, requirements: requirements.clone(), currency }
-                } else {
-                    button {
-                        key: "{index}",
-                        class: "task-folded",
-                        r#type: "button",
-                        onclick: move |_| open.set(Some(index)),
-                        span { class: "task-folded-title", {folded_title(&task)} }
-                        span { class: "task-folded-summary", {task_summary(&task, currency)} }
-                    }
                 }
             }
             FormError { message: work_problem }
@@ -353,6 +357,7 @@ fn TaskCard(
     task: TypedTask,
     requirements: Vec<RequirementView>,
     currency: CurrencyCode,
+    on_collapse: EventHandler<()>,
 ) -> Element {
     let mut work = work;
     let mut edit = move |change: &dyn Fn(&mut TypedTask)| {
@@ -378,6 +383,15 @@ fn TaskCard(
     rsx! {
         div { class: "task-card",
             div { class: "task-card-head",
+                // The triangle folds it (as ▸ on a folded task opens it).
+                button {
+                    class: "task-toggle",
+                    r#type: "button",
+                    "aria-label": tr(messages::WORK_FOLD_TASK),
+                    "aria-expanded": "true",
+                    onclick: move |_| on_collapse.call(()),
+                    "▾"
+                }
                 input {
                     class: "field-input task-title",
                     placeholder: tr(messages::WORK_TASK_TITLE),

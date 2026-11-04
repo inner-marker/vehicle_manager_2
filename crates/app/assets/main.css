@@ -3206,10 +3206,6 @@ a.squawk-history-job {
     text-decoration: none;
 }
 
-.schedule-bundle {
-    margin: 0;
-}
-
 .schedule-empty {
     align-items: center;
     text-align: center;
@@ -3370,7 +3366,27 @@ a.squawk-history-job {
 }
 
 .task-folded-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 700;
+}
+
+/* The triangle: ▸ opens a folded task, ▾ folds the open one. */
+.task-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
 }
 
 .task-folded-summary {

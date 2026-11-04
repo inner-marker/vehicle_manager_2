@@ -1591,8 +1591,8 @@ define_messages! {
     SQUAWK_NOT_OUTSTANDING => "squawk-not-outstanding",
     /// Requirement: a meter rule of zero or less.
     REQUIREMENT_BAD_INTERVAL => "requirement-bad-interval",
-    /// Requirement: a calendar rule out of range.
-    REQUIREMENT_BAD_MONTHS => "requirement-bad-months",
+    /// Requirement: a calendar rule out of its unit's range.
+    REQUIREMENT_BAD_CALENDAR => "requirement-bad-calendar",
     /// Requirement: two rules of one kind.
     REQUIREMENT_REPEATED_RULE => "requirement-repeated-rule",
     /// Bundle: no requirements.
@@ -1724,8 +1724,10 @@ define_messages! {
     SCHEDULE_OR => "schedule-or",
     /// Rules: a calendar rule; takes `count`.
     SCHEDULE_MONTHS => "schedule-months",
-    /// Rules: a calendar rule due by the month's end; takes `count`.
-    SCHEDULE_MONTHS_END => "schedule-months-end",
+    /// Rules: a calendar rule in days; takes `count`.
+    SCHEDULE_DAYS => "schedule-days",
+    /// Rules: a calendar rule in years; takes `count`.
+    SCHEDULE_YEARS => "schedule-years",
     /// Rules: a fixed date with no date yet.
     SCHEDULE_FIXED => "schedule-fixed",
     /// Rules: a fixed date; takes `date`.
@@ -1786,8 +1788,14 @@ define_messages! {
     SCHEDULE_EVERY_LABEL => "schedule-every-label",
     /// A rule's kind: the calendar.
     SCHEDULE_CALENDAR => "schedule-calendar",
-    /// A calendar rule's unit.
+    /// A calendar rule's unit: months.
     SCHEDULE_MONTHS_LABEL => "schedule-months-label",
+    /// A calendar rule's unit: days.
+    SCHEDULE_UNIT_DAYS => "schedule-unit-days",
+    /// A calendar rule's unit: years.
+    SCHEDULE_UNIT_YEARS => "schedule-unit-years",
+    /// A calendar rule's unit menu, for screen readers.
+    SCHEDULE_CALENDAR_UNIT => "schedule-calendar-unit",
     /// A calendar rule: due by the month's end.
     SCHEDULE_END_OF_MONTH => "schedule-end-of-month",
     /// A rule's kind: a fixed date.
@@ -1800,6 +1808,12 @@ define_messages! {
     SCHEDULE_EDIT_BUNDLE_TITLE => "schedule-edit-bundle-title",
     /// Bundle dialog: its requirements.
     SCHEDULE_BUNDLE_COVERS => "schedule-bundle-covers",
+    /// Schedule: a bundle card's requirements; takes `names`.
+    SCHEDULE_BUNDLE_COVERS_LIST => "schedule-bundle-covers-list",
+    /// Schedule: a bundle card's label.
+    SCHEDULE_BUNDLE_LABEL => "schedule-bundle-label",
+    /// Schedule: how many requirements a bundle covers; takes `count`.
+    SCHEDULE_BUNDLE_COUNT => "schedule-bundle-count",
     /// Remove dialog; takes `name`.
     SCHEDULE_REMOVE_TITLE => "schedule-remove-title",
     /// Copy dialog; takes `vehicle`.
@@ -1840,6 +1854,8 @@ define_messages! {
     WORK_NO_TASKS => "work-no-tasks",
     /// A task with no title yet.
     WORK_UNTITLED_TASK => "work-untitled-task",
+    /// The open task's fold button, for screen readers.
+    WORK_FOLD_TASK => "work-fold-task",
     /// A folded task: how many parts; takes `count`.
     WORK_PART_COUNT => "work-part-count",
     /// A task's title, as a placeholder.

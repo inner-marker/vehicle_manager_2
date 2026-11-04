@@ -22,11 +22,16 @@
 //! ```
 //! use domain::requirement::calendar_due;
 //!
+//! use domain::requirement::CalendarUnit::{Days, Months, Years};
+//!
 //! // Every 12 months, from 15 March 2026: due 15 March 2027, or 31 March with end-of-month.
-//! assert_eq!(calendar_due("2026-03-15", 12, false).unwrap(), "2027-03-15");
-//! assert_eq!(calendar_due("2026-03-15", 12, true).unwrap(), "2027-03-31");
+//! assert_eq!(calendar_due("2026-03-15", 12, Months, false).unwrap(), "2027-03-15");
+//! assert_eq!(calendar_due("2026-03-15", 12, Months, true).unwrap(), "2027-03-31");
 //! // A month-end date stays inside the shorter month.
-//! assert_eq!(calendar_due("2026-01-31", 1, false).unwrap(), "2026-02-28");
+//! assert_eq!(calendar_due("2026-01-31", 1, Months, false).unwrap(), "2026-02-28");
+//! // Days and years too.
+//! assert_eq!(calendar_due("2026-03-15", 90, Days, false).unwrap(), "2026-06-13");
+//! assert_eq!(calendar_due("2028-02-29", 1, Years, false).unwrap(), "2029-02-28");
 //! ```
 
 use serde::{Deserialize, Serialize};
@@ -49,6 +54,35 @@ pub type BundleId = Id<Bundle>;
 /// The most months a calendar rule may span (50 years).
 pub const MAX_MONTHS: u16 = 600;
 
+/// What a calendar rule counts in.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CalendarUnit {
+    /// Days (e.g. every 90 days).
+    Days,
+    /// Months (where calendar rules started, so rules stored before units read as months).
+    #[default]
+    Months,
+    /// Years.
+    Years,
+}
+
+impl CalendarUnit {
+    /// Every unit, shortest first.
+    pub const ALL: [Self; 3] = [Self::Days, Self::Months, Self::Years];
+
+    /// The most a calendar rule may count in this unit: 50 years each way (in days, about 10
+    /// years: longer ones are months or years).
+    #[must_use]
+    pub const fn max(self) -> u16 {
+        match self {
+            Self::Days => 3_650,
+            Self::Months => MAX_MONTHS,
+            Self::Years => 50,
+        }
+    }
+}
+
 /// One way a requirement comes due.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "rule", rename_all = "kebab-case")]
@@ -60,11 +94,17 @@ pub enum IntervalRule {
         /// How far apart, more than zero.
         every: i64,
     },
-    /// Every `months` months; with `end_of_month`, due on the last day of that month.
+    /// Every `every` days, months, or years; with `end_of_month` (months and years), due on
+    /// the last day of that month.
     Calendar {
-        /// How many months, 1–600.
-        months: u16,
-        /// Rounded to the end of the calendar month.
+        /// How many (1 up to the unit's [`CalendarUnit::max`]). Stored before units existed as
+        /// `months`.
+        #[serde(alias = "months")]
+        every: u16,
+        /// Days, months, or years (months for a rule stored before units existed).
+        #[serde(default)]
+        unit: CalendarUnit,
+        /// Rounded to the end of the calendar month (ignored for days).
         end_of_month: bool,
     },
     /// On a date from the paperwork. `first` is the first one; each sign-off then gives the
@@ -175,8 +215,8 @@ pub enum RequirementProblem {
     UnknownMeter,
     /// A meter rule of zero or less.
     BadInterval,
-    /// A calendar rule outside 1–600 months.
-    BadMonths,
+    /// A calendar rule outside its unit's range (1–3,650 days, 1–600 months, 1–50 years).
+    BadCalendar,
     /// A fixed date that isn't a date.
     BadDate,
     /// Two rules of the same kind (two calendars, two fixed dates, or one meter twice).
@@ -198,7 +238,7 @@ impl RequirementProblem {
         match self {
             Self::UnknownMeter => messages::SOMETHING_WENT_WRONG,
             Self::BadInterval => messages::REQUIREMENT_BAD_INTERVAL,
-            Self::BadMonths => messages::REQUIREMENT_BAD_MONTHS,
+            Self::BadCalendar => messages::REQUIREMENT_BAD_CALENDAR,
             Self::BadDate => messages::DATE_BAD_DATE,
             Self::RepeatedRule => messages::REQUIREMENT_REPEATED_RULE,
             Self::EmptyBundle => messages::BUNDLE_EMPTY,
@@ -242,9 +282,9 @@ pub fn check_rules(
                     return Err(RequirementProblem::BadInterval);
                 }
             }
-            IntervalRule::Calendar { months, .. } => {
-                if !(1..=MAX_MONTHS).contains(months) {
-                    return Err(RequirementProblem::BadMonths);
+            IntervalRule::Calendar { every, unit, .. } => {
+                if !(1..=unit.max()).contains(every) {
+                    return Err(RequirementProblem::BadCalendar);
                 }
             }
             IntervalRule::FixedDate { first } => {
@@ -277,23 +317,30 @@ pub fn check_bundle(
     Ok(())
 }
 
-/// When a calendar rule of `months` comes due after `done_on` (`2026-03-15`): the same day
-/// `months` later (the month's last day if it's shorter), or with `end_of_month`, the last
-/// day of that month.
+/// When a calendar rule of `every` `unit`s comes due after `done_on` (`2026-03-15`): the same
+/// day that much later (the month's last day if it's shorter), or with `end_of_month` (months
+/// and years only), the last day of that month.
 ///
 /// # Errors
 ///
 /// [`RequirementProblem::BadDate`] if `done_on` isn't a date or the result is out of range.
 pub fn calendar_due(
     done_on: &str,
-    months: u16,
+    every: u16,
+    unit: CalendarUnit,
     end_of_month: bool,
 ) -> Result<String, RequirementProblem> {
     let done = civil(done_on)?;
+    let count = i64::from(every);
+    let span = match unit {
+        CalendarUnit::Days => jiff::Span::new().days(count),
+        CalendarUnit::Months => jiff::Span::new().months(count),
+        CalendarUnit::Years => jiff::Span::new().years(count),
+    };
     let due = done
-        .checked_add(jiff::Span::new().months(i64::from(months)))
+        .checked_add(span)
         .map_err(|_| RequirementProblem::BadDate)?;
-    let due = if end_of_month {
+    let due = if end_of_month && unit != CalendarUnit::Days {
         due.last_of_month()
     } else {
         due
@@ -470,7 +517,8 @@ mod tests {
                     every: 900_000,
                 },
                 IntervalRule::Calendar {
-                    months: 12,
+                    every: 12,
+                    unit: CalendarUnit::Months,
                     end_of_month: false,
                 },
             ],
@@ -497,15 +545,29 @@ mod tests {
             }),
             Err(RequirementProblem::BadInterval)
         );
-        for months in [0, 601] {
+        for (every, unit) in [
+            (0, CalendarUnit::Months),
+            (601, CalendarUnit::Months),
+            (3_651, CalendarUnit::Days),
+            (51, CalendarUnit::Years),
+        ] {
             assert_eq!(
                 rule(IntervalRule::Calendar {
-                    months,
+                    every,
+                    unit,
                     end_of_month: true
                 }),
-                Err(RequirementProblem::BadMonths)
+                Err(RequirementProblem::BadCalendar)
             );
         }
+        assert_eq!(
+            rule(IntervalRule::Calendar {
+                every: 90,
+                unit: CalendarUnit::Days,
+                end_of_month: false
+            }),
+            Ok(())
+        );
         assert_eq!(
             rule(IntervalRule::FixedDate {
                 first: Some("2026-02-30".into())
@@ -515,11 +577,13 @@ mod tests {
         assert_eq!(rule(IntervalRule::FixedDate { first: None }), Ok(()));
         let twice = [
             IntervalRule::Calendar {
-                months: 6,
+                every: 6,
+                unit: CalendarUnit::Months,
                 end_of_month: false,
             },
             IntervalRule::Calendar {
-                months: 12,
+                every: 12,
+                unit: CalendarUnit::Months,
                 end_of_month: false,
             },
         ];
@@ -562,18 +626,65 @@ mod tests {
     }
 
     #[test]
-    fn calendar_rules_add_months_and_round_to_the_month_end() {
-        assert_eq!(calendar_due("2026-03-15", 12, false).unwrap(), "2027-03-15");
-        assert_eq!(calendar_due("2026-03-15", 12, true).unwrap(), "2027-03-31");
-        assert_eq!(calendar_due("2026-01-31", 1, false).unwrap(), "2026-02-28");
+    fn calendar_rules_count_days_and_years_too() {
         assert_eq!(
-            calendar_due("2028-01-31", 1, true).unwrap(),
+            calendar_due("2026-03-15", 90, CalendarUnit::Days, false).unwrap(),
+            "2026-06-13"
+        );
+        assert_eq!(
+            calendar_due("2026-03-15", 90, CalendarUnit::Days, true).unwrap(),
+            "2026-06-13",
+            "the month's end is for months and years"
+        );
+        assert_eq!(
+            calendar_due("2026-03-15", 2, CalendarUnit::Years, true).unwrap(),
+            "2028-03-31"
+        );
+        assert_eq!(
+            calendar_due("2028-02-29", 1, CalendarUnit::Years, false).unwrap(),
+            "2029-02-28",
+            "a leap day a year on"
+        );
+    }
+
+    #[test]
+    fn a_rule_stored_before_units_reads_as_months() {
+        let stored = r#"{"rule":"calendar","months":6,"end_of_month":false}"#;
+        assert_eq!(
+            serde_json::from_str::<IntervalRule>(stored).unwrap(),
+            IntervalRule::Calendar {
+                every: 6,
+                unit: CalendarUnit::Months,
+                end_of_month: false
+            }
+        );
+    }
+
+    #[test]
+    fn calendar_rules_add_months_and_round_to_the_month_end() {
+        assert_eq!(
+            calendar_due("2026-03-15", 12, CalendarUnit::Months, false).unwrap(),
+            "2027-03-15"
+        );
+        assert_eq!(
+            calendar_due("2026-03-15", 12, CalendarUnit::Months, true).unwrap(),
+            "2027-03-31"
+        );
+        assert_eq!(
+            calendar_due("2026-01-31", 1, CalendarUnit::Months, false).unwrap(),
+            "2026-02-28"
+        );
+        assert_eq!(
+            calendar_due("2028-01-31", 1, CalendarUnit::Months, true).unwrap(),
             "2028-02-29",
             "a leap year"
         );
-        assert_eq!(calendar_due("2026-11-30", 3, false).unwrap(), "2027-02-28");
         assert_eq!(
-            calendar_due("not a date", 1, false),
+            calendar_due("2026-11-30", 3, CalendarUnit::Months, false).unwrap(),
+            "2027-02-28"
+        );
+        assert_eq!(
+            calendar_due("not a date", 1, CalendarUnit::Months, false),
             Err(RequirementProblem::BadDate)
         );
     }
@@ -588,7 +699,7 @@ mod tests {
             let done = jiff::civil::date(1950, 1, 1)
                 .checked_add(jiff::Span::new().days(day))
                 .unwrap();
-            let due: jiff::civil::Date = calendar_due(&done.to_string(), months, end_of_month)
+            let due: jiff::civil::Date = calendar_due(&done.to_string(), months, CalendarUnit::Months, end_of_month)
                 .unwrap()
                 .parse()
                 .unwrap();
@@ -653,7 +764,8 @@ mod tests {
                     every: 12_070_080
                 },
                 IntervalRule::Calendar {
-                    months: 12,
+                    every: 12,
+                    unit: CalendarUnit::Months,
                     end_of_month: false
                 },
             ]

@@ -348,10 +348,14 @@ schedule-months = { $count ->
         [one] month
        *[other] { $count } months
     }
-schedule-months-end = { $count ->
-        [one] month
-       *[other] { $count } months
-    }, by the month's end
+schedule-days = { $count ->
+        [one] day
+       *[other] { $count } days
+    }
+schedule-years = { $count ->
+        [one] year
+       *[other] { $count } years
+    }
 schedule-fixed = On a fixed date
 schedule-fixed-next = On a fixed date · next { $date }
 schedule-when-needed = When needed
@@ -383,12 +387,21 @@ schedule-rules-hint = No rules: done when needed. A fixed date's first date is o
 schedule-every-label = every
 schedule-calendar = Calendar
 schedule-months-label = months
+schedule-unit-days = days
+schedule-unit-years = years
+schedule-calendar-unit = Days, months, or years
 schedule-end-of-month = by the month's end
 schedule-fixed-label = Fixed date
 schedule-first-due = first due
 schedule-add-bundle-title = New bundle
 schedule-edit-bundle-title = Change this bundle
 schedule-bundle-covers = What it covers
+schedule-bundle-covers-list = Covers { $names }
+schedule-bundle-label = Service bundle
+schedule-bundle-count = { $count ->
+        [one] 1 requirement
+       *[other] { $count } requirements
+    }
 schedule-remove-title = Remove { $name }?
 schedule-copy-title = Copy a schedule to { $vehicle }
 schedule-copy-from-label = From
@@ -418,6 +431,7 @@ work-from-bundle = + From a bundle…
 work-add-task = + Task
 work-no-tasks = No tasks yet: add one from a requirement, a bundle, or your own.
 work-untitled-task = (no title)
+work-fold-task = Fold this task
 work-part-count = { $count ->
         [one] 1 part
        *[other] { $count } parts
@@ -1200,7 +1214,7 @@ squawk-dispositioned = A job has already dealt with this { $squawk }, so it can'
 ## Requirements and bundles (milestone 7)
 
 requirement-bad-interval = Enter how far apart, more than zero.
-requirement-bad-months = Every 1 to 600 months.
+requirement-bad-calendar = Every 1 to 3,650 days, 1 to 600 months, or 1 to 50 years.
 requirement-repeated-rule = Each meter, the calendar, and the fixed date can be used once.
 bundle-empty = Choose at least one requirement.
 bundle-bad-item = Each requirement can be in a bundle once.

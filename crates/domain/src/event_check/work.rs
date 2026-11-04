@@ -175,7 +175,8 @@ mod tests {
                 requirement(
                     "Engine oil & filter",
                     vec![IntervalRule::Calendar {
-                        months: 12,
+                        every: 12,
+                        unit: crate::requirement::CalendarUnit::Months,
                         end_of_month: false,
                     }],
                 ),

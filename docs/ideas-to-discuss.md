@@ -164,3 +164,13 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 
 ### 20. A separate test server and deployed server ✅
 *Decided 2026-11-03: `docs/decisions.md` #062 (a test server beside the main server on the NAS; main runs `:dev` without test timers; separate session cookies; migrations freeze in `dev`).*
+
+### 21. Chained meter intervals: a first interval, then a different one 🟡
+*Raised by the human, 2026-11-03, after milestone 7's checkpoint test · Suggested phase: Phase 5 (what's due), with the interval rules (milestone 7, choice 4)*
+
+- **Idea:** a meter rule with a first interval and a different one after it, e.g. "Replace after the first 100,000 miles, then every 50,000 miles thereafter" (timing belts, some transmission fluids, a new engine's first oil change).
+- **To discuss:**
+  - **Counted from what:** the meter's first reading on the vehicle, a reading typed when the rule is set up (a used vehicle), or zero.
+  - **Calendar rules too:** "first at 3 years, then every 2 years" (e.g. a new car's first inspection).
+  - **How it's shown:** "First at 100,000 mi, then every 50,000 mi"; and once the first is done, only the repeating part.
+  - **Copying a schedule** (#031) onto a vehicle that's already past the first interval.

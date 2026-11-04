@@ -805,6 +805,9 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
     let high_word = high_severity_name(&vehicle.asset.kind, Translator::english());
     let squawk = view.squawk.clone();
     let entries = history(&view);
+    // Repair this (a Maintainer, while it's outstanding) sits with Edit and Remove.
+    let may_repair =
+        view.status.is_outstanding() && may_log_jobs(vehicle.role, current_mode(auth()));
     let asset = vehicle.asset;
     rsx! {
         div { class: "squawk-body",
@@ -847,22 +850,25 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
                     }
                 }
             }
-            if view.status.is_outstanding() && may_log_jobs(vehicle.role, current_mode(auth())) {
-                Link { class: "primary-button squawk-repair", to: Route::RepairSquawk { squawk_id: view.id.to_string() },
-                    {tr(messages::SQUAWK_REPAIR_THIS)}
+            if view.may_change || may_repair {
+                div { class: "check-row",
+                    if may_repair {
+                        Link { class: "primary-button", to: Route::RepairSquawk { squawk_id: view.id.to_string() },
+                            {tr(messages::SQUAWK_REPAIR_THIS)}
+                        }
+                    }
+                    if view.may_change {
+                        button {
+                            class: "secondary-button",
+                            r#type: "button",
+                            onclick: move |_| sheet.edit(view.id, squawk.clone(), &asset),
+                            {tr(messages::ACTION_EDIT)}
+                        }
+                        button { class: "secondary-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::SQUAWK_REMOVE)} }
+                    }
                 }
             }
-            if view.may_change {
-                div { class: "check-row",
-                    button {
-                        class: "secondary-button",
-                        r#type: "button",
-                        onclick: move |_| sheet.edit(view.id, squawk.clone(), &asset),
-                        {tr(messages::ACTION_EDIT)}
-                    }
-                    button { class: "secondary-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::SQUAWK_REMOVE)} }
-                }
-            } else if !view.history.is_empty() {
+            if !view.may_change && !view.history.is_empty() {
                 p { class: "muted-note squawk-locked", {tr(messages::SQUAWK_LOCKED_NOTE)} }
             }
         }

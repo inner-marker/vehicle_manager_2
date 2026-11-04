@@ -131,7 +131,8 @@ mod maintenance {
                         every: 8_046_720,
                     },
                     IntervalRule::Calendar {
-                        months: 12,
+                        every: 12,
+                        unit: domain::requirement::CalendarUnit::Months,
                         end_of_month: false,
                     },
                 ],

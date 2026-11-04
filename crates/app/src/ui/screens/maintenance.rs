@@ -25,8 +25,8 @@ use domain::notes::Notes;
 use domain::preferences::Preferences;
 use domain::quantity::{parse_reading, reading_value, show_reading};
 use domain::requirement::{
-    Bundle, BundleId, DoneTask, IntervalRule, Requirement, RequirementId, check_bundle,
-    check_rules, copy_schedule,
+    Bundle, BundleId, CalendarUnit, DoneTask, IntervalRule, Requirement, RequirementId,
+    check_bundle, check_rules, copy_schedule,
 };
 
 use super::problem_from_error;
@@ -200,6 +200,24 @@ fn civil_text(date: &str, units: &Preferences) -> String {
         .unwrap_or_else(|| date.to_owned())
 }
 
+/// "6 months", "90 days", "2 years": a calendar rule's count, by its unit.
+const fn calendar_count(unit: CalendarUnit) -> MessageId {
+    match unit {
+        CalendarUnit::Days => messages::SCHEDULE_DAYS,
+        CalendarUnit::Months => messages::SCHEDULE_MONTHS,
+        CalendarUnit::Years => messages::SCHEDULE_YEARS,
+    }
+}
+
+/// A calendar unit's name in the rule's menu: "days", "months", "years".
+const fn calendar_unit_label(unit: CalendarUnit) -> MessageId {
+    match unit {
+        CalendarUnit::Days => messages::SCHEDULE_UNIT_DAYS,
+        CalendarUnit::Months => messages::SCHEDULE_MONTHS_LABEL,
+        CalendarUnit::Years => messages::SCHEDULE_UNIT_YEARS,
+    }
+}
+
 /// "Every 5,000 mi or 6 months", "When needed", "On a fixed date · next 30 Nov 2026": a
 /// requirement's rules, whichever comes first. `next` is a fixed date's next due date, if
 /// known.
@@ -223,18 +241,19 @@ fn rules_text(
                 }
             }
             IntervalRule::Calendar {
-                months,
+                every,
+                unit,
                 end_of_month,
             } => {
-                let id = if *end_of_month {
-                    messages::SCHEDULE_MONTHS_END
+                let count = tr_with(
+                    calendar_count(*unit),
+                    &[("count", MessageArg::from(u32::from(*every)))],
+                );
+                periodic.push(if *end_of_month && *unit != CalendarUnit::Days {
+                    format!("{count}, {}", tr(messages::SCHEDULE_END_OF_MONTH))
                 } else {
-                    messages::SCHEDULE_MONTHS
-                };
-                periodic.push(tr_with(
-                    id,
-                    &[("count", MessageArg::from(u32::from(*months)))],
-                ));
+                    count
+                });
             }
             IntervalRule::FixedDate { first } => {
                 fixed = Some(match next.or(first.as_deref()) {
@@ -380,9 +399,24 @@ fn ScheduleView(
             }
             if !schedule.bundles.is_empty() {
                 h3 { class: "section-heading", {tr(messages::SCHEDULE_BUNDLES).to_uppercase()} }
+                // A card each, like the requirements: its name, and what it covers.
                 for (id, bundle) in schedule.bundles.clone() {
-                    p { key: "{id}", class: "schedule-bundle",
-                        {format!("{}: {}", bundle.name.as_str(), bundle.requirements.iter().map(|id| name_of(*id)).collect::<Vec<_>>().join(", "))}
+                    section { key: "{id}", class: "schedule-card",
+                        div { class: "schedule-card-text",
+                            span { class: "schedule-card-name", {bundle.name.as_str().to_owned()} }
+                            span { class: "schedule-card-rules",
+                                {tr_with(messages::SCHEDULE_BUNDLE_COVERS_LIST, &[(
+                                    "names",
+                                    MessageArg::from(bundle.requirements.iter().map(|id| name_of(*id)).collect::<Vec<_>>().join(", ")),
+                                )])}
+                            }
+                        }
+                        div { class: "schedule-card-last",
+                            span { class: "schedule-card-label", {tr(messages::SCHEDULE_BUNDLE_LABEL).to_uppercase()} }
+                            span { class: "schedule-card-when",
+                                {tr_with(messages::SCHEDULE_BUNDLE_COUNT, &[("count", MessageArg::from(i64::try_from(bundle.requirements.len()).unwrap_or(i64::MAX)))])}
+                            }
+                        }
                     }
                 }
             }
@@ -508,9 +542,18 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
 /// One rule as typed.
 #[derive(Debug, Clone, PartialEq)]
 enum TypedRule {
-    Meter { meter: MeterId, every: String },
-    Calendar { months: String, end_of_month: bool },
-    FixedDate { first: String },
+    Meter {
+        meter: MeterId,
+        every: String,
+    },
+    Calendar {
+        every: String,
+        unit: CalendarUnit,
+        end_of_month: bool,
+    },
+    FixedDate {
+        first: String,
+    },
 }
 
 impl TypedRule {
@@ -526,10 +569,12 @@ impl TypedRule {
                     .unwrap_or_default(),
             },
             IntervalRule::Calendar {
-                months,
+                every,
+                unit,
                 end_of_month,
             } => Self::Calendar {
-                months: months.to_string(),
+                every: every.to_string(),
+                unit: *unit,
                 end_of_month: *end_of_month,
             },
             IntervalRule::FixedDate { first } => Self::FixedDate {
@@ -560,14 +605,17 @@ fn rules_from(
                 })
             }
             TypedRule::Calendar {
-                months,
+                every,
+                unit,
                 end_of_month,
             } => Ok(IntervalRule::Calendar {
-                months: months
+                every: every
                     .trim()
                     .parse()
-                    .map_err(|_| messages::REQUIREMENT_BAD_MONTHS)?,
-                end_of_month: *end_of_month,
+                    .map_err(|_| messages::REQUIREMENT_BAD_CALENDAR)?,
+                unit: *unit,
+                // The month's end is for months and years.
+                end_of_month: *end_of_month && *unit != CalendarUnit::Days,
             }),
             TypedRule::FixedDate { first } => Ok(IntervalRule::FixedDate {
                 first: Some(first.trim().to_owned()).filter(|date| !date.is_empty()),
@@ -733,7 +781,7 @@ fn RequirementDialog(
                     }
                     if !has_calendar {
                         button { class: "secondary-button", r#type: "button",
-                            onclick: move |_| typed.write().rules.push(TypedRule::Calendar { months: "12".into(), end_of_month: false }),
+                            onclick: move |_| typed.write().rules.push(TypedRule::Calendar { every: "12".into(), unit: CalendarUnit::Months, end_of_month: false }),
                             {tr(messages::SCHEDULE_ADD_CALENDAR_RULE)}
                         }
                     }
@@ -808,10 +856,11 @@ fn RuleInputs(
             }
         }
         TypedRule::Calendar {
-            months,
+            every,
+            unit,
             end_of_month,
         } => {
-            let months_now = months.clone();
+            let (every_unit, every_month) = (every.clone(), every.clone());
             rsx! {
                 div { class: "rule-inputs",
                     span { class: "rule-kind", {tr(messages::SCHEDULE_CALENDAR)} }
@@ -819,17 +868,29 @@ fn RuleInputs(
                     input {
                         class: "field-input rule-number",
                         inputmode: "numeric",
-                        value: months,
-                        oninput: move |event| set(TypedRule::Calendar { months: event.value(), end_of_month }),
+                        value: every,
+                        oninput: move |event| set(TypedRule::Calendar { every: event.value(), unit, end_of_month }),
                     }
-                    span { {tr(messages::SCHEDULE_MONTHS_LABEL)} }
-                    label { class: "check",
-                        input {
-                            r#type: "checkbox",
-                            checked: end_of_month,
-                            onchange: move |event| set(TypedRule::Calendar { months: months_now.clone(), end_of_month: event.checked() }),
+                    select {
+                        class: "field-input",
+                        "aria-label": tr(messages::SCHEDULE_CALENDAR_UNIT),
+                        onchange: move |event| {
+                            let picked = CalendarUnit::ALL.into_iter().find(|each| format!("{each:?}") == event.value()).unwrap_or(unit);
+                            set(TypedRule::Calendar { every: every_unit.clone(), unit: picked, end_of_month });
+                        },
+                        for each in CalendarUnit::ALL {
+                            option { key: "{each:?}", value: "{each:?}", selected: each == unit, {tr(calendar_unit_label(each))} }
                         }
-                        span { {tr(messages::SCHEDULE_END_OF_MONTH)} }
+                    }
+                    if unit != CalendarUnit::Days {
+                        label { class: "check",
+                            input {
+                                r#type: "checkbox",
+                                checked: end_of_month,
+                                onchange: move |event| set(TypedRule::Calendar { every: every_month.clone(), unit, end_of_month: event.checked() }),
+                            }
+                            span { {tr(messages::SCHEDULE_END_OF_MONTH)} }
+                        }
                     }
                 }
             }
@@ -1221,13 +1282,32 @@ mod tests {
                 every: 5_000 * MILE / 1000,
             },
             IntervalRule::Calendar {
-                months: 6,
+                every: 6,
+                unit: CalendarUnit::Months,
                 end_of_month: false,
             },
         ];
         assert_eq!(
             rules_text(&oil, &meters(), None, &units),
             "Every 5,000 mi or 6 months"
+        );
+        let calendar = |every, unit, end_of_month| {
+            rules_text(
+                &[IntervalRule::Calendar {
+                    every,
+                    unit,
+                    end_of_month,
+                }],
+                &meters(),
+                None,
+                &units,
+            )
+        };
+        assert_eq!(calendar(90, CalendarUnit::Days, false), "Every 90 days");
+        assert_eq!(calendar(1, CalendarUnit::Years, false), "Every year");
+        assert_eq!(
+            calendar(2, CalendarUnit::Years, true),
+            "Every 2 years, by the month's end"
         );
         assert_eq!(rules_text(&[], &meters(), None, &units), "When needed");
         let inspection = [IntervalRule::FixedDate {
@@ -1243,7 +1323,8 @@ mod tests {
             "the last job's next due date wins"
         );
         let yearly = [IntervalRule::Calendar {
-            months: 1,
+            every: 1,
+            unit: CalendarUnit::Months,
             end_of_month: true,
         }];
         assert_eq!(
@@ -1300,7 +1381,8 @@ mod tests {
                 every: "5000".into(),
             },
             TypedRule::Calendar {
-                months: " 6 ".into(),
+                every: " 6 ".into(),
+                unit: CalendarUnit::Months,
                 end_of_month: true,
             },
             TypedRule::FixedDate {
@@ -1315,7 +1397,8 @@ mod tests {
                     every: parse_reading("5000", MeterUnit::Miles, 0).unwrap(),
                 },
                 IntervalRule::Calendar {
-                    months: 6,
+                    every: 6,
+                    unit: CalendarUnit::Months,
                     end_of_month: true,
                 },
                 IntervalRule::FixedDate { first: None },
@@ -1330,12 +1413,27 @@ mod tests {
             Err(messages::REQUIREMENT_BAD_INTERVAL)
         );
         let months = [TypedRule::Calendar {
-            months: "lots".into(),
+            every: "lots".into(),
+            unit: CalendarUnit::Months,
             end_of_month: false,
         }];
         assert_eq!(
             rules_from(&months, &meters()),
-            Err(messages::REQUIREMENT_BAD_MONTHS)
+            Err(messages::REQUIREMENT_BAD_CALENDAR)
+        );
+        let days = [TypedRule::Calendar {
+            every: "90".into(),
+            unit: CalendarUnit::Days,
+            end_of_month: true,
+        }];
+        assert_eq!(
+            rules_from(&days, &meters()),
+            Ok(vec![IntervalRule::Calendar {
+                every: 90,
+                unit: CalendarUnit::Days,
+                end_of_month: false
+            }]),
+            "the month's end is dropped for days"
         );
         // A stored rule types back into the same text.
         let rule = IntervalRule::Meter {
