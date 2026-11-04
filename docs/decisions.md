@@ -745,3 +745,26 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Messages that name them get the word, its plural, a capitalized form, and its article ("an issue", "a squawk") from the translator, so no screen has to pass it.
 - **Why:** the human, 2026-11-03: "Squawk is familiar in the aviation community, but might not be outside of it." One household-wide word keeps lists that mix vehicles consistent; per-kind words were considered and turned down.
 - **Unaffected:** what squawks are and do (#051, #063).
+
+### 065. Photos and documents are files on disk, each named by its SHA-256; the database holds what they are
+*Decided: 2026-11-04 · Plan: §4 Asset, Attachment; §7 Data & operations · Phase plan: phase-2.md milestone 8, question 1 · Closes idea 3 · Refines #035, #036*
+
+- **Decision:**
+  - **Every stored file** (a photo's JPEG and thumbnail, a kept original, a PDF and its first-page thumbnail) **is a file in `data/files/`,** named by the SHA-256 of its contents (`data/files/ab/cdef…`), behind a small storage interface in `storage`. It's written once and **never changed**; the same file attached twice is stored once.
+  - **The database holds the attachment records** (owner, kind, size, page count, original name, photo metadata) and the hashes they point to.
+  - **The integrity check** verifies files against their hashes, and reports a missing or damaged one as an Admin message (#050).
+  - **A file is erased only when nothing points to it any more** (removed attachments are soft-deleted, #043).
+  - **Backups and restores are the database plus `data/files/`.** Nightly snapshots stay database-only (#035): files never change, so the folder needs no copies of its own. Copying main into the test server (#062) copies both.
+- **Why:** the plan kept photos as blobs in the database, but every nightly snapshot copies the whole database and 7 are kept, so each photo and PDF would take about 8× its size on the NAS. Files named by their hash keep snapshots small, make damage detectable, and can move to other storage later without touching the records.
+- **Unaffected:** the photo sizes, originals, and metadata (#036); the PDF limit and viewer (#037); lazy blob sync (Phase 3).
+
+### 066. License plates are their own records, with an issuing authority and a history
+*Decided: 2026-11-04 · Plan: §3 Official asset documents; §4 Asset · Phase plan: phase-2.md milestone 8, question 5*
+
+- **Decision:**
+  - **A plate is a record on the vehicle:** an issuing authority (a US state or Canadian province from a list, a country, or other text), a number, and from / until dates. **The current plate** shows on the vehicle's page; **earlier ones are its history,** e.g. after a move to another state.
+  - **A registration links to the plate it's for;** renewing the registration updates that plate's expiration.
+  - **Plates only, for now.** Other identifiers (VIN, serial, a boat's registration number) stay typed identifiers; the record is general enough to add other kinds later.
+  - **Existing plates move over:** a migration turns each `plate` identifier into a vehicle's first plate record, with **no authority yet**, and the vehicle's page asks for one.
+- **Why:** the human, 2026-11-03: a plate belongs to a state and changes when the vehicle moves; a typed identifier has neither an authority nor a history.
+- **Unaffected:** the other typed identifiers (#030).

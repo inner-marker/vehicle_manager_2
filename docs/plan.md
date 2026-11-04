@@ -224,13 +224,14 @@ Holds only information that doesn't change over time:
 - **Lifecycle status:** in service, spare / in storage, out for service, retired, disposed (see Asset lifecycle & components).
 - Make, model, year
 - Color
-- **Identifiers:** a list of typed identifiers rather than a single VIN field, e.g. VIN, license plate, registration, serial number (and later aircraft identifiers such as N-number and airframe serial)
+- **Identifiers:** a list of typed identifiers rather than a single VIN field, e.g. VIN, registration, serial number (and later aircraft identifiers such as N-number and airframe serial)
+- **License plates:** their own records, each with an issuing authority (state, province, or country), a number, and dates; the current one shows, earlier ones are its history, and renewing a registration updates its plate (`docs/decisions.md` #066)
 - Description
-- Photos (stored as blobs in the database)
+- Photos (stored as files, see Attachments)
 
 > **Meter readings are not vehicle fields.** Odometer, hours, etc. are readings taken at a point in time, so they live on events. That also builds a full history of every meter for free.
 
-> **Photo tradeoff:** blobs are simple, but they grow the database and make every sync heavier. The alternative is files plus a path reference, but then the files need their own sync. Blobs are a fine starting point at this scale.
+> **Where files live** (`docs/decisions.md` #065): photos and documents are **files on disk** in `data/files/`, each named by its SHA-256 and never changed; the database holds the attachment records. Nightly snapshots stay database-only and small; a backup or restore is the database plus the files folder. Files sync separately and lazily (Phase 3).
 
 ### Asset profiles
 
@@ -720,8 +721,8 @@ Asset                # tracked thing; the UI calls it a "vehicle" (static identi
  ├─ parent_asset_id? # → Asset where currently installed (history in Installation)
  ├─ lifecycle_status # in_service | spare | out_for_service | retired | disposed
  ├─ make, model, year, color, description
- ├─ identifiers[]    # (type, value): VIN, plate, registration, serial, ...
- └─ photos[]         # blobs
+ ├─ identifiers[]    # (type, value): VIN, registration, serial, ...
+ └─ attachments[]    # photos and documents (files by SHA-256, #065)
 
 Meter                # user-defined, per asset
  ├─ id, asset_id
@@ -764,10 +765,11 @@ MeterReading         # one row per meter read during an event
 
 Attachment           # photo or multi-page document
  ├─ id
- ├─ owner            # → Event | Squawk | Asset
+ ├─ owner            # → Event | Task | Squawk | Asset | AssetDocument (a kind and an ID)
  ├─ kind             # photo | document
  ├─ mime_type, size_bytes, page_count?, original_name
- ├─ blob, thumbnail_blob        # thumbnail = first page for documents
+ ├─ file_sha256, thumbnail_sha256   # files in data/files/ (#065); thumbnail = first page for documents
+ ├─ original_sha256?            # a kept original (#036)
  └─ metadata?        # photo EXIF (time, GPS, camera), kept per the photo rule
 
 CustomFieldDef       # a user-defined field
@@ -860,6 +862,12 @@ DisposalDetails      # 1:1 detail table for a disposal event
  ├─ method           # sold | traded_in | scrapped | given_away | core_exchange | lost_stolen | other
  └─ counterparty?, price_minor?, currency?    # bill of sale etc. as attachments
 
+LicensePlate         # a vehicle's plate (#066)
+ ├─ id, asset_id
+ ├─ authority?       # US state, Canadian province, country, or other; none only for plates moved from identifiers
+ ├─ number
+ └─ from_on?, until_on?        # date-only; until_on follows the linked registration
+
 AssetDocument        # official document about an asset: title, registration, insurance, certificate, ...
  ├─ id, asset_id
  ├─ doc_type         # from the asset profile, or a custom type
@@ -867,6 +875,7 @@ AssetDocument        # official document about an asset: title, registration, in
  ├─ issued_on?, effective_on?, expires_on?   # date-only; no expires_on = never expires
  ├─ status           # current | expired | superseded
  ├─ supersedes_id?   # → AssetDocument (the previous record this renewal replaces)
+ ├─ plate_id?        # a registration's plate (#066)
  ├─ reminder_lead_days?
  └─ attachments[], notes
 
@@ -1555,7 +1564,7 @@ The NAS runs two servers side by side (`docs/decisions.md` #062), each its own C
 
 ### Data & operations
 
-- **Persistent volume** for the SQLite database (and any file storage), on a **local NAS disk, not a network share**, so containers can be rebuilt or upgraded without data loss.
+- **Persistent volume** for the SQLite database and the files folder (`data/files/`, #065), on a **local NAS disk, not a network share**, so containers can be rebuilt or upgraded without data loss. A backup or restore covers both.
 - **Secrets** (token-signing keys, etc.) supplied via environment or Docker secrets, never baked into the image.
 - **Upgrades:** rebuild or pull the new app image and restart. The app backs up the database (`VACUUM INTO`) and runs schema migrations on startup.
 - **Backups (MVP):** device copies, pre-migration snapshots, and a **nightly local `VACUUM INTO` snapshot** in `data/snapshots/` (same pool for now; configurable for a USB disk later, #035). See Data integrity & loss detection.

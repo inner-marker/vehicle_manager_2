@@ -30,7 +30,7 @@
 | 5 | **Location** | ✅ | Coordinates (degrees × 10⁷, accuracy, fix time), required city/state/country; browser location; saved places; the offline geocoder with cities500, Natural Earth 1:10m, and the nearest-boundary fallback (#038); geocoder data file and attribution | From a phone browser, a test location resolves to the right city and state, including a coastal point; saved places work on desktop | a geocoder crate or our own lookup (chosen in the step plan) |
 | 6 | **Events: fuel-ups & readings** | ✅ | **Before planning:** check the human's records and signatures plan (`docs/sub-plans/01-signatures-and-records.md`, idea 12) for anything affecting finalizing, amendments, or the audit trail. The event spine (UTC + time zone, location, readings, notes, multi-day dates, performed-by vs. logged-by); drafts, **Finalize now** with confirmation, automatic finalizing after 24 h by the server, amendments (#034); monotonic readings and required readings per event type; fuel-ups with highway/towing/hauling %, towed vehicles, vehicle-reported fuel economy, trip fields (#030, #033); **+ Log** and quick logging (#040); Timeline tab | Log fuel-ups and readings from the phone; a lower odometer is refused; an event locks after 24 h and can then only be amended | `uom` (quantities; moved here from milestone 4, when readings first appear) |
 | 7 | **Maintenance, repairs & squawks** | 🔨 | Maintenance and repair events with tasks, labor, parts and labor cost (#032); complaint and cause; **Finish** with checks and confirmation; squawks with sign-off and required disposition; requirements with interval rules (meter, calendar with end-of-month, fixed date) and service bundles as data, "Copy schedule from another asset" (#031); forgotten-job reminder after 14 days; squawks have a **severity**, High keeping the asset out of use (#063, refining #051's blocks use; for the Phase 5 readiness summary) | Log an oil change with two tasks, sign off a squawk, log a repair with complaint and cause; Finish refuses while a squawk is undispositioned | none expected |
-| 8 | **Photos & documents** | ⬜ | Photo upload with the Small/Medium/Large picker, thumbnails, metadata fields, gated originals (#036); PDF upload with page count and the pdf.js viewer (#037); attachments on events, squawks, and assets; **official asset documents** (title, registration, insurance) with renewal history; Documents tab; **license plates with their issuing authority and their own history** (see below) | Take a Large damage photo and a Small meter photo on the phone; open a PDF on web and desktop | `image` (+ HEIC support), pdf.js (bundled asset) |
+| 8 | **Photos & documents** | 🔨 | Photo upload with the Small/Medium/Large picker, thumbnails, metadata fields, gated originals (#036); PDF upload with page count and the pdf.js viewer (#037); attachments on events, squawks, and assets; **official asset documents** (title, registration, insurance) with renewal history; Documents tab; **license plates with their issuing authority and their own history** (see below) | Take a Large damage photo and a Small meter photo on the phone; open a PDF on web and desktop | `image` (+ HEIC support), pdf.js (bundled asset) |
 | 9 | **Asset lifecycle** | ⬜ | Acquisition and disposal records with attachments; status changes; send-out / return tracking; archive instead of delete; aircraft-ready groundwork that isn't already in place (reference documents, one-time and recurring requirements). **Also, before the `v0.2.0` release: show each person only what they may use** (raised 2026-11-02; see below) | Send a vehicle out for service and return it; archive one and find it again; as Sam, no Users, Groups, or household settings anywhere | none expected |
 
 **Show only what each person may use (milestone 9, before `v0.2.0`; raised by the human 2026-11-02).** The release is when other household members start using the app, so screens, menu items, and controls a person can't use shouldn't appear at all, rather than appearing and then saying "not allowed". To review when milestone 9 is planned:
@@ -39,7 +39,7 @@
 - **Sweep every screen** for the same pattern: buttons and menu items shown but refused (the vehicle page's Setup already hides what the person can't use; its "view only" note stays).
 - The server keeps checking everything; hiding is only so people aren't shown what they can't do.
 
-**License plates get an issuing authority and their own history (milestone 8; raised by the human 2026-11-03).** A plate is only a typed identifier today (a kind and a value), with no state and no history. To plan with milestone 8's official documents:
+**License plates get an issuing authority and their own history (milestone 8; raised by the human 2026-11-03; answered 2026-11-04 in milestone 8's choice 5 and decision #066).** A plate is only a typed identifier today (a kind and a value), with no state and no history. To plan with milestone 8's official documents:
 - **An issuing authority on every plate:** a state or province in the US and Canada, or a country (or other authority) elsewhere. None is stored yet, so existing plates need one added.
 - **A plate's own timeline:** a vehicle can move from state to state, getting a new plate (and number) each time. Each plate keeps its authority, number, and dates, and the vehicle shows its current one with the earlier ones as history.
 - **Its expiration follows the registration:** renewing a registration (milestone 8's renewal history) updates the plate's expiration date.
@@ -1029,3 +1029,63 @@
   - **Schedule:** each service bundle is a card like a requirement's ("Covers …", "SERVICE BUNDLE · 2 requirements").
   - **Idea 21** (chained meter intervals: "after the first 100,000 miles, then every 50,000") for Phase 5, in `docs/ideas-to-discuss.md`.
   - 2 new tests (days and years; a rule stored before units). Checked in the browser: each unit, the range refusal, the bundle card, the work log's order and toggle, and the squawk page's row.
+
+### Milestone 8 plan: photos, documents & license plates
+*Approved 2026-11-04 (every question answered as recommended) · Branch: `milestone/p2-m8-documents`, cut from `milestone/p2-m7-maintenance` (the human, 2026-11-04: M7's part 2 test is still to run; M8 builds stay off the test server until it's done, and M7 fixes are made on M7 and merged into M8) · Milestone PR: after M7's merges · Decisions #030, #036, #037, #040, #043, #050, #062, #065, #066*
+
+**Goal:** photos and PDFs on events, squawks, and vehicles; each vehicle's **official documents** (title, registration, insurance) with their scans and renewal history, on a **Documents** tab; and **license plates** with an issuing authority and their own history.
+
+**Reviewed against** the plan (§3 Attachments, Photos from the web UI, Official asset documents; §4 Asset, Attachment; §7 Data & operations), decisions #036, #037, ideas 1–21, and sub-plans 01–03, 2026-11-04.
+- **Ideas:**
+  - **Idea 3 (content-addressed blob storage) belongs here:** decided as files on disk (choice 1, #065).
+  - **Idea 11 (a NAS maintenance tool):** with files on disk, a restore is the database *and* `data/files/`; the runbook in `docs/deploying-nas.md` changes with 8c. No tool now.
+  - **Idea 7 (layered settings):** "keep originals" off server-wide (#036) is one more household preference, in the existing two layers (#029).
+  - No effect: 2, 4 (exports are post-MVP; attachments will need a place in that format), 10, 13, 15, 16, 19, 21.
+- **Sub-plans:**
+  - **01 (signatures):** its record hash covers "all tasks, parts, and attachment hashes". **Cheap groundwork:** every stored file is identified by its SHA-256, which idea 3 gives anyway. Attachments on a finished event are a correction (choice 6). Nothing else (sub-plan 01 isn't confirmed).
+  - **02 (voice):** audio clips could later be attachments; no effect now.
+  - **03 (email):** no effect.
+- **Carried from earlier milestones:** profiles already list each kind's document types (`documents: ["document-title", …]`, #030); identifiers are a JSON list on the asset (`identifiers`, migration 0006), a plate being `kind: "plate"` with a value; M7 left photos and documents on squawks and tasks to this milestone.
+- **Not from the plan, deferred:** expiration reminders and the renew flow from a reminder (Phase 5); the offline glovebox (post-MVP mobile); combining camera pages into one PDF (Phase 6); OCR (later); lazy blob sync (Phase 3).
+
+**Choices** (the human answered each question as recommended, 2026-11-04):
+1. **Where files live (idea 3).** The plan (§4 Asset) keeps photos as blobs in the SQLite database. Either way, each file is stored once under its SHA-256, behind a small storage interface, so it can move later.
+   - **A. In the database** (the plan): one file to back up and restore; but every nightly snapshot copies every photo and PDF, and 7 snapshots are kept, so attachments take about 8× their size on the NAS.
+   - **B. Files on disk** (`data/files/ab/cdef…`), never changed once written: snapshots stay small; but a backup or restore is the database plus the folder, and copying main into the test server copies both.
+   - **Chosen: B** (decision #065). Files never change, so the folder needs no snapshotting of its own; the integrity check verifies each file against its hash.
+2. **HEIC.** #036 converts HEIC to JPEG. Decoding HEIC needs `libheif` (a C library): easy in the Docker image, an extra install for desktop builds. iPhone Safari usually hands the browser a JPEG already.
+   - **Chosen:** the browser makes the JPEG (as #036 says, resizing before upload), so HEIC only matters for a **kept original**, which is stored as is and never decoded. The server refuses a HEIC *photo* it would have to convert, with a message. No `libheif` now.
+3. **PDF page count and first-page thumbnail (#037).** The server can count pages with a small pure-Rust PDF reader (e.g. `lopdf`), but can't draw a page without a renderer such as pdfium.
+   - **Chosen:** the app draws the first-page thumbnail with the bundled pdf.js before upload; the server checks it's a real PDF and counts the pages itself. A PDF without a thumbnail shows a plain document icon.
+4. **What can carry attachments.** The plan says events, squawks, and vehicles; M7 deferred "squawks and tasks".
+   - **Chosen:** events (any kind), squawks, vehicles, and official documents; **tasks** too, as a small step (a receipt on the brake job). Owners are stored as a kind and an ID, so milestone 9's acquisition and disposal records can use them.
+5. **License plates** (milestone 8's open questions):
+   - **Its own record or part of the registration?** **Chosen: its own record** on the vehicle (decision #066): an issuing authority (a US state or Canadian province from a list, or a country, or other text), a number, and from / until dates. The current one shows in the header; earlier ones are its history. A registration **links to** the plate it's for, and renewing it updates that plate's expiration.
+   - **Other identifiers** (a boat's state registration number): **chosen: plates only now**; the record is general enough to add more kinds later.
+   - **Existing plates:** a migration moves each `plate` identifier into the first plate record with **no authority yet**, and the vehicle's page asks for one.
+6. **Attachments on finished events.** Finished and finalized events are locked (#034), and a later signature would hash their attachments (sub-plan 01).
+   - **Chosen:** attachments are part of a draft; after it's finished, adding or removing one is a **correction** (6h), like any other change. Squawks, vehicles, and documents take attachments any time.
+7. **Who adds and removes them.** **Chosen:** anyone who may change the owner (a Driver on a fuel-up, a Maintainer on a job, a Driver on a squawk they may edit); **official documents** need a Maintainer; removing is a soft delete (#043), and a file is erased only when nothing points to it any more.
+8. **Size picker defaults** (#036: profiles set the default per event type). **Chosen:** Small on fuel-ups and readings, Medium everywhere else, Large never by default.
+
+**Choices from the plan** (no question needed):
+- Photos: Small 1280 / Medium 2560 / Large 4096 px JPEG (quality 85), upright, 400 px thumbnail, 25 MB limit, never enlarged; metadata (time, GPS, camera) read in the browser before resizing and kept as fields; originals kept only by Maintainers and Admins, off server-wide by an Admin (#036).
+- PDFs: 50 MB, checked and page-counted by the server, shown with the bundled **pdf.js** on web and desktop, with Download (#037).
+- Official documents: type (from the profile, or custom), number, issuer, issued and optional expiry dates, scans, notes; **renewing** makes a new record that supersedes the old one (current, expired, superseded); the Documents tab shows the current ones first.
+- Uploads go under `/api/v1/files` (behind the auth layer); only that route's body limit is raised.
+
+**Steps:**
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 8.0 | ☑️ | `docs: Phase 2 milestone 8 plan` | This plan; decisions #065 (files on disk by SHA-256; closes idea 3) and #066 (license plates); the plan's §4 and §7 follow | none |
+| 8a | ⬜ | `feat(domain): attachments` | Files by SHA-256; attachments (owner, kind, size, page count, name, photo metadata, original); limits, size picker, permissions. Test-first | none |
+| 8b | ⬜ | `feat(domain): official documents and license plates` | Documents with supersession; plates with an authority and dates; renewal updates the plate. Test-first | none |
+| 8c | ⬜ | `feat(storage): files, attachments, documents, and plates` | Migration 0014; the file store; moving existing plate identifiers | none |
+| 8d | ⬜ | `feat(server): uploads, documents, and plates` | Upload and download (checked type, size, dimensions; PDF page count); thumbnails for photos; documents and plates commands; the integrity check covers files | `image` (JPEG and thumbnails), a PDF reader (e.g. `lopdf`) |
+| 8e | ⬜ | `feat(app): photos` | **SVG options first.** Take or pick a photo, the size picker, resizing and metadata in the app; photo strips on events, squawks, tasks, and vehicles | an EXIF reader (e.g. `kamadak-exif`) |
+| 8f | ⬜ | `feat(app): PDFs and the viewer` | **SVG options first.** Upload a PDF, the first-page thumbnail, pdf.js viewer, Download | pdf.js (bundled) |
+| 8g | ⬜ | `docs: photos and documents checkpoint test` | Part 1, on the test server once M7 is signed off | none |
+| 8h | ⬜ | `feat(app): the Documents tab and license plates` | **SVG options first.** Documents and renewals; plates and their history | none |
+| 8i | ⬜ | `docs: photos and documents test plan, part 2` | The rest, phone and desktop | none |
+| 8j | ⬜ | `docs: record the photos and documents test runs` | Results | none |
