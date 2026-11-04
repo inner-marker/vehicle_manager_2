@@ -391,6 +391,8 @@ The core abstraction is a single **event** type covering everything that happens
 - Lists show a **thumbnail of the first page** and the page count.
 - **Getting documents in:**
   - Upload an existing PDF (all platforms).
+  - **Share a PDF from another app** (mobile apps, post-MVP; the human, 2026-11-04): the app registers as a place PDFs (and photos) can be sent, so the iOS share sheet ("Open in…") and Android's "Share to" list it. A shared file opens a short "Attach to…" step: which vehicle, then what it goes on (the vehicle, an event, a squawk, or a document), and arrives as an ordinary attachment.
+    - *Possibly sooner on Android:* the web app could do the same as an installed web app (the Web Share Target API, which Android's Chrome supports; iOS Safari doesn't). To decide when the mobile apps are planned.
   - **Scan with a phone:**
     - Mobile apps (post-MVP) use the platform document scanner (iOS and Android both include one), with edge detection and perspective correction, producing one multi-page PDF.
     - Web UI: capture several pages with the camera, then combine them into one PDF (Phase 6).
@@ -1861,7 +1863,7 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
   - NHTSA recalls: `recallsByVehicle`
 - **Post-MVP: Mobile.** 
   - Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, 
-  - **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of *
+  - **native document scanning** (multi-page PDF), **receiving PDFs and photos shared from other apps** (see Attachments), native location services, and the bundled offline geocoder. Most of *
   - *voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
 - **Post-MVP: Offsite backups.** 
