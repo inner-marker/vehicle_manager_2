@@ -5,6 +5,7 @@ mod connection;
 mod diagnostics;
 mod event_page;
 mod groups;
+mod job_page;
 mod log_chooser;
 mod log_form;
 mod log_input;

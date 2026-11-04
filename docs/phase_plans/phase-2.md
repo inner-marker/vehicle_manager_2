@@ -809,6 +809,7 @@
     - **When and where**, **Readings** (the start, plus optional end readings), **Tasks** (from a requirement, a bundle, or typed; each a card with its parts table, labor time and cost, "resets from", a fixed date's next due date, and notes; others fold to one line), **Squawks** (each open one signed off with the task that fixed it and notes, or deferred with a reason, and a new severity), **+ Open a squawk** found during the job, a repair's **Complaint** and **Cause**, and **Who and notes**.
     - A bar at the bottom: the total, **Save draft**, and **Finish…**, which shows its checks (readings, place, every squawk) before "Finish and lock".
     - **Repair this** on a squawk's page (the human, 2026-11-03): starts a repair with the complaint filled in from the squawk and its sign-off ready, for a Maintainer.
+17. **A job's page** (the human's pick: option A of `docs/ui-sketches/p2m7-job-page-options.svg`, 2026-11-03): one column like a fuel-up's page. Big numbers (the total with parts and labor, the tasks, start → end readings, labor), a repair's complaint and cause, each task as a card with its parts and labor table (the others folded), the squawks it dealt with, then when and where and the record.
 14. **The squawk screens** (the human's pick from `docs/ui-sketches/p2m7-squawks-options.svg`, 2026-11-03): a **summary card on the Overview** listing the outstanding ones, High first (option A's panel); a **Squawks tab** with Outstanding / Resolved / All filters, the list and the chosen squawk side by side on wide screens (option B); **opening one is a quick sheet** with notes and the time folded away (option B).
 
 | Step | Status | Commit title | Contents | New dependencies |
@@ -824,7 +825,7 @@
 | 7g | ☑️ | `feat(app): requirements, bundles, and the Maintenance tab` | SVG options done (choice 15). The Maintenance tab's Schedule (last done), Jobs, and Set up (requirements with their rules, bundles, **Copy from…**) | none |
 | 7h | ☑️ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ☑️ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
-| 7j | ⬜ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
+| 7j | ☑️ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
 | 7k | ⬜ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
 | 7l | ⬜ | `docs: record the maintenance test runs` | Results of both runs | none |
 
@@ -991,3 +992,21 @@
     - the brake lights signed off by the oil task: Finish lists "Rattle…: sign it off or defer it" with Finish and lock off. Deferred (Medium), then finished: the event is Finalized, Last done shows "52,644 mi", the brake lights are resolved and the rattle deferred and Medium;
     - **Repair this** on the rattle: the complaint filled in and its sign-off chosen. Saved as a draft (the page offers Finish…), finished from its form: the rattle is resolved;
     - on the phone, each part on its own rows and the total with both buttons on one line. Fixed along the way: the form's title said "Reading" for a job, and the total skipped a task with no title yet.
+- **7j:** no new dependency (`crates/app/src/ui/screens/job_page.rs`). A job's page (choice 17):
+  - **The top:** back links to the vehicle and **‹ Jobs** (the Maintenance tab's). A finished job says "Finished · date"; a draft offers Finish… (7i).
+  - **The big numbers:** the total ("parts 72.42 USD · labor 60.00 USD"), the tasks (how many, and their titles), each meter "52,641 → 52,697 mi" (start → end), and the labor time.
+  - **A repair's** Complaint and Cause.
+  - **Tasks:** the first open, the others folded to one line ("1 part · 0:10 · 24.98 USD"). A task's card shows:
+    - "For: requirement" (linked to the Maintenance tab) and what it resets from;
+    - a fixed date's next due date;
+    - the parts table (what, number, quantity, unit price, cost) with a labor row;
+    - its notes, and its total.
+  - **Squawks dealt with:** each with its chip and a link to its page. A sign-off says "Signed off · by Brake light bulbs · New bulbs"; a deferral "Deferred · Parts on order · → Medium". Then "Found during this job: Coolant smell (Low) ›".
+  - **Timeline and Jobs rows** add the squawks it signed off and deferred ("… · 2 tasks · 132.42 USD · 1 signed off · 1 deferred").
+  - 16 messages. 2 new tests: the big numbers' labor and split; what a disposition says.
+  - **Browser check** (1200 × 1000 and a 390 × 844 phone):
+    - a finished oil change through the API: the links, tiles, both tasks (open and folded), and the squawks dealt with, with the one found during it;
+    - its Jobs row;
+    - **Correct…:** the form had its tasks and squawks. Finish refused until the squawk found during the job was dealt with too (outstanding now), then the correction's page linked back to the original;
+    - **the forgotten-job message**, from a repair draft backdated 15 days in the database: "A job is still a draft … on Truck" and **Open the job** opened it ("Draft · finish it when the work is done");
+    - the phone's tiles, tasks, and table fit.

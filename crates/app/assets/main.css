@@ -3484,3 +3484,115 @@ a.squawk-history-job {
         gap: 2px;
     }
 }
+
+/* ---------- A job's page (step 7j; option A of docs/ui-sketches/p2m7-job-page-options.svg) ---------- */
+
+.event-tile .event-tile-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+/* A task: its card (open) or one line (folded). */
+.job-task {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.job-task-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    list-style-position: inside;
+}
+
+.job-task-title {
+    font-weight: 800;
+}
+
+.job-task-summary {
+    color: var(--text-muted);
+}
+
+.job-task-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 14px;
+}
+
+.job-task-body .muted-note {
+    margin: 0;
+}
+
+.job-parts {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.job-parts th {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+.job-parts td {
+    padding: 6px;
+}
+
+.job-parts .number {
+    text-align: right;
+}
+
+.job-parts .muted {
+    color: var(--text-muted);
+}
+
+/* A squawk the job dealt with. */
+.job-squawk {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.job-squawk .squawk-row-top {
+    justify-content: flex-start;
+}
+
+.job-squawk-link {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.job-squawk-what.signed-off {
+    color: #3fb950;
+    font-weight: 600;
+}
+
+.job-squawk-what.deferred {
+    color: var(--warn);
+    font-weight: 600;
+}
+
+@media (max-width: 639px) {
+    /* Phones: the part number column is left out (it stays in the form). */
+    .job-parts th:nth-child(2),
+    .job-parts td:nth-child(2) {
+        display: none;
+    }
+}

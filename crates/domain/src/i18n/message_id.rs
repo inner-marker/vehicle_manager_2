@@ -1922,6 +1922,38 @@ define_messages! {
     WORK_FINISH_BACK => "work-finish-back",
     /// Finish dialog: finish.
     WORK_FINISH_LOCK => "work-finish-lock",
+    /// A finished job's status; takes `date`.
+    EVENT_STATUS_JOB_FINISHED => "event-status-job-finished",
+    /// A job's tile: the total.
+    JOB_TOTAL => "job-total",
+    /// A job's total, split; takes `parts` and `labor`.
+    JOB_SPLIT => "job-split",
+    /// A job's labor.
+    JOB_LABOR => "job-labor",
+    /// A part's or labor's cost, as a column.
+    JOB_COST => "job-cost",
+    /// A job with no tasks.
+    JOB_NO_TASKS => "job-no-tasks",
+    /// A task reset its requirement from the start readings.
+    JOB_RESETS_START => "job-resets-start",
+    /// A task reset its requirement from the end readings.
+    JOB_RESETS_END => "job-resets-end",
+    /// A task's next due date; takes `date`.
+    JOB_NEXT_DUE => "job-next-due",
+    /// A task's notes; takes `notes`.
+    JOB_NOTES => "job-notes",
+    /// A job's page: the squawks it dealt with.
+    JOB_SQUAWKS => "job-squawks",
+    /// A sign-off's task; takes `task`.
+    JOB_FIXED_BY => "job-fixed-by",
+    /// A deferral, on a job's page.
+    JOB_DEFERRED => "job-deferred",
+    /// A squawk found during the job; takes `description` and `severity`.
+    JOB_FOUND => "job-found",
+    /// A job's row: squawks signed off; takes `count`.
+    TIMELINE_SIGNED_OFF => "timeline-signed-off",
+    /// A job's row: squawks deferred; takes `count`.
+    TIMELINE_DEFERRED => "timeline-deferred",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
 }

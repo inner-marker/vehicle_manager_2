@@ -177,6 +177,26 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
         if total > 0 {
             parts.push(show_money(total, work.currency));
         }
+        // What it did about squawks: "1 signed off · 1 deferred".
+        let (signed, deferred) = work
+            .dispositions
+            .iter()
+            .fold((0_i64, 0_i64), |(s, d), each| match each.action {
+                domain::squawk::Disposition::SignedOff { .. } => (s + 1, d),
+                domain::squawk::Disposition::Deferred { .. } => (s, d + 1),
+            });
+        if signed > 0 {
+            parts.push(tr_with(
+                messages::TIMELINE_SIGNED_OFF,
+                &[("count", MessageArg::from(signed))],
+            ));
+        }
+        if deferred > 0 {
+            parts.push(tr_with(
+                messages::TIMELINE_DEFERRED,
+                &[("count", MessageArg::from(deferred))],
+            ));
+        }
     }
     parts.join(" · ")
 }

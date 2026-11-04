@@ -462,6 +462,25 @@ work-check-undecided = { $description }: sign it off or defer it
 work-finish-locks = Finishing locks it: a mistake is fixed with a correction.
 work-finish-back = Back
 work-finish-lock = Finish and lock
+
+## A job's page (milestone 7 step 7j)
+
+event-status-job-finished = Finished · { $date }
+job-total = Total
+job-split = parts { $parts } · labor { $labor }
+job-labor = Labor
+job-cost = Cost
+job-no-tasks = No tasks.
+job-resets-start = resets from the start readings
+job-resets-end = resets from the end readings
+job-next-due = Next due: { $date }
+job-notes = Notes: { $notes }
+job-squawks = { $Squawks } dealt with
+job-fixed-by = by { $task }
+job-deferred = Deferred
+job-found = Found during this job: { $description } ({ $severity }) ›
+timeline-signed-off = { $count } signed off
+timeline-deferred = { $count } deferred
 unit-miles = Miles
 unit-kilometers = Kilometers
 unit-us-gallons = US gal

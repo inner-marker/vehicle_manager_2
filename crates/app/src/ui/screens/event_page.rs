@@ -4,6 +4,10 @@
 //! flags, the actions, the big numbers, then each part as a short list. A draft can be edited,
 //! finalized now (with a confirmation, #034), or deleted; a finalized event can only be
 //! corrected. An original and its correction link to each other, each with the reason.
+//!
+//! **A maintenance or repair job** (step 7j) shows its own big numbers, its tasks with their
+//! parts and labor, and the squawks it dealt with (`job_page`); a draft is finished, not
+//! finalized.
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, AssetsOutcome, EventView, EventsOutcome, PreferencesOutcome};
@@ -19,6 +23,7 @@ use domain::preferences::Preferences;
 use domain::quantity::{economy_value, show_money, show_reading, show_volume, unit_price};
 use domain::time::{Clock, UnixMillis};
 
+use super::job_page::{JobSections, JobTiles};
 use super::squawks::ReportSquawk;
 use super::vehicle::Tab;
 use super::{FormError, problem_from_error};
@@ -168,6 +173,13 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
         | AuthState::Unreachable(_) => domain::event::FINALIZE_AFTER_MILLIS,
     };
     let status = match (event.status, event.finalized) {
+        (EventStatus::Finalized, Some(done)) if !event.kind.finalizes_by_itself() => tr_with(
+            messages::EVENT_STATUS_JOB_FINISHED,
+            &[(
+                "date",
+                MessageArg::from(when_text(done.at, &zone, &units).0),
+            )],
+        ),
         (EventStatus::Finalized, Some(done)) => tr_with(
             messages::EVENT_STATUS_FINALIZED,
             &[(
@@ -214,7 +226,12 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
                 }
                 ReportSquawk { vehicle: vehicle.clone(), event: view.id }
             }
-            Tiles { event: event.clone(), vehicle: vehicle.clone(), units }
+            if job {
+                JobTiles { event: event.clone(), vehicle: vehicle.clone() }
+                JobSections { id: view.id, event: event.clone(), vehicle: vehicle.clone() }
+            } else {
+                Tiles { event: event.clone(), vehicle: vehicle.clone(), units }
+            }
             Details { view: view.clone(), vehicle, units }
         }
         if let Some(what) = confirm() {
@@ -223,22 +240,24 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
     }
 }
 
-/// Back to the vehicle, and to the tab the event is listed on: "‹ Test car  ‹ Fuel" for a
-/// fuel-up, "‹ Timeline" otherwise.
+/// Back to the vehicle, and to where the event is listed: "‹ Test car  ‹ Fuel" for a fuel-up,
+/// "‹ Jobs" for a maintenance or repair job (the Maintenance tab's), "‹ Timeline" otherwise.
 #[component]
 fn BackLinks(vehicle: AssetView, kind: EventKind) -> Element {
-    let tab = if kind == EventKind::Fuel && super::vehicle::has_fuel(&vehicle.asset) {
-        Tab::Fuel
+    let (slug, label) = if !kind.finalizes_by_itself() {
+        ("jobs", tr(messages::MAINTENANCE_JOBS))
+    } else if kind == EventKind::Fuel && super::vehicle::has_fuel(&vehicle.asset) {
+        (Tab::Fuel.slug(), tr(Tab::Fuel.label()))
     } else {
-        Tab::Timeline
+        (Tab::Timeline.slug(), tr(Tab::Timeline.label()))
     };
     rsx! {
         div { class: "back-links",
             Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: vehicle.id.to_string() }, {format!("‹ {}", vehicle.asset.name.as_str())} }
             Link {
                 class: "vehicle-back",
-                to: Route::VehicleTab { asset_id: vehicle.id.to_string(), tab: tab.slug().to_owned() },
-                {format!("‹ {}", tr(tab.label()))}
+                to: Route::VehicleTab { asset_id: vehicle.id.to_string(), tab: slug.to_owned() },
+                {format!("‹ {label}")}
             }
         }
     }
