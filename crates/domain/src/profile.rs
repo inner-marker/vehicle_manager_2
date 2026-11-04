@@ -22,6 +22,7 @@ use std::sync::LazyLock;
 use serde::Deserialize;
 
 use crate::asset::{AssetId, AssetKind, IdentifierKind};
+use crate::attachment::PhotoSize;
 use crate::custom_field::{CustomField, FieldKey, FieldKind, FieldRange};
 use crate::i18n::{Translator, messages};
 use crate::label::Label;
@@ -64,6 +65,19 @@ pub struct Profile {
     pub meters: Vec<ProfileMeter>,
     /// The custom fields a new asset starts with.
     pub fields: Vec<ProfileField>,
+    /// Photo sizes that differ from [`PhotoSize::default_for`] on its kinds of events (#036);
+    /// none so far.
+    #[serde(default)]
+    pub photo_sizes: Vec<ProfilePhotoSize>,
+}
+
+/// A kind's default photo size on one kind of event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+pub struct ProfilePhotoSize {
+    /// The kind of event.
+    pub event: EventKind,
+    /// The size its photos start at.
+    pub size: PhotoSize,
 }
 
 /// An extra section of screens and forms for some kinds.
@@ -184,6 +198,16 @@ pub fn profile(kind: &AssetKind) -> Option<&'static Profile> {
 }
 
 impl Profile {
+    /// The size a photo on an event of `kind` starts at: the profile's own, or
+    /// [`PhotoSize::default_for`].
+    #[must_use]
+    pub fn photo_size(&self, kind: EventKind) -> PhotoSize {
+        self.photo_sizes
+            .iter()
+            .find(|entry| entry.event == kind)
+            .map_or_else(|| PhotoSize::default_for(kind), |entry| entry.size)
+    }
+
     /// The meters a new asset of this kind starts with. A distance meter without its own unit
     /// uses the person's distance preference; names are translated with `translator`.
     #[must_use]
@@ -246,6 +270,19 @@ mod tests {
 
     fn all() -> &'static [Profile] {
         profiles().unwrap()
+    }
+
+    #[test]
+    fn photos_start_small_on_fuel_ups_unless_the_profile_says_otherwise() {
+        let car = named("car");
+        assert_eq!(car.photo_size(EventKind::Fuel), PhotoSize::Small);
+        assert_eq!(car.photo_size(EventKind::Repair), PhotoSize::Medium);
+        let mut changed = car.clone();
+        changed.photo_sizes.push(ProfilePhotoSize {
+            event: EventKind::Repair,
+            size: PhotoSize::Large,
+        });
+        assert_eq!(changed.photo_size(EventKind::Repair), PhotoSize::Large);
     }
 
     fn named(id: &str) -> &'static Profile {

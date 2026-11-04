@@ -1972,4 +1972,38 @@ define_messages! {
     TIMELINE_DEFERRED => "timeline-deferred",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
+    /// Photo size: Small.
+    PHOTO_SIZE_SMALL => "photo-size-small",
+    /// Photo size: Medium.
+    PHOTO_SIZE_MEDIUM => "photo-size-medium",
+    /// Photo size: Large.
+    PHOTO_SIZE_LARGE => "photo-size-large",
+    /// Attachment: an empty file.
+    ATTACHMENT_EMPTY => "attachment-empty",
+    /// Attachment: a photo that isn't a JPEG or PNG.
+    ATTACHMENT_NOT_A_PHOTO => "attachment-not-a-photo",
+    /// Attachment: a HEIC photo that wasn't converted.
+    ATTACHMENT_HEIC_PHOTO => "attachment-heic-photo",
+    /// Attachment: a document that isn't a PDF.
+    ATTACHMENT_NOT_A_PDF => "attachment-not-a-pdf",
+    /// Attachment: a photo over 25 MB.
+    ATTACHMENT_PHOTO_TOO_LARGE => "attachment-photo-too-large",
+    /// Attachment: a PDF over 50 MB.
+    ATTACHMENT_PDF_TOO_LARGE => "attachment-pdf-too-large",
+    /// Attachment: a file with no name.
+    ATTACHMENT_NAME_EMPTY => "attachment-name-empty",
+    /// Attachment: a file name over 255 characters.
+    ATTACHMENT_NAME_TOO_LONG => "attachment-name-too-long",
+    /// Attachment: a photo with no width or height.
+    ATTACHMENT_NO_SIZE => "attachment-no-size",
+    /// Attachment: a camera name over 100 characters.
+    ATTACHMENT_CAMERA_TOO_LONG => "attachment-camera-too-long",
+    /// Attachment: a PDF with no pages.
+    ATTACHMENT_NO_PAGES => "attachment-no-pages",
+    /// Attachment: on a task the job doesn't have.
+    ATTACHMENT_NO_SUCH_TASK => "attachment-no-such-task",
+    /// Attachment: a file reference that isn't a SHA-256.
+    ATTACHMENT_BAD_HASH => "attachment-bad-hash",
+    /// Attachment: changing anything but where it is.
+    ATTACHMENT_UNCHANGEABLE => "attachment-unchangeable",
 }

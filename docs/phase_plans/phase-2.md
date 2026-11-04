@@ -1079,7 +1079,7 @@
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
 | 8.0 | ☑️ | `docs: Phase 2 milestone 8 plan` | This plan; decisions #065 (files on disk by SHA-256; closes idea 3) and #066 (license plates); the plan's §4 and §7 follow | none |
-| 8a | ⬜ | `feat(domain): attachments` | Files by SHA-256; attachments (owner, kind, size, page count, name, photo metadata, original); limits, size picker, permissions. Test-first | none |
+| 8a | ☑️ | `feat(domain): attachments` | Files by SHA-256; attachments (owner, kind, size, page count, name, photo metadata, original); limits, size picker, permissions. Test-first | none |
 | 8b | ⬜ | `feat(domain): official documents and license plates` | Documents with supersession; plates with an authority and dates; renewal updates the plate. Test-first | none |
 | 8c | ⬜ | `feat(storage): files, attachments, documents, and plates` | Migration 0014; the file store; moving existing plate identifiers | none |
 | 8d | ⬜ | `feat(server): uploads, documents, and plates` | Upload and download (checked type, size, dimensions; PDF page count); thumbnails for photos; documents and plates commands; the integrity check covers files | `image` (JPEG and thumbnails), a PDF reader (e.g. `lopdf`) |
@@ -1089,3 +1089,16 @@
 | 8h | ⬜ | `feat(app): the Documents tab and license plates` | **SVG options first.** Documents and renewals; plates and their history | none |
 | 8i | ⬜ | `docs: photos and documents test plan, part 2` | The rest, phone and desktop | none |
 | 8j | ⬜ | `docs: record the photos and documents test runs` | Results | none |
+
+**Written so far**
+- **8.0:** decisions #065 (files on disk in `data/files/`, each named by its SHA-256; closes idea 3) and #066 (license plates as their own records). The plan's §4 (Asset, the entity sketch) and §7 (Data & operations) follow.
+- **8a:** no new dependency.
+  - **`domain::attachment`:** `FileHash` (64 lowercase hex digits), `StoredFile` (a hash and a size), `FileType::sniff` (JPEG, PNG, HEIC, or PDF, from the first bytes, never the name), `FileName` (as uploaded, without folders or control characters, 1–255 characters).
+  - **Photos:** `PhotoSize` (Small 1280, Medium 2560 the default, Large 4096) with `fit` (never enlarged) and `thumbnail_size` (400 px); `PhotoMetadata` (time taken, coordinates, camera, and the raw EXIF as a file); `Original` (the file as taken, any image type, HEIC included). JPEG quality 85.
+  - **`Attachment`:** the vehicle it's about, its owner (`Vehicle`, an `Event` and optionally one of its tasks by place, or a `Squawk`; official documents join in 8b), the file and thumbnail, the name, a photo's or a document's details (size, pixels, metadata, original; or pages), and who added it and when. `AttachmentPatch` may only move it (`only_moves`); the rest is set once.
+  - **Checks:** `check_upload` (photos are JPEG or PNG up to 25 MB, a HEIC photo is refused with its own message; documents are PDFs up to 50 MB), `check_original`, `check` (a photo's pixels and camera name, a PDF's pages, the task exists).
+  - **Corrections and tasks:** `for_correction` copies an event's attachments to its correction (same files); `after_task_removed` moves a removed task's attachments to the event and later ones up one, as sign-offs do. `Attachment::files` lists every file one uses, for erasing unused files and the integrity check.
+  - **Defaults:** `PhotoSize::default_for` (Small on fuel-ups and readings, Medium on jobs; choice 8); a profile's `photo_sizes` can change one (none do yet), through `Profile::photo_size`.
+  - **Permissions:** `AssetAction::KeepOriginals` and `ManageDocuments`, both Maintainer. The household's switch for originals (#036) comes with its column in 8c.
+  - 17 messages. 13 new tests: file types from their bytes (an MP4 isn't HEIC); sizes shrink and never enlarge; the defaults per kind of event; hashes; file names; uploads by type and size; originals; the details and task checks; removing a task; a correction's attachments; the files an attachment uses; a round trip and only moving; a profile's photo size.
+

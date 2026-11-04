@@ -152,6 +152,10 @@ pub enum AssetAction {
     OverrideReadings,
     /// Edit the asset's own details, archive or delete it.
     ManageAsset,
+    /// Keep a photo's original file as taken (#036), if the household allows it.
+    KeepOriginals,
+    /// Add, renew, and remove official documents and license plates (milestone 8, choice 7).
+    ManageDocuments,
 }
 
 impl AssetAction {
@@ -164,7 +168,9 @@ impl AssetAction {
             Self::LogMaintenance
             | Self::DispositionSquawk
             | Self::ConfigureMaintenance
-            | Self::ManageEvents => Role::Maintainer,
+            | Self::ManageEvents
+            | Self::KeepOriginals
+            | Self::ManageDocuments => Role::Maintainer,
             Self::ManageAsset | Self::OverrideReadings => Role::Admin,
         }
     }

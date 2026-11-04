@@ -1228,3 +1228,23 @@ event-bad-next-due = A next due date goes only on a task whose requirement has a
 event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
 event-end-below-start = The end reading is lower than the start one. Check them.
 event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.
+
+## Attachments (milestone 8)
+
+photo-size-small = Small
+photo-size-medium = Medium
+photo-size-large = Large
+attachment-empty = That file is empty.
+attachment-not-a-photo = That isn't a photo the app can use. Choose a JPEG or PNG.
+attachment-heic-photo = That photo is HEIC, which the server doesn't convert. Take it again from the app, or export it as a JPEG first.
+attachment-not-a-pdf = Documents must be PDFs.
+attachment-photo-too-large = Photos can be up to 25 MB.
+attachment-pdf-too-large = PDFs can be up to 50 MB. Very large manuals are better kept outside the app.
+attachment-name-empty = The file needs a name.
+attachment-name-too-long = The file's name can be up to 255 characters.
+attachment-no-size = That photo has no size. Try it again.
+attachment-camera-too-long = The camera's name can be up to 100 characters.
+attachment-no-pages = That PDF has no pages.
+attachment-no-such-task = That task isn't on this job any more.
+attachment-bad-hash = That file reference isn't valid.
+attachment-unchangeable = An attachment can only be moved; to change it, remove it and add it again.
