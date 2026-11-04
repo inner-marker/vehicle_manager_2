@@ -541,12 +541,14 @@ notice-dismiss = Dismiss
 inbox-snapshot-failed = The nightly snapshot failed
 inbox-snapshot-skipped = The nightly snapshot was skipped
 inbox-quick-check-failed = The hourly database check failed
+inbox-file-check-failed = Some photos or documents are missing or damaged
 # The job's name is in the message's details.
 inbox-job-failed = A scheduled job failed
 inbox-job-skipped = A scheduled job was skipped
 inbox-job-body = See the details below and the server's log.
 inbox-snapshot-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
 inbox-quick-check-body = The hourly check found a problem in the database, so the server is refusing changes. See the details below and the server's log.
+inbox-file-check-body = The nightly check of the photo and document files in data/files/ found a problem. See the details below and the server's log. A missing or damaged file can be copied back from a backup of data/files/.
 inbox-server-unhealthy = The server isn't accepting changes
 inbox-place-lookup-unavailable = Place lookup isn't available
 inbox-place-lookup-body = The server couldn't open its place data, so it can't suggest a city, state, and country from a location. Saved places and typing a place still work. Restarting the server, or updating it, usually fixes this; the details below say what went wrong.

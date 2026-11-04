@@ -144,6 +144,7 @@ pub async fn start(
             // Photos and PDFs (#065): without the folder, attachments can't be added or shown.
             match storage::files::FileStore::open(&paths.data_dir) {
                 Ok(store) => {
+                    jobs::check_files_exist(&database, &store, clock.now()).await;
                     let _ = FILE_STORE.set(store);
                 }
                 Err(error) => tracing::error!(target: log_area::DATABASE, %error, "can't open the files folder; photos and documents are unavailable"),
@@ -175,6 +176,7 @@ pub async fn start(
                     snapshot_dir: paths.snapshot_dir.clone(),
                     timers,
                     server_device,
+                    file_store: FILE_STORE.get().cloned(),
                 });
             } else {
                 tracing::error!(target: log_area::DATABASE, "no server device ID; scheduled jobs not started");

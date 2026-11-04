@@ -1084,7 +1084,7 @@
 | 8c | ☑️ | `feat(storage): files, attachments, documents, and plates` | Migration 0014; the file store; moving existing plate identifiers | none |
 | 8d.1 | ☑️ | `feat(server): uploads and attachments` | Upload and download (checked type and size; photos converted, upright, sized, with thumbnails; PDF page count); adding, moving, and removing attachments; a correction keeps them | `image` (JPEG and PNG only), `lopdf` (approved 2026-11-04) |
 | 8d.2 | ☑️ | `feat(server): official documents and license plates` | Documents (add, renew, change, remove; a registration sets its plate's expiry) and plates (a new one retires the current one); server functions | none |
-| 8d.3 | ⬜ | `feat(server): file checks and cleanup` | The startup check covers files (missing or damaged ones as an Admin message); a nightly job erases unused files once no kept snapshot could need them (8c) | none |
+| 8d.3 | ☑️ | `feat(server): file checks and cleanup` | A nightly file check (every file against its hash; missing or damaged ones as an Admin message) that also erases unused files once no kept snapshot could need them; at startup, a missing file brings it forward | none |
 | 8e | ⬜ | `feat(app): photos` | **SVG options first.** Take or pick a photo, the size picker, resizing and metadata in the app; photo strips on events, squawks, tasks, and vehicles | an EXIF reader (e.g. `kamadak-exif`) |
 | 8f | ⬜ | `feat(app): PDFs and the viewer` | **SVG options first.** Upload a PDF, the first-page thumbnail, pdf.js viewer, Download | pdf.js (bundled) |
 | 8g | ⬜ | `docs: photos and documents checkpoint test` | Part 1, on the test server once M7 is signed off | none |
@@ -1142,4 +1142,10 @@
   - **Removing:** only the latest of a renewal chain (`DocumentProblem::Renewed`), so a renewal never points at nothing; a plate a registration names can't go (`PlateProblem::InUse`); a document's scans go with it.
   - **Server functions:** `/api/v1/documents`, `/add`, `/renew`, `/edit`, `/delete`; `/api/v1/plates/add`, `/edit`, `/delete`.
   - 2 messages. 4 new tests: a Maintainer adds a plate and registration and a Driver only sees them (status through the expiry day, the plate's expiry following, only a registration names a plate); renewals (superseded once, the plate following the newest, removing the latest first, a plate in use); a new plate retiring the old one, and keeping an authority; removing a document removes its scans.
+- **8d.3:** no new dependency.
+  - **A new job, `file-check`,** daily at 08:00 UTC (an hour after the snapshot; every N minutes with test timers): checks every listed file against its SHA-256, then erases files nothing needs (`unused_files`, 8c) with a cutoff of **8 days** (a day past the 7 kept snapshots; `keep_unused_files_for`), so restoring any kept snapshot finds its files. A missing, damaged, or unreadable file fails the run, naming up to 5 (the log has each): the Admin sees **"Some photos or documents are missing or damaged"** in Messages (`JobKind::FileCheck`, #050).
+  - **Hashing every file isn't done at startup** (it could take a while on a big folder); instead, startup checks each listed file is *there*, and if one isn't, brings the check forward to run within the minute (`bring_job_forward`, new in storage; `schedule_job` only ever schedules a first run, so it couldn't).
+  - **Not covered:** a file renamed into the store whose listing never got written (a crash between the two) stays on disk unlisted. It's harmless and rare; a later clean-up could find files that aren't listed.
+  - **`docs/deploying-nas.md`:** the 8 days (a pre-upgrade backup older than that may miss photos removed since) and the nightly check.
+  - 2 messages. 3 new tests: the check finds damage and erases only old unused files; a missing file at startup brings it forward; the 8 days (and the test-timer equivalent).
 

@@ -2058,4 +2058,8 @@ define_messages! {
     DOCUMENT_RENEWED => "document-renewed",
     /// Plate: removing one a registration names.
     PLATE_IN_USE => "plate-in-use",
+    /// Messages: the nightly file check failed.
+    INBOX_FILE_CHECK_FAILED => "inbox-file-check-failed",
+    /// Messages: the file check's text.
+    INBOX_FILE_CHECK_BODY => "inbox-file-check-body",
 }
