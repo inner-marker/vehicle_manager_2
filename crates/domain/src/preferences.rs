@@ -210,6 +210,45 @@ impl CurrencyCode {
         Self(*b"MXN"),
     ];
 
+    /// The choices for an amount's currency, `home` (the household's or person's) first and
+    /// chosen by default, then the common ones, then `current` if it's none of those.
+    #[must_use]
+    pub fn menu(home: Self, current: Self) -> Vec<Self> {
+        let mut codes = vec![home];
+        codes.extend(Self::COMMON.into_iter().filter(|code| *code != home));
+        if !codes.contains(&current) {
+            codes.push(current);
+        }
+        codes
+    }
+
+    /// What goes in front of an amount in this currency, seen by someone whose currency is
+    /// `home`: "$" for their own dollars and "CA$", "A$", "US$" for others'; "€", "£", "¥";
+    /// otherwise the code and a space ("CHF ").
+    #[must_use]
+    pub fn symbol(self, home: Self) -> String {
+        let dollar = match self.as_str() {
+            "USD" => Some("US$"),
+            "CAD" => Some("CA$"),
+            "AUD" => Some("A$"),
+            "MXN" => Some("MX$"),
+            "NZD" => Some("NZ$"),
+            "HKD" => Some("HK$"),
+            "SGD" => Some("S$"),
+            _other => None,
+        };
+        match (dollar, self.as_str()) {
+            (Some(_), _) if self == home => "$".to_owned(),
+            (Some(prefixed), _) => prefixed.to_owned(),
+            (None, "EUR") => "€".to_owned(),
+            (None, "GBP") => "£".to_owned(),
+            (None, "JPY") => "¥".to_owned(),
+            (None, "INR") => "₹".to_owned(),
+            (None, "KRW") => "₩".to_owned(),
+            (None, code) => format!("{code} "),
+        }
+    }
+
     /// Reads a code; surrounding spaces are ignored and letters uppercased.
     ///
     /// # Errors
@@ -634,6 +673,27 @@ mod tests {
         assert_eq!(
             Preferences::resolve(&mine, &PreferenceChoices::default()).originals,
             Originals::Allowed
+        );
+    }
+
+    #[test]
+    fn currencies_show_their_symbol_and_list_home_first() {
+        let code = |text| CurrencyCode::parse(text).unwrap();
+        let usd = CurrencyCode::USD;
+        assert_eq!(usd.symbol(usd), "$");
+        assert_eq!(code("CAD").symbol(usd), "CA$");
+        assert_eq!(code("CAD").symbol(code("CAD")), "$");
+        assert_eq!(usd.symbol(code("CAD")), "US$");
+        assert_eq!(code("EUR").symbol(usd), "€");
+        assert_eq!(code("GBP").symbol(usd), "£");
+        assert_eq!(code("CHF").symbol(usd), "CHF ");
+        let menu = CurrencyCode::menu(code("GBP"), code("CHF"));
+        assert_eq!(menu[0], code("GBP"));
+        assert_eq!(menu.iter().filter(|c| **c == code("GBP")).count(), 1);
+        assert_eq!(menu.last(), Some(&code("CHF")));
+        assert_eq!(
+            CurrencyCode::menu(usd, usd).len(),
+            CurrencyCode::COMMON.len()
         );
     }
 }

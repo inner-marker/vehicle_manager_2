@@ -21,12 +21,13 @@ use domain::i18n::{MessageArg, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::CurrencyCode;
 use domain::profile::high_severity_name;
-use domain::quantity::{duration_as_typed, show_money};
+use domain::quantity::duration_as_typed;
 use domain::requirement::{Bundle, BundleId, IntervalRule};
 use domain::squawk::{CountedDisposition, Severity, SquawkId, status};
 
 use super::FormError;
 use super::attachments::{AttachmentStrip, photo_size_for};
+use super::log_form::MoneyInput;
 use super::squawks::{SeverityChip, use_squawk_sheet};
 use super::work_input::{Action, TypedDisposition, TypedPart, TypedTask, TypedWork, total_minor};
 use crate::ui::{tr, tr_with};
@@ -113,7 +114,7 @@ fn task_summary(task: &TypedTask, currency: CurrencyCode) -> String {
         tasks: vec![task.clone()],
         ..TypedWork::default()
     };
-    bits.push(show_money(total_minor(&one, currency), currency));
+    bits.push(crate::ui::money(total_minor(&one, currency), currency));
     bits.join(" · ")
 }
 
@@ -136,6 +137,7 @@ pub(super) fn WorkLog(
     end_problem: Option<(MeterId, String)>,
     editing: Option<EventId>,
     saved_tasks: usize,
+    start_readings: Vec<(MeterId, String)>,
 ) -> Element {
     let photo_size = photo_size_for(&vehicle.asset.kind, kind);
     let mut work = work;
@@ -168,7 +170,14 @@ pub(super) fn WorkLog(
             if typed.show_end {
                 h3 { class: "section-heading", {tr(messages::WORK_END_READINGS).to_uppercase()} }
                 for (id, meter) in meters {
-                    EndReading { key: "{id}", work, id, meter, problem: end_problem.clone().filter(|(at, _)| *at == id).map(|(_, text)| text) }
+                    EndReading {
+                        key: "{id}",
+                        work,
+                        id,
+                        meter,
+                        start: start_readings.iter().find(|(at, _)| *at == id).map(|(_, text)| text.trim().to_owned()).filter(|text| !text.is_empty()),
+                        problem: end_problem.clone().filter(|(at, _)| *at == id).map(|(_, text)| text),
+                    }
                 }
             } else {
                 button { class: "link-button", r#type: "button", onclick: move |_| work.write().show_end = true,
@@ -340,6 +349,7 @@ fn EndReading(
     work: Signal<TypedWork>,
     id: MeterId,
     meter: Meter,
+    start: Option<String>,
     problem: Option<String>,
 ) -> Element {
     let mut work = work;
@@ -364,16 +374,26 @@ fn EndReading(
                 inputmode: "decimal",
                 autocomplete: "off",
                 value: text,
-                oninput: move |event| {
-                    let mut typed = work.write();
-                    match typed.end_readings.iter_mut().find(|(have, _)| *have == id) {
-                        Some(entry) => entry.1 = event.value(),
-                        None => typed.end_readings.push((id, event.value())),
-                    }
-                },
+                oninput: move |event| set_end_reading(&mut work.write(), id, event.value()),
+            }
+            if let Some(start) = start {
+                button {
+                    class: "link-button copy-start",
+                    r#type: "button",
+                    onclick: move |_| set_end_reading(&mut work.write(), id, start.clone()),
+                    {tr(messages::WORK_COPY_FROM_START)}
+                }
             }
         }
         FormError { message: problem }
+    }
+}
+
+/// Sets meter `id`'s end reading to `text`.
+fn set_end_reading(work: &mut TypedWork, id: MeterId, text: String) {
+    match work.end_readings.iter_mut().find(|(have, _)| *have == id) {
+        Some(entry) => entry.1 = text,
+        None => work.end_readings.push((id, text)),
     }
 }
 
@@ -415,7 +435,7 @@ fn TaskCard(
         tasks: vec![task.clone()],
         ..TypedWork::default()
     };
-    let total = show_money(total_minor(&one, currency), currency);
+    let total = crate::ui::money(total_minor(&one, currency), currency);
     rsx! {
         div { class: "task-card",
             div { class: "task-card-head",
@@ -454,7 +474,7 @@ fn TaskCard(
                 span { class: "parts-head", {tr(messages::WORK_PART_PRICE)} }
                 span { class: "parts-head" }
                 for (row, part) in task.parts.iter().cloned().enumerate() {
-                    PartRow { key: "{row}", work, index, row, part }
+                    PartRow { key: "{row}", work, index, row, part, currency }
                 }
             }
             button {
@@ -476,11 +496,10 @@ fn TaskCard(
                 }
                 label { class: "field",
                     span { class: "field-label", {tr_with(messages::WORK_LABOR_COST, &[("currency", MessageArg::from(currency.as_str()))])} }
-                    input {
-                        class: "field-input",
-                        inputmode: "decimal",
+                    MoneyInput {
+                        currency,
                         value: task.labor_cost.clone(),
-                        oninput: move |event| edit(&|task: &mut TypedTask| task.labor_cost = event.value()),
+                        on_input: move |text: String| edit(&|task: &mut TypedTask| task.labor_cost.clone_from(&text)),
                     }
                 }
             }
@@ -555,7 +574,13 @@ fn task_photos(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn PartRow(work: Signal<TypedWork>, index: usize, row: usize, part: TypedPart) -> Element {
+fn PartRow(
+    work: Signal<TypedWork>,
+    index: usize,
+    row: usize,
+    part: TypedPart,
+    currency: CurrencyCode,
+) -> Element {
     let mut work = work;
     let mut edit = move |change: &dyn Fn(&mut TypedPart)| {
         if let Some(part) = work
@@ -568,14 +593,31 @@ fn PartRow(work: Signal<TypedWork>, index: usize, row: usize, part: TypedPart) -
         }
     };
     rsx! {
-        input { class: "field-input", "aria-label": tr(messages::WORK_PART_WHAT), value: part.description.clone(), maxlength: "100",
-            oninput: move |event| edit(&|part: &mut TypedPart| part.description = event.value()) }
-        input { class: "field-input", "aria-label": tr(messages::WORK_PART_NUMBER), value: part.part_number.clone(), maxlength: "40",
-            oninput: move |event| edit(&|part: &mut TypedPart| part.part_number = event.value()) }
-        input { class: "field-input", "aria-label": tr(messages::WORK_PART_QUANTITY), inputmode: "decimal", placeholder: "1", value: part.quantity.clone(),
-            oninput: move |event| edit(&|part: &mut TypedPart| part.quantity = event.value()) }
-        input { class: "field-input", "aria-label": tr(messages::WORK_PART_PRICE), inputmode: "decimal", value: part.unit_price,
-            oninput: move |event| edit(&|part: &mut TypedPart| part.unit_price = event.value()) }
+        // Each field's label shows on a phone, where the table's headings are hidden.
+        label { class: "part-field",
+            span { class: "part-label", {tr(messages::WORK_PART_WHAT)} }
+            input { class: "field-input", "aria-label": tr(messages::WORK_PART_WHAT), value: part.description.clone(), maxlength: "100",
+                oninput: move |event| edit(&|part: &mut TypedPart| part.description = event.value()) }
+        }
+        label { class: "part-field",
+            span { class: "part-label", {tr(messages::WORK_PART_NUMBER)} }
+            input { class: "field-input", "aria-label": tr(messages::WORK_PART_NUMBER), value: part.part_number.clone(), maxlength: "40",
+                oninput: move |event| edit(&|part: &mut TypedPart| part.part_number = event.value()) }
+        }
+        label { class: "part-field",
+            span { class: "part-label", {tr(messages::WORK_PART_QUANTITY)} }
+            input { class: "field-input", "aria-label": tr(messages::WORK_PART_QUANTITY), inputmode: "decimal", placeholder: "1", value: part.quantity,
+                oninput: move |event| edit(&|part: &mut TypedPart| part.quantity = event.value()) }
+        }
+        label { class: "part-field",
+            span { class: "part-label", {tr(messages::WORK_PART_PRICE)} }
+            MoneyInput {
+                currency,
+                value: part.unit_price,
+                label: tr(messages::WORK_PART_PRICE),
+                on_input: move |text: String| edit(&|part: &mut TypedPart| part.unit_price.clone_from(&text)),
+            }
+        }
         button {
             class: "link-button rule-remove",
             r#type: "button",

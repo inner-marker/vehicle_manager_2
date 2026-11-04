@@ -19,7 +19,7 @@ use domain::i18n::{MessageArg, Translator, messages};
 use domain::meter::{Meter, MeterId, MeterUnit};
 use domain::preferences::CurrencyCode;
 use domain::profile::high_severity_name;
-use domain::quantity::{quantity_value, show_duration, show_money, show_reading};
+use domain::quantity::{quantity_value, show_duration, show_reading};
 use domain::squawk::{Disposition, SquawkDisposition};
 
 use super::attachments::{AttachmentStrip, photo_size_for};
@@ -75,8 +75,14 @@ pub(super) fn split_text(work: &WorkDetails) -> String {
     tr_with(
         messages::JOB_SPLIT,
         &[
-            ("parts", MessageArg::from(show_money(parts, work.currency))),
-            ("labor", MessageArg::from(show_money(labor, work.currency))),
+            (
+                "parts",
+                MessageArg::from(crate::ui::money(parts, work.currency)),
+            ),
+            (
+                "labor",
+                MessageArg::from(crate::ui::money(labor, work.currency)),
+            ),
         ],
     )
 }
@@ -122,7 +128,7 @@ pub(super) fn JobTiles(event: Event, vehicle: AssetView) -> Element {
     let mut tiles: Vec<(String, String, String)> = vec![
         (
             tr(messages::JOB_TOTAL).to_uppercase(),
-            show_money(work.total_cost_minor(), work.currency),
+            crate::ui::money(work.total_cost_minor(), work.currency),
             split_text(&work),
         ),
         (
@@ -270,7 +276,7 @@ fn TaskView(
     asset_id: String,
     currency: CurrencyCode,
 ) -> Element {
-    let total = show_money(
+    let total = crate::ui::money(
         task.parts_cost_minor() + task.labor_cost_minor.unwrap_or(0),
         currency,
     );
@@ -320,8 +326,8 @@ fn TaskView(
                                     td { {part.description.clone()} }
                                     td { class: "muted", {part.part_number.clone().unwrap_or_default()} }
                                     td { class: "number", {quantity_value(part.quantity_milli)} }
-                                    td { class: "number", {part.unit_price_minor.map(|price| show_money(price, currency)).unwrap_or_default()} }
-                                    td { class: "number", {part.cost_minor().map(|cost| show_money(cost, currency)).unwrap_or_default()} }
+                                    td { class: "number", {part.unit_price_minor.map(|price| crate::ui::money(price, currency)).unwrap_or_default()} }
+                                    td { class: "number", {part.cost_minor().map(|cost| crate::ui::money(cost, currency)).unwrap_or_default()} }
                                 }
                             }
                             if task.labor_seconds.is_some() || task.labor_cost_minor.is_some() {
@@ -330,7 +336,7 @@ fn TaskView(
                                     td {}
                                     td { class: "number", {task.labor_seconds.map(show_duration).unwrap_or_default()} }
                                     td {}
-                                    td { class: "number", {task.labor_cost_minor.map(|cost| show_money(cost, currency)).unwrap_or_default()} }
+                                    td { class: "number", {task.labor_cost_minor.map(|cost| crate::ui::money(cost, currency)).unwrap_or_default()} }
                                 }
                             }
                         }
@@ -396,7 +402,7 @@ mod tests {
     fn the_big_numbers_add_up() {
         let work = work();
         assert_eq!(labor_seconds(&work), 2_400);
-        assert_eq!(split_text(&work), "parts 12.99 USD · labor 45.00 USD");
+        assert_eq!(split_text(&work), "parts $12.99 · labor $45.00");
     }
 
     #[test]

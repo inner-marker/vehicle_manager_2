@@ -90,6 +90,30 @@ pub(crate) fn set_squawk_word(word: SquawkWord) {
     }
 }
 
+/// The person's currency (the household's unless they chose their own), as last loaded: amounts
+/// in it show a plain "$", others "CA$" and so on (`CurrencyCode::symbol`).
+static HOME_CURRENCY: std::sync::Mutex<domain::preferences::CurrencyCode> =
+    std::sync::Mutex::new(domain::preferences::CurrencyCode::USD);
+
+/// Uses `currency` as the person's own from now on (from the preferences the server sends).
+pub(crate) fn set_home_currency(currency: domain::preferences::CurrencyCode) {
+    *HOME_CURRENCY
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = currency;
+}
+
+/// The person's currency, as last loaded.
+pub(crate) fn home_currency() -> domain::preferences::CurrencyCode {
+    *HOME_CURRENCY
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// An amount with its currency's symbol, as the person sees it: "$45.67", "CA$45.67".
+pub(crate) fn money(minor: i64, currency: domain::preferences::CurrencyCode) -> String {
+    domain::quantity::show_money(minor, currency, home_currency())
+}
+
 /// The English text of a message (the only language so far; decision #022).
 fn tr(id: MessageId) -> String {
     Translator::english().tr_for(squawk_word(), id)

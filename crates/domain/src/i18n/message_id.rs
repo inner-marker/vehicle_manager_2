@@ -2152,4 +2152,12 @@ define_messages! {
     SETTING_ORIGINALS_OFF => "setting-originals-off",
     /// Settings: what keeping originals means.
     SETTING_ORIGINALS_NOTE => "setting-originals-note",
+    /// Log form: the When and where fold's summary with no place yet.
+    LOG_PLACE_NEEDED => "log-place-needed",
+    /// Log form: the When and where fold's summary with no place, and why.
+    LOG_NO_PLACE_SUMMARY => "log-no-place-summary",
+    /// Work log: an end reading the same as the start one.
+    WORK_COPY_FROM_START => "work-copy-from-start",
+    /// Log form: the currency its amounts are in.
+    LOG_CURRENCY => "log-currency",
 }

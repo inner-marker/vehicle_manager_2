@@ -1852,6 +1852,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - Built-in Help Documents
   - What format do we store the documents?
 - Info pop-ups (circled question marks that pops up a small help window with summary, with links to the full Help Documents)
+- **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.
 - **Phase 7: Security.** Full audit and hardening (as required) of all components. Ensure industry standards and best practices are followed for authentication, authorization, data storage, and network communication. Penetration testing and code review for security vulnerabilities.
@@ -1942,6 +1943,7 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 
 ### Phase 6: Polish
 
+- **Labor rates:** whose rate it is: one for the household, one per Maintainer, or one per shop (the "done by" performer, e.g. a dealer's hourly rate), and whether a rate can change over time (old jobs keep the rate they used).
 - **Desktop signing** (moved from Phase 4, #041): sign desktop builds (macOS Gatekeeper, Windows SmartScreen), or accept the warnings for personal use? Needed by the first release with desktop packages.
 - **Import/export formats:** CSV, JSON, or both; full backup vs. per-vehicle export.
 - **Reports and cost views:** which reports matter most (cost per mile, cost per vehicle per year, fuel trends)?
