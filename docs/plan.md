@@ -499,6 +499,7 @@ Conditions enable **fuel economy broken down by condition and by towed vehicle,*
 
 A **squawk** is an issue or broken item noted on a vehicle, to be dealt with later.
 
+- **What they're called on screen:** "squawk" is familiar to pilots but not to everyone, so the Admin picks one word for the household: **Issues** (the default), Squawks, Faults, or Write-ups (`docs/decisions.md` #064). Only the words on screen change; the code and documents keep "squawk".
 - **Opened anytime:** standalone, or while logging any event. Each squawk has a description, date opened, optional photos, and notes.
 - **Status:** open → **deferred** (still outstanding, with a reason) → **resolved**.
 - **Resolved** by signing it off during a later maintenance or repair event, linked to that event (and task, where relevant), with resolution notes.
@@ -537,7 +538,7 @@ Some maintenance is recurring, such as a 5,000 or 10,000 mile service.
 
 - **Requirements are the source of truth.** Each **requirement** (a maintenance item on an asset, see Requirements & compliance) has **one or more interval rules**, and whichever comes due first wins:
   - **Meter rules:** a specific meter plus an amount, e.g. every 7,500 mi on the odometer, or every 250 h on *engine hours* (not key-on hours).
-  - **Calendar rule:** every N months, with an optional **"due by end of month"** setting (the due date rounds to the end of the calendar month, as aviation inspections do).
+  - **Calendar rule:** every N **days, months, or years** (1–3,650 days, 1–600 months, 1–50 years), with an optional **"due by end of month"** setting for months and years (the due date rounds to the end of the calendar month, as aviation inspections do).
   - **Fixed-date rule: "next due on [date]."** A specific due date rather than a repeating interval, for items whose next date comes from paperwork or an outside source: registration renewal, emissions or safety inspection, recall completion deadline, warranty expiration.
     - When the task is signed off, the user is **prompted for the next due date** (e.g. the new registration expiry), or can mark the item as done with no next date.
     - Can be combined with the other rules; whichever comes first still wins.
@@ -891,8 +892,8 @@ Requirement          # per asset: something that must be done (replaces "TaskDef
 
 IntervalRule         # a Requirement has zero or more; earliest due wins
  ├─ requirement_id
- ├─ (meter_id + every) | every_months | due_on_date   # meter, calendar, or fixed-date rule
- └─ end_of_month     # calendar rules only: due date rounds to end of month
+ ├─ (meter_id + every) | (every + unit) | due_on_date   # meter, calendar (days | months | years), or fixed-date rule
+ └─ end_of_month     # calendar rules in months or years only: due date rounds to end of month
 
 ServiceBundle        # a named service that groups tasks for one-tap sign-off
  ├─ id
@@ -1315,7 +1316,7 @@ The server and every device must be able to upgrade **any** older database schem
 - The **database records its own schema version** (sqlx's migrations table).
 - **On startup** (server and every device): read the version and apply every missing step in order. A database five versions behind runs five steps, so any number of old versions is handled by the same path.
 - **Migrations are embedded in the binary** (`sqlx::migrate!`).
-- **Released steps are immutable:** never edit, only add. sqlx checksums applied migrations and refuses to start if one changed.
+- **Merged steps are immutable:** once a migration merges into `dev` (which the everyday server runs), never edit it, not even a comment; only add. One on a milestone branch may still change until its PR merges (`docs/decisions.md` #062). sqlx checksums applied migrations and refuses to start if one changed.
 - **All migrations are kept forever,** so even an ancient database can upgrade.
 - Since the server and devices both use SQLite, **one migration set serves both.**
 
@@ -1506,6 +1507,18 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 |---|---|---|
 | **App** | Dioxus fullstack server: sync API (server functions) + web UI | Loopback on the NAS only |
 | *(no database container)* | SQLite master database is a file on the app container's persistent volume | None |
+
+### Main and test servers
+
+The NAS runs two servers side by side (`docs/decisions.md` #062), each its own Container Manager Project with its own data folder:
+
+| Server | Folder | Port | Address | Image |
+|---|---|---|---|---|
+| **Main** (everyday use) | `/volume1/docker/vehicle_manager` | 8410 | `https://<nas>.<tailnet>.ts.net` | `:dev`, built **without** test timers |
+| **Test** | `/volume1/docker/vehicle_manager_test` | 8411 | `https://<nas>.<tailnet>.ts.net:8443` | `:milestone-<name>` (with test timers), `:dev`, or a `:sha-` build |
+
+- **Test plans run on the test server.** It keeps its own data; when a test needs real data, main's newest nightly snapshot can be copied in (see `docs/deploying-nas.md`).
+- **`VEHICLEMANAGER_INSTANCE`** names a server (empty on main, `test` on test). It names the session cookie, so the two servers on one hostname don't sign each other out, and the test server shows a **TEST SERVER** tag and "(test)" in the tab's title.
 
 ### Target NAS & image architectures
 
@@ -1805,7 +1818,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 - *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 
-### Phase 3: Local-first & sync.** 
+### Phase 3: Local-first & sync.
 - Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
