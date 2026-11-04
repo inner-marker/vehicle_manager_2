@@ -14,13 +14,14 @@
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, RequirementView, SquawkView};
+use domain::event::EventId;
 use domain::i18n::{MessageArg, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::CurrencyCode;
 use domain::profile::high_severity_name;
 use domain::quantity::{duration_as_typed, show_money};
 use domain::requirement::{Bundle, BundleId, IntervalRule};
-use domain::squawk::{Severity, SquawkId};
+use domain::squawk::{CountedDisposition, Severity, SquawkId, status};
 
 use super::FormError;
 use super::squawks::{SeverityChip, use_squawk_sheet};
@@ -630,19 +631,26 @@ fn SquawkChoice(
     }
 }
 
-/// The squawks the job deals with: the vehicle's outstanding ones, and any it already
-/// dispositions (a correction does its original's again), outstanding first, High first.
-pub(super) fn job_squawks(all: &[SquawkView], typed: &TypedWork) -> Vec<SquawkView> {
+/// The squawks the job deals with: those outstanding on the vehicle once `leave_out`'s
+/// dispositions are left out (the job itself, and the one it corrects, as the server counts
+/// them), High first, then the oldest.
+pub(super) fn job_squawks(all: &[SquawkView], leave_out: &[EventId]) -> Vec<SquawkView> {
     let mut shown: Vec<SquawkView> = all
         .iter()
-        .filter(|view| view.status.is_outstanding() || typed.disposition(view.id).is_some())
+        .filter(|view| {
+            let counted: Vec<CountedDisposition> = view
+                .history
+                .iter()
+                .filter(|counted| !leave_out.contains(&counted.event))
+                .cloned()
+                .collect();
+            status(&counted).is_outstanding()
+        })
         .cloned()
         .collect();
     shown.sort_by(|a, b| {
-        b.status
-            .is_outstanding()
-            .cmp(&a.status.is_outstanding())
-            .then(b.severity.cmp(&a.severity))
+        b.severity
+            .cmp(&a.severity)
             .then(a.squawk.opened_at.cmp(&b.squawk.opened_at))
     });
     shown
@@ -693,6 +701,68 @@ mod tests {
         assert_eq!(
             (added[0].title.as_str(), added[0].requirement),
             ("Rotate tires", Some(test_id(41)))
+        );
+    }
+
+    #[test]
+    fn a_job_deals_with_the_squawks_outstanding_without_itself_and_its_original() {
+        use domain::squawk::{Disposition, SquawkDisposition, SquawkStatus, SquawkText};
+        use domain::time::UnixMillis;
+        let view = |n: u32, history: Vec<(u32, bool)>| SquawkView {
+            id: test_id(n),
+            squawk: domain::squawk::Squawk {
+                asset: test_id(10),
+                description: SquawkText::parse("Rattle").unwrap(),
+                notes: Notes::default(),
+                severity: Severity::Low,
+                opened_at: UnixMillis::from_millis(i64::from(n)),
+                opened_by: test_id(1),
+                found_on: None,
+                received_at: UnixMillis::from_millis(0),
+            },
+            status: SquawkStatus::Open,
+            severity: Severity::Low,
+            history: history
+                .into_iter()
+                .map(|(event, signed)| CountedDisposition {
+                    at: UnixMillis::from_millis(i64::from(event)),
+                    event: test_id(event),
+                    disposition: SquawkDisposition {
+                        squawk: test_id(n),
+                        action: if signed {
+                            Disposition::SignedOff {
+                                notes: Notes::default(),
+                                task: None,
+                            }
+                        } else {
+                            Disposition::Deferred {
+                                reason: domain::event::Reason::parse("Later").unwrap(),
+                            }
+                        },
+                        severity: None,
+                    },
+                })
+                .collect(),
+            opened_by_name: String::new(),
+            may_change: false,
+        };
+        let all = [
+            // Signed off by the job being corrected (100): outstanding for its correction.
+            view(60, vec![(100, true)]),
+            // Deferred by 100, then signed off by a later repair (200): not the correction's.
+            view(61, vec![(100, false), (200, true)]),
+            // Never dealt with.
+            view(62, vec![]),
+        ];
+        let shown: Vec<SquawkId> = job_squawks(&all, &[test_id(100)])
+            .iter()
+            .map(|v| v.id)
+            .collect();
+        assert_eq!(shown, vec![test_id(60), test_id(62)]);
+        assert_eq!(
+            job_squawks(&all, &[]).len(),
+            1,
+            "a new job: only the one never dealt with"
         );
     }
 

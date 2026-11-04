@@ -287,7 +287,16 @@ fn LogScreen(
                     .map_or(data.zone.clone(), |event| event.dates.zone.clone()),
                 ..data
             };
-            rsx! { FormBody { kind, data, mode, start } }
+            // The jobs whose squawk dispositions this one replaces: itself (an edit) and the one
+            // it corrects (#034).
+            let leave_out: Vec<EventId> = match mode {
+                Mode::New => Vec::new(),
+                Mode::Edit(id) => std::iter::once(id)
+                    .chain(original.as_ref().and_then(|event| event.corrects))
+                    .collect(),
+                Mode::Correct(original) => vec![original],
+            };
+            rsx! { FormBody { kind, data, mode, start, leave_out } }
         }
     }
 }
@@ -517,7 +526,13 @@ fn refusal(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element {
+fn FormBody(
+    kind: EventKind,
+    data: Loaded,
+    mode: Mode,
+    start: Typed,
+    leave_out: Vec<EventId>,
+) -> Element {
     let inputs = use_inputs(&start);
     let units = data.units;
     let mut busy = use_signal(|| false);
@@ -549,6 +564,7 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
         .collect();
     let (meters, fields, fallback) = (view.meters.clone(), view.fields.clone(), data.zone.clone());
     let may_override = data.may_override;
+    let squawks_left_out = leave_out.clone();
     // Save draft (`false`), or save and Finish (`true`, a job).
     let submit = Callback::new(move |finish: bool| {
         let context = Context {
@@ -561,7 +577,20 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
             now: SystemClock.now(),
         };
         let mut problem = inputs.problem;
-        let input = match build(&inputs.typed(), &context) {
+        // Only the squawks the job deals with now: one another job has since resolved isn't
+        // this job's to disposition any more (the server would refuse it).
+        let mut typed = inputs.typed();
+        let shown = job_squawk_ids(&job_squawks(
+            &(all_squawks)()
+                .map(|loaded| loaded.squawks)
+                .unwrap_or_default(),
+            &squawks_left_out,
+        ));
+        typed
+            .work
+            .dispositions
+            .retain(|disposition| shown.contains(&disposition.squawk));
+        let input = match build(&typed, &context) {
             Ok(input) => input,
             Err((target, message)) => {
                 problem.set(Some((target, tr(message))));
@@ -647,7 +676,7 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
         &(all_squawks)()
             .map(|loaded| loaded.squawks)
             .unwrap_or_default(),
-        &(inputs.work)(),
+        &leave_out,
     );
     let checks = finish_checks(&inputs, &required, &shown_squawks);
     let currency = units.currency;
