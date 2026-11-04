@@ -1283,8 +1283,6 @@ define_messages! {
     LOG_FUEL_DETAIL => "log-fuel-detail",
     /// The + Log chooser: under Reading.
     LOG_READING_DETAIL => "log-reading-detail",
-    /// The + Log chooser: a kind not built yet.
-    LOG_LATER => "log-later",
     /// The + Log chooser: nothing to log for.
     LOG_NO_VEHICLES => "log-no-vehicles",
     /// Log form: the badge on a required item.
@@ -1816,6 +1814,114 @@ define_messages! {
     SCHEDULE_COPY_LEFT_OUT => "schedule-copy-left-out",
     /// Copy dialog's button.
     SCHEDULE_COPY => "schedule-copy",
+    /// + Log: the maintenance tile's line.
+    LOG_MAINTENANCE_DETAIL => "log-maintenance-detail",
+    /// + Log: the repair tile's line.
+    LOG_REPAIR_DETAIL => "log-repair-detail",
+    /// A job's draft status (it never locks by itself).
+    EVENT_STATUS_JOB_DRAFT => "event-status-job-draft",
+    /// A squawk's page: start a repair of it.
+    SQUAWK_REPAIR_THIS => "squawk-repair-this",
+    /// Work log: the readings at the end.
+    WORK_END_READINGS => "work-end-readings",
+    /// Work log: ask for readings at the end.
+    WORK_ADD_END_READINGS => "work-add-end-readings",
+    /// Work log: one end reading's label; takes `meter` and `unit`.
+    WORK_END_READING => "work-end-reading",
+    /// Work log: the tasks.
+    WORK_TASKS => "work-tasks",
+    /// Work log: add a task from a requirement.
+    WORK_FROM_REQUIREMENT => "work-from-requirement",
+    /// Work log: add a bundle's tasks.
+    WORK_FROM_BUNDLE => "work-from-bundle",
+    /// Work log: add a typed task.
+    WORK_ADD_TASK => "work-add-task",
+    /// Work log: no tasks yet.
+    WORK_NO_TASKS => "work-no-tasks",
+    /// A task with no title yet.
+    WORK_UNTITLED_TASK => "work-untitled-task",
+    /// A folded task: how many parts; takes `count`.
+    WORK_PART_COUNT => "work-part-count",
+    /// A task's title, as a placeholder.
+    WORK_TASK_TITLE => "work-task-title",
+    /// A task's requirement; takes `name`.
+    WORK_TASK_FOR => "work-task-for",
+    /// A task's parts.
+    WORK_PARTS => "work-parts",
+    /// A part: what it is.
+    WORK_PART_WHAT => "work-part-what",
+    /// A part: its number.
+    WORK_PART_NUMBER => "work-part-number",
+    /// A part: how many.
+    WORK_PART_QUANTITY => "work-part-quantity",
+    /// A part: the price of one.
+    WORK_PART_PRICE => "work-part-price",
+    /// Add a part.
+    WORK_ADD_PART => "work-add-part",
+    /// A task's labor time.
+    WORK_LABOR_TIME => "work-labor-time",
+    /// A task's labor cost; takes `currency`.
+    WORK_LABOR_COST => "work-labor-cost",
+    /// Which readings reset the requirement.
+    WORK_RESETS_FROM => "work-resets-from",
+    /// Resets from the start readings.
+    WORK_RESETS_START => "work-resets-start",
+    /// Resets from the end readings.
+    WORK_RESETS_END => "work-resets-end",
+    /// A fixed-date rule's next due date.
+    WORK_NEXT_DUE => "work-next-due",
+    /// A task's total; takes `total`.
+    WORK_TASK_TOTAL => "work-task-total",
+    /// Work log: the squawks to deal with; takes `count`.
+    WORK_SQUAWKS => "work-squawks",
+    /// Work log: no open squawks.
+    WORK_NO_SQUAWKS => "work-no-squawks",
+    /// Work log: open a squawk found during the job.
+    WORK_OPEN_SQUAWK => "work-open-squawk",
+    /// A squawk: fixed.
+    WORK_SIGN_OFF => "work-sign-off",
+    /// A squawk: put off.
+    WORK_DEFER => "work-defer",
+    /// A sign-off: the task that fixed it.
+    WORK_FIXED_BY => "work-fixed-by",
+    /// A sign-off with no task.
+    WORK_FIXED_BY_NONE => "work-fixed-by-none",
+    /// A deferral's reason.
+    WORK_DEFER_WHY => "work-defer-why",
+    /// A disposition keeping the severity.
+    WORK_SEVERITY_SAME => "work-severity-same",
+    /// Work log: a repair's own section.
+    WORK_REPAIR => "work-repair",
+    /// A repair's complaint.
+    WORK_COMPLAINT => "work-complaint",
+    /// A repair's cause.
+    WORK_CAUSE => "work-cause",
+    /// About a repair's tasks.
+    WORK_REPAIR_NOTE => "work-repair-note",
+    /// Work log: the total.
+    WORK_TOTAL => "work-total",
+    /// Work log: save without finishing.
+    WORK_SAVE_DRAFT => "work-save-draft",
+    /// Finish a job.
+    WORK_FINISH => "work-finish",
+    /// Finish dialog: its title.
+    WORK_FINISH_TITLE => "work-finish-title",
+    /// Finish check: readings given.
+    WORK_CHECK_READINGS_OK => "work-check-readings-ok",
+    /// Finish check: readings missing.
+    WORK_CHECK_READINGS_MISSING => "work-check-readings-missing",
+    /// Finish check: a place.
+    WORK_CHECK_PLACE_OK => "work-check-place-ok",
+    /// Finish check: no place.
+    WORK_CHECK_PLACE_MISSING => "work-check-place-missing",
+    /// Finish check: a squawk not dealt with; takes `description`.
+    WORK_CHECK_UNDECIDED => "work-check-undecided",
+    /// Finish dialog: what it does.
+    WORK_FINISH_LOCKS => "work-finish-locks",
+    /// Finish dialog: back to the form.
+    WORK_FINISH_BACK => "work-finish-back",
+    /// Finish dialog: finish.
+    WORK_FINISH_LOCK => "work-finish-lock",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
 }

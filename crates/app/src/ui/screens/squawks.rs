@@ -127,6 +127,12 @@ pub(crate) fn may_open_squawks(role: Role, mode: ActiveMode) -> bool {
     role.min(mode.cap()) >= AssetAction::OpenSquawk.required_role()
 }
 
+/// Whether someone with `role` on a vehicle may log maintenance and repairs on it in `mode` (a
+/// Maintainer or higher, in that mode): **Repair this**.
+fn may_log_jobs(role: Role, mode: ActiveMode) -> bool {
+    role.min(mode.cap()) >= AssetAction::LogMaintenance.required_role()
+}
+
 /// The person's mode (Driver until signed in).
 fn current_mode(auth: AuthState) -> ActiveMode {
     match auth {
@@ -404,7 +410,7 @@ fn severity_text(severity: Severity, high_word: &str) -> String {
 }
 
 #[component]
-fn SeverityChip(severity: Severity, high_word: String) -> Element {
+pub(super) fn SeverityChip(severity: Severity, high_word: String) -> Element {
     rsx! {
         span { class: "severity-chip {severity_class(severity)}", {severity_text(severity, &high_word)} }
     }
@@ -419,7 +425,7 @@ const fn status_class(status: SquawkStatus) -> &'static str {
 }
 
 #[component]
-fn StatusChip(status: SquawkStatus) -> Element {
+pub(super) fn StatusChip(status: SquawkStatus) -> Element {
     rsx! { span { class: status_class(status), {tr(status.label())} } }
 }
 
@@ -792,6 +798,7 @@ fn history(view: &SquawkView) -> Vec<HistoryEntry> {
 #[component]
 fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>) -> Element {
     let sheet = use_squawk_sheet();
+    let auth = use_auth();
     let units = use_units();
     let zone = use_device_zone();
     let mut confirm = use_signal(|| false);
@@ -838,6 +845,11 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
                             span { class: "squawk-history-change", {change} }
                         }
                     }
+                }
+            }
+            if view.status.is_outstanding() && may_log_jobs(vehicle.role, current_mode(auth())) {
+                Link { class: "primary-button squawk-repair", to: Route::RepairSquawk { squawk_id: view.id.to_string() },
+                    {tr(messages::SQUAWK_REPAIR_THIS)}
                 }
             }
             if view.may_change {

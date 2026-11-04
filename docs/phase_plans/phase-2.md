@@ -805,6 +805,10 @@
     - **Jobs** (everyone): the vehicle's maintenance and repairs, drafts first: the Timeline's rows, for jobs only. Filled in by 7i.
     - **Set up** (Maintainers, in Maintainer or Admin mode): option A's requirement and bundle sections and dialogs (rule rows: a meter rule, a calendar rule, a fixed date), and **Copy from…** while there are no requirements.
     - Setup's tab keeps meters and fields, with a link to Maintenance › Set up; the address keeps the view.
+16. **The work log** (the human's pick: option A of `docs/ui-sketches/p2m7-work-log-options.svg`, 2026-11-03): one form in sections, like the fuel-up form.
+    - **When and where**, **Readings** (the start, plus optional end readings), **Tasks** (from a requirement, a bundle, or typed; each a card with its parts table, labor time and cost, "resets from", a fixed date's next due date, and notes; others fold to one line), **Squawks** (each open one signed off with the task that fixed it and notes, or deferred with a reason, and a new severity), **+ Open a squawk** found during the job, a repair's **Complaint** and **Cause**, and **Who and notes**.
+    - A bar at the bottom: the total, **Save draft**, and **Finish…**, which shows its checks (readings, place, every squawk) before "Finish and lock".
+    - **Repair this** on a squawk's page (the human, 2026-11-03): starts a repair with the complaint filled in from the squawk and its sign-off ready, for a Maintainer.
 14. **The squawk screens** (the human's pick from `docs/ui-sketches/p2m7-squawks-options.svg`, 2026-11-03): a **summary card on the Overview** listing the outstanding ones, High first (option A's panel); a **Squawks tab** with Outstanding / Resolved / All filters, the list and the chosen squawk side by side on wide screens (option B); **opening one is a quick sheet** with notes and the time folded away (option B).
 
 | Step | Status | Commit title | Contents | New dependencies |
@@ -819,7 +823,7 @@
 | 7f | ☑️ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
 | 7g | ☑️ | `feat(app): requirements, bundles, and the Maintenance tab` | SVG options done (choice 15). The Maintenance tab's Schedule (last done), Jobs, and Set up (requirements with their rules, bundles, **Copy from…**) | none |
 | 7h | ☑️ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
-| 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
+| 7i | ☑️ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
 | 7j | ⬜ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
 | 7k | ⬜ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
 | 7l | ⬜ | `docs: record the maintenance test runs` | Results of both runs | none |
@@ -970,3 +974,20 @@
   - copying onto a trailer (the odometer rule left out) and onto a new truck (never linked);
   - Setup's link.
   - **The human runs it**; the results are recorded in 7l.
+- **7i:** no new dependency. The work log (choice 16): the log form for **maintenance** and **repairs** (`log_form`, with `work_log` for the job's sections and `work_input` to build the work, tested without a browser).
+  - **+ Log** offers Maintenance and Repair to a Maintainer, in Maintainer or Admin mode.
+  - **A job's form:** every meter open (the readings at the start), then **+ Readings at the end**.
+    - **Tasks:** + From a requirement, + From a bundle (a task for each of its requirements not there yet), + Task. The open one is a card: its title and requirement, a parts table (what, number, quantity in thousandths, unit price), labor h:mm and cost, "Resets the requirement from" Start or End readings (End opens the end readings), a fixed-date rule's next due date, notes, and its total. The others fold to one line.
+    - **Squawks:** each open one, and any the job already deals with (a correction does its original's again). **Sign off** (fixed by which task, notes) or **Defer** (why, and a new severity); tapping again undecides it. **+ Found something new?** opens the squawk sheet, and the new one joins the list.
+    - **A repair's** Complaint and Cause.
+    - **The bar:** the total (parts and labor, as far as they can be read), **Save draft**, and **Finish…**.
+  - **Finish…** lists its checks (the required readings, the place, each undecided squawk by name). **Finish and lock** stays off until they pass, then saves the job and finishes it. A server refusal after saving opens the draft's form.
+  - **Repair this** on a squawk's page (a Maintainer, while it's outstanding; `/squawks/:id/repair`) opens a repair with the complaint filled in from the squawk and its sign-off ready.
+  - **An event's page:** a job's draft says "Draft · finish it when the work is done" and offers **Finish…** (in its form) instead of Finalize now. The rest of the job's page is 7j.
+  - `domain::quantity::parse_quantity` and `quantity_value` (thousandths). 55 messages; "Arrives in a later milestone" (+ Log's old line for jobs) is gone. 8 new tests: quantities; an oil change's work (parts, labor, end readings, an undecided squawk left out, no complaint on maintenance); typing a job's work back; where problems show; Finish's undecided squawks; a bundle's new tasks; removing a task keeps the sign-offs right; and the total counting a task with no title yet.
+  - **Browser check** (1200 × 1000 and a 390 × 844 phone):
+    - + Log's tiles: Fuel-up, Reading, Maintenance, Repair, Issue;
+    - a maintenance job: the bundle's two tasks, a part table with two parts, labor "030" typed as 0:30, the total 107.44 USD;
+    - the brake lights signed off by the oil task: Finish lists "Rattle…: sign it off or defer it" with Finish and lock off. Deferred (Medium), then finished: the event is Finalized, Last done shows "52,644 mi", the brake lights are resolved and the rattle deferred and Medium;
+    - **Repair this** on the rattle: the complaint filled in and its sign-off chosen. Saved as a draft (the page offers Finish…), finished from its form: the rattle is resolved;
+    - on the phone, each part on its own rows and the total with both buttons on one line. Fixed along the way: the form's title said "Reading" for a job, and the total skipped a task with no title yet.

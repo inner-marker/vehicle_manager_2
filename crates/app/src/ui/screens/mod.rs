@@ -20,6 +20,8 @@ mod users;
 mod vehicle;
 mod vehicle_setup;
 mod vehicles;
+mod work_input;
+mod work_log;
 
 pub(crate) use account::{
     ChangePasswordForm, Field, ForcedPasswordChange, FormError, Setup, SignIn,
@@ -29,7 +31,7 @@ pub(crate) use diagnostics::Diagnostics;
 pub(crate) use event_page::EventDetail;
 pub(crate) use groups::Groups;
 pub(crate) use log_chooser::{LogChooserDialog, LogEvent, provide_log_chooser};
-pub(crate) use log_form::{CorrectEvent, EditEvent, LogForm};
+pub(crate) use log_form::{CorrectEvent, EditEvent, LogForm, RepairSquawk};
 pub(crate) use messages::Messages;
 pub(crate) use placeholders::{Due, NotFound, Reports, Timeline};
 pub(crate) use places::Places;

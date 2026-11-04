@@ -80,10 +80,11 @@ pub(crate) fn Shell() -> Element {
         }
         // A log form: "Fuel-up · Truck".
         Route::LogForm { asset_id, kind } => {
-            let kind = if kind == "fuel" {
-                messages::EVENT_KIND_FUEL
-            } else {
-                messages::EVENT_KIND_READING
+            let kind = match kind.as_str() {
+                "fuel" => messages::EVENT_KIND_FUEL,
+                "maintenance" => messages::EVENT_KIND_MAINTENANCE,
+                "repair" => messages::EVENT_KIND_REPAIR,
+                _ => messages::EVENT_KIND_READING,
             };
             vehicle_name(vehicles, asset_id)
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
@@ -97,6 +98,7 @@ pub(crate) fn Shell() -> Element {
         | Route::EditEvent { .. }
         | Route::CorrectEvent { .. }
         | Route::SquawkDetail { .. }
+        | Route::RepairSquawk { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
@@ -120,6 +122,7 @@ pub(crate) fn Shell() -> Element {
         | Route::EditEvent { .. }
         | Route::CorrectEvent { .. }
         | Route::SquawkDetail { .. }
+        | Route::RepairSquawk { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}

@@ -175,6 +175,8 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
                 MessageArg::from(when_text(done.at, &zone, &units).0),
             )],
         ),
+        // A job never locks by itself: it's finished (step 7i).
+        _ if !event.kind.finalizes_by_itself() => tr(messages::EVENT_STATUS_JOB_DRAFT),
         _ => tr_with(
             messages::EVENT_STATUS_DRAFT,
             &[(
@@ -183,6 +185,7 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
             )],
         ),
     };
+    let job = !event.kind.finalizes_by_itself();
     let finalized = event.status == EventStatus::Finalized;
     rsx! {
         div { class: "event-page",
@@ -198,7 +201,12 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
             div { class: "check-row",
                 if view.may_change {
                     Link { class: "secondary-button", to: Route::EditEvent { event_id: view.id.to_string() }, {tr(messages::ACTION_EDIT)} }
-                    button { class: "primary-button", r#type: "button", onclick: move |_| confirm.set(Some(Confirm::Finalize)), {tr(messages::EVENT_FINALIZE_NOW)} }
+                    if job {
+                        // Finish is in the work log, with its checks.
+                        Link { class: "primary-button", to: Route::EditEvent { event_id: view.id.to_string() }, {tr(messages::WORK_FINISH)} }
+                    } else {
+                        button { class: "primary-button", r#type: "button", onclick: move |_| confirm.set(Some(Confirm::Finalize)), {tr(messages::EVENT_FINALIZE_NOW)} }
+                    }
                     button { class: "secondary-button", r#type: "button", onclick: move |_| confirm.set(Some(Confirm::Delete)), {tr(messages::EVENT_DELETE)} }
                 }
                 if view.may_correct {

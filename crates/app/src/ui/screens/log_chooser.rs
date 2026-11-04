@@ -4,7 +4,8 @@
 //! One dialog (a sheet on phones): the vehicle at the top, with last time's chosen (or the
 //! vehicle whose page it's opened from), then a tile for each kind of event the person may log
 //! on it, by their role and mode, and a **Squawk** tile for Drivers and up (it opens the squawk
-//! sheet, step 7f). Maintenance and repairs join in step 7i.
+//! sheet, step 7f). **Maintenance** and **Repair** open the work log (step 7i), for
+//! Maintainers in Maintainer or Admin mode.
 //!
 //! **Last time's vehicle** is remembered on this device (the browser's local storage), so it
 //! survives a reload.
@@ -93,13 +94,15 @@ pub(crate) fn use_log_chooser() -> LogChooser {
 }
 
 /// The kinds of events the person may log on `vehicle` in `mode`: its kind's (#030), limited by
-/// their role there and the mode (plan §6). Fuel-ups and readings only, until milestone 7.
+/// their role there and the mode (plan §6).
 pub(crate) fn loggable_kinds(vehicle: &AssetSummary, mode: ActiveMode) -> Vec<EventKind> {
     let kinds = event_kinds(&vehicle.asset.kind);
     let allowed = vehicle.role.min(mode.cap());
     [
         (EventKind::Fuel, AssetAction::LogFuel),
         (EventKind::Reading, AssetAction::LogReading),
+        (EventKind::Maintenance, AssetAction::LogMaintenance),
+        (EventKind::Repair, AssetAction::LogMaintenance),
     ]
     .into_iter()
     .filter(|(kind, action)| kinds.contains(kind) && allowed >= action.required_role())
@@ -112,7 +115,8 @@ const fn kind_detail(kind: EventKind) -> domain::i18n::MessageId {
     match kind {
         EventKind::Fuel => messages::LOG_FUEL_DETAIL,
         EventKind::Reading => messages::LOG_READING_DETAIL,
-        EventKind::Maintenance | EventKind::Repair => messages::LOG_LATER,
+        EventKind::Maintenance => messages::LOG_MAINTENANCE_DETAIL,
+        EventKind::Repair => messages::LOG_REPAIR_DETAIL,
     }
 }
 
@@ -226,7 +230,14 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
                             on_done.call(());
                         }
                     },
-                    span { class: "log-tile-icon", if kind == EventKind::Fuel { "⛽" } else { "⏱" } }
+                    span { class: "log-tile-icon",
+                        match kind {
+                            EventKind::Fuel => "⛽",
+                            EventKind::Reading => "⏱",
+                            EventKind::Maintenance => "🔧",
+                            EventKind::Repair => "🛠",
+                        }
+                    }
                     span { class: "log-tile-text",
                         span { class: "log-tile-name", {tr(kind.label())} }
                         span { class: "log-tile-detail", {tr(kind_detail(kind))} }
@@ -308,6 +319,20 @@ mod tests {
             loggable_kinds(&vehicle("trailer", Role::Driver), ActiveMode::Driver),
             vec![EventKind::Reading],
             "trailers have no fuel-ups"
+        );
+        assert_eq!(
+            loggable_kinds(&vehicle("truck", Role::Maintainer), ActiveMode::Maintainer),
+            vec![
+                EventKind::Fuel,
+                EventKind::Reading,
+                EventKind::Maintenance,
+                EventKind::Repair
+            ],
+            "maintenance and repairs for a Maintainer, in that mode"
+        );
+        assert_eq!(
+            loggable_kinds(&vehicle("truck", Role::Maintainer), ActiveMode::Driver),
+            both,
         );
     }
 }

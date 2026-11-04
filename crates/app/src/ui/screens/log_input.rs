@@ -2,7 +2,8 @@
 //! components so it can be tested without a browser.
 //!
 //! Each problem names the part of the form it belongs to ([`Target`]), so its message shows
-//! there: under the meter, the field, the fuel, the date, or the place.
+//! there: under the meter, the field, the fuel, the date, the place, or (for a maintenance or
+//! repair job) the work log or its squawks. The work itself is typed and built in `work_input`.
 
 use domain::api::Located;
 use domain::asset::AssetId;
@@ -24,6 +25,8 @@ use domain::quantity::{
 };
 use domain::time::UnixMillis;
 
+use super::work_input::{TypedWork, typed_work, work_from};
+
 /// Where on the form a problem shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Target {
@@ -39,6 +42,12 @@ pub(super) enum Target {
     Where,
     /// Under a correction's reason.
     Correction,
+    /// Under the work log's tasks (a job).
+    Work,
+    /// Under the work log's squawks.
+    Squawks,
+    /// Under a reading at the end of a job.
+    EndReading(MeterId),
     /// Above Save.
     General,
 }
@@ -57,9 +66,8 @@ impl Target {
         match problem {
             EventProblem::Required(item) => Self::of(item),
             EventProblem::ReadingOutOfOrder(clash) => Self::Meter(clash.meter),
-            EventProblem::UnknownMeter(meter) | EventProblem::EndBelowStart(meter) => {
-                Self::Meter(meter)
-            }
+            EventProblem::UnknownMeter(meter) => Self::Meter(meter),
+            EventProblem::EndBelowStart(meter) => Self::EndReading(meter),
             EventProblem::UnknownField(field) | EventProblem::WrongValue(field) => {
                 Self::Field(field)
             }
@@ -77,15 +85,14 @@ impl Target {
             | EventProblem::Finalized
             | EventProblem::NotFinalized
             | EventProblem::AlreadyCorrected
-            | EventProblem::WorkDetails
-            | EventProblem::RepairOnly
+            | EventProblem::WorkDetails => Self::General,
+            EventProblem::RepairOnly
             | EventProblem::UnknownRequirement
             | EventProblem::BadPart
             | EventProblem::BadCost
             | EventProblem::BadNextDue
-            | EventProblem::NoEndReadings
-            | EventProblem::UnknownTask
-            | EventProblem::Squawk(_) => Self::General,
+            | EventProblem::NoEndReadings => Self::Work,
+            EventProblem::UnknownTask | EventProblem::Squawk(_) => Self::Squawks,
         }
     }
 }
@@ -148,6 +155,8 @@ pub(super) struct Typed {
     /// The start of the event being edited or corrected, kept to the millisecond unless the
     /// date or time typed changed (the form shows minutes).
     pub original_start: Option<UnixMillis>,
+    /// A maintenance or repair job's work log.
+    pub work: TypedWork,
 }
 
 /// What building the event needs besides what was typed.
@@ -368,7 +377,16 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
         source: EventSource::Typed,
         performed_by,
         fuel: fuel(typed, context)?,
-        work: None,
+        work: (!context.kind.finalizes_by_itself())
+            .then(|| {
+                work_from(
+                    &typed.work,
+                    context.kind,
+                    context.meters,
+                    context.units.currency,
+                )
+            })
+            .transpose()?,
         reading_override: typed
             .override_reason
             .as_deref()
@@ -457,6 +475,11 @@ pub(super) fn typed_from(
             .map(|reason| reason.as_str().to_owned()),
         original_location: Some(event.location.clone()),
         original_start: Some(event.dates.start),
+        work: event
+            .work
+            .as_ref()
+            .map(|work| typed_work(work, meters))
+            .unwrap_or_default(),
     }
 }
 

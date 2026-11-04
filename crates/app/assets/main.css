@@ -3294,3 +3294,193 @@ a.squawk-history-job {
         padding: 0 8px;
     }
 }
+
+/* ---------- The work log (step 7i; option A of docs/ui-sketches/p2m7-work-log-options.svg) ---------- */
+
+/* A job's form is wider: the parts table needs the room. */
+.log-form.job {
+    max-width: 820px;
+}
+
+.work-add {
+    width: auto;
+}
+
+/* The open task: a card with its parts table, labor, and the rest. */
+.task-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.task-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.task-card-head .task-title {
+    flex: 1;
+    font-weight: 700;
+}
+
+.task-card-total {
+    margin: 0;
+    align-self: flex-end;
+    font-weight: 700;
+}
+
+.task-card .muted-note {
+    margin: 0;
+}
+
+/* Parts: what, number, quantity, unit price, and ✕. */
+.parts-table {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, 0.8fr) minmax(0, 0.9fr) auto;
+    gap: 6px 8px;
+    align-items: center;
+}
+
+.parts-head {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* A task folded to one line. */
+.task-folded {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-folded-title {
+    font-weight: 700;
+}
+
+.task-folded-summary {
+    color: var(--text-muted);
+}
+
+/* A squawk to sign off or defer: amber until decided. */
+.squawk-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.squawk-choice.undecided {
+    border-color: var(--warn);
+}
+
+.squawk-choice.signed-off {
+    border-color: #3fb950;
+}
+
+.squawk-choice .squawk-row-top {
+    justify-content: flex-start;
+}
+
+.squawk-repair {
+    align-self: flex-start;
+}
+
+/* The job's bar: the total, Save draft, and Finish…. */
+.job-bar .job-total {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.job-bar .job-total strong {
+    font-size: 1.15rem;
+}
+
+.job-bar .form-buttons {
+    margin: 0;
+}
+
+.finish-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.finish-check {
+    display: flex;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.finish-check.ok .finish-mark {
+    color: #3fb950;
+}
+
+.finish-check.missing {
+    color: var(--error);
+}
+
+@media (max-width: 639px) {
+    /* Phones: each part on three rows: what it is; its number and quantity; its price and ✕.
+       The five headings come first, then five cells per part, so a part's description is
+       every fifth cell from the sixth. */
+    .parts-table {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .parts-table .parts-head {
+        display: none;
+    }
+
+    .parts-table > :nth-child(5n + 6) {
+        grid-column: 1 / -1;
+    }
+
+    .parts-table > :nth-child(5n + 10) {
+        justify-self: end;
+    }
+
+    /* The job's bar: the total and both buttons on one line. */
+    .job-bar {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .job-bar .form-buttons {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .job-bar .form-buttons button {
+        padding: 0 12px;
+    }
+
+    .task-folded {
+        flex-direction: column;
+        gap: 2px;
+    }
+}

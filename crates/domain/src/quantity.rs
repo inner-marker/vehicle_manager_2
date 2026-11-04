@@ -385,6 +385,30 @@ pub fn show_reading(raw: i64, unit: MeterUnit, precision: u8) -> String {
     }
 }
 
+// --- Counts of parts ------------------------------------------------------------------------
+
+/// A typed quantity ("5.5", "1") as thousandths (5,500; 1,000), as a part's quantity is
+/// stored (#032).
+///
+/// # Errors
+///
+/// [`QuantityError`] if it isn't a non-negative number, has more than three decimals, or is
+/// too large.
+pub fn parse_quantity(text: &str) -> Result<i64, QuantityError> {
+    let (value, decimals) = number(text)?;
+    if decimals > 3 {
+        return Err(QuantityError::TooPrecise);
+    }
+    whole(value * 1_000.0)
+}
+
+/// A quantity in thousandths as typed: "5.5", "1", "0.125".
+#[must_use]
+pub fn quantity_value(milli: i64) -> String {
+    let shown = fixed(float(milli) / 1_000.0, 3);
+    shown.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
 // --- Money -----------------------------------------------------------------------------------
 
 /// The currency's minor-unit decimals (ISO 4217): 0 for e.g. yen, 3 for e.g. Kuwaiti dinar,
@@ -652,5 +676,17 @@ mod tests {
             let number = text.trim_end_matches(" USD");
             prop_assert_eq!(parse_money(number, CurrencyCode::USD), Ok(cents));
         }
+    }
+
+    #[test]
+    fn quantities_are_thousandths() {
+        assert_eq!(parse_quantity("5.5"), Ok(5_500));
+        assert_eq!(parse_quantity(" 1 "), Ok(1_000));
+        assert_eq!(parse_quantity("0.125"), Ok(125));
+        assert_eq!(parse_quantity("1.2345"), Err(QuantityError::TooPrecise));
+        assert_eq!(parse_quantity("-1"), Err(QuantityError::Negative));
+        assert_eq!(quantity_value(5_500), "5.5");
+        assert_eq!(quantity_value(1_000), "1");
+        assert_eq!(quantity_value(125), "0.125");
     }
 }

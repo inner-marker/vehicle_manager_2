@@ -402,6 +402,66 @@ schedule-copy-summary = { $requirements ->
     }. Copies, never links.
 schedule-copy-left-out = Left out (no matching meter on { $vehicle }):
 schedule-copy = Copy
+
+## The work log (milestone 7 step 7i)
+
+log-maintenance-detail = Service, inspections, the schedule
+log-repair-detail = Fixing something wrong
+event-status-job-draft = Draft · finish it when the work is done
+squawk-repair-this = Repair this
+work-end-readings = Readings at the end
+work-add-end-readings = + Readings at the end (after a test drive)
+work-end-reading = { $meter } at the end ({ $unit })
+work-tasks = Tasks
+work-from-requirement = + From a requirement…
+work-from-bundle = + From a bundle…
+work-add-task = + Task
+work-no-tasks = No tasks yet: add one from a requirement, a bundle, or your own.
+work-untitled-task = (no title)
+work-part-count = { $count ->
+        [one] 1 part
+       *[other] { $count } parts
+    }
+work-task-title = What was done
+work-task-for = For: { $name }
+work-parts = Parts
+work-part-what = What
+work-part-number = Part number
+work-part-quantity = Quantity
+work-part-price = Unit price
+work-add-part = + Part
+work-labor-time = Labor (h:mm)
+work-labor-cost = Labor cost ({ $currency })
+work-resets-from = Resets the requirement from
+work-resets-start = Start
+work-resets-end = End readings
+work-next-due = Next due (from the paperwork)
+work-task-total = Task: { $total }
+work-squawks = { $Squawks } · { $count } to sign off or defer
+work-no-squawks = None open on this vehicle.
+work-open-squawk = + Found something new? Report { $a-squawk }
+work-sign-off = Sign off
+work-defer = Defer
+work-fixed-by = Fixed by
+work-fixed-by-none = No task
+work-defer-why = Why
+work-severity-same = No change
+work-repair = Repair
+work-complaint = Complaint: what was wrong
+work-cause = Cause: the diagnosis
+work-repair-note = The tasks are the fix.
+work-total = Total
+work-save-draft = Save draft
+work-finish = Finish…
+work-finish-title = Finish this job?
+work-check-readings-ok = The required readings
+work-check-readings-missing = A required reading is missing: give it, or skip it with a reason
+work-check-place-ok = Where it was done
+work-check-place-missing = Where it was done: set it, or say why you can't
+work-check-undecided = { $description }: sign it off or defer it
+work-finish-locks = Finishing locks it: a mistake is fixed with a correction.
+work-finish-back = Back
+work-finish-lock = Finish and lock
 unit-miles = Miles
 unit-kilometers = Kilometers
 unit-us-gallons = US gal
@@ -924,7 +984,6 @@ log-vehicle = Vehicle
 log-last-time = { $name } · same as last time
 log-fuel-detail = Odometer, fuel, and price
 log-reading-detail = Just the meters
-log-later = Coming in a later milestone
 log-no-vehicles = There are no vehicles you can log for.
 log-required = Required
 log-last-reading = last { $value } · { $date }
