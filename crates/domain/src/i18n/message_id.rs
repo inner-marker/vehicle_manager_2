@@ -2144,4 +2144,12 @@ define_messages! {
     PDF_FIT_WIDTH => "pdf-fit-width",
     /// PDF viewer: the page in view; takes `page` and `pages`.
     PDF_PAGE_OF => "pdf-page-of",
+    /// Settings: keeping originals (#036).
+    SETTING_ORIGINALS => "setting-originals",
+    /// Settings: Maintainers and Admins may keep them.
+    SETTING_ORIGINALS_ALLOWED => "setting-originals-allowed",
+    /// Settings: nobody keeps them.
+    SETTING_ORIGINALS_OFF => "setting-originals-off",
+    /// Settings: what keeping originals means.
+    SETTING_ORIGINALS_NOTE => "setting-originals-note",
 }

@@ -1087,7 +1087,7 @@
 | 8d.3 | ☑️ | `feat(server): file checks and cleanup` | A nightly file check (every file against its hash; missing or damaged ones as an Admin message) that also erases unused files once no kept snapshot could need them; at startup, a missing file brings it forward | none |
 | 8e | ☑️ | `feat(app): photos` | **SVG options first.** Take or pick a photo, the size picker, resizing and metadata in the app; photo strips on events, squawks, tasks, and vehicles | an EXIF reader (e.g. `kamadak-exif`) |
 | 8f | ☑️ | `feat(app): PDFs and the viewer` | **SVG options first.** Upload a PDF, the first-page thumbnail, pdf.js viewer, Download | pdf.js (bundled) |
-| 8g | ⬜ | `docs: photos and documents checkpoint test` | Part 1, on the test server once M7 is signed off | none |
+| 8g | ☑️ | `docs: photos and documents checkpoint test` | Part 1, on the test server once M7 is signed off | none |
 | 8h | ⬜ | `feat(app): the Documents tab and license plates` | **SVG options first.** Documents and renewals; plates and their history | none |
 | 8i | ⬜ | `docs: photos and documents test plan, part 2` | The rest, phone and desktop | none |
 | 8j | ⬜ | `docs: record the photos and documents test runs` | Results | none |
@@ -1169,4 +1169,6 @@
   - **pdf.js 6's document has no `destroy()`:** the loading task is destroyed instead (found in the browser check).
   - **Checked in the browser** (headless Chrome, a three-page PDF with real text): the sheet, the tile from the first page, the page count, pages drawn as they came into view (2 of 3 at first), the text layer's text, zoom, "Page 3 of 3" after scrolling, the phone width, closing (nothing left behind). A zoomed page scrolls to both edges; a resize draws again to fit (a column that grew with its page made that loop at first, fixed with `minmax(0, 1fr)`). **Not checked by me:** the desktop app, real scanned and encrypted PDFs, and a 50 MB one (the test plan, 8g).
   - 7 messages (one removed). No new Rust tests: the viewer is pdf.js and JavaScript, checked in the browser.
+- **8g:** `docs/test-plans/p2m8-photos-documents.md`, part 1 (34 steps): the upgrade (schema 13 → 14, the backup, `data/files/`, the plate moved out of the identifiers); photos on the Overview (an Admin), a fuel-up (Small by default, the camera, GPS and its place), a squawk, and a repair's tasks; keeping originals; removing a task and saving; Finish locking them and a correction copying them; PDFs (the viewer, a real DMV or insurer PDF, over 50 MB, not a PDF); the household's switch; and the nightly file check with test timers (erasing after the kept "days", a damaged file's message). **The human runs it on the test server once milestone 7 is signed off** (the upgrade can't be undone with an older image).
+  - **Added for it:** Settings › Household's **Keep photo originals** (Allowed / Off), the switch 8c and 8d.1 built without a screen. The You tab shows it as the Admin's. 4 messages, 1 new test.
 

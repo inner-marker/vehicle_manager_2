@@ -13,8 +13,8 @@ use domain::api::{PreferencesOutcome, PreferencesView};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
-    Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, PreferenceChoices,
-    Preferences, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
+    Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, Originals,
+    PreferenceChoices, Preferences, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
 };
 use domain::timers::Timers;
 
@@ -268,6 +268,7 @@ pub(crate) fn Settings() -> Element {
                 CurrencyRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 LanguageRow {}
                 SquawkWordRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
+                OriginalsRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
                 IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, timers, on_save: save }
             }
@@ -558,6 +559,57 @@ fn squawk_word_patch(word: SquawkWord) -> PreferencesPatch {
     }
 }
 
+/// Whether Maintainers and Admins may keep a photo's original (#036): the household's Admin
+/// chooses, for everyone.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn OriginalsRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let current = view.effective.originals;
+    let name = |choice: Originals| {
+        tr(match choice {
+            Originals::Allowed => messages::SETTING_ORIGINALS_ALLOWED,
+            Originals::Off => messages::SETTING_ORIGINALS_OFF,
+        })
+    };
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_ORIGINALS)} }
+            if household_tab {
+                div { class: "choice-buttons",
+                    for choice in [Originals::Allowed, Originals::Off] {
+                        button {
+                            key: "{choice:?}",
+                            class: if choice == current { "choice on" } else { "choice" },
+                            "aria-pressed": choice == current,
+                            onclick: move |_| on_save.call(originals_patch(choice)),
+                            {name(choice)}
+                        }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::SETTING_ORIGINALS_NOTE)} }
+            } else {
+                span { class: "setting-value", {name(current)} }
+                p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
+            }
+        }
+    }
+}
+
+/// The change that sets whether originals may be kept.
+fn originals_patch(choice: Originals) -> PreferencesPatch {
+    PreferencesPatch {
+        originals: Some(Choice::Set(choice)),
+        ..PreferencesPatch::default()
+    }
+}
+
 /// The language: English (US) only so far, so nothing to change.
 #[component]
 fn LanguageRow() -> Element {
@@ -591,6 +643,15 @@ mod tests {
                 };
                 assert_eq!(setting.chosen(&choices), Some(index), "{setting:?} {index}");
             }
+        }
+    }
+
+    #[test]
+    fn choosing_originals_changes_only_that() {
+        for choice in [Originals::Allowed, Originals::Off] {
+            let patch = originals_patch(choice);
+            assert_eq!(patch.changed_fields(), vec!["originals"]);
+            assert_eq!(patch.originals, Some(Choice::Set(choice)));
         }
     }
 

@@ -290,6 +290,10 @@ setting-currency = Currency
 setting-language = Language
 setting-squawk-word = Call problems
 setting-squawk-word-household = The household's Admin chooses this, for everyone.
+setting-originals = Keep photo originals
+setting-originals-allowed = Allowed
+setting-originals-off = Off
+setting-originals-note = Maintainers and Admins may keep a photo's file as taken (with its location and camera details) beside the one shown. Originals already kept stay.
 squawk-word-choice = { $Squawks }
 
 ## Squawk screens (milestone 7 step 7f)
