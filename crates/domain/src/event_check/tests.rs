@@ -163,6 +163,7 @@ fn fuel_up() -> Event {
             towed: vec![test_id(TRAILER)],
             reported_economy: Some(8_500),
         }),
+        work: None,
         reading_override: None,
         status: EventStatus::Draft,
         last_edited_at: on("2026-02-01"),
@@ -179,7 +180,9 @@ fn checked(event: &Event, admin: bool) -> Result<Vec<Warning>, EventProblem> {
     check(
         event,
         &CheckContext {
-            has_fuel: true,
+            kinds: &EventKind::ALL,
+            requirements: &[],
+            outstanding_squawks: &[],
             meters: &meters,
             fields: &fields,
             history: &history,
@@ -251,7 +254,9 @@ fn required_readings_and_fields_are_given_or_skipped_with_a_reason() {
     let mut event = fuel_up();
     event.fields.retain(|value| value.field != test_id(BRAND));
     let context = CheckContext {
-        has_fuel: true,
+        kinds: &EventKind::ALL,
+        requirements: &[],
+        outstanding_squawks: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -397,7 +402,13 @@ fn fuel_ups_need_sensible_details() {
 fn kinds_follow_the_vehicle_and_the_milestone() {
     let (meters, fields, history) = (meters(), fields(), history());
     let trailer = CheckContext {
-        has_fuel: false,
+        kinds: &[
+            EventKind::Reading,
+            EventKind::Maintenance,
+            EventKind::Repair,
+        ],
+        requirements: &[],
+        outstanding_squawks: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -415,8 +426,8 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
     maintenance.fuel = None;
     assert_eq!(
         checked(&maintenance, false),
-        Err(EventProblem::WrongKind),
-        "milestone 7"
+        Err(EventProblem::WorkDetails),
+        "maintenance needs its work details"
     );
 
     // A reading: the odometer isn't required, and fuel details aren't allowed.
@@ -425,7 +436,9 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
     reading.fuel = None;
     reading.fields.clear();
     let context = CheckContext {
-        has_fuel: true,
+        kinds: &EventKind::ALL,
+        requirements: &[],
+        outstanding_squawks: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -530,7 +543,7 @@ fn reasons_and_the_patch() {
     );
     assert_eq!(reason(" Typo ").as_str(), "Typo");
     let mut patch = EventPatch::all(fuel_up());
-    assert_eq!(patch.changed_fields().len(), 19, "every field");
+    assert_eq!(patch.changed_fields().len(), 20, "every field");
     patch.keep_only(&["notes", "readings"]);
     assert_eq!(patch.changed_fields(), vec!["readings", "notes"]);
 }
@@ -589,7 +602,9 @@ proptest! {
         event.readings[0].value = value;
         let (meters, fields) = (meters(), fields());
         let result = check(&event, &CheckContext {
-            has_fuel: true,
+            kinds: &EventKind::ALL,
+            requirements: &[],
+            outstanding_squawks: &[],
             meters: &meters,
             fields: &fields,
                 history: &history,

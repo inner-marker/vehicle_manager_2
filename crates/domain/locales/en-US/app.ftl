@@ -8,7 +8,7 @@
 ## Navigation (plan §5 UI direction)
 
 nav-garage = Garage
-nav-due-and-squawks = Due & squawks
+nav-due-and-squawks = Due & { $squawks }
 nav-messages = Messages
 nav-timeline = Timeline
 nav-reports = Reports
@@ -21,8 +21,8 @@ nav-diagnostics = Diagnostics
 # $count (number): open squawks across the shown vehicles.
 open-squawk-count =
     { $count ->
-        [one] { $count } open squawk
-       *[other] { $count } open squawks
+        [one] { $count } open { $squawk }
+       *[other] { $count } open { $squawks }
     }
 
 ## Screens
@@ -288,6 +288,213 @@ setting-pressure = Pressure
 setting-date-format = Date format
 setting-currency = Currency
 setting-language = Language
+setting-squawk-word = Call problems
+setting-squawk-word-household = The household's Admin chooses this, for everyone.
+squawk-word-choice = { $Squawks }
+
+## Squawk screens (milestone 7 step 7f)
+
+tab-squawks = { $Squawks }
+tab-squawks-count = { $Squawks } · { $count }
+screen-squawk = { $Squawk }
+squawk-new = + { $Squawk }
+squawk-report = Report { $a-squawk }
+squawk-sheet-title = New { $squawk } · { $vehicle }
+squawk-sheet-edit-title = Change this { $squawk }
+squawk-description-label = What's wrong?
+squawk-severity-label = Severity
+squawk-high-note = High keeps it out of use: shown as { $word }.
+squawk-more = Notes, when noticed
+squawk-notes-label = Notes (optional)
+squawk-noticed-date = Noticed
+squawk-not-found = That { $squawk } isn't there any more.
+squawks-none-outstanding = No open { $squawks }.
+squawks-all = All { $squawks } ›
+squawks-filter-outstanding = Outstanding · { $count }
+squawks-filter-resolved = Resolved · { $count }
+squawks-filter-all = All
+squawks-none-here = Nothing here.
+squawks-select-hint = Choose { $a-squawk } to see its history.
+squawk-opened-by = Opened by { $name } · { $date }
+squawk-found-on = Found on: { $event } ›
+squawk-found-on-event = an event
+squawk-notes-heading = Notes
+squawk-history-heading = History
+squawk-history-opened = Opened · { $severity }
+squawk-history-signed-off = Signed off
+squawk-history-deferred = Deferred: { $reason }
+squawk-history-job = Job · { $date } ›
+squawk-locked-note = A job has dealt with it, so it changes only in the next job.
+squawk-remove = Remove
+squawk-remove-title = Remove this { $squawk }?
+squawk-remove-text = Only for one opened by mistake: it's gone for everyone.
+log-squawk-detail = Something's wrong
+
+## The Maintenance tab (milestone 7 step 7g)
+
+setup-schedule-moved = The maintenance schedule is under Maintenance › Set up ›
+maintenance-schedule = Schedule
+maintenance-jobs = Jobs
+maintenance-set-up = Set up
+timeline-in-progress = In progress
+timeline-task-count = { $count ->
+        [one] 1 task
+       *[other] { $count } tasks
+    }
+jobs-empty = No maintenance or repairs logged yet.
+schedule-every = Every { $rules }
+schedule-or = or
+schedule-months = { $count ->
+        [one] month
+       *[other] { $count } months
+    }
+schedule-days = { $count ->
+        [one] day
+       *[other] { $count } days
+    }
+schedule-years = { $count ->
+        [one] year
+       *[other] { $count } years
+    }
+schedule-fixed = On a fixed date
+schedule-fixed-next = On a fixed date · next { $date }
+schedule-when-needed = When needed
+schedule-last-done = Last done
+schedule-not-done = Not done yet
+schedule-the-job = The job ›
+schedule-turned-off = Turned off: { $names }
+schedule-bundles = Service bundles
+schedule-requirements = Requirements
+schedule-empty-title = No schedule yet
+schedule-empty-hint = Track oil, tires, inspections, and anything else done to it.
+schedule-nothing-tracked = Nothing is tracked yet.
+schedule-set-it-up = Set it up
+schedule-copy-from = Copy from…
+schedule-add-requirement = + Requirement
+schedule-add-bundle = + Bundle
+schedule-none-yet = No requirements yet.
+schedule-no-bundles = No bundles. A bundle is a service done as one, e.g. a 5,000-mile service.
+schedule-off = Off
+schedule-remove-note = A requirement a job has done can't be removed (turn it off instead). Removing one takes it out of its bundles.
+schedule-add-requirement-title = New requirement
+schedule-name = Name
+schedule-in-use = In use
+schedule-due-when = Due when, whichever comes first
+schedule-add-meter-rule = + Meter rule
+schedule-add-calendar-rule = + Calendar rule
+schedule-add-fixed-rule = + Fixed date
+schedule-rules-hint = No rules: done when needed. A fixed date's first date is optional; each job gives the next.
+schedule-every-label = every
+schedule-calendar = Calendar
+schedule-months-label = months
+schedule-unit-days = days
+schedule-unit-years = years
+schedule-calendar-unit = Days, months, or years
+schedule-end-of-month = by the month's end
+schedule-fixed-label = Fixed date
+schedule-first-due = first due
+schedule-add-bundle-title = New bundle
+schedule-edit-bundle-title = Change this bundle
+schedule-bundle-covers = What it covers
+schedule-bundle-covers-list = Covers { $names }
+schedule-bundle-label = Service bundle
+schedule-bundle-count = { $count ->
+        [one] 1 requirement
+       *[other] { $count } requirements
+    }
+schedule-remove-title = Remove { $name }?
+schedule-copy-title = Copy a schedule to { $vehicle }
+schedule-copy-from-label = From
+schedule-copy-no-vehicles = There's no other vehicle to copy from.
+schedule-copy-summary = { $requirements ->
+        [one] 1 requirement
+       *[other] { $requirements } requirements
+    } and { $bundles ->
+        [one] 1 bundle
+       *[other] { $bundles } bundles
+    }. Copies, never links.
+schedule-copy-left-out = Left out (no matching meter on { $vehicle }):
+schedule-copy = Copy
+
+## The work log (milestone 7 step 7i)
+
+log-maintenance-detail = Service, inspections, the schedule
+log-repair-detail = Fixing something wrong
+event-status-job-draft = Draft · finish it when the work is done
+squawk-repair-this = Repair this
+work-end-readings = Readings at the end
+work-add-end-readings = + Readings at the end (after a test drive)
+work-end-reading = { $meter } at the end ({ $unit })
+work-tasks = Tasks
+work-from-requirement = + From a requirement…
+work-from-bundle = + From a bundle…
+work-add-task = + Task
+work-no-tasks = No tasks yet: add one from a requirement, a bundle, or your own.
+work-untitled-task = (no title)
+work-fold-task = Fold this task
+work-part-count = { $count ->
+        [one] 1 part
+       *[other] { $count } parts
+    }
+work-task-title = What was done
+work-task-for = For: { $name }
+work-parts = Parts
+work-part-what = What
+work-part-number = Part number
+work-part-quantity = Quantity
+work-part-price = Unit price
+work-add-part = + Part
+work-labor-time = Labor (h:mm)
+work-labor-cost = Labor cost ({ $currency })
+work-resets-from = Resets the requirement from
+work-resets-start = Start
+work-resets-end = End readings
+work-next-due = Next due (from the paperwork)
+work-task-total = Task: { $total }
+work-squawks = { $Squawks } · { $count } to sign off or defer
+work-no-squawks = None open on this vehicle.
+work-open-squawk = + Found something new? Report { $a-squawk }
+work-sign-off = Sign off
+work-defer = Defer
+work-fixed-by = Fixed by
+work-fixed-by-none = No task
+work-defer-why = Why
+work-severity-same = No change
+work-repair = Repair
+work-complaint = Complaint: what was wrong
+work-cause = Cause: the diagnosis
+work-repair-note = The tasks are the fix.
+work-total = Total
+work-save-draft = Save draft
+work-finish = Finish…
+work-finish-title = Finish this job?
+work-check-readings-ok = The required readings
+work-check-readings-missing = A required reading is missing: give it, or skip it with a reason
+work-check-place-ok = Where it was done
+work-check-place-missing = Where it was done: set it, or say why you can't
+work-check-undecided = { $description }: sign it off or defer it
+work-finish-locks = Finishing locks it: a mistake is fixed with a correction.
+work-finish-back = Back
+work-finish-lock = Finish and lock
+
+## A job's page (milestone 7 step 7j)
+
+event-status-job-finished = Finished · { $date }
+job-total = Total
+job-split = parts { $parts } · labor { $labor }
+job-labor = Labor
+job-cost = Cost
+job-no-tasks = No tasks.
+job-resets-start = resets from the start readings
+job-resets-end = resets from the end readings
+job-next-due = Next due: { $date }
+job-notes = Notes: { $notes }
+job-squawks = { $Squawks } dealt with
+job-fixed-by = by { $task }
+job-deferred = Deferred
+job-found = Found during this job: { $description } ({ $severity }) ›
+timeline-signed-off = { $count } signed off
+timeline-deferred = { $count } deferred
 unit-miles = Miles
 unit-kilometers = Kilometers
 unit-us-gallons = US gal
@@ -346,6 +553,9 @@ inbox-place-lookup-body = The server couldn't open its place data, so it can't s
 inbox-database-unavailable = The server couldn't open its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-integrity-check-failed = The server found a problem in its database. You can still look around, but nothing can be saved until it's fixed.
 inbox-open-diagnostics = Open Diagnostics
+inbox-forgotten-job = A job is still a draft
+inbox-forgotten-job-body = A maintenance or repair job on { $vehicle } hasn't been touched for a while. Finish it when the work is done, or delete it if it was a mistake.
+inbox-open-job = Open the job
 messages-filter-all = All
 messages-severity-urgent = URGENT
 messages-severity-warning = WARNING
@@ -495,8 +705,7 @@ panel-ready = Ready to use?
 panel-ready-coming = Arrives with what's due (Phase 5).
 panel-due = Coming due
 panel-due-coming = Next services (Phase 5).
-panel-squawks = Open squawks
-panel-squawks-coming = Squawks arrive in milestone 7.
+panel-squawks = Open { $squawks }
 panel-fuel = Latest fuel-ups
 panel-meters = Meters
 meters-none = No meters yet.
@@ -808,7 +1017,6 @@ log-vehicle = Vehicle
 log-last-time = { $name } · same as last time
 log-fuel-detail = Odometer, fuel, and price
 log-reading-detail = Just the meters
-log-later = Coming in a later milestone
 log-no-vehicles = There are no vehicles you can log for.
 log-required = Required
 log-last-reading = last { $value } · { $date }
@@ -830,6 +1038,8 @@ log-filled-full = Filled to full
 log-missed = Missed a fill-up
 log-section-when-where = When and where
 log-now = Now
+log-place-needed = Place needed
+log-no-place-summary = No place (reason given)
 log-change = Change
 log-date = Date
 log-time = Time
@@ -960,3 +1170,65 @@ panel-no-readings = No readings yet
 
 instance-tag = { $name } server
 instance-tag-note = Not the household's main server: for testing. What's saved here stays here.
+
+## Squawks (milestone 7)
+
+# What the household calls squawks (#064). Every message gets these as { $squawk },
+# { $squawks }, { $Squawk }, { $Squawks }, and { $a-squawk }: write "squawk" through them,
+# never as a word.
+squawk-word-issue = issue
+    .plural = issues
+    .title = Issue
+    .title-plural = Issues
+    .article = an issue
+squawk-word-squawk = squawk
+    .plural = squawks
+    .title = Squawk
+    .title-plural = Squawks
+    .article = a squawk
+squawk-word-fault = fault
+    .plural = faults
+    .title = Fault
+    .title-plural = Faults
+    .article = a fault
+squawk-word-write-up = write-up
+    .plural = write-ups
+    .title = Write-up
+    .title-plural = Write-ups
+    .article = a write-up
+
+severity-low = Low
+severity-medium = Medium
+severity-high = High
+squawk-high-not-drivable = Not drivable
+squawk-high-not-towable = Not towable
+squawk-high-out-of-service = Out of service
+squawk-status-open = Open
+squawk-status-deferred = Deferred
+squawk-status-resolved = Resolved
+squawk-description-empty = Say what's wrong.
+squawk-description-too-long = That's too long: at most 500 characters.
+squawk-undispositioned = Sign off or defer every open { $squawk } before finishing.
+squawk-dispositioned-twice = That { $squawk } is already signed off or deferred in this job.
+squawk-not-outstanding = That { $squawk } isn't open or deferred on this vehicle.
+squawk-dispositioned = A job has already dealt with this { $squawk }, so it can't be changed or removed. Its next job can change its severity.
+
+## Requirements and bundles (milestone 7)
+
+requirement-bad-interval = Enter how far apart, more than zero.
+requirement-bad-calendar = Every 1 to 3,650 days, 1 to 600 months, or 1 to 50 years.
+requirement-repeated-rule = Each meter, the calendar, and the fixed date can be used once.
+bundle-empty = Choose at least one requirement.
+bundle-bad-item = Each requirement can be in a bundle once.
+requirement-in-use = A task has done this requirement, so it stays in the history. Turn it off instead.
+schedule-not-empty = This vehicle already has requirements. Copying a schedule is only for a vehicle without one.
+
+## Maintenance and repairs (milestone 7)
+
+event-bad-part = Each part needs a description (up to 100 characters), a part number of up to 40, and a quantity above zero.
+event-bad-next-due = A next due date goes only on a task whose requirement has a fixed-date rule, and must be a date.
+event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
+event-end-below-start = The end reading is lower than the start one. Check them.
+event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.
+work-copy-from-start = Copy from start
+log-currency = Currency

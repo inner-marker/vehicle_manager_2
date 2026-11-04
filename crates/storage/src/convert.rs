@@ -102,6 +102,16 @@ pub fn json_from_sql<T: DeserializeOwned>(
     serde_json::from_str(text).map_err(|_| StorageError::InvalidValue { column })
 }
 
+/// A named value's column text (every enum stored by name has one).
+pub(crate) fn name<T: Serialize>(value: &T, column: &'static str) -> Result<String, StorageError> {
+    name_to_sql(value).ok_or(StorageError::InvalidValue { column })
+}
+
+/// Turns any conversion error into "this column holds an invalid value".
+pub(crate) fn invalid<E>(column: &'static str) -> impl Fn(E) -> StorageError {
+    move |_| StorageError::InvalidValue { column }
+}
+
 /// An optional column's change in an update: `(changed?, new value)`, bound into
 /// `CASE WHEN ? THEN ? ELSE column END`. Clearing a column (setting NULL) is a real change,
 /// which `coalesce` can't express.

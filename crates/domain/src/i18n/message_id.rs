@@ -767,8 +767,6 @@ define_messages! {
     PANEL_DUE_COMING => "panel-due-coming",
     /// Overview panel: open squawks.
     PANEL_SQUAWKS => "panel-squawks",
-    /// Overview panel: squawks, not built yet.
-    PANEL_SQUAWKS_COMING => "panel-squawks-coming",
     /// Overview panel: latest fuel-ups.
     PANEL_FUEL => "panel-fuel",
     /// Overview panel and Setup section: meters.
@@ -1285,8 +1283,6 @@ define_messages! {
     LOG_FUEL_DETAIL => "log-fuel-detail",
     /// The + Log chooser: under Reading.
     LOG_READING_DETAIL => "log-reading-detail",
-    /// The + Log chooser: a kind not built yet.
-    LOG_LATER => "log-later",
     /// The + Log chooser: nothing to log for.
     LOG_NO_VEHICLES => "log-no-vehicles",
     /// Log form: the badge on a required item.
@@ -1565,4 +1561,423 @@ define_messages! {
     INSTANCE_TAG => "instance-tag",
     /// The instance tag's tooltip.
     INSTANCE_TAG_NOTE => "instance-tag-note",
+    /// Squawk severity: minor.
+    SEVERITY_LOW => "severity-low",
+    /// Squawk severity: get it looked at.
+    SEVERITY_MEDIUM => "severity-medium",
+    /// Squawk severity: keeps it out of use.
+    SEVERITY_HIGH => "severity-high",
+    /// What High means for a car, truck, or motorcycle.
+    SQUAWK_HIGH_NOT_DRIVABLE => "squawk-high-not-drivable",
+    /// What High means for a trailer.
+    SQUAWK_HIGH_NOT_TOWABLE => "squawk-high-not-towable",
+    /// What High means for equipment, and kinds without a profile.
+    SQUAWK_HIGH_OUT_OF_SERVICE => "squawk-high-out-of-service",
+    /// Squawk status: not dealt with yet.
+    SQUAWK_STATUS_OPEN => "squawk-status-open",
+    /// Squawk status: put off at the latest maintenance.
+    SQUAWK_STATUS_DEFERRED => "squawk-status-deferred",
+    /// Squawk status: signed off.
+    SQUAWK_STATUS_RESOLVED => "squawk-status-resolved",
+    /// Squawk: no description.
+    SQUAWK_DESCRIPTION_EMPTY => "squawk-description-empty",
+    /// Squawk: a description over 500 characters.
+    SQUAWK_DESCRIPTION_TOO_LONG => "squawk-description-too-long",
+    /// Finish: an outstanding squawk left as it was.
+    SQUAWK_UNDISPOSITIONED => "squawk-undispositioned",
+    /// A squawk dispositioned twice in one event.
+    SQUAWK_DISPOSITIONED_TWICE => "squawk-dispositioned-twice",
+    /// A disposition of a squawk that isn't outstanding.
+    SQUAWK_NOT_OUTSTANDING => "squawk-not-outstanding",
+    /// Requirement: a meter rule of zero or less.
+    REQUIREMENT_BAD_INTERVAL => "requirement-bad-interval",
+    /// Requirement: a calendar rule out of its unit's range.
+    REQUIREMENT_BAD_CALENDAR => "requirement-bad-calendar",
+    /// Requirement: two rules of one kind.
+    REQUIREMENT_REPEATED_RULE => "requirement-repeated-rule",
+    /// Bundle: no requirements.
+    BUNDLE_EMPTY => "bundle-empty",
+    /// Bundle: a repeated or unknown requirement.
+    BUNDLE_BAD_ITEM => "bundle-bad-item",
+    /// Maintenance: a part that doesn't fit.
+    EVENT_BAD_PART => "event-bad-part",
+    /// Maintenance: a misplaced or invalid next due date.
+    EVENT_BAD_NEXT_DUE => "event-bad-next-due",
+    /// Maintenance: resetting from end readings that don't exist.
+    EVENT_NO_END_READINGS => "event-no-end-readings",
+    /// Maintenance: an end reading below the start.
+    EVENT_END_BELOW_START => "event-end-below-start",
+    /// Maintenance: Finish on a fuel-up or reading, or Finalize now on a job.
+    EVENT_FINISH_JOBS_ONLY => "event-finish-jobs-only",
+    /// Squawk: changing or removing one that a job has already dealt with.
+    SQUAWK_DISPOSITIONED => "squawk-dispositioned",
+    /// Requirement: removing one a task has done.
+    REQUIREMENT_IN_USE => "requirement-in-use",
+    /// Copy schedule: the vehicle already has requirements.
+    SCHEDULE_NOT_EMPTY => "schedule-not-empty",
+    /// Message title: a forgotten maintenance or repair draft.
+    INBOX_FORGOTTEN_JOB => "inbox-forgotten-job",
+    /// Message text: a forgotten maintenance or repair draft.
+    INBOX_FORGOTTEN_JOB_BODY => "inbox-forgotten-job-body",
+    /// Message button: open the forgotten job.
+    INBOX_OPEN_JOB => "inbox-open-job",
+    /// What squawks are called (#064): "issue", with its plural, capitalized forms, and article
+    /// as attributes.
+    SQUAWK_WORD_ISSUE => "squawk-word-issue",
+    /// What squawks are called: "squawk".
+    SQUAWK_WORD_SQUAWK => "squawk-word-squawk",
+    /// What squawks are called: "fault".
+    SQUAWK_WORD_FAULT => "squawk-word-fault",
+    /// What squawks are called: "write-up".
+    SQUAWK_WORD_WRITE_UP => "squawk-word-write-up",
+    /// Settings: what squawks are called.
+    SETTING_SQUAWK_WORD => "setting-squawk-word",
+    /// Settings: one choice of what squawks are called, e.g. "Issues".
+    SQUAWK_WORD_CHOICE => "squawk-word-choice",
+    /// Vehicle tab: its squawks.
+    TAB_SQUAWKS => "tab-squawks",
+    /// Vehicle tab: its squawks, with how many are outstanding; takes `count`.
+    TAB_SQUAWKS_COUNT => "tab-squawks-count",
+    /// Top bar title: one squawk's page.
+    SCREEN_SQUAWK => "screen-squawk",
+    /// Button: open a new squawk.
+    SQUAWK_NEW => "squawk-new",
+    /// Event page button: open a squawk found on this event.
+    SQUAWK_REPORT => "squawk-report",
+    /// Sheet title for a new squawk; takes `vehicle`.
+    SQUAWK_SHEET_TITLE => "squawk-sheet-title",
+    /// Sheet title when changing a squawk.
+    SQUAWK_SHEET_EDIT_TITLE => "squawk-sheet-edit-title",
+    /// Sheet: the description's label.
+    SQUAWK_DESCRIPTION_LABEL => "squawk-description-label",
+    /// Sheet: the severity's label.
+    SQUAWK_SEVERITY_LABEL => "squawk-severity-label",
+    /// Sheet: what High means; takes `word` (e.g. Not drivable).
+    SQUAWK_HIGH_NOTE => "squawk-high-note",
+    /// Sheet: unfold the notes and when it was noticed.
+    SQUAWK_MORE => "squawk-more",
+    /// Sheet: the notes' label.
+    SQUAWK_NOTES_LABEL => "squawk-notes-label",
+    /// Sheet: the date it was noticed.
+    SQUAWK_NOTICED_DATE => "squawk-noticed-date",
+    /// A squawk that's gone, or can't be seen.
+    SQUAWK_NOT_FOUND => "squawk-not-found",
+    /// Overview card: nothing outstanding.
+    SQUAWKS_NONE_OUTSTANDING => "squawks-none-outstanding",
+    /// Overview card: to the Squawks tab.
+    SQUAWKS_ALL => "squawks-all",
+    /// Squawks tab filter; takes `count`.
+    SQUAWKS_FILTER_OUTSTANDING => "squawks-filter-outstanding",
+    /// Squawks tab filter; takes `count`.
+    SQUAWKS_FILTER_RESOLVED => "squawks-filter-resolved",
+    /// Squawks tab filter: everything.
+    SQUAWKS_FILTER_ALL => "squawks-filter-all",
+    /// Squawks tab: nothing under this filter.
+    SQUAWKS_NONE_HERE => "squawks-none-here",
+    /// Squawks tab: nothing chosen yet.
+    SQUAWKS_SELECT_HINT => "squawks-select-hint",
+    /// A squawk's page: who opened it; takes `name` and `date`.
+    SQUAWK_OPENED_BY => "squawk-opened-by",
+    /// A squawk's page: the event it was found on; takes `event`.
+    SQUAWK_FOUND_ON => "squawk-found-on",
+    /// The found-on event, until it's loaded.
+    SQUAWK_FOUND_ON_EVENT => "squawk-found-on-event",
+    /// A squawk's page: its notes.
+    SQUAWK_NOTES_HEADING => "squawk-notes-heading",
+    /// A squawk's page: its history.
+    SQUAWK_HISTORY_HEADING => "squawk-history-heading",
+    /// History: opened; takes `severity`.
+    SQUAWK_HISTORY_OPENED => "squawk-history-opened",
+    /// History: a job signed it off.
+    SQUAWK_HISTORY_SIGNED_OFF => "squawk-history-signed-off",
+    /// History: a job deferred it; takes `reason`.
+    SQUAWK_HISTORY_DEFERRED => "squawk-history-deferred",
+    /// History: the job, linked; takes `date`.
+    SQUAWK_HISTORY_JOB => "squawk-history-job",
+    /// A squawk a job has dealt with.
+    SQUAWK_LOCKED_NOTE => "squawk-locked-note",
+    /// Button: remove a squawk opened by mistake.
+    SQUAWK_REMOVE => "squawk-remove",
+    /// Remove dialog: its title.
+    SQUAWK_REMOVE_TITLE => "squawk-remove-title",
+    /// Remove dialog: what it does.
+    SQUAWK_REMOVE_TEXT => "squawk-remove-text",
+    /// + Log: the squawk tile's line.
+    LOG_SQUAWK_DETAIL => "log-squawk-detail",
+    /// Setup: where the maintenance schedule is.
+    SETUP_SCHEDULE_MOVED => "setup-schedule-moved",
+    /// Maintenance tab view: what's tracked.
+    MAINTENANCE_SCHEDULE => "maintenance-schedule",
+    /// Maintenance tab view: the maintenance and repairs.
+    MAINTENANCE_JOBS => "maintenance-jobs",
+    /// Maintenance tab view: setting the schedule up.
+    MAINTENANCE_SET_UP => "maintenance-set-up",
+    /// Jobs: the drafts' heading.
+    TIMELINE_IN_PROGRESS => "timeline-in-progress",
+    /// A job's row: how many tasks; takes `count`.
+    TIMELINE_TASK_COUNT => "timeline-task-count",
+    /// Jobs: none yet.
+    JOBS_EMPTY => "jobs-empty",
+    /// Rules: periodic ones; takes `rules` (e.g. 5,000 mi or 6 months).
+    SCHEDULE_EVERY => "schedule-every",
+    /// Rules: between two rules.
+    SCHEDULE_OR => "schedule-or",
+    /// Rules: a calendar rule; takes `count`.
+    SCHEDULE_MONTHS => "schedule-months",
+    /// Rules: a calendar rule in days; takes `count`.
+    SCHEDULE_DAYS => "schedule-days",
+    /// Rules: a calendar rule in years; takes `count`.
+    SCHEDULE_YEARS => "schedule-years",
+    /// Rules: a fixed date with no date yet.
+    SCHEDULE_FIXED => "schedule-fixed",
+    /// Rules: a fixed date; takes `date`.
+    SCHEDULE_FIXED_NEXT => "schedule-fixed-next",
+    /// Rules: none.
+    SCHEDULE_WHEN_NEEDED => "schedule-when-needed",
+    /// Schedule card: when it was last done.
+    SCHEDULE_LAST_DONE => "schedule-last-done",
+    /// Schedule card: never done.
+    SCHEDULE_NOT_DONE => "schedule-not-done",
+    /// Schedule card: the job that last did it.
+    SCHEDULE_THE_JOB => "schedule-the-job",
+    /// Schedule: turned-off requirements; takes `names`.
+    SCHEDULE_TURNED_OFF => "schedule-turned-off",
+    /// Schedule and Set up: the bundles.
+    SCHEDULE_BUNDLES => "schedule-bundles",
+    /// Set up: the requirements.
+    SCHEDULE_REQUIREMENTS => "schedule-requirements",
+    /// Schedule: nothing set up.
+    SCHEDULE_EMPTY_TITLE => "schedule-empty-title",
+    /// Schedule: what to set up.
+    SCHEDULE_EMPTY_HINT => "schedule-empty-hint",
+    /// Schedule: nothing set up, for those who can't.
+    SCHEDULE_NOTHING_TRACKED => "schedule-nothing-tracked",
+    /// Schedule: to Set up.
+    SCHEDULE_SET_IT_UP => "schedule-set-it-up",
+    /// Button: copy a schedule from another vehicle.
+    SCHEDULE_COPY_FROM => "schedule-copy-from",
+    /// Button: add a requirement.
+    SCHEDULE_ADD_REQUIREMENT => "schedule-add-requirement",
+    /// Button: add a bundle.
+    SCHEDULE_ADD_BUNDLE => "schedule-add-bundle",
+    /// Set up: no requirements.
+    SCHEDULE_NONE_YET => "schedule-none-yet",
+    /// Set up: no bundles.
+    SCHEDULE_NO_BUNDLES => "schedule-no-bundles",
+    /// Set up: a requirement turned off.
+    SCHEDULE_OFF => "schedule-off",
+    /// Set up: about removing.
+    SCHEDULE_REMOVE_NOTE => "schedule-remove-note",
+    /// Requirement dialog: adding one.
+    SCHEDULE_ADD_REQUIREMENT_TITLE => "schedule-add-requirement-title",
+    /// Requirement and bundle dialogs: the name.
+    SCHEDULE_NAME => "schedule-name",
+    /// Requirement dialog: whether it's on.
+    SCHEDULE_IN_USE => "schedule-in-use",
+    /// Requirement dialog: the rules' heading.
+    SCHEDULE_DUE_WHEN => "schedule-due-when",
+    /// Requirement dialog: add a meter rule.
+    SCHEDULE_ADD_METER_RULE => "schedule-add-meter-rule",
+    /// Requirement dialog: add a calendar rule.
+    SCHEDULE_ADD_CALENDAR_RULE => "schedule-add-calendar-rule",
+    /// Requirement dialog: add a fixed date.
+    SCHEDULE_ADD_FIXED_RULE => "schedule-add-fixed-rule",
+    /// Requirement dialog: about the rules.
+    SCHEDULE_RULES_HINT => "schedule-rules-hint",
+    /// A rule's inputs: every.
+    SCHEDULE_EVERY_LABEL => "schedule-every-label",
+    /// A rule's kind: the calendar.
+    SCHEDULE_CALENDAR => "schedule-calendar",
+    /// A calendar rule's unit: months.
+    SCHEDULE_MONTHS_LABEL => "schedule-months-label",
+    /// A calendar rule's unit: days.
+    SCHEDULE_UNIT_DAYS => "schedule-unit-days",
+    /// A calendar rule's unit: years.
+    SCHEDULE_UNIT_YEARS => "schedule-unit-years",
+    /// A calendar rule's unit menu, for screen readers.
+    SCHEDULE_CALENDAR_UNIT => "schedule-calendar-unit",
+    /// A calendar rule: due by the month's end.
+    SCHEDULE_END_OF_MONTH => "schedule-end-of-month",
+    /// A rule's kind: a fixed date.
+    SCHEDULE_FIXED_LABEL => "schedule-fixed-label",
+    /// A fixed date's first date.
+    SCHEDULE_FIRST_DUE => "schedule-first-due",
+    /// Bundle dialog: adding one.
+    SCHEDULE_ADD_BUNDLE_TITLE => "schedule-add-bundle-title",
+    /// Bundle dialog: changing one.
+    SCHEDULE_EDIT_BUNDLE_TITLE => "schedule-edit-bundle-title",
+    /// Bundle dialog: its requirements.
+    SCHEDULE_BUNDLE_COVERS => "schedule-bundle-covers",
+    /// Schedule: a bundle card's requirements; takes `names`.
+    SCHEDULE_BUNDLE_COVERS_LIST => "schedule-bundle-covers-list",
+    /// Schedule: a bundle card's label.
+    SCHEDULE_BUNDLE_LABEL => "schedule-bundle-label",
+    /// Schedule: how many requirements a bundle covers; takes `count`.
+    SCHEDULE_BUNDLE_COUNT => "schedule-bundle-count",
+    /// Remove dialog; takes `name`.
+    SCHEDULE_REMOVE_TITLE => "schedule-remove-title",
+    /// Copy dialog; takes `vehicle`.
+    SCHEDULE_COPY_TITLE => "schedule-copy-title",
+    /// Copy dialog: the vehicle to copy from.
+    SCHEDULE_COPY_FROM_LABEL => "schedule-copy-from-label",
+    /// Copy dialog: no other vehicles.
+    SCHEDULE_COPY_NO_VEHICLES => "schedule-copy-no-vehicles",
+    /// Copy dialog: what comes; takes `requirements` and `bundles`.
+    SCHEDULE_COPY_SUMMARY => "schedule-copy-summary",
+    /// Copy dialog: meter rules left out; takes `vehicle`.
+    SCHEDULE_COPY_LEFT_OUT => "schedule-copy-left-out",
+    /// Copy dialog's button.
+    SCHEDULE_COPY => "schedule-copy",
+    /// + Log: the maintenance tile's line.
+    LOG_MAINTENANCE_DETAIL => "log-maintenance-detail",
+    /// + Log: the repair tile's line.
+    LOG_REPAIR_DETAIL => "log-repair-detail",
+    /// A job's draft status (it never locks by itself).
+    EVENT_STATUS_JOB_DRAFT => "event-status-job-draft",
+    /// A squawk's page: start a repair of it.
+    SQUAWK_REPAIR_THIS => "squawk-repair-this",
+    /// Work log: the readings at the end.
+    WORK_END_READINGS => "work-end-readings",
+    /// Work log: ask for readings at the end.
+    WORK_ADD_END_READINGS => "work-add-end-readings",
+    /// Work log: one end reading's label; takes `meter` and `unit`.
+    WORK_END_READING => "work-end-reading",
+    /// Work log: the tasks.
+    WORK_TASKS => "work-tasks",
+    /// Work log: add a task from a requirement.
+    WORK_FROM_REQUIREMENT => "work-from-requirement",
+    /// Work log: add a bundle's tasks.
+    WORK_FROM_BUNDLE => "work-from-bundle",
+    /// Work log: add a typed task.
+    WORK_ADD_TASK => "work-add-task",
+    /// Work log: no tasks yet.
+    WORK_NO_TASKS => "work-no-tasks",
+    /// A task with no title yet.
+    WORK_UNTITLED_TASK => "work-untitled-task",
+    /// The open task's fold button, for screen readers.
+    WORK_FOLD_TASK => "work-fold-task",
+    /// A folded task: how many parts; takes `count`.
+    WORK_PART_COUNT => "work-part-count",
+    /// A task's title, as a placeholder.
+    WORK_TASK_TITLE => "work-task-title",
+    /// A task's requirement; takes `name`.
+    WORK_TASK_FOR => "work-task-for",
+    /// A task's parts.
+    WORK_PARTS => "work-parts",
+    /// A part: what it is.
+    WORK_PART_WHAT => "work-part-what",
+    /// A part: its number.
+    WORK_PART_NUMBER => "work-part-number",
+    /// A part: how many.
+    WORK_PART_QUANTITY => "work-part-quantity",
+    /// A part: the price of one.
+    WORK_PART_PRICE => "work-part-price",
+    /// Add a part.
+    WORK_ADD_PART => "work-add-part",
+    /// A task's labor time.
+    WORK_LABOR_TIME => "work-labor-time",
+    /// A task's labor cost; takes `currency`.
+    WORK_LABOR_COST => "work-labor-cost",
+    /// Which readings reset the requirement.
+    WORK_RESETS_FROM => "work-resets-from",
+    /// Resets from the start readings.
+    WORK_RESETS_START => "work-resets-start",
+    /// Resets from the end readings.
+    WORK_RESETS_END => "work-resets-end",
+    /// A fixed-date rule's next due date.
+    WORK_NEXT_DUE => "work-next-due",
+    /// A task's total; takes `total`.
+    WORK_TASK_TOTAL => "work-task-total",
+    /// Work log: the squawks to deal with; takes `count`.
+    WORK_SQUAWKS => "work-squawks",
+    /// Work log: no open squawks.
+    WORK_NO_SQUAWKS => "work-no-squawks",
+    /// Work log: open a squawk found during the job.
+    WORK_OPEN_SQUAWK => "work-open-squawk",
+    /// A squawk: fixed.
+    WORK_SIGN_OFF => "work-sign-off",
+    /// A squawk: put off.
+    WORK_DEFER => "work-defer",
+    /// A sign-off: the task that fixed it.
+    WORK_FIXED_BY => "work-fixed-by",
+    /// A sign-off with no task.
+    WORK_FIXED_BY_NONE => "work-fixed-by-none",
+    /// A deferral's reason.
+    WORK_DEFER_WHY => "work-defer-why",
+    /// A disposition keeping the severity.
+    WORK_SEVERITY_SAME => "work-severity-same",
+    /// Work log: a repair's own section.
+    WORK_REPAIR => "work-repair",
+    /// A repair's complaint.
+    WORK_COMPLAINT => "work-complaint",
+    /// A repair's cause.
+    WORK_CAUSE => "work-cause",
+    /// About a repair's tasks.
+    WORK_REPAIR_NOTE => "work-repair-note",
+    /// Work log: the total.
+    WORK_TOTAL => "work-total",
+    /// Work log: save without finishing.
+    WORK_SAVE_DRAFT => "work-save-draft",
+    /// Finish a job.
+    WORK_FINISH => "work-finish",
+    /// Finish dialog: its title.
+    WORK_FINISH_TITLE => "work-finish-title",
+    /// Finish check: readings given.
+    WORK_CHECK_READINGS_OK => "work-check-readings-ok",
+    /// Finish check: readings missing.
+    WORK_CHECK_READINGS_MISSING => "work-check-readings-missing",
+    /// Finish check: a place.
+    WORK_CHECK_PLACE_OK => "work-check-place-ok",
+    /// Finish check: no place.
+    WORK_CHECK_PLACE_MISSING => "work-check-place-missing",
+    /// Finish check: a squawk not dealt with; takes `description`.
+    WORK_CHECK_UNDECIDED => "work-check-undecided",
+    /// Finish dialog: what it does.
+    WORK_FINISH_LOCKS => "work-finish-locks",
+    /// Finish dialog: back to the form.
+    WORK_FINISH_BACK => "work-finish-back",
+    /// Finish dialog: finish.
+    WORK_FINISH_LOCK => "work-finish-lock",
+    /// A finished job's status; takes `date`.
+    EVENT_STATUS_JOB_FINISHED => "event-status-job-finished",
+    /// A job's tile: the total.
+    JOB_TOTAL => "job-total",
+    /// A job's total, split; takes `parts` and `labor`.
+    JOB_SPLIT => "job-split",
+    /// A job's labor.
+    JOB_LABOR => "job-labor",
+    /// A part's or labor's cost, as a column.
+    JOB_COST => "job-cost",
+    /// A job with no tasks.
+    JOB_NO_TASKS => "job-no-tasks",
+    /// A task reset its requirement from the start readings.
+    JOB_RESETS_START => "job-resets-start",
+    /// A task reset its requirement from the end readings.
+    JOB_RESETS_END => "job-resets-end",
+    /// A task's next due date; takes `date`.
+    JOB_NEXT_DUE => "job-next-due",
+    /// A task's notes; takes `notes`.
+    JOB_NOTES => "job-notes",
+    /// A job's page: the squawks it dealt with.
+    JOB_SQUAWKS => "job-squawks",
+    /// A sign-off's task; takes `task`.
+    JOB_FIXED_BY => "job-fixed-by",
+    /// A deferral, on a job's page.
+    JOB_DEFERRED => "job-deferred",
+    /// A squawk found during the job; takes `description` and `severity`.
+    JOB_FOUND => "job-found",
+    /// A job's row: squawks signed off; takes `count`.
+    TIMELINE_SIGNED_OFF => "timeline-signed-off",
+    /// A job's row: squawks deferred; takes `count`.
+    TIMELINE_DEFERRED => "timeline-deferred",
+    /// Settings: the word is the household's, set by its Admin.
+    SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
+    /// Log form: the When and where fold's summary with no place yet.
+    LOG_PLACE_NEEDED => "log-place-needed",
+    /// Log form: the When and where fold's summary with no place, and why.
+    LOG_NO_PLACE_SUMMARY => "log-no-place-summary",
+    /// Work log: an end reading the same as the start one.
+    WORK_COPY_FROM_START => "work-copy-from-start",
+    /// Log form: the currency its amounts are in.
+    LOG_CURRENCY => "log-currency",
 }

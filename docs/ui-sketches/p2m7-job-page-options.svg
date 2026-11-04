@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2560" viewBox="0 0 1560 2560" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2560" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 7j · A maintenance or repair job&#x27;s page, and its Timeline rows: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Like a fuel-up&#x27;s page (6h): status, actions, the big numbers, then each part. A job adds its tasks (parts and labor), the squawks it dealt with, start and end readings, and a repair&#x27;s complaint and cause.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One column, like a fuel-up&#x27;s page: big numbers, then each task as a card with its parts; squawks and the rest below</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a finished oil change</text>
+<rect x="40" y="166" width="900" height="1150" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance</text>
+<rect x="758" y="178" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="178" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="80" y="236" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Test truck   ‹ Maintenance › Jobs</text>
+<text x="80" y="270" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov 2026, 9:41 am</text>
+<rect x="80" y="284" width="216.0" height="24" rx="12" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="188.0" y="300" font-size="11" fill="#3fb950" font-weight="700" text-anchor="middle">Finished · 3 Nov 2026 by Sam</text>
+<rect x="304.0" y="284" width="111.0" height="24" rx="12" fill="#3a2615" stroke="#f0883e" stroke-width="1.2"/>
+<text x="359.5" y="300" font-size="11" fill="#f0883e" font-weight="700" text-anchor="middle">⚑ No location</text>
+<rect x="80" y="322" width="110" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="135.0" y="342" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Correct…</text>
+<rect x="198" y="322" width="150" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="273.0" y="342" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Report a squawk</text>
+<rect x="80.0" y="364" width="199.0" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="92.0" y="386" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TOTAL</text>
+<text x="92.0" y="412" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">$132.42</text>
+<text x="92.0" y="428" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="start">parts $82.44 · labor $50.00</text>
+<rect x="287.0" y="364" width="199.0" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="299.0" y="386" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<text x="299.0" y="412" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">2</text>
+<text x="299.0" y="428" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Engine oil &amp; filter, Bulbs</text>
+<rect x="494.0" y="364" width="199.0" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="506.0" y="386" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">ODOMETER</text>
+<text x="506.0" y="412" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">52,644 → 52,700 mi</text>
+<text x="506.0" y="428" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="start">start → end</text>
+<rect x="701.0" y="364" width="199.0" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="713.0" y="386" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">LABOR</text>
+<text x="713.0" y="412" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">0:40</text>
+<text x="80" y="458" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="80" y="470" width="820" height="232" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="496" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="886" y="496" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="end">$107.44</text>
+<text x="94" y="516" font-size="11.5" fill="#5aa9ff" font-weight="600" text-anchor="start">For: Engine oil &amp; filter ›  ·  resets from the end readings</text>
+<text x="94" y="544" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Part</text>
+<text x="394" y="544" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Number</text>
+<text x="544" y="544" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Qty</text>
+<text x="634" y="544" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Unit</text>
+<text x="754" y="544" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Cost</text>
+<line x1="94" y1="552" x2="886" y2="552" stroke="#333a45" stroke-width="1"/>
+<text x="94" y="574" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Oil filter</text>
+<text x="394" y="574" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">FL-500S</text>
+<text x="544" y="574" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">1</text>
+<text x="634" y="574" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$12.99</text>
+<text x="754" y="574" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$12.99</text>
+<text x="94" y="600" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Engine oil 5W-30</text>
+<text x="394" y="600" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start"></text>
+<text x="544" y="600" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">5.5</text>
+<text x="634" y="600" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$8.99</text>
+<text x="754" y="600" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$49.45</text>
+<text x="94" y="626" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Labor</text>
+<text x="394" y="626" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start"></text>
+<text x="544" y="626" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">0:30</text>
+<text x="634" y="626" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start"></text>
+<text x="754" y="626" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$45.00</text>
+<text x="94" y="662" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Notes: Drain plug gasket replaced</text>
+<rect x="80" y="712" width="820" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="739" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">▸ Brake light bulbs</text>
+<text x="886" y="739" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="end">2 parts · 0:10 · $24.98</text>
+<text x="80" y="784" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS DEALT WITH</text>
+<rect x="80" y="796" width="820" height="54" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="94" y="804" width="153.0" height="24" rx="12" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="170.5" y="820" font-size="11" fill="#ff6b6b" font-weight="700" text-anchor="middle">HIGH · Not drivable</text>
+<text x="255.0" y="821" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="start">Brake lights out, both sides ›</text>
+<text x="94" y="842" font-size="12" fill="#3fb950" font-weight="600" text-anchor="start">Signed off · by Brake light bulbs · New bulbs</text>
+<rect x="80" y="858" width="820" height="54" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="94" y="866" width="62.0" height="24" rx="12" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="125.0" y="882" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">MEDIUM</text>
+<text x="164.0" y="883" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="start">Rattle from the rear on bumps ›</text>
+<text x="94" y="904" font-size="12" fill="#f5b942" font-weight="600" text-anchor="start">Deferred · Parts on order · Low → Medium</text>
+<text x="80" y="934" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Found during this job: Coolant smell (Low) ›</text>
+<text x="80" y="970" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHEN AND WHERE</text>
+<text x="80" y="992" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">3 Nov 2026, 9:41 am – 11:05 am · In the driveway (no place)</text>
+<text x="80" y="1028" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO AND RECORD</text>
+<text x="80" y="1050" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Done by Joe&#x27;s Auto · logged by Sam · finished by Sam, 3 Nov 2026</text>
+<text x="80" y="1086" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A repair adds REPAIR (complaint and cause) above the tasks. A draft shows Edit, Finish…, Delete.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the same, stacked</text>
+<rect x="980" y="166" width="260" height="880" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Test truck  ‹ Jobs</text>
+<text x="996" y="260" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov</text>
+<rect x="996" y="272" width="139.0" height="24" rx="12" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="1065.5" y="288" font-size="11" fill="#3fb950" font-weight="700" text-anchor="middle">Finished · by Sam</text>
+<rect x="996" y="308" width="100" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1046.0" y="328" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Correct…</text>
+<rect x="996" y="350" width="108" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="372" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TOTAL</text>
+<text x="1008" y="398" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">$132.42</text>
+<rect x="1112" y="350" width="108" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1124" y="372" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">ODOMETER</text>
+<text x="1124" y="398" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">52,700</text>
+<text x="996" y="446" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="996" y="456" width="226" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="480" font-size="13.5" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1210" y="480" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="end">$107.44</text>
+<text x="1008" y="508" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Oil filter · FL-500S</text>
+<text x="1210" y="508" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">1 × 12.99</text>
+<text x="1008" y="532" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Engine oil 5W-30</text>
+<text x="1210" y="532" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">5.5 × 8.99</text>
+<text x="1008" y="556" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Labor 0:30</text>
+<text x="1210" y="556" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">45.00</text>
+<text x="1008" y="592" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Resets from the end readings</text>
+<rect x="996" y="616" width="226" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="641" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">▸ Brake light bulbs · $24.98</text>
+<text x="996" y="684" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS DEALT WITH</text>
+<rect x="996" y="694" width="226" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1008" y="702" width="48.0" height="24" rx="12" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="1032.0" y="718" font-size="11" fill="#ff6b6b" font-weight="700" text-anchor="middle">HIGH</text>
+<text x="1008" y="740" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Brake lights out</text>
+<text x="1008" y="756" font-size="11" fill="#3fb950" font-weight="600" text-anchor="start">Signed off</text>
+<rect x="996" y="774" width="226" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1008" y="782" width="62.0" height="24" rx="12" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="1039.0" y="798" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">MEDIUM</text>
+<text x="1008" y="820" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle</text>
+<text x="1008" y="836" font-size="11" fill="#f5b942" font-weight="600" text-anchor="start">Deferred · Parts on order</text>
+<text x="996" y="876" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">WHEN AND WHERE · WHO</text>
+<text x="996" y="896" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">3 Nov · In the driveway</text>
+<text x="980" y="1074" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Familiar: a fuel-up&#x27;s page, with</text>
+<text x="980" y="1096" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   more sections.</text>
+<text x="980" y="1118" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Each task keeps its parts with it.</text>
+<text x="980" y="1140" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The squawks link to their pages.</text>
+<text x="980" y="1162" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A big service is long (the other</text>
+<text x="980" y="1184" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   tasks fold).</text>
+<text x="40" y="1364" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · Like a shop invoice: the line items on the left (tasks, parts, labor, totals); a summary column on the right</text>
+<text x="40" y="1394" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the same oil change</text>
+<rect x="40" y="1406" width="900" height="780" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1408" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="1439" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance</text>
+<rect x="758" y="1418" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="1437" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="1418" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="1437" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="80" y="1476" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Test truck   ‹ Maintenance › Jobs</text>
+<text x="80" y="1510" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov 2026</text>
+<rect x="80" y="1524" width="139.0" height="24" rx="12" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="149.5" y="1540" font-size="11" fill="#3fb950" font-weight="700" text-anchor="middle">Finished · by Sam</text>
+<rect x="80" y="1562" width="520" height="520" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1588" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start"></text>
+<text x="394" y="1588" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Qty</text>
+<text x="454" y="1588" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Unit</text>
+<text x="586" y="1588" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="end">Amount</text>
+<line x1="94" y1="1596" x2="586" y2="1596" stroke="#333a45" stroke-width="1"/>
+<text x="94" y="1620" font-size="13" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="380" y="1620" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="440" y="1620" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="586" y="1620" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end"></text>
+<text x="94" y="1650" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Oil filter FL-500S</text>
+<text x="380" y="1650" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">1</text>
+<text x="440" y="1650" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">12.99</text>
+<text x="586" y="1650" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">12.99</text>
+<text x="94" y="1680" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Engine oil 5W-30</text>
+<text x="380" y="1680" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">5.5</text>
+<text x="440" y="1680" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">8.99</text>
+<text x="586" y="1680" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">49.45</text>
+<text x="94" y="1710" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Labor</text>
+<text x="380" y="1710" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">0:30</text>
+<text x="440" y="1710" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="586" y="1710" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">45.00</text>
+<text x="94" y="1740" font-size="13" fill="#e8eaed" font-weight="800" text-anchor="start">Brake light bulbs</text>
+<text x="380" y="1740" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="440" y="1740" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="586" y="1740" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end"></text>
+<text x="94" y="1770" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Bulb 1157</text>
+<text x="380" y="1770" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2</text>
+<text x="440" y="1770" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">4.99</text>
+<text x="586" y="1770" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">9.98</text>
+<text x="94" y="1800" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Labor</text>
+<text x="380" y="1800" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">0:10</text>
+<text x="440" y="1800" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="586" y="1800" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">15.00</text>
+<line x1="94" y1="1836" x2="586" y2="1836" stroke="#333a45" stroke-width="1"/>
+<text x="380" y="1862" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Parts</text>
+<text x="586" y="1862" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">72.42</text>
+<text x="380" y="1888" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Labor</text>
+<text x="586" y="1888" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">60.00</text>
+<text x="380" y="1914" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Total (USD)</text>
+<text x="586" y="1914" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="end">132.42</text>
+<text x="94" y="1956" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Engine oil &amp; filter: for Engine oil &amp; filter ›, resets from the end</text>
+<text x="94" y="1976" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Notes: Drain plug gasket replaced</text>
+<rect x="616" y="1562" width="284" height="520" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="630" y="1586" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">READINGS</text>
+<text x="630" y="1608" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Odometer 52,644 → 52,700 mi</text>
+<text x="630" y="1642" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS</text>
+<text x="630" y="1664" font-size="12" fill="#3fb950" font-weight="600" text-anchor="start">✓ Brake lights out (High)</text>
+<text x="630" y="1684" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">   signed off by Brake light bulbs</text>
+<text x="630" y="1704" font-size="12" fill="#f5b942" font-weight="600" text-anchor="start">↻ Rattle (Low → Medium)</text>
+<text x="630" y="1724" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">   deferred: Parts on order</text>
+<text x="630" y="1744" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Found: Coolant smell</text>
+<text x="630" y="1778" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">WHEN AND WHERE</text>
+<text x="630" y="1800" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">3 Nov, 9:41 – 11:05 am</text>
+<text x="630" y="1820" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">In the driveway (no place)</text>
+<text x="630" y="1854" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO</text>
+<text x="630" y="1876" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Joe&#x27;s Auto · logged by Sam</text>
+<text x="630" y="1896" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">finished by Sam, 3 Nov</text>
+<rect x="630" y="2036" width="110" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="685.0" y="2056" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Correct…</text>
+<text x="80" y="2116" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A repair: COMPLAINT and CAUSE head the left column, above the line items.</text>
+<text x="980" y="1394" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · summary first, then the invoice</text>
+<rect x="980" y="1406" width="260" height="780" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1432" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1436" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="1462" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Test truck  ‹ Jobs</text>
+<text x="996" y="1500" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov</text>
+<rect x="996" y="1512" width="139.0" height="24" rx="12" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="1065.5" y="1528" font-size="11" fill="#3fb950" font-weight="700" text-anchor="middle">Finished · by Sam</text>
+<rect x="996" y="1548" width="226" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1572" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Total $132.42 · 2 tasks</text>
+<text x="1008" y="1596" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Odometer 52,644 → 52,700</text>
+<text x="1008" y="1620" font-size="12" fill="#3fb950" font-weight="600" text-anchor="start">✓ Brake lights signed off</text>
+<text x="1008" y="1644" font-size="12" fill="#f5b942" font-weight="600" text-anchor="start">↻ Rattle deferred</text>
+<text x="1008" y="1668" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">📍 In the driveway</text>
+<rect x="996" y="1710" width="226" height="300" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1734" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1210" y="1734" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end"></text>
+<text x="1008" y="1766" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="start">Oil filter · 1 × 12.99</text>
+<text x="1210" y="1766" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end">12.99</text>
+<text x="1008" y="1798" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="start">Engine oil · 5.5 × 8.99</text>
+<text x="1210" y="1798" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end">49.45</text>
+<text x="1008" y="1830" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="start">Labor 0:30</text>
+<text x="1210" y="1830" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end">45.00</text>
+<text x="1008" y="1862" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="start">Brake light bulbs</text>
+<text x="1210" y="1862" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end"></text>
+<text x="1008" y="1894" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="start">Bulb 1157 · 2 × 4.99</text>
+<text x="1210" y="1894" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end">9.98</text>
+<text x="1008" y="1926" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="start">Labor 0:10</text>
+<text x="1210" y="1926" font-size="11.5" fill="#e8eaed" font-weight="500" text-anchor="end">15.00</text>
+<text x="1008" y="1958" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="start">Total</text>
+<text x="1210" y="1958" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="end">132.42</text>
+<text x="980" y="2214" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Reads like the shop&#x27;s own invoice:</text>
+<text x="980" y="2236" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   easy to compare and to total.</text>
+<text x="980" y="2258" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The summary keeps the squawks and</text>
+<text x="980" y="2280" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   readings in view.</text>
+<text x="980" y="2302" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− New layout (fuel-ups use A&#x27;s).</text>
+<text x="980" y="2324" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two columns squeeze on narrower</text>
+<text x="980" y="2346" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   windows (phones stack them).</text>
+<text x="40" y="2254" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both · Timeline and Jobs rows for jobs: the kind and date, the first task and count, the cost, and what it did about squawks</text>
+<text x="40" y="2284" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · rows</text>
+<rect x="40" y="2296" width="900" height="220" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="80" y="2324" width="820" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="96" y="2358" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">🛠</text>
+<text x="130" y="2350" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Repair · 10 Nov 2026 · 2:15 pm</text>
+<text x="130" y="2370" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Front brake pads · 1 task · $186.20</text>
+<rect x="810" y="2340" width="55.0" height="24" rx="12" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="837.5" y="2356" font-size="11" fill="#5aa9ff" font-weight="700" text-anchor="middle">Draft</text>
+<rect x="80" y="2394" width="820" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="96" y="2428" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="130" y="2420" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov 2026 · 9:41 am</text>
+<text x="130" y="2440" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">52,644 mi · Engine oil &amp; filter · 2 tasks · $132.42 · 1 signed off · 1 deferred</text>
+<text x="80" y="2480" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A row opens the job&#x27;s page. A forgotten draft&#x27;s message (&quot;A job is still a draft&quot;) opens it too, with Finish… on it.</text>
+</svg>

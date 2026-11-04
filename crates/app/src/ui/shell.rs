@@ -40,6 +40,9 @@ pub(crate) fn Shell() -> Element {
     let inbox = provide_inbox_context();
     let vehicles = provide_vehicles_context();
     let chooser = super::screens::provide_log_chooser();
+    super::screens::provide_squawk_sheet();
+    // The household's word for squawks (#064) is in the navigation's labels.
+    let _word = super::SQUAWK_WORD();
     // Ask the server again on every navigation, so an Admin mode it ended after 15 idle
     // minutes (or a session it ended) stops showing.
     use_effect(use_reactive!(|route| {
@@ -77,10 +80,11 @@ pub(crate) fn Shell() -> Element {
         }
         // A log form: "Fuel-up · Truck".
         Route::LogForm { asset_id, kind } => {
-            let kind = if kind == "fuel" {
-                messages::EVENT_KIND_FUEL
-            } else {
-                messages::EVENT_KIND_READING
+            let kind = match kind.as_str() {
+                "fuel" => messages::EVENT_KIND_FUEL,
+                "maintenance" => messages::EVENT_KIND_MAINTENANCE,
+                "repair" => messages::EVENT_KIND_REPAIR,
+                _ => messages::EVENT_KIND_READING,
             };
             vehicle_name(vehicles, asset_id)
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
@@ -93,6 +97,8 @@ pub(crate) fn Shell() -> Element {
         | Route::EventDetail { .. }
         | Route::EditEvent { .. }
         | Route::CorrectEvent { .. }
+        | Route::SquawkDetail { .. }
+        | Route::RepairSquawk { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
@@ -115,6 +121,8 @@ pub(crate) fn Shell() -> Element {
         | Route::EventDetail { .. }
         | Route::EditEvent { .. }
         | Route::CorrectEvent { .. }
+        | Route::SquawkDetail { .. }
+        | Route::RepairSquawk { .. }
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
@@ -239,6 +247,7 @@ pub(crate) fn Shell() -> Element {
                 IconView { icon: Icon::Add }
             }
             super::screens::LogChooserDialog {}
+            super::screens::SquawkSheetDialog {}
         }
     }
 }

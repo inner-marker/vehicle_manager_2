@@ -10,11 +10,13 @@ mod preferences {
     use domain::api::{PreferencesOutcome, PreferencesView};
     use domain::preferences::{
         Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, GarageSort, IdleSignOut,
-        Language, PreferencesPatch, PressureUnit, VolumeUnit,
+        Language, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
     };
     use domain::test_support::{ManualClock, test_id};
     use server::health::Health;
-    use server::preferences::{PreferencesContext, set_household, set_mine};
+    use server::preferences::{
+        PreferencesContext, set_household, set_mine, view as preferences_view,
+    };
     use server::sessions::SignedIn;
     use storage::Database;
 
@@ -161,6 +163,7 @@ mod preferences {
                 language: Some(Choice::Set(Language::EnglishUs)),
                 idle_sign_out: None,
                 garage_sort: None,
+                squawk_word: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -214,6 +217,30 @@ mod preferences {
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(view.effective.garage_sort, garage_sort);
+        }
+    }
+
+    #[tokio::test]
+    async fn what_squawks_are_called_is_the_admins_choice_for_everyone() {
+        let (_temp, database, mut stuart, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let word = |word| PreferencesPatch {
+            squawk_word: Some(Choice::Set(word)),
+            ..PreferencesPatch::default()
+        };
+        assert_eq!(
+            set_mine(&context(&database, &sam, &clock), word(SquawkWord::Fault)).await,
+            PreferencesOutcome::NotAllowed,
+            "a person can't choose their own"
+        );
+        let view = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(view.effective.squawk_word, SquawkWord::Issue, "the default");
+
+        stuart.mode = ActiveMode::Admin;
+        for chosen in SquawkWord::ALL {
+            unwrap_view(set_household(&context(&database, &stuart, &clock), word(chosen)).await);
+            let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+            assert_eq!(sams.effective.squawk_word, chosen);
         }
     }
 }

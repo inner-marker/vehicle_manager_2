@@ -11,15 +11,22 @@
 //! Only English exists for now. Choosing a language per user or device, and locale
 //! formatting of dates, numbers, and units, come in Phase 2 (decisions.md #018, #022).
 //!
+//! **Squawks are called by the household's word** (#064): write them in a message as
+//! `{ $squawk }`, `{ $squawks }`, `{ $Squawk }`, `{ $Squawks }`, or `{ $a-squawk }`, never as
+//! a word; the translator fills them in.
+//!
 //! # Examples
 //!
 //! ```
 //! use domain::i18n::{messages, MessageArg, Translator};
+//! use domain::preferences::SquawkWord;
 //!
 //! let english = Translator::english();
 //! assert_eq!(english.tr(messages::NAV_GARAGE), "Garage");
+//! let two = [("count", MessageArg::from(2))];
+//! assert_eq!(english.tr_with(messages::OPEN_SQUAWK_COUNT, &two), "2 open issues");
 //! assert_eq!(
-//!     english.tr_with(messages::OPEN_SQUAWK_COUNT, &[("count", MessageArg::from(2))]),
+//!     english.tr_with_for(SquawkWord::Squawk, messages::OPEN_SQUAWK_COUNT, &two),
 //!     "2 open squawks"
 //! );
 //! ```

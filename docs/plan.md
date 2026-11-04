@@ -499,13 +499,14 @@ Conditions enable **fuel economy broken down by condition and by towed vehicle,*
 
 A **squawk** is an issue or broken item noted on a vehicle, to be dealt with later.
 
+- **What they're called on screen:** "squawk" is familiar to pilots but not to everyone, so the Admin picks one word for the household: **Issues** (the default), Squawks, Faults, or Write-ups (`docs/decisions.md` #064). Only the words on screen change; the code and documents keep "squawk".
 - **Opened anytime:** standalone, or while logging any event. Each squawk has a description, date opened, optional photos, and notes.
 - **Status:** open → **deferred** (still outstanding, with a reason) → **resolved**.
 - **Resolved** by signing it off during a later maintenance or repair event, linked to that event (and task, where relevant), with resolution notes.
 - **Required disposition:** logging any **maintenance or repair event while squawks are open or deferred** requires each one to be either **signed off** or **deferred** (with a reason) before the event can be saved.
 - **Deferrals don't carry over:** a previously deferred squawk must be **re-dispositioned at every later maintenance or repair event**. Each deferral is recorded, building a history of how long an issue has been put off.
 - Deferred and open squawks show on the vehicle's overview and "what's due."
-- **Blocks use:** a squawk can be marked as keeping the asset out of use (e.g. brakes, a flat tire, an inoperative required instrument), when it's opened or at any disposition. The Readiness summary counts it (#051). It's captured from the start (Phase 2) because it can't be filled in afterwards.
+- **Severity: Low, Medium, or High** (`docs/decisions.md` #063). A new squawk starts at Low. **High keeps the asset out of use** (e.g. brakes, a flat tire, an inoperative required instrument), named by the kind's profile ("Not drivable", "Not towable", "Out of service"; for aircraft, "Grounding"). It can change when opened or at any disposition. The Readiness summary counts High squawks (#051). It's captured from the start (Phase 2) because it can't be filled in afterwards.
 - Like required readings, these rules are enforced in the `domain` crate, offline and again on the server at sync.
 
 ### Maintenance event → tasks (one-to-many)
@@ -537,7 +538,7 @@ Some maintenance is recurring, such as a 5,000 or 10,000 mile service.
 
 - **Requirements are the source of truth.** Each **requirement** (a maintenance item on an asset, see Requirements & compliance) has **one or more interval rules**, and whichever comes due first wins:
   - **Meter rules:** a specific meter plus an amount, e.g. every 7,500 mi on the odometer, or every 250 h on *engine hours* (not key-on hours).
-  - **Calendar rule:** every N months, with an optional **"due by end of month"** setting (the due date rounds to the end of the calendar month, as aviation inspections do).
+  - **Calendar rule:** every N **days, months, or years** (1–3,650 days, 1–600 months, 1–50 years), with an optional **"due by end of month"** setting for months and years (the due date rounds to the end of the calendar month, as aviation inspections do).
   - **Fixed-date rule: "next due on [date]."** A specific due date rather than a repeating interval, for items whose next date comes from paperwork or an outside source: registration renewal, emissions or safety inspection, recall completion deadline, warranty expiration.
     - When the task is signed off, the user is **prompted for the next due date** (e.g. the new registration expiry), or can mark the item as done with no next date.
     - Can be combined with the other rules; whichever comes first still wins.
@@ -692,7 +693,7 @@ Everything that must be done to an asset, whether your own schedule or an extern
 A per-asset summary of whether the records say the asset can be used, shown at the top of the vehicle's **Overview** tab (the per-vehicle dashboard) and as a badge on its Garage card (#051).
 
 - **Generic, from profiles:** the same idea covers "road-ready" for a car and "airworthy" for an aircraft. A requirement or official document can be marked **needed for use**; the profile sets the defaults, and each asset can change them. No kind-specific code.
-  - **Car:** registration and insurance current, no squawk that blocks use, nothing safety-related overdue.
+  - **Car:** registration and insurance current, no High squawk (#063), nothing safety-related overdue.
   - **Aircraft (later):** annual inspection within 12 calendar months (end-of-month rule), transponder and ELT checks, airworthiness directives complied with, and every open squawk fixed or properly deferred.
 - **Ready for what:** readiness depends on the intended use, so each profile lists **operation types** and the items each one adds. E.g. an aircraft's IFR adds the pitot-static and altimeter checks (24 calendar months) and a VOR check (30 days); "for hire" adds the 100-hour inspection; a trailer might have "heavy towing". The summary asks "ready for what?" when the profile has more than one.
 - **Shows why, not just a light:** each item with ✓ or ✗, its due date or meter value, and a link to the requirement, document, or squawk. Items due soon show as warnings before they block.
@@ -700,7 +701,7 @@ A per-asset summary of whether the records say the asset can be used, shown at t
 - **Later, next to it:** "is the **person** current?" (e.g. a pilot's flight review and medical), from the credentials on user profiles (post-MVP, with logbook entries).
 
 **Phasing**
-- **Phase 2:** the Overview tab's shell (milestone 4); squawks can be marked **blocks use** (milestone 7).
+- **Phase 2:** the Overview tab's shell (milestone 4); squawks get a **severity**, High keeping the asset out of use (milestone 7, #063).
 - **Phase 5:** the readiness summary, "needed for use" on requirements and documents, operation types in the profiles, time and distance until each major service on the Overview, and the Garage badge.
 - **Aircraft phase:** the aviation items and operation types (VFR day, night, IFR, for hire).
 
@@ -891,8 +892,8 @@ Requirement          # per asset: something that must be done (replaces "TaskDef
 
 IntervalRule         # a Requirement has zero or more; earliest due wins
  ├─ requirement_id
- ├─ (meter_id + every) | every_months | due_on_date   # meter, calendar, or fixed-date rule
- └─ end_of_month     # calendar rules only: due date rounds to end of month
+ ├─ (meter_id + every) | (every + unit) | due_on_date   # meter, calendar (days | months | years), or fixed-date rule
+ └─ end_of_month     # calendar rules in months or years only: due date rounds to end of month
 
 ServiceBundle        # a named service that groups tasks for one-tap sign-off
  ├─ id
@@ -1315,7 +1316,7 @@ The server and every device must be able to upgrade **any** older database schem
 - The **database records its own schema version** (sqlx's migrations table).
 - **On startup** (server and every device): read the version and apply every missing step in order. A database five versions behind runs five steps, so any number of old versions is handled by the same path.
 - **Migrations are embedded in the binary** (`sqlx::migrate!`).
-- **Released steps are immutable:** never edit, only add. sqlx checksums applied migrations and refuses to start if one changed.
+- **Merged steps are immutable:** once a migration merges into `dev` (which the everyday server runs), never edit it, not even a comment; only add. One on a milestone branch may still change until its PR merges (`docs/decisions.md` #062). sqlx checksums applied migrations and refuses to start if one changed.
 - **All migrations are kept forever,** so even an ancient database can upgrade.
 - Since the server and devices both use SQLite, **one migration set serves both.**
 
@@ -1506,6 +1507,18 @@ The server is one Rust binary plus a SQLite file, so the "hub" can run on **any 
 |---|---|---|
 | **App** | Dioxus fullstack server: sync API (server functions) + web UI | Loopback on the NAS only |
 | *(no database container)* | SQLite master database is a file on the app container's persistent volume | None |
+
+### Main and test servers
+
+The NAS runs two servers side by side (`docs/decisions.md` #062), each its own Container Manager Project with its own data folder:
+
+| Server | Folder | Port | Address | Image |
+|---|---|---|---|---|
+| **Main** (everyday use) | `/volume1/docker/vehicle_manager` | 8410 | `https://<nas>.<tailnet>.ts.net` | `:dev`, built **without** test timers |
+| **Test** | `/volume1/docker/vehicle_manager_test` | 8411 | `https://<nas>.<tailnet>.ts.net:8443` | `:milestone-<name>` (with test timers), `:dev`, or a `:sha-` build |
+
+- **Test plans run on the test server.** It keeps its own data; when a test needs real data, main's newest nightly snapshot can be copied in (see `docs/deploying-nas.md`).
+- **`VEHICLEMANAGER_INSTANCE`** names a server (empty on main, `test` on test). It names the session cookie, so the two servers on one hostname don't sign each other out, and the test server shows a **TEST SERVER** tag and "(test)" in the tab's title.
 
 ### Target NAS & image architectures
 
@@ -1762,6 +1775,8 @@ Every agent change is reviewed as a diff before merging.
 
 *Each phase's agreed work plan (PR sequence, status, and detailed PR plans) lives in `docs/phase_plans/` and is linked from that phase below.*
 
+Each phase has open questions in section 10 that must be resolved before work on that phase starts.
+
 ### Phase 1: Walking skeleton
 
 **Phase plan:** [`phase_plans/phase-1.md`](phase_plans/phase-1.md) · **Complete:** exit criteria met 2026-10-29; released as `v0.1.0`
@@ -1799,32 +1814,85 @@ Every agent change is reviewed as a diff before merging.
 
 **Exit criteria:** from separate devices, both the web UI and the desktop app reach the server on the NAS over Tailscale and show the test response. A wrong credential or incompatible version is rejected cleanly.
 
-### Later phases (tentative)
+### Phase 2: Data model & server storage.
 
-Each phase has open questions in section 10 that must be resolved before work on that phase starts.
+- *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 
-- **Phase 2: Data model & server storage.** *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
-- *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
-- **Phase 3: Local-first & sync.** Local SQLite, offline logging, command outbox, tombstones, incremental pull. **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
-- **Phase 5: Maintenance intelligence.** **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
-- **Phase 6: Polish.** Import/export, pairing flow, reports, **multi-page document capture in the web UI**, and **standalone mode** (single device, no server, local backups, upgrade path to a server).
-- **Post-MVP: Mobile.** Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of **voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
+### Phase 3: Local-first & sync.
+- Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
+- **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
+- Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
+
+### Phase 4: Mobile (Moved to post-MVP)
+*Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
+
+### Phase 5: Maintenance intelligence.
+- **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). 
+- The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. 
+- What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
+
+### Phase 6: Polish.
+- **Phase 6: Polish.** Import/export, pairing flow, reports
+- **multi-page document capture in the web UI**
+- **standalone mode** (single device, no server, local backups, upgrade path to a server).
+- Built-in Help Documents
+  - What format do we store the documents?
+- Info pop-ups (circled question marks that pops up a small help window with summary, with links to the full Help Documents)
+- **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
+
+### Phase 7: Security.
+- **Phase 7: Security.** Full audit and hardening (as required) of all components. Ensure industry standards and best practices are followed for authentication, authorization, data storage, and network communication. Penetration testing and code review for security vulnerabilities.
+
+Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are post-MVP, and will be v1.1.0, 1.2.0, etc.
+
+### Post-MVP (Post v1.0.0) ideas
+
+- **Post-MVP: Public APIs** 
+  - NHTSA’s vPIC (Product Information Catalog and Vehicle Listing)
+  - NHTSA recalls: `recallsByVehicle`
+- **Post-MVP: Mobile.** 
+  - Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, 
+  - **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of *
+  - *voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
-- **Post-MVP: Offsite backups.** Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
-- **Post-MVP: OBD-II scans.** USB OBD-II reading on desktop (trouble codes, freeze frame, readiness, VIN, odometer), saved with events, before/after comparison; Bluetooth on mobile later.
-- **Post-MVP: Reference data packs, full-text search, and a scoped read API** (see Extensibility groundwork).
-- **Post-MVP: Components.** Installation history with positions, install/remove workflow, spare and out-for-service components, component meters linked to the parent, permission inheritance.
-- **Post-MVP: Reference data import.** Recall suggestions from NHTSA data by VIN; automatic applicability matching by model and serial range.
-- **Post-MVP: Measurements.** Structured measurements with positions, multiple values, limits, and auto-squawks.
+- **Post-MVP: Offsite backups.** 
+  - Litestream replication and/or encrypted restic snapshots of the master database, plus restore testing.
+- **Post-MVP: OBD-II scans.** 
+  - USB OBD-II reading on desktop (trouble codes, freeze frame, readiness, VIN, odometer), saved with events, before/after comparison; 
+  - Bluetooth on mobile later. (e.g. OBDLink MX+)
+- **Post-MVP: Reference data packs, full-text search, and a scoped read API** 
+  - (see Extensibility groundwork).
+- **Post-MVP: Components.** 
+  - Installation history with positions (left vs. right engine), install/remove workflow, spare and out-for-service components, component meters linked to the parent, permission inheritance.
+- **Post-MVP: Reference data import.** 
+  - Recall suggestions from NHTSA data by VIN; automatic applicability matching by model and serial range.
+- **Post-MVP: Measurements.** 
+  - Structured measurements with positions, multiple values, limits, and auto-squawks.
 - **Post-MVP: Human-friendly record numbers** (e.g. "F-150 entry 42"), assigned by the server at finalize, with reports or logbooks (#042).
-- **Post-MVP: Vehicle history reports.** Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
-- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. **Signatures wait for the human's records and signatures standards plan to be confirmed** (`docs/sub-plans/01-signatures-and-records.md`, idea 12).
+- **Post-MVP: Vehicle history reports.** 
+  - Sale, insurance, and full-archive exports as PDF, Word, ZIP bundle, and CSV/JSON, with presets, privacy toggles, and an integrity footer.
+  - What is included is by template, then customisable. Templates for sale, insurance, full-archive. Check boxes for what to include. Can deviate from template. Templates can be customized.
+- **Post-MVP (after reports): Logbook entries, statement templates & signatures.** 
+  - One logbook per asset (optional for ground vehicles), dedicated logbook entries in maintenance events, templates with read / edit fields / edit all (gated) levels and Admin-only template editing, drawn or wet signatures, credentials on user profiles, US Letter printouts. 
+  - **Signatures wait for the human's records and signatures standards plan to be confirmed** (`docs/sub-plans/01-signatures-and-records.md`, idea 12).
 - **Post-MVP (later): Logbook label and other page formats.**
-- **Post-MVP (after reports): Vehicle transfer to the next owner.** Importable vehicle package for another server running the app.
-- **Post-MVP: Event map.** Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
-- **Post-MVP: Alternative hosting.** Plain binary/installer running as a background service, and **desktop app host mode.**
-- **Post-MVP: OS notifications.** Desktop and mobile system notifications, starting with locally scheduled ones and then push notifications (which need Apple/Google push services).
-- **Long-term aspiration: Aircraft.** Aviation component specifics, the FAA statement library, aviation record layouts, and an electronic-signature acceptability review. Not planned yet; see Aircraft-ready groundwork.
+- **Post-MVP (after reports): Vehicle transfer to the next owner.** 
+  - Importable vehicle package for another server running the app.
+- **Post-MVP: Event map.** 
+  - Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
+- **Post-MVP: Alternative hosting.** 
+  - Plain binary/installer running as a background service, and **desktop app host mode.**
+  - Raspbery Pi is prioritized due to cost.
+  - Other NAS (TrueNAS, QNAP, Synology, HexOS) and cloud hosting (AWS, GCP, Azure) are lower priority.
+- **Post-MVP: OS notifications.** 
+  - Desktop and mobile system notifications, starting with locally scheduled ones and then push notifications (which need Apple/Google push services).
+- **Long-term aspiration: Aircraft.** 
+  - Aviation component specifics, the FAA statement library, aviation record layouts, and an electronic-signature acceptability review. Not planned yet; see Aircraft-ready groundwork.
+
+### Long-Term
+
+- **Parallel app focused on Small Maintenance Business**
+  - Expected to handle many customer vehicles, with a single user account and multiple employees. The app will have a somewhat different UI and workflow, but share the parts of the backend and sync engine. It may be a seperate repo, or it may be another sub-crate in this workspace; to be decided farther down the road.
 
 ---
 
@@ -1859,6 +1927,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 ### Phase 6: Polish
 
+- **Labor rates:** whose rate it is: one for the household, one per Maintainer, or one per shop (the "done by" performer, e.g. a dealer's hourly rate), and whether a rate can change over time (old jobs keep the rate they used).
 - **Desktop signing** (moved from Phase 4, #041): sign desktop builds (macOS Gatekeeper, Windows SmartScreen), or accept the warnings for personal use? Needed by the first release with desktop packages.
 - **Import/export formats:** CSV, JSON, or both; full backup vs. per-vehicle export.
 - **Reports and cost views:** which reports matter most (cost per mile, cost per vehicle per year, fuel trends)?

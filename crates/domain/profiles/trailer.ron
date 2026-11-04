@@ -1,7 +1,7 @@
 // Trailer (decision #030): no fuel, no meter by default (an odometer can be added).
 (
     id: "trailer",
-    version: 1,
+    version: 2,
     name: "profile-trailer",
     event_kinds: [reading, maintenance, repair],
     sections: [],
@@ -9,6 +9,8 @@
         (kind: "vin", name: "identifier-vin"),
         (kind: "plate", name: "identifier-plate"),
     ],
+    // What a High squawk means for this kind (#063).
+    high_severity: "squawk-high-not-towable",
     documents: ["document-title", "document-registration", "document-insurance"],
     meters: [],
     fields: [],

@@ -1,13 +1,15 @@
 // Other equipment (decision #030): anything else; add its meters by hand.
 (
     id: "other-equipment",
-    version: 1,
+    version: 2,
     name: "profile-other-equipment",
     event_kinds: [reading, maintenance, repair],
     sections: [],
     identifiers: [
         (kind: "serial", name: "identifier-serial"),
     ],
+    // What a High squawk means for this kind (#063).
+    high_severity: "squawk-high-out-of-service",
     documents: [],
     meters: [],
     fields: [],

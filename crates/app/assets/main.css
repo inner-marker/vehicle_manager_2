@@ -2534,12 +2534,34 @@ textarea.field-input {
 
 .fold-head {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 10px;
     min-height: 48px;
     padding: 10px 14px;
     cursor: pointer;
-    list-style-position: inside;
+    list-style: none;
+}
+
+.fold-head::-webkit-details-marker {
+    display: none;
+}
+
+/* The same ▸ / ▾ as a task card's (the work log). */
+.fold-toggle {
+    color: var(--accent);
+    font-size: 1.35rem;
+    line-height: 1;
+    transition: transform 0.15s;
+}
+
+.fold[open] .fold-toggle {
+    transform: rotate(90deg);
+}
+
+.fold-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .fold-title {
@@ -2869,3 +2891,807 @@ body:has(.log-form) .fab {
     font-size: 0.9rem;
     font-weight: 500;
 }
+
+/* ---------- Squawks (step 7f; docs/ui-sketches/p2m7-squawks-options.svg) ---------- */
+
+/* Severity: Low in the accent colour, Medium amber, High red (it keeps the vehicle out of use). */
+.severity-low {
+    --severity: var(--accent);
+}
+
+.severity-medium {
+    --severity: var(--warn);
+}
+
+.severity-high {
+    --severity: var(--error);
+}
+
+.severity-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border: 1.5px solid var(--severity);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--severity) 16%, transparent);
+    color: var(--severity);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.squawk-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-raised);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.squawk-status.deferred {
+    color: var(--warn);
+}
+
+.squawk-status.resolved {
+    color: #3fb950;
+}
+
+/* The sheet's severity buttons take the chosen severity's colours. */
+.severity-buttons .choice.on {
+    border-color: var(--severity);
+    background: color-mix(in srgb, var(--severity) 18%, transparent);
+    color: var(--severity);
+}
+
+.squawk-high-note {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    background: var(--urgent-bg);
+    color: var(--error);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.squawk-more {
+    align-self: flex-start;
+}
+
+.dialog.squawk-sheet {
+    width: min(440px, 100%);
+}
+
+.panel-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.squawks-card .link-button:last-child {
+    align-self: flex-start;
+}
+
+/* One squawk in a list: severity and status, what's wrong, who and when. */
+.squawk-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.squawk-row:hover,
+.squawk-row:focus-visible {
+    border-color: var(--accent);
+}
+
+.squawk-row.selected {
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+}
+
+.squawk-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.squawk-row-text {
+    font-weight: 700;
+}
+
+.squawk-row-meta {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* The Squawks tab: the list beside the chosen one, like Messages. */
+.squawks {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.squawks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.squawks-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.squawks-detail {
+    min-width: 0;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.squawks-back {
+    display: none;
+}
+
+.squawk-body,
+.squawk-detail-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.squawk-title {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.squawk-body .muted-note,
+.squawk-notes {
+    margin: 0;
+}
+
+.squawk-notes {
+    white-space: pre-wrap;
+}
+
+.squawk-found-on {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.squawk-history {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.squawk-history-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.squawk-history-job {
+    font-weight: 700;
+}
+
+a.squawk-history-job {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.squawk-history-change {
+    color: var(--warn);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.squawk-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 640px;
+}
+
+@media (max-width: 639px) {
+    /* Squawks on phones: the list, or one squawk with a way back. */
+    .squawks {
+        display: block;
+    }
+
+    .squawks .squawks-detail {
+        display: none;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    .squawks.has-selection .squawks-list {
+        display: none;
+    }
+
+    .squawks.has-selection .squawks-detail {
+        display: block;
+    }
+
+    .squawks-back {
+        display: inline-flex;
+        align-self: flex-start;
+    }
+}
+
+/* ---------- The Maintenance tab (step 7g; docs/ui-sketches/p2m7-schedule-options-2.svg) ---------- */
+
+.maintenance {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Three views: narrower segments than Settings' two. */
+.maintenance-views .segment {
+    min-width: 0;
+}
+
+.schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* One requirement: its name and rules on the left, when it was last done on the right. */
+.schedule-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.schedule-card-text,
+.schedule-card-last {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.schedule-card-last {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.schedule-card-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.schedule-card-rules {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.schedule-card-label {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.schedule-card-when {
+    font-weight: 600;
+}
+
+.schedule-card-when.muted {
+    color: var(--text-muted);
+}
+
+.schedule-card-job {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.schedule-empty {
+    align-items: center;
+    text-align: center;
+}
+
+.schedule-empty-title {
+    margin: 0;
+}
+
+/* The requirement dialog's rules: one row each, with ✕ to remove it. */
+.dialog.requirement-dialog {
+    width: min(560px, 100%);
+}
+
+.rule-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.rule-inputs {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.rule-inputs > .field-input {
+    width: auto;
+}
+
+.rule-inputs .rule-number {
+    width: 7em;
+}
+
+.rule-kind {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.rule-remove {
+    font-size: 1rem;
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.copy-left-out {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+    color: var(--warn);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 639px) {
+    /* Phones: the last-done line goes under the name. */
+    .schedule-card-last {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .maintenance-views {
+        align-self: stretch;
+        display: flex;
+    }
+
+    .maintenance-views .segment {
+        flex: 1;
+        padding: 0 8px;
+    }
+}
+
+/* ---------- The work log (step 7i; option A of docs/ui-sketches/p2m7-work-log-options.svg) ---------- */
+
+/* A job's form is wider: the parts table needs the room. */
+.log-form.job {
+    max-width: 820px;
+}
+
+.work-add {
+    width: auto;
+}
+
+/* The open task: a card with its parts table, labor, and the rest. */
+.task-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.task-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.task-card-head .task-title {
+    flex: 1;
+    font-weight: 700;
+}
+
+.task-card-total {
+    margin: 0;
+    align-self: flex-end;
+    font-weight: 700;
+}
+
+.task-card .muted-note {
+    margin: 0;
+}
+
+/* Parts: what, number, quantity, unit price, and ✕. */
+.parts-table {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, 0.8fr) minmax(0, 0.9fr) auto;
+    gap: 6px 8px;
+    align-items: center;
+}
+
+.parts-head {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* On a wide screen the headings name the columns, so each field's own label is hidden and the
+   field is the grid's cell. */
+.part-field {
+    display: contents;
+}
+
+.part-label {
+    display: none;
+}
+
+/* A task folded to one line. */
+.task-folded {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-folded-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+}
+
+/* The triangle: ▸ opens a folded task, ▾ folds the open one. */
+.task-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.task-folded-summary {
+    color: var(--text-muted);
+}
+
+/* A squawk to sign off or defer: amber until decided. */
+.squawk-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.squawk-choice.undecided {
+    border-color: var(--warn);
+}
+
+.squawk-choice.signed-off {
+    border-color: #3fb950;
+}
+
+.squawk-choice .squawk-row-top {
+    justify-content: flex-start;
+}
+
+.squawk-repair {
+    align-self: flex-start;
+}
+
+/* The job's bar: the total, Save draft, and Finish…. */
+.job-bar .job-total {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.job-bar .job-total strong {
+    font-size: 1.15rem;
+}
+
+.job-bar .form-buttons {
+    margin: 0;
+}
+
+.finish-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.finish-check {
+    display: flex;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.finish-check.ok .finish-mark {
+    color: #3fb950;
+}
+
+.finish-check.missing {
+    color: var(--error);
+}
+
+@media (max-width: 639px) {
+    /* Phones: each part on three rows: what it is; its number and quantity; its price and ✕.
+       The five headings come first, then five cells per part, so a part's description is
+       every fifth cell from the sixth. */
+    .parts-table {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .parts-table .parts-head {
+        display: none;
+    }
+
+    .parts-table .part-field {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .parts-table .part-label {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* The ✕ lines up with the fields, not their labels. */
+    .parts-table > .rule-remove {
+        align-self: end;
+        padding-bottom: 10px;
+    }
+
+    .parts-table > :nth-child(5n + 6) {
+        grid-column: 1 / -1;
+    }
+
+    .parts-table > :nth-child(5n + 10) {
+        justify-self: end;
+    }
+
+    /* The job's bar: the total and both buttons on one line. */
+    .job-bar {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .job-bar .form-buttons {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .job-bar .form-buttons button {
+        padding: 0 12px;
+    }
+
+    .task-folded {
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+/* ---------- A job's page (step 7j; option A of docs/ui-sketches/p2m7-job-page-options.svg) ---------- */
+
+.event-tile .event-tile-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+/* A task: its card (open) or one line (folded). */
+.job-task {
+    margin-top: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.job-task-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    list-style-position: inside;
+}
+
+.job-task-title {
+    font-weight: 800;
+}
+
+.job-task-summary {
+    color: var(--text-muted);
+}
+
+.job-task-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 14px;
+}
+
+.job-task-body .muted-note {
+    margin: 0;
+}
+
+.job-parts {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.job-parts th {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+.job-parts td {
+    padding: 6px;
+}
+
+.job-parts .number {
+    text-align: right;
+}
+
+.job-parts .muted {
+    color: var(--text-muted);
+}
+
+/* A squawk the job dealt with. */
+.job-squawk {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.job-squawk .squawk-row-top {
+    justify-content: flex-start;
+}
+
+.job-squawk-link {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.job-squawk-what.signed-off {
+    color: #3fb950;
+    font-weight: 600;
+}
+
+.job-squawk-what.deferred {
+    color: var(--warn);
+    font-weight: 600;
+}
+
+@media (max-width: 639px) {
+    /* Phones: the part number column is left out (it stays in the form). */
+    .job-parts th:nth-child(2),
+    .job-parts td:nth-child(2) {
+        display: none;
+    }
+}
+
+/* An end reading's "Copy from start" (the human's M7 note), under its field. */
+.copy-start {
+    align-self: flex-start;
+    font-size: 0.85rem;
+}
+
+/* An amount's field with its currency's symbol in front (the human's M7 note). */
+.money-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.money-symbol {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.money-input .field-input {
+    width: 100%;
+    padding-left: calc(10px + var(--money-symbol-width, 2ch));
+}
+
+.currency-pick {
+    max-width: 260px;
+}
+

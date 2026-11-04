@@ -1,0 +1,280 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2060" viewBox="0 0 1560 2060" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2060" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 7f · Squawks: opening one, the vehicle&#x27;s list, and a squawk&#x27;s page: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Severity: Low (where every squawk starts), Medium, High (keeps it out of use; named per kind, &quot;Not drivable&quot; for a truck). Status comes from jobs: Open, Deferred, Resolved.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Squawks live on the Overview (High first); opening one and a squawk&#x27;s page are full pages, like events</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Overview (Driver mode)</text>
+<rect x="40" y="166" width="900" height="640" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="200" height="636" rx="0" fill="#1d2128"/>
+<text x="62" y="202" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="202" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="218" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="240" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="240" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<line x1="54" y1="260" x2="230" y2="260" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="290" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="328" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Places</text>
+<text x="86" y="366" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<rect x="242" y="168" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="676" y="178" width="74" height="28" rx="14" fill="#5aa9ff"/>
+<text x="713" y="197" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">+ Log</text>
+<rect x="758" y="178" width="88" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="802" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
+<rect x="854" y="178" width="72" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="890" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam ▾</text>
+<text x="262" y="236" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="262" y="268" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="290" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<line x1="262" y1="340" x2="350.8" y2="340" stroke="#5aa9ff" stroke-width="3"/>
+<text x="306.4" y="330" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="395.2" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="495.40000000000003" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="580.4000000000001" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="657.8000000000001" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<text x="739.0" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="341" x2="918" y2="341" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="358" width="656" height="252" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="382" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS · 3 OUTSTANDING</text>
+<text x="904" y="382" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="end">+ Squawk</text>
+<rect x="276" y="396" width="628" height="54" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="288" y="404" width="160.12" height="22" rx="11" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="368.06" y="419" font-size="11" fill="#ff6b6b" font-weight="800" text-anchor="middle">HIGH · Not drivable</text>
+<text x="288" y="440" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Brake lights out, both sides</text>
+<rect x="810" y="404" width="46" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="833.0" y="419" font-size="11" fill="#e8eaed" font-weight="700" text-anchor="middle">Open</text>
+<text x="890" y="440" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">Sam · 2 days ago</text>
+<rect x="276" y="458" width="628" height="54" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="288" y="466" width="62.88" height="22" rx="11" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="319.44" y="481" font-size="11" fill="#f5b942" font-weight="800" text-anchor="middle">MEDIUM</text>
+<text x="288" y="502" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle from the rear on bumps</text>
+<rect x="810" y="466" width="74" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="847.0" y="481" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">Deferred</text>
+<text x="890" y="502" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">Parts on order · 3 Nov job</text>
+<rect x="276" y="520" width="628" height="54" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="288" y="528" width="40.44" height="22" rx="11" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="308.22" y="543" font-size="11" fill="#5aa9ff" font-weight="800" text-anchor="middle">LOW</text>
+<text x="288" y="564" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Passenger wiper streaks</text>
+<rect x="810" y="528" width="46" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="833.0" y="543" font-size="11" fill="#e8eaed" font-weight="700" text-anchor="middle">Open</text>
+<text x="890" y="564" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">Stuart · 1 Oct</text>
+<text x="276" y="594" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Show 4 resolved</text>
+<rect x="262" y="624" width="320" height="92" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="648" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">READY TO USE?</text>
+<text x="276" y="674" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Phase 5: High squawks count here.</text>
+<rect x="598" y="624" width="320" height="92" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="612" y="648" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">COMING DUE</text>
+<text x="612" y="674" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Phase 5.</text>
+<rect x="262" y="728" width="656" height="60" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="752" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="276" y="774" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Odometer 52,644 mi · 3 Nov</text>
+<text x="262" y="818" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A row opens the squawk&#x27;s page. Resolved ones fold away under &quot;Show resolved&quot;.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · New squawk</text>
+<rect x="980" y="166" width="250" height="640" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Truck</text>
+<text x="996" y="264" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">New squawk</text>
+<text x="996" y="286" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">What&#x27;s wrong?</text>
+<rect x="996" y="294" width="218" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="319" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Brake lights out, both</text>
+<text x="996" y="370" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Severity</text>
+<rect x="996" y="378" width="218" height="40" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1032.3333333333333" y="403" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="middle">Low</text>
+<text x="1105.0" y="403" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="middle">Medium</text>
+<rect x="1144.3333333333333" y="381" width="66.66666666666667" height="34" rx="8" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="1177.6666666666665" y="403" font-size="13" fill="#ff6b6b" font-weight="800" text-anchor="middle">High</text>
+<rect x="996" y="426" width="218" height="40" rx="8" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="1008" y="443" font-size="11.5" fill="#ff6b6b" font-weight="700" text-anchor="start">High keeps it out of use:</text>
+<text x="1008" y="459" font-size="11.5" fill="#ff6b6b" font-weight="500" text-anchor="start">shown as Not drivable.</text>
+<text x="996" y="486" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes (optional)</text>
+<rect x="996" y="494" width="218" height="64" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="516" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">More detail…</text>
+<text x="996" y="570" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Noticed</text>
+<rect x="996" y="578" width="218" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="603" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">3 Nov 2026 · 9:41</text>
+<text x="996" y="650" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Found on: Fuel-up · 3 Nov</text>
+<text x="996" y="668" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(only when opened from an event)</text>
+<rect x="996" y="690" width="218" height="44" rx="10" fill="#5aa9ff"/>
+<text x="1105.0" y="717.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Open squawk</text>
+<text x="1105" y="756" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="1260" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · A squawk&#x27;s page</text>
+<rect x="1260" y="166" width="250" height="640" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="1278" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="1262" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="1276" y="222" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Truck  ‹ Overview</text>
+<rect x="1276" y="250" width="62.88" height="22" rx="11" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="1307.44" y="265" font-size="11" fill="#f5b942" font-weight="800" text-anchor="middle">MEDIUM</text>
+<rect x="1356" y="250" width="74" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1393.0" y="265" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">Deferred</text>
+<text x="1276" y="302" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Rattle from the rear</text>
+<text x="1276" y="324" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">on bumps</text>
+<text x="1276" y="350" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Opened by Sam · 28 Oct 2026</text>
+<text x="1276" y="368" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">Found on: Fuel-up · 28 Oct ›</text>
+<text x="1276" y="402" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">NOTES</text>
+<text x="1276" y="422" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Worse with the trailer on.</text>
+<text x="1276" y="458" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">HISTORY</text>
+<rect x="1276" y="470" width="218" height="66" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1288" y="492" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="start">3 Nov · Oil change ›</text>
+<text x="1288" y="510" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Deferred: Parts on order</text>
+<text x="1288" y="527" font-size="11.5" fill="#f5b942" font-weight="600" text-anchor="start">Low → Medium</text>
+<rect x="1276" y="546" width="218" height="66" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1288" y="568" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">28 Oct · Opened</text>
+<text x="1288" y="586" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Low</text>
+<rect x="1276" y="638" width="218" height="58" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1288" y="660" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A job has dealt with it, so it</text>
+<text x="1288" y="678" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">changes only in the next job.</text>
+<text x="1276" y="722" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Until then: Edit and Remove,</text>
+<text x="1276" y="740" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">for its opener or a Maintainer.</text>
+<text x="40" y="842" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">+ Log (both options): a Squawk tile for Drivers and up</text>
+<rect x="40" y="854" width="560" height="250" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="80" y="874" width="480" height="210" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="104" y="910" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="104" y="924" width="432" height="38" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="116" y="948" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Truck</text>
+<text x="524" y="948" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="104" y="976" width="136" height="76" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="120" y="1010" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="150" y="1010" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<rect x="252" y="976" width="136" height="76" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="268" y="1010" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="298" y="1010" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<rect x="400" y="976" width="136" height="76" rx="12" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="416" y="1010" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⚠</text>
+<text x="446" y="1010" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Squawk</text>
+<text x="416" y="1038" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Something&#x27;s wrong</text>
+<text x="104" y="1076" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Maintainer mode adds Maintenance and Repair tiles (7i).</text>
+<text x="640" y="884" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Everything about a vehicle&#x27;s squawks is on its first tab;</text>
+<text x="640" y="906" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   High ones are the first thing anyone sees (#051).</text>
+<text x="640" y="928" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Opening one and its page work like events (full pages,</text>
+<text x="640" y="950" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   back links), so nothing new to learn.</text>
+<text x="640" y="972" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ No new tab; Phase 5&#x27;s readiness sits right below.</text>
+<text x="640" y="994" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A vehicle with many squawks makes a long Overview</text>
+<text x="640" y="1016" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (resolved ones fold away).</text>
+<text x="640" y="1038" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− No one place to look through old, resolved squawks</text>
+<text x="640" y="1060" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   beyond &quot;Show resolved&quot;.</text>
+<text x="40" y="1164" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A Squawks tab (list and detail side by side, like Messages); the Overview shows a summary; opening one is a quick sheet</text>
+<text x="40" y="1194" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the Squawks tab (Driver mode)</text>
+<rect x="40" y="1206" width="900" height="600" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1208" width="200" height="596" rx="0" fill="#1d2128"/>
+<text x="62" y="1242" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="1242" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="1258" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="1280" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="1280" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<line x1="54" y1="1300" x2="230" y2="1300" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="1330" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="1368" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Places</text>
+<text x="86" y="1406" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<rect x="242" y="1208" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="1239" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="676" y="1218" width="74" height="28" rx="14" fill="#5aa9ff"/>
+<text x="713" y="1237" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">+ Log</text>
+<rect x="758" y="1218" width="88" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="802" y="1237" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
+<rect x="854" y="1218" width="72" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="890" y="1237" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam ▾</text>
+<text x="262" y="1276" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="262" y="1308" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="1330" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<text x="306.4" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Overview</text>
+<line x1="350.8" y1="1380" x2="462.4" y2="1380" stroke="#5aa9ff" stroke-width="3"/>
+<text x="406.6" y="1370" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Squawks · 3</text>
+<text x="506.79999999999995" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="606.9999999999999" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="692.0" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="750.4" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Docs</text>
+<text x="812.5999999999999" y="1370" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="1381" x2="918" y2="1381" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="1398" width="122.2" height="30" rx="15" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="323.1" y="1418" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Outstanding 3</text>
+<rect x="388" y="1398" width="100.0" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="438.0" y="1418" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Resolved 4</text>
+<rect x="492" y="1398" width="48.2" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="516.1" y="1418" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">All</text>
+<text x="918" y="1418" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="end">+ Squawk</text>
+<rect x="262" y="1444" width="300" height="62" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="274" y="1452" width="153.66000000000003" height="22" rx="11" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="350.83000000000004" y="1467" font-size="10.5" fill="#ff6b6b" font-weight="800" text-anchor="middle">HIGH · Not drivable</text>
+<text x="274" y="1492" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Brake lights out, both sides</text>
+<text x="550" y="1466" font-size="11.5" fill="#e8eaed" font-weight="700" text-anchor="end">Open</text>
+<rect x="262" y="1514" width="300" height="62" rx="8" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<rect x="274" y="1522" width="60.84" height="22" rx="11" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="304.42" y="1537" font-size="10.5" fill="#f5b942" font-weight="800" text-anchor="middle">MEDIUM</text>
+<text x="274" y="1562" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle from the rear on bumps</text>
+<text x="550" y="1536" font-size="11.5" fill="#f5b942" font-weight="700" text-anchor="end">Deferred</text>
+<rect x="262" y="1584" width="300" height="62" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="274" y="1592" width="39.42" height="22" rx="11" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="293.71" y="1607" font-size="10.5" fill="#5aa9ff" font-weight="800" text-anchor="middle">LOW</text>
+<text x="274" y="1632" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Passenger wiper streaks</text>
+<text x="550" y="1606" font-size="11.5" fill="#e8eaed" font-weight="700" text-anchor="end">Open</text>
+<rect x="578" y="1444" width="340" height="330" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="594" y="1460" width="62.88" height="22" rx="11" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="625.44" y="1475" font-size="11" fill="#f5b942" font-weight="800" text-anchor="middle">MEDIUM</text>
+<rect x="674" y="1460" width="74" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="711.0" y="1475" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">Deferred</text>
+<text x="594" y="1512" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Rattle from the rear on bumps</text>
+<text x="594" y="1534" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Opened by Sam · 28 Oct · found on Fuel-up ›</text>
+<text x="594" y="1566" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">NOTES</text>
+<text x="594" y="1586" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Worse with the trailer on.</text>
+<text x="594" y="1620" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">HISTORY</text>
+<text x="594" y="1644" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="start">3 Nov · Oil change ›</text>
+<text x="594" y="1662" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Deferred: Parts on order · Low → Medium</text>
+<text x="594" y="1692" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">28 Oct · Opened · Low</text>
+<text x="594" y="1754" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A job has dealt with it: changes come in the next job.</text>
+<text x="980" y="1194" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Overview&#x27;s summary</text>
+<rect x="980" y="1206" width="250" height="600" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1232" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1236" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="1262" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="996" y="1300" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<line x1="996" y1="1344" x2="1084.8" y2="1344" stroke="#5aa9ff" stroke-width="3"/>
+<text x="1040.4" y="1334" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="1140.6" y="1334" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Squawks · 3</text>
+<text x="1225.6" y="1334" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Tim…</text>
+<line x1="996" y1="1345" x2="1214" y2="1345" stroke="#333a45" stroke-width="1"/>
+<rect x="996" y="1360" width="218" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="1384" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS</text>
+<rect x="1010" y="1396" width="160.12" height="22" rx="11" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="1090.06" y="1411" font-size="11" fill="#ff6b6b" font-weight="800" text-anchor="middle">HIGH · Not drivable</text>
+<text x="1010" y="1436" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Brake lights out, both sides</text>
+<text x="1010" y="1462" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">+ 1 Medium · 1 Low</text>
+<text x="1010" y="1494" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="start">All squawks ›</text>
+<rect x="996" y="1522" width="218" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="1546" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">READY TO USE?</text>
+<text x="1010" y="1572" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Phase 5.</text>
+<rect x="996" y="1604" width="218" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="1628" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="996" y="1704" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Phone: the Squawks tab is the list;</text>
+<text x="996" y="1722" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">a row opens the squawk&#x27;s page.</text>
+<text x="1260" y="1194" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · New squawk as a sheet</text>
+<rect x="1260" y="1206" width="250" height="600" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="1278" y="1232" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="1262" y="1354" width="246" height="450" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="1365" y="1364" width="40" height="4" rx="2" fill="#9aa1ab"/>
+<text x="1280" y="1396" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">New squawk · Truck</text>
+<text x="1280" y="1416" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">What&#x27;s wrong?</text>
+<rect x="1280" y="1424" width="210" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1292" y="1449" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Brake lights out</text>
+<rect x="1280" y="1494" width="210" height="40" rx="10" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1283.0" y="1497" width="64.0" height="34" rx="8" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="1315.0" y="1519" font-size="13" fill="#5aa9ff" font-weight="800" text-anchor="middle">Low</text>
+<text x="1385.0" y="1519" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="middle">Medium</text>
+<text x="1455.0" y="1519" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="middle">High</text>
+<text x="1280" y="1556" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">▸ Notes, when noticed</text>
+<rect x="1280" y="1576" width="210" height="44" rx="10" fill="#5aa9ff"/>
+<text x="1385.0" y="1603.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Open squawk</text>
+<text x="1385" y="1642" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="1280" y="1684" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Low unless changed: two</text>
+<text x="1280" y="1702" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">fields and a tap.</text>
+<text x="640" y="1864" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Room for many squawks and their history; resolved</text>
+<text x="640" y="1886" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   ones a tap away (the filter).</text>
+<text x="640" y="1908" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The Overview stays short: the worst one, then counts.</text>
+<text x="640" y="1930" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Opening one is quick, even from the phone in a parking lot.</text>
+<text x="640" y="1952" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− One more tab (seven on a truck; phones scroll them).</text>
+<text x="640" y="1974" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A sheet hides the notes and time until expanded.</text>
+<text x="640" y="1996" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Detail beside the list is new on a vehicle&#x27;s page</text>
+<text x="640" y="2018" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (Messages works this way).</text>
+<text x="40" y="1864" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Both: + Log&#x27;s Squawk tile; an event&#x27;s page gets &quot;Report a squawk&quot; (found on that event).</text>
+<text x="40" y="1886" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Mix and match is fine, e.g. A&#x27;s Overview list with B&#x27;s quick sheet.</text>
+</svg>

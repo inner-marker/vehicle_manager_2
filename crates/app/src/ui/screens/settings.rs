@@ -4,6 +4,8 @@
 //! **Household** (Admin mode only); each setting is a row of buttons, and on the You tab a
 //! **"Use household default"** switch. Changes save at once; the server answers with the
 //! preferences now in effect. Under **Sign-in**, when the app signs out by itself (#049).
+//! What squawks are called (#064) is the household's alone: buttons on the Household tab, the
+//! word itself on the You tab.
 
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
@@ -12,7 +14,7 @@ use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
     Choice, CurrencyCode, DateFormat, DistanceUnit, EconomyUnit, IdleSignOut, PreferenceChoices,
-    Preferences, PreferencesPatch, PressureUnit, VolumeUnit,
+    Preferences, PreferencesPatch, PressureUnit, SquawkWord, VolumeUnit,
 };
 use domain::timers::Timers;
 
@@ -21,7 +23,7 @@ use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::idle::{IdleContext, use_idle};
 use crate::ui::screens::problem_from_error;
 use crate::ui::theme::ThemeToggle;
-use crate::ui::{tr, tr_with};
+use crate::ui::{set_squawk_word, tr, tr_with};
 
 /// A setting shown as a row of buttons.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -265,6 +267,7 @@ pub(crate) fn Settings() -> Element {
                 }
                 CurrencyRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 LanguageRow {}
+                SquawkWordRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
                 h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
                 IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, timers, on_save: save }
             }
@@ -289,6 +292,8 @@ fn apply(
             tracing::debug!(target: log_area::UI, effective = ?next.effective, "preferences loaded");
             error.set(None);
             idle.sign_out.set(next.effective.idle_sign_out);
+            set_squawk_word(next.effective.squawk_word);
+            crate::ui::set_home_currency(next.effective.currency);
             view.set(Some(next));
         }
         Ok(PreferencesOutcome::NotAllowed) => {
@@ -507,6 +512,53 @@ fn sign_out_label(choice: IdleSignOut, label: MessageId, timers: Timers) -> Stri
     }
 }
 
+/// What squawks are called (#064): the household's word, as buttons for its Admin, and as
+/// plain text (with who chooses it) on the You tab.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn SquawkWordRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let current = view.effective.squawk_word;
+    let name = |word: SquawkWord| {
+        domain::i18n::Translator::english().tr_for(word, messages::SQUAWK_WORD_CHOICE)
+    };
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_SQUAWK_WORD)} }
+            if household_tab {
+                div { class: "choice-buttons",
+                    for word in SquawkWord::ALL {
+                        button {
+                            key: "{word:?}",
+                            class: if word == current { "choice on" } else { "choice" },
+                            "aria-pressed": word == current,
+                            onclick: move |_| on_save.call(squawk_word_patch(word)),
+                            {name(word)}
+                        }
+                    }
+                }
+            } else {
+                span { class: "setting-value", {name(current)} }
+                p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
+            }
+        }
+    }
+}
+
+/// The change that makes `word` the household's.
+fn squawk_word_patch(word: SquawkWord) -> PreferencesPatch {
+    PreferencesPatch {
+        squawk_word: Some(Choice::Set(word)),
+        ..PreferencesPatch::default()
+    }
+}
+
 /// The language: English (US) only so far, so nothing to change.
 #[component]
 fn LanguageRow() -> Element {
@@ -540,6 +592,15 @@ mod tests {
                 };
                 assert_eq!(setting.chosen(&choices), Some(index), "{setting:?} {index}");
             }
+        }
+    }
+
+    #[test]
+    fn choosing_a_squawk_word_changes_only_that() {
+        for word in SquawkWord::ALL {
+            let patch = squawk_word_patch(word);
+            assert_eq!(patch.changed_fields(), vec!["squawk_word"]);
+            assert_eq!(patch.squawk_word, Some(Choice::Set(word)));
         }
     }
 

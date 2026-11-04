@@ -16,15 +16,10 @@ use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
 use crate::convert::{
-    clearable, id_from_sql, id_to_sql, json_from_sql, json_to_sql, name_to_sql, required,
+    clearable, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name, required,
     required_name,
 };
 use crate::{Database, StorageError};
-
-/// A named value's column text, which must exist (every enum here has a name).
-fn name(value: &impl serde::Serialize, column: &'static str) -> Result<String, StorageError> {
-    name_to_sql(value).ok_or(StorageError::InvalidValue { column })
-}
 
 /// An optional named value's column text.
 fn optional_name(
@@ -32,11 +27,6 @@ fn optional_name(
     column: &'static str,
 ) -> Result<Option<String>, StorageError> {
     value.map(|value| name(value, column)).transpose()
-}
-
-/// Turns any conversion error into "this column holds an invalid value".
-fn invalid<E>(column: &'static str) -> impl Fn(E) -> StorageError {
-    move |_| StorageError::InvalidValue { column }
 }
 
 /// Runs a soft delete (`UPDATE … SET deleted = 1, sequence = ? WHERE id = ?`; each table's

@@ -10,7 +10,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::{id_from_sql, id_to_sql, required};
+use crate::convert::{id_from_sql, id_to_sql, invalid, required};
 use crate::{Database, StorageError};
 
 /// Writes the `saved_places` table.
@@ -96,11 +96,6 @@ impl RecordWriter<SavedPlace> for SavedPlaceWriter {
             .await?;
         Ok(())
     }
-}
-
-/// Turns any conversion error into "this column holds an invalid value".
-fn invalid<E>(column: &'static str) -> impl Fn(E) -> StorageError {
-    move |_| StorageError::InvalidValue { column }
 }
 
 fn saved_place_from_row(row: &SqliteRow) -> Result<(SavedPlaceId, SavedPlace), StorageError> {

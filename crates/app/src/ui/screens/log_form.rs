@@ -10,11 +10,17 @@
 //! A required item can be skipped with a reason (the event is flagged). A reading that doesn't
 //! fit its neighbours is refused; the Admin in Admin mode may keep it with a reason. The server
 //! checks everything again.
+//!
+//! **A maintenance or repair job** (step 7i) is the same form with every meter open and the
+//! work log's sections (`work_log`), and at the bottom its total, **Save draft**, and
+//! **Finish…**: Finish's checks, then "Finish and lock" saves the job and finishes it (#034).
+//! **Repair this** on a squawk's page opens a repair with its complaint and sign-off filled
+//! in.
 
 use dioxus::prelude::*;
 use domain::api::{
     AssetSummary, AssetView, AssetsOutcome, EventsOutcome, LatestReading, PlacesOutcome,
-    PreferencesOutcome,
+    PreferencesOutcome, RequirementView, ScheduleOutcome, SquawkView, SquawksOutcome,
 };
 use domain::asset::AssetId;
 use domain::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
@@ -28,14 +34,19 @@ use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::location::{CountryCode, SavedPlace, SavedPlaceId, TimeZone};
 use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
-use domain::preferences::Preferences;
+use domain::preferences::{CurrencyCode, Preferences};
 use domain::profile::{Section, profile};
 use domain::quantity::{duration_as_typed, parse_money, parse_volume, show_reading, unit_price};
+use domain::requirement::{Bundle, BundleId};
+use domain::squawk::SquawkId;
 use domain::time::Clock;
 
 use super::log_chooser::use_log_chooser;
 use super::log_input::{Context, Target, Typed, build, required_items, typed_from, zone};
+use super::squawks::use_vehicle_squawks;
 use super::vehicle_setup::event_from_value;
+use super::work_input::{Action, FinishCheck, TypedDisposition, TypedWork, total_minor};
+use super::work_log::{WorkLog, job_squawk_ids, job_squawks};
 use super::{FormError, problem_from_error};
 use crate::api;
 use crate::logging::SystemClock;
@@ -46,7 +57,8 @@ use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
 
 /// The browser's own time zone, for an event with no place data.
-const ZONE_SCRIPT: &str = "return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';";
+pub(super) const ZONE_SCRIPT: &str =
+    "return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';";
 
 /// What the form is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,10 +75,37 @@ pub(super) enum Mode {
 #[component]
 pub(crate) fn LogForm(asset_id: String, kind: String) -> Element {
     match (asset_id.parse::<AssetId>(), event_from_value(&kind)) {
-        (Ok(asset), Some(kind @ (EventKind::Fuel | EventKind::Reading))) => {
-            rsx! { LogScreen { asset, kind, mode: Mode::New, original: None } }
+        (Ok(asset), Some(kind)) => {
+            rsx! { LogScreen { asset, kind, mode: Mode::New, original: None, prefill: None } }
         }
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/squawks/:squawk_id/repair` (**Repair this**): a new repair of the squawk's vehicle, its
+/// complaint the squawk's description and the squawk ready to sign off (choice 16).
+#[component]
+pub(crate) fn RepairSquawk(squawk_id: String) -> Element {
+    let mut loaded = use_signal(|| None::<Result<SquawkView, MessageId>>);
+    use_effect(use_reactive!(|squawk_id| {
+        spawn(async move {
+            let answer = match squawk_id.parse::<SquawkId>() {
+                Err(_) => Err(messages::SQUAWK_NOT_FOUND),
+                Ok(id) => match api::squawk_view(id).await {
+                    Ok(SquawksOutcome::Squawk { view }) => Ok(*view),
+                    Ok(_) => Err(messages::SQUAWK_NOT_FOUND),
+                    Err(error) => Err(problem_from_error(&error).message()),
+                },
+            };
+            loaded.set(Some(answer));
+        });
+    }));
+    match loaded() {
+        None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
+        Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
+        Some(Ok(view)) => rsx! {
+            LogScreen { asset: view.squawk.asset, kind: EventKind::Repair, mode: Mode::New, original: None, prefill: Some(view) }
+        },
     }
 }
 
@@ -109,7 +148,7 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
             } else {
                 Mode::Edit(id)
             };
-            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event) } }
+            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None } }
         }
     }
 }
@@ -124,9 +163,12 @@ struct Loaded {
     countries: Vec<(CountryCode, String)>,
     zone: TimeZone,
     units: Preferences,
+    /// A job's schedule: the vehicle's requirements and bundles (for its tasks).
+    requirements: Vec<RequirementView>,
+    bundles: Vec<(BundleId, Bundle)>,
 }
 
-async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
+async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
     let failed = |error: &ServerFnError| problem_from_error(error).message();
     let outcome = api::vehicle_page(asset).await.map_err(|e| failed(&e))?;
     if outcome == AssetsOutcome::NotFound {
@@ -164,6 +206,18 @@ async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
         .and_then(|zone| TimeZone::parse(&zone).ok())
         .filter(domain::dates::is_known_zone)
         .unwrap_or_else(TimeZone::utc);
+    let (requirements, bundles) = if kind.finalizes_by_itself() {
+        (Vec::new(), Vec::new())
+    } else {
+        match api::vehicle_schedule(asset).await {
+            Ok(ScheduleOutcome::Schedule {
+                requirements,
+                bundles,
+                ..
+            }) => (requirements, bundles),
+            _ => (Vec::new(), Vec::new()),
+        }
+    };
     Ok(Loaded {
         view,
         latest,
@@ -172,24 +226,58 @@ async fn load(asset: AssetId) -> Result<Loaded, MessageId> {
         countries,
         zone,
         units,
+        requirements,
+        bundles,
     })
 }
 
+/// A repair from **Repair this**: its complaint the squawk's description (and notes), the
+/// squawk ready to sign off.
+fn repair_start(squawk: &SquawkView) -> Typed {
+    let notes = squawk.squawk.notes.as_str();
+    let complaint = if notes.is_empty() {
+        squawk.squawk.description.as_str().to_owned()
+    } else {
+        format!("{}\n{notes}", squawk.squawk.description.as_str())
+    };
+    Typed {
+        work: TypedWork {
+            complaint,
+            dispositions: vec![TypedDisposition {
+                action: Action::SignOff,
+                ..TypedDisposition::undecided(squawk.id)
+            }],
+            ..TypedWork::default()
+        },
+        ..Typed::default()
+    }
+}
+
 #[component]
-fn LogScreen(asset: AssetId, kind: EventKind, mode: Mode, original: Option<Event>) -> Element {
+fn LogScreen(
+    asset: AssetId,
+    kind: EventKind,
+    mode: Mode,
+    original: Option<Event>,
+    prefill: Option<SquawkView>,
+) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
-    use_effect(use_reactive!(|asset| {
+    use_effect(use_reactive!(|asset, kind| {
         spawn(async move {
-            loaded.set(Some(load(asset).await));
+            loaded.set(Some(load(asset, kind).await));
         });
     }));
     match loaded() {
         None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
         Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
         Some(Ok(data)) => {
-            let start = original.as_ref().map_or_else(Typed::default, |event| {
-                typed_from(event, &data.view.meters, &data.view.fields, &data.units)
-            });
+            let start = match (&original, &prefill) {
+                (Some(event), _) => {
+                    typed_from(event, &data.view.meters, &data.view.fields, &data.units)
+                }
+                (None, Some(squawk)) => repair_start(squawk),
+                (None, None) => Typed::default(),
+            };
             // An edit or correction keeps the event's own zone when the place data has none.
             let data = Loaded {
                 zone: original
@@ -197,7 +285,16 @@ fn LogScreen(asset: AssetId, kind: EventKind, mode: Mode, original: Option<Event
                     .map_or(data.zone.clone(), |event| event.dates.zone.clone()),
                 ..data
             };
-            rsx! { FormBody { kind, data, mode, start } }
+            // The jobs whose squawk dispositions this one replaces: itself (an edit) and the one
+            // it corrects (#034).
+            let leave_out: Vec<EventId> = match mode {
+                Mode::New => Vec::new(),
+                Mode::Edit(id) => std::iter::once(id)
+                    .chain(original.as_ref().and_then(|event| event.corrects))
+                    .collect(),
+                Mode::Correct(original) => vec![original],
+            };
+            rsx! { FormBody { kind, data, mode, start, leave_out } }
         }
     }
 }
@@ -227,6 +324,10 @@ struct Inputs {
     original_location: Signal<Option<EventLocation>>,
     original_start: Signal<Option<domain::time::UnixMillis>>,
     picker: Picker,
+    /// A job's work log.
+    work: Signal<TypedWork>,
+    /// The currency its amounts are in (`None`: the person's).
+    currency: Signal<Option<CurrencyCode>>,
     /// The problem shown, and where.
     problem: Signal<Option<(Target, String)>>,
 }
@@ -259,6 +360,8 @@ impl Inputs {
             override_reason: (self.override_reason)(),
             original_location: (self.original_location)(),
             original_start: (self.original_start)(),
+            work: (self.work)(),
+            currency: (self.currency)(),
         }
     }
 
@@ -315,10 +418,12 @@ fn use_inputs(start: &Typed) -> Inputs {
         no_place_reason: use_signal(|| start.no_place_reason.clone()),
         someone: use_signal(|| start.someone.clone()),
         notes: use_signal(|| start.notes.clone()),
+        currency: use_signal(|| start.currency),
         override_reason: use_signal(|| start.override_reason.clone()),
         original_location: use_signal(|| start.original_location.clone()),
         original_start: use_signal(|| start.original_start),
         picker,
+        work: use_signal(|| start.work.clone()),
         problem: use_signal(|| None),
     }
 }
@@ -423,7 +528,13 @@ fn refusal(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element {
+fn FormBody(
+    kind: EventKind,
+    data: Loaded,
+    mode: Mode,
+    start: Typed,
+    leave_out: Vec<EventId>,
+) -> Element {
     let inputs = use_inputs(&start);
     let units = data.units;
     let mut busy = use_signal(|| false);
@@ -434,11 +545,17 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
     let navigator = use_navigator();
     let view = data.view.clone();
     let asset = view.id;
+    let job = !kind.finalizes_by_itself();
+    let all_squawks = use_vehicle_squawks(asset);
+    let mut finishing = use_signal(|| false);
     let required = required_items(kind, &view.meters, &view.fields);
+    // A reading, or a job's readings at the start, shows every meter.
     let open_meters: Vec<(MeterId, Meter)> = view
         .meters
         .iter()
-        .filter(|(id, _)| kind == EventKind::Reading || required.contains(&Requirement::Meter(*id)))
+        .filter(|(id, _)| {
+            kind == EventKind::Reading || job || required.contains(&Requirement::Meter(*id))
+        })
         .cloned()
         .collect();
     let required_fields: Vec<(CustomFieldId, CustomField)> = view
@@ -449,7 +566,9 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
         .collect();
     let (meters, fields, fallback) = (view.meters.clone(), view.fields.clone(), data.zone.clone());
     let may_override = data.may_override;
-    let save = move |_| {
+    let squawks_left_out = leave_out.clone();
+    // Save draft (`false`), or save and Finish (`true`, a job).
+    let submit = Callback::new(move |finish: bool| {
         let context = Context {
             asset,
             kind,
@@ -460,7 +579,20 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
             now: SystemClock.now(),
         };
         let mut problem = inputs.problem;
-        let input = match build(&inputs.typed(), &context) {
+        // Only the squawks the job deals with now: one another job has since resolved isn't
+        // this job's to disposition any more (the server would refuse it).
+        let mut typed = inputs.typed();
+        let shown = job_squawk_ids(&job_squawks(
+            &(all_squawks)()
+                .map(|loaded| loaded.squawks)
+                .unwrap_or_default(),
+            &squawks_left_out,
+        ));
+        typed
+            .work
+            .dispositions
+            .retain(|disposition| shown.contains(&disposition.squawk));
+        let input = match build(&typed, &context) {
             Ok(input) => input,
             Err((target, message)) => {
                 problem.set(Some((target, tr(message))));
@@ -474,6 +606,31 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
             let result = send(mode, input, reason()).await;
             busy.set(false);
             match result {
+                Ok(EventsOutcome::Saved { id, .. }) if finish => {
+                    chooser.remember(asset);
+                    match api::finish_event(id).await {
+                        Ok(EventsOutcome::Done) => {
+                            tracing::debug!(target: log_area::UI, event = %id, "job finished");
+                            navigator.replace(Route::EventDetail {
+                                event_id: id.to_string(),
+                            });
+                        }
+                        Ok(EventsOutcome::Invalid { problem: refused }) => {
+                            // Saved, but not finished: the draft's form, with the reason.
+                            finishing.set(false);
+                            problem.set(Some(refusal(refused, mode, &names.0, &units, &zone)));
+                            navigator.replace(Route::EditEvent {
+                                event_id: id.to_string(),
+                            });
+                        }
+                        other => {
+                            tracing::debug!(target: log_area::UI, ?other, "finish: unexpected answer");
+                            finishing.set(false);
+                            problem
+                                .set(Some((Target::General, tr(messages::SOMETHING_WENT_WRONG))));
+                        }
+                    }
+                }
                 Ok(EventsOutcome::Saved { id, warnings }) => {
                     chooser.remember(asset);
                     tracing::debug!(target: log_area::UI, event = %id, warnings = warnings.len(), "event saved");
@@ -509,15 +666,37 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
                     tr(problem_from_error(&error).message()),
                 ))),
             }
+            finishing.set(false);
         });
-    };
+    });
     if let Some(SavedWith(id, warnings)) = saved() {
         return rsx! { SavedNotice { event: id, warnings } };
     }
     let latest = data.latest.clone();
     let zone_now = zone(&inputs.typed(), &data.zone);
+    let shown_squawks = job_squawks(
+        &(all_squawks)()
+            .map(|loaded| loaded.squawks)
+            .unwrap_or_default(),
+        &leave_out,
+    );
+    let checks = finish_checks(&inputs, &required, &shown_squawks);
+    let currency = (inputs.currency)().unwrap_or(units.currency);
+    let work_problem = |target: Target| inputs.problem_at(target);
+    let end_problem = (inputs.problem)().and_then(|(at, text)| match at {
+        Target::EndReading(meter) => Some((meter, text)),
+        Target::Meter(_)
+        | Target::Field(_)
+        | Target::Fuel
+        | Target::When
+        | Target::Where
+        | Target::Correction
+        | Target::Work
+        | Target::Squawks
+        | Target::General => None,
+    });
     rsx! {
-        div { class: "log-form",
+        div { class: if job { "log-form job" } else { "log-form" },
             Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: asset.to_string() }, {format!("‹ {}", view.asset.name.as_str())} }
             if let Mode::Correct(_) = mode {
                 div { class: "log-item",
@@ -546,6 +725,24 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
             if kind == EventKind::Fuel {
                 FuelPart { inputs, units }
             }
+            if job {
+                div { class: "log-item",
+                    CurrencyPick { inputs, home: units.currency }
+                }
+                WorkLog {
+                    kind,
+                    work: inputs.work,
+                    vehicle: view.clone(),
+                    requirements: data.requirements.clone(),
+                    bundles: data.bundles.clone(),
+                    squawks: shown_squawks,
+                    currency,
+                    work_problem: work_problem(Target::Work),
+                    squawk_problem: work_problem(Target::Squawks),
+                    end_problem,
+                    start_readings: (inputs.readings)(),
+                }
+            }
             WhenWherePart { inputs, places: data.places.clone(), countries: data.countries, zone: zone_now.clone() }
             if kind == EventKind::Fuel {
                 DrivingFold { inputs, view: view.clone() }
@@ -553,10 +750,104 @@ fn FormBody(kind: EventKind, data: Loaded, mode: Mode, start: Typed) -> Element 
             MoreFold { inputs, kind, view, required, units, zone: zone_now }
             WhoFold { inputs }
             FormError { message: inputs.problem_at(Target::General) }
-            div { class: "save-bar",
-                p { class: "muted-note", {tr(messages::LOG_DRAFT_NOTE)} }
-                button { class: "primary-button", r#type: "button", disabled: busy(), onclick: save,
-                    {tr(if busy() { messages::LOG_SAVING } else { messages::LOG_SAVE })}
+            if job {
+                div { class: "save-bar job-bar",
+                    div { class: "job-total",
+                        span { class: "section-heading", {tr(messages::WORK_TOTAL).to_uppercase()} }
+                        strong { {crate::ui::money(total_minor(&(inputs.work)(), currency), currency)} }
+                    }
+                    div { class: "form-buttons",
+                        button { class: "secondary-button", r#type: "button", disabled: busy(), onclick: move |_| submit.call(false),
+                            {tr(if busy() { messages::LOG_SAVING } else { messages::WORK_SAVE_DRAFT })}
+                        }
+                        button { class: "primary-button", r#type: "button", disabled: busy(), onclick: move |_| finishing.set(true),
+                            {tr(messages::WORK_FINISH)}
+                        }
+                    }
+                }
+            } else {
+                div { class: "save-bar",
+                    p { class: "muted-note", {tr(messages::LOG_DRAFT_NOTE)} }
+                    button { class: "primary-button", r#type: "button", disabled: busy(), onclick: move |_| submit.call(false),
+                        {tr(if busy() { messages::LOG_SAVING } else { messages::LOG_SAVE })}
+                    }
+                }
+            }
+        }
+        if finishing() {
+            FinishDialog { checks, busy: busy(), on_finish: move |()| submit.call(true), on_close: move |()| finishing.set(false) }
+        }
+    }
+}
+
+/// Finish's checks, as far as the form can tell (the server checks everything again): the
+/// required readings, the place, and every squawk the job deals with decided.
+fn finish_checks(
+    inputs: &Inputs,
+    required: &[Requirement],
+    squawks: &[SquawkView],
+) -> Vec<FinishCheck> {
+    let typed = inputs.typed();
+    let readings = required.iter().all(|item| match item {
+        Requirement::Meter(id) => {
+            inputs.skipping(*item) || !text_of(&typed.readings, id).trim().is_empty()
+        }
+        Requirement::Field(id) => {
+            inputs.skipping(*item) || !text_of(&typed.fields, id).trim().is_empty()
+        }
+    });
+    let place = matches!(super::log_input::place(&typed), Ok(Some(_)))
+        || typed
+            .no_place_reason
+            .as_ref()
+            .is_some_and(|reason| !reason.trim().is_empty());
+    let undecided = typed.work.undecided(&job_squawk_ids(squawks));
+    let mut checks = vec![FinishCheck::Readings(readings), FinishCheck::Place(place)];
+    checks.extend(
+        squawks
+            .iter()
+            .filter(|view| undecided.contains(&view.id))
+            .map(|view| FinishCheck::Undecided(view.squawk.description.as_str().to_owned())),
+    );
+    checks
+}
+
+/// "Finish this job?": its checks, then **Finish and lock** once they all pass (#034).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn FinishDialog(
+    checks: Vec<FinishCheck>,
+    busy: bool,
+    on_finish: EventHandler<()>,
+    on_close: EventHandler<()>,
+) -> Element {
+    let ready = checks.iter().all(FinishCheck::passes);
+    rsx! {
+        div { class: "dialog-scrim", onclick: move |_| on_close.call(()),
+            div { class: "dialog finish-dialog", role: "dialog", "aria-modal": "true", onclick: move |event| event.stop_propagation(),
+                h2 { class: "dialog-title", {tr(messages::WORK_FINISH_TITLE)} }
+                ul { class: "finish-checks",
+                    for (index, check) in checks.into_iter().enumerate() {
+                        li { key: "{index}", class: if check.passes() { "finish-check ok" } else { "finish-check missing" },
+                            span { class: "finish-mark", if check.passes() { "✓" } else { "✕" } }
+                            span {
+                                match &check {
+                                    FinishCheck::Undecided(description) => tr_with(check.message(), &[("description", MessageArg::from(description.as_str()))]),
+                                    FinishCheck::Readings(_) | FinishCheck::Place(_) => tr(check.message()),
+                                }
+                            }
+                        }
+                    }
+                }
+                p { class: "dialog-text", {tr(messages::WORK_FINISH_LOCKS)} }
+                div { class: "form-buttons",
+                    button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::WORK_FINISH_BACK)} }
+                    button { class: "primary-button", r#type: "button", disabled: !ready || busy, onclick: move |_| on_finish.call(()),
+                        {tr(if busy { messages::LOG_SAVING } else { messages::WORK_FINISH_LOCK })}
+                    }
                 }
             }
         }
@@ -880,9 +1171,10 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
         messages::LOG_VOLUME,
         &[("unit", MessageArg::from(volume_abbr(units.volume)))],
     );
+    let currency = (inputs.currency)().unwrap_or(units.currency);
     let price_label = tr_with(
         messages::LOG_PRICE,
-        &[("currency", MessageArg::from(units.currency.as_str()))],
+        &[("currency", MessageArg::from(currency.as_str()))],
     );
     rsx! {
         div { class: "log-item",
@@ -894,9 +1186,10 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
                 }
                 label { class: "field",
                     span { class: "field-label", {price_label} }
-                    input { class: "field-input big", inputmode: "decimal", autocomplete: "off", value: price(), oninput: move |event| price.set(event.value()) }
+                    MoneyInput { currency, value: price(), big: true, on_input: move |text: String| price.set(text) }
                 }
             }
+            CurrencyPick { inputs, home: units.currency }
             if let Some(text) = per_unit(&inputs, &units) {
                 p { class: "muted-note", {text} }
             }
@@ -925,11 +1218,31 @@ fn WhenWherePart(
     countries: Vec<(CountryCode, String)>,
     zone: TimeZone,
 ) -> Element {
+    let when = (inputs.when)().map_or_else(
+        || tr(messages::LOG_NOW),
+        |(date, time)| format!("{date} {time}"),
+    );
+    let city = (inputs.picker.city)();
+    let region = (inputs.picker.region)();
+    let place = if !city.trim().is_empty() {
+        [city.trim(), region.trim()]
+            .into_iter()
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join(", ")
+    } else if (inputs.no_place_reason)().is_some() {
+        tr(messages::LOG_NO_PLACE_SUMMARY)
+    } else {
+        tr(messages::LOG_PLACE_NEEDED)
+    };
+    // Open while the place (required) is still missing; folded once there is one.
+    let open = city.trim().is_empty() && (inputs.no_place_reason)().is_none();
     rsx! {
         div { class: "log-item",
-            Heading { text: tr(messages::LOG_SECTION_WHEN_WHERE), required: false }
-            WhenRow { inputs, zone }
-            WhereRows { inputs, places, countries }
+            Fold { title: tr(messages::LOG_SECTION_WHEN_WHERE), summary: format!("{when} · {place}"), open,
+                WhenRow { inputs, zone }
+                WhereRows { inputs, places, countries }
+            }
         }
     }
 }
@@ -1059,14 +1372,89 @@ fn WhereRows(
 
 // --- The folded sections -----------------------------------------------------------------
 
-/// A folded section: its title and one-line summary, then what's in it.
+/// The currency an event's amounts are in: the person's first (and chosen until changed), then
+/// the common ones, then the event's own if it's none of those (the human's M7 note).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
 #[component]
-fn Fold(title: String, summary: String, children: Element) -> Element {
+fn CurrencyPick(inputs: Inputs, home: CurrencyCode) -> Element {
+    let mut chosen = inputs.currency;
+    let current = chosen().unwrap_or(home);
     rsx! {
-        details { class: "fold",
+        label { class: "field currency-pick",
+            span { class: "field-label", {tr(messages::LOG_CURRENCY)} }
+            select {
+                class: "field-input",
+                onchange: move |event: FormEvent| {
+                    if let Ok(code) = CurrencyCode::parse(&event.value()) {
+                        chosen.set(Some(code));
+                    }
+                },
+                for code in CurrencyCode::menu(home, current) {
+                    option { key: "{code}", value: "{code}", selected: code == current,
+                        {format!("{code} ({})", code.symbol(home).trim_end())}
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// An amount's field, with its currency's symbol in front ("$", "CA$", "€").
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(super) fn MoneyInput(
+    currency: CurrencyCode,
+    value: String,
+    #[props(default)] big: bool,
+    #[props(default)] label: Option<String>,
+    on_input: EventHandler<String>,
+) -> Element {
+    let symbol = currency.symbol(crate::ui::home_currency());
+    // Room for the symbol in front of the amount: "$" needs less than "CA$" or "CHF".
+    let room = format!(
+        "--money-symbol-width: {}ch",
+        symbol.trim_end().chars().count() + 1
+    );
+    rsx! {
+        span { class: "money-input", style: "{room}",
+            span { class: "money-symbol", "aria-hidden": "true", {symbol.trim_end().to_owned()} }
+            input {
+                class: if big { "field-input big" } else { "field-input" },
+                inputmode: "decimal",
+                autocomplete: "off",
+                "aria-label": label,
+                value,
+                oninput: move |event| on_input.call(event.value()),
+            }
+        }
+    }
+}
+
+/// A folded section: ▸ (▾ when open), its title and one-line summary, then what's in it.
+/// `open` is how it starts; after that the person folds and unfolds it.
+#[component]
+fn Fold(
+    title: String,
+    summary: String,
+    #[props(default)] open: bool,
+    children: Element,
+) -> Element {
+    // Only the first value counts, so a change elsewhere never folds it under the person.
+    let open = use_signal(|| open);
+    rsx! {
+        details { class: "fold", open: open(),
             summary { class: "fold-head",
-                span { class: "fold-title", {title} }
-                span { class: "fold-summary", {summary} }
+                span { class: "fold-toggle", "aria-hidden": "true", "▸" }
+                span { class: "fold-text",
+                    span { class: "fold-title", {title} }
+                    span { class: "fold-summary", {summary} }
+                }
             }
             div { class: "fold-body", {children} }
         }

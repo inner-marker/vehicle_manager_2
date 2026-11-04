@@ -13,6 +13,8 @@
 //! | Messages reload on an open screen | 5 minutes | 1 minute |
 //! | Nightly snapshot, hourly database check | 07:00 UTC daily, hourly | every N minutes |
 //! | Recovery code lifetime | 15 minutes | N minutes |
+//! | A fuel-up or reading finalizes by itself | 24 hours after its last edit | N minutes |
+//! | A maintenance or repair draft is a forgotten job | 14 days after its last edit | N minutes |
 //!
 //! Never shortened: the sign-in attempt limit (it protects against guessing) and the
 //! 30-day session.
@@ -118,6 +120,14 @@ impl Timers {
     pub fn finalize_after_millis(self) -> i64 {
         self.test_millis()
             .unwrap_or(crate::event::FINALIZE_AFTER_MILLIS)
+    }
+
+    /// How long a maintenance or repair draft sits untouched before it's a forgotten job
+    /// (#034).
+    #[must_use]
+    pub fn forgotten_after_millis(self) -> i64 {
+        self.test_millis()
+            .unwrap_or(crate::event::FORGOTTEN_AFTER_MILLIS)
     }
 
     /// How long Admin mode lasts without activity.

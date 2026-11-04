@@ -639,6 +639,137 @@ pub enum EventsOutcome {
     Unavailable,
 }
 
+/// What opening or changing a squawk sends (milestone 7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SquawkInput {
+    /// Which vehicle (fixed once opened).
+    pub asset: crate::asset::AssetId,
+    /// What's wrong.
+    pub description: crate::squawk::SquawkText,
+    /// More detail.
+    pub notes: crate::notes::Notes,
+    /// How serious it is.
+    pub severity: crate::squawk::Severity,
+    /// When it was noticed.
+    pub opened_at: crate::time::UnixMillis,
+    /// The event it was found on, if any (fixed once opened).
+    pub found_on: Option<crate::event::EventId>,
+}
+
+/// One squawk as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SquawkView {
+    /// Its ID.
+    pub id: crate::squawk::SquawkId,
+    /// The squawk, as opened (and edited).
+    pub squawk: crate::squawk::Squawk,
+    /// Where it stands now.
+    pub status: crate::squawk::SquawkStatus,
+    /// Its severity now (the latest disposition's change, or as opened).
+    pub severity: crate::squawk::Severity,
+    /// Its dispositions that count, oldest first.
+    pub history: Vec<crate::squawk::CountedDisposition>,
+    /// Who opened it, by their display name.
+    pub opened_by_name: String,
+    /// The person may change or remove it (it's still open, no job has dealt with it, and
+    /// they opened it or are a Maintainer).
+    pub may_change: bool,
+}
+
+/// The answer to a squawk request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum SquawksOutcome {
+    /// One vehicle's squawks, newest first.
+    Squawks {
+        /// Each squawk.
+        squawks: Vec<SquawkView>,
+        /// The person may open one on this vehicle (a Driver or higher, in that mode).
+        may_open: bool,
+    },
+    /// One squawk.
+    Squawk {
+        /// It.
+        view: Box<SquawkView>,
+    },
+    /// A squawk was opened or changed.
+    Saved {
+        /// Its ID.
+        id: crate::squawk::SquawkId,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, squawk, or event (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The squawk was refused.
+    Invalid {
+        /// Why.
+        problem: crate::squawk::SquawkProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// One requirement as the app shows it, with when it was last done.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RequirementView {
+    /// Its ID.
+    pub id: crate::requirement::RequirementId,
+    /// The requirement.
+    pub requirement: crate::requirement::Requirement,
+    /// The latest finished task that did it, if any.
+    pub last_done: Option<crate::requirement::DoneTask>,
+}
+
+/// The answer to a requirements or bundles request (a vehicle's maintenance schedule).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ScheduleOutcome {
+    /// One vehicle's schedule.
+    Schedule {
+        /// Its requirements (turned-off ones too), by name.
+        requirements: Vec<RequirementView>,
+        /// Its bundles, by name.
+        bundles: Vec<(crate::requirement::BundleId, crate::requirement::Bundle)>,
+        /// The person may change it (a Maintainer or higher, in that mode).
+        may_configure: bool,
+    },
+    /// A requirement was added or changed.
+    SavedRequirement {
+        /// Its ID.
+        id: crate::requirement::RequirementId,
+    },
+    /// A bundle was added or changed.
+    SavedBundle {
+        /// Its ID.
+        id: crate::requirement::BundleId,
+    },
+    /// A schedule was copied from another vehicle.
+    Copied {
+        /// How many requirements were copied.
+        requirements: usize,
+        /// How many bundles were copied.
+        bundles: usize,
+        /// Meter rules left out, as "requirement: meter" (no matching meter).
+        left_out: Vec<(crate::label::Label, crate::label::Label)>,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, requirement, or bundle (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The requirement or bundle was refused.
+    Invalid {
+        /// Why.
+        problem: crate::requirement::RequirementProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// What to do with a message (decision #050).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

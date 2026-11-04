@@ -1,9 +1,11 @@
-//! Preferences: units, formats, currency, language (decisions #029, #048), and when the app
-//! signs out by itself (#049), and how the Garage sorts vehicles (#056).
+//! Preferences: units, formats, currency, language (decisions #029, #048), when the app
+//! signs out by itself (#049), how the Garage sorts vehicles (#056), and what squawks are
+//! called (#064).
 //!
 //! Display only: stored values are always metric integers and currency codes. Each value
 //! here is chosen by the household (an Admin) and can be overridden by each user:
 //! **the user's choice → the household's → the built-in default** ([`Preferences::resolve`]).
+//! The one exception is [`SquawkWord`]: the household's alone, so everyone sees one word.
 //!
 //! One record holds the household's choices and one each user's, with one field per setting,
 //! so two devices changing different settings never overwrite each other (#043).
@@ -155,6 +157,27 @@ pub enum GarageSort {
     Custom,
 }
 
+/// What the household calls squawks on screen (#064): the Admin's choice, the same for
+/// everyone. Only the words change; the code, the API, and the documents say "squawk".
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SquawkWord {
+    /// "Issues" (the default: understood by everyone).
+    #[default]
+    Issue,
+    /// "Squawks" (aviation's word).
+    Squawk,
+    /// "Faults".
+    Fault,
+    /// "Write-ups" (the shop's word).
+    WriteUp,
+}
+
+impl SquawkWord {
+    /// Every word, in the order Settings offers them.
+    pub const ALL: [Self; 4] = [Self::Issue, Self::Squawk, Self::Fault, Self::WriteUp];
+}
+
 /// An ISO 4217 currency code: three capital letters, e.g. `USD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -173,6 +196,45 @@ impl CurrencyCode {
         Self(*b"AUD"),
         Self(*b"MXN"),
     ];
+
+    /// The choices for an amount's currency, `home` (the household's or person's) first and
+    /// chosen by default, then the common ones, then `current` if it's none of those.
+    #[must_use]
+    pub fn menu(home: Self, current: Self) -> Vec<Self> {
+        let mut codes = vec![home];
+        codes.extend(Self::COMMON.into_iter().filter(|code| *code != home));
+        if !codes.contains(&current) {
+            codes.push(current);
+        }
+        codes
+    }
+
+    /// What goes in front of an amount in this currency, seen by someone whose currency is
+    /// `home`: "$" for their own dollars and "CA$", "A$", "US$" for others'; "€", "£", "¥";
+    /// otherwise the code and a space ("CHF ").
+    #[must_use]
+    pub fn symbol(self, home: Self) -> String {
+        let dollar = match self.as_str() {
+            "USD" => Some("US$"),
+            "CAD" => Some("CA$"),
+            "AUD" => Some("A$"),
+            "MXN" => Some("MX$"),
+            "NZD" => Some("NZ$"),
+            "HKD" => Some("HK$"),
+            "SGD" => Some("S$"),
+            _other => None,
+        };
+        match (dollar, self.as_str()) {
+            (Some(_), _) if self == home => "$".to_owned(),
+            (Some(prefixed), _) => prefixed.to_owned(),
+            (None, "EUR") => "€".to_owned(),
+            (None, "GBP") => "£".to_owned(),
+            (None, "JPY") => "¥".to_owned(),
+            (None, "INR") => "₹".to_owned(),
+            (None, "KRW") => "₩".to_owned(),
+            (None, code) => format!("{code} "),
+        }
+    }
 
     /// Reads a code; surrounding spaces are ignored and letters uppercased.
     ///
@@ -257,6 +319,8 @@ pub struct Preferences {
     pub idle_sign_out: IdleSignOut,
     /// How the Garage orders vehicles.
     pub garage_sort: GarageSort,
+    /// What squawks are called (the household's choice only).
+    pub squawk_word: SquawkWord,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -281,11 +345,13 @@ pub struct PreferenceChoices {
     pub idle_sign_out: Option<IdleSignOut>,
     /// How the Garage orders vehicles.
     pub garage_sort: Option<GarageSort>,
+    /// What squawks are called: the household's record only (a person's is ignored).
+    pub squawk_word: Option<SquawkWord>,
 }
 
 impl Preferences {
     /// The preferences in effect: each setting from `mine` if chosen, else the household's,
-    /// else the built-in default.
+    /// else the built-in default. What squawks are called comes from the household only.
     #[must_use]
     pub fn resolve(mine: &PreferenceChoices, household: &PreferenceChoices) -> Self {
         let defaults = Self::default();
@@ -323,6 +389,7 @@ impl Preferences {
                 .garage_sort
                 .or(household.garage_sort)
                 .unwrap_or(defaults.garage_sort),
+            squawk_word: household.squawk_word.unwrap_or(defaults.squawk_word),
         }
     }
 }
@@ -386,6 +453,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::garage_sort`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub garage_sort: Option<Choice<GarageSort>>,
+    /// See [`Preferences::squawk_word`] (the household's record only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub squawk_word: Option<Choice<SquawkWord>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -400,6 +470,7 @@ impl Patch for PreferencesPatch {
             ("language", self.language.is_some()),
             ("idle_sign_out", self.idle_sign_out.is_some()),
             ("garage_sort", self.garage_sort.is_some()),
+            ("squawk_word", self.squawk_word.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -435,6 +506,9 @@ impl Patch for PreferencesPatch {
         if !keep("garage_sort") {
             self.garage_sort = None;
         }
+        if !keep("squawk_word") {
+            self.squawk_word = None;
+        }
     }
 }
 
@@ -459,6 +533,32 @@ mod tests {
         assert_eq!(defaults.language, Language::EnglishUs);
         assert_eq!(defaults.idle_sign_out, IdleSignOut::EightHours);
         assert_eq!(defaults.garage_sort, GarageSort::NewestActivity);
+        assert_eq!(defaults.squawk_word, SquawkWord::Issue);
+    }
+
+    #[test]
+    fn what_squawks_are_called_is_the_households_alone() {
+        let household = PreferenceChoices {
+            squawk_word: Some(SquawkWord::Squawk),
+            ..PreferenceChoices::default()
+        };
+        let mine = PreferenceChoices {
+            squawk_word: Some(SquawkWord::Fault),
+            ..PreferenceChoices::default()
+        };
+        assert_eq!(
+            Preferences::resolve(&mine, &household).squawk_word,
+            SquawkWord::Squawk
+        );
+        assert_eq!(
+            Preferences::resolve(&mine, &PreferenceChoices::default()).squawk_word,
+            SquawkWord::Issue,
+            "a person's own choice never counts"
+        );
+        assert_eq!(
+            serde_json::to_string(&SquawkWord::WriteUp).unwrap(),
+            r#""write-up""#
+        );
     }
 
     #[test]
@@ -527,5 +627,26 @@ mod tests {
             patch
         );
         assert_eq!(Choice::<PressureUnit>::Default.value(), None);
+    }
+
+    #[test]
+    fn currencies_show_their_symbol_and_list_home_first() {
+        let code = |text| CurrencyCode::parse(text).unwrap();
+        let usd = CurrencyCode::USD;
+        assert_eq!(usd.symbol(usd), "$");
+        assert_eq!(code("CAD").symbol(usd), "CA$");
+        assert_eq!(code("CAD").symbol(code("CAD")), "$");
+        assert_eq!(usd.symbol(code("CAD")), "US$");
+        assert_eq!(code("EUR").symbol(usd), "€");
+        assert_eq!(code("GBP").symbol(usd), "£");
+        assert_eq!(code("CHF").symbol(usd), "CHF ");
+        let menu = CurrencyCode::menu(code("GBP"), code("CHF"));
+        assert_eq!(menu[0], code("GBP"));
+        assert_eq!(menu.iter().filter(|c| **c == code("GBP")).count(), 1);
+        assert_eq!(menu.last(), Some(&code("CHF")));
+        assert_eq!(
+            CurrencyCode::menu(usd, usd).len(),
+            CurrencyCode::COMMON.len()
+        );
     }
 }

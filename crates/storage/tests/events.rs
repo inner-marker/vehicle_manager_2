@@ -199,6 +199,7 @@ mod events {
                 towed: vec![test_id(TRAILER)],
                 reported_economy: Some(7_015),
             }),
+            work: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: at,

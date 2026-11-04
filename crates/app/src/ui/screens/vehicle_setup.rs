@@ -181,6 +181,15 @@ pub(super) fn Setup(view: AssetView) -> Element {
             DetailsSection { view: view.clone() }
             MetersSection { view: view.clone() }
             FieldsSection { view: view.clone() }
+            // The maintenance schedule moved to its own tab (step 7g, choice 15).
+            if view.can_configure {
+                p { class: "muted-note",
+                    Link {
+                        to: Route::VehicleTab { asset_id: view.id.to_string(), tab: "set-up".to_owned() },
+                        {tr(messages::SETUP_SCHEDULE_MOVED)}
+                    }
+                }
+            }
             GroupAndStatus { view }
         }
     }
@@ -188,7 +197,7 @@ pub(super) fn Setup(view: AssetView) -> Element {
 
 /// A Setup section's heading, with its button (if any) on the right.
 #[component]
-fn SectionHeading(title: MessageId, children: Element) -> Element {
+pub(super) fn SectionHeading(title: MessageId, children: Element) -> Element {
     rsx! {
         div { class: "setup-heading",
             h3 { class: "section-heading", {tr(title).to_uppercase()} }
@@ -479,7 +488,7 @@ fn MetersSection(view: AssetView) -> Element {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn RowButtons(on_edit: EventHandler<()>, on_remove: EventHandler<()>) -> Element {
+pub(super) fn RowButtons(on_edit: EventHandler<()>, on_remove: EventHandler<()>) -> Element {
     rsx! {
         div { class: "setup-row-buttons",
             button { class: "secondary-button", onclick: move |_| on_edit.call(()), {tr(messages::ACTION_EDIT)} }

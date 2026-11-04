@@ -49,6 +49,13 @@ impl EventKind {
     /// Every kind, in order.
     pub const ALL: [Self; 4] = [Self::Fuel, Self::Reading, Self::Maintenance, Self::Repair];
 
+    /// Whether it finalizes by itself, 24 hours after its last edit (fuel-ups and readings);
+    /// maintenance and repairs lock only when finished (#034).
+    #[must_use]
+    pub const fn finalizes_by_itself(self) -> bool {
+        matches!(self, Self::Fuel | Self::Reading)
+    }
+
     /// The kind's name.
     #[must_use]
     pub const fn label(self) -> MessageId {

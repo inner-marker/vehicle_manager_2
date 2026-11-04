@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetId;
-use crate::command::{Clearable, Patch, Record};
+use crate::command::{Clearable, Record, record_patch};
 use crate::custom_field::CustomFieldId;
 use crate::dates::EventDates;
 use crate::i18n::{MessageId, messages};
@@ -253,6 +253,115 @@ pub struct FuelDetails {
     pub reported_economy: Option<i64>,
 }
 
+/// The most characters a part's description may have.
+pub const PART_MAX_CHARS: usize = 100;
+/// The most characters a part number may have.
+pub const PART_NUMBER_MAX_CHARS: usize = 40;
+/// How long a maintenance or repair draft can sit untouched before a reminder (#034).
+pub const FORGOTTEN_AFTER_MILLIS: i64 = 14 * 24 * 60 * 60 * 1000;
+
+/// Which of a maintenance event's reading sets: the start (the required one) or the end
+/// (e.g. after a test drive).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ReadingSet {
+    /// At the start of the work.
+    #[default]
+    Start,
+    /// At the end.
+    End,
+}
+
+/// A part used on a task (#032, milestone 7 choice 3).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Part {
+    /// What it is, e.g. "Oil filter" (1–100 characters).
+    pub description: String,
+    /// Its part number, if known (up to 40 characters), e.g. "FL-500S".
+    pub part_number: Option<String>,
+    /// How many, in thousandths (5.5 quarts is 5,500), more than zero.
+    pub quantity_milli: i64,
+    /// The price of one, in the event's currency's minor unit, if known.
+    pub unit_price_minor: Option<i64>,
+}
+
+impl Part {
+    /// What these cost together (quantity times unit price), if the price is known.
+    #[must_use]
+    pub fn cost_minor(&self) -> Option<i64> {
+        self.unit_price_minor
+            .map(|price| (i128::from(price) * i128::from(self.quantity_milli) + 500) / 1000)
+            .and_then(|cost| i64::try_from(cost).ok())
+    }
+}
+
+/// One task in a maintenance or repair event (#032).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Task {
+    /// What was done, e.g. "Engine oil & filter".
+    pub title: Label,
+    /// The requirement it does, if any (a repair task often fixes something no interval
+    /// tracks).
+    pub requirement: Option<crate::requirement::RequirementId>,
+    /// Notes.
+    pub notes: Notes,
+    /// The parts used.
+    pub parts: Vec<Part>,
+    /// How long it took, in seconds (typed as HH:MM).
+    pub labor_seconds: Option<i64>,
+    /// What the labor cost, in the event's currency's minor unit.
+    pub labor_cost_minor: Option<i64>,
+    /// Which readings reset its requirement: the start (the default) or the end.
+    pub resets_from: ReadingSet,
+    /// For a fixed-date rule: the next due date from the paperwork (`2027-11-30`), or none.
+    pub next_due: Option<String>,
+}
+
+impl Task {
+    /// What the parts cost together (the known prices).
+    #[must_use]
+    pub fn parts_cost_minor(&self) -> i64 {
+        self.parts.iter().filter_map(Part::cost_minor).sum()
+    }
+}
+
+/// What a maintenance or repair event adds (#032; milestone 7).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct WorkDetails {
+    /// The tasks, in order.
+    pub tasks: Vec<Task>,
+    /// Readings at the end of the work (the start ones are the event's own readings).
+    pub end_readings: Vec<Reading>,
+    /// What this event does about the vehicle's outstanding squawks.
+    pub dispositions: Vec<crate::squawk::SquawkDisposition>,
+    /// The costs' currency.
+    pub currency: CurrencyCode,
+    /// A repair's complaint: what was wrong, as noticed.
+    pub complaint: Option<Notes>,
+    /// A repair's cause: the diagnosis.
+    pub cause: Option<Notes>,
+}
+
+impl WorkDetails {
+    /// The end reading for `meter`, if there's one.
+    #[must_use]
+    pub fn end_reading(&self, meter: MeterId) -> Option<i64> {
+        self.end_readings
+            .iter()
+            .find(|reading| reading.meter == meter)
+            .map(|reading| reading.value)
+    }
+
+    /// What the visit cost: every task's parts and labor (#032).
+    #[must_use]
+    pub fn total_cost_minor(&self) -> i64 {
+        self.tasks
+            .iter()
+            .map(|task| task.parts_cost_minor() + task.labor_cost_minor.unwrap_or(0))
+            .sum()
+    }
+}
+
 /// One event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Event {
@@ -280,6 +389,8 @@ pub struct Event {
     pub performed_by: Option<Performer>,
     /// A fuel-up's details.
     pub fuel: Option<FuelDetails>,
+    /// A maintenance or repair's work: tasks, end readings, squawk dispositions.
+    pub work: Option<WorkDetails>,
     /// Why a reading out of order with its neighbours was kept (the Admin's override).
     pub reading_override: Option<Reason>,
     /// Draft or finalized.
@@ -322,6 +433,8 @@ pub struct EventInput {
     pub performed_by: Option<Performer>,
     /// See [`Event::fuel`].
     pub fuel: Option<FuelDetails>,
+    /// See [`Event::work`].
+    pub work: Option<WorkDetails>,
     /// See [`Event::reading_override`].
     pub reading_override: Option<Reason>,
 }
@@ -343,6 +456,7 @@ impl EventInput {
             logged_by,
             performed_by: self.performed_by,
             fuel: self.fuel,
+            work: self.work,
             reading_override: self.reading_override,
             status: EventStatus::Draft,
             last_edited_at: now,
@@ -366,6 +480,7 @@ impl EventInput {
             notes: self.notes,
             performed_by: self.performed_by,
             fuel: self.fuel,
+            work: self.work,
             reading_override: self.reading_override,
             last_edited_at: now,
             ..current.clone()
@@ -398,6 +513,7 @@ pub fn event_changes(before: &Event, after: &Event) -> EventPatch {
         logged_by: None,
         performed_by: cleared(before.performed_by.as_ref(), after.performed_by.as_ref()),
         fuel: cleared(before.fuel.as_ref(), after.fuel.as_ref()),
+        work: cleared(before.work.as_ref(), after.work.as_ref()),
         reading_override: cleared(
             before.reading_override.as_ref(),
             after.reading_override.as_ref(),
@@ -458,7 +574,45 @@ impl Event {
     #[must_use]
     pub const fn finalize_due(&self, now: UnixMillis, delay_millis: i64) -> bool {
         matches!(self.status, EventStatus::Draft)
+            && self.kind.finalizes_by_itself()
             && now.as_millis() - self.last_edited_at.as_millis() >= delay_millis
+    }
+
+    /// Whether it's a forgotten job at `now` (#034): a maintenance or repair draft untouched
+    /// for `delay` (14 days, or the test minutes). Only a reminder; nothing locks.
+    #[must_use]
+    pub const fn forgotten(&self, now: UnixMillis, delay_millis: i64) -> bool {
+        matches!(self.status, EventStatus::Draft)
+            && !self.kind.finalizes_by_itself()
+            && now.as_millis() - self.last_edited_at.as_millis() >= delay_millis
+    }
+
+    /// The tasks it did for requirements, as "last done" counts them (7b), once it's finished:
+    /// each with its event's time and the readings it resets from.
+    #[must_use]
+    pub fn done_tasks(&self, id: EventId) -> Vec<crate::requirement::DoneTask> {
+        let Some(work) = self
+            .work
+            .as_ref()
+            .filter(|_| self.status == EventStatus::Finalized)
+        else {
+            return Vec::new();
+        };
+        work.tasks
+            .iter()
+            .filter_map(|task| {
+                Some(crate::requirement::DoneTask {
+                    requirement: task.requirement?,
+                    at: self.dates.start,
+                    event: id,
+                    readings: match task.resets_from {
+                        ReadingSet::Start => self.readings.clone(),
+                        ReadingSet::End => work.end_readings.clone(),
+                    },
+                    next_due: task.next_due.clone(),
+                })
+            })
+            .collect()
     }
 
     /// The reading for `meter`, if it has one.
@@ -529,12 +683,37 @@ pub enum EventProblem {
     TowsItself,
     /// A kind of event this vehicle doesn't have (e.g. a fuel-up for a trailer).
     WrongKind,
+    /// **Finish** on a fuel-up or reading, or **Finalize now** on a maintenance or repair:
+    /// jobs are finished (with their checks), the others finalized.
+    NotAJob,
     /// A change to a finalized event.
     Finalized,
     /// A correction of an event that isn't finalized yet (edit the draft instead).
     NotFinalized,
     /// A correction of an event that was already corrected (correct the correction instead).
     AlreadyCorrected,
+    /// A maintenance or repair without its work details, or another kind with them.
+    WorkDetails,
+    /// A complaint or cause on something other than a repair.
+    RepairOnly,
+    /// A task for a requirement that isn't this vehicle's.
+    UnknownRequirement,
+    /// A part with no description, too long a description or part number, or a quantity of
+    /// zero or less.
+    BadPart,
+    /// A negative price, labor time, or labor cost.
+    BadCost,
+    /// A next due date on a task whose requirement has no fixed-date rule, or that isn't a
+    /// date.
+    BadNextDue,
+    /// A task resetting from the end readings when there are none for its meters.
+    NoEndReadings,
+    /// An end reading lower than the start one (the meter in question).
+    EndBelowStart(MeterId),
+    /// A signed-off squawk naming a task that isn't in the list.
+    UnknownTask,
+    /// A squawk disposition problem (finishing with one left, one twice, one not outstanding).
+    Squawk(crate::squawk::SquawkProblem),
 }
 
 impl EventProblem {
@@ -548,59 +727,36 @@ impl EventProblem {
             Self::LocationRequired => messages::EVENT_LOCATION_REQUIRED,
             Self::Required(_) => messages::EVENT_REQUIRED,
             Self::ReadingOutOfOrder(_) => messages::EVENT_READING_OUT_OF_ORDER,
-            Self::UnknownMeter(_) | Self::UnknownField(_) | Self::FuelDetails => {
-                messages::SOMETHING_WENT_WRONG
-            }
+            Self::UnknownMeter(_)
+            | Self::UnknownField(_)
+            | Self::FuelDetails
+            | Self::WorkDetails
+            | Self::RepairOnly
+            | Self::UnknownRequirement
+            | Self::UnknownTask => messages::SOMETHING_WENT_WRONG,
             Self::WrongValue(_) => messages::EVENT_WRONG_VALUE,
             Self::NoVolume => messages::EVENT_NO_VOLUME,
-            Self::BadAmount => messages::EVENT_BAD_AMOUNT,
+            Self::BadAmount | Self::BadCost => messages::EVENT_BAD_AMOUNT,
             Self::BadPercent => messages::EVENT_BAD_PERCENT,
             Self::TowsItself => messages::EVENT_TOWS_ITSELF,
             Self::WrongKind => messages::EVENT_WRONG_KIND,
+            Self::NotAJob => messages::EVENT_FINISH_JOBS_ONLY,
             Self::Finalized => messages::EVENT_FINALIZED,
             Self::NotFinalized => messages::EVENT_NOT_FINALIZED,
             Self::AlreadyCorrected => messages::EVENT_ALREADY_CORRECTED,
+            Self::BadPart => messages::EVENT_BAD_PART,
+            Self::BadNextDue => messages::EVENT_BAD_NEXT_DUE,
+            Self::NoEndReadings => messages::EVENT_NO_END_READINGS,
+            Self::EndBelowStart(_) => messages::EVENT_END_BELOW_START,
+            Self::Squawk(problem) => problem.message(),
         }
     }
 }
 
-/// Declares [`EventPatch`]: one optional value per field (field-level last-write-wins, #043),
-/// with its field names, so a field can't be added without being listed.
-macro_rules! event_patch {
-    ($($(#[$doc:meta])* $field:ident: $ty:ty,)+) => {
-        /// The changeable fields of an [`Event`]; `Some` means "set to this".
-        #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-        pub struct EventPatch {
-            $(
-                $(#[$doc])*
-                #[serde(skip_serializing_if = "Option::is_none")]
-                pub $field: Option<$ty>,
-            )+
-        }
-
-        impl Patch for EventPatch {
-            fn changed_fields(&self) -> Vec<&'static str> {
-                let mut fields = Vec::new();
-                $(
-                    if self.$field.is_some() {
-                        fields.push(stringify!($field));
-                    }
-                )+
-                fields
-            }
-
-            fn keep_only(&mut self, fields: &[&str]) {
-                $(
-                    if !fields.contains(&stringify!($field)) {
-                        self.$field = None;
-                    }
-                )+
-            }
-        }
-    };
-}
-
-event_patch! {
+record_patch! {
+    /// The changeable fields of an [`Event`]; `Some` means "set to this".
+    EventPatch
+    {
     /// See [`Event::asset`] (set when created).
     asset: AssetId,
     /// See [`Event::kind`] (set when created).
@@ -625,6 +781,8 @@ event_patch! {
     performed_by: Clearable<Performer>,
     /// See [`Event::fuel`].
     fuel: Clearable<FuelDetails>,
+        /// See [`Event::work`].
+        work: Clearable<WorkDetails>,
     /// See [`Event::reading_override`].
     reading_override: Clearable<Reason>,
     /// See [`Event::status`].
@@ -639,6 +797,7 @@ event_patch! {
     corrects: Clearable<EventId>,
     /// See [`Event::correction_reason`] (set when created).
     correction_reason: Clearable<Reason>,
+    }
 }
 
 impl EventPatch {
@@ -658,6 +817,7 @@ impl EventPatch {
             logged_by: Some(event.logged_by),
             performed_by: Some(Clearable::from_option(event.performed_by)),
             fuel: Some(Clearable::from_option(event.fuel)),
+            work: Some(Clearable::from_option(event.work)),
             reading_override: Some(Clearable::from_option(event.reading_override)),
             status: Some(event.status),
             last_edited_at: Some(event.last_edited_at),
@@ -688,6 +848,7 @@ impl EventPatch {
             logged_by: self.logged_by.ok_or("logged_by")?,
             performed_by: self.performed_by.and_then(Clearable::into_option),
             fuel: self.fuel.and_then(Clearable::into_option),
+            work: self.work.and_then(Clearable::into_option),
             reading_override: self.reading_override.and_then(Clearable::into_option),
             status: self.status.unwrap_or_default(),
             last_edited_at: self.last_edited_at.ok_or("last_edited_at")?,
@@ -726,6 +887,7 @@ impl Event {
             notes,
             performed_by,
             fuel,
+            work,
             reading_override,
             status,
             last_edited_at,
@@ -740,6 +902,7 @@ impl Event {
         set(&mut self.notes, notes);
         clear(&mut self.performed_by, performed_by);
         clear(&mut self.fuel, fuel);
+        clear(&mut self.work, work);
         clear(&mut self.reading_override, reading_override);
         set(&mut self.status, status);
         set(&mut self.last_edited_at, last_edited_at);

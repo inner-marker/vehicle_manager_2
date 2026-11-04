@@ -14,6 +14,9 @@
 //! - **Custom fields:** each value matches its field's type; a value outside the field's range
 //!   is a warning, never a refusal.
 //! - **Fuel-ups:** more than zero, sensible amounts and percentages, and never towing itself.
+//! - **Maintenance and repairs** (milestone 7, `work`): tasks for the vehicle's requirements,
+//!   sensible parts and costs, end readings at or above the start ones, and squawk
+//!   dispositions; **Finish** also needs every outstanding squawk dispositioned.
 //! - **Finalized events never change;** a correction needs a finalized original and a reason.
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +29,8 @@ use crate::event::{
     Skipped,
 };
 use crate::meter::{EventKind, Meter, MeterId};
+use crate::requirement::{Requirement as VehicleRequirement, RequirementId};
+use crate::squawk::SquawkId;
 use crate::time::UnixMillis;
 
 /// Whether events need a place (groundwork: only "required" exists now, milestone 6 choice 1).
@@ -40,8 +45,8 @@ pub enum LocationRule {
 /// What the checks need beyond the event itself.
 #[derive(Debug, Clone, Copy)]
 pub struct CheckContext<'a> {
-    /// Whether the vehicle's kind has fuel-ups (trailers don't, #030).
-    pub has_fuel: bool,
+    /// The kinds of events the vehicle has (its profile's, #030; trailers have no fuel-ups).
+    pub kinds: &'a [EventKind],
     /// The vehicle's meters.
     pub meters: &'a [(MeterId, Meter)],
     /// The vehicle's custom fields.
@@ -53,6 +58,10 @@ pub struct CheckContext<'a> {
     pub location_rule: LocationRule,
     /// Whether the person may keep a reading that doesn't fit (the Admin, in Admin mode).
     pub may_override_readings: bool,
+    /// The vehicle's requirements, for maintenance and repair tasks.
+    pub requirements: &'a [(RequirementId, VehicleRequirement)],
+    /// The vehicle's open and deferred squawks (other than ones this event already counted).
+    pub outstanding_squawks: &'a [SquawkId],
 }
 
 /// Something worth telling the person that doesn't stop the save.
@@ -137,21 +146,38 @@ pub fn check(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning>, 
         check_performer(performer)?;
     }
     check_fuel(event)?;
+    work::check_work(event, context, false)?;
     check_required(event, context)?;
     let mut warnings = check_readings(event, context)?;
     warnings.extend(check_fields(event, context)?);
     Ok(warnings)
 }
 
-/// Fuel-ups and readings only, until maintenance and repairs arrive (milestone 7), and fuel-ups
-/// only for kinds that have them.
+/// Checks a maintenance or repair event for **Finish** (#034): everything [`check`] does, and
+/// every outstanding squawk signed off or deferred (the required disposition).
+///
+/// # Errors
+///
+/// The first [`EventProblem`] found; [`EventProblem::NotAJob`] for a fuel-up or reading
+/// (they're finalized, not finished).
+pub fn check_finish(
+    event: &Event,
+    context: &CheckContext<'_>,
+) -> Result<Vec<Warning>, EventProblem> {
+    if event.kind.finalizes_by_itself() {
+        return Err(EventProblem::NotAJob);
+    }
+    let warnings = check(event, context)?;
+    work::check_work(event, context, true)?;
+    Ok(warnings)
+}
+
+/// Only the kinds of events the vehicle has (e.g. no fuel-ups for a trailer).
 fn check_kind(event: &Event, context: &CheckContext<'_>) -> Result<(), EventProblem> {
-    match event.kind {
-        EventKind::Fuel if context.has_fuel => Ok(()),
-        EventKind::Reading => Ok(()),
-        EventKind::Fuel | EventKind::Maintenance | EventKind::Repair => {
-            Err(EventProblem::WrongKind)
-        }
+    if context.kinds.contains(&event.kind) {
+        Ok(())
+    } else {
+        Err(EventProblem::WrongKind)
     }
 }
 
@@ -244,18 +270,33 @@ fn check_required(event: &Event, context: &CheckContext<'_>) -> Result<(), Event
 }
 
 /// Each reading is for one of the vehicle's meters, once, and fits its neighbours in time (or
-/// the Admin kept it, with a reason).
+/// the Admin kept it, with a reason): the start set at the event's start, and a maintenance
+/// event's end set at its end (or start, for a one-day job).
 fn check_readings(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning>, EventProblem> {
+    let mut warnings = check_reading_set(event, &event.readings, event.dates.start, context)?;
+    if let Some(work) = &event.work {
+        let end = event.dates.end.unwrap_or(event.dates.start);
+        warnings.extend(check_reading_set(event, &work.end_readings, end, context)?);
+    }
+    Ok(warnings)
+}
+
+fn check_reading_set(
+    event: &Event,
+    readings: &[crate::event::Reading],
+    at: UnixMillis,
+    context: &CheckContext<'_>,
+) -> Result<Vec<Warning>, EventProblem> {
     let mut warnings = Vec::new();
-    for (index, reading) in event.readings.iter().enumerate() {
+    for (index, reading) in readings.iter().enumerate() {
         let known = context.meters.iter().any(|(id, _)| *id == reading.meter);
-        let repeated = event.readings[..index]
+        let repeated = readings[..index]
             .iter()
             .any(|earlier| earlier.meter == reading.meter);
         if !known || repeated {
             return Err(EventProblem::UnknownMeter(reading.meter));
         }
-        let (before, after) = neighbours(context.history, reading.meter, event.dates.start);
+        let (before, after) = neighbours(context.history, reading.meter, at);
         let Some(clash) = clash(reading.meter, reading.value, before, after) else {
             continue;
         };
@@ -418,6 +459,8 @@ pub fn check_correction(
     }
     Ok(())
 }
+
+mod work;
 
 #[cfg(test)]
 mod tests;

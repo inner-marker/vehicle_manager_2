@@ -7,7 +7,7 @@
 use dioxus::prelude::*;
 use domain::api::MarkMessage;
 use domain::i18n::{MessageArg, MessageId, messages};
-use domain::inbox::{InboxItem, MessageAction, MessageKey, Severity};
+use domain::inbox::{InboxItem, MessageAction, MessageKey, MessageKind, Severity};
 
 use crate::ui::inbox::{mark, severity_and_time, severity_class, use_inbox};
 use crate::ui::routes::Route;
@@ -157,6 +157,18 @@ fn MessageRow(item: InboxItem, selected: bool, on_open: EventHandler<InboxItem>)
     }
 }
 
+/// A message's text, with the vehicle's name for a forgotten job.
+fn body_text(kind: &MessageKind) -> String {
+    if let MessageKind::ForgottenJob { vehicle, .. } = kind {
+        tr_with(
+            kind.body(),
+            &[("vehicle", MessageArg::from(vehicle.as_str()))],
+        )
+    } else {
+        tr(kind.body())
+    }
+}
+
 /// The chosen message: its text, the Admin's details, its action, and Dismiss.
 #[expect(
     unused_qualifications,
@@ -175,7 +187,7 @@ fn MessageDetail(
         button { class: "link-button messages-back", onclick: move |_| on_back.call(()), {tr(messages::MESSAGES_BACK)} }
         p { class: "message-meta {severity_class(message.severity)}", {severity_and_time(&item)} }
         h2 { class: "message-title", {tr(message.kind.title())} }
-        p { class: "message-body", {tr(message.kind.body())} }
+        p { class: "message-body", {body_text(&message.kind)} }
         if !message.detail.is_empty() {
             h3 { class: "section-heading", {tr(messages::MESSAGES_DETAILS)} }
             pre { class: "message-detail", {message.detail.clone()} }
@@ -187,6 +199,9 @@ fn MessageDetail(
                     onclick: move |_| match action {
                         MessageAction::OpenDiagnostics => {
                             navigator.push(Route::Diagnostics {});
+                        }
+                        MessageAction::OpenEvent { event } => {
+                            navigator.push(Route::EventDetail { event_id: event.to_string() });
                         }
                     },
                     {tr(action.label())}

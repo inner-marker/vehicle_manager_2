@@ -14,7 +14,8 @@ use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, EventsOutcome, Handshake,
     InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
-    SessionState, SetupOutcome, SignInOutcome, SwitchModeOutcome, UserAdminOutcome,
+    ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome,
+    UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -948,6 +949,214 @@ pub(crate) async fn correct_event(
     .await)
 }
 
+/// **Finish**: locks a maintenance or repair draft once it passes Finish's checks (every
+/// outstanding squawk signed off or deferred in it).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`EventsOutcome`] values.
+#[post("/api/v1/events/finish")]
+pub(crate) async fn finish_event(id: domain::event::EventId) -> ServerFnResult<EventsOutcome> {
+    Ok(
+        server_side::with_events(async |context| ::server::events::finish(&context, id).await)
+            .await,
+    )
+}
+
+/// One vehicle's squawks, newest first (milestone 7).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SquawksOutcome`] values.
+#[post("/api/v1/squawks")]
+pub(crate) async fn vehicle_squawks(
+    asset: domain::asset::AssetId,
+) -> ServerFnResult<SquawksOutcome> {
+    Ok(
+        server_side::with_squawks(async |context| ::server::squawks::list(&context, asset).await)
+            .await,
+    )
+}
+
+/// One squawk, with its history.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SquawksOutcome`] values.
+#[post("/api/v1/squawks/view")]
+pub(crate) async fn squawk_view(id: domain::squawk::SquawkId) -> ServerFnResult<SquawksOutcome> {
+    Ok(
+        server_side::with_squawks(async |context| ::server::squawks::view(&context, id).await)
+            .await,
+    )
+}
+
+/// Opens a squawk.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SquawksOutcome`] values.
+#[post("/api/v1/squawks/open")]
+pub(crate) async fn open_squawk(input: domain::api::SquawkInput) -> ServerFnResult<SquawksOutcome> {
+    Ok(
+        server_side::with_squawks(async |context| ::server::squawks::open(&context, input).await)
+            .await,
+    )
+}
+
+/// Changes a squawk no job has dealt with yet.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SquawksOutcome`] values.
+#[post("/api/v1/squawks/edit")]
+pub(crate) async fn edit_squawk(
+    id: domain::squawk::SquawkId,
+    input: domain::api::SquawkInput,
+) -> ServerFnResult<SquawksOutcome> {
+    Ok(server_side::with_squawks(async |context| {
+        ::server::squawks::edit(&context, id, input).await
+    })
+    .await)
+}
+
+/// Removes a squawk opened by mistake (no job has dealt with it yet).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`SquawksOutcome`] values.
+#[post("/api/v1/squawks/delete")]
+pub(crate) async fn delete_squawk(id: domain::squawk::SquawkId) -> ServerFnResult<SquawksOutcome> {
+    Ok(
+        server_side::with_squawks(async |context| ::server::squawks::delete(&context, id).await)
+            .await,
+    )
+}
+
+/// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
+/// bundles.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements")]
+pub(crate) async fn vehicle_schedule(
+    asset: domain::asset::AssetId,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(
+        server_side::with_schedule(async |context| ::server::schedule::view(&context, asset).await)
+            .await,
+    )
+}
+
+/// Adds a requirement.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/add")]
+pub(crate) async fn add_requirement(
+    requirement: domain::requirement::Requirement,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::add_requirement(&context, requirement).await
+    })
+    .await)
+}
+
+/// Changes a requirement.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/edit")]
+pub(crate) async fn edit_requirement(
+    id: domain::requirement::RequirementId,
+    requirement: domain::requirement::Requirement,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::edit_requirement(&context, id, requirement).await
+    })
+    .await)
+}
+
+/// Removes a requirement no task has done.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/delete")]
+pub(crate) async fn delete_requirement(
+    id: domain::requirement::RequirementId,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::delete_requirement(&context, id).await
+    })
+    .await)
+}
+
+/// Adds a service bundle.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/bundles/add")]
+pub(crate) async fn add_bundle(
+    bundle: domain::requirement::Bundle,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::add_bundle(&context, bundle).await
+    })
+    .await)
+}
+
+/// Changes a service bundle.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/bundles/edit")]
+pub(crate) async fn edit_bundle(
+    id: domain::requirement::BundleId,
+    bundle: domain::requirement::Bundle,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::edit_bundle(&context, id, bundle).await
+    })
+    .await)
+}
+
+/// Removes a service bundle.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/bundles/delete")]
+pub(crate) async fn delete_bundle(
+    id: domain::requirement::BundleId,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::delete_bundle(&context, id).await
+    })
+    .await)
+}
+
+/// Copies another vehicle's schedule onto one that has none yet (#031).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/requirements/copy")]
+pub(crate) async fn copy_schedule(
+    from: domain::asset::AssetId,
+    to: domain::asset::AssetId,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::copy(&context, from, to).await
+    })
+    .await)
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -1139,15 +1348,21 @@ mod server_side {
     pub(super) async fn with_messages(
         action: impl AsyncFnOnce(server::messages::MessagesContext<'_>) -> domain::api::InboxOutcome,
     ) -> domain::api::InboxOutcome {
-        let (Some(database), Some(user)) = (server::startup::database(), signed_in()) else {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
             return domain::api::InboxOutcome::Unavailable;
         };
         let context = server::messages::MessagesContext {
             database,
+            database_id,
             user: &user,
             health: server::health::current(),
             problem: server::health::unhealthy_since(),
             clock: &SystemClock,
+            timers: server::startup::timers(),
         };
         action(context).await
     }
@@ -1194,6 +1409,51 @@ mod server_side {
             clock: &SystemClock,
         };
         action(context).await
+    }
+
+    /// The signed-in person's vehicles context.
+    fn assets_context<'a>(
+        database: &'a storage::Database,
+        database_id: domain::id::DatabaseId,
+        user: &'a SignedIn,
+    ) -> server::assets::AssetsContext<'a> {
+        server::assets::AssetsContext {
+            database,
+            database_id,
+            user,
+            health: server::health::current(),
+            clock: &SystemClock,
+        }
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a squawks request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_squawks(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::SquawksOutcome,
+    ) -> domain::api::SquawksOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::SquawksOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a schedule request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_schedule(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::ScheduleOutcome,
+    ) -> domain::api::ScheduleOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::ScheduleOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
     }
 
     /// Runs `action` with the signed-in person's places context, or answers that it's

@@ -38,6 +38,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::access::ActiveMode;
 use crate::command::{Patch, Record};
+use crate::event::{Event, EventId};
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::time::UnixMillis;
@@ -160,6 +161,14 @@ pub enum MessageKind {
     },
     /// The server couldn't open its place data, so coordinates can't be looked up (#059).
     PlaceLookupUnavailable,
+    /// A maintenance or repair draft left untouched (#034, milestone 7): for whoever logged
+    /// it and the vehicle's Maintainers.
+    ForgottenJob {
+        /// The draft.
+        event: EventId,
+        /// The vehicle's name, for the text.
+        vehicle: String,
+    },
 }
 
 impl MessageKind {
@@ -182,6 +191,7 @@ impl MessageKind {
             Self::JobSkipped { .. } => messages::INBOX_JOB_SKIPPED,
             Self::ServerUnhealthy { .. } => messages::INBOX_SERVER_UNHEALTHY,
             Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_UNAVAILABLE,
+            Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB,
         }
     }
 
@@ -206,6 +216,7 @@ impl MessageKind {
                 problem: ServerProblem::IntegrityCheckFailed,
             } => messages::INBOX_INTEGRITY_CHECK_FAILED,
             Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_BODY,
+            Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB_BODY,
         }
     }
 }
@@ -216,6 +227,11 @@ impl MessageKind {
 pub enum MessageAction {
     /// Open Diagnostics (the server's health and the log).
     OpenDiagnostics,
+    /// Open an event's page (a forgotten job).
+    OpenEvent {
+        /// Which event.
+        event: EventId,
+    },
 }
 
 impl MessageAction {
@@ -224,6 +240,7 @@ impl MessageAction {
     pub const fn label(self) -> MessageId {
         match self {
             Self::OpenDiagnostics => messages::INBOX_OPEN_DIAGNOSTICS,
+            Self::OpenEvent { .. } => messages::INBOX_OPEN_JOB,
         }
     }
 }
@@ -353,6 +370,31 @@ fn job_message(report: &JobReport) -> Option<Message> {
         detail: report.detail.clone(),
         action: Some(MessageAction::OpenDiagnostics),
     })
+}
+
+/// The reminder for a forgotten job (#034): `event` (with ID `id`) on the vehicle named
+/// `vehicle`, a maintenance or repair draft untouched for `delay_millis`. Editing the draft
+/// ends it; a later lapse is a new message.
+#[must_use]
+pub fn forgotten_job_message(
+    id: EventId,
+    event: &Event,
+    vehicle: &str,
+    delay_millis: i64,
+) -> Message {
+    let edited = event.last_edited_at.as_millis();
+    Message {
+        key: MessageKey(format!("forgotten-job:{id}:{edited}")),
+        kind: MessageKind::ForgottenJob {
+            event: id,
+            vehicle: vehicle.to_owned(),
+        },
+        severity: Severity::Warning,
+        audience: Audience::Everyone,
+        raised_at: UnixMillis::from_millis(edited + delay_millis),
+        detail: String::new(),
+        action: Some(MessageAction::OpenEvent { event: id }),
+    }
 }
 
 /// A problem's stable name, for keys.
@@ -694,10 +736,73 @@ mod tests {
                 MessageKind::JobFailed { job } => job.name(),
                 MessageKind::JobSkipped { .. }
                 | MessageKind::ServerUnhealthy { .. }
-                | MessageKind::PlaceLookupUnavailable => "",
+                | MessageKind::PlaceLookupUnavailable
+                | MessageKind::ForgottenJob { .. } => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);
+    }
+
+    #[test]
+    fn a_forgotten_job_is_raised_once_per_lapse_and_opens_the_job() {
+        use crate::dates::EventDates;
+        use crate::event::{EventLocation, EventSource, EventStatus};
+        use crate::location::{LocationSource, TimeZone};
+        use crate::meter::EventKind;
+
+        let mut event = Event {
+            asset: test_id(10),
+            kind: EventKind::Maintenance,
+            dates: EventDates {
+                start: UnixMillis::from_millis(1_000),
+                end: None,
+                zone: TimeZone::parse("UTC").unwrap(),
+            },
+            location: EventLocation {
+                place: None,
+                coordinates: None,
+                accuracy_m: None,
+                fix_time: None,
+                source: LocationSource::Manual,
+                place_name: None,
+                saved_place: None,
+                geocoder_version: None,
+                missing_reason: None,
+            },
+            readings: vec![],
+            skipped: vec![],
+            fields: vec![],
+            notes: crate::notes::Notes::default(),
+            source: EventSource::Typed,
+            logged_by: test_id(1),
+            performed_by: None,
+            fuel: None,
+            work: None,
+            reading_override: None,
+            status: EventStatus::Draft,
+            last_edited_at: UnixMillis::from_millis(5_000),
+            received_at: UnixMillis::from_millis(5_000),
+            finalized: None,
+            corrects: None,
+            correction_reason: None,
+        };
+        let id = test_id(100);
+        let message = forgotten_job_message(id, &event, "Truck", 60_000);
+        assert_eq!(message.raised_at, UnixMillis::from_millis(65_000));
+        assert_eq!(message.audience, Audience::Everyone);
+        assert_eq!(message.action, Some(MessageAction::OpenEvent { event: id }));
+        assert_eq!(
+            message.kind,
+            MessageKind::ForgottenJob {
+                event: id,
+                vehicle: "Truck".into()
+            }
+        );
+        assert!(MessageKey::parse(message.key.as_str()).is_some());
+
+        event.last_edited_at = UnixMillis::from_millis(9_000);
+        let later = forgotten_job_message(id, &event, "Truck", 60_000);
+        assert_ne!(later.key, message.key, "a new lapse is a new message");
     }
 
     #[test]

@@ -385,6 +385,30 @@ pub fn show_reading(raw: i64, unit: MeterUnit, precision: u8) -> String {
     }
 }
 
+// --- Counts of parts ------------------------------------------------------------------------
+
+/// A typed quantity ("5.5", "1") as thousandths (5,500; 1,000), as a part's quantity is
+/// stored (#032).
+///
+/// # Errors
+///
+/// [`QuantityError`] if it isn't a non-negative number, has more than three decimals, or is
+/// too large.
+pub fn parse_quantity(text: &str) -> Result<i64, QuantityError> {
+    let (value, decimals) = number(text)?;
+    if decimals > 3 {
+        return Err(QuantityError::TooPrecise);
+    }
+    whole(value * 1_000.0)
+}
+
+/// A quantity in thousandths as typed: "5.5", "1", "0.125".
+#[must_use]
+pub fn quantity_value(milli: i64) -> String {
+    let shown = fixed(float(milli) / 1_000.0, 3);
+    shown.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
 // --- Money -----------------------------------------------------------------------------------
 
 /// The currency's minor-unit decimals (ISO 4217): 0 for e.g. yen, 3 for e.g. Kuwaiti dinar,
@@ -424,15 +448,17 @@ pub fn money_value(minor: i64, currency: CurrencyCode) -> String {
     )
 }
 
-/// An amount as "45.67 USD".
+/// An amount with its currency's symbol, seen by someone whose currency is `home`: "$45.67",
+/// "CA$45.67", "€45.67", "-$5.00" (see [`CurrencyCode::symbol`]).
 #[must_use]
-pub fn show_money(minor: i64, currency: CurrencyCode) -> String {
+pub fn show_money(minor: i64, currency: CurrencyCode, home: CurrencyCode) -> String {
     let places = currency_decimals(currency);
-    let value = float(minor) / 10_f64.powi(i32::from(places));
+    let value = float(minor.abs()) / 10_f64.powi(i32::from(places));
     format!(
-        "{} {}",
-        fixed(value, usize::from(places)),
-        currency.as_str()
+        "{}{}{}",
+        if minor < 0 { "-" } else { "" },
+        currency.symbol(home),
+        fixed(value, usize::from(places))
     )
 }
 
@@ -618,8 +644,9 @@ mod tests {
         assert_eq!(parse_money("5000.5", yen), Err(QuantityError::TooPrecise));
         let dinar = CurrencyCode::parse("KWD").unwrap();
         assert_eq!(parse_money("1.250", dinar), Ok(1_250));
-        assert_eq!(show_money(4_567, usd()), "45.67 USD");
-        assert_eq!(show_money(5_000, yen), "5000 JPY");
+        assert_eq!(show_money(4_567, usd(), usd()), "$45.67");
+        assert_eq!(show_money(5_000, yen, usd()), "¥5000");
+        assert_eq!(show_money(-500, usd(), usd()), "-$5.00");
     }
 
     proptest! {
@@ -648,9 +675,21 @@ mod tests {
 
         #[test]
         fn money_survives_a_round_trip_exactly(cents in 0i64..1_000_000_000) {
-            let text = show_money(cents, CurrencyCode::USD);
-            let number = text.trim_end_matches(" USD");
+            let text = show_money(cents, CurrencyCode::USD, CurrencyCode::USD);
+            let number = text.trim_start_matches('$');
             prop_assert_eq!(parse_money(number, CurrencyCode::USD), Ok(cents));
         }
+    }
+
+    #[test]
+    fn quantities_are_thousandths() {
+        assert_eq!(parse_quantity("5.5"), Ok(5_500));
+        assert_eq!(parse_quantity(" 1 "), Ok(1_000));
+        assert_eq!(parse_quantity("0.125"), Ok(125));
+        assert_eq!(parse_quantity("1.2345"), Err(QuantityError::TooPrecise));
+        assert_eq!(parse_quantity("-1"), Err(QuantityError::Negative));
+        assert_eq!(quantity_value(5_500), "5.5");
+        assert_eq!(quantity_value(1_000), "1");
+        assert_eq!(quantity_value(125), "0.125");
     }
 }
