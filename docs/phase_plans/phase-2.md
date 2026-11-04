@@ -818,7 +818,7 @@
 | 7f.0 | ☑️ | `feat: what the household calls squawks` | Choice 13 (#064): the household preference (Issues, Squawks, Faults, Write-ups; a new column, migration `0013`); the translator fills in the word, plural, capital, and article for every message that names them; Settings' household section offers it (Admin mode) | none |
 | 7f | ☑️ | `feat(app): squawks` | SVG options done (choice 14). Opening a squawk as a quick sheet (**+ Log**'s Squawk tile, the vehicle's page, an event's page); the Overview's summary card (High first, with its word); the Squawks tab (filters, list and detail); a squawk's page with its history | none |
 | 7g | ☑️ | `feat(app): requirements, bundles, and the Maintenance tab` | SVG options done (choice 15). The Maintenance tab's Schedule (last done), Jobs, and Set up (requirements with their rules, bundles, **Copy from…**) | none |
-| 7h | ⬜ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
+| 7h | ☑️ | `docs: maintenance checkpoint test` | `docs/test-plans/p2m7-maintenance.md`, part 1 (squawks, requirements, copying a schedule); **the human runs it on the test server** | none |
 | 7i | ⬜ | `feat(app): the maintenance and repair work log` | **SVG options first.** + Log's Maintenance and Repair; the work log (tasks from requirements or a bundle, parts, labor, readings at start and end, squawk sign-off and deferral, new squawks, notes, complaint and cause); **Finish** with its checks and confirmation | none |
 | 7j | ⬜ | `feat(app): maintenance on the event page and Timeline` | **SVG options first.** The event page for maintenance and repairs (tasks, parts, costs, dispositions, start and end readings); their Timeline rows; correcting one; the forgotten-job message's link | none |
 | 7k | ⬜ | `docs: maintenance test plan, part 2` | The rest: the work log, Finish refusing an undispositioned squawk, repairs, corrections, the forgotten job with test timers, phone and desktop | none |
@@ -961,3 +961,12 @@
     - Jobs: the draft repair under In progress, then the finished one, with "Engine oil & filter · 2 tasks · 115.98 USD";
     - Copy onto a van: the preview, then its Schedule;
     - Setup's link lands on Set up; Driver mode shows only Schedule and Jobs; the phone's cards fit.
+- **7h:** `docs/test-plans/p2m7-maintenance.md`, part 1 (36 steps), on the test server with the `milestone-p2-m7-maintenance` image:
+  - migrating 11 → 13 with milestone 6's events kept;
+  - choosing the word (Squawks);
+  - squawks from + Log, the card, and an event (High's word for a truck and a trailer), and who may change them, by mode;
+  - the Squawks tab and a squawk's page, on the Mac and a phone;
+  - the Maintenance tab: Driver and Maintainer views, requirements with each kind of rule, the refusals, a bundle, turning one off, removing one;
+  - copying onto a trailer (the odometer rule left out) and onto a new truck (never linked);
+  - Setup's link.
+  - **The human runs it**; the results are recorded in 7l.
