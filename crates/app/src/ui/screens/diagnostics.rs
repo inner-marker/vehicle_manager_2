@@ -111,24 +111,27 @@ pub(crate) fn Diagnostics() -> Element {
         if visible.is_empty() {
             p { class: "placeholder", {tr(messages::LOG_VIEWER_EMPTY)} }
         } else {
-            table { class: "log-table",
-                thead {
-                    tr {
-                        th { {tr(messages::LOG_VIEWER_TIME)} }
-                        th { {tr(messages::LOG_VIEWER_LEVEL)} }
-                        th { {tr(messages::LOG_VIEWER_AREA)} }
-                        th { {tr(messages::LOG_VIEWER_MESSAGE)} }
+            // Only the list scrolls sideways on a narrow screen, never the page (issue #23).
+            div { class: "log-table-scroll",
+                table { class: "log-table",
+                    thead {
+                        tr {
+                            th { {tr(messages::LOG_VIEWER_TIME)} }
+                            th { {tr(messages::LOG_VIEWER_LEVEL)} }
+                            th { {tr(messages::LOG_VIEWER_AREA)} }
+                            th { {tr(messages::LOG_VIEWER_MESSAGE)} }
+                        }
                     }
-                }
-                tbody {
-                    for (index, entry) in visible.iter().enumerate() {
-                        tr { key: "{index}", class: "level-{entry.level.as_str()}",
-                            td { class: "log-time", {format_utc_iso8601(entry.time())} }
-                            td { {tr(level_label(entry.level))} }
-                            td { {area_label(&entry.area)} }
-                            td {
-                                {entry.message.clone()}
-                                span { class: "log-fields", " {format_fields(entry)}" }
+                    tbody {
+                        for (index, entry) in visible.iter().enumerate() {
+                            tr { key: "{index}", class: "level-{entry.level.as_str()}",
+                                td { class: "log-time", {format_utc_iso8601(entry.time())} }
+                                td { {tr(level_label(entry.level))} }
+                                td { {area_label(&entry.area)} }
+                                td {
+                                    {entry.message.clone()}
+                                    span { class: "log-fields", " {format_fields(entry)}" }
+                                }
                             }
                         }
                     }
