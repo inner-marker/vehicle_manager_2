@@ -27,10 +27,26 @@ pub(super) fn check_work(
     let work = match (event.kind, &event.work) {
         (EventKind::Maintenance | EventKind::Repair, Some(work)) => work,
         (EventKind::Maintenance | EventKind::Repair, None)
-        | (EventKind::Fuel | EventKind::Reading, Some(_)) => {
+        | (
+            EventKind::Fuel
+            | EventKind::Reading
+            | EventKind::Acquired
+            | EventKind::SentOut
+            | EventKind::Returned
+            | EventKind::Disposed,
+            Some(_),
+        ) => {
             return Err(EventProblem::WorkDetails);
         }
-        (EventKind::Fuel | EventKind::Reading, None) => return Ok(()),
+        (
+            EventKind::Fuel
+            | EventKind::Reading
+            | EventKind::Acquired
+            | EventKind::SentOut
+            | EventKind::Returned
+            | EventKind::Disposed,
+            None,
+        ) => return Ok(()),
     };
     if event.kind != EventKind::Repair && (work.complaint.is_some() || work.cause.is_some()) {
         return Err(EventProblem::RepairOnly);
@@ -264,6 +280,7 @@ mod tests {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: UnixMillis::from_millis(10 * DAY),
@@ -287,6 +304,7 @@ mod tests {
             may_override_readings: false,
             requirements: &requirements,
             outstanding_squawks: &outstanding,
+            lifecycle: &[],
         };
         let result = if finishing {
             check_finish(event, &context)

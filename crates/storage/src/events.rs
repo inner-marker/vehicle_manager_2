@@ -388,6 +388,8 @@ fn event_from_row(row: &SqliteRow) -> Result<(EventId, Event), StorageError> {
         performed_by: performer_from_row(row)?,
         fuel: None,
         work: None,
+        // Lifecycle details are stored from step 9c (migration 0015).
+        lifecycle: None,
         reading_override: reason_from(row.try_get("reading_override")?, "events.reading_override")?,
         status: required_name(row.try_get("status")?, "events.status")?,
         last_edited_at: UnixMillis::from_millis(row.try_get("last_edited_ms")?),

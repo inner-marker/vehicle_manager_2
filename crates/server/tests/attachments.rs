@@ -208,6 +208,7 @@ mod attachments {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
         }
     }

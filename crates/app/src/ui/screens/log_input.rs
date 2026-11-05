@@ -85,7 +85,16 @@ impl Target {
             | EventProblem::Finalized
             | EventProblem::NotFinalized
             | EventProblem::AlreadyCorrected
-            | EventProblem::WorkDetails => Self::General,
+            | EventProblem::WorkDetails
+            | EventProblem::LifecycleDetails
+            | EventProblem::TextTooLong
+            | EventProblem::AlreadyAcquired
+            | EventProblem::AlreadyOut
+            | EventProblem::NotOut
+            | EventProblem::ReturnBeforeSendOut
+            | EventProblem::AlreadyDisposed
+            | EventProblem::WithdrawnNotCorrection
+            | EventProblem::VehicleDisposed => Self::General,
             EventProblem::RepairOnly
             | EventProblem::UnknownRequirement
             | EventProblem::BadPart
@@ -390,6 +399,8 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
                 )
             })
             .transpose()?,
+        // The lifecycle forms arrive in step 9e.
+        lifecycle: None,
         reading_override: typed
             .override_reason
             .as_deref()

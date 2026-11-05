@@ -1230,8 +1230,8 @@
 
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
-| 9.0 | ⬜ | `docs: Phase 2 milestone 9 plan` | This plan; decisions #067 (lifecycle events, questions 1–4), #068 (reference documents and compliance modes, 5–6), and #069 (show only what the current mode allows, 7–8) | none |
-| 9a | ⬜ | `feat(domain): lifecycle events` | Acquired, Sent out, Returned, Disposed: their details, checks, the status they set, and a disposed vehicle's read-only rule; the overdue-return rule. Test-first | none |
+| 9.0 | ☑️ | `docs: Phase 2 milestone 9 plan` | This plan; decisions #067 (lifecycle events, questions 1–4), #068 (reference documents and compliance modes, 5–6), and #069 (show only what the current mode allows, 7–8) | none |
+| 9a | ☑️ | `feat(domain): lifecycle events` | Acquired, Sent out, Returned, Disposed: their details, checks, the status they set, and a disposed vehicle's read-only rule; the overdue-return rule. Test-first | none |
 | 9b | ⬜ | `feat(domain): reference documents, compliance modes, and applicability` | Reference documents; a requirement's mode, applicability, and worked-out status; one-time closing. Test-first | none |
 | 9c | ⬜ | `feat(storage): lifecycle events and reference documents` | Migration 0015 | none |
 | 9d | ⬜ | `feat(server): lifecycle events, reference documents, and the overdue return` | The rules on the server; the derived message; server functions | none |
@@ -1240,3 +1240,16 @@
 | 9g | ⬜ | `feat(app): show each person only what they may use` | The sweep (question 8, #069): every screen, tab, button, menu item, and field checked against the role capped by the mode, with its report | none |
 | 9h | ⬜ | `docs: lifecycle test plan` | One run on the test server, ending with the sweep as Sam | none |
 | 9i | ⬜ | `docs: record the lifecycle test run` | Results | none |
+
+**Written so far**
+- **9.0:** decisions #067 (lifecycle events; a disposed vehicle takes corrections but nothing new), #068 (reference documents, compliance modes, applicability), and #069 (everything shows only if the role, capped by the mode, allows it).
+- **9a:** no new dependency.
+  - **`EventKind`** gains `Acquired`, `SentOut`, `Returned`, and `Disposed`. `EventKind::ALL` is now all eight; `EVERYDAY` (the four a profile chooses among) and `LIFECYCLE` are new, and `profile::event_kinds` gives the everyday ones. Every vehicle has the lifecycle kinds, a trailer too. They finalize by themselves after 24 hours, like fuel-ups.
+  - **`domain::lifecycle`:** `LifecycleDetails` (`Acquisition`: from whom and the price; `SendOut`: the shop, work order, expected return date, carrier, tracking, estimate; `Return`: the send-out it ends and the final cost; `Disposal`: how, to whom, the price, and `withdrawn`, which only a correction may set). `Party` (a name and an optional contact) and `Money` (an amount and its currency). The date, readings, notes, and attachments are the event's own.
+  - **Worked out, never stored** (from `LifecycleRecord`s: the vehicle's lifecycle events that count): `status` (Disposed once a disposal is recorded, a draft too; Out for service while a send-out has no return; otherwise what Setup says), `takes_new_records` (not once the disposal is **finalized**, so a draft disposal can still be deleted), `overdue_return` (from the day after the expected date).
+  - **Checks** (`lifecycle::check`, run by `event_check::check`): details that match the kind; one acquisition, one disposal, and one trip out at a time; a return names the open send-out and isn't dated before it; names, contacts, references, and amounts. Anything new for a vehicle whose disposal is finalized is refused (`VehicleDisposed`); corrections pass.
+  - **Permissions:** `AssetAction::SendOut` (Maintainer: sent out and returned) and `RecordOwnership` (Admin: acquired and disposed). `AssetAction::to_log(kind)` replaces the server's and the + Log chooser's own lists.
+  - **The overdue-return message:** `MessageKind::OverdueReturn` and `overdue_return_message` (one per send-out and expected date), with an **Open the send-out** button. The server raises it in 9d.
+  - **Meanwhile:** storage doesn't keep the details yet (9c; the `events.kind` column's check still allows only the four everyday kinds), the server passes no lifecycle events to the checks (9d), and + Log doesn't offer the new kinds (9e). The overdue message shows the date as `YYYY-MM-DD` until 9e.
+  - **Storage (9c) needs a table rebuild:** `events.kind` has a `CHECK` that lists the four kinds, and SQLite can't change a check in place. Migration 0015 will rebuild `events` the way SQLite documents it (foreign keys off, copy, swap, `foreign_key_check`), tested against a copy of a database with events, work, and attachments.
+  - 25 messages. 15 new tests: the status through a trip out and back; a draft disposal counts but locks nothing; a withdrawn disposal; overdue from the day after; never overdue once back or with no date; details per kind; one at a time; returns; withdrawing only by correction; parties, amounts, and references; the round trip; who may log each kind; every vehicle has the lifecycle kinds; a finalized disposal takes corrections only; the overdue message's key and button.

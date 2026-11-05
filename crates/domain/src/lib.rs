@@ -27,6 +27,7 @@ pub mod identity;
 pub mod idle;
 pub mod inbox;
 pub mod label;
+pub mod lifecycle;
 pub mod location;
 pub mod log_area;
 pub mod meter;

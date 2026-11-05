@@ -157,15 +157,26 @@ fn MessageRow(item: InboxItem, selected: bool, on_open: EventHandler<InboxItem>)
     }
 }
 
-/// A message's text, with the vehicle's name for a forgotten job.
+/// A message's text, with the vehicle's name for a forgotten job or an overdue return.
 fn body_text(kind: &MessageKind) -> String {
-    if let MessageKind::ForgottenJob { vehicle, .. } = kind {
-        tr_with(
+    match kind {
+        MessageKind::ForgottenJob { vehicle, .. } => tr_with(
             kind.body(),
             &[("vehicle", MessageArg::from(vehicle.as_str()))],
-        )
-    } else {
-        tr(kind.body())
+        ),
+        MessageKind::OverdueReturn {
+            vehicle, expected, ..
+        } => tr_with(
+            kind.body(),
+            &[
+                ("vehicle", MessageArg::from(vehicle.as_str())),
+                ("date", MessageArg::from(expected.as_str())),
+            ],
+        ),
+        MessageKind::JobFailed { .. }
+        | MessageKind::JobSkipped { .. }
+        | MessageKind::ServerUnhealthy { .. }
+        | MessageKind::PlaceLookupUnavailable => tr(kind.body()),
     }
 }
 
@@ -200,7 +211,7 @@ fn MessageDetail(
                         MessageAction::OpenDiagnostics => {
                             navigator.push(Route::Diagnostics {});
                         }
-                        MessageAction::OpenEvent { event } => {
+                        MessageAction::OpenEvent { event } | MessageAction::OpenSendOut { event } => {
                             navigator.push(Route::EventDetail { event_id: event.to_string() });
                         }
                     },

@@ -280,6 +280,7 @@ mod maintenance {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: at(days),

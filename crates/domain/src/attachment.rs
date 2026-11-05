@@ -281,13 +281,18 @@ impl PhotoSize {
     }
 
     /// The default for a photo on an event of `kind` (milestone 8, choice 8): Small on
-    /// fuel-ups and readings (a pump or a gauge), Medium on everything else. A profile can
+    /// fuel-ups and readings (a pump or a gauge), Medium on everything else (work, paperwork). A profile can
     /// change it ([`crate::profile::Profile::photo_size`]).
     #[must_use]
     pub const fn default_for(kind: EventKind) -> Self {
         match kind {
             EventKind::Fuel | EventKind::Reading => Self::Small,
-            EventKind::Maintenance | EventKind::Repair => Self::Medium,
+            EventKind::Maintenance
+            | EventKind::Repair
+            | EventKind::Acquired
+            | EventKind::SentOut
+            | EventKind::Returned
+            | EventKind::Disposed => Self::Medium,
         }
     }
 }

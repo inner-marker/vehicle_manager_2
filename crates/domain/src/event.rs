@@ -1,10 +1,12 @@
-//! Events: fuel-ups and meter readings (milestone 6; plan §3 Events, decisions #006, #008,
-//! #030, #033, #034, #043).
+//! Events: fuel-ups and meter readings (milestone 6), maintenance and repairs (milestone 7),
+//! and lifecycle events (milestone 9, [`crate::lifecycle`]); plan §3 Events, decisions #006,
+//! #008, #030, #033, #034, #043, #067.
 //!
 //! Every event shares one **spine**: its vehicle, kind, dates (UTC plus the place's zone),
 //! location, readings, custom field values, notes, where it came from (its **source**: typed
 //! now; voice and import later), who logged it, and who did it. A fuel-up adds its
-//! [`FuelDetails`].
+//! [`FuelDetails`], a maintenance or repair its [`WorkDetails`], and a lifecycle event its
+//! [`LifecycleDetails`].
 //!
 //! **Drafts and finalizing (#034):** an event is a draft until it's **finalized**: by hand
 //! (**Finalize now**) or by the server 24 hours after its last edit. A finalized event never
@@ -23,6 +25,7 @@ use crate::dates::EventDates;
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::label::Label;
+use crate::lifecycle::{LifecycleDetails, LifecycleRecord};
 use crate::location::{Coordinates, LocationSource, Place, SavedPlaceId};
 use crate::meter::{EventKind, MeterId};
 use crate::notes::Notes;
@@ -391,6 +394,9 @@ pub struct Event {
     pub fuel: Option<FuelDetails>,
     /// A maintenance or repair's work: tasks, end readings, squawk dispositions.
     pub work: Option<WorkDetails>,
+    /// A lifecycle event's details (milestone 9, #067).
+    #[serde(default)]
+    pub lifecycle: Option<LifecycleDetails>,
     /// Why a reading out of order with its neighbours was kept (the Admin's override).
     pub reading_override: Option<Reason>,
     /// Draft or finalized.
@@ -435,6 +441,9 @@ pub struct EventInput {
     pub fuel: Option<FuelDetails>,
     /// See [`Event::work`].
     pub work: Option<WorkDetails>,
+    /// See [`Event::lifecycle`].
+    #[serde(default)]
+    pub lifecycle: Option<LifecycleDetails>,
     /// See [`Event::reading_override`].
     pub reading_override: Option<Reason>,
 }
@@ -457,6 +466,7 @@ impl EventInput {
             performed_by: self.performed_by,
             fuel: self.fuel,
             work: self.work,
+            lifecycle: self.lifecycle,
             reading_override: self.reading_override,
             status: EventStatus::Draft,
             last_edited_at: now,
@@ -481,6 +491,7 @@ impl EventInput {
             performed_by: self.performed_by,
             fuel: self.fuel,
             work: self.work,
+            lifecycle: self.lifecycle,
             reading_override: self.reading_override,
             last_edited_at: now,
             ..current.clone()
@@ -514,6 +525,7 @@ pub fn event_changes(before: &Event, after: &Event) -> EventPatch {
         performed_by: cleared(before.performed_by.as_ref(), after.performed_by.as_ref()),
         fuel: cleared(before.fuel.as_ref(), after.fuel.as_ref()),
         work: cleared(before.work.as_ref(), after.work.as_ref()),
+        lifecycle: cleared(before.lifecycle.as_ref(), after.lifecycle.as_ref()),
         reading_override: cleared(
             before.reading_override.as_ref(),
             after.reading_override.as_ref(),
@@ -615,6 +627,17 @@ impl Event {
             .collect()
     }
 
+    /// It as a lifecycle record, if it's a lifecycle event.
+    #[must_use]
+    pub fn lifecycle_record(&self, id: EventId) -> Option<LifecycleRecord> {
+        self.lifecycle.clone().map(|details| LifecycleRecord {
+            id,
+            at: self.dates.start,
+            status: self.status,
+            details,
+        })
+    }
+
     /// The reading for `meter`, if it has one.
     #[must_use]
     pub fn reading(&self, meter: MeterId) -> Option<i64> {
@@ -714,6 +737,24 @@ pub enum EventProblem {
     UnknownTask,
     /// A squawk disposition problem (finishing with one left, one twice, one not outstanding).
     Squawk(crate::squawk::SquawkProblem),
+    /// A lifecycle event without its details, or another kind with them (#067).
+    LifecycleDetails,
+    /// A work order, carrier, or tracking number over 100 characters.
+    TextTooLong,
+    /// A second acquisition (correct the first instead).
+    AlreadyAcquired,
+    /// A send-out while the vehicle is already out.
+    AlreadyOut,
+    /// A return when the vehicle isn't out, or naming another send-out.
+    NotOut,
+    /// A return dated before its send-out.
+    ReturnBeforeSendOut,
+    /// A second disposal.
+    AlreadyDisposed,
+    /// A withdrawn disposal that isn't a correction.
+    WithdrawnNotCorrection,
+    /// Something new for a vehicle whose disposal is finalized (corrections only, #067).
+    VehicleDisposed,
 }
 
 impl EventProblem {
@@ -733,7 +774,9 @@ impl EventProblem {
             | Self::WorkDetails
             | Self::RepairOnly
             | Self::UnknownRequirement
-            | Self::UnknownTask => messages::SOMETHING_WENT_WRONG,
+            | Self::UnknownTask
+            | Self::LifecycleDetails
+            | Self::WithdrawnNotCorrection => messages::SOMETHING_WENT_WRONG,
             Self::WrongValue(_) => messages::EVENT_WRONG_VALUE,
             Self::NoVolume => messages::EVENT_NO_VOLUME,
             Self::BadAmount | Self::BadCost => messages::EVENT_BAD_AMOUNT,
@@ -749,6 +792,13 @@ impl EventProblem {
             Self::NoEndReadings => messages::EVENT_NO_END_READINGS,
             Self::EndBelowStart(_) => messages::EVENT_END_BELOW_START,
             Self::Squawk(problem) => problem.message(),
+            Self::TextTooLong => messages::EVENT_TEXT_TOO_LONG,
+            Self::AlreadyAcquired => messages::EVENT_ALREADY_ACQUIRED,
+            Self::AlreadyOut => messages::EVENT_ALREADY_OUT,
+            Self::NotOut => messages::EVENT_NOT_OUT,
+            Self::ReturnBeforeSendOut => messages::EVENT_RETURN_BEFORE_SEND_OUT,
+            Self::AlreadyDisposed => messages::EVENT_ALREADY_DISPOSED,
+            Self::VehicleDisposed => messages::EVENT_VEHICLE_DISPOSED,
         }
     }
 }
@@ -781,8 +831,10 @@ record_patch! {
     performed_by: Clearable<Performer>,
     /// See [`Event::fuel`].
     fuel: Clearable<FuelDetails>,
-        /// See [`Event::work`].
-        work: Clearable<WorkDetails>,
+    /// See [`Event::work`].
+    work: Clearable<WorkDetails>,
+    /// See [`Event::lifecycle`].
+    lifecycle: Clearable<LifecycleDetails>,
     /// See [`Event::reading_override`].
     reading_override: Clearable<Reason>,
     /// See [`Event::status`].
@@ -818,6 +870,7 @@ impl EventPatch {
             performed_by: Some(Clearable::from_option(event.performed_by)),
             fuel: Some(Clearable::from_option(event.fuel)),
             work: Some(Clearable::from_option(event.work)),
+            lifecycle: Some(Clearable::from_option(event.lifecycle)),
             reading_override: Some(Clearable::from_option(event.reading_override)),
             status: Some(event.status),
             last_edited_at: Some(event.last_edited_at),
@@ -849,6 +902,7 @@ impl EventPatch {
             performed_by: self.performed_by.and_then(Clearable::into_option),
             fuel: self.fuel.and_then(Clearable::into_option),
             work: self.work.and_then(Clearable::into_option),
+            lifecycle: self.lifecycle.and_then(Clearable::into_option),
             reading_override: self.reading_override.and_then(Clearable::into_option),
             status: self.status.unwrap_or_default(),
             last_edited_at: self.last_edited_at.ok_or("last_edited_at")?,
@@ -888,6 +942,7 @@ impl Event {
             performed_by,
             fuel,
             work,
+            lifecycle,
             reading_override,
             status,
             last_edited_at,
@@ -903,6 +958,7 @@ impl Event {
         clear(&mut self.performed_by, performed_by);
         clear(&mut self.fuel, fuel);
         clear(&mut self.work, work);
+        clear(&mut self.lifecycle, lifecycle);
         clear(&mut self.reading_override, reading_override);
         set(&mut self.status, status);
         set(&mut self.last_edited_at, last_edited_at);

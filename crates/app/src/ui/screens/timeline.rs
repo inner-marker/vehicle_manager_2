@@ -222,9 +222,15 @@ const fn filter_label(filter: Option<EventKind>) -> MessageId {
     match filter {
         None => messages::TIMELINE_ALL,
         Some(EventKind::Fuel) => messages::TIMELINE_FUEL_UPS,
-        Some(EventKind::Reading | EventKind::Maintenance | EventKind::Repair) => {
-            messages::TIMELINE_READINGS
-        }
+        Some(
+            EventKind::Reading
+            | EventKind::Maintenance
+            | EventKind::Repair
+            | EventKind::Acquired
+            | EventKind::SentOut
+            | EventKind::Returned
+            | EventKind::Disposed,
+        ) => messages::TIMELINE_READINGS,
     }
 }
 
@@ -296,6 +302,10 @@ fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> E
         EventKind::Fuel => "⛽",
         EventKind::Reading => "⏱",
         EventKind::Maintenance | EventKind::Repair => "🔧",
+        EventKind::Acquired => "🔑",
+        EventKind::SentOut => "🚚",
+        EventKind::Returned => "↩",
+        EventKind::Disposed => "🏁",
     };
     let title = format!(
         "{} · {}",
@@ -531,6 +541,7 @@ mod tests {
                 performed_by: None,
                 fuel: None,
                 work: None,
+                lifecycle: None,
                 reading_override: None,
                 status: EventStatus::Finalized,
                 last_edited_at: at,

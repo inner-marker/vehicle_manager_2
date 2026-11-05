@@ -96,18 +96,11 @@ pub(crate) fn use_log_chooser() -> LogChooser {
 /// The kinds of events the person may log on `vehicle` in `mode`: its kind's (#030), limited by
 /// their role there and the mode (plan §6).
 pub(crate) fn loggable_kinds(vehicle: &AssetSummary, mode: ActiveMode) -> Vec<EventKind> {
-    let kinds = event_kinds(&vehicle.asset.kind);
     let allowed = vehicle.role.min(mode.cap());
-    [
-        (EventKind::Fuel, AssetAction::LogFuel),
-        (EventKind::Reading, AssetAction::LogReading),
-        (EventKind::Maintenance, AssetAction::LogMaintenance),
-        (EventKind::Repair, AssetAction::LogMaintenance),
-    ]
-    .into_iter()
-    .filter(|(kind, action)| kinds.contains(kind) && allowed >= action.required_role())
-    .map(|(kind, _)| kind)
-    .collect()
+    event_kinds(&vehicle.asset.kind)
+        .into_iter()
+        .filter(|kind| allowed >= AssetAction::to_log(*kind).required_role())
+        .collect()
 }
 
 /// What a kind's tile says under its name.
@@ -117,6 +110,10 @@ const fn kind_detail(kind: EventKind) -> domain::i18n::MessageId {
         EventKind::Reading => messages::LOG_READING_DETAIL,
         EventKind::Maintenance => messages::LOG_MAINTENANCE_DETAIL,
         EventKind::Repair => messages::LOG_REPAIR_DETAIL,
+        EventKind::Acquired => messages::LOG_ACQUIRED_DETAIL,
+        EventKind::SentOut => messages::LOG_SENT_OUT_DETAIL,
+        EventKind::Returned => messages::LOG_RETURNED_DETAIL,
+        EventKind::Disposed => messages::LOG_DISPOSED_DETAIL,
     }
 }
 
@@ -236,6 +233,10 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
                             EventKind::Reading => "⏱",
                             EventKind::Maintenance => "🔧",
                             EventKind::Repair => "🛠",
+                            EventKind::Acquired => "🔑",
+                            EventKind::SentOut => "🚚",
+                            EventKind::Returned => "↩",
+                            EventKind::Disposed => "🏁",
                         }
                     }
                     span { class: "log-tile-text",

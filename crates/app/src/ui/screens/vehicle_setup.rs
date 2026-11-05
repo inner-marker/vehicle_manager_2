@@ -98,6 +98,10 @@ pub(super) const fn event_value(kind: EventKind) -> &'static str {
         EventKind::Reading => "reading",
         EventKind::Maintenance => "maintenance",
         EventKind::Repair => "repair",
+        EventKind::Acquired => "acquired",
+        EventKind::SentOut => "sent-out",
+        EventKind::Returned => "returned",
+        EventKind::Disposed => "disposed",
     }
 }
 

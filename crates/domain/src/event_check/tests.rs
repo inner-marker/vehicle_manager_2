@@ -164,6 +164,7 @@ fn fuel_up() -> Event {
             reported_economy: Some(8_500),
         }),
         work: None,
+        lifecycle: None,
         reading_override: None,
         status: EventStatus::Draft,
         last_edited_at: on("2026-02-01"),
@@ -183,6 +184,7 @@ fn checked(event: &Event, admin: bool) -> Result<Vec<Warning>, EventProblem> {
             kinds: &EventKind::ALL,
             requirements: &[],
             outstanding_squawks: &[],
+            lifecycle: &[],
             meters: &meters,
             fields: &fields,
             history: &history,
@@ -257,6 +259,7 @@ fn required_readings_and_fields_are_given_or_skipped_with_a_reason() {
         kinds: &EventKind::ALL,
         requirements: &[],
         outstanding_squawks: &[],
+        lifecycle: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -409,6 +412,7 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
         ],
         requirements: &[],
         outstanding_squawks: &[],
+        lifecycle: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -439,6 +443,7 @@ fn kinds_follow_the_vehicle_and_the_milestone() {
         kinds: &EventKind::ALL,
         requirements: &[],
         outstanding_squawks: &[],
+        lifecycle: &[],
         meters: &meters,
         fields: &fields,
         history: &history,
@@ -543,7 +548,7 @@ fn reasons_and_the_patch() {
     );
     assert_eq!(reason(" Typo ").as_str(), "Typo");
     let mut patch = EventPatch::all(fuel_up());
-    assert_eq!(patch.changed_fields().len(), 20, "every field");
+    assert_eq!(patch.changed_fields().len(), 21, "every field");
     patch.keep_only(&["notes", "readings"]);
     assert_eq!(patch.changed_fields(), vec!["readings", "notes"]);
 }
@@ -605,6 +610,7 @@ proptest! {
             kinds: &EventKind::ALL,
             requirements: &[],
             outstanding_squawks: &[],
+            lifecycle: &[],
             meters: &meters,
             fields: &fields,
                 history: &history,
@@ -618,4 +624,85 @@ proptest! {
             before.is_none_or(|b| value >= b) && after.is_none_or(|a| value <= a)
         );
     }
+}
+
+/// A lifecycle event on 1 February: the fuel-up's spine with `details` instead of fuel.
+fn lifecycle_event(details: lifecycle::LifecycleDetails) -> Event {
+    let mut event = fuel_up();
+    event.kind = details.kind();
+    event.fuel = None;
+    event.fields.clear();
+    event.lifecycle = Some(details);
+    event
+}
+
+fn disposal() -> lifecycle::LifecycleDetails {
+    lifecycle::LifecycleDetails::Disposed(lifecycle::Disposal {
+        method: lifecycle::DisposalMethod::Sold,
+        to: None,
+        price: None,
+        withdrawn: false,
+    })
+}
+
+/// Checks `event` on a trailer (no fuel-ups) whose lifecycle so far is `lifecycle`.
+fn checked_on_trailer(
+    event: &Event,
+    lifecycle: &[LifecycleRecord],
+) -> Result<Vec<Warning>, EventProblem> {
+    let (meters, fields, history) = (meters(), fields(), history());
+    check(
+        event,
+        &CheckContext {
+            kinds: &EventKind::EVERYDAY[1..],
+            requirements: &[],
+            outstanding_squawks: &[],
+            lifecycle,
+            meters: &meters,
+            fields: &fields,
+            history: &history,
+            location_rule: LocationRule::Required,
+            may_override_readings: false,
+        },
+    )
+}
+
+#[test]
+fn every_vehicle_has_the_lifecycle_kinds() {
+    let disposed = lifecycle_event(disposal());
+    assert_eq!(checked_on_trailer(&disposed, &[]), Ok(vec![]));
+    let mut bare = disposed;
+    bare.lifecycle = None;
+    assert_eq!(
+        checked_on_trailer(&bare, &[]),
+        Err(EventProblem::LifecycleDetails)
+    );
+}
+
+#[test]
+fn a_finalized_disposal_takes_corrections_but_nothing_new() {
+    let mut sold = LifecycleRecord {
+        id: test_id(900),
+        at: on("2026-01-15"),
+        status: EventStatus::Draft,
+        details: disposal(),
+    };
+    let mut reading = fuel_up();
+    reading.kind = EventKind::Reading;
+    reading.fuel = None;
+    reading.fields.clear();
+    assert_eq!(
+        checked_on_trailer(&reading, std::slice::from_ref(&sold)),
+        Ok(vec![]),
+        "a draft disposal can still be deleted, so it locks nothing yet"
+    );
+    sold.status = EventStatus::Finalized;
+    let lifecycle = [sold];
+    assert_eq!(
+        checked_on_trailer(&reading, &lifecycle),
+        Err(EventProblem::VehicleDisposed)
+    );
+    reading.corrects = Some(test_id(901));
+    reading.correction_reason = Some(reason("Wrong odometer"));
+    assert_eq!(checked_on_trailer(&reading, &lifecycle), Ok(vec![]));
 }

@@ -187,6 +187,7 @@ mod maintenance {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
         }
     }

@@ -1405,3 +1405,28 @@ attachment-add-count = { $count ->
     [one] Add 1
    *[other] Add { $count }
 }
+event-kind-acquired = Acquired
+event-kind-sent-out = Sent out
+event-kind-returned = Returned
+event-kind-disposed = Disposed
+disposal-sold = Sold
+disposal-traded-in = Traded in
+disposal-scrapped = Scrapped
+disposal-given-away = Given away
+disposal-returned-to-vendor = Returned to the vendor
+disposal-lost-or-stolen = Lost or stolen
+disposal-other = Other
+event-text-too-long = That's too long: at most 100 characters.
+event-already-acquired = This vehicle's acquisition is already recorded: correct that one instead.
+event-already-out = This vehicle is already out for service: record its return first.
+event-not-out = This vehicle isn't out for service.
+event-return-before-send-out = It can't come back before it went out: check the date.
+event-already-disposed = This vehicle's disposal is already recorded: correct that one instead.
+event-vehicle-disposed = This vehicle was disposed of: its records can be corrected, but nothing new added.
+inbox-overdue-return = A vehicle isn't back yet
+inbox-overdue-return-body = { $vehicle } was expected back from service on { $date }. Record its return when it's back, or update the expected date.
+inbox-open-send-out = Open the send-out
+log-acquired-detail = When and how it was bought
+log-sent-out-detail = Off to a shop, and when it's due back
+log-returned-detail = Back from the shop, and what it cost
+log-disposed-detail = Sold, traded in, or scrapped

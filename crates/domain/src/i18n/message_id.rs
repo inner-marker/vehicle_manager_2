@@ -2280,4 +2280,54 @@ define_messages! {
     ATTACHMENT_UNPICK => "attachment-unpick",
     /// Attachments: add what's picked; takes `count`.
     ATTACHMENT_ADD_COUNT => "attachment-add-count",
+    /// Event kind: acquired.
+    EVENT_KIND_ACQUIRED => "event-kind-acquired",
+    /// Event kind: sent out for service.
+    EVENT_KIND_SENT_OUT => "event-kind-sent-out",
+    /// Event kind: back from service.
+    EVENT_KIND_RETURNED => "event-kind-returned",
+    /// Event kind: disposed of.
+    EVENT_KIND_DISPOSED => "event-kind-disposed",
+    /// Disposal: sold.
+    DISPOSAL_SOLD => "disposal-sold",
+    /// Disposal: traded in.
+    DISPOSAL_TRADED_IN => "disposal-traded-in",
+    /// Disposal: scrapped.
+    DISPOSAL_SCRAPPED => "disposal-scrapped",
+    /// Disposal: given away.
+    DISPOSAL_GIVEN_AWAY => "disposal-given-away",
+    /// Disposal: returned to the vendor.
+    DISPOSAL_RETURNED_TO_VENDOR => "disposal-returned-to-vendor",
+    /// Disposal: lost or stolen.
+    DISPOSAL_LOST_OR_STOLEN => "disposal-lost-or-stolen",
+    /// Disposal: something else.
+    DISPOSAL_OTHER => "disposal-other",
+    /// Event: a work order, carrier, or tracking number too long.
+    EVENT_TEXT_TOO_LONG => "event-text-too-long",
+    /// Event: a second acquisition.
+    EVENT_ALREADY_ACQUIRED => "event-already-acquired",
+    /// Event: a send-out while already out.
+    EVENT_ALREADY_OUT => "event-already-out",
+    /// Event: a return when not out.
+    EVENT_NOT_OUT => "event-not-out",
+    /// Event: a return dated before its send-out.
+    EVENT_RETURN_BEFORE_SEND_OUT => "event-return-before-send-out",
+    /// Event: a second disposal.
+    EVENT_ALREADY_DISPOSED => "event-already-disposed",
+    /// Event: something new for a disposed vehicle.
+    EVENT_VEHICLE_DISPOSED => "event-vehicle-disposed",
+    /// Messages: a vehicle not back from service.
+    INBOX_OVERDUE_RETURN => "inbox-overdue-return",
+    /// Messages: the overdue return's text; takes `vehicle` and `date`.
+    INBOX_OVERDUE_RETURN_BODY => "inbox-overdue-return-body",
+    /// Messages: open the send-out.
+    INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
+    /// Log: what an acquisition records.
+    LOG_ACQUIRED_DETAIL => "log-acquired-detail",
+    /// Log: what a send-out records.
+    LOG_SENT_OUT_DETAIL => "log-sent-out-detail",
+    /// Log: what a return records.
+    LOG_RETURNED_DETAIL => "log-returned-detail",
+    /// Log: what a disposal records.
+    LOG_DISPOSED_DETAIL => "log-disposed-detail",
 }
