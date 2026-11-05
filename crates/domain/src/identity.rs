@@ -29,6 +29,12 @@ pub const BUNDLE_ID: &str = "com.innermarker.vehiclemanager";
 /// Matches the last segment of [`BUNDLE_ID`].
 pub const APP_ID: &str = "vehiclemanager";
 
+/// The app's name as people see it: the desktop window's title, for now.
+///
+/// The working name: decision #016 leaves the final display name open. Unlike the IDs above,
+/// it can change freely (nothing is named after it).
+pub const DISPLAY_NAME: &str = "Vehicle Manager";
+
 /// Name of the per-user folder that holds the app's local data (database, logs).
 ///
 /// A single path segment; platform code joins it onto the OS data directory.
