@@ -768,3 +768,38 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Existing plates move over:** a migration turns each `plate` identifier into a vehicle's first plate record, with **no authority yet**, and the vehicle's page asks for one.
 - **Why:** the human, 2026-11-03: a plate belongs to a state and changes when the vehicle moves; a typed identifier has neither an authority nor a history.
 - **Unaffected:** the other typed identifiers (#030).
+
+### 067. Lifecycle events: Acquired, Sent out, Returned, and Disposed; a disposed vehicle takes corrections but nothing new
+*Decided: 2026-11-05 · Plan: §3 Asset lifecycle & components · Phase plan: phase-2.md milestone 9, questions 1–4 · Refines #034*
+
+- **Decision:**
+  - **Four new kinds of event** on a vehicle's Timeline, from **+ Log**, each with attachments and the normal draft, finalize, and correction rules (#034):
+    - **Acquired:** date, from whom, price and currency, condition notes, the starting readings. One per vehicle, added any time (vehicles already in the app get one when someone has the details); the add-vehicle form doesn't ask for it.
+    - **Sent out:** date, the shop, a work order number, the expected return date, shipping and tracking, the estimated cost. Sets the status to **Out for service**.
+    - **Returned:** date, the final cost, notes. Sets the status back to what it was before.
+    - **Disposed:** how (sold, traded in, scrapped, given away, returned to the vendor, lost or stolen, other), date, to whom, price, the final readings, notes. Sets the status to **Disposed**.
+  - **Who:** a Maintainer records Sent out and Returned; the vehicle's Admin records Acquired and Disposed. The shop's work while the vehicle is out is an ordinary maintenance job, performed by the shop.
+  - **A disposed vehicle takes no new records** (events, squawks, documents) once its disposal is finished, but **corrections are still allowed** on its finished records, including the disposal itself (correcting it to "not disposed" undoes a mistake). It stays viewable and in reports.
+  - **An overdue return:** a day after the expected return date with no Returned event, a message (#050) for the vehicle's Maintainers and whoever sent it out.
+- **Why:** the human, 2026-11-05: questions 1, 3, and 4 as recommended; for 2, "Corrections can be done to disposed assets, but no new events."
+- **Unaffected:** the five statuses and archiving (milestone 4); delete for mistakes.
+
+### 068. Reference documents (recalls and bulletins); requirements get a compliance mode and an applicability
+*Decided: 2026-11-05 · Plan: §3 Requirements & compliance; §4 Requirement, ReferenceDocument · Phase plan: phase-2.md milestone 9, questions 5–6*
+
+- **Decision:**
+  - **A reference document** is a shared household record: type and issuing authority, reference numbers, title, description, remedy, issued and effective dates, a revision, applicability as written, a URL, and attachments. A Maintainer adds one from a vehicle's Maintenance › Set up, which also makes that vehicle's requirement for it; other vehicles can link the same record. A household-wide list waits.
+  - **Every requirement has a mode:** **Recurring** (with its rules, as before) or **One-time** (the first finished task that does it closes it). Initial-then-recurring and terminating-action modes are Phase 5.
+  - **Every requirement has an applicability:** **Applies** (the default), **Not applicable** (a reason required; out of the schedule but still listed), or **Under review**. Its status (open, complied, active, not applicable) is worked out, not stored.
+- **Why:** the human, 2026-11-05, as recommended; the plan's aircraft-ready groundwork for Phase 2.
+- **Unaffected:** interval rules and service bundles (#031).
+
+### 069. Everything shows only if the person's role, capped by their current mode, allows it
+*Decided: 2026-11-05 · Plan: §5 UI direction; §6 Users, roles & permissions · Phase plan: phase-2.md milestone 9, questions 7–8 · Refines #045, #046*
+
+- **Decision:**
+  - **A screen, tab, button, menu item, or field shows only if the person may use it** with their role capped by their current mode (on that vehicle, where roles are per vehicle). This holds for every role and mode, not just the Admin's. Nothing is shown only to be refused.
+  - So **Users, Groups, and Settings' Household tab** show only for the household's Admin in Admin mode; the mode menu is the way in.
+  - **The server still checks everything;** hiding is only so people aren't shown what they can't do.
+- **Why:** the human, 2026-11-05: "things should only show if the user's currently-selected role allows them to see/use it. Not just for admin." `v0.2.0` is when the rest of the household starts using the app.
+- **Unaffected:** the vehicle page's "view only" note; the mode rules and timeouts (#049).

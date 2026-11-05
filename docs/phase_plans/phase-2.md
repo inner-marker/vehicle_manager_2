@@ -34,7 +34,7 @@
 | 9 | **Asset lifecycle** | ⬜ | Acquisition and disposal records with attachments; status changes; send-out / return tracking; archive instead of delete; aircraft-ready groundwork that isn't already in place (reference documents, one-time and recurring requirements). **Also, before the `v0.2.0` release: show each person only what they may use** (raised 2026-11-02; see below) | Send a vehicle out for service and return it; archive one and find it again; as Sam, no Users, Groups, or household settings anywhere | none expected |
 
 **Show only what each person may use (milestone 9, before `v0.2.0`; raised by the human 2026-11-02).** The release is when other household members start using the app, so screens, menu items, and controls a person can't use shouldn't appear at all, rather than appearing and then saying "not allowed". To review when milestone 9 is planned:
-- **Users and Groups** already appear only for the household's Admin. Open question: should they also be hidden while the Admin is in Driver or Maintainer mode (today they show and say "Switch to Admin mode")?
+- **Users and Groups** already appear only for the household's Admin. ~~Open question: should they also be hidden while the Admin is in Driver or Maintainer mode (today they show and say "Switch to Admin mode")?~~ Answered 2026-11-05: yes, hidden outside Admin mode (#069).
 - **Settings:** the **You / Household** picker shows only for the household's Admin **in Admin mode** (as it is today). Everyone else, including the Admin in Driver or Maintainer mode, sees just their own settings, with no picker.
 - **Sweep every screen** for the same pattern: buttons and menu items shown but refused (the vehicle page's Setup already hides what the person can't use; its "view only" note stays).
 - The server keeps checking everything; hiding is only so people aren't shown what they can't do.
@@ -1190,3 +1190,53 @@
 - **8i:** `docs/test-plans/p2m8-photos-documents.md`, part 2 (25 steps), on part 1's `Test truck`: its moved plate (just a number, "Choose who issued it", then a state; a plate with a state keeps one); a registration expiring soon (the chip, the plate's expiry following, a scan); insurance, a title, and the household's own type (with dates the wrong way round); renewing (one card, Earlier, the plate's expiry moving); removing refused (a renewed document, a plate a registration names); moving to another state (the old plate retired, the registration moved to the new one); a Driver seeing but not changing; a photo of a card from the phone; and the desktop app (HEIC from Photos, Download to Downloads, the PDF viewer, a job's PDF, reopening).
 - **8j, after both parts (run by the human, 2026-11-04):** all 59 steps passed; the results and the human's notes are in the test plan. Done from the notes: the add sheet keeps what's taken or chosen until **Add N** (the size and Keep the original can still change; ✕ drops one; a failed one stays with why; 4 messages); server logs by time (`--since 5m`) in `docs/deploying-nas.md`, and the rule in AGENTS.md. To Phase 6 (Polish) in the plan: pinch-to-zoom on just the photo, and adding photos and documents before a draft's first save. Asked: what the desktop launcher's `with_cfg` should set first.
 
+
+### Milestone 9 plan: asset lifecycle, reference documents, and showing only what each person may use
+*Approved 2026-11-05 · Branch: `milestone/p2-m9-lifecycle` · Milestone PR: not opened yet · Decisions #034, #040, #050, #051, #052, #057, #067, #068, #069*
+
+**Goal:** a vehicle's whole life is on record: when and how it was **acquired**, when it went **out for service** and came **back**, and when and how it was **disposed of** (after which its records stay, read-only). Recalls and bulletins can be entered as **reference documents** that requirements link to, with **one-time** compliance (done once, then closed) beside recurring, and an **applicability** decision. And before `v0.2.0`, when the rest of the household starts using the app, **each person sees only what they may use**.
+
+**Already in place** (milestone 4): the five lifecycle statuses (in service, spare, out for service, retired, disposed) set by hand in Setup; archiving (retired and disposed hidden from the Garage, Show archived); delete for mistakes (Admin, the name typed, a soft delete); the parent field (components are post-MVP).
+
+**Reviewed against** the plan (§3 Asset lifecycle & components, Requirements & compliance, Readiness; §4 Asset, Requirement, ReferenceDocument), decisions #034, #051, #052, ideas 1–21, and sub-plans 01–03, 2026-11-05.
+- **Ideas:** 4 (one interchange format) meets disposal later, where the plan offers a history report or next-owner package (post-MVP); no effect now. 12 (signatures, on hold): a return's release certificate or a disposal's bill of sale may one day be signed; nothing now. No effect: 2, 7, 10, 11, 13, 14, 15, 16, 19, 21.
+- **Sub-plans:** 01 (signatures) as idea 12; 02 (voice) and 03 (email; an overdue return could be emailed once email exists) no effect.
+- **Not from the plan, deferred:** components' install and remove, positions, and linked meters (post-MVP); initial-deadline-then-recurring and terminating-action modes, and supersession handling (Phase 5); automatic recall lookups by VIN (post-MVP); history reports and transfer packages (post-MVP).
+
+**Questions for the human, and the answers** (2026-11-05: 1 and 3–7 as recommended; 2 and 8 changed, as shown):
+1. **Lifecycle events: four new kinds of event** on a vehicle's Timeline, each with attachments, following the normal finalizing rules (#034):
+   - **Acquired:** date, from whom (seller, dealer, manufacturer), price and currency, condition notes, the starting readings.
+   - **Sent out:** date, the shop, a work order number, the expected return date, shipping and tracking, the estimated cost. Sets the status to **Out for service**.
+   - **Returned:** date, the final cost, notes (the return paperwork attached). Sets it back to what it was before (usually In service).
+   - **Disposed:** how (sold, traded in, scrapped, given away, returned to the vendor, lost or stolen, other), date, to whom, price, the final readings, notes. Sets the status to **Disposed**.
+   - **Recommended:** these four, from **+ Log** (Sent out and Returned for a Maintainer; Acquired and Disposed for the vehicle's Admin, since they change what the household owns). The shop's own work while it's out is an ordinary maintenance job, **performed by** the shop.
+2. **A disposed vehicle is read-only.** **Recommended:** no new events, squawks, documents, or changes once its disposal is finished; it stays viewable and in reports. To undo a mistaken disposal, the Admin **corrects** the disposal event (6h) to "not disposed", or deletes it while it's a draft.
+   - **Answer:** as recommended, except that **corrections are still allowed** on a disposed vehicle's finished records (its events, including the disposal itself); only **new** events, squawks, and documents are refused.
+3. **Acquired for vehicles already in the app.** **Recommended:** one per vehicle, added any time from **+ Log** (most of the household's vehicles were bought long ago); the add-vehicle form doesn't ask for it now.
+4. **An overdue return.** **Recommended:** a day after the expected return date with no Returned event, a message (#050) for the vehicle's Maintainers and whoever sent it out, opening the Sent out event.
+5. **Reference documents** (recalls, bulletins), shared across the household: type and issuing authority (e.g. NHTSA, the maker), reference numbers (several), title, description, remedy, issued and effective dates, a revision, applicability as written (text), a URL, and attachments.
+   - **Recommended:** a Maintainer adds one from a vehicle's **Maintenance › Set up** ("+ Recall or bulletin"), which makes the record and that vehicle's requirement for it in one go; another vehicle can link the same record ("+ Requirement from a recall or bulletin"). A household-wide list of them can wait (no new sidebar item now).
+6. **Compliance modes and applicability.** **Recommended:** every requirement gets a **mode**, **Recurring** (today's, with its rules) or **One-time** (done once: the first finished task that does it **closes** it, "Complied on …"); and an **applicability**: Applies (the default), **Not applicable** (a reason required; it drops out of the schedule but stays listed), or **Under review**. Status is worked out (open, complied, active, not applicable), not stored. The other two modes are Phase 5.
+7. **Users and Groups while the Admin isn't in Admin mode** (the open question from 2026-11-02). Today they show and say "Switch to Admin mode". **Recommended:** **hide** them outside Admin mode, like every other Admin-only screen, with the mode menu itself as the way in.
+8. **The sweep** (show only what each person may use). **Recommended:** walk every screen as each role (Viewer, Driver, Maintainer, Admin in each mode) and remove any button, menu item, or field that would only be refused; Settings' You / Household picker only for the household's Admin in Admin mode; the vehicle page's "view only" note stays. A short report of what changed goes in the notes, and the test plan walks the same screens as Sam.
+   - **Answer:** more general: **a screen, tab, button, menu item, or field shows only if the person's role, capped by their current mode, allows it** (on that vehicle, where it's per vehicle), for every role and mode, not just the Admin's. Anything refused is hidden rather than shown and refused. The server still checks everything.
+
+**Choices from the plan** (no question needed):
+- Lifecycle events are events (#034): they appear on the Timeline, are drafts until finalized (24 hours, or Finalize now), and are corrected, not edited, after.
+- The status a vehicle shows comes from its latest finished lifecycle event when there is one; Setup's status menu stays for the others (spare, retired).
+- Reference documents and requirements change through the command pipeline like everything else; the server checks every permission whatever the screen shows.
+
+**Steps** (a sketch, settled once the questions are answered):
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 9.0 | ⬜ | `docs: Phase 2 milestone 9 plan` | This plan; decisions #067 (lifecycle events, questions 1–4), #068 (reference documents and compliance modes, 5–6), and #069 (show only what the current mode allows, 7–8) | none |
+| 9a | ⬜ | `feat(domain): lifecycle events` | Acquired, Sent out, Returned, Disposed: their details, checks, the status they set, and a disposed vehicle's read-only rule; the overdue-return rule. Test-first | none |
+| 9b | ⬜ | `feat(domain): reference documents, compliance modes, and applicability` | Reference documents; a requirement's mode, applicability, and worked-out status; one-time closing. Test-first | none |
+| 9c | ⬜ | `feat(storage): lifecycle events and reference documents` | Migration 0015 | none |
+| 9d | ⬜ | `feat(server): lifecycle events, reference documents, and the overdue return` | The rules on the server; the derived message; server functions | none |
+| 9e | ⬜ | `feat(app): lifecycle events` | **SVG options first.** + Log's four tiles, their forms and pages, the Timeline rows, a disposed vehicle's page | none |
+| 9f | ⬜ | `feat(app): recalls and bulletins, and compliance` | **SVG options first.** The reference document dialog, linking it, mode and applicability on requirements, the Schedule's closed and not-applicable ones | none |
+| 9g | ⬜ | `feat(app): show each person only what they may use` | The sweep (question 8, #069): every screen, tab, button, menu item, and field checked against the role capped by the mode, with its report | none |
+| 9h | ⬜ | `docs: lifecycle test plan` | One run on the test server, ending with the sweep as Sam | none |
+| 9i | ⬜ | `docs: record the lifecycle test run` | Results | none |
