@@ -151,6 +151,8 @@ If any part of a change can only be verified by a person (real devices, the NAS,
 3. **Checklist:** numbered steps, each with its **expected result**, so each item is clearly pass or fail.
 4. **If a step fails, capture:** which debug log area and level to enable before testing (e.g. `sync` at `debug`), what to export afterward (Settings → Diagnostics → Export), and any screenshots or error messages.
 
+**Container logs by time, not by line count:** steps that read the server's log use `docker logs --since 5m <container>` (or a time that fits the step), never `--tail N`. The server logs a line for every route it registers at startup, so a fixed number of lines cuts off the first startup messages as the API grows (the human, 2026-11-04).
+
 When the human reports a failure, **ask for the exported debug log** (preferably the JSON-lines export, limited to the relevant time range and areas) and other captured details. **Read and analyze the log before proposing a fix;** don't guess.
 
 Add **useful `tracing` messages** at debug level in new code paths (never logging secrets), so a failed manual test produces a log that explains what happened.

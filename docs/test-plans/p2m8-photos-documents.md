@@ -126,7 +126,15 @@ Everything runs on the **test server** (decision #062). **Start only once milest
 
 ## 6. Results
 
-*Filled in at step 8j.*
+**Parts 1 and 2** (the human, on the test server, 2026-11-04): all 59 steps passed. The human's notes, as written, and what came of each:
+
+- *"As we add more API endpoints, the number of log lines at `docker logs` will increase … Doing a tail of 40 rows cuts off the initial few log messages during startup. Tail commands should be by time, not by number of lines."* **Done:** `docs/deploying-nas.md` uses `docker logs --since 5m`, and AGENTS.md now says test plans read logs by time, never `--tail N`.
+- *"In app/src/main.rs, I want to start configuring the launcher with `with_cfg(...)` for desktop."* **Asked:** what to configure first (see the milestone's notes).
+- *"On mobile in the web browser, pinching to zoom on an image should only zoom and pan the image, not the whole page. If this is not an easy fix now, then it can go to the 'Polish' phase."* **Phase 6 (Polish):** it needs the viewer to handle the gestures itself (iOS Safari ignores the page's own "don't zoom" setting).
+- *"After I take a photo, the 'Add a photo or PDF' dialog should remain open after I take the picture and choose 'Use this photo' with the iOS interface so I can still choose Small/Medium/Large, or cancel the upload."* **Done:** what's taken or chosen waits in the sheet (named, with ✕ to drop it) while the size and Keep the original can still change; **Add N** uploads them, **Cancel** drops them. One that fails stays listed with why.
+- *"I should be able to add photos and documents in a Repair or Maintenance job in Edit mode, not just in the draft view. Same for Fuel-ups and Readings. This is a 'Polish' phase item."* **Phase 6 (Polish):** recorded as adding them while logging, before the first save (today they can be added once the draft is saved).
+
+Checked in the browser after the change: a chosen photo waits in the sheet, the size changes after choosing, and **Add 1** uploads it at that size.
 
 # Human Notes
 

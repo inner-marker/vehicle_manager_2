@@ -1852,6 +1852,9 @@ Each phase has open questions in section 10 that must be resolved before work on
 - Built-in Help Documents
   - What format do we store the documents?
 - Info pop-ups (circled question marks that pops up a small help window with summary, with links to the full Help Documents)
+- **Photos, after milestone 8's test** (the human, 2026-11-04):
+  - **Pinch to zoom a photo on a phone** zooms and pans just the photo in the viewer, not the whole page (iOS Safari ignores the page's own "don't zoom" setting, so the viewer handles the gestures itself).
+  - **Add photos and documents while logging,** before the first save: a new fuel-up, reading, maintenance, or repair (today they can be added once the draft is saved).
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.

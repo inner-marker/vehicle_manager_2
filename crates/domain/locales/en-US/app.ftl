@@ -1397,3 +1397,11 @@ plate-retired-on = until { $date }
 plate-from-registration = (from its registration)
 plate-choose-authority = Choose who issued it: Edit.
 plate-remove-confirm = Remove the plate
+attachment-kind-photo = Photo
+attachment-kind-pdf = PDF
+attachment-unpick = Don't add { $name }
+attachment-add-count = { $count ->
+    [0] Add
+    [one] Add 1
+   *[other] Add { $count }
+}

@@ -2272,4 +2272,12 @@ define_messages! {
     PLATE_CHOOSE_AUTHORITY => "plate-choose-authority",
     /// Plates: remove, for good.
     PLATE_REMOVE_CONFIRM => "plate-remove-confirm",
+    /// Attachments: a picked photo.
+    ATTACHMENT_KIND_PHOTO => "attachment-kind-photo",
+    /// Attachments: a picked PDF.
+    ATTACHMENT_KIND_PDF => "attachment-kind-pdf",
+    /// Attachments: take a picked file off the list; takes `name`.
+    ATTACHMENT_UNPICK => "attachment-unpick",
+    /// Attachments: add what's picked; takes `count`.
+    ATTACHMENT_ADD_COUNT => "attachment-add-count",
 }

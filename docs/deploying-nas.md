@@ -196,7 +196,7 @@ Restoring replaces the database with an older copy: **everything saved after tha
 
    ```sh
    sudo docker compose start
-   sudo docker logs --tail 20 vehiclemanager
+   sudo docker logs --since 5m vehiclemanager
    ```
 
    It should show `database open` with `created=false` and `database integrity check passed`.
@@ -261,7 +261,7 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 6. **Create its Project:** Container Manager → **Project** → **Create**, name **`vehiclemanager-test`**, path **`/docker/vehicle_manager_test`**, *Use existing docker-compose.yml*, **Finish**. Then check its log:
 
    ```sh
-   sudo docker logs --tail 30 vehiclemanager-test 2>&1
+   sudo docker logs --since 5m vehiclemanager-test 2>&1
    ```
 
    It shows `this is a second server, not the household's main one` with `instance="test"`, `database open` with `created=false` (your existing data), and `database integrity check passed`.
@@ -337,7 +337,7 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 
    ```sh
    sudo docker compose start
-   sudo docker logs --tail 20 vehiclemanager-test 2>&1
+   sudo docker logs --since 5m vehiclemanager-test 2>&1
    ```
 
    `database open` with `created=false`. If the test server runs a newer milestone, it may migrate the copy (backing it up first); main's own database is never touched.

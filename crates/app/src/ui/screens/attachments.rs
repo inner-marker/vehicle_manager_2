@@ -402,8 +402,19 @@ fn AddSheet(
     let mut keep_original = use_signal(|| false);
     let mut progress = use_signal(|| None::<(usize, usize)>);
     let mut problems = use_signal(Vec::<String>::new);
+    // What was taken or chosen, waiting for Add (the human's M8 note: the sheet stays open after
+    // the camera, so the size can still change, or it can be cancelled). `true` for a PDF.
+    let mut picked = use_signal(Vec::<(dioxus::html::FileData, bool)>::new);
+    let mut added_any = use_signal(|| false);
     let busy = progress().is_some();
     let mut chosen = move |files: Vec<dioxus::html::FileData>, pdf: bool| {
+        problems.set(Vec::new());
+        picked
+            .write()
+            .extend(files.into_iter().map(|file| (file, pdf)));
+    };
+    let add = move |_| {
+        let files = picked();
         if files.is_empty() {
             return;
         }
@@ -411,34 +422,47 @@ fn AddSheet(
         spawn(async move {
             let count = files.len();
             let mut failed = Vec::new();
-            for (index, file) in files.into_iter().enumerate() {
+            let mut left = Vec::new();
+            for (index, (file, pdf)) in files.into_iter().enumerate() {
                 progress.set(Some((index + 1, count)));
                 let name = file.name();
                 let added = if pdf {
-                    add_pdf(asset, owner, file).await
+                    add_pdf(asset, owner, file.clone()).await
                 } else {
-                    add_photo(asset, owner, file, size(), keep_original()).await
+                    add_photo(asset, owner, file.clone(), size(), keep_original()).await
                 };
-                if let Err(problem) = added {
-                    failed.push(tr_with(
-                        messages::ATTACHMENT_FAILED,
-                        &[
-                            ("name", MessageArg::from(name.as_str())),
-                            ("problem", MessageArg::from(tr(problem).as_str())),
-                        ],
-                    ));
+                match added {
+                    Ok(()) => added_any.set(true),
+                    Err(problem) => {
+                        failed.push(tr_with(
+                            messages::ATTACHMENT_FAILED,
+                            &[
+                                ("name", MessageArg::from(name.as_str())),
+                                ("problem", MessageArg::from(tr(problem).as_str())),
+                            ],
+                        ));
+                        left.push((file, pdf));
+                    }
                 }
             }
             progress.set(None);
             if failed.is_empty() {
                 on_close.call(true);
             } else {
+                // The ones that didn't go stay, to try again or remove.
+                picked.set(left);
                 problems.set(failed);
             }
         });
     };
+    let waiting: Vec<(usize, String, bool)> = picked()
+        .iter()
+        .enumerate()
+        .map(|(index, (file, pdf))| (index, file.name(), *pdf))
+        .collect();
+    let count = waiting.len();
     rsx! {
-        div { class: "dialog-scrim", onclick: move |_| if !busy { on_close.call(!problems().is_empty()) },
+        div { class: "dialog-scrim", onclick: move |_| if !busy { on_close.call(added_any()) },
             div {
                 class: "dialog attachment-sheet",
                 role: "dialog",
@@ -505,6 +529,29 @@ fn AddSheet(
                         span { {tr(messages::ATTACHMENT_KEEP_ORIGINAL)} }
                     }
                 }
+                if !waiting.is_empty() {
+                    ul { class: "picked-files",
+                        for (index, name, pdf) in waiting {
+                            li { key: "{index}-{name}", class: "picked-file",
+                                span { class: "picked-file-kind", {tr(if pdf { messages::ATTACHMENT_KIND_PDF } else { messages::ATTACHMENT_KIND_PHOTO })} }
+                                span { class: "picked-file-name", {name.clone()} }
+                                button {
+                                    class: "link-button rule-remove",
+                                    r#type: "button",
+                                    disabled: busy,
+                                    "aria-label": tr_with(messages::ATTACHMENT_UNPICK, &[("name", MessageArg::from(name.as_str()))]),
+                                    onclick: move |_| {
+                                        let mut files = picked.write();
+                                        if index < files.len() {
+                                            files.remove(index);
+                                        }
+                                    },
+                                    "✕"
+                                }
+                            }
+                        }
+                    }
+                }
                 if let Some((at, count)) = progress() {
                     p { class: "muted-note", role: "status",
                         {tr_with(messages::ATTACHMENT_ADDING, &[
@@ -521,8 +568,15 @@ fn AddSheet(
                         class: "secondary-button",
                         r#type: "button",
                         disabled: busy,
-                        onclick: move |_| on_close.call(!problems().is_empty()),
-                        {tr(if problems().is_empty() { messages::ACTION_CANCEL } else { messages::ATTACHMENT_DONE })}
+                        onclick: move |_| on_close.call(added_any()),
+                        {tr(if added_any() { messages::ATTACHMENT_DONE } else { messages::ACTION_CANCEL })}
+                    }
+                    button {
+                        class: "primary-button",
+                        r#type: "button",
+                        disabled: busy || count == 0,
+                        onclick: add,
+                        {tr_with(messages::ATTACHMENT_ADD_COUNT, &[("count", MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX)))])}
                     }
                 }
             }
