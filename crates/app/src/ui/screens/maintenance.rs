@@ -647,6 +647,9 @@ fn requirement_from(
         notes: Notes::parse(&typed.notes).map_err(domain::notes::NotesError::message)?,
         enabled: typed.enabled,
         rules: rules_from(&typed.rules, meters)?,
+        reference: None,
+        mode: domain::requirement::ComplianceMode::Recurring,
+        applicability: domain::requirement::Applicability::Applies,
     })
 }
 
@@ -1344,6 +1347,9 @@ mod tests {
                 meter: test_id(21),
                 every: 360_000,
             }],
+            reference: None,
+            mode: domain::requirement::ComplianceMode::Recurring,
+            applicability: domain::requirement::Applicability::Applies,
         };
         let done = DoneTask {
             requirement: test_id(40),

@@ -241,6 +241,9 @@ mod maintenance {
                     end_of_month: false,
                 },
             ],
+            reference: None,
+            mode: domain::requirement::ComplianceMode::Recurring,
+            applicability: domain::requirement::Applicability::Applies,
         }
     }
 

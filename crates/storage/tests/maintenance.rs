@@ -145,6 +145,9 @@ mod maintenance {
                 notes: Notes::default(),
                 enabled: true,
                 rules,
+                reference: None,
+                mode: domain::requirement::ComplianceMode::Recurring,
+                applicability: domain::requirement::Applicability::Applies,
             };
             RequirementWriter
                 .create(

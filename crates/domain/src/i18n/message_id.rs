@@ -2330,4 +2330,40 @@ define_messages! {
     LOG_RETURNED_DETAIL => "log-returned-detail",
     /// Log: what a disposal records.
     LOG_DISPOSED_DETAIL => "log-disposed-detail",
+    /// Reference documents: no title or too long.
+    REFERENCE_BAD_TITLE => "reference-bad-title",
+    /// Reference documents: the authority too long.
+    REFERENCE_AUTHORITY_TOO_LONG => "reference-authority-too-long",
+    /// Reference documents: a bad or repeated number.
+    REFERENCE_BAD_NUMBER => "reference-bad-number",
+    /// Reference documents: the revision too long.
+    REFERENCE_REVISION_TOO_LONG => "reference-revision-too-long",
+    /// Reference documents: not a web address.
+    REFERENCE_BAD_URL => "reference-bad-url",
+    /// Reference documents: effective before issued.
+    REFERENCE_EFFECTIVE_BEFORE_ISSUED => "reference-effective-before-issued",
+    /// Requirements: done again and again.
+    COMPLIANCE_RECURRING => "compliance-recurring",
+    /// Requirements: done once.
+    COMPLIANCE_ONE_TIME => "compliance-one-time",
+    /// Requirements: not done yet.
+    REQUIREMENT_STATUS_OPEN => "requirement-status-open",
+    /// Requirements: a one-time one, done.
+    REQUIREMENT_STATUS_COMPLIED => "requirement-status-complied",
+    /// Requirements: a recurring one in use.
+    REQUIREMENT_STATUS_ACTIVE => "requirement-status-active",
+    /// Requirements: doesn't apply.
+    REQUIREMENT_STATUS_NOT_APPLICABLE => "requirement-status-not-applicable",
+    /// Requirements: a one-time one with intervals.
+    REQUIREMENT_ONE_TIME_WITH_RULES => "requirement-one-time-with-rules",
+    /// Reference type: a recall.
+    REFERENCE_RECALL => "reference-recall",
+    /// Reference type: a technical service bulletin.
+    REFERENCE_TECHNICAL_SERVICE_BULLETIN => "reference-technical-service-bulletin",
+    /// Reference type: a service bulletin.
+    REFERENCE_SERVICE_BULLETIN => "reference-service-bulletin",
+    /// Reference type: a manufacturer's schedule.
+    REFERENCE_MANUFACTURER_SCHEDULE => "reference-manufacturer-schedule",
+    /// Reference type: anything else.
+    REFERENCE_OTHER => "reference-other",
 }

@@ -7,8 +7,8 @@ use domain::id::Id;
 use domain::label::Label;
 use domain::notes::Notes;
 use domain::requirement::{
-    Bundle, BundleId, BundlePatch, DoneTask, IntervalRule, Requirement, RequirementId,
-    RequirementPatch,
+    Applicability, Bundle, BundleId, BundlePatch, ComplianceMode, DoneTask, IntervalRule,
+    Requirement, RequirementId, RequirementPatch,
 };
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
@@ -186,6 +186,10 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
             notes: Notes::parse(&notes).map_err(invalid("requirements.notes"))?,
             enabled: row.try_get("enabled")?,
             rules: json_from_sql::<Vec<IntervalRule>>(&rules, "requirements.rules")?,
+            // Stored from step 9c (migration 0015).
+            reference: None,
+            mode: ComplianceMode::Recurring,
+            applicability: Applicability::Applies,
         },
     ))
 }

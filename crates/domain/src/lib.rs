@@ -36,6 +36,7 @@ pub mod plate;
 pub mod preferences;
 pub mod profile;
 pub mod quantity;
+pub mod reference;
 pub mod requirement;
 pub mod server_address;
 pub mod squawk;

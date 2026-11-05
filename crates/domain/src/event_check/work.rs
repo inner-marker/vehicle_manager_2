@@ -184,6 +184,9 @@ mod tests {
             notes: Notes::default(),
             enabled: true,
             rules,
+            reference: None,
+            mode: crate::requirement::ComplianceMode::Recurring,
+            applicability: crate::requirement::Applicability::Applies,
         };
         vec![
             (

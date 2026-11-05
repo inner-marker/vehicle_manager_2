@@ -424,6 +424,8 @@ impl AssetsContext<'_> {
                     tasks: 0,
                 })
             }
+            // A reference document's attachments are on no vehicle; served from step 9d.
+            AttachmentOwner::Reference { .. } => Err(AttachmentsOutcome::NotFound),
         }
     }
 
@@ -449,15 +451,17 @@ impl AssetsContext<'_> {
     async fn visible_attachment(
         &self,
         id: AttachmentId,
-    ) -> Result<(Attachment, AssetScope), AttachmentsOutcome> {
+    ) -> Result<(Attachment, AssetId, AssetScope), AttachmentsOutcome> {
         let attachment = self
             .database
             .attachment(id)
             .await
             .map_err(|error| failed("attachment", &error))?
             .ok_or(AttachmentsOutcome::NotFound)?;
-        let scope = self.attachment_scope(attachment.asset).await?;
-        Ok((attachment, scope))
+        // A reference document's attachments (on no vehicle) are served from step 9d.
+        let asset = attachment.asset.ok_or(AttachmentsOutcome::NotFound)?;
+        let scope = self.attachment_scope(asset).await?;
+        Ok((attachment, asset, scope))
     }
 
     /// `file` as the store lists it, if it was uploaded with that size.
@@ -632,7 +636,7 @@ async fn add_attachment(
     let found = verified_content(context, store, scope, &input.file, input.content).await?;
     let now = context.clock.now();
     let attachment = Attachment {
-        asset: input.asset,
+        asset: Some(input.asset),
         owner: input.owner,
         file: input.file,
         thumbnail: input.thumbnail,
@@ -669,12 +673,12 @@ async fn move_attachment(
     id: AttachmentId,
     task: Option<u16>,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let (attachment, scope) = context.visible_attachment(id).await?;
+    let (attachment, asset, scope) = context.visible_attachment(id).await?;
     let AttachmentOwner::Event { event, .. } = attachment.owner else {
         return Err(invalid(AttachmentProblem::Unchangeable));
     };
     let permission = context
-        .attachment_permission(attachment.asset, attachment.owner, scope)
+        .attachment_permission(asset, attachment.owner, scope)
         .await?;
     if !permission.allowed {
         return Err(AttachmentsOutcome::NotAllowed);
@@ -706,9 +710,9 @@ async fn remove_attachment(
     context: &AssetsContext<'_>,
     id: AttachmentId,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let (attachment, scope) = context.visible_attachment(id).await?;
+    let (attachment, asset, scope) = context.visible_attachment(id).await?;
     let permission = context
-        .attachment_permission(attachment.asset, attachment.owner, scope)
+        .attachment_permission(asset, attachment.owner, scope)
         .await?;
     if !permission.allowed {
         return Err(AttachmentsOutcome::NotAllowed);
@@ -741,7 +745,7 @@ pub async fn download(
     id: AttachmentId,
     part: AttachmentPart,
 ) -> Result<Download, AttachmentsOutcome> {
-    let (attachment, scope) = context.visible_attachment(id).await?;
+    let (attachment, _, scope) = context.visible_attachment(id).await?;
     let (file, mime) = match part {
         AttachmentPart::File => (
             attachment.file.clone(),

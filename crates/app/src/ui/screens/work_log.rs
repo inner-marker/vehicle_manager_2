@@ -790,6 +790,9 @@ mod tests {
                 notes: Notes::default(),
                 enabled: true,
                 rules: vec![],
+                reference: None,
+                mode: domain::requirement::ComplianceMode::Recurring,
+                applicability: domain::requirement::Applicability::Applies,
             },
             last_done: None,
         }

@@ -25,8 +25,8 @@ type OwnerColumns = (
     Option<Vec<u8>>,
 );
 
-fn owner_to_sql(owner: AttachmentOwner) -> OwnerColumns {
-    match owner {
+fn owner_to_sql(owner: AttachmentOwner) -> Result<OwnerColumns, StorageError> {
+    Ok(match owner {
         AttachmentOwner::Vehicle => ("vehicle", None, None, None, None),
         AttachmentOwner::Event { event, task } => (
             "event",
@@ -39,7 +39,13 @@ fn owner_to_sql(owner: AttachmentOwner) -> OwnerColumns {
         AttachmentOwner::Document { document } => {
             ("document", None, None, None, Some(id_to_sql(document)))
         }
-    }
+        // A reference document's attachments are stored from step 9c (migration 0015).
+        AttachmentOwner::Reference { .. } => {
+            return Err(StorageError::InvalidValue {
+                column: "attachments.owner",
+            });
+        }
+    })
 }
 
 fn owner_from_row(row: &SqliteRow) -> Result<AttachmentOwner, StorageError> {
@@ -97,7 +103,7 @@ impl RecordWriter<Attachment> for AttachmentWriter {
         sequence: i64,
     ) -> Result<(), StorageError> {
         let (owner, event, task, squawk, document) =
-            owner_to_sql(required(values.owner, "attachments.owner")?);
+            owner_to_sql(required(values.owner, "attachments.owner")?)?;
         let content = required(values.content.as_ref(), "attachments.content")?;
         let (file, file_bytes) = file_columns(
             required(values.file.as_ref(), "attachments.file_sha256")?,
@@ -117,7 +123,10 @@ impl RecordWriter<Attachment> for AttachmentWriter {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
-        .bind(id_to_sql(required(values.asset, "attachments.asset_id")?))
+        .bind(id_to_sql(required(
+            values.asset.flatten(),
+            "attachments.asset_id",
+        )?))
         .bind(owner)
         .bind(event)
         .bind(task)
@@ -153,7 +162,7 @@ impl RecordWriter<Attachment> for AttachmentWriter {
         let Some(owner) = patch.owner else {
             return Ok(());
         };
-        let (owner, event, task, squawk, document) = owner_to_sql(owner);
+        let (owner, event, task, squawk, document) = owner_to_sql(owner)?;
         sqlx::query(
             "UPDATE attachments SET owner = ?, event_id = ?, task_position = ?, squawk_id = ?,
                                     document_id = ?, sequence = ?
@@ -207,7 +216,10 @@ fn attachment_from_row(row: &SqliteRow) -> Result<(AttachmentId, Attachment), St
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "attachments.id")?,
         Attachment {
-            asset: id_from_sql(row.try_get::<&[u8], _>("asset_id")?, "attachments.asset_id")?,
+            asset: Some(id_from_sql(
+                row.try_get::<&[u8], _>("asset_id")?,
+                "attachments.asset_id",
+            )?),
             owner: owner_from_row(row)?,
             file: file_from_row(row, "file_sha256", "file_bytes")?.ok_or(
                 StorageError::InvalidValue {
@@ -279,7 +291,8 @@ impl Database {
                 AttachmentOwner::Vehicle
                 | AttachmentOwner::Event { .. }
                 | AttachmentOwner::Squawk { .. }
-                | AttachmentOwner::Document { .. },
+                | AttachmentOwner::Document { .. }
+                | AttachmentOwner::Reference { .. },
                 _,
             ) => candidate == owner,
         };

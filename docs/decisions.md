@@ -792,6 +792,8 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Every requirement has a mode:** **Recurring** (with its rules, as before) or **One-time** (the first finished task that does it closes it). Initial-then-recurring and terminating-action modes are Phase 5.
   - **Every requirement has an applicability:** **Applies** (the default), **Not applicable** (a reason required; out of the schedule but still listed), or **Under review**. Its status (open, complied, active, not applicable) is worked out, not stored.
 - **Why:** the human, 2026-11-05, as recommended; the plan's aircraft-ready groundwork for Phase 2.
+  - **Its types:** recall, technical service bulletin, service bulletin, manufacturer schedule, other (airworthiness directives come with aircraft).
+  - **Its attachments belong to it, not to a vehicle** (2026-11-05): anyone who can see a vehicle whose requirement links it can read it and its attachments. **Changing it** needs a Maintainer of every vehicle that links it, or the household's Admin in Admin mode, since a change shows on all of them.
 - **Unaffected:** interval rules and service bundles (#031).
 
 ### 069. Everything shows only if the person's role, capped by their current mode, allows it
