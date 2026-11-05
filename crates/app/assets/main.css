@@ -441,6 +441,12 @@ html {
     color: var(--text-muted);
 }
 
+/* Only the list scrolls sideways on a narrow screen, never the page (issue #23). */
+.log-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 .log-table {
     width: 100%;
     border-collapse: collapse;
