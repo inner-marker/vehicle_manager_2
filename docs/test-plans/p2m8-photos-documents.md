@@ -48,40 +48,40 @@ Everything runs on the **test server** (decision #062). **Start only once milest
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | Note `Test truck`'s plate (Setup tab). `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager-test 2>&1` | <ul><li>`backed up before migrating` with `schema_before=13`.</li><li>`database open` with `created=false`, `schema_before=13 schema_now=14`, and the **same database ID** as before.</li><li>`database integrity check passed` and `scheduled jobs started`.</li><li>No `ERROR` lines.</li></ul> |
-| [ ] | 2 | `ls -ln data/` | A new `files/` folder (with `incoming/` inside, empty), owned by `1030 100`. A new `pre-migration-<UTC time>-v13.sqlite` in `data/backups/`. |
-| [ ] | 3 | **Mac**, as `admin`: `Test truck` | <ul><li>The header and Garage card show **no plate** (expected until part 2), and Setup's identifiers no longer list it. Its VIN (if any) is still there.</li><li>Milestone 7's squawks, jobs, and schedule are all still there.</li></ul> |
-| [ ] | 4 | **Admin mode** → `Test truck` → **Overview** | A **PHOTOS & DOCUMENTS** panel with a dashed **+ Add** tile. |
-| [ ] | 5 | **+ Add** | **Add a photo or PDF**: Take photo, Choose photos, Choose a PDF; **SIZE** with **Medium** chosen; **Keep the original, as taken**. |
-| [ ] | 6 | **Choose photos** → pick three photos (not the HEIC one) | "Adding 1 of 3…", then the sheet closes and three thumbnails appear. |
-| [ ] | 7 | Tap the first | It opens full screen: the photo, **Size** "Medium · 2560 × 1920 · …" (or its own shape, at most 2560 on the long side; a smaller photo keeps its size), **Added** "by …, today". "1 of 3"; **›** and the → key go to the next; Escape closes. |
-| [ ] | 8 | Open one taken by a phone, and look at **Taken** and **Camera** | The time it was taken (in your time), and the phone ("Apple iPhone …"). |
-| [ ] | 9 | **Download** | The JPEG downloads with its original name. Open it: upright, and (in Preview › Tools › Show Inspector) **no** GPS or camera details in the file. |
-| [ ] | 10 | **Remove** → **Remove** | It's gone from the strip. |
-| [ ] | 11 | **Leave** Admin mode, then open the Overview again | The photos still show, but **no + Add** (a vehicle's own photos are an Admin's). |
-| [ ] | 12 | **Safari** on the Mac (Admin mode): **+ Add** → **Choose photos** → the HEIC photo. Then the same in **Chrome** | Safari: added as a JPEG. Chrome: either added, or "IMG_….HEIC: That photo is HEIC, which the server doesn't convert…" (Chrome can't read HEIC). |
-| [ ] | 13 | **Phone**, as **Sam** (Driver): `Test truck` → **+** → **Fuel-up**, fill it in, **Save** | Saved. Its page has **PHOTOS** with **+ Add**. |
-| [ ] | 14 | **+ Add** | **Small** is chosen (a fuel-up's default). **No** "Keep the original" (Sam is a Driver). |
-| [ ] | 15 | **Take photo** → photograph the pump, with location on → use it | The thumbnail appears. Open it: "Small · 1280 × 960 · about 200 KB", **Where** names the town, **Taken** is now. |
-| [ ] | 16 | Back on the fuel-up page: **Edit** | The form shows the same **PHOTOS** strip. |
-| [ ] | 17 | Open a squawk on `Test truck` (as Sam, one he opened) | **PHOTOS** with **+ Add**; add one. It stays after a job dealt with the squawk too (try one that's Deferred). |
-| [ ] | 18 | **Mac**, `admin`, **Maintainer mode**: `Test truck` → **+ Log** → **Repair**, with two tasks (`Front pads`, `Rear pads`) | Under the tasks: "Save the draft to add photos and documents." |
-| [ ] | 19 | **Save draft**, then open it again (**Edit**) | Each task card has **PHOTOS & RECEIPTS** with **+ Add**; below the tasks, **PHOTOS & DOCUMENTS** for the job. |
-| [ ] | 20 | On **Rear pads**: **+ Add** → **Medium**, tick **Keep the original** → a photo. On the job: **Choose a PDF** → the multi-page scan | The photo shows on Rear pads; the PDF's first page shows as its tile with its page count. |
-| [ ] | 21 | Open the photo | **Original** shows beside Download. **Original** downloads the file as taken (same name). |
-| [ ] | 22 | Remove **Front pads** (the first task) | A note: "Save the draft to see each task's photos again"; the task strips hide. |
-| [ ] | 23 | **Save draft**, then **Edit** again | The photo is on the one task left (**Rear pads**, now first). The PDF is still on the job. |
-| [ ] | 24 | **Finish…** → **Finish and lock** | Its page shows the photo and PDF, with **no + Add**; opening the photo shows **no Remove**. |
-| [ ] | 25 | **Correct…** → a reason → **Save** | The correction's page shows the same photo and PDF (copies), which can be removed from it; the original keeps them. |
-| [ ] | 26 | Open the PDF | Its pages, one under another, white on the dark viewer. "Page 1 of N"; scrolling moves it on. **+** and **−** zoom; **Fit width** goes back. Text can be selected (if the scan has text). |
-| [ ] | 27 | On the job (or a fresh draft): **Choose a PDF** → the **DMV or insurer PDF** | Added, with its first page as the tile and the right page count. It opens and shows its pages. *(If it's refused with "couldn't read that file", note which PDF.)* |
-| [ ] | 28 | **Choose a PDF** → the one **over 50 MB**; then the **renamed non-PDF** | "PDFs can be up to 50 MB…" (before uploading); then "Documents must be PDFs." |
-| [ ] | 29 | **Admin mode** → **Settings** → **Household** → **Keep photo originals**: **Off**. Then **Maintainer mode**, a job draft → **+ Add** | Settings shows Allowed / Off with a note. In the sheet, **no** "Keep the original". The **You** tab shows "Keep photo originals: Off" and that the Admin chooses it. Originals already kept (step 21) can still be downloaded. Set it back to **Allowed**. |
-| [ ] | 30 | **Phone**, Sam: open the repair's page from step 24, then its photo | No **Original** button (only Maintainers and Admins). |
-| [ ] | 31 | **The file check, with test timers.** In `.env` set `VEHICLEMANAGER_TEST_MINUTES=2`, then `sudo docker compose up -d`. Note `find data/files -type f -not -path '*/incoming/*' \| wc -l` | The count of stored files (each photo is two: it and its thumbnail; a PDF one or two; originals and metadata one each). |
-| [ ] | 32 | Remove a photo in the app (one on a draft or a squawk). Wait **18 minutes** (the 8 kept "days" at 2 minutes each, and a run) | The count drops by that photo's files (2, or more with an original). A photo removed less than 16 minutes before isn't erased yet. |
-| [ ] | 33 | Damage a file: `f=$(find data/files -type f -not -path '*/incoming/*' \| head -1); sudo sh -c "echo x >> $f"`. Wait 2 minutes | **Messages** (Admin mode): **"Some photos or documents are missing or damaged"**, naming the start of the file's name. The log has `stored file problem` with `damaged`. |
-| [ ] | 34 | Clean up: in the app, remove the attachment whose file you damaged (the message stays until it's removed, or the file is copied back from a backup of `data/files/`). Then empty `VEHICLEMANAGER_TEST_MINUTES=` again and `sudo docker compose up -d` | The server starts normally (no TEST TIMERS tag). After the next file check, the message is gone. |
+| [x] | 1 | Note `Test truck`'s plate (Setup tab). `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager-test 2>&1` | <ul><li>`backed up before migrating` with `schema_before=13`.</li><li>`database open` with `created=false`, `schema_before=13 schema_now=14`, and the **same database ID** as before.</li><li>`database integrity check passed` and `scheduled jobs started`.</li><li>No `ERROR` lines.</li></ul> |
+| [x] | 2 | `ls -ln data/` | A new `files/` folder (with `incoming/` inside, empty), owned by `1030 100`. A new `pre-migration-<UTC time>-v13.sqlite` in `data/backups/`. |
+| [x] | 3 | **Mac**, as `admin`: `Test truck` | <ul><li>The header and Garage card show **no plate** (expected until part 2), and Setup's identifiers no longer list it. Its VIN (if any) is still there.</li><li>Milestone 7's squawks, jobs, and schedule are all still there.</li></ul> |
+| [x] | 4 | **Admin mode** → `Test truck` → **Overview** | A **PHOTOS & DOCUMENTS** panel with a dashed **+ Add** tile. |
+| [x] | 5 | **+ Add** | **Add a photo or PDF**: Take photo, Choose photos, Choose a PDF; **SIZE** with **Medium** chosen; **Keep the original, as taken**. |
+| [x] | 6 | **Choose photos** → pick three photos (not the HEIC one) | "Adding 1 of 3…", then the sheet closes and three thumbnails appear. |
+| [x] | 7 | Tap the first | It opens full screen: the photo, **Size** "Medium · 2560 × 1920 · …" (or its own shape, at most 2560 on the long side; a smaller photo keeps its size), **Added** "by …, today". "1 of 3"; **›** and the → key go to the next; Escape closes. |
+| [x] | 8 | Open one taken by a phone, and look at **Taken** and **Camera** | The time it was taken (in your time), and the phone ("Apple iPhone …"). |
+| [x] | 9 | **Download** | The JPEG downloads with its original name. Open it: upright, and (in Preview › Tools › Show Inspector) **no** GPS or camera details in the file. |
+| [x] | 10 | **Remove** → **Remove** | It's gone from the strip. |
+| [x] | 11 | **Leave** Admin mode, then open the Overview again | The photos still show, but **no + Add** (a vehicle's own photos are an Admin's). |
+| [x] | 12 | **Safari** on the Mac (Admin mode): **+ Add** → **Choose photos** → the HEIC photo. Then the same in **Chrome** | Safari: added as a JPEG. Chrome: either added, or "IMG_….HEIC: That photo is HEIC, which the server doesn't convert…" (Chrome can't read HEIC). |
+| [x] | 13 | **Phone**, as **Sam** (Driver): `Test truck` → **+** → **Fuel-up**, fill it in, **Save** | Saved. Its page has **PHOTOS** with **+ Add**. |
+| [x] | 14 | **+ Add** | **Small** is chosen (a fuel-up's default). **No** "Keep the original" (Sam is a Driver). |
+| [x] | 15 | **Take photo** → photograph the pump, with location on → use it | The thumbnail appears. Open it: "Small · 1280 × 960 · about 200 KB", **Where** names the town, **Taken** is now. |
+| [x] | 16 | Back on the fuel-up page: **Edit** | The form shows the same **PHOTOS** strip. |
+| [x] | 17 | Open a squawk on `Test truck` (as Sam, one he opened) | **PHOTOS** with **+ Add**; add one. It stays after a job dealt with the squawk too (try one that's Deferred). |
+| [x] | 18 | **Mac**, `admin`, **Maintainer mode**: `Test truck` → **+ Log** → **Repair**, with two tasks (`Front pads`, `Rear pads`) | Under the tasks: "Save the draft to add photos and documents." |
+| [x] | 19 | **Save draft**, then open it again (**Edit**) | Each task card has **PHOTOS & RECEIPTS** with **+ Add**; below the tasks, **PHOTOS & DOCUMENTS** for the job. |
+| [x] | 20 | On **Rear pads**: **+ Add** → **Medium**, tick **Keep the original** → a photo. On the job: **Choose a PDF** → the multi-page scan | The photo shows on Rear pads; the PDF's first page shows as its tile with its page count. |
+| [x] | 21 | Open the photo | **Original** shows beside Download. **Original** downloads the file as taken (same name). |
+| [x] | 22 | Remove **Front pads** (the first task) | A note: "Save the draft to see each task's photos again"; the task strips hide. |
+| [x] | 23 | **Save draft**, then **Edit** again | The photo is on the one task left (**Rear pads**, now first). The PDF is still on the job. |
+| [x] | 24 | **Finish…** → **Finish and lock** | Its page shows the photo and PDF, with **no + Add**; opening the photo shows **no Remove**. |
+| [x] | 25 | **Correct…** → a reason → **Save** | The correction's page shows the same photo and PDF (copies), which can be removed from it; the original keeps them. |
+| [x] | 26 | Open the PDF | Its pages, one under another, white on the dark viewer. "Page 1 of N"; scrolling moves it on. **+** and **−** zoom; **Fit width** goes back. Text can be selected (if the scan has text). |
+| [x] | 27 | On the job (or a fresh draft): **Choose a PDF** → the **DMV or insurer PDF** | Added, with its first page as the tile and the right page count. It opens and shows its pages. *(If it's refused with "couldn't read that file", note which PDF.)* |
+| [x] | 28 | **Choose a PDF** → the one **over 50 MB**; then the **renamed non-PDF** | "PDFs can be up to 50 MB…" (before uploading); then "Documents must be PDFs." |
+| [x] | 29 | **Admin mode** → **Settings** → **Household** → **Keep photo originals**: **Off**. Then **Maintainer mode**, a job draft → **+ Add** | Settings shows Allowed / Off with a note. In the sheet, **no** "Keep the original". The **You** tab shows "Keep photo originals: Off" and that the Admin chooses it. Originals already kept (step 21) can still be downloaded. Set it back to **Allowed**. |
+| [x] | 30 | **Phone**, Sam: open the repair's page from step 24, then its photo | No **Original** button (only Maintainers and Admins). |
+| [x] | 31 | **The file check, with test timers.** In `.env` set `VEHICLEMANAGER_TEST_MINUTES=2`, then `sudo docker compose up -d`. Note `find data/files -type f -not -path '*/incoming/*' \| wc -l` | The count of stored files (each photo is two: it and its thumbnail; a PDF one or two; originals and metadata one each). |
+| [x] | 32 | Remove a photo in the app (one on a draft or a squawk). Wait **18 minutes** (the 8 kept "days" at 2 minutes each, and a run) | The count drops by that photo's files (2, or more with an original). A photo removed less than 16 minutes before isn't erased yet. |
+| [x] | 33 | Damage a file: `f=$(find data/files -type f -not -path '*/incoming/*' \| head -1); sudo sh -c "echo x >> $f"`. Wait 2 minutes | **Messages** (Admin mode): **"Some photos or documents are missing or damaged"**, naming the start of the file's name. The log has `stored file problem` with `damaged`. |
+| [x] | 34 | Clean up: in the app, remove the attachment whose file you damaged (the message stays until it's removed, or the file is copied back from a backup of `data/files/`). Then empty `VEHICLEMANAGER_TEST_MINUTES=` again and `sudo docker compose up -d` | The server starts normally (no TEST TIMERS tag). After the next file check, the message is gone. |
 
 ## 4. Checklist (part 2)
 
@@ -91,31 +91,31 @@ Everything runs on the **test server** (decision #062). **Start only once milest
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager-test 2>&1` | `database open` with `schema_now=14` (no migration this time), `database integrity check passed`, no `ERROR` lines. |
-| [ ] | 2 | **Mac**, `admin`: `Test truck` | The header shows the plate from part 1's step 1, **as just its number** (no state yet). The Garage card shows it too. |
-| [ ] | 3 | **Documents** tab | **LICENSE PLATE**: the plate drawn like one, "Choose who issued it: Edit." in red. **DOCUMENTS**: "No documents yet." **+ Plate** and **+ Document** show only in Maintainer or Admin mode. |
-| [ ] | 4 | **Maintainer mode** → the plate's **Edit** | **Change the license plate**: "Issued by" with **none chosen** and "Choose who issued it", the number, and empty dates. |
-| [ ] | 5 | **US state** → **North Carolina** (or your state); its issue date → **Save** | The card: "North Carolina · <number>", "Since …". The header and Garage card: "NC · <number>". |
-| [ ] | 6 | **Edit** again → **Other**, leave the name empty → **Save** | "Enter who issued the plate." Cancel. *(A plate that has a state keeps one.)* |
-| [ ] | 7 | **+ Document** | **Add a document**: **Type** (Title, Registration, Insurance, Other…), Number, Issued by, Issued, Takes effect, Expires, **License plate** (the NC plate chosen), "Its expiry becomes the plate's.", Notes, "Add its scans on its card once it's saved." |
-| [ ] | 8 | **Registration**: a number, `NC DMV`, issued a year ago, **expires in 3 weeks** → **Save** | A **Registration** card: number · NC DMV, the dates, a yellow **Expires in N days** chip, **SCANS** with **+ Add**, **Renew…** and **Edit**. The plate's card now says "expires … (from its registration)". |
-| [ ] | 9 | On its **SCANS**: **+ Add** → **Choose a PDF** (or a photo) → the registration card | Its tile shows, first page as the thumbnail. Open it: it reads. |
-| [ ] | 10 | **+ Document** → **Insurance** (expires in 6 months, no plate menu), then **Title** (no expiry) | Each its own card: Insurance **Current** with **Renew…**; Title "never expires", **Current**, and **Edit** only (nothing to renew). |
-| [ ] | 11 | **+ Document** → **Other…** → name `Parking permit`, expires before it's issued → **Save** | "It expires before it's issued or takes effect. Check the dates." Fix the dates → **Save**: a **Parking permit** card. |
-| [ ] | 12 | The registration's **Renew…** | **Renew it**: "A new record; the one it renews is kept as history." Type (fixed), number, issuer, and plate filled in; **dates empty**. |
-| [ ] | 13 | Issued today, expires in a year → **Renew** | One **Registration** card, **Current**, with the new dates, and **▸ Earlier (1)** below it. The plate's expiry moved to the new one. The scan stayed with the earlier one (open **Earlier (1)**). |
-| [ ] | 14 | **Earlier (1)** → **Edit** → **Remove** → **Remove it and its scans** | "A later document renews this one. Remove that one first." Cancel. |
-| [ ] | 15 | The plate's **Edit** → **Remove** → **Remove the plate** | "A registration names this plate. Change the registration first." Cancel. |
-| [ ] | 16 | **The truck moves to Virginia:** **+ Plate** → **US state** → **Virginia**, a new number, issued today → **Add** | The new plate is the current one; **▸ Earlier plates (1)** has the NC one, "… – today". The header and Garage card show "VA · …". |
-| [ ] | 17 | The registration's **Edit** → **License plate**: the new VA plate → **Save** | Saved. The VA plate's card now shows the registration's expiry. |
-| [ ] | 18 | The **Parking permit**'s **Edit** → **Remove** → **Remove it and its scans** | The card goes. |
-| [ ] | 19 | **Phone**, as **Sam** (Driver): `Test truck` → **Documents** | The plate and the cards, with their chips and scans (which open), and **no** + Plate, + Document, Renew, or Edit. |
-| [ ] | 20 | **Phone**, `admin`, **Maintainer mode**: the insurance card's **SCANS** → **+ Add** → **Take photo** → photograph the insurance card | Added, Medium. Open it: readable. |
-| [ ] | 21 | **Desktop app:** sign in → `Test truck` → **Overview** (Admin mode) → **+ Add** → **Choose photos** → the **HEIC** photo from part 1 | Added as a JPEG (the Mac's webview reads HEIC). Open it: upright, with its **Taken** and **Camera**. |
-| [ ] | 22 | In the viewer: **Download** | "Saved to …/Downloads/<name>". The file is there and opens. |
-| [ ] | 23 | **Documents** → the registration's earlier scan | The PDF viewer: its pages, zoom, "Page 1 of N". |
-| [ ] | 24 | A job draft (Maintainer mode) → a task → **+ Add** → **Choose a PDF** | Added, with its first page as the tile. |
-| [ ] | 25 | Quit and reopen the desktop app; open the same photo | It shows (fetched again from the server with the app's session). |
+| [x] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager-test 2>&1` | `database open` with `schema_now=14` (no migration this time), `database integrity check passed`, no `ERROR` lines. |
+| [x] | 2 | **Mac**, `admin`: `Test truck` | The header shows the plate from part 1's step 1, **as just its number** (no state yet). The Garage card shows it too. |
+| [x] | 3 | **Documents** tab | **LICENSE PLATE**: the plate drawn like one, "Choose who issued it: Edit." in red. **DOCUMENTS**: "No documents yet." **+ Plate** and **+ Document** show only in Maintainer or Admin mode. |
+| [x] | 4 | **Maintainer mode** → the plate's **Edit** | **Change the license plate**: "Issued by" with **none chosen** and "Choose who issued it", the number, and empty dates. |
+| [x] | 5 | **US state** → **North Carolina** (or your state); its issue date → **Save** | The card: "North Carolina · <number>", "Since …". The header and Garage card: "NC · <number>". |
+| [x] | 6 | **Edit** again → **Other**, leave the name empty → **Save** | "Enter who issued the plate." Cancel. *(A plate that has a state keeps one.)* |
+| [x] | 7 | **+ Document** | **Add a document**: **Type** (Title, Registration, Insurance, Other…), Number, Issued by, Issued, Takes effect, Expires, **License plate** (the NC plate chosen), "Its expiry becomes the plate's.", Notes, "Add its scans on its card once it's saved." |
+| [x] | 8 | **Registration**: a number, `NC DMV`, issued a year ago, **expires in 3 weeks** → **Save** | A **Registration** card: number · NC DMV, the dates, a yellow **Expires in N days** chip, **SCANS** with **+ Add**, **Renew…** and **Edit**. The plate's card now says "expires … (from its registration)". |
+| [x] | 9 | On its **SCANS**: **+ Add** → **Choose a PDF** (or a photo) → the registration card | Its tile shows, first page as the thumbnail. Open it: it reads. |
+| [x] | 10 | **+ Document** → **Insurance** (expires in 6 months, no plate menu), then **Title** (no expiry) | Each its own card: Insurance **Current** with **Renew…**; Title "never expires", **Current**, and **Edit** only (nothing to renew). |
+| [x] | 11 | **+ Document** → **Other…** → name `Parking permit`, expires before it's issued → **Save** | "It expires before it's issued or takes effect. Check the dates." Fix the dates → **Save**: a **Parking permit** card. |
+| [x] | 12 | The registration's **Renew…** | **Renew it**: "A new record; the one it renews is kept as history." Type (fixed), number, issuer, and plate filled in; **dates empty**. |
+| [x] | 13 | Issued today, expires in a year → **Renew** | One **Registration** card, **Current**, with the new dates, and **▸ Earlier (1)** below it. The plate's expiry moved to the new one. The scan stayed with the earlier one (open **Earlier (1)**). |
+| [x] | 14 | **Earlier (1)** → **Edit** → **Remove** → **Remove it and its scans** | "A later document renews this one. Remove that one first." Cancel. |
+| [x] | 15 | The plate's **Edit** → **Remove** → **Remove the plate** | "A registration names this plate. Change the registration first." Cancel. |
+| [x] | 16 | **The truck moves to Virginia:** **+ Plate** → **US state** → **Virginia**, a new number, issued today → **Add** | The new plate is the current one; **▸ Earlier plates (1)** has the NC one, "… – today". The header and Garage card show "VA · …". |
+| [x] | 17 | The registration's **Edit** → **License plate**: the new VA plate → **Save** | Saved. The VA plate's card now shows the registration's expiry. |
+| [x] | 18 | The **Parking permit**'s **Edit** → **Remove** → **Remove it and its scans** | The card goes. |
+| [x] | 19 | **Phone**, as **Sam** (Driver): `Test truck` → **Documents** | The plate and the cards, with their chips and scans (which open), and **no** + Plate, + Document, Renew, or Edit. |
+| [x] | 20 | **Phone**, `admin`, **Maintainer mode**: the insurance card's **SCANS** → **+ Add** → **Take photo** → photograph the insurance card | Added, Medium. Open it: readable. |
+| [x] | 21 | **Desktop app:** sign in → `Test truck` → **Overview** (Admin mode) → **+ Add** → **Choose photos** → the **HEIC** photo from part 1 | Added as a JPEG (the Mac's webview reads HEIC). Open it: upright, with its **Taken** and **Camera**. |
+| [x] | 22 | In the viewer: **Download** | "Saved to …/Downloads/<name>". The file is there and opens. |
+| [x] | 23 | **Documents** → the registration's earlier scan | The PDF viewer: its pages, zoom, "Page 1 of N". |
+| [x] | 24 | A job draft (Maintainer mode) → a task → **+ Add** → **Choose a PDF** | Added, with its first page as the tile. |
+| [x] | 25 | Quit and reopen the desktop app; open the same photo | It shows (fetched again from the server with the app's session). |
 
 ## 5. If a step fails, capture
 
@@ -127,3 +127,11 @@ Everything runs on the **test server** (decision #062). **Start only once milest
 ## 6. Results
 
 *Filled in at step 8j.*
+
+# Human Notes
+
+- As we add more API endpoints, the number of log lines at `docker logs` will increase. The log lines look like `2026-11-04T23:45:33.371273Z  INFO dioxus_server::server: Registering: GET /api/v1/handshake`. Doing a tail of 40 rows cuts off the initial few log messages during startup. Tail commands should be by time, not by number of lines.
+- In app/src/main.rs, I want to start configuring the launcher with `with_cfg(...)` (line 197?) for desktop
+- On mobile in the web browser, pinching to zoom on an image should only zoom and pan the image, not the whole page. If this is not an easy fix now, then it can go to the "Polish" phase.
+- On mobile in the browser, after I take a photo, the "Add a photo or PDF" diolog should remain open after I take the picture and choose "Use this photo" with the iOS interface so I can still choose Small/Medium/Large, or cancel the upload.
+- I should be able to add photos and documents in a Repair or Maintenance job in Edit mode, not just in the draft view. Same for Fuel-ups and Readings. This is a "Polish" phase item.
