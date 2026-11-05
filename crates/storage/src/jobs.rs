@@ -77,6 +77,24 @@ impl Database {
         Ok(())
     }
 
+    /// Makes `job` due at `at` if it's due later (or isn't scheduled yet), keeping its last
+    /// result: e.g. the file check brought forward at startup.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if the query fails.
+    pub async fn bring_job_forward(&self, job: &str, at: UnixMillis) -> Result<(), StorageError> {
+        sqlx::query(
+            "INSERT INTO jobs (name, next_run_ms) VALUES (?, ?)
+             ON CONFLICT (name) DO UPDATE SET next_run_ms = min(next_run_ms, excluded.next_run_ms)",
+        )
+        .bind(job)
+        .bind(at.as_millis())
+        .execute(self.pool())
+        .await?;
+        Ok(())
+    }
+
     /// Records a finished run of `job` and its next due time.
     ///
     /// # Errors

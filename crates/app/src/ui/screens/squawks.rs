@@ -18,6 +18,7 @@ use domain::api::{
     AssetView, AssetsOutcome, EventsOutcome, SquawkInput, SquawkView, SquawksOutcome,
 };
 use domain::asset::{Asset, AssetId};
+use domain::attachment::{AttachmentOwner, PhotoSize};
 use domain::dates::{format_date, local_to_utc, utc_to_local};
 use domain::event::EventId;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
@@ -29,6 +30,7 @@ use domain::profile::high_severity_name;
 use domain::squawk::{Disposition, Severity, Squawk, SquawkId, SquawkStatus, SquawkText};
 use domain::time::{Clock, UnixMillis};
 
+use super::attachments::AttachmentStrip;
 use super::log_form::ZONE_SCRIPT;
 use super::problem_from_error;
 use super::vehicle::Tab;
@@ -828,6 +830,12 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
             if !squawk.notes.as_str().is_empty() {
                 h3 { class: "section-heading", {tr(messages::SQUAWK_NOTES_HEADING).to_uppercase()} }
                 p { class: "squawk-notes", {squawk.notes.as_str().to_owned()} }
+            }
+            AttachmentStrip {
+                asset: squawk.asset,
+                owner: AttachmentOwner::Squawk { squawk: view.id },
+                heading: messages::ATTACHMENT_PHOTOS,
+                default_size: PhotoSize::Medium,
             }
             h3 { class: "section-heading", {tr(messages::SQUAWK_HISTORY_HEADING).to_uppercase()} }
             ol { class: "squawk-history",

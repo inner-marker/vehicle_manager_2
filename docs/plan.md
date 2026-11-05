@@ -224,13 +224,14 @@ Holds only information that doesn't change over time:
 - **Lifecycle status:** in service, spare / in storage, out for service, retired, disposed (see Asset lifecycle & components).
 - Make, model, year
 - Color
-- **Identifiers:** a list of typed identifiers rather than a single VIN field, e.g. VIN, license plate, registration, serial number (and later aircraft identifiers such as N-number and airframe serial)
+- **Identifiers:** a list of typed identifiers rather than a single VIN field, e.g. VIN, registration, serial number (and later aircraft identifiers such as N-number and airframe serial)
+- **License plates:** their own records, each with an issuing authority (state, province, or country), a number, and dates; the current one shows, earlier ones are its history, and renewing a registration updates its plate (`docs/decisions.md` #066)
 - Description
-- Photos (stored as blobs in the database)
+- Photos (stored as files, see Attachments)
 
 > **Meter readings are not vehicle fields.** Odometer, hours, etc. are readings taken at a point in time, so they live on events. That also builds a full history of every meter for free.
 
-> **Photo tradeoff:** blobs are simple, but they grow the database and make every sync heavier. The alternative is files plus a path reference, but then the files need their own sync. Blobs are a fine starting point at this scale.
+> **Where files live** (`docs/decisions.md` #065): photos and documents are **files on disk** in `data/files/`, each named by its SHA-256 and never changed; the database holds the attachment records. Nightly snapshots stay database-only and small; a backup or restore is the database plus the files folder. Files sync separately and lazily (Phase 3).
 
 ### Asset profiles
 
@@ -385,11 +386,15 @@ The core abstraction is a single **event** type covering everything that happens
   - **Documents:** **multi-page PDFs,** e.g. recall paperwork, dealer invoices, receipts, warranty documents.
 - **Documents open in a document viewer** (scroll or swipe through pages, zoom), not as a stack of separate images.
   - **Every platform:** the bundled **pdf.js** viewer, plus Download / Open in system viewer (`docs/decisions.md` #037).
+  - **Phase 2 (milestone 8f):** the app's own viewer, drawn with pdf.js's core library (the human's pick, `docs/ui-sketches/p2m8-pdf-viewer-options.svg` option A, 2026-11-04): pages one under another, zoom (− / Fit width / +), "Page 2 of 12", text that can be selected, Download.
+  - **Post-MVP (the human, 2026-11-04):** **search** (pdf.js's own find, or the app's over each page's text), a **page-thumbnail sidebar** (drawn small as you scroll; a strip or page grid on a phone), and other viewer extras (e.g. printing, rotating). They build on the same core, so nothing in 8f needs to change.
   - **Limit:** 50 MB per PDF, no page limit; the server checks the type and records the page count (#037).
   - Mobile apps (post-MVP): the same pdf.js viewer.
 - Lists show a **thumbnail of the first page** and the page count.
 - **Getting documents in:**
   - Upload an existing PDF (all platforms).
+  - **Share a PDF from another app** (mobile apps, post-MVP; the human, 2026-11-04): the app registers as a place PDFs (and photos) can be sent, so the iOS share sheet ("Open in…") and Android's "Share to" list it. A shared file opens a short "Attach to…" step: which vehicle, then what it goes on (the vehicle, an event, a squawk, or a document), and arrives as an ordinary attachment.
+    - *Possibly sooner on Android:* the web app could do the same as an installed web app (the Web Share Target API, which Android's Chrome supports; iOS Safari doesn't). To decide when the mobile apps are planned.
   - **Scan with a phone:**
     - Mobile apps (post-MVP) use the platform document scanner (iOS and Android both include one), with edge detection and perspective correction, producing one multi-page PDF.
     - Web UI: capture several pages with the camera, then combine them into one PDF (Phase 6).
@@ -720,8 +725,8 @@ Asset                # tracked thing; the UI calls it a "vehicle" (static identi
  ├─ parent_asset_id? # → Asset where currently installed (history in Installation)
  ├─ lifecycle_status # in_service | spare | out_for_service | retired | disposed
  ├─ make, model, year, color, description
- ├─ identifiers[]    # (type, value): VIN, plate, registration, serial, ...
- └─ photos[]         # blobs
+ ├─ identifiers[]    # (type, value): VIN, registration, serial, ...
+ └─ attachments[]    # photos and documents (files by SHA-256, #065)
 
 Meter                # user-defined, per asset
  ├─ id, asset_id
@@ -764,10 +769,11 @@ MeterReading         # one row per meter read during an event
 
 Attachment           # photo or multi-page document
  ├─ id
- ├─ owner            # → Event | Squawk | Asset
+ ├─ owner            # → Event | Task | Squawk | Asset | AssetDocument (a kind and an ID)
  ├─ kind             # photo | document
  ├─ mime_type, size_bytes, page_count?, original_name
- ├─ blob, thumbnail_blob        # thumbnail = first page for documents
+ ├─ file_sha256, thumbnail_sha256   # files in data/files/ (#065); thumbnail = first page for documents
+ ├─ original_sha256?            # a kept original (#036)
  └─ metadata?        # photo EXIF (time, GPS, camera), kept per the photo rule
 
 CustomFieldDef       # a user-defined field
@@ -860,13 +866,21 @@ DisposalDetails      # 1:1 detail table for a disposal event
  ├─ method           # sold | traded_in | scrapped | given_away | core_exchange | lost_stolen | other
  └─ counterparty?, price_minor?, currency?    # bill of sale etc. as attachments
 
+LicensePlate         # a vehicle's plate (#066)
+ ├─ id, asset_id
+ ├─ authority?       # US state, Canadian province, country, or other; none only for plates moved from identifiers
+ ├─ number
+ ├─ issued_on?, expires_on?    # date-only; expires_on follows the linked registration
+ └─ retired_on?      # when a new plate replaced it; none while current
+
 AssetDocument        # official document about an asset: title, registration, insurance, certificate, ...
  ├─ id, asset_id
  ├─ doc_type         # from the asset profile, or a custom type
  ├─ number?, issuer?
  ├─ issued_on?, effective_on?, expires_on?   # date-only; no expires_on = never expires
- ├─ status           # current | expired | superseded
+ ├─ status           # current | expired | superseded (worked out, not stored)
  ├─ supersedes_id?   # → AssetDocument (the previous record this renewal replaces)
+ ├─ plate_id?        # a registration's plate (#066)
  ├─ reminder_lead_days?
  └─ attachments[], notes
 
@@ -1555,7 +1569,7 @@ The NAS runs two servers side by side (`docs/decisions.md` #062), each its own C
 
 ### Data & operations
 
-- **Persistent volume** for the SQLite database (and any file storage), on a **local NAS disk, not a network share**, so containers can be rebuilt or upgraded without data loss.
+- **Persistent volume** for the SQLite database and the files folder (`data/files/`, #065), on a **local NAS disk, not a network share**, so containers can be rebuilt or upgraded without data loss. A backup or restore covers both.
 - **Secrets** (token-signing keys, etc.) supplied via environment or Docker secrets, never baked into the image.
 - **Upgrades:** rebuild or pull the new app image and restart. The app backs up the database (`VACUUM INTO`) and runs schema migrations on startup.
 - **Backups (MVP):** device copies, pre-migration snapshots, and a **nightly local `VACUUM INTO` snapshot** in `data/snapshots/` (same pool for now; configurable for a USB disk later, #035). See Data integrity & loss detection.
@@ -1838,6 +1852,9 @@ Each phase has open questions in section 10 that must be resolved before work on
 - Built-in Help Documents
   - What format do we store the documents?
 - Info pop-ups (circled question marks that pops up a small help window with summary, with links to the full Help Documents)
+- **Photos, after milestone 8's test** (the human, 2026-11-04):
+  - **Pinch to zoom a photo on a phone** zooms and pans just the photo in the viewer, not the whole page (iOS Safari ignores the page's own "don't zoom" setting, so the viewer handles the gestures itself).
+  - **Add photos and documents while logging,** before the first save: a new fuel-up, reading, maintenance, or repair (today they can be added once the draft is saved).
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.
@@ -1852,7 +1869,7 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
   - NHTSA recalls: `recallsByVehicle`
 - **Post-MVP: Mobile.** 
   - Android and iOS builds, offline "glovebox" view of current asset documents, camera for photos, 
-  - **native document scanning** (multi-page PDF), native location services, and the bundled offline geocoder. Most of *
+  - **native document scanning** (multi-page PDF), **receiving PDFs and photos shared from other apps** (see Attachments), native location services, and the bundled offline geocoder. Most of *
   - *voice logging** needs the mobile apps too (draft `docs/sub-plans/02-voice-capture.md`, idea 14).
   - moved to post-MVP because web UI will be available for mobile use. Also, app signing, side-loading, and distribution become problems for the first mobile release, and the team wants to focus on core features first.
 - **Post-MVP: Offsite backups.** 
@@ -1878,6 +1895,8 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 - **Post-MVP (later): Logbook label and other page formats.**
 - **Post-MVP (after reports): Vehicle transfer to the next owner.** 
   - Importable vehicle package for another server running the app.
+- **Post-MVP: PDF viewer extras** (the human, 2026-11-04).
+  - Search, a page-thumbnail sidebar, printing and rotating, on the milestone 8 viewer (see §3 Attachments).
 - **Post-MVP: Event map.** 
   - Plot events on a map using their stored coordinates, filtered by vehicle, event type, and date.
 - **Post-MVP: Alternative hosting.** 

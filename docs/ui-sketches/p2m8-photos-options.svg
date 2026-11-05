@@ -1,0 +1,245 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2440" viewBox="0 0 1560 2440" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2440" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 8e · Photos (and where PDFs will sit): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Where photos and PDFs show on an event, a task, a squawk, and a vehicle; adding them (Take photo, Choose, the size); and looking at one. PDFs open in the viewer in 8f.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · A strip of thumbnails under each thing, with + Add at the end; tap one to see it</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a repair draft in the work log, and a squawk</text>
+<rect x="40" y="166" width="900" height="900" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Repair · Truck</text>
+<rect x="758" y="178" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="178" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="80" y="236" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="80" y="248" width="820" height="280" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="276" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">▾  Rear brake pads</text>
+<text x="886" y="276" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="end">$186.20</text>
+<text x="94" y="306" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Part</text>
+<text x="394" y="306" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Number</text>
+<text x="544" y="306" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Qty</text>
+<text x="634" y="306" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">Unit</text>
+<line x1="94" y1="314" x2="886" y2="314" stroke="#333a45" stroke-width="1"/>
+<text x="94" y="336" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Brake pads, rear</text>
+<text x="394" y="336" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">D1414</text>
+<text x="544" y="336" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">1</text>
+<text x="634" y="336" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$64.99</text>
+<text x="94" y="362" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Rotor, rear</text>
+<text x="394" y="362" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start"></text>
+<text x="544" y="362" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">2</text>
+<text x="634" y="362" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">$48.60</text>
+<text x="94" y="406" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS &amp; RECEIPTS</text>
+<rect x="94" y="416" width="84" height="84" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M102 490 L125.92 453.8 L142.72 473.12 L154.48 462.2 L170 490 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="154.48" cy="441.2" r="6.72" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="98" y="480" width="47.2" height="16" rx="4" fill="#000000"/>
+<text x="103" y="492" font-size="9.5" fill="#e8eaed" font-weight="700" text-anchor="start">Before</text>
+<rect x="186" y="416" width="84" height="84" rx="8" fill="#55473a" stroke="#333a45" stroke-width="1.5"/>
+<path d="M194 490 L217.92000000000002 453.8 L234.72 473.12 L246.48 462.2 L262 490 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="246.48" cy="441.2" r="6.72" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="190" y="480" width="41.0" height="16" rx="4" fill="#000000"/>
+<text x="195" y="492" font-size="9.5" fill="#e8eaed" font-weight="700" text-anchor="start">After</text>
+<rect x="278" y="416" width="84" height="84" rx="8" fill="#e9e4d8" stroke="#333a45" stroke-width="1.5"/>
+<rect x="290" y="430" width="60" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="290" y="439" width="48" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="290" y="448" width="60" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="290" y="457" width="48" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="282" y="480" width="40" height="16" rx="4" fill="#b3261e"/>
+<text x="288" y="492" font-size="9.5" fill="#ffffff" font-weight="800" text-anchor="start">PDF</text>
+<text x="356" y="492" font-size="9.5" fill="#3a3630" font-weight="700" text-anchor="end">2 p</text>
+<rect x="370" y="416" width="84" height="84" rx="8" fill="none" stroke="#5aa9ff" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="412.0" y="463.0" font-size="12" fill="#5aa9ff" font-weight="700" text-anchor="middle">+ Add</text>
+<text x="94" y="520" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The task&#x27;s own: e.g. the worn pads, the receipt. The job&#x27;s (not a task&#x27;s) sit below the tasks.</text>
+<text x="80" y="552" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS &amp; DOCUMENTS (THE JOB)</text>
+<rect x="80" y="564" width="84" height="84" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M88 638 L111.92 601.8 L128.72 621.12 L140.48 610.2 L156 638 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="140.48" cy="589.2" r="6.72" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="172" y="564" width="84" height="84" rx="8" fill="none" stroke="#5aa9ff" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="214.0" y="611.0" font-size="12" fill="#5aa9ff" font-weight="700" text-anchor="middle">+ Add</text>
+<text x="80" y="672" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Saved with the draft. Once it&#x27;s finished, they&#x27;re locked; a correction starts with them.</text>
+<line x1="80" y1="712" x2="900" y2="712" stroke="#333a45" stroke-width="1"/>
+<text x="80" y="746" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">A squawk&#x27;s page</text>
+<rect x="80" y="760" width="167.0" height="24" rx="12" fill="#3a2f15" stroke="#f5b942" stroke-width="1.2"/>
+<text x="163.5" y="776" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">MEDIUM · Low → Medium</text>
+<text x="80" y="804" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle from the rear on bumps</text>
+<text x="80" y="836" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS</text>
+<rect x="80" y="848" width="84" height="84" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M88 922 L111.92 885.8 L128.72 905.12 L140.48 894.2 L156 922 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="140.48" cy="873.2" r="6.72" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="172" y="848" width="84" height="84" rx="8" fill="#55473a" stroke="#333a45" stroke-width="1.5"/>
+<path d="M180 922 L203.92000000000002 885.8 L220.72 905.12 L232.48 894.2 L248 922 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="232.48" cy="873.2" r="6.72" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="264" y="848" width="84" height="84" rx="8" fill="none" stroke="#5aa9ff" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="306.0" y="895.0" font-size="12" fill="#5aa9ff" font-weight="700" text-anchor="middle">+ Add</text>
+<text x="80" y="952" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Anyone who may change the squawk adds photos, any time (even after a job dealt with it).</text>
+<text x="80" y="974" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A vehicle&#x27;s Overview: its photos the same way (an Admin adds them); the first is its picture.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · a fuel-up, adding a photo</text>
+<rect x="980" y="166" width="260" height="620" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · Truck</text>
+<text x="996" y="262" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Odometer</text>
+<rect x="996" y="270" width="226" height="34" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="292" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">52,644</text>
+<text x="996" y="330" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS</text>
+<rect x="996" y="340" width="64" height="64" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M1004 394 L1020.32 368.8 L1033.12 383.52 L1042.08 375.2 L1052 394 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="1042.08" cy="359.2" r="5.12" fill="#ffffff" fill-opacity="0.3"/>
+<rect x="1000" y="384" width="34.8" height="16" rx="4" fill="#000000"/>
+<text x="1005" y="396" font-size="9.5" fill="#e8eaed" font-weight="700" text-anchor="start">Pump</text>
+<rect x="1068" y="340" width="64" height="64" rx="8" fill="none" stroke="#5aa9ff" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="1100.0" y="377.0" font-size="12" fill="#5aa9ff" font-weight="700" text-anchor="middle">+ Add</text>
+<text x="996" y="434" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Tap + Add:</text>
+<rect x="982" y="454" width="256" height="330" rx="18" fill="#262b34" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="1090" y="464" width="40" height="4" rx="2" fill="#4a535e"/>
+<text x="1000" y="496" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">Add a photo</text>
+<rect x="1000" y="512" width="220" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1012" y="537" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Take photo</text>
+<text x="1208" y="537" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="end">the phone&#x27;s camera</text>
+<rect x="1000" y="560" width="220" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1012" y="585" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Choose photos</text>
+<text x="1208" y="585" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="end">from the library</text>
+<rect x="1000" y="608" width="220" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1012" y="633" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Choose a PDF</text>
+<text x="1208" y="633" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="end">in 8f</text>
+<text x="1000" y="672" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">SIZE</text>
+<rect x="1000" y="680" width="70" height="40" rx="8" fill="#5aa9ff"/>
+<text x="1035" y="698" font-size="12" fill="#0b1420" font-weight="800" text-anchor="middle">Small</text>
+<text x="1035" y="713" font-size="9.5" fill="#0b1420" font-weight="500" text-anchor="middle">~200 KB</text>
+<rect x="1075" y="680" width="70" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1110" y="698" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Medium</text>
+<text x="1110" y="713" font-size="9.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">~1 MB</text>
+<rect x="1150" y="680" width="70" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1185" y="698" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Large</text>
+<text x="1185" y="713" font-size="9.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">~3 MB</text>
+<text x="1000" y="742" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Small is a fuel-up&#x27;s default.</text>
+<text x="1000" y="762" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">□ Keep the original (Maintainers)</text>
+<text x="1270" y="184" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Photos are where the thing is:</text>
+<text x="1270" y="206" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   on the task, the squawk, the job.</text>
+<text x="1270" y="228" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Thumbnails show what they are</text>
+<text x="1270" y="250" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   at a glance (before/after).</text>
+<text x="1270" y="272" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One + Add everywhere.</text>
+<text x="1270" y="294" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Names and sizes show only when</text>
+<text x="1270" y="316" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   you open one.</text>
+<text x="40" y="1124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A list under each thing: a small thumbnail, the name, and its details; + Photo and + PDF buttons</text>
+<text x="40" y="1154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the same repair draft</text>
+<rect x="40" y="1166" width="900" height="520" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1168" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="1199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Repair · Truck</text>
+<rect x="758" y="1178" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="1197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="1178" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="1197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="80" y="1236" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="80" y="1248" width="820" height="330" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1276" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">▾  Rear brake pads</text>
+<text x="886" y="1276" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="end">$186.20</text>
+<text x="94" y="1302" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(parts and labor as now)</text>
+<text x="94" y="1336" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS &amp; RECEIPTS</text>
+<rect x="690" y="1318" width="92" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="736.0" y="1338" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Photo</text>
+<rect x="790" y="1318" width="92" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="836.0" y="1338" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ PDF</text>
+<rect x="94" y="1352" width="792" height="54" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<rect x="102" y="1357" width="44" height="44" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M110 1391 L118.72 1376.8 L127.52 1386.92 L133.68 1381.2 L138 1391 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="133.68" cy="1370.2" r="3.52" fill="#ffffff" fill-opacity="0.3"/>
+<text x="158" y="1376" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">IMG_0412.jpg</text>
+<text x="158" y="1394" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Photo · Medium · 0.8 MB · Sam, 3 Nov</text>
+<text x="872" y="1385" font-size="12" fill="#ff6b6b" font-weight="600" text-anchor="end">Remove</text>
+<rect x="94" y="1414" width="792" height="54" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<rect x="102" y="1419" width="44" height="44" rx="8" fill="#55473a" stroke="#333a45" stroke-width="1.5"/>
+<path d="M110 1453 L118.72 1438.8 L127.52 1448.92 L133.68 1443.2 L138 1453 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="133.68" cy="1432.2" r="3.52" fill="#ffffff" fill-opacity="0.3"/>
+<text x="158" y="1438" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">IMG_0413.jpg</text>
+<text x="158" y="1456" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Photo · Medium · 0.9 MB · Sam, 3 Nov</text>
+<text x="872" y="1447" font-size="12" fill="#ff6b6b" font-weight="600" text-anchor="end">Remove</text>
+<rect x="94" y="1476" width="792" height="54" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<rect x="102" y="1481" width="44" height="44" rx="8" fill="#e9e4d8" stroke="#333a45" stroke-width="1.5"/>
+<rect x="114" y="1495" width="20" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="114" y="1504" width="8" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="114" y="1513" width="20" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="114" y="1522" width="8" height="4" rx="2" fill="#b9b2a3"/>
+<rect x="106" y="1509" width="28" height="12" rx="3" fill="#b3261e"/>
+<text x="120" y="1518" font-size="7.5" fill="#ffffff" font-weight="800" text-anchor="middle">PDF</text>
+<text x="158" y="1500" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Invoice 2291.pdf</text>
+<text x="158" y="1518" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="start">PDF · 2 pages · 0.3 MB · Sam, 3 Nov</text>
+<text x="872" y="1509" font-size="12" fill="#ff6b6b" font-weight="600" text-anchor="end">Remove</text>
+<text x="94" y="1552" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Picked photos join the list with a size menu each, then upload.</text>
+<text x="80" y="1598" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS &amp; DOCUMENTS (THE JOB)</text>
+<rect x="698" y="1580" width="92" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="744.0" y="1600" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Photo</text>
+<rect x="798" y="1580" width="92" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="844.0" y="1600" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ PDF</text>
+<text x="80" y="1626" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">None yet.</text>
+<text x="980" y="1154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · a fuel-up</text>
+<rect x="980" y="1166" width="260" height="500" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1196" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="1222" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up · Truck</text>
+<text x="996" y="1262" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">PHOTOS</text>
+<rect x="996" y="1274" width="226" height="54" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1002" y="1279" width="44" height="44" rx="8" fill="#3d4b5c" stroke="#333a45" stroke-width="1.5"/>
+<path d="M1010 1313 L1018.72 1298.8 L1027.52 1308.92 L1033.68 1303.2 L1038 1313 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="1033.68" cy="1292.2" r="3.52" fill="#ffffff" fill-opacity="0.3"/>
+<text x="1054" y="1298" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="start">IMG_0412.jpg</text>
+<text x="1054" y="1316" font-size="10.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Small · 0.2 MB</text>
+<rect x="996" y="1340" width="108" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1050.0" y="1360" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Photo</text>
+<rect x="1112" y="1340" width="108" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1166.0" y="1360" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ PDF</text>
+<text x="1270" y="1184" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Names, sizes, and who added</text>
+<text x="1270" y="1206" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   each are visible at once.</text>
+<text x="1270" y="1228" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Good for paperwork (receipts).</text>
+<text x="1270" y="1250" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Takes more room; photos are</text>
+<text x="1270" y="1272" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   small, so before/after reads</text>
+<text x="1270" y="1294" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   less well.</text>
+<text x="1270" y="1316" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two buttons in every place.</text>
+<text x="40" y="1764" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both · Looking at a photo: it fills the screen; its details, Download, and Remove below</text>
+<text x="40" y="1794" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a photo opened</text>
+<rect x="40" y="1806" width="900" height="560" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1808" width="896" height="556" rx="10" fill="#05070a"/>
+<text x="70" y="1844" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Back</text>
+<text x="910" y="1844" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="end">2 of 3</text>
+<rect x="190" y="1864" width="440" height="440" rx="8" fill="#55473a" stroke="#333a45" stroke-width="1.5"/>
+<path d="M198 2294 L357.2 2062.0 L445.2 2163.2 L506.8 2106.0 L622 2294 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="506.8" cy="1996.0" r="35.2" fill="#ffffff" fill-opacity="0.3"/>
+<text x="720" y="1894" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">Before</text>
+<text x="720" y="1928" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">Taken</text>
+<text x="720" y="1946" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">3 Nov 2026, 9:52 am</text>
+<text x="720" y="1968" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">Where</text>
+<text x="720" y="1986" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Asheville, NC (from the photo)</text>
+<text x="720" y="2008" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">Camera</text>
+<text x="720" y="2026" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Apple iPhone 15 Pro</text>
+<text x="720" y="2048" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">Size</text>
+<text x="720" y="2066" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">Medium · 2560 × 1920 · 0.8 MB</text>
+<text x="720" y="2088" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">Added</text>
+<text x="720" y="2106" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="start">by Sam, 3 Nov 2026</text>
+<rect x="720" y="2144" width="100" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="770.0" y="2164" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Download</text>
+<rect x="828" y="2144" width="92" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="874.0" y="2164" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Original</text>
+<rect x="720" y="2184" width="92" height="30" rx="8" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="766" y="2204" font-size="12" fill="#ff6b6b" font-weight="700" text-anchor="middle">Remove</text>
+<text x="720" y="2244" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Original: Maintainers and Admins,</text>
+<text x="720" y="2264" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">when one was kept.</text>
+<text x="70" y="2348" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">← → (or swipe on a phone) for the next one. PDFs open the same way, in the pdf.js viewer (8f).</text>
+<text x="980" y="1794" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the same</text>
+<rect x="980" y="1806" width="260" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1832" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1808" width="256" height="556" rx="24" fill="#05070a"/>
+<text x="998" y="1854" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Back</text>
+<text x="1222" y="1854" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="end">2 of 3</text>
+<rect x="990" y="1874" width="240" height="240" rx="8" fill="#55473a" stroke="#333a45" stroke-width="1.5"/>
+<path d="M998 2104 L1081.2 1982.0 L1129.2 2037.2 L1162.8 2006.0 L1222 2104 Z" fill="#ffffff" fill-opacity="0.18"/>
+<circle cx="1162.8" cy="1946.0" r="19.2" fill="#ffffff" fill-opacity="0.3"/>
+<text x="998" y="2144" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Before</text>
+<text x="998" y="2168" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="start">3 Nov, 9:52 am · Asheville, NC</text>
+<text x="998" y="2188" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Medium · 0.8 MB · by Sam</text>
+<rect x="998" y="2214" width="100" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1048.0" y="2234" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Download</text>
+<rect x="1106" y="2214" width="100" height="30" rx="8" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="1156" y="2234" font-size="12" fill="#ff6b6b" font-weight="700" text-anchor="middle">Remove</text>
+<text x="998" y="2284" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="start">Swipe for the next one</text>
+<text x="40" y="2404" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A photo&#x27;s place comes from its GPS (looked up like an event&#x27;s) and is never shown in exports by default (#036). The JPEG itself carries no metadata.</text>
+</svg>

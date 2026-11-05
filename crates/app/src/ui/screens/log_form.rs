@@ -19,10 +19,12 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetSummary, AssetView, AssetsOutcome, EventsOutcome, LatestReading, PlacesOutcome,
-    PreferencesOutcome, RequirementView, ScheduleOutcome, SquawkView, SquawksOutcome,
+    AssetSummary, AssetView, AssetsOutcome, AttachmentsOutcome, EventsOutcome, LatestReading,
+    PlacesOutcome, PreferencesOutcome, RequirementView, ScheduleOutcome, SquawkView,
+    SquawksOutcome,
 };
 use domain::asset::AssetId;
+use domain::attachment::AttachmentOwner;
 use domain::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
 use domain::dates::{format_date, utc_to_local};
 use domain::event::{
@@ -41,6 +43,7 @@ use domain::requirement::{Bundle, BundleId};
 use domain::squawk::SquawkId;
 use domain::time::Clock;
 
+use super::attachments::{AttachmentStrip, photo_size_for};
 use super::log_chooser::use_log_chooser;
 use super::log_input::{Context, Target, Typed, build, required_items, typed_from, zone};
 use super::squawks::use_vehicle_squawks;
@@ -461,11 +464,57 @@ async fn send(
     mode: Mode,
     input: EventInput,
     reason: String,
+    removed_tasks: Vec<u16>,
 ) -> Result<EventsOutcome, ServerFnError> {
     match mode {
         Mode::New => api::add_event(input).await,
-        Mode::Edit(id) => api::edit_event(id, input).await,
+        Mode::Edit(id) => {
+            let asset = input.asset;
+            // Where the photos are now, before the server sees the tasks' new order.
+            let before = if removed_tasks.is_empty() {
+                Vec::new()
+            } else {
+                attachments_on_event(asset, id).await
+            };
+            let outcome = api::edit_event(id, input).await?;
+            if matches!(outcome, EventsOutcome::Saved { .. }) {
+                follow_removed_tasks(&before, &removed_tasks).await;
+            }
+            Ok(outcome)
+        }
         Mode::Correct(original) => api::correct_event(original, input, reason).await,
+    }
+}
+
+/// The attachments on a draft (and its tasks), and where each is.
+async fn attachments_on_event(
+    asset: AssetId,
+    event: EventId,
+) -> Vec<(domain::attachment::AttachmentId, AttachmentOwner)> {
+    match api::attachments(asset, AttachmentOwner::Event { event, task: None }).await {
+        Ok(AttachmentsOutcome::Attachments { attachments, .. }) => attachments
+            .into_iter()
+            .map(|view| (view.id, view.attachment.owner))
+            .collect(),
+        Ok(_) | Err(_) => Vec::new(),
+    }
+}
+
+/// Moves each attachment in `before` to where its task went once `removed` (in order) left the
+/// list; a removed task's photos stay on the job.
+async fn follow_removed_tasks(
+    before: &[(domain::attachment::AttachmentId, AttachmentOwner)],
+    removed: &[u16],
+) {
+    for (id, owner) in before {
+        let after = removed
+            .iter()
+            .fold(*owner, |owner, task| owner.after_task_removed(*task));
+        if let (AttachmentOwner::Event { task, .. }, true) = (after, after != *owner)
+            && let Err(error) = api::move_attachment(*id, task).await
+        {
+            tracing::debug!(target: log_area::UI, attachment = %id, %error, "couldn't move a photo with its task");
+        }
     }
 }
 
@@ -601,9 +650,10 @@ fn FormBody(
         };
         let zone = input.dates.zone.clone();
         let names = (meters.clone(), fields.clone());
+        let removed_tasks = typed.work.removed_tasks.clone();
         busy.set(true);
         spawn(async move {
-            let result = send(mode, input, reason()).await;
+            let result = send(mode, input, reason(), removed_tasks).await;
             busy.set(false);
             match result {
                 Ok(EventsOutcome::Saved { id, .. }) if finish => {
@@ -725,6 +775,14 @@ fn FormBody(
             if kind == EventKind::Fuel {
                 FuelPart { inputs, units }
             }
+            if !job && let Mode::Edit(id) = mode {
+                AttachmentStrip {
+                    asset,
+                    owner: AttachmentOwner::Event { event: id, task: None },
+                    heading: messages::ATTACHMENT_PHOTOS,
+                    default_size: photo_size_for(&view.asset.kind, kind),
+                }
+            }
             if job {
                 div { class: "log-item",
                     CurrencyPick { inputs, home: units.currency }
@@ -740,6 +798,8 @@ fn FormBody(
                     work_problem: work_problem(Target::Work),
                     squawk_problem: work_problem(Target::Squawks),
                     end_problem,
+                    editing: if let Mode::Edit(id) = mode { Some(id) } else { None },
+                    saved_tasks: start.work.tasks.len(),
                     start_readings: (inputs.readings)(),
                 }
             }

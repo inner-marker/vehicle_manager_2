@@ -290,6 +290,10 @@ setting-currency = Currency
 setting-language = Language
 setting-squawk-word = Call problems
 setting-squawk-word-household = The household's Admin chooses this, for everyone.
+setting-originals = Keep photo originals
+setting-originals-allowed = Allowed
+setting-originals-off = Off
+setting-originals-note = Maintainers and Admins may keep a photo's file as taken (with its location and camera details) beside the one shown. Originals already kept stay.
 squawk-word-choice = { $Squawks }
 
 ## Squawk screens (milestone 7 step 7f)
@@ -541,12 +545,14 @@ notice-dismiss = Dismiss
 inbox-snapshot-failed = The nightly snapshot failed
 inbox-snapshot-skipped = The nightly snapshot was skipped
 inbox-quick-check-failed = The hourly database check failed
+inbox-file-check-failed = Some photos or documents are missing or damaged
 # The job's name is in the message's details.
 inbox-job-failed = A scheduled job failed
 inbox-job-skipped = A scheduled job was skipped
 inbox-job-body = See the details below and the server's log.
 inbox-snapshot-body = See the details below and the server's log. Until this is fixed, there's no new backup of the database.
 inbox-quick-check-body = The hourly check found a problem in the database, so the server is refusing changes. See the details below and the server's log.
+inbox-file-check-body = The nightly check of the photo and document files in data/files/ found a problem. See the details below and the server's log. A missing or damaged file can be copied back from a backup of data/files/.
 inbox-server-unhealthy = The server isn't accepting changes
 inbox-place-lookup-unavailable = Place lookup isn't available
 inbox-place-lookup-body = The server couldn't open its place data, so it can't suggest a city, state, and country from a location. Saved places and typing a place still work. Restarting the server, or updating it, usually fixes this; the details below say what went wrong.
@@ -1230,5 +1236,172 @@ event-bad-next-due = A next due date goes only on a task whose requirement has a
 event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
 event-end-below-start = The end reading is lower than the start one. Check them.
 event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.
+
+## Attachments (milestone 8)
+
+photo-size-small = Small
+photo-size-medium = Medium
+photo-size-large = Large
+attachment-empty = That file is empty.
+attachment-not-a-photo = That isn't a photo the app can use. Choose a JPEG or PNG.
+attachment-heic-photo = That photo is HEIC, which the server doesn't convert. Take it again from the app, or export it as a JPEG first.
+attachment-not-a-pdf = Documents must be PDFs.
+attachment-photo-too-large = Photos can be up to 25 MB.
+attachment-pdf-too-large = PDFs can be up to 50 MB. Very large manuals are better kept outside the app.
+attachment-name-empty = The file needs a name.
+attachment-name-too-long = The file's name can be up to 255 characters.
+attachment-no-size = That photo has no size. Try it again.
+attachment-camera-too-long = The camera's name can be up to 100 characters.
+attachment-no-pages = That PDF has no pages.
+attachment-no-such-task = That task isn't on this job any more.
+attachment-bad-hash = That file reference isn't valid.
+attachment-unchangeable = An attachment can only be moved; to change it, remove it and add it again.
+attachment-unreadable = The server couldn't read that file. It may be damaged, or a PDF it can't open.
+attachment-not-uploaded = That file didn't finish uploading. Try adding it again.
+attachment-originals-off = The household doesn't keep originals. The photo can still be added without it.
+attachment-event-finished = This event is locked. To add or remove a photo or document, correct the event.
+
+## Official documents and license plates (milestone 8)
+
+document-status-current = Current
+document-status-expired = Expired
+document-status-superseded = Superseded
+document-unknown-type = That isn't a document type the app knows.
+document-number-too-long = The number can be up to 60 characters.
+document-issuer-too-long = Who issued it can be up to 100 characters.
+document-expires-before-issued = It expires before it's issued or takes effect. Check the dates.
+document-renews-unknown = The document it renews isn't on this vehicle.
+document-renews-other-type = A renewal must be of the same kind of document.
+document-already-renewed = That document has already been renewed. Renew the newer one.
+document-plate-not-registration = Only a registration is linked to a license plate.
+document-unknown-plate = That license plate isn't on this vehicle.
+document-renewed = A later document renews this one. Remove that one first.
+plate-number-empty = Enter the plate's number.
+plate-number-too-long = A plate's number can be up to 15 characters.
+plate-needs-authority = Choose who issued the plate: a state or province, a country, or another authority.
+plate-unknown-region = Choose a state or province from the list.
+plate-bad-country = A country is its two-letter code, e.g. DE or MX.
+plate-authority-empty = Enter who issued the plate.
+plate-authority-too-long = Who issued the plate can be up to 60 characters.
+plate-retired-before-issued = The plate stopped being used before it was issued. Check the dates.
+plate-in-use = A registration names this plate. Change the registration first.
+
+## Photos in the app (milestone 8, step 8e)
+
+attachment-photos = Photos
+attachment-task-photos = Photos & receipts
+attachment-job-photos = Photos & documents
+attachment-add = + Add
+attachment-pdf-pages = { $count } p
+attachment-add-photo = Add a photo or PDF
+attachment-take-photo = Take photo
+attachment-take-photo-hint = with the camera
+attachment-choose-photos = Choose photos
+attachment-choose-photos-hint = from the library or files
+attachment-size = Size
+photo-size-small-hint = about 200 KB
+photo-size-medium-hint = about 1 MB
+photo-size-large-hint = about 3 MB
+attachment-keep-original = Keep the original, as taken
+attachment-adding = Adding { $at } of { $count }…
+attachment-failed = { $name }: { $problem }
+attachment-done = Done
+attachment-back = ‹ Back
+attachment-position = { $at } of { $count }
+attachment-previous = Previous
+attachment-next = Next
+attachment-taken = Taken
+attachment-where = Where
+attachment-camera = Camera
+attachment-added = Added
+attachment-added-by = by { $name }, { $date }
+attachment-download = Download
+attachment-original = Original
+attachment-saved-to = Saved to { $path }
+attachment-remove-title = Remove this file?
+attachment-remove-text = It's taken off here for everyone.
+attachment-save-first = Save the draft to add photos and documents.
+attachment-save-to-see = Save the draft to see each task's photos again.
+
+## PDFs in the app (milestone 8, step 8f)
+
+attachment-choose-pdf = Choose a PDF
+attachment-choose-pdf-hint = up to 50 MB
+attachment-pdf-cant-show = This PDF can't be shown here. Use Download to open it.
+pdf-zoom-out = Zoom out
+pdf-zoom-in = Zoom in
+pdf-fit-width = Fit width
+pdf-page-of = Page { $page } of { $pages }
 work-copy-from-start = Copy from start
 log-currency = Currency
+
+## The Documents tab and license plates (milestone 8, step 8h)
+
+documents-heading = Documents
+documents-add = + Document
+documents-none = No documents yet.
+documents-plate = License plate
+documents-add-plate = + Plate
+documents-no-plate = No license plate yet.
+documents-earlier-plates = Earlier plates ({ $count })
+documents-earlier = Earlier ({ $count })
+documents-scans = Scans
+documents-renew = Renew…
+document-issued-on = Issued { $date }
+document-effective-on = from { $date }
+document-expires-on = expires { $date }
+document-never-expires = never expires
+document-expires-in = { $days ->
+    [0] Expires today
+    [one] Expires tomorrow
+   *[other] Expires in { $days } days
+}
+documents-add-title = Add a document
+documents-renew-title = Renew it
+documents-edit-title = Change the document
+documents-renew-note = A new record; the one it renews is kept as history.
+documents-renew-save = Renew
+documents-type = Type
+documents-type-other = Other…
+documents-type-name = What it is
+documents-name-needed = Say what it is (up to 40 characters).
+documents-number = Number
+documents-issuer = Issued by
+documents-issued = Issued
+documents-effective = Takes effect
+documents-expires = Expires
+documents-plate-field = License plate
+documents-no-plate-choice = None
+documents-plate-follows = Its expiry becomes the plate's.
+documents-notes = Notes
+documents-notes-too-long = The notes are too long.
+documents-scans-later = Add its scans on its card once it's saved.
+documents-remove-confirm = Remove it and its scans
+plate-add-title = Add a license plate
+plate-edit-title = Change the license plate
+plate-add-note = The current plate (if any) is retired on the new one's issue date, or today.
+plate-add-save = Add
+plate-issued-by = Issued by
+plate-by-state = US state
+plate-by-province = Canadian province
+plate-by-country = Country
+plate-by-other = Other
+plate-state = State
+plate-province = Province or territory
+plate-country = Country
+plate-other = Who issued it
+plate-number = Number
+plate-retired = Retired
+plate-since = Since { $date }
+plate-retired-on = until { $date }
+plate-from-registration = (from its registration)
+plate-choose-authority = Choose who issued it: Edit.
+plate-remove-confirm = Remove the plate
+attachment-kind-photo = Photo
+attachment-kind-pdf = PDF
+attachment-unpick = Don't add { $name }
+attachment-add-count = { $count ->
+    [0] Add
+    [one] Add 1
+   *[other] Add { $count }
+}

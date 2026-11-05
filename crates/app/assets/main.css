@@ -3664,6 +3664,346 @@ a.squawk-history-job {
     }
 }
 
+/* ---------- Photos (p2m8-photos-options.svg, option A) ---------- */
+
+.attachment-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.attachment-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.attachment-tile,
+.attachment-add {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    cursor: pointer;
+}
+
+.attachment-tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-tile-pdf {
+    background: #e9e4d8;
+}
+
+.attachment-tile-badge {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #b3261e;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.attachment-add {
+    border: 1.5px dashed var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 700;
+}
+
+/* The vehicle's photos panel shows only when the strip does (an Admin, or photos to see). */
+.vehicle-photos:not(:has(.attachment-strip)) {
+    display: none;
+}
+
+.attachment-sheet .sheet-choice {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+/* The file input covers its row, invisible, so tapping anywhere opens the picker. */
+.attachment-sheet .sheet-choice input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.sheet-choice-label {
+    font-weight: 700;
+}
+
+.sheet-choice-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.photo-sizes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.photo-size {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.photo-size-on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
+.photo-size-name {
+    font-weight: 800;
+}
+
+.photo-size-hint {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.photo-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 24px;
+    overflow-y: auto;
+    background: #05070a;
+    color: #e8eaed;
+    outline: none;
+}
+
+body:has(.photo-viewer) {
+    overflow: hidden;
+}
+
+.photo-viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.photo-viewer-body {
+    display: grid;
+    /* minmax(0, …): a zoomed PDF scrolls inside its column rather than widening it. */
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    gap: 24px;
+    align-items: start;
+}
+
+.photo-viewer-image {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.photo-viewer-image img {
+    max-width: 100%;
+    max-height: calc(100dvh - 120px);
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.photo-viewer-step {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 22px;
+    background: rgb(0 0 0 / 55%);
+    color: #ffffff;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+
+.photo-viewer-previous {
+    left: 8px;
+}
+
+.photo-viewer-next {
+    right: 8px;
+}
+
+.photo-viewer-name {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+    overflow-wrap: anywhere;
+}
+
+.photo-viewer-details dl {
+    margin: 0 0 12px;
+}
+
+.photo-viewer-details dt {
+    margin-top: 10px;
+    color: #9aa1ab;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.photo-viewer-details dd {
+    margin: 2px 0 0;
+}
+
+/* ---------- PDFs (p2m8-pdf-viewer-options.svg, option A; pages drawn by pdf.js) ---------- */
+
+.pdf-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 16px;
+}
+
+.pdf-tools .secondary-button {
+    min-width: 36px;
+    padding: 6px 10px;
+}
+
+.photo-viewer-image:has(.pdf-pages) {
+    align-items: stretch;
+}
+
+.pdf-pages {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    /* Centred by the pages' own margins, so a zoomed page still scrolls to its left edge. */
+    align-items: flex-start;
+    gap: 12px;
+    height: calc(100dvh - 110px);
+    overflow: auto;
+    padding: 4px 16px 24px;
+}
+
+.pdf-page {
+    position: relative;
+    flex-shrink: 0;
+    margin: 0 auto;
+    background: #ffffff;
+    box-shadow: 0 1px 6px rgb(0 0 0 / 50%);
+}
+
+.pdf-page canvas {
+    display: block;
+}
+
+/* pdf.js's text layer: the page's text, invisible, over the drawing, so it can be selected
+   (the rules pdf.js's own viewer uses for it, pdf_viewer.css, Apache-2.0). */
+.pdf-page .textLayer {
+    position: absolute;
+    inset: 0;
+    overflow: clip;
+    line-height: 1;
+    text-align: initial;
+    transform-origin: 0 0;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    forced-color-adjust: none;
+    --min-font-size: 1;
+    --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+    --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-page .textLayer :is(span, br) {
+    position: absolute;
+    color: transparent;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    user-select: text;
+}
+
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+    z-index: 1;
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-page .textLayer .markedContent {
+    display: contents;
+}
+
+.pdf-page .textLayer ::selection {
+    background: rgb(90 169 255 / 35%);
+    color: transparent;
+}
+
+/* The remove dialog sits over the viewer. */
+.dialog-scrim.viewer-dialog {
+    z-index: 50;
+}
+
+@media (max-width: 639px) {
+    .photo-viewer {
+        padding: 12px;
+    }
+
+    .photo-viewer-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .attachment-tile,
+    .attachment-add {
+        width: 72px;
+        height: 72px;
+    }
+
+    .pdf-tools {
+        margin-right: 8px;
+    }
+
+    .pdf-pages {
+        height: calc(100dvh - 160px);
+        padding: 4px 0 16px;
+    }
+}
+
 /* An end reading's "Copy from start" (the human's M7 note), under its field. */
 .copy-start {
     align-self: flex-start;
@@ -3693,5 +4033,179 @@ a.squawk-history-job {
 
 .currency-pick {
     max-width: 260px;
+}
+
+
+/* ---------- The Documents tab (p2m8-documents-options.svg, option A) ---------- */
+
+.documents-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.documents-tab .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+}
+
+.documents-tab .section-head .section-heading {
+    margin: 0;
+}
+
+.status-chip.ok {
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.status-chip.warn {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.status-chip.bad {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.plate-card,
+.document-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.plate-card-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 200px;
+}
+
+.plate-card-text .form-error {
+    margin: 0;
+}
+
+/* The current plate, drawn like one. */
+.plate-picture {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 150px;
+    min-height: 62px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #f4f1ea;
+    color: #111111;
+}
+
+.plate-picture-by {
+    color: #1c3f7a;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.plate-picture-number {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.document-card {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.document-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.document-card-type {
+    font-size: 1.05rem;
+}
+
+.document-card-line,
+.document-card .muted-note {
+    margin: 0;
+}
+
+.document-card .attachment-strip {
+    margin-top: 0;
+}
+
+.document-card-buttons {
+    justify-content: flex-end;
+}
+
+.documents-earlier {
+    margin: -4px 0 4px 4px;
+}
+
+.documents-earlier summary {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.documents-earlier-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0 0 16px;
+}
+
+/* What's waiting in the add sheet (the human's M8 note). */
+.picked-files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.picked-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.picked-file-kind {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.picked-file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 

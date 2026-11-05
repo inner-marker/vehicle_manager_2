@@ -1,8 +1,10 @@
 //! One component per screen. Most are placeholders until their phase builds them.
 
 mod account;
+mod attachments;
 mod connection;
 mod diagnostics;
+mod documents;
 mod event_page;
 mod groups;
 mod job_page;

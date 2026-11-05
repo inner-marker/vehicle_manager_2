@@ -29,6 +29,7 @@ The server runs as a Docker container from the image `ghcr.io/inner-marker/vehic
 ├── .env                           settings (from deploy/.env.example); NAS only
 └── data/                          the container's /data
     ├── vehiclemanager.sqlite      the database (plus -wal and -shm files while it runs)
+    ├── files/                     photos and PDFs, each named by its SHA-256 (decision #065)
     ├── backups/                   copies made before each database upgrade
     ├── snapshots/                 nightly snapshots, newest 7
     └── logs/                      log files and last-crash.txt
@@ -147,7 +148,7 @@ Set `VEHICLEMANAGER_IMAGE_TAG=sha-<commit>` in `.env` to a known-good build (the
 
 ## Database, backups, and snapshots
 
-The server keeps everything in `data/vehiclemanager.sqlite` and protects it three ways:
+The server keeps its records in `data/vehiclemanager.sqlite` and protects them three ways (photos and PDFs are files in `data/files/`; see below):
 
 | What | When | Where | Kept |
 |---|---|---|---|
@@ -160,6 +161,8 @@ The server keeps everything in `data/vehiclemanager.sqlite` and protects it thre
 - **Each snapshot is checked** after it's written. A snapshot that missed its time (the NAS was off) runs soon after the next start.
 - **Snapshots are in the same storage pool** as the database (decision #035). They protect against corruption, a bad upgrade, and mistakes, not against losing the NAS itself; offsite backups come later.
 - **Checking the last snapshot:** `ls -l data/snapshots/` over SSH shows them, newest last. The container log has a `job finished` line for each (or `job failed` with the reason).
+- **Photos and PDFs** are files in `data/files/`, each named by its SHA-256 and never changed once written (decision #065). Snapshots and pre-upgrade backups copy **only the database**: they stay small, and the files they point at are still in `data/files/`. The server keeps a removed attachment's files for **8 days** (a day past the oldest of the 7 snapshots), then erases them, so restoring any kept snapshot finds its files. A **pre-upgrade backup** older than that may miss photos removed since. **Back up `data/files/` along with the database** when you copy `data/` anywhere.
+- **The nightly file check** (08:00 UTC, an hour after the snapshot) checks every photo and PDF against its name, then erases the unused ones. A missing or damaged file shows in **Messages** (Admin mode) as "Some photos or documents are missing or damaged", and the log names each one. If a file is missing when the server starts, the check runs within the minute.
 - **Place data:** the image carries its own (`/app/geodata/geodata-<version>.gpkg`, decision #059), so nothing needs setting. To use another file (e.g. a newer one), copy it into `data/` and set `VEHICLEMANAGER_GEODATA_FILE=/data/<file>.gpkg` in `.env`. If the file can't be opened, the server still runs: place lookup is off, saved places and typed places still work, and the Admin sees **Place lookup isn't available** in Messages.
 - **Another snapshot folder** (e.g. a USB disk, later): mount it in `compose.yaml` and set `VEHICLEMANAGER_SNAPSHOT_DIR` in `.env` to its path inside the container (see the comments in both files). That folder is never created by the server: if the disk isn't mounted, the snapshot is **skipped** and logged, rather than written to the pool.
 
@@ -193,12 +196,14 @@ Restoring replaces the database with an older copy: **everything saved after tha
 
    ```sh
    sudo docker compose start
-   sudo docker logs --tail 20 vehiclemanager
+   sudo docker logs --since 5m vehiclemanager
    ```
 
    It should show `database open` with `created=false` and `database integrity check passed`.
 
 The database ID is the same as before (it's inside the snapshot), so devices treat it as the same database. Once everything looks right, delete `data/replaced/`.
+
+**Leave `data/files/` as it is:** the restored database finds its photos and PDFs there. Files added after the snapshot stay too, unused, and are erased later.
 
 ## Splitting into a main server and a test server
 
@@ -256,7 +261,7 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 6. **Create its Project:** Container Manager → **Project** → **Create**, name **`vehiclemanager-test`**, path **`/docker/vehicle_manager_test`**, *Use existing docker-compose.yml*, **Finish**. Then check its log:
 
    ```sh
-   sudo docker logs --tail 30 vehiclemanager-test 2>&1
+   sudo docker logs --since 5m vehiclemanager-test 2>&1
    ```
 
    It shows `this is a second server, not the household's main one` with `instance="test"`, `database open` with `created=false` (your existing data), and `database integrity check passed`.
@@ -320,18 +325,26 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
    sudo chown 1030:100 data/vehiclemanager.sqlite
    ```
 
-3. **Start it** and check its log:
+3. **Copy in main's photos and PDFs** (only files the test server doesn't have; each name is its contents, so nothing is overwritten):
+
+   ```sh
+   sudo mkdir -p data/files
+   sudo cp -an /volume1/docker/vehicle_manager/data/files/. data/files/
+   sudo chown -R 1030:100 data/files
+   ```
+
+4. **Start it** and check its log:
 
    ```sh
    sudo docker compose start
-   sudo docker logs --tail 20 vehiclemanager-test 2>&1
+   sudo docker logs --since 5m vehiclemanager-test 2>&1
    ```
 
    `database open` with `created=false`. If the test server runs a newer milestone, it may migrate the copy (backing it up first); main's own database is never touched.
 
 - **Sign in with your main account:** the copy has main's people and passwords.
 - **The copy keeps main's database ID.** That's fine now. Once sync arrives (Phase 3), don't connect a desktop app to the test server's copy.
-- **To go back** to the test server's own data, stop it, move `data/replaced/vehiclemanager.sqlite*` back into `data/`, and start it.
+- **To go back** to the test server's own data, stop it, move `data/replaced/vehiclemanager.sqlite*` back into `data/`, and start it. Its own files are still in `data/files/` (main's were only added).
 
 ## Logs and troubleshooting
 

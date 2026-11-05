@@ -96,6 +96,9 @@ pub(super) struct TypedWork {
     pub dispositions: Vec<TypedDisposition>,
     pub complaint: String,
     pub cause: String,
+    /// The places of tasks removed since the draft was last saved, in the order they went: the
+    /// tasks' photos move to match once it's saved (8e).
+    pub removed_tasks: Vec<u16>,
 }
 
 impl TypedWork {
@@ -360,6 +363,7 @@ pub(super) fn typed_work(work: &WorkDetails, meters: &[(MeterId, Meter)]) -> Typ
             .as_ref()
             .map(|notes| notes.as_str().to_owned())
             .unwrap_or_default(),
+        removed_tasks: Vec::new(),
     }
 }
 
@@ -485,6 +489,7 @@ mod tests {
             ],
             complaint: "Squeal".into(),
             cause: String::new(),
+            removed_tasks: Vec::new(),
         }
     }
 

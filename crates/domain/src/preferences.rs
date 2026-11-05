@@ -5,7 +5,8 @@
 //! Display only: stored values are always metric integers and currency codes. Each value
 //! here is chosen by the household (an Admin) and can be overridden by each user:
 //! **the user's choice → the household's → the built-in default** ([`Preferences::resolve`]).
-//! The one exception is [`SquawkWord`]: the household's alone, so everyone sees one word.
+//! The exceptions are [`SquawkWord`] and [`Originals`]: the household's alone, so everyone sees
+//! one word and follows one rule.
 //!
 //! One record holds the household's choices and one each user's, with one field per setting,
 //! so two devices changing different settings never overwrite each other (#043).
@@ -178,6 +179,18 @@ impl SquawkWord {
     pub const ALL: [Self; 4] = [Self::Issue, Self::Squawk, Self::Fault, Self::WriteUp];
 }
 
+/// Whether Maintainers and Admins may keep a photo's original file as taken (#036): the
+/// household's Admin can turn it off for everyone.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Originals {
+    /// They may (the default).
+    #[default]
+    Allowed,
+    /// Nobody keeps originals.
+    Off,
+}
+
 /// An ISO 4217 currency code: three capital letters, e.g. `USD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -321,6 +334,8 @@ pub struct Preferences {
     pub garage_sort: GarageSort,
     /// What squawks are called (the household's choice only).
     pub squawk_word: SquawkWord,
+    /// Whether originals may be kept (the household's choice only).
+    pub originals: Originals,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -347,11 +362,14 @@ pub struct PreferenceChoices {
     pub garage_sort: Option<GarageSort>,
     /// What squawks are called: the household's record only (a person's is ignored).
     pub squawk_word: Option<SquawkWord>,
+    /// Whether originals may be kept: the household's record only (a person's is ignored).
+    pub originals: Option<Originals>,
 }
 
 impl Preferences {
     /// The preferences in effect: each setting from `mine` if chosen, else the household's,
-    /// else the built-in default. What squawks are called comes from the household only.
+    /// else the built-in default. What squawks are called, and whether originals may be kept,
+    /// come from the household only.
     #[must_use]
     pub fn resolve(mine: &PreferenceChoices, household: &PreferenceChoices) -> Self {
         let defaults = Self::default();
@@ -390,6 +408,7 @@ impl Preferences {
                 .or(household.garage_sort)
                 .unwrap_or(defaults.garage_sort),
             squawk_word: household.squawk_word.unwrap_or(defaults.squawk_word),
+            originals: household.originals.unwrap_or(defaults.originals),
         }
     }
 }
@@ -456,6 +475,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::squawk_word`] (the household's record only).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub squawk_word: Option<Choice<SquawkWord>>,
+    /// See [`Preferences::originals`] (the household's record only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub originals: Option<Choice<Originals>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -471,6 +493,7 @@ impl Patch for PreferencesPatch {
             ("idle_sign_out", self.idle_sign_out.is_some()),
             ("garage_sort", self.garage_sort.is_some()),
             ("squawk_word", self.squawk_word.is_some()),
+            ("originals", self.originals.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -508,6 +531,9 @@ impl Patch for PreferencesPatch {
         }
         if !keep("squawk_word") {
             self.squawk_word = None;
+        }
+        if !keep("originals") {
+            self.originals = None;
         }
     }
 }
@@ -627,6 +653,27 @@ mod tests {
             patch
         );
         assert_eq!(Choice::<PressureUnit>::Default.value(), None);
+    }
+
+    #[test]
+    fn only_the_household_decides_on_originals() {
+        assert_eq!(Preferences::default().originals, Originals::Allowed);
+        let household = PreferenceChoices {
+            originals: Some(Originals::Off),
+            ..PreferenceChoices::default()
+        };
+        let mine = PreferenceChoices {
+            originals: Some(Originals::Allowed),
+            ..PreferenceChoices::default()
+        };
+        assert_eq!(
+            Preferences::resolve(&mine, &household).originals,
+            Originals::Off
+        );
+        assert_eq!(
+            Preferences::resolve(&mine, &PreferenceChoices::default()).originals,
+            Originals::Allowed
+        );
     }
 
     #[test]

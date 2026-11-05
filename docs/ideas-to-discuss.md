@@ -23,15 +23,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 - Besides version numbers, client and server exchange a **list of supported features.**
 - New features can roll out gradually; older clients hide what they can't handle instead of erroring.
 
-### 3. Separate, content-addressed blob storage 🟡
-*Suggested phase: Phase 2*
-
-- Photos and documents stored in their own table, **identified by a content hash (SHA-256),** behind a small storage interface. Attachment records hold the metadata (owner, kind, EXIF).
-- **Benefits:**
-  - Deduplication: the same receipt attached twice is stored once.
-  - Integrity checks: a damaged file is detectable.
-  - Easy to move later: if multi-page documents make the database too large, files can move to disk or object storage without touching anything else.
-- **To discuss:** keep blobs in SQLite at first (current plan) vs. files on disk from the start.
+### 3. Separate, content-addressed blob storage ✅
+*Decided 2026-11-04: `docs/decisions.md` #065 (files on disk in `data/files/`, each named by its SHA-256; the database holds the records).*
 
 ### 4. One canonical interchange format, defined early 🟡
 *Suggested phase: Phase 2*

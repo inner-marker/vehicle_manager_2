@@ -163,6 +163,7 @@ mod tests {
                 identifiers: vec![],
             },
             role: Role::Driver,
+            plate: None,
         }
     }
 

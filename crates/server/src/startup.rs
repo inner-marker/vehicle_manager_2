@@ -62,6 +62,15 @@ pub fn database_id() -> Option<domain::id::DatabaseId> {
     DATABASE_ID.get().copied()
 }
 
+/// The file store (#065), once [`start`] has opened it.
+static FILE_STORE: std::sync::OnceLock<storage::files::FileStore> = std::sync::OnceLock::new();
+
+/// The file store in `<data dir>/files/`, once [`start`] has opened it.
+#[must_use]
+pub fn file_store() -> Option<&'static storage::files::FileStore> {
+    FILE_STORE.get()
+}
+
 /// The server's own device ID, once [`start`] has opened the database.
 #[must_use]
 pub fn server_device() -> Option<DeviceId> {
@@ -132,6 +141,14 @@ pub async fn start(
     DATABASE
         .get_or_init(|| async {
             let database = open_and_check(&paths.data_dir, clock.as_ref()).await?;
+            // Photos and PDFs (#065): without the folder, attachments can't be added or shown.
+            match storage::files::FileStore::open(&paths.data_dir) {
+                Ok(store) => {
+                    jobs::check_files_exist(&database, &store, clock.now()).await;
+                    let _ = FILE_STORE.set(store);
+                }
+                Err(error) => tracing::error!(target: log_area::DATABASE, %error, "can't open the files folder; photos and documents are unavailable"),
+            }
             match database.user_count().await {
                 Ok(count) => {
                     setup::open_if_needed(count);
@@ -159,6 +176,7 @@ pub async fn start(
                     snapshot_dir: paths.snapshot_dir.clone(),
                     timers,
                     server_device,
+                    file_store: FILE_STORE.get().cloned(),
                 });
             } else {
                 tracing::error!(target: log_area::DATABASE, "no server device ID; scheduled jobs not started");

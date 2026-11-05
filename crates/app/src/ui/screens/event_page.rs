@@ -11,6 +11,7 @@
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, AssetsOutcome, EventView, EventsOutcome, PreferencesOutcome};
+use domain::attachment::AttachmentOwner;
 use domain::custom_field::FieldKind;
 use domain::dates::{format_date, format_time};
 use domain::event::{Event, EventId, EventSource, EventStatus, Finalizer, Performer, Requirement};
@@ -23,6 +24,7 @@ use domain::preferences::Preferences;
 use domain::quantity::{economy_value, show_reading, show_volume, unit_price};
 use domain::time::{Clock, UnixMillis};
 
+use super::attachments::{AttachmentStrip, photo_size_for};
 use super::job_page::{JobSections, JobTiles};
 use super::squawks::ReportSquawk;
 use super::vehicle::Tab;
@@ -231,6 +233,12 @@ fn EventBody(data: Loaded, reloads: Signal<u32>) -> Element {
                 JobSections { id: view.id, event: event.clone(), vehicle: vehicle.clone() }
             } else {
                 Tiles { event: event.clone(), vehicle: vehicle.clone(), units }
+                AttachmentStrip {
+                    asset: vehicle.id,
+                    owner: AttachmentOwner::Event { event: view.id, task: None },
+                    heading: messages::ATTACHMENT_PHOTOS,
+                    default_size: photo_size_for(&vehicle.asset.kind, event.kind),
+                }
             }
             Details { view: view.clone(), vehicle, units }
         }

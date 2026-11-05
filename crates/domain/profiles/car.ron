@@ -1,13 +1,13 @@
 // Car (decision #030).
 (
     id: "car",
-    version: 2,
+    version: 3,
     name: "profile-car",
     event_kinds: [fuel, reading, maintenance, repair],
     sections: [r#fuel-economy],
+    // License plates are their own records (#066), not identifiers.
     identifiers: [
         (kind: "vin", name: "identifier-vin"),
-        (kind: "plate", name: "identifier-plate"),
     ],
     // What a High squawk means for this kind (#063).
     high_severity: "squawk-high-not-drivable",

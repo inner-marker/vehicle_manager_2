@@ -300,6 +300,7 @@ mod tests {
                 identifiers: vec![],
             },
             role,
+            plate: None,
         }
     }
 

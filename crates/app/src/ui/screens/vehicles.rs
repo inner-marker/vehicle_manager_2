@@ -372,13 +372,13 @@ fn VehicleCard(
     } else {
         format!("{} · {}", kind_name(&asset.kind), model.join(" "))
     };
-    // A plate if it has one, otherwise its first identifier.
-    let identifier = asset
-        .identifiers
-        .iter()
-        .find(|identifier| identifier.kind.as_str() == "plate")
-        .or_else(|| asset.identifiers.first())
-        .map(|identifier| identifier.value.clone());
+    // Its current plate if it has one, otherwise its first identifier.
+    let identifier = item.plate.clone().or_else(|| {
+        asset
+            .identifiers
+            .first()
+            .map(|identifier| identifier.value.clone())
+    });
     let archived = !asset.status.shows_in_garage();
     rsx! {
         div { class: if archived { "vehicle-card archived" } else { "vehicle-card" },
@@ -633,6 +633,7 @@ mod tests {
                 identifiers: vec![],
             },
             role: Role::Driver,
+            plate: None,
         }
     }
 

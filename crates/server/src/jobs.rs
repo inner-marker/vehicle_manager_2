@@ -7,6 +7,10 @@
 //!   until it's restarted and looked at.
 //! - **Finalize drafts** every [`FINALIZE_EVERY_MINUTES`] minutes: fuel-ups and readings
 //!   last edited 24 hours ago (or the test minutes) are finalized by the server (#034).
+//! - **File check** at [`FILE_CHECK_HOUR_UTC`]:00 UTC: every photo and document file is checked
+//!   against its SHA-256, and files nothing uses are erased once no kept snapshot could need
+//!   them ([`keep_unused_files_for`], #065). A missing or damaged file fails the run, which the
+//!   Admin sees in Messages.
 //!
 //! Each run is logged and recorded in the `jobs` table (last run, result, next run). A job
 //! that was due while the server was off runs soon after it starts.
@@ -23,6 +27,7 @@ use domain::log_area;
 use domain::time::{Clock, UnixMillis};
 use domain::timers::Timers;
 use storage::Database;
+use storage::files::{FileCheck, FileStore};
 use storage::jobs::{JobResult, JobRun};
 use storage::snapshot::{rotate_snapshots, verify_snapshot};
 
@@ -31,6 +36,12 @@ use crate::health::{self, HealthProblem};
 /// The nightly snapshot's hour, in UTC: 07:00 UTC is 03:00 US Eastern daylight time
 /// (02:00 standard). Local-time scheduling waits for the time-zone library (milestone 6).
 pub const SNAPSHOT_HOUR_UTC: i64 = 7;
+
+/// The file check's hour, in UTC: an hour after the snapshot.
+pub const FILE_CHECK_HOUR_UTC: i64 = 8;
+
+/// The file check's stable name (also used to bring it forward at startup).
+pub const FILE_CHECK_JOB: &str = "file-check";
 
 /// How many nightly snapshots are kept (#035).
 pub const SNAPSHOTS_KEPT: usize = 7;
@@ -55,14 +66,17 @@ pub enum Job {
     QuickCheck,
     /// Finalizing drafts 24 hours after their last edit.
     FinalizeDrafts,
+    /// Checking the photo and document files, and erasing unused ones.
+    FileCheck,
 }
 
 impl Job {
     /// Every job, in the order they run when due together.
-    pub const ALL: [Self; 3] = [
+    pub const ALL: [Self; 4] = [
         Self::NightlySnapshot,
         Self::QuickCheck,
         Self::FinalizeDrafts,
+        Self::FileCheck,
     ];
 
     /// Its name in the `jobs` table and the log. Never changes once released.
@@ -72,6 +86,7 @@ impl Job {
             Self::NightlySnapshot => "nightly-snapshot",
             Self::QuickCheck => "quick-check",
             Self::FinalizeDrafts => "finalize-drafts",
+            Self::FileCheck => FILE_CHECK_JOB,
         }
     }
 
@@ -80,6 +95,7 @@ impl Job {
             Self::NightlySnapshot => Schedule::DailyAtUtcHour(SNAPSHOT_HOUR_UTC),
             Self::QuickCheck => Schedule::Every(MILLIS_PER_HOUR),
             Self::FinalizeDrafts => Schedule::Every(FINALIZE_EVERY_MINUTES * 60_000),
+            Self::FileCheck => Schedule::DailyAtUtcHour(FILE_CHECK_HOUR_UTC),
         }
     }
 }
@@ -139,6 +155,8 @@ pub struct JobContext {
     pub timers: Timers,
     /// The server's own device, for the changes it makes (finalizing drafts).
     pub server_device: DeviceId,
+    /// The photo and document files (none if the folder couldn't be opened).
+    pub file_store: Option<FileStore>,
 }
 
 /// Runs every job due at `now`, in [`Job::ALL`] order, and records each run. A job never
@@ -210,6 +228,7 @@ async fn run_and_record(context: &JobContext, job: Job) {
         Job::NightlySnapshot => snapshot(context, started).await,
         Job::QuickCheck => quick_check(context).await,
         Job::FinalizeDrafts => finalize_drafts(context).await,
+        Job::FileCheck => file_check(context).await,
     };
     let finished = context.clock.now();
     let run = JobRun {
@@ -318,6 +337,145 @@ async fn finalize_drafts(context: &JobContext) -> (JobResult, String) {
     {
         Ok(count) => (JobResult::Ok, format!("finalized {count}")),
         Err(message) => (JobResult::Failed, message),
+    }
+}
+
+/// How long a file nothing uses is kept: past the oldest kept snapshot, so restoring any of
+/// them finds its photos and documents (#065). A day longer than the snapshots go back, or
+/// with test timers, as many test intervals.
+#[must_use]
+pub fn keep_unused_files_for(timers: Timers) -> i64 {
+    let interval = timers.job_interval_millis().unwrap_or(MILLIS_PER_DAY);
+    let kept = i64::try_from(SNAPSHOTS_KEPT).unwrap_or(i64::MAX);
+    kept.saturating_add(1).saturating_mul(interval)
+}
+
+/// At most this many problem files are named in a run's message (the log has them all).
+const FILES_NAMED: usize = 5;
+
+/// The nightly file check: every listed file against its hash, then erasing unused ones.
+async fn file_check(context: &JobContext) -> (JobResult, String) {
+    let Some(store) = context.file_store.clone() else {
+        return (
+            JobResult::Failed,
+            "the files folder couldn't be opened".to_owned(),
+        );
+    };
+    let listed = match context.database.stored_files().await {
+        Ok(listed) => listed,
+        Err(error) => return (JobResult::Failed, format!("can't list the files: {error}")),
+    };
+    let count = listed.len();
+    let checking = store.clone();
+    let checked = tokio::task::spawn_blocking(move || {
+        listed
+            .into_iter()
+            .map(|file| {
+                let found = checking.check(&file.hash);
+                (file, found)
+            })
+            .collect::<Vec<_>>()
+    })
+    .await;
+    let Ok(checked) = checked else {
+        return (JobResult::Failed, "the check stopped".to_owned());
+    };
+    let mut problems = Vec::new();
+    for (file, found) in checked {
+        let problem = match found {
+            Ok(FileCheck::Good) => continue,
+            Ok(FileCheck::Missing) => "missing",
+            Ok(FileCheck::Damaged) => "damaged",
+            Err(_) => "unreadable",
+        };
+        tracing::error!(target: log_area::DATABASE, file = file.hash.as_str(), problem, "stored file problem");
+        problems.push(format!("{} {problem}", &file.hash.as_str()[..12]));
+    }
+    let erased = erase_unused(context, &store).await;
+    match (problems.is_empty(), erased) {
+        (true, Ok(erased)) => (
+            JobResult::Ok,
+            format!("checked {count} files; erased {erased} unused"),
+        ),
+        (false, erased) => {
+            let named: Vec<&str> = problems
+                .iter()
+                .take(FILES_NAMED)
+                .map(String::as_str)
+                .collect();
+            (
+                JobResult::Failed,
+                format!(
+                    "{} of {count} files have a problem: {}{}; {}",
+                    problems.len(),
+                    named.join(", "),
+                    if problems.len() > FILES_NAMED {
+                        ", …"
+                    } else {
+                        ""
+                    },
+                    erased.map_or_else(|error| error, |erased| format!("erased {erased} unused")),
+                ),
+            )
+        }
+        (true, Err(error)) => (JobResult::Failed, error),
+    }
+}
+
+/// Erases the files nothing needs any more, and how many.
+async fn erase_unused(context: &JobContext, store: &FileStore) -> Result<usize, String> {
+    let before = UnixMillis::from_millis(
+        context
+            .clock
+            .now()
+            .as_millis()
+            .saturating_sub(keep_unused_files_for(context.timers)),
+    );
+    let unused = context
+        .database
+        .unused_files(before)
+        .await
+        .map_err(|error| format!("can't find unused files: {error}"))?;
+    let mut erased = 0;
+    for hash in unused {
+        let erasing = store.clone();
+        let file = hash.clone();
+        match tokio::task::spawn_blocking(move || erasing.erase(&file)).await {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => return Err(format!("can't erase a file: {error}")),
+            Err(_) => return Err("erasing stopped".to_owned()),
+        }
+        context
+            .database
+            .forget_file(&hash)
+            .await
+            .map_err(|error| format!("can't forget an erased file: {error}"))?;
+        erased += 1;
+    }
+    Ok(erased)
+}
+
+/// At startup: if any listed file is missing, brings the file check forward so the Admin hears
+/// about it within the minute rather than the next morning. Hashing every file is left to the
+/// check itself.
+pub async fn check_files_exist(database: &Database, store: &FileStore, now: UnixMillis) {
+    let Ok(listed) = database.stored_files().await else {
+        return;
+    };
+    let checking = store.clone();
+    let missing = tokio::task::spawn_blocking(move || {
+        listed
+            .iter()
+            .filter(|file| !checking.path(&file.hash).exists())
+            .count()
+    })
+    .await
+    .unwrap_or(0);
+    if missing > 0 {
+        tracing::warn!(target: log_area::DATABASE, missing, "stored files are missing; checking them now");
+        if let Err(error) = database.bring_job_forward(FILE_CHECK_JOB, now).await {
+            tracing::error!(target: log_area::DATABASE, %error, "can't bring the file check forward");
+        }
     }
 }
 

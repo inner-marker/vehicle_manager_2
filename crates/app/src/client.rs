@@ -36,6 +36,17 @@ pub fn apply_request_headers() {
     set_request_headers(request_headers(token.as_deref()));
 }
 
+/// The headers a request to the server carries right now (for the file routes, which aren't
+/// server functions).
+#[must_use]
+pub fn current_headers() -> HeaderMap {
+    let token = SESSION_TOKEN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    request_headers(token.as_deref())
+}
+
 /// The API version header, plus `Authorization: Bearer` when there's a token. A token with
 /// characters a header can't carry is left out (the server then says you're not signed in).
 #[must_use]

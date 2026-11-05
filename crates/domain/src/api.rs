@@ -391,6 +391,9 @@ pub struct AssetSummary {
     pub asset: crate::asset::Asset,
     /// The person's role on it.
     pub role: crate::access::Role,
+    /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
+    #[serde(default)]
+    pub plate: Option<String>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -434,6 +437,9 @@ pub struct AssetView {
         crate::custom_field::CustomFieldId,
         crate::custom_field::CustomField,
     )>,
+    /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
+    #[serde(default)]
+    pub plate: Option<String>,
 }
 
 /// How one person's access changes in a move, for the preview.
@@ -712,6 +718,329 @@ pub enum SquawksOutcome {
     Unavailable,
 }
 
+// --- Attachments (milestone 8) ------------------------------------------------------------
+
+/// The path files are uploaded to (a plain route, not a server function: its body limit is
+/// raised to fit a PDF, #037). The body is the file; the query says what it's for.
+pub const UPLOAD_PATH: &str = "/api/v1/files/upload";
+
+/// What an upload is for, as its query (`?for=photo&size=medium`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "for", rename_all = "kebab-case")]
+pub enum UploadPurpose {
+    /// A photo, kept at `size` (the server converts or shrinks it if needed, #036).
+    Photo {
+        /// The size picked.
+        size: crate::attachment::PhotoSize,
+    },
+    /// A photo's original, as taken (#036).
+    Original,
+    /// A photo's metadata as read (EXIF).
+    PhotoMetadata,
+    /// A PDF (#037).
+    Document,
+    /// A PDF's first page as a JPEG, which the app draws.
+    DocumentThumbnail,
+}
+
+impl UploadPurpose {
+    /// The query string, without the `?`.
+    #[must_use]
+    pub fn to_query(self) -> String {
+        match self {
+            Self::Photo { size } => format!(
+                "for=photo&size={}",
+                match size {
+                    crate::attachment::PhotoSize::Small => "small",
+                    crate::attachment::PhotoSize::Medium => "medium",
+                    crate::attachment::PhotoSize::Large => "large",
+                }
+            ),
+            Self::Original => "for=original".to_owned(),
+            Self::PhotoMetadata => "for=photo-metadata".to_owned(),
+            Self::Document => "for=document".to_owned(),
+            Self::DocumentThumbnail => "for=document-thumbnail".to_owned(),
+        }
+    }
+
+    /// The purpose from a query string (without the `?`), if it's one.
+    #[must_use]
+    pub fn from_query(query: &str) -> Option<Self> {
+        let value = |key: &str| {
+            query
+                .split('&')
+                .filter_map(|pair| pair.split_once('='))
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| value)
+        };
+        match value("for")? {
+            "photo" => Some(Self::Photo {
+                size: match value("size")? {
+                    "small" => crate::attachment::PhotoSize::Small,
+                    "medium" => crate::attachment::PhotoSize::Medium,
+                    "large" => crate::attachment::PhotoSize::Large,
+                    _ => return None,
+                },
+            }),
+            "original" => Some(Self::Original),
+            "photo-metadata" => Some(Self::PhotoMetadata),
+            "document" => Some(Self::Document),
+            "document-thumbnail" => Some(Self::DocumentThumbnail),
+            _ => None,
+        }
+    }
+}
+
+/// A file the server stored from an upload, with what it found out about it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UploadedFile {
+    /// The file as stored (a photo as the server kept it: a correctly sized JPEG).
+    pub file: crate::attachment::StoredFile,
+    /// What it is (none for a photo's metadata).
+    pub file_type: Option<crate::attachment::FileType>,
+    /// The thumbnail the server made (photos and PDF thumbnails).
+    pub thumbnail: Option<crate::attachment::StoredFile>,
+    /// A photo's width and height, in pixels.
+    pub pixels: Option<(u32, u32)>,
+    /// A PDF's page count.
+    pub pages: Option<u32>,
+}
+
+/// The answer to an upload.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum UploadOutcome {
+    /// Stored.
+    Uploaded {
+        /// What was stored.
+        uploaded: UploadedFile,
+    },
+    /// The person may not upload (nobody signed in, or no role that adds attachments).
+    NotAllowed,
+    /// The file was refused.
+    Invalid {
+        /// Why.
+        problem: crate::attachment::AttachmentProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// Adding an attachment from files already uploaded. The server works out a photo's pixels
+/// and a PDF's pages from the stored files, whatever `content` says.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttachmentInput {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// What it goes on.
+    pub owner: crate::attachment::AttachmentOwner,
+    /// The name it was uploaded with.
+    pub name: crate::attachment::FileName,
+    /// The file (from [`UploadedFile::file`]).
+    pub file: crate::attachment::StoredFile,
+    /// Its thumbnail (from [`UploadedFile::thumbnail`]).
+    pub thumbnail: Option<crate::attachment::StoredFile>,
+    /// A photo's or a PDF's details.
+    pub content: crate::attachment::Content,
+}
+
+/// One attachment as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttachmentView {
+    /// Its ID.
+    pub id: crate::attachment::AttachmentId,
+    /// The attachment.
+    pub attachment: crate::attachment::Attachment,
+    /// Who added it, by name.
+    pub added_by_name: String,
+    /// The person may move or remove it.
+    pub may_change: bool,
+}
+
+/// Which file of an attachment to download.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AttachmentPart {
+    /// The photo or the PDF.
+    File,
+    /// Its thumbnail.
+    Thumbnail,
+    /// A photo's original (Maintainers and Admins only, #036).
+    Original,
+}
+
+impl AttachmentPart {
+    /// Its name in the download path.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::File => "file",
+            Self::Thumbnail => "thumbnail",
+            Self::Original => "original",
+        }
+    }
+
+    /// The part from its name in the path.
+    #[must_use]
+    pub fn parse(text: &str) -> Option<Self> {
+        [Self::File, Self::Thumbnail, Self::Original]
+            .into_iter()
+            .find(|part| part.as_str() == text)
+    }
+}
+
+/// Where one part of an attachment is downloaded: `/api/v1/attachments/<id>/<part>`.
+#[must_use]
+pub fn download_path(id: crate::attachment::AttachmentId, part: AttachmentPart) -> String {
+    format!("/api/v1/attachments/{id}/{}", part.as_str())
+}
+
+/// The answer to an attachment request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum AttachmentsOutcome {
+    /// What's attached to something, oldest first.
+    Attachments {
+        /// Each attachment.
+        attachments: Vec<AttachmentView>,
+        /// The person may add one here.
+        may_add: bool,
+        /// The person may keep a photo's original here (#036).
+        may_keep_originals: bool,
+    },
+    /// An attachment was added or moved.
+    Saved {
+        /// Its ID.
+        id: crate::attachment::AttachmentId,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, attachment, or owner (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The attachment was refused.
+    Invalid {
+        /// Why.
+        problem: crate::attachment::AttachmentProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+// --- Official documents and license plates (milestone 8) --------------------------------
+
+/// An official document as typed in (renewals name what they renew separately).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DocumentInput {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// What kind.
+    pub doc_type: crate::document::DocumentType,
+    /// Its number.
+    pub number: Option<String>,
+    /// Who issued it.
+    pub issuer: Option<String>,
+    /// When it was issued.
+    pub issued_on: Option<crate::dates::CalendarDate>,
+    /// When it takes effect, if not when issued.
+    pub effective_on: Option<crate::dates::CalendarDate>,
+    /// When it expires (none: never).
+    pub expires_on: Option<crate::dates::CalendarDate>,
+    /// A registration's plate.
+    pub plate: Option<crate::plate::LicensePlateId>,
+    /// Notes.
+    pub notes: crate::notes::Notes,
+}
+
+/// A license plate as typed in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlateInput {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Who issued it.
+    pub authority: Option<crate::plate::Authority>,
+    /// Its number.
+    pub number: crate::plate::PlateNumber,
+    /// When it was issued.
+    pub issued_on: Option<crate::dates::CalendarDate>,
+    /// When it expires.
+    pub expires_on: Option<crate::dates::CalendarDate>,
+    /// When it stopped being used.
+    pub retired_on: Option<crate::dates::CalendarDate>,
+    /// Notes.
+    pub notes: crate::notes::Notes,
+}
+
+/// One official document as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DocumentView {
+    /// Its ID.
+    pub id: crate::document::AssetDocumentId,
+    /// The document.
+    pub document: crate::document::AssetDocument,
+    /// Where it stands on the day asked about.
+    pub status: crate::document::DocumentStatus,
+    /// The document that renews it, if any.
+    pub renewed_by: Option<crate::document::AssetDocumentId>,
+}
+
+/// One license plate as the app shows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlateView {
+    /// Its ID.
+    pub id: crate::plate::LicensePlateId,
+    /// The plate.
+    pub plate: crate::plate::LicensePlate,
+    /// It's the vehicle's current plate.
+    pub current: bool,
+}
+
+/// The answer to a documents or plates request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DocumentsOutcome {
+    /// One vehicle's documents (oldest first) and plates (the current one last).
+    Documents {
+        /// Each document.
+        documents: Vec<DocumentView>,
+        /// Each plate.
+        plates: Vec<PlateView>,
+        /// The document types the vehicle's profile lists (message keys).
+        listed_types: Vec<String>,
+        /// The person may add, renew, change, and remove them (a Maintainer, in that mode).
+        may_change: bool,
+    },
+    /// A document was added, renewed, or changed.
+    SavedDocument {
+        /// Its ID.
+        id: crate::document::AssetDocumentId,
+    },
+    /// A plate was added or changed.
+    SavedPlate {
+        /// Its ID.
+        id: crate::plate::LicensePlateId,
+    },
+    /// Done.
+    Done,
+    /// There's no such vehicle, document, or plate (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The document was refused.
+    InvalidDocument {
+        /// Why.
+        problem: crate::document::DocumentProblem,
+    },
+    /// The plate was refused.
+    InvalidPlate {
+        /// Why.
+        problem: crate::plate::PlateProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// One requirement as the app shows it, with when it was last done.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RequirementView {
@@ -955,5 +1284,38 @@ mod tests {
                 ApiError::AuthNotConfigured
             ]
         );
+    }
+
+    #[test]
+    fn upload_purposes_round_trip_through_their_query() {
+        use crate::attachment::PhotoSize;
+        for purpose in [
+            UploadPurpose::Photo {
+                size: PhotoSize::Small,
+            },
+            UploadPurpose::Photo {
+                size: PhotoSize::Large,
+            },
+            UploadPurpose::Original,
+            UploadPurpose::PhotoMetadata,
+            UploadPurpose::Document,
+            UploadPurpose::DocumentThumbnail,
+        ] {
+            assert_eq!(
+                UploadPurpose::from_query(&purpose.to_query()),
+                Some(purpose)
+            );
+        }
+        assert_eq!(
+            UploadPurpose::from_query("for=photo"),
+            None,
+            "a photo needs a size"
+        );
+        assert_eq!(UploadPurpose::from_query("for=video"), None);
+        assert_eq!(
+            AttachmentPart::parse("thumbnail"),
+            Some(AttachmentPart::Thumbnail)
+        );
+        assert_eq!(AttachmentPart::parse("raw"), None);
     }
 }

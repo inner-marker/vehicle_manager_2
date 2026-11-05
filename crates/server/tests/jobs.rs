@@ -9,7 +9,10 @@ mod scheduler {
     use domain::test_support::{ManualClock, test_id};
     use domain::time::{Clock, UnixMillis};
     use domain::timers::Timers;
-    use server::jobs::{Job, JobContext, SnapshotDir, next_run, run_due_jobs};
+    use server::jobs::{
+        Job, JobContext, SnapshotDir, check_files_exist, keep_unused_files_for, next_run,
+        run_due_jobs,
+    };
     use storage::{Database, NewDatabaseIds};
 
     /// 2023-11-14T22:13:20Z.
@@ -29,6 +32,7 @@ mod scheduler {
             snapshot_dir,
             timers: Timers::NORMAL,
             server_device: test_id(2),
+            file_store: Some(storage::files::FileStore::open(data_dir).unwrap()),
         };
         (context, clock)
     }
@@ -189,5 +193,140 @@ mod scheduler {
         run_due_jobs(&context, later).await;
 
         assert_eq!(snapshots_in(&snapshots).len(), 1);
+    }
+
+    /// The file check's last result and message.
+    async fn file_check_report(context: &JobContext) -> (domain::inbox::JobOutcome, String) {
+        let report = context
+            .database
+            .job_reports()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|report| report.name == Job::FileCheck.name())
+            .unwrap();
+        (report.outcome, report.detail)
+    }
+
+    #[tokio::test]
+    async fn the_file_check_finds_damage_and_erases_old_unused_files() {
+        let temp = tempfile::tempdir().unwrap();
+        let (context, clock) = context(
+            temp.path(),
+            SnapshotDir {
+                path: temp.path().join("snapshots"),
+                create_if_missing: true,
+            },
+        )
+        .await;
+        let store = context.file_store.clone().unwrap();
+        // Two files nothing uses: one stored long ago, one just now.
+        let old = store.put(b"an old upload").unwrap();
+        context
+            .database
+            .record_stored_file(&old, NOW)
+            .await
+            .unwrap();
+        run_due_jobs(&context, NOW).await;
+        let due = context
+            .database
+            .job_next_run(Job::FileCheck.name())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            domain::time_utils::format_utc_iso8601(due),
+            "2023-11-15T08:00:00.000Z"
+        );
+        // Stored a day before the second run below, so within the snapshots' reach then.
+        let later =
+            UnixMillis::from_millis(NOW.as_millis() + keep_unused_files_for(Timers::NORMAL) + DAY);
+        let recent = store.put(b"a recent upload").unwrap();
+        context
+            .database
+            .record_stored_file(&recent, UnixMillis::from_millis(later.as_millis() - DAY))
+            .await
+            .unwrap();
+
+        // Within the snapshots' reach, nothing is erased.
+        run_at_next(&context, &clock, Job::FileCheck).await;
+        let (outcome, detail) = file_check_report(&context).await;
+        assert_eq!(outcome, domain::inbox::JobOutcome::Ok);
+        assert_eq!(detail, "checked 2 files; erased 0 unused");
+
+        // Past them, the old one goes; the recent one stays.
+        clock.set(later);
+        run_due_jobs(&context, later).await;
+        let (_, detail) = file_check_report(&context).await;
+        assert_eq!(detail, "checked 2 files; erased 1 unused");
+        assert!(!store.path(&old.hash).exists());
+        assert!(store.path(&recent.hash).exists());
+
+        // A damaged file fails the run, naming it.
+        std::fs::write(store.path(&recent.hash), b"changed").unwrap();
+        context
+            .database
+            .bring_job_forward(Job::FileCheck.name(), later)
+            .await
+            .unwrap();
+        run_due_jobs(&context, later).await;
+        let (outcome, detail) = file_check_report(&context).await;
+        assert_eq!(outcome, domain::inbox::JobOutcome::Failed);
+        assert!(
+            detail.starts_with("1 of 1 files have a problem:"),
+            "{detail}"
+        );
+        assert!(detail.contains("damaged"), "{detail}");
+    }
+
+    #[tokio::test]
+    async fn a_missing_file_at_startup_brings_the_file_check_forward() {
+        let temp = tempfile::tempdir().unwrap();
+        let (context, _clock) = context(
+            temp.path(),
+            SnapshotDir {
+                path: temp.path().join("snapshots"),
+                create_if_missing: true,
+            },
+        )
+        .await;
+        let store = context.file_store.clone().unwrap();
+        let file = store.put(b"a receipt").unwrap();
+        context
+            .database
+            .record_stored_file(&file, NOW)
+            .await
+            .unwrap();
+        run_due_jobs(&context, NOW).await;
+
+        check_files_exist(&context.database, &store, NOW).await;
+        assert_ne!(
+            context
+                .database
+                .job_next_run(Job::FileCheck.name())
+                .await
+                .unwrap(),
+            Some(NOW),
+            "nothing missing: it stays on its schedule"
+        );
+        store.erase(&file.hash).unwrap();
+        check_files_exist(&context.database, &store, NOW).await;
+        assert_eq!(
+            context
+                .database
+                .job_next_run(Job::FileCheck.name())
+                .await
+                .unwrap(),
+            Some(NOW)
+        );
+    }
+
+    #[test]
+    fn unused_files_outlast_the_kept_snapshots() {
+        assert_eq!(keep_unused_files_for(Timers::NORMAL), 8 * DAY);
+        assert_eq!(
+            keep_unused_files_for(Timers::test(2).unwrap()),
+            8 * 2 * 60_000
+        );
     }
 }

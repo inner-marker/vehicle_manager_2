@@ -427,6 +427,7 @@ mod tests {
                 identifiers: vec![],
             },
             role: Role::Admin,
+            plate: None,
         }
     }
 

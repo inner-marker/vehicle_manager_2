@@ -12,6 +12,8 @@
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, RequirementView, ScheduleOutcome, SquawkView};
+use domain::asset::AssetId;
+use domain::attachment::{AttachmentOwner, PhotoSize};
 use domain::event::{Event, EventId, Task, WorkDetails};
 use domain::i18n::{MessageArg, Translator, messages};
 use domain::meter::{Meter, MeterId, MeterUnit};
@@ -20,6 +22,7 @@ use domain::profile::high_severity_name;
 use domain::quantity::{quantity_value, show_duration, show_reading};
 use domain::squawk::{Disposition, SquawkDisposition};
 
+use super::attachments::{AttachmentStrip, photo_size_for};
 use super::squawks::{SeverityChip, use_vehicle_squawks};
 use crate::api;
 use crate::ui::routes::Route;
@@ -214,11 +217,20 @@ pub(super) fn JobSections(id: EventId, event: Event, vehicle: AssetView) -> Elem
                     key: "{index}",
                     task,
                     open: index == 0,
+                    asset: vehicle.id,
+                    owner: AttachmentOwner::Event { event: id, task: u16::try_from(index).ok() },
+                    photo_size: photo_size_for(&vehicle.asset.kind, event.kind),
                     requirement: schedule().iter().find(|view| Some(view.id) == work.tasks[index].requirement).map(|view| view.requirement.name.as_str().to_owned()),
                     asset_id: vehicle.id.to_string(),
                     currency,
                 }
             }
+        }
+        AttachmentStrip {
+            asset: vehicle.id,
+            owner: AttachmentOwner::Event { event: id, task: None },
+            heading: messages::ATTACHMENT_JOB_PHOTOS,
+            default_size: photo_size_for(&vehicle.asset.kind, event.kind),
         }
         if !work.dispositions.is_empty() || !found.is_empty() {
             section { class: "event-section",
@@ -257,6 +269,9 @@ pub(super) fn JobSections(id: EventId, event: Event, vehicle: AssetView) -> Elem
 fn TaskView(
     task: Task,
     open: bool,
+    asset: AssetId,
+    owner: AttachmentOwner,
+    photo_size: PhotoSize,
     requirement: Option<String>,
     asset_id: String,
     currency: CurrencyCode,
@@ -331,6 +346,7 @@ fn TaskView(
                     p { class: "muted-note", {tr_with(messages::JOB_NOTES, &[("notes", MessageArg::from(task.notes.as_str()))])} }
                 }
                 p { class: "task-card-total", {tr_with(messages::WORK_TASK_TOTAL, &[("total", MessageArg::from(total))])} }
+                AttachmentStrip { asset, owner, heading: messages::ATTACHMENT_TASK_PHOTOS, default_size: photo_size }
             }
         }
     }

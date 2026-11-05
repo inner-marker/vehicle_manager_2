@@ -1972,6 +1972,186 @@ define_messages! {
     TIMELINE_DEFERRED => "timeline-deferred",
     /// Settings: the word is the household's, set by its Admin.
     SETTING_SQUAWK_WORD_HOUSEHOLD => "setting-squawk-word-household",
+    /// Photo size: Small.
+    PHOTO_SIZE_SMALL => "photo-size-small",
+    /// Photo size: Medium.
+    PHOTO_SIZE_MEDIUM => "photo-size-medium",
+    /// Photo size: Large.
+    PHOTO_SIZE_LARGE => "photo-size-large",
+    /// Attachment: an empty file.
+    ATTACHMENT_EMPTY => "attachment-empty",
+    /// Attachment: a photo that isn't a JPEG or PNG.
+    ATTACHMENT_NOT_A_PHOTO => "attachment-not-a-photo",
+    /// Attachment: a HEIC photo that wasn't converted.
+    ATTACHMENT_HEIC_PHOTO => "attachment-heic-photo",
+    /// Attachment: a document that isn't a PDF.
+    ATTACHMENT_NOT_A_PDF => "attachment-not-a-pdf",
+    /// Attachment: a photo over 25 MB.
+    ATTACHMENT_PHOTO_TOO_LARGE => "attachment-photo-too-large",
+    /// Attachment: a PDF over 50 MB.
+    ATTACHMENT_PDF_TOO_LARGE => "attachment-pdf-too-large",
+    /// Attachment: a file with no name.
+    ATTACHMENT_NAME_EMPTY => "attachment-name-empty",
+    /// Attachment: a file name over 255 characters.
+    ATTACHMENT_NAME_TOO_LONG => "attachment-name-too-long",
+    /// Attachment: a photo with no width or height.
+    ATTACHMENT_NO_SIZE => "attachment-no-size",
+    /// Attachment: a camera name over 100 characters.
+    ATTACHMENT_CAMERA_TOO_LONG => "attachment-camera-too-long",
+    /// Attachment: a PDF with no pages.
+    ATTACHMENT_NO_PAGES => "attachment-no-pages",
+    /// Attachment: on a task the job doesn't have.
+    ATTACHMENT_NO_SUCH_TASK => "attachment-no-such-task",
+    /// Attachment: a file reference that isn't a SHA-256.
+    ATTACHMENT_BAD_HASH => "attachment-bad-hash",
+    /// Attachment: changing anything but where it is.
+    ATTACHMENT_UNCHANGEABLE => "attachment-unchangeable",
+    /// Document status: in force.
+    DOCUMENT_STATUS_CURRENT => "document-status-current",
+    /// Document status: past its expiry.
+    DOCUMENT_STATUS_EXPIRED => "document-status-expired",
+    /// Document status: renewed.
+    DOCUMENT_STATUS_SUPERSEDED => "document-status-superseded",
+    /// Document: a type that isn't known.
+    DOCUMENT_UNKNOWN_TYPE => "document-unknown-type",
+    /// Document: a number over 60 characters.
+    DOCUMENT_NUMBER_TOO_LONG => "document-number-too-long",
+    /// Document: an issuer over 100 characters.
+    DOCUMENT_ISSUER_TOO_LONG => "document-issuer-too-long",
+    /// Document: expires before it's issued or takes effect.
+    DOCUMENT_EXPIRES_BEFORE_ISSUED => "document-expires-before-issued",
+    /// Document: renews one the vehicle doesn't have.
+    DOCUMENT_RENEWS_UNKNOWN => "document-renews-unknown",
+    /// Document: renews another type.
+    DOCUMENT_RENEWS_OTHER_TYPE => "document-renews-other-type",
+    /// Document: renews one that's already renewed.
+    DOCUMENT_ALREADY_RENEWED => "document-already-renewed",
+    /// Document: a plate on something other than a registration.
+    DOCUMENT_PLATE_NOT_REGISTRATION => "document-plate-not-registration",
+    /// Document: a plate that isn't this vehicle's.
+    DOCUMENT_UNKNOWN_PLATE => "document-unknown-plate",
+    /// Plate: no number.
+    PLATE_NUMBER_EMPTY => "plate-number-empty",
+    /// Plate: a number over 15 characters.
+    PLATE_NUMBER_TOO_LONG => "plate-number-too-long",
+    /// Plate: no issuing authority.
+    PLATE_NEEDS_AUTHORITY => "plate-needs-authority",
+    /// Plate: a state or province that isn't in the list.
+    PLATE_UNKNOWN_REGION => "plate-unknown-region",
+    /// Plate: a country code that isn't two letters.
+    PLATE_BAD_COUNTRY => "plate-bad-country",
+    /// Plate: an other authority with no name.
+    PLATE_AUTHORITY_EMPTY => "plate-authority-empty",
+    /// Plate: an authority's name over 60 characters.
+    PLATE_AUTHORITY_TOO_LONG => "plate-authority-too-long",
+    /// Plate: retired before it was issued.
+    PLATE_RETIRED_BEFORE_ISSUED => "plate-retired-before-issued",
+    /// Attachment: a photo or PDF the server couldn't read.
+    ATTACHMENT_UNREADABLE => "attachment-unreadable",
+    /// Attachment: a file that wasn't uploaded first.
+    ATTACHMENT_NOT_UPLOADED => "attachment-not-uploaded",
+    /// Attachment: an original while the household has them off.
+    ATTACHMENT_ORIGINALS_OFF => "attachment-originals-off",
+    /// Attachment: on a finished event.
+    ATTACHMENT_EVENT_FINISHED => "attachment-event-finished",
+    /// Document: removing one a later one renews.
+    DOCUMENT_RENEWED => "document-renewed",
+    /// Plate: removing one a registration names.
+    PLATE_IN_USE => "plate-in-use",
+    /// Messages: the nightly file check failed.
+    INBOX_FILE_CHECK_FAILED => "inbox-file-check-failed",
+    /// Messages: the file check's text.
+    INBOX_FILE_CHECK_BODY => "inbox-file-check-body",
+    /// Attachments: a squawk's, a vehicle's, or a fuel-up's heading.
+    ATTACHMENT_PHOTOS => "attachment-photos",
+    /// Attachments: a task's heading.
+    ATTACHMENT_TASK_PHOTOS => "attachment-task-photos",
+    /// Attachments: a job's own heading.
+    ATTACHMENT_JOB_PHOTOS => "attachment-job-photos",
+    /// Attachments: the tile that adds one.
+    ATTACHMENT_ADD => "attachment-add",
+    /// Attachments: a PDF tile's page count; takes `count`.
+    ATTACHMENT_PDF_PAGES => "attachment-pdf-pages",
+    /// Attachments: the add sheet's title (photos and PDFs).
+    ATTACHMENT_ADD_PHOTO => "attachment-add-photo",
+    /// Attachments: take one with the camera.
+    ATTACHMENT_TAKE_PHOTO => "attachment-take-photo",
+    /// Attachments: under Take photo.
+    ATTACHMENT_TAKE_PHOTO_HINT => "attachment-take-photo-hint",
+    /// Attachments: choose existing ones.
+    ATTACHMENT_CHOOSE_PHOTOS => "attachment-choose-photos",
+    /// Attachments: under Choose photos.
+    ATTACHMENT_CHOOSE_PHOTOS_HINT => "attachment-choose-photos-hint",
+    /// Attachments: the size picker's heading, and a photo's size.
+    ATTACHMENT_SIZE => "attachment-size",
+    /// Photo size: about how big Small is.
+    PHOTO_SIZE_SMALL_HINT => "photo-size-small-hint",
+    /// Photo size: about how big Medium is.
+    PHOTO_SIZE_MEDIUM_HINT => "photo-size-medium-hint",
+    /// Photo size: about how big Large is.
+    PHOTO_SIZE_LARGE_HINT => "photo-size-large-hint",
+    /// Attachments: keep the file as taken (#036).
+    ATTACHMENT_KEEP_ORIGINAL => "attachment-keep-original",
+    /// Attachments: adding several; takes `at` and `count`.
+    ATTACHMENT_ADDING => "attachment-adding",
+    /// Attachments: one that wasn't added; takes `name` and `problem`.
+    ATTACHMENT_FAILED => "attachment-failed",
+    /// Attachments: closes the sheet after a problem.
+    ATTACHMENT_DONE => "attachment-done",
+    /// Attachments: leaves the viewer.
+    ATTACHMENT_BACK => "attachment-back",
+    /// Attachments: which one in the viewer; takes `at` and `count`.
+    ATTACHMENT_POSITION => "attachment-position",
+    /// Attachments: the previous one.
+    ATTACHMENT_PREVIOUS => "attachment-previous",
+    /// Attachments: the next one.
+    ATTACHMENT_NEXT => "attachment-next",
+    /// Attachments: when a photo was taken.
+    ATTACHMENT_TAKEN => "attachment-taken",
+    /// Attachments: where a photo was taken.
+    ATTACHMENT_WHERE => "attachment-where",
+    /// Attachments: the camera.
+    ATTACHMENT_CAMERA => "attachment-camera",
+    /// Attachments: who added it and when.
+    ATTACHMENT_ADDED => "attachment-added",
+    /// Attachments: takes `name` and `date`.
+    ATTACHMENT_ADDED_BY => "attachment-added-by",
+    /// Attachments: save the file.
+    ATTACHMENT_DOWNLOAD => "attachment-download",
+    /// Attachments: save the original as taken.
+    ATTACHMENT_ORIGINAL => "attachment-original",
+    /// Attachments: where a download went (desktop); takes `path`.
+    ATTACHMENT_SAVED_TO => "attachment-saved-to",
+    /// Attachments: the remove dialog's title.
+    ATTACHMENT_REMOVE_TITLE => "attachment-remove-title",
+    /// Attachments: the remove dialog's text.
+    ATTACHMENT_REMOVE_TEXT => "attachment-remove-text",
+    /// Attachments: on a new job, before it's saved.
+    ATTACHMENT_SAVE_FIRST => "attachment-save-first",
+    /// Attachments: tasks were removed since the last save.
+    ATTACHMENT_SAVE_TO_SEE => "attachment-save-to-see",
+    /// Attachments: choose a PDF.
+    ATTACHMENT_CHOOSE_PDF => "attachment-choose-pdf",
+    /// Attachments: under Choose a PDF.
+    ATTACHMENT_CHOOSE_PDF_HINT => "attachment-choose-pdf-hint",
+    /// Attachments: a PDF the viewer couldn't open.
+    ATTACHMENT_PDF_CANT_SHOW => "attachment-pdf-cant-show",
+    /// PDF viewer: smaller.
+    PDF_ZOOM_OUT => "pdf-zoom-out",
+    /// PDF viewer: bigger.
+    PDF_ZOOM_IN => "pdf-zoom-in",
+    /// PDF viewer: the page as wide as the viewer.
+    PDF_FIT_WIDTH => "pdf-fit-width",
+    /// PDF viewer: the page in view; takes `page` and `pages`.
+    PDF_PAGE_OF => "pdf-page-of",
+    /// Settings: keeping originals (#036).
+    SETTING_ORIGINALS => "setting-originals",
+    /// Settings: Maintainers and Admins may keep them.
+    SETTING_ORIGINALS_ALLOWED => "setting-originals-allowed",
+    /// Settings: nobody keeps them.
+    SETTING_ORIGINALS_OFF => "setting-originals-off",
+    /// Settings: what keeping originals means.
+    SETTING_ORIGINALS_NOTE => "setting-originals-note",
     /// Log form: the When and where fold's summary with no place yet.
     LOG_PLACE_NEEDED => "log-place-needed",
     /// Log form: the When and where fold's summary with no place, and why.
@@ -1980,4 +2160,124 @@ define_messages! {
     WORK_COPY_FROM_START => "work-copy-from-start",
     /// Log form: the currency its amounts are in.
     LOG_CURRENCY => "log-currency",
+    /// Documents tab: the documents' heading.
+    DOCUMENTS_HEADING => "documents-heading",
+    /// Documents tab: add one.
+    DOCUMENTS_ADD => "documents-add",
+    /// Documents tab: none yet.
+    DOCUMENTS_NONE => "documents-none",
+    /// Documents tab: the plate's heading.
+    DOCUMENTS_PLATE => "documents-plate",
+    /// Documents tab: add a plate.
+    DOCUMENTS_ADD_PLATE => "documents-add-plate",
+    /// Documents tab: no plate yet.
+    DOCUMENTS_NO_PLATE => "documents-no-plate",
+    /// Documents tab: earlier plates, folded; takes `count`.
+    DOCUMENTS_EARLIER_PLATES => "documents-earlier-plates",
+    /// Documents tab: what a document renewed, folded; takes `count`.
+    DOCUMENTS_EARLIER => "documents-earlier",
+    /// Documents tab: a document's scans.
+    DOCUMENTS_SCANS => "documents-scans",
+    /// Documents tab: renew one.
+    DOCUMENTS_RENEW => "documents-renew",
+    /// Documents: when issued; takes `date`.
+    DOCUMENT_ISSUED_ON => "document-issued-on",
+    /// Documents: when it takes effect; takes `date`.
+    DOCUMENT_EFFECTIVE_ON => "document-effective-on",
+    /// Documents and plates: when it expires; takes `date`.
+    DOCUMENT_EXPIRES_ON => "document-expires-on",
+    /// Documents: no expiry.
+    DOCUMENT_NEVER_EXPIRES => "document-never-expires",
+    /// Documents: a current one close to its expiry; takes `days`.
+    DOCUMENT_EXPIRES_IN => "document-expires-in",
+    /// Documents: the add dialog's title.
+    DOCUMENTS_ADD_TITLE => "documents-add-title",
+    /// Documents: the renew dialog's title.
+    DOCUMENTS_RENEW_TITLE => "documents-renew-title",
+    /// Documents: the edit dialog's title.
+    DOCUMENTS_EDIT_TITLE => "documents-edit-title",
+    /// Documents: what renewing does.
+    DOCUMENTS_RENEW_NOTE => "documents-renew-note",
+    /// Documents: save a renewal.
+    DOCUMENTS_RENEW_SAVE => "documents-renew-save",
+    /// Documents: its type.
+    DOCUMENTS_TYPE => "documents-type",
+    /// Documents: a type of the household's own.
+    DOCUMENTS_TYPE_OTHER => "documents-type-other",
+    /// Documents: the household's own type's name.
+    DOCUMENTS_TYPE_NAME => "documents-type-name",
+    /// Documents: an own type with no name.
+    DOCUMENTS_NAME_NEEDED => "documents-name-needed",
+    /// Documents: its number.
+    DOCUMENTS_NUMBER => "documents-number",
+    /// Documents: who issued it.
+    DOCUMENTS_ISSUER => "documents-issuer",
+    /// Documents and plates: the issue date.
+    DOCUMENTS_ISSUED => "documents-issued",
+    /// Documents: when it takes effect.
+    DOCUMENTS_EFFECTIVE => "documents-effective",
+    /// Documents and plates: the expiry date.
+    DOCUMENTS_EXPIRES => "documents-expires",
+    /// Documents: a registration's plate.
+    DOCUMENTS_PLATE_FIELD => "documents-plate-field",
+    /// Documents: a registration with no plate.
+    DOCUMENTS_NO_PLATE_CHOICE => "documents-no-plate-choice",
+    /// Documents: what a registration's expiry does.
+    DOCUMENTS_PLATE_FOLLOWS => "documents-plate-follows",
+    /// Documents and plates: notes.
+    DOCUMENTS_NOTES => "documents-notes",
+    /// Documents and plates: notes too long.
+    DOCUMENTS_NOTES_TOO_LONG => "documents-notes-too-long",
+    /// Documents: where scans are added.
+    DOCUMENTS_SCANS_LATER => "documents-scans-later",
+    /// Documents: remove, for good.
+    DOCUMENTS_REMOVE_CONFIRM => "documents-remove-confirm",
+    /// Plates: the add dialog's title.
+    PLATE_ADD_TITLE => "plate-add-title",
+    /// Plates: the edit dialog's title.
+    PLATE_EDIT_TITLE => "plate-edit-title",
+    /// Plates: what adding one does.
+    PLATE_ADD_NOTE => "plate-add-note",
+    /// Plates: save a new one.
+    PLATE_ADD_SAVE => "plate-add-save",
+    /// Plates: who issued it.
+    PLATE_ISSUED_BY => "plate-issued-by",
+    /// Plates: a US state.
+    PLATE_BY_STATE => "plate-by-state",
+    /// Plates: a Canadian province or territory.
+    PLATE_BY_PROVINCE => "plate-by-province",
+    /// Plates: a country.
+    PLATE_BY_COUNTRY => "plate-by-country",
+    /// Plates: another authority.
+    PLATE_BY_OTHER => "plate-by-other",
+    /// Plates: the state.
+    PLATE_STATE => "plate-state",
+    /// Plates: the province or territory.
+    PLATE_PROVINCE => "plate-province",
+    /// Plates: the country.
+    PLATE_COUNTRY => "plate-country",
+    /// Plates: another authority's name.
+    PLATE_OTHER => "plate-other",
+    /// Plates: its number.
+    PLATE_NUMBER => "plate-number",
+    /// Plates: when it stopped being used.
+    PLATE_RETIRED => "plate-retired",
+    /// Plates: since when; takes `date`.
+    PLATE_SINCE => "plate-since",
+    /// Plates: retired; takes `date`.
+    PLATE_RETIRED_ON => "plate-retired-on",
+    /// Plates: the expiry comes from the registration.
+    PLATE_FROM_REGISTRATION => "plate-from-registration",
+    /// Plates: one moved over with no authority yet.
+    PLATE_CHOOSE_AUTHORITY => "plate-choose-authority",
+    /// Plates: remove, for good.
+    PLATE_REMOVE_CONFIRM => "plate-remove-confirm",
+    /// Attachments: a picked photo.
+    ATTACHMENT_KIND_PHOTO => "attachment-kind-photo",
+    /// Attachments: a picked PDF.
+    ATTACHMENT_KIND_PDF => "attachment-kind-pdf",
+    /// Attachments: take a picked file off the list; takes `name`.
+    ATTACHMENT_UNPICK => "attachment-unpick",
+    /// Attachments: add what's picked; takes `count`.
+    ATTACHMENT_ADD_COUNT => "attachment-add-count",
 }

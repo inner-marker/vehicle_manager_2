@@ -12,10 +12,10 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome, EventsOutcome, Handshake,
-    InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
-    ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome,
-    UserAdminOutcome,
+    AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
+    DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong,
+    PreferencesOutcome, RecoveryOutcome, ScheduleOutcome, SessionState, SetupOutcome,
+    SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -1033,6 +1033,194 @@ pub(crate) async fn delete_squawk(id: domain::squawk::SquawkId) -> ServerFnResul
     )
 }
 
+/// What's attached to something on a vehicle (an event's includes its tasks'), oldest first.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments")]
+pub(crate) async fn attachments(
+    asset: domain::asset::AssetId,
+    owner: domain::attachment::AttachmentOwner,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::list(&context, asset, owner).await
+    })
+    .await)
+}
+
+/// Adds an attachment from files already uploaded (`domain::api::UPLOAD_PATH`).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/add")]
+pub(crate) async fn add_attachment(
+    input: domain::api::AttachmentInput,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, store| {
+        ::server::attachments::add(&context, store, input).await
+    })
+    .await)
+}
+
+/// Moves an attachment to another task of its event (or to the event itself).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/move")]
+pub(crate) async fn move_attachment(
+    id: domain::attachment::AttachmentId,
+    task: Option<u16>,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::move_to(&context, id, task).await
+    })
+    .await)
+}
+
+/// Removes an attachment.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AttachmentsOutcome`] values.
+#[post("/api/v1/attachments/delete")]
+pub(crate) async fn remove_attachment(
+    id: domain::attachment::AttachmentId,
+) -> ServerFnResult<AttachmentsOutcome> {
+    Ok(server_side::with_attachments(async |context, _| {
+        ::server::attachments::remove(&context, id).await
+    })
+    .await)
+}
+
+/// One vehicle's official documents and license plates, each document's status as of `today`
+/// (the person's date).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/documents")]
+pub(crate) async fn documents(
+    asset: domain::asset::AssetId,
+    today: domain::dates::CalendarDate,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::list(&context, asset, &today).await
+    })
+    .await)
+}
+
+/// Adds an official document.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/documents/add")]
+pub(crate) async fn add_document(
+    input: domain::api::DocumentInput,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::add_document(&context, input).await
+    })
+    .await)
+}
+
+/// Renews an official document: a new one that supersedes it.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/documents/renew")]
+pub(crate) async fn renew_document(
+    previous: domain::document::AssetDocumentId,
+    input: domain::api::DocumentInput,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::renew(&context, previous, input).await
+    })
+    .await)
+}
+
+/// Changes an official document.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/documents/edit")]
+pub(crate) async fn edit_document(
+    id: domain::document::AssetDocumentId,
+    input: domain::api::DocumentInput,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::edit_document(&context, id, input).await
+    })
+    .await)
+}
+
+/// Removes an official document (and its scans) that nothing renews.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/documents/delete")]
+pub(crate) async fn remove_document(
+    id: domain::document::AssetDocumentId,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::remove_document(&context, id).await
+    })
+    .await)
+}
+
+/// Adds a license plate, retiring the current one.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/plates/add")]
+pub(crate) async fn add_plate(
+    input: domain::api::PlateInput,
+    today: domain::dates::CalendarDate,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::add_plate(&context, input, &today).await
+    })
+    .await)
+}
+
+/// Changes a license plate.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/plates/edit")]
+pub(crate) async fn edit_plate(
+    id: domain::plate::LicensePlateId,
+    input: domain::api::PlateInput,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::edit_plate(&context, id, input).await
+    })
+    .await)
+}
+
+/// Removes a license plate no registration names.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DocumentsOutcome`] values.
+#[post("/api/v1/plates/delete")]
+pub(crate) async fn remove_plate(
+    id: domain::plate::LicensePlateId,
+) -> ServerFnResult<DocumentsOutcome> {
+    Ok(server_side::with_documents(async |context| {
+        ::server::documents::remove_plate(&context, id).await
+    })
+    .await)
+}
+
 /// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
 /// bundles.
 ///
@@ -1437,6 +1625,41 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::SquawksOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context and the file store for an
+    /// attachments request, or answers that it's unavailable (no database or files folder, or
+    /// nobody signed in).
+    pub(super) async fn with_attachments(
+        action: impl AsyncFnOnce(
+            server::assets::AssetsContext<'_>,
+            &'static storage::files::FileStore,
+        ) -> domain::api::AttachmentsOutcome,
+    ) -> domain::api::AttachmentsOutcome {
+        let (Some(database), Some(database_id), Some(user), Some(store)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+            server::startup::file_store(),
+        ) else {
+            return domain::api::AttachmentsOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user), store).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a documents request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_documents(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::DocumentsOutcome,
+    ) -> domain::api::DocumentsOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::DocumentsOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

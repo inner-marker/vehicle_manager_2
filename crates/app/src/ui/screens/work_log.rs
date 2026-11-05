@@ -14,6 +14,8 @@
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, RequirementView, SquawkView};
+use domain::asset::AssetId;
+use domain::attachment::{AttachmentOwner, PhotoSize};
 use domain::event::EventId;
 use domain::i18n::{MessageArg, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
@@ -24,6 +26,7 @@ use domain::requirement::{Bundle, BundleId, IntervalRule};
 use domain::squawk::{CountedDisposition, Severity, SquawkId, status};
 
 use super::FormError;
+use super::attachments::{AttachmentStrip, photo_size_for};
 use super::log_form::MoneyInput;
 use super::squawks::{SeverityChip, use_squawk_sheet};
 use super::work_input::{Action, TypedDisposition, TypedPart, TypedTask, TypedWork, total_minor};
@@ -70,6 +73,8 @@ pub(super) fn remove_task(work: &mut TypedWork, index: usize) {
         return;
     }
     work.tasks.remove(index);
+    work.removed_tasks
+        .push(u16::try_from(index).unwrap_or(u16::MAX));
     for disposition in &mut work.dispositions {
         disposition.task = match disposition.task {
             Some(task) if task == index => None,
@@ -130,8 +135,11 @@ pub(super) fn WorkLog(
     work_problem: Option<String>,
     squawk_problem: Option<String>,
     end_problem: Option<(MeterId, String)>,
+    editing: Option<EventId>,
+    saved_tasks: usize,
     start_readings: Vec<(MeterId, String)>,
 ) -> Element {
+    let photo_size = photo_size_for(&vehicle.asset.kind, kind);
     let mut work = work;
     let mut open = use_signal(|| Some(0_usize));
     let sheet = use_squawk_sheet();
@@ -185,7 +193,18 @@ pub(super) fn WorkLog(
             }
             for (index, task) in typed.tasks.iter().cloned().enumerate() {
                 if open() == Some(index) {
-                    TaskCard { key: "{index}", work, index, task, requirements: requirements.clone(), currency, on_collapse: move |()| open.set(None) }
+                    TaskCard {
+                        key: "{index}",
+                        work,
+                        index,
+                        task,
+                        requirements: requirements.clone(),
+                        currency,
+                        on_collapse: move |()| open.set(None),
+                        photos: task_photos(editing, &typed, saved_tasks, index),
+                        asset: vehicle.id,
+                        photo_size,
+                    }
                 } else {
                     button {
                         key: "{index}",
@@ -250,6 +269,20 @@ pub(super) fn WorkLog(
                 }
             }
             FormError { message: work_problem }
+            match editing {
+                Some(event) => rsx! {
+                    if !typed.removed_tasks.is_empty() {
+                        p { class: "muted-note", {tr(messages::ATTACHMENT_SAVE_TO_SEE)} }
+                    }
+                    AttachmentStrip {
+                        asset: vehicle.id,
+                        owner: AttachmentOwner::Event { event, task: None },
+                        heading: messages::ATTACHMENT_JOB_PHOTOS,
+                        default_size: photo_size,
+                    }
+                },
+                None => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_SAVE_FIRST)} } },
+            }
         }
         // Squawks.
         section { class: "log-item work-squawks",
@@ -378,6 +411,9 @@ fn TaskCard(
     requirements: Vec<RequirementView>,
     currency: CurrencyCode,
     on_collapse: EventHandler<()>,
+    photos: Option<AttachmentOwner>,
+    asset: AssetId,
+    photo_size: PhotoSize,
 ) -> Element {
     let mut work = work;
     let mut edit = move |change: &dyn Fn(&mut TypedTask)| {
@@ -509,8 +545,27 @@ fn TaskCard(
                 }
             }
             p { class: "task-card-total", {tr_with(messages::WORK_TASK_TOTAL, &[("total", MessageArg::from(total))])} }
+            if let Some(owner) = photos {
+                AttachmentStrip { asset, owner, heading: messages::ATTACHMENT_TASK_PHOTOS, default_size: photo_size }
+            }
         }
     }
+}
+
+/// Where a task card's photos are, if they can be shown now: only on a saved draft, for a task it
+/// had when saved, and while no task has been removed since (their places would be off until
+/// it's saved again).
+fn task_photos(
+    editing: Option<EventId>,
+    typed: &TypedWork,
+    saved_tasks: usize,
+    index: usize,
+) -> Option<AttachmentOwner> {
+    let event = editing?;
+    (typed.removed_tasks.is_empty() && index < saved_tasks).then(|| AttachmentOwner::Event {
+        event,
+        task: u16::try_from(index).ok(),
+    })
 }
 
 /// One part's row.

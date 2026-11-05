@@ -7,11 +7,14 @@
 //! Native only: the web (WASM) build must never depend on this crate.
 
 pub mod assets;
+pub mod attachments;
 pub mod commands;
 pub mod convert;
 pub mod database;
+pub mod documents;
 mod error;
 pub mod events;
+pub mod files;
 mod integrity;
 pub mod jobs;
 pub mod message_marks;

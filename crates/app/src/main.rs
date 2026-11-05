@@ -93,7 +93,11 @@ fn launch(log_handles: Option<LogHandles>) {
             if let Some(log_handles) = log_handles {
                 config = config.context(log_handles);
             }
-            let app = Router::new().serve_dioxus_application(config, app::ui::App);
+            // Uploads and downloads of photos and PDFs are plain routes (their bodies are
+            // files), inside the same auth layer.
+            let app = Router::new()
+                .merge(app::file_routes::routes())
+                .serve_dioxus_application(config, app::ui::App);
             Ok(server::auth::protect(app, auth))
         }
     })

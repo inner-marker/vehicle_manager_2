@@ -61,6 +61,47 @@ impl DateError {
     }
 }
 
+/// A date with no time or zone (`2026-11-30`), e.g. a document's expiry: the same day for
+/// every viewer (plan §4 "Calendar dates are not instants"). Sorts in date order.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct CalendarDate(String);
+
+impl CalendarDate {
+    /// A date as `<input type="date">` gives it.
+    ///
+    /// # Errors
+    ///
+    /// [`DateError::BadDate`], or [`DateError::OutOfRange`] outside 1900–2200.
+    pub fn parse(input: &str) -> Result<Self, DateError> {
+        let date: jiff::civil::Date = input.trim().parse().map_err(|_| DateError::BadDate)?;
+        if !YEARS.contains(&date.year()) {
+            return Err(DateError::OutOfRange);
+        }
+        Ok(Self(date.to_string()))
+    }
+
+    /// The date as `YYYY-MM-DD`.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl TryFrom<String> for CalendarDate {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::parse(&value).map_err(|error| format!("{error:?}"))
+    }
+}
+
+impl From<CalendarDate> for String {
+    fn from(date: CalendarDate) -> Self {
+        date.0
+    }
+}
+
 /// The earliest and latest years an event may have (records go back a long way; the plan's
 /// limits elsewhere are 1800–2200 for model years).
 const YEARS: core::ops::RangeInclusive<i16> = 1900..=2200;
@@ -287,6 +328,19 @@ mod tests {
 
     fn zone(name: &str) -> TimeZone {
         TimeZone::parse(name).unwrap()
+    }
+
+    #[test]
+    fn calendar_dates_are_checked_and_sort_by_date() {
+        let date = CalendarDate::parse(" 2026-11-30 ").unwrap();
+        assert_eq!(date.as_str(), "2026-11-30");
+        assert!(CalendarDate::parse("2026-02-29").is_err());
+        assert_eq!(
+            CalendarDate::parse("1850-01-01"),
+            Err(DateError::OutOfRange)
+        );
+        assert!(CalendarDate::parse("2027-01-01").unwrap() > date);
+        assert!(serde_json::from_str::<CalendarDate>("\"30/11/2026\"").is_err());
     }
 
     #[test]

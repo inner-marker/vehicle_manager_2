@@ -153,7 +153,7 @@ fn PlaceRow(place: SavedPlace, on_edit: EventHandler<()>, on_remove: EventHandle
 }
 
 /// Every country, for the picker (empty while the server has no place data).
-fn use_countries() -> Signal<Vec<(CountryCode, String)>> {
+pub(super) fn use_countries() -> Signal<Vec<(CountryCode, String)>> {
     let mut countries = use_signal(Vec::new);
     use_effect(move || {
         spawn(async move {

@@ -23,6 +23,8 @@ pub(crate) mod idle;
 pub(crate) mod inbox;
 pub(crate) mod location;
 pub(crate) mod nav;
+pub(crate) mod pdfs;
+pub(crate) mod photos;
 pub(crate) mod routes;
 mod screens;
 mod shell;
@@ -120,4 +122,26 @@ fn tr(id: MessageId) -> String {
 /// The English text of a message with arguments filled in.
 fn tr_with(id: MessageId, args: &[(&str, MessageArg)]) -> String {
     Translator::english().tr_with_for(squawk_word(), id, args)
+}
+
+#[cfg(test)]
+mod stylesheet {
+    /// Every `{` in the stylesheet is closed, so no rule lands inside a phone-only block by
+    /// mistake (a merge once dropped one, and the Documents tab was styled only on phones).
+    #[test]
+    fn the_stylesheets_braces_balance() {
+        let css = include_str!("../../assets/main.css");
+        let mut depth = 0_i32;
+        for (line, text) in css.lines().enumerate() {
+            for character in text.chars() {
+                match character {
+                    '{' => depth += 1,
+                    '}' => depth -= 1,
+                    _other => {}
+                }
+                assert!(depth >= 0, "an extra closing brace on line {}", line + 1);
+            }
+        }
+        assert_eq!(depth, 0, "a block is left open");
+    }
 }

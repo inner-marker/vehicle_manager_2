@@ -104,6 +104,8 @@ pub enum JobKind {
     NightlySnapshot,
     /// The hourly database check (`quick-check`).
     QuickCheck,
+    /// The nightly check and clean-up of the photo and document files (`file-check`).
+    FileCheck,
     /// A job this build doesn't know by name.
     Other(String),
 }
@@ -115,6 +117,7 @@ impl JobKind {
         match name {
             "nightly-snapshot" => Self::NightlySnapshot,
             "quick-check" => Self::QuickCheck,
+            "file-check" => Self::FileCheck,
             other => Self::Other(other.to_owned()),
         }
     }
@@ -125,6 +128,7 @@ impl JobKind {
         match self {
             Self::NightlySnapshot => "nightly-snapshot",
             Self::QuickCheck => "quick-check",
+            Self::FileCheck => "file-check",
             Self::Other(name) => name,
         }
     }
@@ -183,6 +187,9 @@ impl MessageKind {
                 job: JobKind::QuickCheck,
             } => messages::INBOX_QUICK_CHECK_FAILED,
             Self::JobFailed {
+                job: JobKind::FileCheck,
+            } => messages::INBOX_FILE_CHECK_FAILED,
+            Self::JobFailed {
                 job: JobKind::Other(_),
             } => messages::INBOX_JOB_FAILED,
             Self::JobSkipped {
@@ -208,6 +215,9 @@ impl MessageKind {
             Self::JobFailed {
                 job: JobKind::QuickCheck,
             } => messages::INBOX_QUICK_CHECK_BODY,
+            Self::JobFailed {
+                job: JobKind::FileCheck,
+            } => messages::INBOX_FILE_CHECK_BODY,
             Self::JobFailed { .. } | Self::JobSkipped { .. } => messages::INBOX_JOB_BODY,
             Self::ServerUnhealthy {
                 problem: ServerProblem::DatabaseUnavailable,
