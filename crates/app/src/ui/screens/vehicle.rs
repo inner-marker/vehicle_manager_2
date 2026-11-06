@@ -307,9 +307,10 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
     };
     let shown = tabs(&view.asset);
     // Record return is a Maintainer's (in that mode or above).
-    let may_return = mode().is_some_and(|mode| {
-        view.role.min(mode.cap()) >= domain::access::AssetAction::SendOut.required_role()
-    });
+    let may_return = view.standing.takes_new_records
+        && mode().is_some_and(|mode| {
+            view.role.min(mode.cap()) >= domain::access::AssetAction::SendOut.required_role()
+        });
     let current = if shown.contains(&tab()) {
         tab()
     } else {

@@ -179,8 +179,11 @@ pub(super) fn Setup(view: AssetView) -> Element {
     let may_change = view.can_configure || view.can_manage || view.can_move;
     rsx! {
         div { class: "vehicle-setup",
+            // The mode hint only for someone a mode change would help (#069).
             if !may_change {
-                p { class: "muted-note", {tr(messages::SETUP_VIEW_ONLY)} }
+                p { class: "muted-note",
+                    {tr(if view.role >= domain::access::Role::Maintainer { messages::SETUP_VIEW_ONLY } else { messages::SETUP_VIEW_ONLY_ROLE })}
+                }
             }
             DetailsSection { view: view.clone() }
             MetersSection { view: view.clone() }

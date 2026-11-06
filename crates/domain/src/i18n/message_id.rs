@@ -2522,4 +2522,6 @@ define_messages! {
     SCHEDULE_SETTLED => "schedule-settled",
     /// A button: close.
     ACTION_CLOSE => "action-close",
+    /// Setup: view only, for someone whose role doesn't change setup.
+    SETUP_VIEW_ONLY_ROLE => "setup-view-only-role",
 }

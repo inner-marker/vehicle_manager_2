@@ -136,7 +136,7 @@ fn may_log_jobs(role: Role, mode: ActiveMode) -> bool {
 }
 
 /// The person's mode (Driver until signed in).
-fn current_mode(auth: AuthState) -> ActiveMode {
+pub(super) fn current_mode(auth: AuthState) -> ActiveMode {
     match auth {
         AuthState::SignedIn(session) => session.mode,
         AuthState::Loading
@@ -807,9 +807,11 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
     let high_word = high_severity_name(&vehicle.asset.kind, Translator::english());
     let squawk = view.squawk.clone();
     let entries = history(&view);
-    // Repair this (a Maintainer, while it's outstanding) sits with Edit and Remove.
-    let may_repair =
-        view.status.is_outstanding() && may_log_jobs(vehicle.role, current_mode(auth()));
+    // Repair this (a Maintainer, while it's outstanding) sits with Edit and Remove; not once
+    // the vehicle's disposal is finalized (#067).
+    let may_repair = view.status.is_outstanding()
+        && vehicle.standing.takes_new_records
+        && may_log_jobs(vehicle.role, current_mode(auth()));
     let asset = vehicle.asset;
     rsx! {
         div { class: "squawk-body",

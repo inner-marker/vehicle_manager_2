@@ -1529,3 +1529,4 @@ reference-open = Open it
 schedule-add-reference = + Recall or bulletin
 schedule-settled = Done and not applicable
 action-close = Close
+setup-view-only-role = You can see this vehicle's setup; a Maintainer or the Admin changes it.

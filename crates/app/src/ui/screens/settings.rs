@@ -203,6 +203,9 @@ pub(crate) fn Settings() -> Element {
     let auth = use_auth();
     let in_admin_mode =
         matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
+    // Keeping originals is a Maintainer's (#036), so its row shows only in a mode that may (#069).
+    let may_keep_originals =
+        matches!(auth(), AuthState::SignedIn(session) if session.mode >= ActiveMode::Maintainer);
     // Test timers (#054) show each sign-out choice's real length.
     let timers = match auth() {
         AuthState::SignedIn(session) => session.timers,
@@ -223,8 +226,11 @@ pub(crate) fn Settings() -> Element {
         });
     });
 
+    // The Household tab is the household Admin's, in Admin mode only (#069): everyone else,
+    // and the Admin in another mode, sees just their own settings, with no picker.
+    let shown = if in_admin_mode { tab() } else { Tab::You };
     let save = move |patch: PreferencesPatch| {
-        let household = tab() == Tab::Household;
+        let household = in_admin_mode && tab() == Tab::Household;
         spawn(async move {
             let result = if household {
                 api::set_household_preferences(patch).await
@@ -237,6 +243,7 @@ pub(crate) fn Settings() -> Element {
 
     rsx! {
         div { class: "settings",
+            if in_admin_mode {
             div { class: "segmented", role: "tablist",
                 button {
                     class: if tab() == Tab::You { "segment on" } else { "segment" },
@@ -253,24 +260,25 @@ pub(crate) fn Settings() -> Element {
                     {tr(messages::SETTINGS_TAB_HOUSEHOLD)}
                 }
             }
+            }
             if let Some(message) = error() {
                 p { class: "form-error", role: "alert", {message} }
             }
-            if tab() == Tab::Household && !in_admin_mode {
-                p { class: "muted-note", {tr(messages::SETTINGS_HOUSEHOLD_ADMIN_ONLY)} }
-            } else if let Some(current) = view() {
+            if let Some(current) = view() {
                 p { class: "muted-note",
-                    if tab() == Tab::You { {tr(messages::SETTINGS_YOU_HELP)} } else { {tr(messages::SETTINGS_HOUSEHOLD_HELP)} }
+                    if shown == Tab::You { {tr(messages::SETTINGS_YOU_HELP)} } else { {tr(messages::SETTINGS_HOUSEHOLD_HELP)} }
                 }
                 for setting in ButtonSetting::ALL {
-                    SettingButtons { key: "{setting:?}", setting, view: current, household_tab: tab() == Tab::Household, on_save: save }
+                    SettingButtons { key: "{setting:?}", setting, view: current, household_tab: shown == Tab::Household, on_save: save }
                 }
-                CurrencyRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
+                CurrencyRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 LanguageRow {}
-                SquawkWordRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
-                OriginalsRow { view: current, household_tab: tab() == Tab::Household, on_save: save }
+                SquawkWordRow { view: current, household_tab: shown == Tab::Household, on_save: save }
+                if may_keep_originals {
+                    OriginalsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
+                }
                 h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
-                IdleSignOutRow { view: current, household_tab: tab() == Tab::Household, timers, on_save: save }
+                IdleSignOutRow { view: current, household_tab: shown == Tab::Household, timers, on_save: save }
             }
             h3 { class: "section-heading", {tr(messages::SETTINGS_THIS_DEVICE)} }
             div { class: "setting-row",

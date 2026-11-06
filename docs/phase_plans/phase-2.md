@@ -1244,7 +1244,7 @@
 | 9d | ☑️ | `feat(server): lifecycle events, reference documents, and the overdue return` | The rules on the server; the derived message; server functions | none |
 | 9e | ☑️ | `feat(app): lifecycle events` | **SVG options first.** + Log's four tiles, their forms and pages, the Timeline rows, a disposed vehicle's page | none |
 | 9f | ☑️ | `feat(app): recalls and bulletins, and compliance` | **SVG options first.** The reference document dialog, linking it, mode and applicability on requirements, the Schedule's closed and not-applicable ones | none |
-| 9g | ⬜ | `feat(app): show each person only what they may use` | The sweep (question 8, #069): every screen, tab, button, menu item, and field checked against the role capped by the mode, with its report | none |
+| 9g | ☑️ | `feat(app): show each person only what they may use` | The sweep (question 8, #069): every screen, tab, button, menu item, and field checked against the role capped by the mode, with its report | none |
 | 9h | ⬜ | `docs: lifecycle test plan` | One run on the test server, ending with the sweep as Sam | none |
 | 9i | ⬜ | `docs: record the lifecycle test run` | Results | none |
 
@@ -1301,3 +1301,17 @@
   - **Checked in a real browser** (1200 px), as the Admin in Admin mode: Set up showed **+ Recall or bulletin**; the picker offered only **+ A new one**; the new recall's name came from its title ("Front passenger air bag inflator may"); saving opened its view with its details; its PDF was added there and stored on the recall with no vehicle; the truck's Schedule showed Open, "One-time · Recall · NHTSA campaign 24V-123", and Open it ›; on a second vehicle the picker listed the truck's recall, the dialog came up one-time with the recall at the top, Not applicable without a reason was refused, and once saved the van's Schedule showed it under Done and not applicable with its reason.
   - **Not done:** a household-wide list of recalls (decided to wait, #068); removing a recall in the app (the server allows it once nothing links it); a custom type in the form (the listed ones, and "Other").
   - 4 new app tests: a long title makes a name cut at a word; typed numbers skip blank rows and dates must be dates; not applicable needs a reason and the choices round-trip; which statuses are settled (and a recurring one shows no chip).
+- **9g:** no new dependency. **The sweep's report** (#069: a screen, tab, button, menu item, or field shows only if the person's role, capped by their mode, allows it). Every screen's action controls were listed with what gates them against what the server checks; what was shown but refused:
+  - **Users and Groups** in the sidebar: now only in Admin mode (they showed for the household's Admin in every mode). Their pages still say "Switch to Admin mode" if opened from an address.
+  - **+ Log and the phone's +**: now only when there's something to log: for the vehicle whose page this is, or anywhere else, for any vehicle the person can see. A Viewer, and a disposed vehicle's page, have none.
+  - **Settings:** the **You / Household** picker shows only for the household's Admin in Admin mode (it showed for everyone, with "Switch to Admin mode" on the Household tab); the **Keep photo originals** row only in Maintainer or Admin mode.
+  - **Repair this** on an issue, and **Record return** on the banner: not once the vehicle's disposal is finalized. **Open a new issue** inside a job: only for whoever may open issues, and not on a disposed vehicle.
+  - **A log, edit, or correct form opened from its address** (not offered by the app) now says "Your role or mode doesn't allow that" instead of showing a form the server would refuse. A new event's kind must be one the person may log there now; an edit needs the event's `may_change`, a correction its `may_correct`. It waits for the person's mode to load first.
+  - **Setup tab:** stays for everyone (#069 keeps its "view only" note), but the note says "needs Maintainer or Admin mode" only to someone a mode change would help; a Viewer or Driver reads "You can see this vehicle's setup; a Maintainer or the Admin changes it."
+  - **Already right** (no change): the Garage's Add vehicle and group controls, the vehicle's Setup sections, Maintenance › Set up and its buttons, Documents, attachments, issues, event and job pages (all gated by the server's flags), Places (each person's own), and the views every role may see (Issues, Timeline, Maintenance's Schedule and Jobs, Fuel, Documents).
+  - **Checked in a real browser** (1200 px) as five people, each through the Garage, a truck's Overview, Setup, Maintenance, Documents, and Settings:
+    - **the Admin in Admin mode:** everything, and the Household picker;
+    - **the Admin in Driver mode:** no Users or Groups, no Add vehicle, view-only Setup with the mode hint, no Set up, documents' buttons, or picker;
+    - **a Viewer:** no + Log, no + Issue, the new Setup note, no picker, no originals row;
+    - **a Driver:** + Log and + Issue only;
+    - **a Maintainer in Maintainer mode:** meters, fields, Set up, and documents, but no Edit details, Move, or Delete, no vehicle photos, and no picker.

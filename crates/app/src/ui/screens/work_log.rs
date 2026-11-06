@@ -140,6 +140,11 @@ pub(super) fn WorkLog(
     start_readings: Vec<(MeterId, String)>,
 ) -> Element {
     let photo_size = photo_size_for(&vehicle.asset.kind, kind);
+    // A new issue from the job: whoever may open one, and not once the vehicle's disposal is
+    // finalized (#067, #069).
+    let auth = crate::ui::auth::use_auth();
+    let may_open = vehicle.standing.takes_new_records
+        && super::squawks::may_open_squawks(vehicle.role, super::squawks::current_mode(auth()));
     let mut work = work;
     let mut open = use_signal(|| Some(0_usize));
     let sheet = use_squawk_sheet();
@@ -302,8 +307,10 @@ pub(super) fn WorkLog(
                     tasks: titles.clone(),
                 }
             }
-            button { class: "link-button", r#type: "button", onclick: move |_| sheet.open_new(asset_id, &asset, None),
-                {tr(messages::WORK_OPEN_SQUAWK)}
+            if may_open {
+                button { class: "link-button", r#type: "button", onclick: move |_| sheet.open_new(asset_id, &asset, None),
+                    {tr(messages::WORK_OPEN_SQUAWK)}
+                }
             }
             FormError { message: squawk_problem }
         }

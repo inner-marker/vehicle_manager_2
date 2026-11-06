@@ -102,15 +102,31 @@ pub(crate) fn use_log_chooser() -> LogChooser {
 /// (#030), then the lifecycle ones that fit now (#067), limited by their role there and the mode
 /// (plan §6). None once its disposal is finalized.
 pub(crate) fn loggable_kinds(vehicle: &AssetSummary, mode: ActiveMode) -> Vec<EventKind> {
-    let allowed = vehicle.role.min(mode.cap());
-    if !vehicle.standing.takes_new_records {
+    kinds_for(&vehicle.asset, vehicle.role, &vehicle.standing, mode)
+}
+
+/// What [`loggable_kinds`] gives, from a vehicle's parts (its page has them too).
+pub(super) fn kinds_for(
+    asset: &domain::asset::Asset,
+    role: domain::access::Role,
+    standing: &domain::lifecycle::Standing,
+    mode: ActiveMode,
+) -> Vec<EventKind> {
+    let allowed = role.min(mode.cap());
+    if !standing.takes_new_records {
         return Vec::new();
     }
-    event_kinds(&vehicle.asset.kind)
+    event_kinds(&asset.kind)
         .into_iter()
-        .chain(vehicle.standing.lifecycle_kinds())
+        .chain(standing.lifecycle_kinds())
         .filter(|kind| allowed >= AssetAction::to_log(*kind).required_role())
         .collect()
+}
+
+/// Whether + Log has anything for `vehicle` in `mode`: a kind of event, or an issue.
+pub(crate) fn may_log_for(vehicle: &AssetSummary, mode: ActiveMode) -> bool {
+    !loggable_kinds(vehicle, mode).is_empty()
+        || (vehicle.standing.takes_new_records && may_open_squawks(vehicle.role, mode))
 }
 
 /// What a kind's tile says under its name.
@@ -180,7 +196,7 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
         .map(|garage| garage.assets)
         .unwrap_or_default()
         .into_iter()
-        .filter(|vehicle| !loggable_kinds(vehicle, mode).is_empty())
+        .filter(|vehicle| may_log_for(vehicle, mode))
         .collect();
     choices.sort_by_key(|vehicle| Some(vehicle.id) != last);
     let first = start

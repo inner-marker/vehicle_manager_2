@@ -135,7 +135,18 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
             let answer = match event_id.parse::<EventId>() {
                 Err(_) => Err(messages::EVENT_NOT_FOUND),
                 Ok(id) => match api::event_view(id).await {
-                    Ok(EventsOutcome::Event { view }) => Ok((id, view.event)),
+                    // Only what the person may do to it now (#069): edit a draft, or correct a
+                    // finalized one; a direct address otherwise says so.
+                    Ok(EventsOutcome::Event { view })
+                        if (if correct {
+                            view.may_correct
+                        } else {
+                            view.may_change
+                        }) =>
+                    {
+                        Ok((id, view.event))
+                    }
+                    Ok(EventsOutcome::Event { .. }) => Err(messages::VEHICLES_NOT_ALLOWED),
                     Ok(EventsOutcome::NotFound) => Err(messages::EVENT_NOT_FOUND),
                     Ok(_) => Err(messages::SOMETHING_WENT_WRONG),
                     Err(error) => Err(problem_from_error(&error).message()),
@@ -267,9 +278,39 @@ fn LogScreen(
     prefill: Option<SquawkView>,
 ) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
-    use_effect(use_reactive!(|asset, kind| {
+    let auth = crate::ui::auth::use_auth();
+    // The person's mode, once known (after a reload it loads a moment later).
+    let person_mode = match auth() {
+        crate::ui::auth::AuthState::SignedIn(session) => Some(session.mode),
+        crate::ui::auth::AuthState::Loading
+        | crate::ui::auth::AuthState::NeedsSetup
+        | crate::ui::auth::AuthState::SignedOut
+        | crate::ui::auth::AuthState::Unreachable(_) => None,
+    };
+    use_effect(use_reactive!(|asset, kind, person_mode| {
+        let Some(person_mode) = person_mode else {
+            return;
+        };
         spawn(async move {
-            loaded.set(Some(load(asset, kind).await));
+            let answer = load(asset, kind).await.and_then(|data| {
+                // A new event only of a kind the person may log here now (#069); a direct
+                // address otherwise says so.
+                let view = &data.view;
+                let may = matches!(mode, Mode::Edit(_) | Mode::Correct(_))
+                    || super::log_chooser::kinds_for(
+                        &view.asset,
+                        view.role,
+                        &view.standing,
+                        person_mode,
+                    )
+                    .contains(&kind);
+                if may {
+                    Ok(data)
+                } else {
+                    Err(messages::VEHICLES_NOT_ALLOWED)
+                }
+            });
+            loaded.set(Some(answer));
         });
     }));
     match loaded() {
