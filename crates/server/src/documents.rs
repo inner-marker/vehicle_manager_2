@@ -78,6 +78,20 @@ impl AssetsContext<'_> {
         )
     }
 
+    /// The vehicle's scope, if the person may manage its documents and it takes new ones (not
+    /// once its disposal is finalized, #067).
+    async fn new_document_scope(&self, asset: AssetId) -> Result<AssetScope, DocumentsOutcome> {
+        let scope = self.document_scope(asset).await?;
+        if crate::lifecycle::takes_new_records(self.database, asset)
+            .await
+            .map_err(|error| failed("lifecycle", &error))?
+        {
+            Ok(scope)
+        } else {
+            Err(DocumentsOutcome::NotAllowed)
+        }
+    }
+
     /// The vehicle's scope, if the person may manage its documents.
     async fn document_scope(&self, asset: AssetId) -> Result<AssetScope, DocumentsOutcome> {
         let scope = self
@@ -267,7 +281,7 @@ async fn add_new_document(
     input: DocumentInput,
     supersedes: Option<AssetDocumentId>,
 ) -> Result<DocumentsOutcome, DocumentsOutcome> {
-    context.document_scope(input.asset).await?;
+    context.new_document_scope(input.asset).await?;
     let document = document_from(context, input, supersedes);
     let id: AssetDocumentId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
     let change = Change::Create {
@@ -385,7 +399,7 @@ async fn add_new_plate(
     input: PlateInput,
     today: &CalendarDate,
 ) -> Result<DocumentsOutcome, DocumentsOutcome> {
-    context.document_scope(input.asset).await?;
+    context.new_document_scope(input.asset).await?;
     let plate = plate_from(context, input);
     check_plate(&plate, true).map_err(plate_problem)?;
     let (_, plates) = context.papers(plate.asset).await?;

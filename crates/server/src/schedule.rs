@@ -7,6 +7,9 @@
 //!   it): the Maintainer role on it (or higher), in Maintainer mode or above. Copying also
 //!   needs to see the vehicle it copies from.
 //!
+//! A requirement can link a reference document the person can read, be one-time or
+//! recurring, and apply or not (milestone 9, #068); a one-time one has no interval rules.
+//!
 //! A requirement a task has done (in a draft or a finished job) stays in the history: it can
 //! be turned off but not removed. Removing one also takes it out of the bundles, and a bundle
 //! left empty goes too.
@@ -14,11 +17,11 @@
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
 use domain::api::{AssetsOutcome, RequirementView, ScheduleOutcome};
 use domain::asset::AssetId;
-use domain::command::Change;
+use domain::command::{Change, Clearable};
 use domain::log_area;
 use domain::requirement::{
     Bundle, BundleId, BundlePatch, Requirement, RequirementId, RequirementPatch,
-    RequirementProblem, check_bundle, check_rules, copy_schedule, last_done,
+    RequirementProblem, check_bundle, check_compliance, check_rules, copy_schedule, last_done,
 };
 use storage::requirements::{BundleWriter, RequirementWriter};
 
@@ -100,14 +103,25 @@ impl AssetsContext<'_> {
             .map_err(|error| failed("bundles", &error))
     }
 
-    /// Checks a requirement's rules against its vehicle's meters.
+    /// Checks a requirement's rules against its vehicle's meters, and its mode and link: a
+    /// one-time one has no rules, and a linked reference document exists and is one the person
+    /// can read (#068).
     async fn check_requirement(&self, requirement: &Requirement) -> Result<(), ScheduleOutcome> {
         let meters = self
             .database
             .meters_of(requirement.asset)
             .await
             .map_err(|error| failed("meters", &error))?;
-        check_rules(&requirement.rules, &meters).map_err(invalid)
+        check_rules(&requirement.rules, &meters).map_err(invalid)?;
+        let mut readable = Vec::new();
+        if let Some(reference) = requirement.reference
+            && crate::references::readable(self, reference)
+                .await
+                .map_err(|error| failed("reference", &error))?
+        {
+            readable.push(reference);
+        }
+        check_compliance(requirement, &readable).map_err(invalid)
     }
 
     /// Checks a bundle's requirements against its vehicle's.
@@ -185,6 +199,7 @@ async fn view_schedule(
         .map(|(id, requirement)| RequirementView {
             id,
             last_done: last_done(id, &done).cloned(),
+            status: requirement.status(id, &done),
             requirement,
         })
         .collect();
@@ -223,7 +238,8 @@ async fn add_requirement_to(
     Ok(ScheduleOutcome::SavedRequirement { id })
 }
 
-/// Changes a requirement's name, notes, whether it's on, and its rules (its vehicle stays).
+/// Changes a requirement's name, notes, whether it's on, its rules, its link to a reference
+/// document, its mode, and whether it applies (its vehicle stays).
 pub async fn edit_requirement(
     context: &AssetsContext<'_>,
     id: RequirementId,
@@ -249,6 +265,11 @@ async fn edit_requirement_of(
         notes: (current.notes != requirement.notes).then_some(requirement.notes),
         enabled: (current.enabled != requirement.enabled).then_some(requirement.enabled),
         rules: (current.rules != requirement.rules).then_some(requirement.rules),
+        reference: (current.reference != requirement.reference)
+            .then(|| Clearable::from_option(requirement.reference)),
+        mode: (current.mode != requirement.mode).then_some(requirement.mode),
+        applicability: (current.applicability != requirement.applicability)
+            .then_some(requirement.applicability),
         ..RequirementPatch::default()
     };
     context

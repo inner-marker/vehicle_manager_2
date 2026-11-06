@@ -163,6 +163,7 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
             };
             role_on(grants, scope).map(|role| AssetSummary {
                 id,
+                status: asset.status,
                 asset,
                 role,
                 plate: None,
@@ -171,6 +172,10 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
         .collect();
     for summary in &mut assets {
         summary.plate = current_plate(database, summary.id).await?;
+        summary.status = crate::lifecycle::standing(database, summary.id, summary.asset.status)
+            .await
+            .map_err(|error| unavailable("lifecycle", &error))?
+            .status;
     }
     let can_manage_groups = context.may(AdminAction::ManageGroups);
     // Each group with how many visible vehicles it has; empty ones only for the Admin.
@@ -231,6 +236,9 @@ async fn asset_view(
         .map_err(|error| unavailable("custom fields", &error))?;
     let grants = &context.user.grants;
     let mode = context.user.mode;
+    let standing = crate::lifecycle::standing(database, id, asset.status)
+        .await
+        .map_err(|error| unavailable("lifecycle", &error))?;
     Ok(AssetsOutcome::Asset {
         view: Box::new(AssetView {
             id,
@@ -242,6 +250,7 @@ async fn asset_view(
             meters,
             fields,
             plate: current_plate(database, id).await?,
+            standing,
         }),
     })
 }

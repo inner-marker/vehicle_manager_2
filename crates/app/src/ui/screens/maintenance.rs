@@ -707,13 +707,30 @@ fn RequirementDialog(
     let save_meters = vehicle.meters.clone();
     let asset = vehicle.id;
     let editing_id = existing.as_ref().map(|(id, _)| *id);
+    // What this form doesn't show yet stays as it was (a recall's link, mode, and whether it
+    // applies; step 9f adds them).
+    let kept = existing.as_ref().map(|(_, requirement)| {
+        (
+            requirement.reference,
+            requirement.mode,
+            requirement.applicability.clone(),
+        )
+    });
     let save = move |event: FormEvent| {
         event.prevent_default();
         if busy() {
             return;
         }
         let requirement = match requirement_from(&typed(), asset, &save_meters) {
-            Ok(requirement) => requirement,
+            Ok(requirement) => match kept.clone() {
+                Some((reference, mode, applicability)) => Requirement {
+                    reference,
+                    mode,
+                    applicability,
+                    ..requirement
+                },
+                None => requirement,
+            },
             Err(message) => {
                 problem.set(Some(message));
                 return;

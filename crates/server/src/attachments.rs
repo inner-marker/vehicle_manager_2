@@ -15,6 +15,11 @@
 //!   attachments (`copy_to_correction`).
 //! - **A squawk's:** whoever may change the squawk, at any time.
 //! - **A document's:** a Maintainer (in 8d.2).
+//! - **A reference document's** (on no vehicle, milestone 9): whoever may change the reference
+//!   document; seeing one needs to be able to read it (`crate::references`).
+//!
+//! Once a vehicle's disposal is finalized (#067), nothing new is attached to it, except to an
+//! event (a draft, so a correction).
 //!
 //! **Seeing** one needs only to see its vehicle, except a photo's original: only those who may
 //! keep originals (Maintainers and Admins, #036).
@@ -36,6 +41,7 @@ use domain::command::Change;
 use domain::event::{EventId, EventStatus};
 use domain::log_area;
 use domain::preferences::{Originals, PreferencesId};
+use domain::reference::ReferenceDocumentId;
 use domain::time::UnixMillis;
 use image::{DynamicImage, ImageDecoder, ImageReader, Limits, RgbImage};
 use storage::Database;
@@ -371,8 +377,63 @@ impl AssetsContext<'_> {
     }
 
     /// Whether the person may change what's attached to `owner` on `asset` (whose scope is
-    /// `scope`), checking `owner` is on that vehicle. An event must still be a draft.
+    /// `scope`), checking `owner` is on that vehicle. An event must still be a draft; anything
+    /// else takes nothing new once the vehicle's disposal is finalized (#067).
     async fn attachment_permission(
+        &self,
+        asset: AssetId,
+        owner: AttachmentOwner,
+        scope: AssetScope,
+    ) -> Result<Permission, AttachmentsOutcome> {
+        let mut permission = self.owner_permission(asset, owner, scope).await?;
+        if permission.allowed
+            && owner.event().is_none()
+            && !crate::lifecycle::takes_new_records(self.database, asset)
+                .await
+                .map_err(|error| failed("lifecycle", &error))?
+        {
+            permission.allowed = false;
+        }
+        Ok(permission)
+    }
+
+    /// Whether the person may change a reference document's attachments (#068): it must be
+    /// one they can read, and they must be allowed to change it.
+    async fn reference_permission(
+        &self,
+        reference: ReferenceDocumentId,
+    ) -> Result<Permission, AttachmentsOutcome> {
+        if !crate::references::readable(self, reference)
+            .await
+            .map_err(|error| failed("reference", &error))?
+        {
+            return Err(AttachmentsOutcome::NotFound);
+        }
+        Ok(Permission {
+            allowed: crate::references::changeable(self, reference)
+                .await
+                .map_err(|error| failed("reference", &error))?,
+            tasks: 0,
+        })
+    }
+
+    /// Where an attachment's owner is and what the person may do there: on a vehicle (its ID
+    /// and scope), or a reference document's (on none).
+    async fn place_of(
+        &self,
+        asset: Option<AssetId>,
+        owner: AttachmentOwner,
+    ) -> Result<(Option<(AssetId, AssetScope)>, Permission), AttachmentsOutcome> {
+        if let AttachmentOwner::Reference { reference } = owner {
+            return Ok((None, self.reference_permission(reference).await?));
+        }
+        let asset = asset.ok_or(AttachmentsOutcome::NotFound)?;
+        let scope = self.attachment_scope(asset).await?;
+        let permission = self.attachment_permission(asset, owner, scope).await?;
+        Ok((Some((asset, scope)), permission))
+    }
+
+    async fn owner_permission(
         &self,
         asset: AssetId,
         owner: AttachmentOwner,
@@ -424,8 +485,7 @@ impl AssetsContext<'_> {
                     tasks: 0,
                 })
             }
-            // A reference document's attachments are on no vehicle; served from step 9d.
-            AttachmentOwner::Reference { .. } => Err(AttachmentsOutcome::NotFound),
+            AttachmentOwner::Reference { reference } => self.reference_permission(reference).await,
         }
     }
 
@@ -447,21 +507,38 @@ impl AssetsContext<'_> {
             .map_err(|outcome| from_assets(&outcome))
     }
 
-    /// The attachment and its vehicle's scope, if the person can see it.
+    /// The attachment and where it is (its vehicle and scope; none for a reference
+    /// document's), if the person can see it.
     async fn visible_attachment(
         &self,
         id: AttachmentId,
-    ) -> Result<(Attachment, AssetId, AssetScope), AttachmentsOutcome> {
+    ) -> Result<(Attachment, Option<(AssetId, AssetScope)>), AttachmentsOutcome> {
         let attachment = self
             .database
             .attachment(id)
             .await
             .map_err(|error| failed("attachment", &error))?
             .ok_or(AttachmentsOutcome::NotFound)?;
-        // A reference document's attachments (on no vehicle) are served from step 9d.
+        if let AttachmentOwner::Reference { reference } = attachment.owner {
+            self.reference_permission(reference).await?;
+            return Ok((attachment, None));
+        }
         let asset = attachment.asset.ok_or(AttachmentsOutcome::NotFound)?;
         let scope = self.attachment_scope(asset).await?;
-        Ok((attachment, asset, scope))
+        Ok((attachment, Some((asset, scope))))
+    }
+
+    /// The attachment, if the person can see it and may change what it's on.
+    async fn changeable_attachment(
+        &self,
+        id: AttachmentId,
+    ) -> Result<Attachment, AttachmentsOutcome> {
+        let (attachment, _) = self.visible_attachment(id).await?;
+        let (_, permission) = self.place_of(attachment.asset, attachment.owner).await?;
+        if !permission.allowed {
+            return Err(AttachmentsOutcome::NotAllowed);
+        }
+        Ok(attachment)
     }
 
     /// `file` as the store lists it, if it was uploaded with that size.
@@ -500,20 +577,24 @@ async fn list_attachments(
     asset: AssetId,
     owner: AttachmentOwner,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let scope = context.attachment_scope(asset).await?;
     // A finished event's attachments are shown, but nobody may change them.
-    let allowed = match context.attachment_permission(asset, owner, scope).await {
-        Ok(permission) => permission.allowed,
+    let (place, allowed) = match context.place_of(Some(asset), owner).await {
+        Ok((place, permission)) => (place, permission.allowed),
         Err(AttachmentsOutcome::Invalid {
             problem: AttachmentProblem::EventFinished,
-        }) => false,
+        }) => (Some((asset, context.attachment_scope(asset).await?)), false),
         Err(outcome) => return Err(outcome),
     };
-    let found = context
-        .database
-        .attachments_on(asset, owner)
-        .await
-        .map_err(|error| failed("attachments", &error))?;
+    let found = match owner {
+        AttachmentOwner::Reference { reference } => {
+            context.database.attachments_of_reference(reference).await
+        }
+        AttachmentOwner::Vehicle
+        | AttachmentOwner::Event { .. }
+        | AttachmentOwner::Squawk { .. }
+        | AttachmentOwner::Document { .. } => context.database.attachments_on(asset, owner).await,
+    }
+    .map_err(|error| failed("attachments", &error))?;
     let mut attachments = Vec::with_capacity(found.len());
     for (id, attachment) in found {
         let added_by_name = context
@@ -530,8 +611,11 @@ async fn list_attachments(
             may_change: allowed,
         });
     }
+    // Only on a vehicle: a reference document's photos are kept as shown.
     let may_keep_originals = allowed
-        && context.permits_attachment(AssetAction::KeepOriginals, scope)
+        && place.is_some_and(|(_, scope)| {
+            context.permits_attachment(AssetAction::KeepOriginals, scope)
+        })
         && context.originals_allowed().await?;
     Ok(AttachmentsOutcome::Attachments {
         attachments,
@@ -565,7 +649,7 @@ async fn read_stored(store: &FileStore, file: &StoredFile) -> Result<Vec<u8>, At
 async fn verified_content(
     context: &AssetsContext<'_>,
     store: &FileStore,
-    scope: AssetScope,
+    scope: Option<AssetScope>,
     file: &StoredFile,
     claimed: Content,
 ) -> Result<Content, AttachmentsOutcome> {
@@ -581,7 +665,9 @@ async fn verified_content(
                 return Err(invalid(AttachmentProblem::NotAPhoto));
             }
             if let Some(original) = &original {
-                if !context.permits_attachment(AssetAction::KeepOriginals, scope) {
+                if !scope.is_some_and(|scope| {
+                    context.permits_attachment(AssetAction::KeepOriginals, scope)
+                }) {
                     return Err(AttachmentsOutcome::NotAllowed);
                 }
                 if !context.originals_allowed().await? {
@@ -622,13 +708,12 @@ async fn add_attachment(
     store: &FileStore,
     input: AttachmentInput,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let scope = context.attachment_scope(input.asset).await?;
-    let permission = context
-        .attachment_permission(input.asset, input.owner, scope)
-        .await?;
+    // A reference document's attachment goes on no vehicle, whatever `input.asset` says.
+    let (place, permission) = context.place_of(Some(input.asset), input.owner).await?;
     if !permission.allowed {
         return Err(AttachmentsOutcome::NotAllowed);
     }
+    let scope = place.map(|(_, scope)| scope);
     context.uploaded(&input.file).await?;
     if let Some(thumbnail) = &input.thumbnail {
         context.uploaded(thumbnail).await?;
@@ -636,7 +721,7 @@ async fn add_attachment(
     let found = verified_content(context, store, scope, &input.file, input.content).await?;
     let now = context.clock.now();
     let attachment = Attachment {
-        asset: Some(input.asset),
+        asset: place.map(|(asset, _)| asset),
         owner: input.owner,
         file: input.file,
         thumbnail: input.thumbnail,
@@ -654,7 +739,7 @@ async fn add_attachment(
             values: AttachmentPatch::all(attachment),
         })
         .await?;
-    tracing::debug!(target: log_area::APP, attachment = %id, asset = %input.asset, "attachment added");
+    tracing::debug!(target: log_area::APP, attachment = %id, owner = ?input.owner, "attachment added");
     Ok(AttachmentsOutcome::Saved { id })
 }
 
@@ -673,13 +758,11 @@ async fn move_attachment(
     id: AttachmentId,
     task: Option<u16>,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let (attachment, asset, scope) = context.visible_attachment(id).await?;
+    let (attachment, _) = context.visible_attachment(id).await?;
     let AttachmentOwner::Event { event, .. } = attachment.owner else {
         return Err(invalid(AttachmentProblem::Unchangeable));
     };
-    let permission = context
-        .attachment_permission(asset, attachment.owner, scope)
-        .await?;
+    let (_, permission) = context.place_of(attachment.asset, attachment.owner).await?;
     if !permission.allowed {
         return Err(AttachmentsOutcome::NotAllowed);
     }
@@ -710,13 +793,7 @@ async fn remove_attachment(
     context: &AssetsContext<'_>,
     id: AttachmentId,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
-    let (attachment, asset, scope) = context.visible_attachment(id).await?;
-    let permission = context
-        .attachment_permission(asset, attachment.owner, scope)
-        .await?;
-    if !permission.allowed {
-        return Err(AttachmentsOutcome::NotAllowed);
-    }
+    context.changeable_attachment(id).await?;
     context.save_attachment(Change::Delete { id }).await?;
     tracing::debug!(target: log_area::APP, attachment = %id, "attachment removed");
     Ok(AttachmentsOutcome::Done)
@@ -745,7 +822,7 @@ pub async fn download(
     id: AttachmentId,
     part: AttachmentPart,
 ) -> Result<Download, AttachmentsOutcome> {
-    let (attachment, _, scope) = context.visible_attachment(id).await?;
+    let (attachment, place) = context.visible_attachment(id).await?;
     let (file, mime) = match part {
         AttachmentPart::File => (
             attachment.file.clone(),
@@ -762,7 +839,9 @@ pub async fn download(
             FileType::Jpeg.mime(),
         ),
         AttachmentPart::Original => {
-            if !context.permits_attachment(AssetAction::KeepOriginals, scope) {
+            if !place.is_some_and(|(_, scope)| {
+                context.permits_attachment(AssetAction::KeepOriginals, scope)
+            }) {
                 return Err(AttachmentsOutcome::NotAllowed);
             }
             let Content::Photo {

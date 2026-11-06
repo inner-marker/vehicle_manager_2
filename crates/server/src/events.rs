@@ -213,6 +213,9 @@ impl AssetsContext<'_> {
             let outstanding = self.outstanding_squawks(event.asset, &leave_out).await?;
             (requirements, outstanding)
         };
+        let lifecycle = crate::lifecycle::records(self.database, event.asset, &leave_out)
+            .await
+            .map_err(|error| failed("lifecycle", &error))?;
         let context = CheckContext {
             kinds: &kinds,
             meters: &meters,
@@ -222,9 +225,7 @@ impl AssetsContext<'_> {
             may_override_readings: self.permits(AssetAction::OverrideReadings, scope),
             requirements: &requirements,
             outstanding_squawks: &outstanding_squawks,
-            // The vehicle's lifecycle events are gathered from step 9d, once storage keeps
-            // their details (9c).
-            lifecycle: &[],
+            lifecycle: &lifecycle,
         };
         let warnings = if finishing {
             check_finish(event, &context)

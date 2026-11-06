@@ -20,7 +20,7 @@ use domain::event::{
 };
 use domain::id::Id;
 use domain::label::Label;
-use domain::lifecycle::LifecycleDetails;
+use domain::lifecycle::{LifecycleDetails, LifecycleRecord};
 use domain::location::{Coordinates, Place, TimeZone};
 use domain::meter::MeterId;
 use domain::notes::Notes;
@@ -620,6 +620,49 @@ pub struct CountedReading {
 }
 
 impl Database {
+    /// One vehicle's lifecycle events that count (milestone 9): not deleted, and not ones a
+    /// correction replaces. The rules in `domain::lifecycle` work on these. Each comes with
+    /// what it corrects, if anything, so a caller can also leave out the one it's checking
+    /// against.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn lifecycle_of(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(LifecycleRecord, Option<EventId>)>, StorageError> {
+        let rows = sqlx::query(
+            "SELECT e.id, e.start_ms, e.status, e.corrects_id, l.details
+             FROM lifecycle_details l JOIN events e ON e.id = l.event_id
+             WHERE e.asset_id = ? AND e.deleted = 0
+               AND NOT EXISTS (SELECT 1 FROM events c
+                               WHERE c.corrects_id = e.id AND c.deleted = 0)
+             ORDER BY e.start_ms, e.id",
+        )
+        .bind(id_to_sql(asset))
+        .fetch_all(self.pool())
+        .await?;
+        rows.iter()
+            .map(|row| {
+                let details: String = row.try_get("details")?;
+                let corrects = row
+                    .try_get::<Option<Vec<u8>>, _>("corrects_id")?
+                    .map(|bytes| id_from_sql(&bytes, "events.corrects_id"))
+                    .transpose()?;
+                Ok((
+                    LifecycleRecord {
+                        id: id_from_sql(row.try_get::<&[u8], _>("id")?, "events.id")?,
+                        at: UnixMillis::from_millis(row.try_get("start_ms")?),
+                        status: required_name(row.try_get("status")?, "events.status")?,
+                        details: json_from_sql(&details, "lifecycle_details.details")?,
+                    },
+                    corrects,
+                ))
+            })
+            .collect()
+    }
+
     /// One event, if it exists and isn't deleted.
     ///
     /// # Errors

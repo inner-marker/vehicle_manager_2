@@ -218,6 +218,13 @@ async fn open_squawk(
     if !context.permits_squawk(AssetAction::OpenSquawk, scope) {
         return Err(SquawksOutcome::NotAllowed);
     }
+    // Nothing new once the vehicle's disposal is finalized (#067).
+    if !crate::lifecycle::takes_new_records(context.database, input.asset)
+        .await
+        .map_err(|error| failed("lifecycle", &error))?
+    {
+        return Err(SquawksOutcome::NotAllowed);
+    }
     if let Some(event) = input.found_on {
         let found_on = context
             .database

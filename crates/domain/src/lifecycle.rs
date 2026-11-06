@@ -184,6 +184,38 @@ pub struct LifecycleRecord {
     pub details: LifecycleDetails,
 }
 
+/// What a vehicle's lifecycle events say about it now.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Standing {
+    /// The status it shows ([`status`]).
+    pub status: LifecycleStatus,
+    /// Whether it takes new records ([`takes_new_records`]).
+    pub takes_new_records: bool,
+    /// The send-out it's on now, if it's out for service ([`open_send_out`]).
+    pub sent_out: Option<EventId>,
+}
+
+impl Default for Standing {
+    /// In service, taking new records, not out.
+    fn default() -> Self {
+        Self {
+            status: LifecycleStatus::InService,
+            takes_new_records: true,
+            sent_out: None,
+        }
+    }
+}
+
+/// What `records` say about a vehicle whose Setup status is `stored`.
+#[must_use]
+pub fn standing(stored: LifecycleStatus, records: &[LifecycleRecord]) -> Standing {
+    Standing {
+        status: status(stored, records),
+        takes_new_records: takes_new_records(records),
+        sent_out: open_send_out(records).map(|(record, _)| record.id),
+    }
+}
+
 /// The send-out with no return yet, if the vehicle is out.
 #[must_use]
 pub fn open_send_out(records: &[LifecycleRecord]) -> Option<(&LifecycleRecord, &SendOut)> {

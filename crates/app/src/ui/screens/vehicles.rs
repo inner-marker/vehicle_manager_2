@@ -618,6 +618,7 @@ mod tests {
 
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
+            status: LifecycleStatus::InService,
             id: test_id(n),
             asset: Asset {
                 kind: AssetKind::parse("car").unwrap(),

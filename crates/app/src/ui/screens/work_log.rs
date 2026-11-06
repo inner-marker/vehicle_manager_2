@@ -795,6 +795,7 @@ mod tests {
                 applicability: domain::requirement::Applicability::Applies,
             },
             last_done: None,
+            status: domain::requirement::RequirementStatus::Active,
         }
     }
 

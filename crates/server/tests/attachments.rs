@@ -673,4 +673,84 @@ mod attachments {
             "the original keeps its own"
         );
     }
+
+    #[tokio::test]
+    async fn a_recalls_pdf_is_on_no_vehicle_and_read_by_anyone_who_sees_a_linked_one() {
+        use domain::api::{ReferenceInput, ReferenceLink, ReferencesOutcome};
+        use domain::reference::{RECALL, ReferenceType};
+        use domain::requirement::{Applicability, ComplianceMode};
+
+        let (temp, database, stuart, sam) = setup().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let clock = ManualClock::new(NOW);
+        let (truck, _) = new_truck(&database, &stuart, &clock).await;
+        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintain = context(&database, &maintainer, &clock);
+        let input = ReferenceInput {
+            doc_type: ReferenceType::listed(RECALL).unwrap(),
+            authority: Some("NHTSA".into()),
+            numbers: vec![],
+            title: "Rear axle nut may loosen".into(),
+            description: Notes::default(),
+            remedy: Notes::default(),
+            issued_on: None,
+            effective_on: None,
+            revision: None,
+            supersedes: None,
+            applicability: Notes::default(),
+            url: None,
+        };
+        let link = ReferenceLink {
+            asset: truck,
+            name: Label::parse("Axle nut recall").unwrap(),
+            mode: ComplianceMode::OneTime,
+            applicability: Applicability::Applies,
+        };
+        let ReferencesOutcome::Saved { id: recall, .. } =
+            server::references::add(&maintain, input, link).await
+        else {
+            panic!("the recall wasn't added");
+        };
+        let owner = AttachmentOwner::Reference { reference: recall };
+        let notice = receipt(&database, &store, &maintainer, truck, owner).await;
+        let id = saved(&add(&maintain, &store, notice).await);
+        let stored = database.attachment(id).await.unwrap().unwrap();
+        assert_eq!(stored.asset, None, "on no vehicle");
+        assert_eq!(stored.content, Content::Document { pages: 1 });
+
+        // Sam can see the truck, so he reads the recall and its PDF, but can't change them.
+        let driver = context(&database, &sam, &clock);
+        let AttachmentsOutcome::Attachments {
+            attachments,
+            may_add,
+            ..
+        } = list(&driver, truck, owner).await
+        else {
+            panic!("no list");
+        };
+        assert_eq!(attachments.len(), 1);
+        assert!(!may_add);
+        assert!(
+            download(&driver, &store, id, AttachmentPart::File)
+                .await
+                .is_ok()
+        );
+        assert_eq!(remove(&driver, id).await, AttachmentsOutcome::NotAllowed);
+
+        // Someone who sees no linked vehicle doesn't find it at all.
+        let stranger = SignedIn {
+            grants: vec![],
+            ..sam.clone()
+        };
+        let outside = context(&database, &stranger, &clock);
+        assert_eq!(
+            list(&outside, truck, owner).await,
+            AttachmentsOutcome::NotFound
+        );
+        assert_eq!(
+            download(&outside, &store, id, AttachmentPart::File).await,
+            Err(AttachmentsOutcome::NotFound)
+        );
+        assert_eq!(remove(&maintain, id).await, AttachmentsOutcome::Done);
+    }
 }
