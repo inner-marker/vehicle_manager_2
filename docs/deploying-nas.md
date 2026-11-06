@@ -138,7 +138,9 @@ sudo docker compose pull
 sudo docker compose up -d
 ```
 
-This pulls the newest image for the tag in `.env` and recreates the container. `data/` is untouched. In Container Manager, the Project's *Action → Build* may do the same; if the new image doesn't show up, use the commands above.
+This pulls the newest image for the tag in `.env` and recreates the container. `data/` is untouched.
+
+> **Before an update that rebuilds tables, copy `data/` too.** The server always backs the database up before upgrading it (`data/backups/pre-migration-…`), but an upgrade that rebuilds tables (milestone 9's migration 0015: `events` and `attachments`) is worth a full copy of `data/` first, the database and `files/` together: `sudo docker compose stop`, `sudo cp -a data ../vehicle_manager-before-<release>`, `sudo docker compose start`, then the two update commands. Do it on the test server first, then on main when the milestone merges into `dev`. In Container Manager, the Project's *Action → Build* may do the same; if the new image doesn't show up, use the commands above.
 
 ## Rolling back
 

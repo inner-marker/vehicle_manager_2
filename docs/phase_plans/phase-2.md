@@ -1245,7 +1245,7 @@
 | 9e | ☑️ | `feat(app): lifecycle events` | **SVG options first.** + Log's four tiles, their forms and pages, the Timeline rows, a disposed vehicle's page | none |
 | 9f | ☑️ | `feat(app): recalls and bulletins, and compliance` | **SVG options first.** The reference document dialog, linking it, mode and applicability on requirements, the Schedule's closed and not-applicable ones | none |
 | 9g | ☑️ | `feat(app): show each person only what they may use` | The sweep (question 8, #069): every screen, tab, button, menu item, and field checked against the role capped by the mode, with its report | none |
-| 9h | ⬜ | `docs: lifecycle test plan` | One run on the test server, ending with the sweep as Sam | none |
+| 9h | ☑️ | `docs: lifecycle test plan` | One run on the test server, ending with the sweep as Sam | none |
 | 9i | ⬜ | `docs: record the lifecycle test run` | Results | none |
 
 **Written so far**
@@ -1315,3 +1315,4 @@
     - **a Viewer:** no + Log, no + Issue, the new Setup note, no picker, no originals row;
     - **a Driver:** + Log and + Issue only;
     - **a Maintainer in Maintainer mode:** meters, fields, Set up, and documents, but no Edit details, Move, or Delete, no vehicle photos, and no picker.
+- **9h:** `docs/test-plans/p2m9-lifecycle.md`, 40 steps on the test server: a full copy of `data/` before the upgrade (migration 0015 rebuilds `events` and `attachments`), the upgrade and its log, everything from milestones 7 and 8 still there; a send-out (refused without a shop, then late), its banner, Messages, and Sam's view, then the return; an acquisition; a second vehicle disposed of (refused without how, the confirmation, the draft, archived, finalized with nothing new offered, then withdrawn by a correction); a recall with two numbers and a long title, its PDF, its Schedule card; linking it to the second vehicle as not applicable; editing it for both; complying with it in a job; one-time hiding the intervals; and the sweep as the Admin in Driver mode, a new Viewer, and Sam, with a direct address that's refused. `docs/deploying-nas.md`'s **Updating** gains a note: before an update that rebuilds tables, copy `data/` (test server first, then main when the milestone merges).
