@@ -2366,4 +2366,82 @@ define_messages! {
     REFERENCE_MANUFACTURER_SCHEDULE => "reference-manufacturer-schedule",
     /// Reference type: anything else.
     REFERENCE_OTHER => "reference-other",
+    /// Log: the lifecycle kinds' heading.
+    LOG_VEHICLE_LIFE => "log-vehicle-life",
+    /// Lifecycle: a send-out with no shop.
+    LIFE_SHOP_REQUIRED => "life-shop-required",
+    /// Lifecycle: a disposal with no method.
+    LIFE_METHOD_REQUIRED => "life-method-required",
+    /// Lifecycle form: the acquisition's section.
+    LIFE_ACQUIRED_HEADING => "life-acquired-heading",
+    /// Lifecycle form: the send-out's section.
+    LIFE_SENT_OUT_HEADING => "life-sent-out-heading",
+    /// Lifecycle form: the return's section.
+    LIFE_RETURNED_HEADING => "life-returned-heading",
+    /// Lifecycle form: the disposal's section.
+    LIFE_DISPOSED_HEADING => "life-disposed-heading",
+    /// Lifecycle form: who it was bought from.
+    LIFE_FROM => "life-from",
+    /// Lifecycle form: the shop.
+    LIFE_SHOP => "life-shop",
+    /// Lifecycle form: who it went to.
+    LIFE_TO_WHOM => "life-to-whom",
+    /// Lifecycle form: how to reach them.
+    LIFE_CONTACT => "life-contact",
+    /// Lifecycle form: the price.
+    LIFE_PRICE => "life-price",
+    /// Lifecycle form: the shop's estimate.
+    LIFE_ESTIMATE => "life-estimate",
+    /// Lifecycle form: what it cost in the end.
+    LIFE_FINAL_COST => "life-final-cost",
+    /// Lifecycle form: the work order number.
+    LIFE_WORK_ORDER => "life-work-order",
+    /// Lifecycle form: when it's due back.
+    LIFE_DUE_BACK => "life-due-back",
+    /// Lifecycle form: the shipping fold.
+    LIFE_SHIPPING => "life-shipping",
+    /// Lifecycle form: not shipped.
+    LIFE_SHIPPING_NONE => "life-shipping-none",
+    /// Lifecycle form: the carrier.
+    LIFE_CARRIER => "life-carrier",
+    /// Lifecycle form: the tracking number.
+    LIFE_TRACKING => "life-tracking",
+    /// Lifecycle form: how it was disposed of.
+    LIFE_HOW => "life-how",
+    /// Lifecycle form: nothing chosen yet.
+    LIFE_CHOOSE => "life-choose",
+    /// Lifecycle form: a disposal's correction undoing it.
+    LIFE_WITHDRAWN => "life-withdrawn",
+    /// Lifecycle form: what a return ends; takes `shop` and `date`.
+    LIFE_RETURN_OF => "life-return-of",
+    /// Lifecycle form: the disposal's confirmation title.
+    LIFE_DISPOSE_TITLE => "life-dispose-title",
+    /// Lifecycle form: what a disposal means; takes `vehicle`.
+    LIFE_DISPOSE_TEXT => "life-dispose-text",
+    /// Lifecycle form: save the disposal.
+    LIFE_DISPOSE_SAVE => "life-dispose-save",
+    /// Timeline: who it was bought from; takes `name`.
+    LIFE_SUMMARY_FROM => "life-summary-from",
+    /// Timeline: who it went to; takes `name`.
+    LIFE_SUMMARY_TO => "life-summary-to",
+    /// Timeline: when a send-out is due back; takes `date`.
+    LIFE_SUMMARY_DUE_BACK => "life-summary-due-back",
+    /// Vehicle page: out for service, with a due date; takes `shop`, `date`, `due`.
+    LIFE_BANNER_OUT_DUE => "life-banner-out-due",
+    /// Vehicle page: out for service; takes `shop` and `date`.
+    LIFE_BANNER_OUT => "life-banner-out",
+    /// Vehicle page: how late the return is; takes `days`.
+    LIFE_BANNER_LATE => "life-banner-late",
+    /// Vehicle page: the shop's estimate; takes `amount`.
+    LIFE_BANNER_ESTIMATE => "life-banner-estimate",
+    /// Vehicle page: record the return.
+    LIFE_RECORD_RETURN => "life-record-return",
+    /// Vehicle page: disposed of; takes `how` and `date`.
+    LIFE_BANNER_DISPOSED => "life-banner-disposed",
+    /// Vehicle page: disposed of to someone; takes `how`, `date`, `name`.
+    LIFE_BANNER_DISPOSED_TO => "life-banner-disposed-to",
+    /// Vehicle page: what a finalized disposal means.
+    LIFE_BANNER_DISPOSED_NOTE => "life-banner-disposed-note",
+    /// Vehicle page: a disposal still a draft.
+    LIFE_BANNER_DISPOSED_DRAFT => "life-banner-disposed-draft",
 }

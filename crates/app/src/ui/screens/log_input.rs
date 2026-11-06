@@ -25,6 +25,7 @@ use domain::quantity::{
 };
 use domain::time::UnixMillis;
 
+use super::life_input::{TypedLife, life_from, typed_life};
 use super::work_input::{TypedWork, typed_work, work_from};
 
 /// Where on the form a problem shows.
@@ -48,6 +49,8 @@ pub(super) enum Target {
     Squawks,
     /// Under a reading at the end of a job.
     EndReading(MeterId),
+    /// Under a lifecycle event's own section (milestone 9).
+    Life,
     /// Above Save.
     General,
 }
@@ -86,15 +89,15 @@ impl Target {
             | EventProblem::NotFinalized
             | EventProblem::AlreadyCorrected
             | EventProblem::WorkDetails
-            | EventProblem::LifecycleDetails
+            | EventProblem::VehicleDisposed => Self::General,
+            EventProblem::LifecycleDetails
             | EventProblem::TextTooLong
             | EventProblem::AlreadyAcquired
             | EventProblem::AlreadyOut
             | EventProblem::NotOut
             | EventProblem::ReturnBeforeSendOut
             | EventProblem::AlreadyDisposed
-            | EventProblem::WithdrawnNotCorrection
-            | EventProblem::VehicleDisposed => Self::General,
+            | EventProblem::WithdrawnNotCorrection => Self::Life,
             EventProblem::RepairOnly
             | EventProblem::UnknownRequirement
             | EventProblem::BadPart
@@ -168,6 +171,8 @@ pub(super) struct Typed {
     pub work: TypedWork,
     /// The currency its amounts are in (`None`: the person's).
     pub currency: Option<CurrencyCode>,
+    /// A lifecycle event's own section.
+    pub life: TypedLife,
 }
 
 /// What building the event needs besides what was typed.
@@ -347,6 +352,12 @@ fn fuel(typed: &Typed, context: &Context<'_>) -> Result<Option<FuelDetails>, Pro
 ///
 /// The first [`Problem`] found, with where it shows.
 pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, Problem> {
+    // A lifecycle event's own section comes first on the form, so its problems do too.
+    let lifecycle = life_from(
+        &typed.life,
+        context.kind,
+        typed.currency.unwrap_or(context.units.currency),
+    )?;
     let zone = zone(typed, context.fallback_zone);
     let unchanged = typed
         .original_start
@@ -399,8 +410,7 @@ pub(super) fn build(typed: &Typed, context: &Context<'_>) -> Result<EventInput, 
                 )
             })
             .transpose()?,
-        // The lifecycle forms arrive in step 9e.
-        lifecycle: None,
+        lifecycle,
         reading_override: typed
             .override_reason
             .as_deref()
@@ -448,22 +458,6 @@ pub(super) fn typed_from(
             .iter()
             .map(|skip| (skip.item, skip.reason.as_str().to_owned()))
             .collect(),
-        volume: fuel
-            .map(|fuel| volume_value(fuel.volume_ml, units.volume))
-            .unwrap_or_default(),
-        price: fuel
-            .and_then(|fuel| fuel.cost_minor.map(|cost| money_value(cost, fuel.currency)))
-            .unwrap_or_default(),
-        filled_full: fuel.is_none_or(|fuel| fuel.filled_full),
-        missed_previous: fuel.is_some_and(|fuel| fuel.missed_previous),
-        highway: fuel.map_or(50, |fuel| fuel.highway_pct),
-        towing: fuel.map_or(0, |fuel| fuel.towing_pct),
-        hauling: fuel.map_or(0, |fuel| fuel.hauling_pct),
-        towed: fuel.map(|fuel| fuel.towed.clone()).unwrap_or_default(),
-        economy: fuel
-            .and_then(|fuel| fuel.reported_economy)
-            .map(|economy| economy_value(economy, units.economy))
-            .unwrap_or_default(),
         when: utc_to_local(event.dates.start, &event.dates.zone).ok(),
         city: part(|place| place.city.as_str()),
         region: part(|place| place.region.as_str()),
@@ -495,16 +489,51 @@ pub(super) fn typed_from(
             .map(|work| typed_work(work, meters))
             .unwrap_or_default(),
         currency: event_currency(event),
+        life: event
+            .lifecycle
+            .as_ref()
+            .map(|details| typed_life(details).0)
+            .unwrap_or_default(),
+        ..with_fuel(fuel, units)
     }
 }
 
-/// The currency an event's amounts are in: its fuel's, or its work's.
+/// A fuel-up's values as they're typed (the defaults for any other event).
+fn with_fuel(fuel: Option<&FuelDetails>, units: &Preferences) -> Typed {
+    Typed {
+        volume: fuel
+            .map(|fuel| volume_value(fuel.volume_ml, units.volume))
+            .unwrap_or_default(),
+        price: fuel
+            .and_then(|fuel| fuel.cost_minor.map(|cost| money_value(cost, fuel.currency)))
+            .unwrap_or_default(),
+        filled_full: fuel.is_none_or(|fuel| fuel.filled_full),
+        missed_previous: fuel.is_some_and(|fuel| fuel.missed_previous),
+        highway: fuel.map_or(50, |fuel| fuel.highway_pct),
+        towing: fuel.map_or(0, |fuel| fuel.towing_pct),
+        hauling: fuel.map_or(0, |fuel| fuel.hauling_pct),
+        towed: fuel.map(|fuel| fuel.towed.clone()).unwrap_or_default(),
+        economy: fuel
+            .and_then(|fuel| fuel.reported_economy)
+            .map(|economy| economy_value(economy, units.economy))
+            .unwrap_or_default(),
+        ..Typed::default()
+    }
+}
+
+/// The currency an event's amounts are in: its fuel's, its work's, or its lifecycle amount's.
 fn event_currency(event: &Event) -> Option<CurrencyCode> {
     event
         .fuel
         .as_ref()
         .map(|fuel| fuel.currency)
         .or_else(|| event.work.as_ref().map(|work| work.currency))
+        .or_else(|| {
+            event
+                .lifecycle
+                .as_ref()
+                .and_then(|details| typed_life(details).1)
+        })
 }
 
 /// The meters and fields that are required on `kind`, in the form's order.

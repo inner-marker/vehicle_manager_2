@@ -193,6 +193,34 @@ pub struct Standing {
     pub takes_new_records: bool,
     /// The send-out it's on now, if it's out for service ([`open_send_out`]).
     pub sent_out: Option<EventId>,
+    /// Its acquisition, if one is recorded ([`acquisition`]).
+    #[serde(default)]
+    pub acquired: Option<EventId>,
+    /// Its disposal, if one is recorded, a draft too ([`disposal`]).
+    #[serde(default)]
+    pub disposal: Option<EventId>,
+}
+
+impl Standing {
+    /// The lifecycle kinds that fit now (#067): none once it takes no new records; Sent out
+    /// while it isn't out, Returned while it is; Acquired until one is recorded; Disposed until
+    /// one is. Who may log each is a separate check (`AssetAction::to_log`).
+    #[must_use]
+    pub fn lifecycle_kinds(&self) -> Vec<EventKind> {
+        if !self.takes_new_records {
+            return Vec::new();
+        }
+        let disposed = self.disposal.is_some();
+        [
+            (EventKind::SentOut, self.sent_out.is_none() && !disposed),
+            (EventKind::Returned, self.sent_out.is_some()),
+            (EventKind::Acquired, self.acquired.is_none()),
+            (EventKind::Disposed, !disposed),
+        ]
+        .into_iter()
+        .filter_map(|(kind, fits)| fits.then_some(kind))
+        .collect()
+    }
 }
 
 impl Default for Standing {
@@ -202,6 +230,8 @@ impl Default for Standing {
             status: LifecycleStatus::InService,
             takes_new_records: true,
             sent_out: None,
+            acquired: None,
+            disposal: None,
         }
     }
 }
@@ -213,6 +243,8 @@ pub fn standing(stored: LifecycleStatus, records: &[LifecycleRecord]) -> Standin
         status: status(stored, records),
         takes_new_records: takes_new_records(records),
         sent_out: open_send_out(records).map(|(record, _)| record.id),
+        acquired: acquisition(records).map(|record| record.id),
+        disposal: disposal(records).map(|record| record.id),
     }
 }
 
@@ -681,5 +713,31 @@ mod tests {
                 details
             );
         }
+    }
+
+    #[test]
+    fn only_the_lifecycle_kinds_that_fit_now_are_offered() {
+        let home = standing(LifecycleStatus::InService, &[]);
+        assert_eq!(
+            home.lifecycle_kinds(),
+            [EventKind::SentOut, EventKind::Acquired, EventKind::Disposed]
+        );
+        let out = standing(
+            LifecycleStatus::InService,
+            &[done(1, 100, acquired()), done(2, 200, send_out(None))],
+        );
+        assert_eq!(
+            out.lifecycle_kinds(),
+            [EventKind::Returned, EventKind::Disposed]
+        );
+        assert_eq!(out.sent_out, Some(id(2)));
+        assert_eq!(out.acquired, Some(id(1)));
+        let selling = standing(
+            LifecycleStatus::InService,
+            &[draft(3, 300, disposed(false))],
+        );
+        assert_eq!(selling.lifecycle_kinds(), [EventKind::Acquired]);
+        let gone = standing(LifecycleStatus::InService, &[done(3, 300, disposed(false))]);
+        assert!(gone.lifecycle_kinds().is_empty());
     }
 }

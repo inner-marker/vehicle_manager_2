@@ -157,8 +157,9 @@ fn MessageRow(item: InboxItem, selected: bool, on_open: EventHandler<InboxItem>)
     }
 }
 
-/// A message's text, with the vehicle's name for a forgotten job or an overdue return.
-fn body_text(kind: &MessageKind) -> String {
+/// A message's text, with the vehicle's name for a forgotten job or an overdue return (and its
+/// date, as the person writes dates).
+fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> String {
     match kind {
         MessageKind::ForgottenJob { vehicle, .. } => tr_with(
             kind.body(),
@@ -170,7 +171,10 @@ fn body_text(kind: &MessageKind) -> String {
             kind.body(),
             &[
                 ("vehicle", MessageArg::from(vehicle.as_str())),
-                ("date", MessageArg::from(expected.as_str())),
+                (
+                    "date",
+                    MessageArg::from(super::documents::date_text(expected, units)),
+                ),
             ],
         ),
         MessageKind::JobFailed { .. }
@@ -192,13 +196,14 @@ fn MessageDetail(
     on_dismiss: EventHandler<MessageKey>,
 ) -> Element {
     let navigator = use_navigator();
+    let units = crate::ui::units::use_units();
     let message = item.message.clone();
     let key = message.key.clone();
     rsx! {
         button { class: "link-button messages-back", onclick: move |_| on_back.call(()), {tr(messages::MESSAGES_BACK)} }
         p { class: "message-meta {severity_class(message.severity)}", {severity_and_time(&item)} }
         h2 { class: "message-title", {tr(message.kind.title())} }
-        p { class: "message-body", {body_text(&message.kind)} }
+        p { class: "message-body", {body_text(&message.kind, &units())} }
         if !message.detail.is_empty() {
             h3 { class: "section-heading", {tr(messages::MESSAGES_DETAILS)} }
             pre { class: "message-detail", {message.detail.clone()} }

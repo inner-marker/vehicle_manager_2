@@ -169,7 +169,11 @@ async fn list_squawks(
     }
     Ok(SquawksOutcome::Squawks {
         squawks,
-        may_open: context.permits_squawk(AssetAction::OpenSquawk, scope),
+        // Not once the vehicle's disposal is finalized (#067).
+        may_open: context.permits_squawk(AssetAction::OpenSquawk, scope)
+            && crate::lifecycle::takes_new_records(context.database, asset)
+                .await
+                .map_err(|error| failed("lifecycle", &error))?,
     })
 }
 

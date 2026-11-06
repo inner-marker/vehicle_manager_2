@@ -4209,3 +4209,62 @@ body:has(.photo-viewer) {
     white-space: nowrap;
 }
 
+
+/* ---------- Lifecycle (milestone 9) ---------- */
+
+.badge.warn {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.badge.muted {
+    color: var(--text-muted);
+}
+
+/* Under the vehicle page's header, on every tab: out for service, or disposed of. */
+.life-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.life-banner.late {
+    border-color: var(--warn);
+}
+
+.life-banner.late .life-banner-text span {
+    color: var(--warn);
+}
+
+.life-banner-icon {
+    font-size: 1.25rem;
+}
+
+.life-banner-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.life-banner-text span {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.life-return-of {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+    .life-banner {
+        flex-wrap: wrap;
+    }
+}

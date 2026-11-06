@@ -1012,7 +1012,8 @@ fn SquawkScreen(id: SquawkId) -> Element {
 pub(crate) fn ReportSquawk(vehicle: AssetView, event: EventId) -> Element {
     let sheet = use_squawk_sheet();
     let auth = use_auth();
-    if !may_open_squawks(vehicle.role, current_mode(auth())) {
+    if !vehicle.standing.takes_new_records || !may_open_squawks(vehicle.role, current_mode(auth()))
+    {
         return rsx! {};
     }
     rsx! {

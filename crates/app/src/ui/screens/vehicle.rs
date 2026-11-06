@@ -11,7 +11,7 @@
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, AssetsOutcome};
-use domain::asset::{Asset, AssetId, Identifier};
+use domain::asset::{Asset, AssetId, Identifier, LifecycleStatus};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterDimension};
@@ -19,6 +19,7 @@ use domain::profile::profile;
 
 use super::attachments::AttachmentStrip;
 use super::documents::DocumentsTab;
+use super::life_part::LifeBanner;
 use super::maintenance::{MaintenanceTab, MaintenanceView};
 use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawks};
 use super::timeline::{OverviewPanels, Shown, Timeline};
@@ -305,6 +306,10 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
         return rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } };
     };
     let shown = tabs(&view.asset);
+    // Record return is a Maintainer's (in that mode or above).
+    let may_return = mode().is_some_and(|mode| {
+        view.role.min(mode.cap()) >= domain::access::AssetAction::SendOut.required_role()
+    });
     let current = if shown.contains(&tab()) {
         tab()
     } else {
@@ -313,6 +318,7 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
     rsx! {
         div { class: "vehicle-page",
             Header { view: view.clone() }
+            LifeBanner { view: view.clone(), may_return }
             TabBar { shown, current, squawks: squawks().as_ref().map(VehicleSquawks::outstanding), on_pick: move |picked| tab.set(picked) }
             match current {
                 Tab::Overview => rsx! {
@@ -376,7 +382,14 @@ fn Header(view: AssetView) -> Element {
                         {summary.group.name.as_str().to_owned()}
                     }
                 }
-                span { class: "badge", {tr(status_label(asset.status))} }
+                // What its lifecycle events say, where they say (#067), else Setup's.
+                span { class: match view.standing.status {
+                        LifecycleStatus::OutForService => "badge warn",
+                        LifecycleStatus::Disposed | LifecycleStatus::Retired => "badge muted",
+                        LifecycleStatus::InService | LifecycleStatus::Spare => "badge",
+                    },
+                    {tr(status_label(view.standing.status))}
+                }
             }
         }
     }

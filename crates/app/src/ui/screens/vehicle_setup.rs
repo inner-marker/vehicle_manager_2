@@ -105,7 +105,7 @@ pub(super) const fn event_value(kind: EventKind) -> &'static str {
     }
 }
 
-pub(super) fn event_from_value(value: &str) -> Option<EventKind> {
+pub(crate) fn event_from_value(value: &str) -> Option<EventKind> {
     EventKind::ALL
         .into_iter()
         .find(|kind| event_value(*kind) == value)

@@ -80,12 +80,10 @@ pub(crate) fn Shell() -> Element {
         }
         // A log form: "Fuel-up · Truck".
         Route::LogForm { asset_id, kind } => {
-            let kind = match kind.as_str() {
-                "fuel" => messages::EVENT_KIND_FUEL,
-                "maintenance" => messages::EVENT_KIND_MAINTENANCE,
-                "repair" => messages::EVENT_KIND_REPAIR,
-                _ => messages::EVENT_KIND_READING,
-            };
+            let kind = super::screens::event_from_value(kind).map_or(
+                messages::EVENT_KIND_READING,
+                domain::meter::EventKind::label,
+            );
             vehicle_name(vehicles, asset_id)
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
         }

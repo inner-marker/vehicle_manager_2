@@ -394,10 +394,11 @@ pub struct AssetSummary {
     /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
     #[serde(default)]
     pub plate: Option<String>,
-    /// The status it shows: from its lifecycle events where they say (out for service,
-    /// disposed), otherwise what Setup says (`asset.status`); milestone 9, #067.
+    /// What its lifecycle events say about it now: the status it shows (from them where they
+    /// say, out for service or disposed; otherwise what Setup says, `asset.status`), and more
+    /// (milestone 9, #067).
     #[serde(default)]
-    pub status: crate::asset::LifecycleStatus,
+    pub standing: crate::lifecycle::Standing,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.

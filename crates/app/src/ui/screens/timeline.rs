@@ -147,18 +147,26 @@ fn meter_abbr(unit: MeterUnit) -> String {
 
 /// "52,644 mi · 18.004 gal · 62.27 USD": the readings, then a fuel-up's volume and cost.
 pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Preferences) -> String {
+    // A lifecycle event: its details first.
     let mut parts: Vec<String> = event
-        .readings
-        .iter()
-        .filter_map(|reading| {
-            let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
-            Some(format!(
-                "{} {}",
-                show_reading(reading.value, meter.unit, meter.precision),
-                meter_abbr(meter.unit)
-            ))
-        })
-        .collect();
+        .lifecycle
+        .as_ref()
+        .map(|details| super::life_part::life_summary(details, units))
+        .unwrap_or_default();
+    parts.extend(
+        event
+            .readings
+            .iter()
+            .filter_map(|reading| {
+                let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
+                Some(format!(
+                    "{} {}",
+                    show_reading(reading.value, meter.unit, meter.precision),
+                    meter_abbr(meter.unit)
+                ))
+            })
+            .collect::<Vec<_>>(),
+    );
     if let Some(fuel) = &event.fuel {
         parts.push(show_volume(fuel.volume_ml, units.volume));
         parts.extend(
@@ -298,15 +306,7 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
 #[component]
 fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> Element {
     let event = &row.view.event;
-    let icon = match event.kind {
-        EventKind::Fuel => "⛽",
-        EventKind::Reading => "⏱",
-        EventKind::Maintenance | EventKind::Repair => "🔧",
-        EventKind::Acquired => "🔑",
-        EventKind::SentOut => "🚚",
-        EventKind::Returned => "↩",
-        EventKind::Disposed => "🏁",
-    };
+    let icon = super::log_chooser::kind_icon(event.kind);
     let title = format!(
         "{} · {}",
         tr(event.kind.label()),

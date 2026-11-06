@@ -568,7 +568,14 @@ fn Details(view: EventView, vehicle: AssetView, units: Preferences) -> Element {
     };
     let event = &view.event;
     let (who, record) = record_rows(&view, &units);
+    let life = event
+        .lifecycle
+        .as_ref()
+        .map(|details| super::life_part::life_rows(event.kind, details, &units));
     rsx! {
+        if let Some((heading, rows)) = life {
+            Rows { heading, rows }
+        }
         Rows { heading: messages::LOG_SECTION_WHEN_WHERE, rows: where_rows(event) }
         if event.kind == EventKind::Fuel {
             Rows { heading: messages::LOG_FOLD_DRIVING, rows: driving_rows(event, &names) }

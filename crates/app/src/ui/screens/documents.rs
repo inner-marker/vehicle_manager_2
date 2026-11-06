@@ -42,21 +42,21 @@ const SOON_DAYS: i64 = 30;
 
 /// The person's date today, in the device's zone (`None` if the device's clock or zone is
 /// unusable).
-fn today(zone: &TimeZone) -> Option<CalendarDate> {
+pub(super) fn today(zone: &TimeZone) -> Option<CalendarDate> {
     domain::dates::today(SystemClock.now(), zone)
         .ok()
         .and_then(|text| CalendarDate::parse(&text).ok())
 }
 
 /// The days from `from` to `to` (negative if `to` is earlier).
-fn days_between(from: &CalendarDate, to: &CalendarDate) -> Option<i64> {
+pub(super) fn days_between(from: &CalendarDate, to: &CalendarDate) -> Option<i64> {
     let from: jiff::civil::Date = from.as_str().parse().ok()?;
     let to: jiff::civil::Date = to.as_str().parse().ok()?;
     Some(i64::from((to - from).get_days()))
 }
 
 /// A date as the person writes dates: "31 Oct 2026".
-fn date_text(date: &CalendarDate, units: &Preferences) -> String {
+pub(super) fn date_text(date: &CalendarDate, units: &Preferences) -> String {
     let Ok(utc) = TimeZone::parse("UTC") else {
         return date.as_str().to_owned();
     };
@@ -285,6 +285,9 @@ pub(crate) fn DocumentsTab(vehicle: AssetView) -> Element {
         .cloned()
         .collect();
     let may_change = found.may_change;
+    // Nothing new once the vehicle's disposal is finalized (#067); what's there can still be
+    // corrected.
+    let may_add = may_change && vehicle.standing.takes_new_records;
     let close = move |changed: bool| {
         dialog.set(None);
         if changed {
@@ -295,7 +298,7 @@ pub(crate) fn DocumentsTab(vehicle: AssetView) -> Element {
         div { class: "documents-tab",
             div { class: "section-head",
                 h3 { class: "section-heading", {tr(messages::DOCUMENTS_PLATE).to_uppercase()} }
-                if may_change {
+                if may_add {
                     button { class: "secondary-button", r#type: "button", onclick: move |_| dialog.set(Some(Dialog::NewPlate)), {tr(messages::DOCUMENTS_ADD_PLATE)} }
                 }
             }
@@ -331,7 +334,7 @@ pub(crate) fn DocumentsTab(vehicle: AssetView) -> Element {
             }
             div { class: "section-head",
                 h3 { class: "section-heading", {tr(messages::DOCUMENTS_HEADING).to_uppercase()} }
-                if may_change {
+                if may_add {
                     button { class: "secondary-button", r#type: "button", onclick: move |_| dialog.set(Some(Dialog::NewDocument)), {tr(messages::DOCUMENTS_ADD)} }
                 }
             }
@@ -347,6 +350,7 @@ pub(crate) fn DocumentsTab(vehicle: AssetView) -> Element {
                     today: today.clone(),
                     units,
                     may_change,
+                    may_renew: may_add,
                     on_dialog: move |next: Dialog| dialog.set(Some(next)),
                 }
             }
@@ -421,6 +425,7 @@ fn DocumentCard(
     today: CalendarDate,
     units: Preferences,
     may_change: bool,
+    may_renew: bool,
     on_dialog: EventHandler<Dialog>,
 ) -> Element {
     let (chip, chip_class) = status_chip(&head, &today);
@@ -445,7 +450,7 @@ fn DocumentCard(
             AttachmentStrip { asset, owner: AttachmentOwner::Document { document: id }, heading: messages::DOCUMENTS_SCANS, default_size: PhotoSize::Medium }
             if may_change {
                 div { class: "check-row document-card-buttons",
-                    if document.expires_on.is_some() {
+                    if may_renew && document.expires_on.is_some() {
                         button { class: "secondary-button", r#type: "button", onclick: move |_| on_dialog.call(Dialog::Renew(id, Box::new(renewing.clone()))), {tr(messages::DOCUMENTS_RENEW)} }
                     }
                     button { class: "secondary-button", r#type: "button", onclick: move |_| on_dialog.call(Dialog::EditDocument(id, Box::new(editing.clone()))), {tr(messages::ACTION_EDIT)} }

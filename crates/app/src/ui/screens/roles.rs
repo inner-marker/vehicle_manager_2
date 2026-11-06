@@ -315,7 +315,7 @@ mod tests {
                 vehicles: 1,
             }],
             assets: vec![AssetSummary {
-                status: LifecycleStatus::InService,
+                standing: domain::lifecycle::Standing::default(),
                 id: test_id(1),
                 asset: Asset {
                     kind: AssetKind::parse("truck").unwrap(),

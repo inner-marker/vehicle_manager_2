@@ -148,7 +148,7 @@ mod tests {
 
     fn summary(n: u32, name: &str) -> AssetSummary {
         AssetSummary {
-            status: LifecycleStatus::InService,
+            standing: crate::lifecycle::Standing::default(),
             id: test_id(n),
             asset: Asset {
                 kind: AssetKind::parse("car").unwrap(),
