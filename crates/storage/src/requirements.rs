@@ -1,20 +1,26 @@
-//! The `requirements` and `bundles` tables (milestone 7): their writers for the command
+//! The `requirements` and `bundles` tables (milestone 7; a requirement's link, mode, and
+//! applicability from milestone 9, #068): their writers for the command
 //! pipeline, and the queries the server needs. When a requirement was last done comes from the
 //! tasks of a vehicle's counted maintenance and repair events.
 
 use domain::asset::AssetId;
+use domain::command::Clearable;
 use domain::id::Id;
 use domain::label::Label;
 use domain::notes::Notes;
+use domain::reference::ReferenceDocumentId;
 use domain::requirement::{
-    Applicability, Bundle, BundleId, BundlePatch, ComplianceMode, DoneTask, IntervalRule,
-    Requirement, RequirementId, RequirementPatch,
+    Bundle, BundleId, BundlePatch, DoneTask, IntervalRule, Requirement, RequirementId,
+    RequirementPatch,
 };
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::{id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, required};
+use crate::convert::{
+    clearable, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name, required,
+    required_name,
+};
 use crate::{Database, StorageError};
 
 /// Writes the `requirements` table.
@@ -34,8 +40,9 @@ impl RecordWriter<Requirement> for RequirementWriter {
         sequence: i64,
     ) -> Result<(), StorageError> {
         sqlx::query(
-            "INSERT INTO requirements (id, asset_id, name, notes, enabled, rules, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO requirements (id, asset_id, name, notes, enabled, rules, reference_id,
+                                       mode, applicability, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -45,6 +52,17 @@ impl RecordWriter<Requirement> for RequirementWriter {
         .bind(json_to_sql(
             &values.rules.clone().unwrap_or_default(),
             "requirements.rules",
+        )?)
+        .bind(
+            values
+                .reference
+                .and_then(Clearable::into_option)
+                .map(id_to_sql),
+        )
+        .bind(name(&values.mode.unwrap_or_default(), "requirements.mode")?)
+        .bind(json_to_sql(
+            &values.applicability.clone().unwrap_or_default(),
+            "requirements.applicability",
         )?)
         .bind(sequence)
         .execute(connection)
@@ -60,12 +78,16 @@ impl RecordWriter<Requirement> for RequirementWriter {
         sequence: i64,
     ) -> Result<(), StorageError> {
         // The vehicle is fixed once made.
+        let reference = clearable(patch.reference.as_ref(), id_to_sql);
         sqlx::query(
             "UPDATE requirements SET
                  name = coalesce(?, name),
                  notes = coalesce(?, notes),
                  enabled = coalesce(?, enabled),
                  rules = coalesce(?, rules),
+                 reference_id = CASE WHEN ? THEN ? ELSE reference_id END,
+                 mode = coalesce(?, mode),
+                 applicability = coalesce(?, applicability),
                  sequence = ?
              WHERE id = ?",
         )
@@ -77,6 +99,21 @@ impl RecordWriter<Requirement> for RequirementWriter {
                 .rules
                 .as_ref()
                 .map(|rules| json_to_sql(rules, "requirements.rules"))
+                .transpose()?,
+        )
+        .bind(reference.0)
+        .bind(reference.1)
+        .bind(
+            patch
+                .mode
+                .map(|mode| name(&mode, "requirements.mode"))
+                .transpose()?,
+        )
+        .bind(
+            patch
+                .applicability
+                .as_ref()
+                .map(|applicability| json_to_sql(applicability, "requirements.applicability"))
                 .transpose()?,
         )
         .bind(sequence)
@@ -175,6 +212,8 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
     let name: String = row.try_get("name")?;
     let notes: String = row.try_get("notes")?;
     let rules: String = row.try_get("rules")?;
+    let mode: String = row.try_get("mode")?;
+    let applicability: String = row.try_get("applicability")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?,
         Requirement {
@@ -186,10 +225,12 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
             notes: Notes::parse(&notes).map_err(invalid("requirements.notes"))?,
             enabled: row.try_get("enabled")?,
             rules: json_from_sql::<Vec<IntervalRule>>(&rules, "requirements.rules")?,
-            // Stored from step 9c (migration 0015).
-            reference: None,
-            mode: ComplianceMode::Recurring,
-            applicability: Applicability::Applies,
+            reference: row
+                .try_get::<Option<Vec<u8>>, _>("reference_id")?
+                .map(|bytes| id_from_sql(&bytes, "requirements.reference_id"))
+                .transpose()?,
+            mode: required_name(mode, "requirements.mode")?,
+            applicability: json_from_sql(&applicability, "requirements.applicability")?,
         },
     ))
 }
@@ -240,6 +281,28 @@ impl Database {
              ORDER BY name COLLATE NOCASE, id",
         )
         .bind(id_to_sql(asset))
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(requirement_from_row)
+        .collect()
+    }
+
+    /// Every requirement (on any vehicle) that links reference document `reference`, so the
+    /// server can tell whose it is (#068).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn requirements_linking(
+        &self,
+        reference: ReferenceDocumentId,
+    ) -> Result<Vec<(RequirementId, Requirement)>, StorageError> {
+        sqlx::query(
+            "SELECT * FROM requirements WHERE reference_id = ? AND deleted = 0
+             ORDER BY name COLLATE NOCASE, id",
+        )
+        .bind(id_to_sql(reference))
         .fetch_all(self.pool())
         .await?
         .iter()
