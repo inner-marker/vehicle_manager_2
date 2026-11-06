@@ -2444,4 +2444,82 @@ define_messages! {
     LIFE_BANNER_DISPOSED_NOTE => "life-banner-disposed-note",
     /// Vehicle page: a disposal still a draft.
     LIFE_BANNER_DISPOSED_DRAFT => "life-banner-disposed-draft",
+    /// Requirements: it applies.
+    COMPLIANCE_APPLIES => "compliance-applies",
+    /// Requirements: not decided yet.
+    COMPLIANCE_UNDER_REVIEW => "compliance-under-review",
+    /// Requirements: not applicable with no reason.
+    COMPLIANCE_REASON_NEEDED => "compliance-reason-needed",
+    /// Requirements: how it's complied with.
+    COMPLIANCE_HOW => "compliance-how",
+    /// Requirements: what one-time means.
+    COMPLIANCE_ONE_TIME_NOTE => "compliance-one-time-note",
+    /// Requirements: does it apply?
+    COMPLIANCE_APPLIES_QUESTION => "compliance-applies-question",
+    /// Requirements: why it doesn't apply.
+    COMPLIANCE_WHY_NOT => "compliance-why-not",
+    /// Recalls: not found.
+    REFERENCE_NOT_FOUND => "reference-not-found",
+    /// Recalls: removing one still linked.
+    REFERENCE_IN_USE => "reference-in-use",
+    /// Recalls: the picker's title.
+    REFERENCE_PICKER_TITLE => "reference-picker-title",
+    /// Recalls: add a new one.
+    REFERENCE_NEW_ONE => "reference-new-one",
+    /// Recalls: ones on other vehicles.
+    REFERENCE_ALREADY_RECORDED => "reference-already-recorded",
+    /// Recalls: the new one's dialog.
+    REFERENCE_NEW_TITLE => "reference-new-title",
+    /// Recalls: the edit dialog.
+    REFERENCE_EDIT_TITLE => "reference-edit-title",
+    /// Recalls: its type.
+    REFERENCE_TYPE => "reference-type",
+    /// Recalls: who issued it.
+    REFERENCE_AUTHORITY => "reference-authority",
+    /// Recalls: its reference numbers.
+    REFERENCE_NUMBERS => "reference-numbers",
+    /// Recalls: whose number it is.
+    REFERENCE_SCHEME => "reference-scheme",
+    /// Recalls: the number.
+    REFERENCE_NUMBER => "reference-number",
+    /// Recalls: add a number.
+    REFERENCE_ANOTHER_NUMBER => "reference-another-number",
+    /// Recalls: its title.
+    REFERENCE_TITLE => "reference-title",
+    /// Recalls: what it's about.
+    REFERENCE_DESCRIPTION => "reference-description",
+    /// Recalls: the remedy.
+    REFERENCE_REMEDY => "reference-remedy",
+    /// Recalls: when issued.
+    REFERENCE_ISSUED => "reference-issued",
+    /// Recalls: when effective.
+    REFERENCE_EFFECTIVE => "reference-effective",
+    /// Recalls: its revision.
+    REFERENCE_REVISION => "reference-revision",
+    /// Recalls: applicability as written.
+    REFERENCE_APPLIES_TO => "reference-applies-to",
+    /// Recalls: its web address.
+    REFERENCE_URL => "reference-url",
+    /// Recalls: this vehicle's requirement; takes `vehicle`.
+    REFERENCE_ON_VEHICLE => "reference-on-vehicle",
+    /// Recalls: the requirement's name.
+    REFERENCE_REQUIREMENT_NAME => "reference-requirement-name",
+    /// Recalls: where its PDF goes.
+    REFERENCE_ATTACH_NOTE => "reference-attach-note",
+    /// Recalls: a change shows everywhere.
+    REFERENCE_EDIT_NOTE => "reference-edit-note",
+    /// Recalls: the vehicles linking it.
+    REFERENCE_LINKED => "reference-linked",
+    /// Recalls: open its web address.
+    REFERENCE_OPEN_SOURCE => "reference-open-source",
+    /// Recalls: its PDF and photos.
+    REFERENCE_FILES => "reference-files",
+    /// Recalls: open it.
+    REFERENCE_OPEN => "reference-open",
+    /// Set up: add a recall or bulletin.
+    SCHEDULE_ADD_REFERENCE => "schedule-add-reference",
+    /// Schedule: the bottom section.
+    SCHEDULE_SETTLED => "schedule-settled",
+    /// A button: close.
+    ACTION_CLOSE => "action-close",
 }

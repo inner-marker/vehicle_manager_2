@@ -2,6 +2,7 @@
 
 mod account;
 mod attachments;
+mod compliance;
 mod connection;
 mod diagnostics;
 mod documents;
@@ -17,6 +18,7 @@ mod maintenance;
 mod messages;
 mod placeholders;
 mod places;
+mod references;
 mod roles;
 mod settings;
 mod squawks;

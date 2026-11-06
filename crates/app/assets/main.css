@@ -4268,3 +4268,36 @@ body:has(.photo-viewer) {
         flex-wrap: wrap;
     }
 }
+
+/* ---------- Recalls and compliance (milestone 9) ---------- */
+
+/* A reference number: whose, the number, and ✕, on one line. */
+.field-row.reference-number {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.status-chip.muted {
+    color: var(--text-muted);
+}
+
+.schedule-card-name .status-chip {
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.reference-new {
+    margin-bottom: 12px;
+}
+
+.reference-link {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.reference-line {
+    display: block;
+    margin-bottom: 8px;
+}
