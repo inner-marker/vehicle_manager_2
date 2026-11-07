@@ -157,15 +157,30 @@ fn MessageRow(item: InboxItem, selected: bool, on_open: EventHandler<InboxItem>)
     }
 }
 
-/// A message's text, with the vehicle's name for a forgotten job.
-fn body_text(kind: &MessageKind) -> String {
-    if let MessageKind::ForgottenJob { vehicle, .. } = kind {
-        tr_with(
+/// A message's text, with the vehicle's name for a forgotten job or an overdue return (and its
+/// date, as the person writes dates).
+fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> String {
+    match kind {
+        MessageKind::ForgottenJob { vehicle, .. } => tr_with(
             kind.body(),
             &[("vehicle", MessageArg::from(vehicle.as_str()))],
-        )
-    } else {
-        tr(kind.body())
+        ),
+        MessageKind::OverdueReturn {
+            vehicle, expected, ..
+        } => tr_with(
+            kind.body(),
+            &[
+                ("vehicle", MessageArg::from(vehicle.as_str())),
+                (
+                    "date",
+                    MessageArg::from(super::documents::date_text(expected, units)),
+                ),
+            ],
+        ),
+        MessageKind::JobFailed { .. }
+        | MessageKind::JobSkipped { .. }
+        | MessageKind::ServerUnhealthy { .. }
+        | MessageKind::PlaceLookupUnavailable => tr(kind.body()),
     }
 }
 
@@ -181,13 +196,14 @@ fn MessageDetail(
     on_dismiss: EventHandler<MessageKey>,
 ) -> Element {
     let navigator = use_navigator();
+    let units = crate::ui::units::use_units();
     let message = item.message.clone();
     let key = message.key.clone();
     rsx! {
         button { class: "link-button messages-back", onclick: move |_| on_back.call(()), {tr(messages::MESSAGES_BACK)} }
         p { class: "message-meta {severity_class(message.severity)}", {severity_and_time(&item)} }
         h2 { class: "message-title", {tr(message.kind.title())} }
-        p { class: "message-body", {body_text(&message.kind)} }
+        p { class: "message-body", {body_text(&message.kind, &units())} }
         if !message.detail.is_empty() {
             h3 { class: "section-heading", {tr(messages::MESSAGES_DETAILS)} }
             pre { class: "message-detail", {message.detail.clone()} }
@@ -200,7 +216,7 @@ fn MessageDetail(
                         MessageAction::OpenDiagnostics => {
                             navigator.push(Route::Diagnostics {});
                         }
-                        MessageAction::OpenEvent { event } => {
+                        MessageAction::OpenEvent { event } | MessageAction::OpenSendOut { event } => {
                             navigator.push(Route::EventDetail { event_id: event.to_string() });
                         }
                     },

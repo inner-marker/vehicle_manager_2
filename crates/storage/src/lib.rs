@@ -20,6 +20,7 @@ pub mod jobs;
 pub mod message_marks;
 pub mod places;
 pub mod preferences;
+pub mod references;
 pub mod requirements;
 pub mod snapshot;
 pub mod squawks;

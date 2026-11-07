@@ -200,6 +200,7 @@ mod events {
                 reported_economy: Some(7_015),
             }),
             work: None,
+            lifecycle: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: at,

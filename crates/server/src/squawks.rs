@@ -169,7 +169,11 @@ async fn list_squawks(
     }
     Ok(SquawksOutcome::Squawks {
         squawks,
-        may_open: context.permits_squawk(AssetAction::OpenSquawk, scope),
+        // Not once the vehicle's disposal is finalized (#067).
+        may_open: context.permits_squawk(AssetAction::OpenSquawk, scope)
+            && crate::lifecycle::takes_new_records(context.database, asset)
+                .await
+                .map_err(|error| failed("lifecycle", &error))?,
     })
 }
 
@@ -216,6 +220,13 @@ async fn open_squawk(
 ) -> Result<SquawksOutcome, SquawksOutcome> {
     let scope = context.squawk_scope(input.asset).await?;
     if !context.permits_squawk(AssetAction::OpenSquawk, scope) {
+        return Err(SquawksOutcome::NotAllowed);
+    }
+    // Nothing new once the vehicle's disposal is finalized (#067).
+    if !crate::lifecycle::takes_new_records(context.database, input.asset)
+        .await
+        .map_err(|error| failed("lifecycle", &error))?
+    {
         return Err(SquawksOutcome::NotAllowed);
     }
     if let Some(event) = input.found_on {

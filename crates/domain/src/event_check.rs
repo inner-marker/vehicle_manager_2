@@ -17,6 +17,9 @@
 //! - **Maintenance and repairs** (milestone 7, `work`): tasks for the vehicle's requirements,
 //!   sensible parts and costs, end readings at or above the start ones, and squawk
 //!   dispositions; **Finish** also needs every outstanding squawk dispositioned.
+//! - **Lifecycle events** (milestone 9, `lifecycle`): details that match the kind and fit the
+//!   vehicle's life so far; and nothing new once a vehicle's disposal is finalized, only
+//!   corrections (#067).
 //! - **Finalized events never change;** a correction needs a finalized original and a reason.
 
 use serde::{Deserialize, Serialize};
@@ -28,6 +31,7 @@ use crate::event::{
     Finalized, Finalizer, FuelDetails, PERFORMER_MAX_CHARS, Performer, ReadingClash, Requirement,
     Skipped,
 };
+use crate::lifecycle::{self, LifecycleRecord};
 use crate::meter::{EventKind, Meter, MeterId};
 use crate::requirement::{Requirement as VehicleRequirement, RequirementId};
 use crate::squawk::SquawkId;
@@ -62,6 +66,9 @@ pub struct CheckContext<'a> {
     pub requirements: &'a [(RequirementId, VehicleRequirement)],
     /// The vehicle's open and deferred squawks (other than ones this event already counted).
     pub outstanding_squawks: &'a [SquawkId],
+    /// The vehicle's lifecycle events that count, other than this one and the one it corrects
+    /// (milestone 9, #067).
+    pub lifecycle: &'a [LifecycleRecord],
 }
 
 /// Something worth telling the person that doesn't stop the save.
@@ -140,6 +147,9 @@ pub fn reading_fits(value: i64, before: Option<i64>, after: Option<i64>) -> bool
 ///
 /// The first [`EventProblem`] found.
 pub fn check(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning>, EventProblem> {
+    if event.corrects.is_none() && !lifecycle::takes_new_records(context.lifecycle) {
+        return Err(EventProblem::VehicleDisposed);
+    }
     check_kind(event, context)?;
     check_location(event, context.location_rule)?;
     if let Some(performer) = &event.performed_by {
@@ -147,6 +157,13 @@ pub fn check(event: &Event, context: &CheckContext<'_>) -> Result<Vec<Warning>, 
     }
     check_fuel(event)?;
     work::check_work(event, context, false)?;
+    lifecycle::check(
+        event.kind,
+        event.lifecycle.as_ref(),
+        event.dates.start,
+        event.corrects.is_some(),
+        context.lifecycle,
+    )?;
     check_required(event, context)?;
     let mut warnings = check_readings(event, context)?;
     warnings.extend(check_fields(event, context)?);
@@ -172,9 +189,10 @@ pub fn check_finish(
     Ok(warnings)
 }
 
-/// Only the kinds of events the vehicle has (e.g. no fuel-ups for a trailer).
+/// Only the kinds of events the vehicle has (e.g. no fuel-ups for a trailer); every vehicle has
+/// the lifecycle kinds.
 fn check_kind(event: &Event, context: &CheckContext<'_>) -> Result<(), EventProblem> {
-    if context.kinds.contains(&event.kind) {
+    if event.kind.is_lifecycle() || context.kinds.contains(&event.kind) {
         Ok(())
     } else {
         Err(EventProblem::WrongKind)

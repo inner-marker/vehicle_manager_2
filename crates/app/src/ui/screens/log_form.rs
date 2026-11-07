@@ -44,6 +44,8 @@ use domain::squawk::SquawkId;
 use domain::time::Clock;
 
 use super::attachments::{AttachmentStrip, photo_size_for};
+use super::life_input::TypedLife;
+use super::life_part::{DisposeDialog, LifePart};
 use super::log_chooser::use_log_chooser;
 use super::log_input::{Context, Target, Typed, build, required_items, typed_from, zone};
 use super::squawks::use_vehicle_squawks;
@@ -133,7 +135,18 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
             let answer = match event_id.parse::<EventId>() {
                 Err(_) => Err(messages::EVENT_NOT_FOUND),
                 Ok(id) => match api::event_view(id).await {
-                    Ok(EventsOutcome::Event { view }) => Ok((id, view.event)),
+                    // Only what the person may do to it now (#069): edit a draft, or correct a
+                    // finalized one; a direct address otherwise says so.
+                    Ok(EventsOutcome::Event { view })
+                        if (if correct {
+                            view.may_correct
+                        } else {
+                            view.may_change
+                        }) =>
+                    {
+                        Ok((id, view.event))
+                    }
+                    Ok(EventsOutcome::Event { .. }) => Err(messages::VEHICLES_NOT_ALLOWED),
                     Ok(EventsOutcome::NotFound) => Err(messages::EVENT_NOT_FOUND),
                     Ok(_) => Err(messages::SOMETHING_WENT_WRONG),
                     Err(error) => Err(problem_from_error(&error).message()),
@@ -265,9 +278,39 @@ fn LogScreen(
     prefill: Option<SquawkView>,
 ) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
-    use_effect(use_reactive!(|asset, kind| {
+    let auth = crate::ui::auth::use_auth();
+    // The person's mode, once known (after a reload it loads a moment later).
+    let person_mode = match auth() {
+        crate::ui::auth::AuthState::SignedIn(session) => Some(session.mode),
+        crate::ui::auth::AuthState::Loading
+        | crate::ui::auth::AuthState::NeedsSetup
+        | crate::ui::auth::AuthState::SignedOut
+        | crate::ui::auth::AuthState::Unreachable(_) => None,
+    };
+    use_effect(use_reactive!(|asset, kind, person_mode| {
+        let Some(person_mode) = person_mode else {
+            return;
+        };
         spawn(async move {
-            loaded.set(Some(load(asset, kind).await));
+            let answer = load(asset, kind).await.and_then(|data| {
+                // A new event only of a kind the person may log here now (#069); a direct
+                // address otherwise says so.
+                let view = &data.view;
+                let may = matches!(mode, Mode::Edit(_) | Mode::Correct(_))
+                    || super::log_chooser::kinds_for(
+                        &view.asset,
+                        view.role,
+                        &view.standing,
+                        person_mode,
+                    )
+                    .contains(&kind);
+                if may {
+                    Ok(data)
+                } else {
+                    Err(messages::VEHICLES_NOT_ALLOWED)
+                }
+            });
+            loaded.set(Some(answer));
         });
     }));
     match loaded() {
@@ -279,7 +322,14 @@ fn LogScreen(
                     typed_from(event, &data.view.meters, &data.view.fields, &data.units)
                 }
                 (None, Some(squawk)) => repair_start(squawk),
-                (None, None) => Typed::default(),
+                // A return ends the send-out the vehicle is on.
+                (None, None) => Typed {
+                    life: TypedLife {
+                        sent_out: data.view.standing.sent_out,
+                        ..TypedLife::default()
+                    },
+                    ..Typed::default()
+                },
             };
             // An edit or correction keeps the event's own zone when the place data has none.
             let data = Loaded {
@@ -331,6 +381,8 @@ struct Inputs {
     work: Signal<TypedWork>,
     /// The currency its amounts are in (`None`: the person's).
     currency: Signal<Option<CurrencyCode>>,
+    /// A lifecycle event's own section.
+    life: Signal<TypedLife>,
     /// The problem shown, and where.
     problem: Signal<Option<(Target, String)>>,
 }
@@ -365,6 +417,7 @@ impl Inputs {
             original_start: (self.original_start)(),
             work: (self.work)(),
             currency: (self.currency)(),
+            life: (self.life)(),
         }
     }
 
@@ -427,6 +480,7 @@ fn use_inputs(start: &Typed) -> Inputs {
         original_start: use_signal(|| start.original_start),
         picker,
         work: use_signal(|| start.work.clone()),
+        life: use_signal(|| start.life.clone()),
         problem: use_signal(|| None),
     }
 }
@@ -597,6 +651,8 @@ fn FormBody(
     let job = !kind.finalizes_by_itself();
     let all_squawks = use_vehicle_squawks(asset);
     let mut finishing = use_signal(|| false);
+    // A disposal asks first (#067).
+    let mut confirming = use_signal(|| false);
     let required = required_items(kind, &view.meters, &view.fields);
     // A reading, or a job's readings at the start, shows every meter.
     let open_meters: Vec<(MeterId, Meter)> = view
@@ -723,6 +779,7 @@ fn FormBody(
         return rsx! { SavedNotice { event: id, warnings } };
     }
     let latest = data.latest.clone();
+    let vehicle_name = view.asset.name.as_str().to_owned();
     let zone_now = zone(&inputs.typed(), &data.zone);
     let shown_squawks = job_squawks(
         &(all_squawks)()
@@ -743,11 +800,22 @@ fn FormBody(
         | Target::Correction
         | Target::Work
         | Target::Squawks
+        | Target::Life
         | Target::General => None,
     });
     rsx! {
         div { class: if job { "log-form job" } else { "log-form" },
             Link { class: "vehicle-back", to: Route::VehicleDetail { asset_id: asset.to_string() }, {format!("‹ {}", view.asset.name.as_str())} }
+            if kind.is_lifecycle() {
+                LifePart {
+                    kind,
+                    life: inputs.life,
+                    currency,
+                    units,
+                    correcting: matches!(mode, Mode::Correct(_)),
+                    problem: inputs.problem_at(Target::Life),
+                }
+            }
             if let Mode::Correct(_) = mode {
                 div { class: "log-item",
                     p { class: "muted-note", {tr(messages::LOG_CORRECT_NOTE)} }
@@ -828,7 +896,14 @@ fn FormBody(
             } else {
                 div { class: "save-bar",
                     p { class: "muted-note", {tr(messages::LOG_DRAFT_NOTE)} }
-                    button { class: "primary-button", r#type: "button", disabled: busy(), onclick: move |_| submit.call(false),
+                    button { class: "primary-button", r#type: "button", disabled: busy(),
+                        onclick: move |_| {
+                            if kind == EventKind::Disposed && !(inputs.life)().withdrawn {
+                                confirming.set(true);
+                            } else {
+                                submit.call(false);
+                            }
+                        },
                         {tr(if busy() { messages::LOG_SAVING } else { messages::LOG_SAVE })}
                     }
                 }
@@ -836,6 +911,17 @@ fn FormBody(
         }
         if finishing() {
             FinishDialog { checks, busy: busy(), on_finish: move |()| submit.call(true), on_close: move |()| finishing.set(false) }
+        }
+        if confirming() {
+            DisposeDialog {
+                vehicle: vehicle_name,
+                busy: busy(),
+                on_save: move |()| {
+                    confirming.set(false);
+                    submit.call(false);
+                },
+                on_close: move |()| confirming.set(false),
+            }
         }
     }
 }

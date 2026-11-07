@@ -1740,8 +1740,6 @@ define_messages! {
     SCHEDULE_NOT_DONE => "schedule-not-done",
     /// Schedule card: the job that last did it.
     SCHEDULE_THE_JOB => "schedule-the-job",
-    /// Schedule: turned-off requirements; takes `names`.
-    SCHEDULE_TURNED_OFF => "schedule-turned-off",
     /// Schedule and Set up: the bundles.
     SCHEDULE_BUNDLES => "schedule-bundles",
     /// Set up: the requirements.
@@ -2280,4 +2278,258 @@ define_messages! {
     ATTACHMENT_UNPICK => "attachment-unpick",
     /// Attachments: add what's picked; takes `count`.
     ATTACHMENT_ADD_COUNT => "attachment-add-count",
+    /// Event kind: acquired.
+    EVENT_KIND_ACQUIRED => "event-kind-acquired",
+    /// Event kind: sent out for service.
+    EVENT_KIND_SENT_OUT => "event-kind-sent-out",
+    /// Event kind: back from service.
+    EVENT_KIND_RETURNED => "event-kind-returned",
+    /// Event kind: disposed of.
+    EVENT_KIND_DISPOSED => "event-kind-disposed",
+    /// Disposal: sold.
+    DISPOSAL_SOLD => "disposal-sold",
+    /// Disposal: traded in.
+    DISPOSAL_TRADED_IN => "disposal-traded-in",
+    /// Disposal: scrapped.
+    DISPOSAL_SCRAPPED => "disposal-scrapped",
+    /// Disposal: given away.
+    DISPOSAL_GIVEN_AWAY => "disposal-given-away",
+    /// Disposal: returned to the vendor.
+    DISPOSAL_RETURNED_TO_VENDOR => "disposal-returned-to-vendor",
+    /// Disposal: lost or stolen.
+    DISPOSAL_LOST_OR_STOLEN => "disposal-lost-or-stolen",
+    /// Disposal: something else.
+    DISPOSAL_OTHER => "disposal-other",
+    /// Event: a work order, carrier, or tracking number too long.
+    EVENT_TEXT_TOO_LONG => "event-text-too-long",
+    /// Event: a second acquisition.
+    EVENT_ALREADY_ACQUIRED => "event-already-acquired",
+    /// Event: a send-out while already out.
+    EVENT_ALREADY_OUT => "event-already-out",
+    /// Event: a return when not out.
+    EVENT_NOT_OUT => "event-not-out",
+    /// Event: a return dated before its send-out.
+    EVENT_RETURN_BEFORE_SEND_OUT => "event-return-before-send-out",
+    /// Event: a second disposal.
+    EVENT_ALREADY_DISPOSED => "event-already-disposed",
+    /// Event: something new for a disposed vehicle.
+    EVENT_VEHICLE_DISPOSED => "event-vehicle-disposed",
+    /// Messages: a vehicle not back from service.
+    INBOX_OVERDUE_RETURN => "inbox-overdue-return",
+    /// Messages: the overdue return's text; takes `vehicle` and `date`.
+    INBOX_OVERDUE_RETURN_BODY => "inbox-overdue-return-body",
+    /// Messages: open the send-out.
+    INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
+    /// Log: what an acquisition records.
+    LOG_ACQUIRED_DETAIL => "log-acquired-detail",
+    /// Log: what a send-out records.
+    LOG_SENT_OUT_DETAIL => "log-sent-out-detail",
+    /// Log: what a return records.
+    LOG_RETURNED_DETAIL => "log-returned-detail",
+    /// Log: what a disposal records.
+    LOG_DISPOSED_DETAIL => "log-disposed-detail",
+    /// Reference documents: no title or too long.
+    REFERENCE_BAD_TITLE => "reference-bad-title",
+    /// Reference documents: the authority too long.
+    REFERENCE_AUTHORITY_TOO_LONG => "reference-authority-too-long",
+    /// Reference documents: a bad or repeated number.
+    REFERENCE_BAD_NUMBER => "reference-bad-number",
+    /// Reference documents: the revision too long.
+    REFERENCE_REVISION_TOO_LONG => "reference-revision-too-long",
+    /// Reference documents: not a web address.
+    REFERENCE_BAD_URL => "reference-bad-url",
+    /// Reference documents: effective before issued.
+    REFERENCE_EFFECTIVE_BEFORE_ISSUED => "reference-effective-before-issued",
+    /// Requirements: done again and again.
+    COMPLIANCE_RECURRING => "compliance-recurring",
+    /// Requirements: done once.
+    COMPLIANCE_ONE_TIME => "compliance-one-time",
+    /// Requirements: not done yet.
+    REQUIREMENT_STATUS_OPEN => "requirement-status-open",
+    /// Requirements: a one-time one, done.
+    REQUIREMENT_STATUS_COMPLIED => "requirement-status-complied",
+    /// Requirements: a recurring one in use.
+    REQUIREMENT_STATUS_ACTIVE => "requirement-status-active",
+    /// Requirements: doesn't apply.
+    REQUIREMENT_STATUS_NOT_APPLICABLE => "requirement-status-not-applicable",
+    /// Requirements: a one-time one with intervals.
+    REQUIREMENT_ONE_TIME_WITH_RULES => "requirement-one-time-with-rules",
+    /// Reference type: a recall.
+    REFERENCE_RECALL => "reference-recall",
+    /// Reference type: a technical service bulletin.
+    REFERENCE_TECHNICAL_SERVICE_BULLETIN => "reference-technical-service-bulletin",
+    /// Reference type: a service bulletin.
+    REFERENCE_SERVICE_BULLETIN => "reference-service-bulletin",
+    /// Reference type: a manufacturer's schedule.
+    REFERENCE_MANUFACTURER_SCHEDULE => "reference-manufacturer-schedule",
+    /// Reference type: anything else.
+    REFERENCE_OTHER => "reference-other",
+    /// Log: the lifecycle kinds' heading.
+    LOG_VEHICLE_LIFE => "log-vehicle-life",
+    /// Lifecycle: a send-out with no shop.
+    LIFE_SHOP_REQUIRED => "life-shop-required",
+    /// Lifecycle: a disposal with no method.
+    LIFE_METHOD_REQUIRED => "life-method-required",
+    /// Lifecycle form: the acquisition's section.
+    LIFE_ACQUIRED_HEADING => "life-acquired-heading",
+    /// Lifecycle form: the send-out's section.
+    LIFE_SENT_OUT_HEADING => "life-sent-out-heading",
+    /// Lifecycle form: the return's section.
+    LIFE_RETURNED_HEADING => "life-returned-heading",
+    /// Lifecycle form: the disposal's section.
+    LIFE_DISPOSED_HEADING => "life-disposed-heading",
+    /// Lifecycle form: who it was bought from.
+    LIFE_FROM => "life-from",
+    /// Lifecycle form: the shop.
+    LIFE_SHOP => "life-shop",
+    /// Lifecycle form: who it went to.
+    LIFE_TO_WHOM => "life-to-whom",
+    /// Lifecycle form: how to reach them.
+    LIFE_CONTACT => "life-contact",
+    /// Lifecycle form: the price.
+    LIFE_PRICE => "life-price",
+    /// Lifecycle form: the shop's estimate.
+    LIFE_ESTIMATE => "life-estimate",
+    /// Lifecycle form: what it cost in the end.
+    LIFE_FINAL_COST => "life-final-cost",
+    /// Lifecycle form: the work order number.
+    LIFE_WORK_ORDER => "life-work-order",
+    /// Lifecycle form: when it's due back.
+    LIFE_DUE_BACK => "life-due-back",
+    /// Lifecycle form: the shipping fold.
+    LIFE_SHIPPING => "life-shipping",
+    /// Lifecycle form: not shipped.
+    LIFE_SHIPPING_NONE => "life-shipping-none",
+    /// Lifecycle form: the carrier.
+    LIFE_CARRIER => "life-carrier",
+    /// Lifecycle form: the tracking number.
+    LIFE_TRACKING => "life-tracking",
+    /// Lifecycle form: how it was disposed of.
+    LIFE_HOW => "life-how",
+    /// Lifecycle form: nothing chosen yet.
+    LIFE_CHOOSE => "life-choose",
+    /// Lifecycle form: a disposal's correction undoing it.
+    LIFE_WITHDRAWN => "life-withdrawn",
+    /// Lifecycle form: what a return ends; takes `shop` and `date`.
+    LIFE_RETURN_OF => "life-return-of",
+    /// Lifecycle form: the disposal's confirmation title.
+    LIFE_DISPOSE_TITLE => "life-dispose-title",
+    /// Lifecycle form: what a disposal means; takes `vehicle`.
+    LIFE_DISPOSE_TEXT => "life-dispose-text",
+    /// Lifecycle form: save the disposal.
+    LIFE_DISPOSE_SAVE => "life-dispose-save",
+    /// Timeline: who it was bought from; takes `name`.
+    LIFE_SUMMARY_FROM => "life-summary-from",
+    /// Timeline: who it went to; takes `name`.
+    LIFE_SUMMARY_TO => "life-summary-to",
+    /// Timeline: when a send-out is due back; takes `date`.
+    LIFE_SUMMARY_DUE_BACK => "life-summary-due-back",
+    /// Vehicle page: out for service, with a due date; takes `shop`, `date`, `due`.
+    LIFE_BANNER_OUT_DUE => "life-banner-out-due",
+    /// Vehicle page: out for service; takes `shop` and `date`.
+    LIFE_BANNER_OUT => "life-banner-out",
+    /// Vehicle page: how late the return is; takes `days`.
+    LIFE_BANNER_LATE => "life-banner-late",
+    /// Vehicle page: the shop's estimate; takes `amount`.
+    LIFE_BANNER_ESTIMATE => "life-banner-estimate",
+    /// Vehicle page: record the return.
+    LIFE_RECORD_RETURN => "life-record-return",
+    /// Vehicle page: disposed of; takes `how` and `date`.
+    LIFE_BANNER_DISPOSED => "life-banner-disposed",
+    /// Vehicle page: disposed of to someone; takes `how`, `date`, `name`.
+    LIFE_BANNER_DISPOSED_TO => "life-banner-disposed-to",
+    /// Vehicle page: what a finalized disposal means.
+    LIFE_BANNER_DISPOSED_NOTE => "life-banner-disposed-note",
+    /// Vehicle page: a disposal still a draft.
+    LIFE_BANNER_DISPOSED_DRAFT => "life-banner-disposed-draft",
+    /// Requirements: it applies.
+    COMPLIANCE_APPLIES => "compliance-applies",
+    /// Requirements: not decided yet.
+    COMPLIANCE_UNDER_REVIEW => "compliance-under-review",
+    /// Requirements: not applicable with no reason.
+    COMPLIANCE_REASON_NEEDED => "compliance-reason-needed",
+    /// Requirements: how it's complied with.
+    COMPLIANCE_HOW => "compliance-how",
+    /// Requirements: what one-time means.
+    COMPLIANCE_ONE_TIME_NOTE => "compliance-one-time-note",
+    /// Requirements: does it apply?
+    COMPLIANCE_APPLIES_QUESTION => "compliance-applies-question",
+    /// Requirements: why it doesn't apply.
+    COMPLIANCE_WHY_NOT => "compliance-why-not",
+    /// Recalls: not found.
+    REFERENCE_NOT_FOUND => "reference-not-found",
+    /// Recalls: removing one still linked.
+    REFERENCE_IN_USE => "reference-in-use",
+    /// Recalls: the picker's title.
+    REFERENCE_PICKER_TITLE => "reference-picker-title",
+    /// Recalls: add a new one.
+    REFERENCE_NEW_ONE => "reference-new-one",
+    /// Recalls: ones on other vehicles.
+    REFERENCE_ALREADY_RECORDED => "reference-already-recorded",
+    /// Recalls: the new one's dialog.
+    REFERENCE_NEW_TITLE => "reference-new-title",
+    /// Recalls: the edit dialog.
+    REFERENCE_EDIT_TITLE => "reference-edit-title",
+    /// Recalls: its type.
+    REFERENCE_TYPE => "reference-type",
+    /// Recalls: who issued it.
+    REFERENCE_AUTHORITY => "reference-authority",
+    /// Recalls: its reference numbers.
+    REFERENCE_NUMBERS => "reference-numbers",
+    /// Recalls: whose number it is.
+    REFERENCE_SCHEME => "reference-scheme",
+    /// Recalls: the number.
+    REFERENCE_NUMBER => "reference-number",
+    /// Recalls: add a number.
+    REFERENCE_ANOTHER_NUMBER => "reference-another-number",
+    /// Recalls: its title.
+    REFERENCE_TITLE => "reference-title",
+    /// Recalls: what it's about.
+    REFERENCE_DESCRIPTION => "reference-description",
+    /// Recalls: the remedy.
+    REFERENCE_REMEDY => "reference-remedy",
+    /// Recalls: when issued.
+    REFERENCE_ISSUED => "reference-issued",
+    /// Recalls: when effective.
+    REFERENCE_EFFECTIVE => "reference-effective",
+    /// Recalls: its revision.
+    REFERENCE_REVISION => "reference-revision",
+    /// Recalls: applicability as written.
+    REFERENCE_APPLIES_TO => "reference-applies-to",
+    /// Recalls: its web address.
+    REFERENCE_URL => "reference-url",
+    /// Recalls: this vehicle's requirement; takes `vehicle`.
+    REFERENCE_ON_VEHICLE => "reference-on-vehicle",
+    /// Recalls: the requirement's name.
+    REFERENCE_REQUIREMENT_NAME => "reference-requirement-name",
+    /// Recalls: where its PDF goes.
+    REFERENCE_ATTACH_NOTE => "reference-attach-note",
+    /// Recalls: a change shows everywhere.
+    REFERENCE_EDIT_NOTE => "reference-edit-note",
+    /// Recalls: the vehicles linking it.
+    REFERENCE_LINKED => "reference-linked",
+    /// Recalls: open its web address.
+    REFERENCE_OPEN_SOURCE => "reference-open-source",
+    /// Recalls: its PDF and photos.
+    REFERENCE_FILES => "reference-files",
+    /// Recalls: open it.
+    REFERENCE_OPEN => "reference-open",
+    /// Set up: add a recall or bulletin.
+    SCHEDULE_ADD_REFERENCE => "schedule-add-reference",
+    /// A button: close.
+    ACTION_CLOSE => "action-close",
+    /// Setup: view only, for someone whose role doesn't change setup.
+    SETUP_VIEW_ONLY_ROLE => "setup-view-only-role",
+    /// Schedule: show what still applies.
+    SCHEDULE_FILTER_OPEN => "schedule-filter-open",
+    /// Schedule: show everything.
+    SCHEDULE_FILTER_ALL => "schedule-filter-all",
+    /// Schedule: your own requirements.
+    SCHEDULE_YOUR_SCHEDULE => "schedule-your-schedule",
+    /// Schedule: recalls and bulletins.
+    SCHEDULE_RECALLS => "schedule-recalls",
+    /// Schedule: how many Open hides; takes `count`.
+    SCHEDULE_HIDDEN => "schedule-hidden",
+    /// Work log: a task for a recall or bulletin.
+    WORK_FROM_RECALL => "work-from-recall",
 }

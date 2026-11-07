@@ -14,8 +14,8 @@ use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
     DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong,
-    PreferencesOutcome, RecoveryOutcome, ScheduleOutcome, SessionState, SetupOutcome,
-    SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
+    PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
+    SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
@@ -1221,6 +1221,84 @@ pub(crate) async fn remove_plate(
     .await)
 }
 
+/// The reference documents (recalls and bulletins) the person can read, to link one to another
+/// vehicle (#068).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReferencesOutcome`] values.
+#[post("/api/v1/references")]
+pub(crate) async fn references() -> ServerFnResult<ReferencesOutcome> {
+    Ok(
+        server_side::with_references(async |context| ::server::references::list(&context).await)
+            .await,
+    )
+}
+
+/// One reference document.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReferencesOutcome`] values.
+#[post("/api/v1/references/one")]
+pub(crate) async fn reference(
+    id: domain::reference::ReferenceDocumentId,
+) -> ServerFnResult<ReferencesOutcome> {
+    Ok(
+        server_side::with_references(async |context| {
+            ::server::references::view(&context, id).await
+        })
+        .await,
+    )
+}
+
+/// Adds a reference document, with its first vehicle's requirement for it.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReferencesOutcome`] values.
+#[post("/api/v1/references/add")]
+pub(crate) async fn add_reference(
+    input: domain::api::ReferenceInput,
+    link: domain::api::ReferenceLink,
+) -> ServerFnResult<ReferencesOutcome> {
+    Ok(server_side::with_references(async |context| {
+        ::server::references::add(&context, input, link).await
+    })
+    .await)
+}
+
+/// Changes a reference document.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReferencesOutcome`] values.
+#[post("/api/v1/references/edit")]
+pub(crate) async fn edit_reference(
+    id: domain::reference::ReferenceDocumentId,
+    input: domain::api::ReferenceInput,
+) -> ServerFnResult<ReferencesOutcome> {
+    Ok(server_side::with_references(async |context| {
+        ::server::references::edit(&context, id, input).await
+    })
+    .await)
+}
+
+/// Removes a reference document no requirement links (and its attachments).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReferencesOutcome`] values.
+#[post("/api/v1/references/delete")]
+pub(crate) async fn remove_reference(
+    id: domain::reference::ReferenceDocumentId,
+) -> ServerFnResult<ReferencesOutcome> {
+    Ok(server_side::with_references(async |context| {
+        ::server::references::remove(&context, id).await
+    })
+    .await)
+}
+
 /// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
 /// bundles.
 ///
@@ -1660,6 +1738,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::DocumentsOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a reference documents
+    /// request, or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_references(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::ReferencesOutcome,
+    ) -> domain::api::ReferencesOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::ReferencesOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

@@ -1,5 +1,6 @@
 //! The `events`, `event_readings`, `event_field_values`, and `fuel_details` tables (milestone
-//! 6), and a maintenance or repair event's work (milestone 7): the event writer for
+//! 6), a maintenance or repair event's work (milestone 7), and a lifecycle event's
+//! `lifecycle_details` (milestone 9): the event writer for
 //! the command pipeline, and the queries the server needs.
 //!
 //! **A finalized event never changes** (#034, choice 9): the writer refuses any change to one,
@@ -19,6 +20,7 @@ use domain::event::{
 };
 use domain::id::Id;
 use domain::label::Label;
+use domain::lifecycle::{LifecycleDetails, LifecycleRecord};
 use domain::location::{Coordinates, Place, TimeZone};
 use domain::meter::MeterId;
 use domain::notes::Notes;
@@ -66,7 +68,11 @@ impl RecordWriter<Event> for EventWriter {
         write_readings(connection, id, ReadingSet::Start, &event.readings).await?;
         write_fields(connection, id, &event.fields).await?;
         write_fuel(connection, id, event.fuel.as_ref()).await?;
-        work::write_work(connection, id, event.work.as_ref()).await
+        work::write_work(connection, id, event.work.as_ref()).await?;
+        if let Some(details) = &event.lifecycle {
+            write_lifecycle(connection, id, details).await?;
+        }
+        Ok(())
     }
 
     async fn update(
@@ -110,6 +116,15 @@ impl RecordWriter<Event> for EventWriter {
         }
         if patch.work.is_some() {
             work::write_work(connection, id, event.work.as_ref()).await?;
+        }
+        if patch.lifecycle.is_some() {
+            sqlx::query("DELETE FROM lifecycle_details WHERE event_id = ?")
+                .bind(id_to_sql(id))
+                .execute(&mut *connection)
+                .await?;
+            if let Some(details) = &event.lifecycle {
+                write_lifecycle(connection, id, details).await?;
+            }
         }
         Ok(())
     }
@@ -255,6 +270,27 @@ async fn write_fields(
     Ok(())
 }
 
+/// Writes a lifecycle event's details (milestone 9): as JSON, with the send-out a return ends.
+async fn write_lifecycle(
+    connection: &mut SqliteConnection,
+    id: EventId,
+    details: &LifecycleDetails,
+) -> Result<(), StorageError> {
+    let sent_out = match details {
+        LifecycleDetails::Returned(back) => Some(id_to_sql(back.sent_out)),
+        LifecycleDetails::Acquired(_)
+        | LifecycleDetails::SentOut(_)
+        | LifecycleDetails::Disposed(_) => None,
+    };
+    sqlx::query("INSERT INTO lifecycle_details (event_id, details, sent_out_id) VALUES (?, ?, ?)")
+        .bind(id_to_sql(id))
+        .bind(json_to_sql(details, "lifecycle_details.details")?)
+        .bind(sent_out)
+        .execute(connection)
+        .await?;
+    Ok(())
+}
+
 async fn write_fuel(
     connection: &mut SqliteConnection,
     id: EventId,
@@ -388,6 +424,7 @@ fn event_from_row(row: &SqliteRow) -> Result<(EventId, Event), StorageError> {
         performed_by: performer_from_row(row)?,
         fuel: None,
         work: None,
+        lifecycle: None,
         reading_override: reason_from(row.try_get("reading_override")?, "events.reading_override")?,
         status: required_name(row.try_get("status")?, "events.status")?,
         last_edited_at: UnixMillis::from_millis(row.try_get("last_edited_ms")?),
@@ -441,20 +478,21 @@ impl Scope {
     }
 }
 
-/// Adds each event's readings, field values, fuel details, and work (the work first, so end
+/// Adds each event's readings, field values, fuel details, lifecycle details, and work (the work first, so end
 /// readings have somewhere to go).
 async fn with_parts(
     connection: &mut SqliteConnection,
     scope: Scope,
     mut events: Vec<(EventId, Event)>,
 ) -> Result<Vec<(EventId, Event)>, StorageError> {
-    let (readings_sql, fields_sql, fuel_sql) = match scope {
+    let (readings_sql, fields_sql, fuel_sql, lifecycle_sql) = match scope {
         Scope::Event(_) => (
             "SELECT event_id, reading_set, meter_id, value FROM event_readings
              WHERE event_id = ? ORDER BY meter_id",
             "SELECT event_id, field_id, data FROM event_field_values WHERE event_id = ?
              ORDER BY field_id",
             "SELECT * FROM fuel_details WHERE event_id = ?",
+            "SELECT event_id, details FROM lifecycle_details WHERE event_id = ?",
         ),
         Scope::Asset(_) => (
             "SELECT r.event_id, r.reading_set, r.meter_id, r.value FROM event_readings r
@@ -465,6 +503,8 @@ async fn with_parts(
              ORDER BY v.field_id",
             "SELECT f.* FROM fuel_details f
              JOIN events e ON e.id = f.event_id WHERE e.asset_id = ? AND e.deleted = 0",
+            "SELECT l.event_id, l.details FROM lifecycle_details l
+             JOIN events e ON e.id = l.event_id WHERE e.asset_id = ? AND e.deleted = 0",
         ),
     };
     let index: HashMap<EventId, usize> = events
@@ -519,7 +559,31 @@ async fn with_parts(
             events[position].1.fuel = Some(fuel_from_row(&row)?);
         }
     }
+    add_lifecycle(connection, lifecycle_sql, scope, &mut events, &index).await?;
     Ok(events)
+}
+
+/// Adds each event's lifecycle details, from `sql` (by event or by vehicle).
+async fn add_lifecycle(
+    connection: &mut SqliteConnection,
+    sql: &'static str,
+    scope: Scope,
+    events: &mut [(EventId, Event)],
+    index: &HashMap<EventId, usize>,
+) -> Result<(), StorageError> {
+    for row in sqlx::query(sql)
+        .bind(scope.key())
+        .fetch_all(&mut *connection)
+        .await?
+    {
+        let id: EventId = id_from_sql(row.try_get::<&[u8], _>("event_id")?, "event_id")?;
+        if let Some(position) = index.get(&id) {
+            let details: String = row.try_get("details")?;
+            events[*position].1.lifecycle =
+                Some(json_from_sql(&details, "lifecycle_details.details")?);
+        }
+    }
+    Ok(())
 }
 
 /// One event, if it exists and isn't deleted, read on `connection` (inside a command's
@@ -556,6 +620,49 @@ pub struct CountedReading {
 }
 
 impl Database {
+    /// One vehicle's lifecycle events that count (milestone 9): not deleted, and not ones a
+    /// correction replaces. The rules in `domain::lifecycle` work on these. Each comes with
+    /// what it corrects, if anything, so a caller can also leave out the one it's checking
+    /// against.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn lifecycle_of(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(LifecycleRecord, Option<EventId>)>, StorageError> {
+        let rows = sqlx::query(
+            "SELECT e.id, e.start_ms, e.status, e.corrects_id, l.details
+             FROM lifecycle_details l JOIN events e ON e.id = l.event_id
+             WHERE e.asset_id = ? AND e.deleted = 0
+               AND NOT EXISTS (SELECT 1 FROM events c
+                               WHERE c.corrects_id = e.id AND c.deleted = 0)
+             ORDER BY e.start_ms, e.id",
+        )
+        .bind(id_to_sql(asset))
+        .fetch_all(self.pool())
+        .await?;
+        rows.iter()
+            .map(|row| {
+                let details: String = row.try_get("details")?;
+                let corrects = row
+                    .try_get::<Option<Vec<u8>>, _>("corrects_id")?
+                    .map(|bytes| id_from_sql(&bytes, "events.corrects_id"))
+                    .transpose()?;
+                Ok((
+                    LifecycleRecord {
+                        id: id_from_sql(row.try_get::<&[u8], _>("id")?, "events.id")?,
+                        at: UnixMillis::from_millis(row.try_get("start_ms")?),
+                        status: required_name(row.try_get("status")?, "events.status")?,
+                        details: json_from_sql(&details, "lifecycle_details.details")?,
+                    },
+                    corrects,
+                ))
+            })
+            .collect()
+    }
+
     /// One event, if it exists and isn't deleted.
     ///
     /// # Errors

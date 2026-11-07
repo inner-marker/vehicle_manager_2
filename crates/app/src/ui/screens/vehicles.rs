@@ -83,7 +83,7 @@ fn sections(
             let mut in_group: Vec<AssetSummary> = assets
                 .iter()
                 .filter(|item| item.asset.group == summary.id)
-                .filter(|item| show_archived || item.asset.status.shows_in_garage())
+                .filter(|item| show_archived || item.standing.status.shows_in_garage())
                 .cloned()
                 .collect();
             sort_assets(&mut in_group, sort, order);
@@ -112,7 +112,7 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
         .assets
         .iter()
         .filter(|item| group.is_none_or(|id| item.asset.group == id))
-        .filter(|item| !item.asset.status.shows_in_garage())
+        .filter(|item| !item.standing.status.shows_in_garage())
         .count();
     let shown = sections(
         &view.groups,
@@ -379,7 +379,9 @@ fn VehicleCard(
             .first()
             .map(|identifier| identifier.value.clone())
     });
-    let archived = !asset.status.shows_in_garage();
+    // The status it shows comes from its lifecycle events where they say (#067).
+    let status = item.standing.status;
+    let archived = !status.shows_in_garage();
     rsx! {
         div { class: if archived { "vehicle-card archived" } else { "vehicle-card" },
             Link { class: "vehicle-card-link", to: Route::VehicleDetail { asset_id: id.to_string() },
@@ -389,7 +391,9 @@ fn VehicleCard(
                     span { class: "vehicle-card-identifier", {value} }
                 }
                 if archived {
-                    span { class: "badge", {tr(status_label(asset.status))} }
+                    span { class: "badge", {tr(status_label(status))} }
+                } else if status == LifecycleStatus::OutForService {
+                    span { class: "badge warn", {tr(status_label(status))} }
                 } else {
                     span { class: "vehicle-card-coming", {tr(messages::VEHICLES_CARD_COMING)} }
                 }
@@ -618,6 +622,10 @@ mod tests {
 
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
+            standing: domain::lifecycle::Standing {
+                status,
+                ..domain::lifecycle::Standing::default()
+            },
             id: test_id(n),
             asset: Asset {
                 kind: AssetKind::parse("car").unwrap(),

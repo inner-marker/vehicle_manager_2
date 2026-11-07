@@ -4215,3 +4215,122 @@ body:has(.photo-viewer) {
     white-space: nowrap;
 }
 
+
+/* ---------- Lifecycle (milestone 9) ---------- */
+
+.badge.warn {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.badge.muted {
+    color: var(--text-muted);
+}
+
+/* Under the vehicle page's header, on every tab: out for service, or disposed of. */
+.life-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.life-banner.late {
+    border-color: var(--warn);
+}
+
+.life-banner.late .life-banner-text span {
+    color: var(--warn);
+}
+
+.life-banner-icon {
+    font-size: 1.25rem;
+}
+
+.life-banner-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.life-banner-text span {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.life-return-of {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+    .life-banner {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---------- Recalls and compliance (milestone 9) ---------- */
+
+/* A reference number: whose, the number, and ✕, on one line. */
+.field-row.reference-number {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.status-chip.muted {
+    color: var(--text-muted);
+}
+
+.schedule-card-name .status-chip {
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.reference-new {
+    margin-bottom: 12px;
+}
+
+.reference-link {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.reference-line {
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* A recall's view: each label above what was typed, which sits left-aligned on the input
+   background, so the two never look alike (the human's note, milestone 9 test). */
+.reference-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+}
+
+.reference-row dt {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.reference-row dd {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

@@ -30,8 +30,8 @@ pub type MeterId = Id<Meter>;
 /// The most decimal places a meter shows (e.g. tenths of an hour: 1).
 pub const MAX_PRECISION: u8 = 2;
 
-/// A kind of event. Events themselves arrive in milestone 6; profiles, meters, and custom
-/// fields refer to these kinds already.
+/// A kind of event: the everyday ones a profile chooses among, and the lifecycle ones every
+/// vehicle has (milestone 9).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EventKind {
@@ -43,17 +43,54 @@ pub enum EventKind {
     Maintenance,
     /// A repair.
     Repair,
+    /// The vehicle was acquired (milestone 9, #067).
+    Acquired,
+    /// It went out for service.
+    SentOut,
+    /// It came back from service.
+    Returned,
+    /// It was disposed of.
+    Disposed,
 }
 
 impl EventKind {
     /// Every kind, in order.
-    pub const ALL: [Self; 4] = [Self::Fuel, Self::Reading, Self::Maintenance, Self::Repair];
+    pub const ALL: [Self; 8] = [
+        Self::Fuel,
+        Self::Reading,
+        Self::Maintenance,
+        Self::Repair,
+        Self::Acquired,
+        Self::SentOut,
+        Self::Returned,
+        Self::Disposed,
+    ];
 
-    /// Whether it finalizes by itself, 24 hours after its last edit (fuel-ups and readings);
-    /// maintenance and repairs lock only when finished (#034).
+    /// The everyday kinds, the ones a profile chooses among (a trailer has no fuel-ups).
+    pub const EVERYDAY: [Self; 4] = [Self::Fuel, Self::Reading, Self::Maintenance, Self::Repair];
+
+    /// The lifecycle kinds (#067), which every vehicle has.
+    pub const LIFECYCLE: [Self; 4] = [
+        Self::Acquired,
+        Self::SentOut,
+        Self::Returned,
+        Self::Disposed,
+    ];
+
+    /// Whether it's a lifecycle event (acquired, sent out, returned, disposed).
+    #[must_use]
+    pub const fn is_lifecycle(self) -> bool {
+        matches!(
+            self,
+            Self::Acquired | Self::SentOut | Self::Returned | Self::Disposed
+        )
+    }
+
+    /// Whether it finalizes by itself, 24 hours after its last edit (fuel-ups, readings, and
+    /// lifecycle events); maintenance and repairs lock only when finished (#034).
     #[must_use]
     pub const fn finalizes_by_itself(self) -> bool {
-        matches!(self, Self::Fuel | Self::Reading)
+        !matches!(self, Self::Maintenance | Self::Repair)
     }
 
     /// The kind's name.
@@ -64,6 +101,10 @@ impl EventKind {
             Self::Reading => messages::EVENT_KIND_READING,
             Self::Maintenance => messages::EVENT_KIND_MAINTENANCE,
             Self::Repair => messages::EVENT_KIND_REPAIR,
+            Self::Acquired => messages::EVENT_KIND_ACQUIRED,
+            Self::SentOut => messages::EVENT_KIND_SENT_OUT,
+            Self::Returned => messages::EVENT_KIND_RETURNED,
+            Self::Disposed => messages::EVENT_KIND_DISPOSED,
         }
     }
 }

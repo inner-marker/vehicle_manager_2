@@ -412,6 +412,7 @@ mod tests {
 
     fn cub() -> AssetSummary {
         AssetSummary {
+            standing: domain::lifecycle::Standing::default(),
             id: test_id(1),
             asset: Asset {
                 kind: AssetKind::parse("other-equipment").unwrap(),

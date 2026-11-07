@@ -1,4 +1,5 @@
-//! The `attachments` table (milestone 8; decisions #036, #037, #065): the attachment writer for
+//! The `attachments` table (milestone 8; decisions #036, #037, #065; a reference document's,
+//! on no vehicle, from milestone 9, #068): the attachment writer for
 //! the command pipeline, and the queries the server needs. The files themselves are in the
 //! file store ([`crate::files`]).
 
@@ -8,6 +9,7 @@ use domain::attachment::{
     StoredFile,
 };
 use domain::id::Id;
+use domain::reference::ReferenceDocumentId;
 use domain::time::UnixMillis;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
@@ -16,29 +18,44 @@ use crate::commands::RecordWriter;
 use crate::convert::{id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name, required};
 use crate::{Database, StorageError};
 
-/// An owner as its columns: (owner, event, task, squawk, document).
-type OwnerColumns = (
-    &'static str,
-    Option<Vec<u8>>,
-    Option<i64>,
-    Option<Vec<u8>>,
-    Option<Vec<u8>>,
-);
+/// An owner as its columns.
+#[derive(Debug, Default)]
+struct OwnerColumns {
+    owner: &'static str,
+    event: Option<Vec<u8>>,
+    task: Option<i64>,
+    squawk: Option<Vec<u8>>,
+    document: Option<Vec<u8>>,
+    reference: Option<Vec<u8>>,
+}
 
 fn owner_to_sql(owner: AttachmentOwner) -> OwnerColumns {
     match owner {
-        AttachmentOwner::Vehicle => ("vehicle", None, None, None, None),
-        AttachmentOwner::Event { event, task } => (
-            "event",
-            Some(id_to_sql(event)),
-            task.map(i64::from),
-            None,
-            None,
-        ),
-        AttachmentOwner::Squawk { squawk } => ("squawk", None, None, Some(id_to_sql(squawk)), None),
-        AttachmentOwner::Document { document } => {
-            ("document", None, None, None, Some(id_to_sql(document)))
-        }
+        AttachmentOwner::Vehicle => OwnerColumns {
+            owner: "vehicle",
+            ..OwnerColumns::default()
+        },
+        AttachmentOwner::Event { event, task } => OwnerColumns {
+            owner: "event",
+            event: Some(id_to_sql(event)),
+            task: task.map(i64::from),
+            ..OwnerColumns::default()
+        },
+        AttachmentOwner::Squawk { squawk } => OwnerColumns {
+            owner: "squawk",
+            squawk: Some(id_to_sql(squawk)),
+            ..OwnerColumns::default()
+        },
+        AttachmentOwner::Document { document } => OwnerColumns {
+            owner: "document",
+            document: Some(id_to_sql(document)),
+            ..OwnerColumns::default()
+        },
+        AttachmentOwner::Reference { reference } => OwnerColumns {
+            owner: "reference",
+            reference: Some(id_to_sql(reference)),
+            ..OwnerColumns::default()
+        },
     }
 }
 
@@ -72,6 +89,12 @@ fn owner_from_row(row: &SqliteRow) -> Result<AttachmentOwner, StorageError> {
                 column,
             )?,
         }),
+        "reference" => Ok(AttachmentOwner::Reference {
+            reference: id_from_sql(
+                &id("reference_id")?.ok_or(StorageError::InvalidValue { column })?,
+                column,
+            )?,
+        }),
         _ => Err(StorageError::InvalidValue { column }),
     }
 }
@@ -96,8 +119,7 @@ impl RecordWriter<Attachment> for AttachmentWriter {
         values: &AttachmentPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
-        let (owner, event, task, squawk, document) =
-            owner_to_sql(required(values.owner, "attachments.owner")?);
+        let owner = owner_to_sql(required(values.owner, "attachments.owner")?);
         let content = required(values.content.as_ref(), "attachments.content")?;
         let (file, file_bytes) = file_columns(
             required(values.file.as_ref(), "attachments.file_sha256")?,
@@ -111,18 +133,19 @@ impl RecordWriter<Attachment> for AttachmentWriter {
             .transpose()?;
         sqlx::query(
             "INSERT INTO attachments
-                 (id, asset_id, owner, event_id, task_position, squawk_id, document_id, kind,
-                  file_sha256, file_bytes, thumbnail_sha256, thumbnail_bytes, name, content,
-                  added_ms, added_by, received_ms, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 (id, asset_id, owner, event_id, task_position, squawk_id, document_id,
+                  reference_id, kind, file_sha256, file_bytes, thumbnail_sha256, thumbnail_bytes,
+                  name, content, added_ms, added_by, received_ms, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
-        .bind(id_to_sql(required(values.asset, "attachments.asset_id")?))
-        .bind(owner)
-        .bind(event)
-        .bind(task)
-        .bind(squawk)
-        .bind(document)
+        .bind(required(values.asset, "attachments.asset_id")?.map(id_to_sql))
+        .bind(owner.owner)
+        .bind(owner.event)
+        .bind(owner.task)
+        .bind(owner.squawk)
+        .bind(owner.document)
+        .bind(owner.reference)
         .bind(name(&content.kind(), "attachments.kind")?)
         .bind(file)
         .bind(file_bytes)
@@ -153,17 +176,18 @@ impl RecordWriter<Attachment> for AttachmentWriter {
         let Some(owner) = patch.owner else {
             return Ok(());
         };
-        let (owner, event, task, squawk, document) = owner_to_sql(owner);
+        let owner = owner_to_sql(owner);
         sqlx::query(
             "UPDATE attachments SET owner = ?, event_id = ?, task_position = ?, squawk_id = ?,
-                                    document_id = ?, sequence = ?
+                                    document_id = ?, reference_id = ?, sequence = ?
              WHERE id = ?",
         )
-        .bind(owner)
-        .bind(event)
-        .bind(task)
-        .bind(squawk)
-        .bind(document)
+        .bind(owner.owner)
+        .bind(owner.event)
+        .bind(owner.task)
+        .bind(owner.squawk)
+        .bind(owner.document)
+        .bind(owner.reference)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -207,7 +231,10 @@ fn attachment_from_row(row: &SqliteRow) -> Result<(AttachmentId, Attachment), St
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "attachments.id")?,
         Attachment {
-            asset: id_from_sql(row.try_get::<&[u8], _>("asset_id")?, "attachments.asset_id")?,
+            asset: row
+                .try_get::<Option<Vec<u8>>, _>("asset_id")?
+                .map(|bytes| id_from_sql(&bytes, "attachments.asset_id"))
+                .transpose()?,
             owner: owner_from_row(row)?,
             file: file_from_row(row, "file_sha256", "file_bytes")?.ok_or(
                 StorageError::InvalidValue {
@@ -279,7 +306,8 @@ impl Database {
                 AttachmentOwner::Vehicle
                 | AttachmentOwner::Event { .. }
                 | AttachmentOwner::Squawk { .. }
-                | AttachmentOwner::Document { .. },
+                | AttachmentOwner::Document { .. }
+                | AttachmentOwner::Reference { .. },
                 _,
             ) => candidate == owner,
         };
@@ -289,6 +317,27 @@ impl Database {
             .into_iter()
             .filter(|(_, attachment)| same(attachment.owner))
             .collect())
+    }
+
+    /// A reference document's attachments (on no vehicle), oldest first.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn attachments_of_reference(
+        &self,
+        reference: ReferenceDocumentId,
+    ) -> Result<Vec<(AttachmentId, Attachment)>, StorageError> {
+        sqlx::query(
+            "SELECT * FROM attachments WHERE reference_id = ? AND deleted = 0
+             ORDER BY added_ms, id",
+        )
+        .bind(id_to_sql(reference))
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(attachment_from_row)
+        .collect()
     }
 
     /// Every attachment that isn't removed (to find the files nothing uses).

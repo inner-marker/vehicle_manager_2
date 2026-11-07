@@ -145,6 +145,9 @@ mod maintenance {
                 notes: Notes::default(),
                 enabled: true,
                 rules,
+                reference: None,
+                mode: domain::requirement::ComplianceMode::Recurring,
+                applicability: domain::requirement::Applicability::Applies,
             };
             RequirementWriter
                 .create(
@@ -280,6 +283,7 @@ mod maintenance {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: at(days),

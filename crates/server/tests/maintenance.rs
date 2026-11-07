@@ -187,6 +187,7 @@ mod maintenance {
                 complaint: None,
                 cause: None,
             }),
+            lifecycle: None,
             reading_override: None,
         }
     }
@@ -240,6 +241,9 @@ mod maintenance {
                     end_of_month: false,
                 },
             ],
+            reference: None,
+            mode: domain::requirement::ComplianceMode::Recurring,
+            applicability: domain::requirement::Applicability::Applies,
         }
     }
 

@@ -38,6 +38,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::access::ActiveMode;
 use crate::command::{Patch, Record};
+use crate::dates::CalendarDate;
 use crate::event::{Event, EventId};
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
@@ -173,6 +174,16 @@ pub enum MessageKind {
         /// The vehicle's name, for the text.
         vehicle: String,
     },
+    /// A vehicle sent out for service and not back by the day after it was expected (#067,
+    /// milestone 9): for whoever sent it out and the vehicle's Maintainers.
+    OverdueReturn {
+        /// The send-out.
+        event: EventId,
+        /// The vehicle's name, for the text.
+        vehicle: String,
+        /// When it was expected back.
+        expected: CalendarDate,
+    },
 }
 
 impl MessageKind {
@@ -199,6 +210,7 @@ impl MessageKind {
             Self::ServerUnhealthy { .. } => messages::INBOX_SERVER_UNHEALTHY,
             Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_UNAVAILABLE,
             Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB,
+            Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN,
         }
     }
 
@@ -227,6 +239,7 @@ impl MessageKind {
             } => messages::INBOX_INTEGRITY_CHECK_FAILED,
             Self::PlaceLookupUnavailable => messages::INBOX_PLACE_LOOKUP_BODY,
             Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB_BODY,
+            Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN_BODY,
         }
     }
 }
@@ -242,6 +255,11 @@ pub enum MessageAction {
         /// Which event.
         event: EventId,
     },
+    /// Open a send-out's page (an overdue return).
+    OpenSendOut {
+        /// Which event.
+        event: EventId,
+    },
 }
 
 impl MessageAction {
@@ -251,6 +269,7 @@ impl MessageAction {
         match self {
             Self::OpenDiagnostics => messages::INBOX_OPEN_DIAGNOSTICS,
             Self::OpenEvent { .. } => messages::INBOX_OPEN_JOB,
+            Self::OpenSendOut { .. } => messages::INBOX_OPEN_SEND_OUT,
         }
     }
 }
@@ -404,6 +423,31 @@ pub fn forgotten_job_message(
         raised_at: UnixMillis::from_millis(edited + delay_millis),
         detail: String::new(),
         action: Some(MessageAction::OpenEvent { event: id }),
+    }
+}
+
+/// The message for an overdue return (#067): the send-out `id` of the vehicle named `vehicle`,
+/// expected back on `expected`, raised at `raised_at` (the start of the next day, as the server
+/// counts it). Recording the return ends it; a new expected date is a new message.
+#[must_use]
+pub fn overdue_return_message(
+    id: EventId,
+    vehicle: &str,
+    expected: &CalendarDate,
+    raised_at: UnixMillis,
+) -> Message {
+    Message {
+        key: MessageKey(format!("overdue-return:{id}:{}", expected.as_str())),
+        kind: MessageKind::OverdueReturn {
+            event: id,
+            vehicle: vehicle.to_owned(),
+            expected: expected.clone(),
+        },
+        severity: Severity::Warning,
+        audience: Audience::Everyone,
+        raised_at,
+        detail: String::new(),
+        action: Some(MessageAction::OpenSendOut { event: id }),
     }
 }
 
@@ -747,10 +791,29 @@ mod tests {
                 MessageKind::JobSkipped { .. }
                 | MessageKind::ServerUnhealthy { .. }
                 | MessageKind::PlaceLookupUnavailable
-                | MessageKind::ForgottenJob { .. } => "",
+                | MessageKind::ForgottenJob { .. }
+                | MessageKind::OverdueReturn { .. } => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);
+    }
+
+    #[test]
+    fn an_overdue_return_is_one_message_per_expected_date() {
+        let date = |text| CalendarDate::parse(text).unwrap();
+        let at = UnixMillis::from_millis(5_000);
+        let first = overdue_return_message(test_id(7), "Tacoma", &date("2026-11-10"), at);
+        assert_eq!(
+            first.key.as_str(),
+            format!("overdue-return:{}:2026-11-10", test_id::<Event>(7))
+        );
+        assert_eq!(
+            first.action,
+            Some(MessageAction::OpenSendOut { event: test_id(7) })
+        );
+        assert_eq!(first.audience, Audience::Everyone);
+        let later = overdue_return_message(test_id(7), "Tacoma", &date("2026-11-20"), at);
+        assert_ne!(first.key, later.key, "a new expected date is a new message");
     }
 
     #[test]
@@ -788,6 +851,7 @@ mod tests {
             performed_by: None,
             fuel: None,
             work: None,
+            lifecycle: None,
             reading_override: None,
             status: EventStatus::Draft,
             last_edited_at: UnixMillis::from_millis(5_000),

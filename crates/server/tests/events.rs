@@ -132,6 +132,7 @@ mod events {
                 reported_economy: None,
             }),
             work: None,
+            lifecycle: None,
             reading_override: None,
         }
     }

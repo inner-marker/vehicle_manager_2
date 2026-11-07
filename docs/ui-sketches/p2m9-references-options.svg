@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2780" viewBox="0 0 1560 2780" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2780" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 9f · Recalls and bulletins, and compliance: options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Reference documents (#068) from a vehicle&#x27;s Maintenance › Set up; one-time and recurring requirements; applies, not applicable, under review.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">1 · Adding one, in Maintenance › Set up (a Maintainer)</text>
+<text x="40" y="158" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Two buttons: a new recall or bulletin, or one already recorded on another vehicle</text>
+<text x="40" y="182" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Set up</text>
+<rect x="40" y="194" width="700" height="250" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="232" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">REQUIREMENTS</text>
+<line x1="64" y1="240" x2="716" y2="240" stroke="#333a45" stroke-width="1"/>
+<rect x="316" y="214" width="108" height="30" rx="9" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="370.0" y="234.0" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">+ Requirement</text>
+<rect x="430" y="214" width="150" height="30" rx="9" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="505.0" y="234.0" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">+ Recall or bulletin</text>
+<rect x="586" y="214" width="130" height="30" rx="9" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="651.0" y="234.0" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">+ From one known…</text>
+<rect x="64" y="256" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="280" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Engine oil &amp; filter</text>
+<text x="78" y="302" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Every 5,000 mi or 6 months · Recurring</text>
+<rect x="64" y="336" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="360" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Rear axle nut may loosen</text>
+<rect x="659.6" y="346" width="44.4" height="22" rx="11" fill="#3a2f15" stroke="#d29922" stroke-width="1.2"/>
+<text x="681.8000000000001" y="361" font-size="10.5" fill="#d29922" font-weight="700" text-anchor="middle">OPEN</text>
+<text x="78" y="382" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">One-time · Recall · NHTSA 24V-123</text>
+<text x="770" y="234" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Each button does one thing.</text>
+<text x="770" y="254" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ &quot;From one known…&quot; lists the recalls the person can read (on</text>
+<text x="770" y="274" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   their other vehicles), to add this vehicle&#x27;s requirement for one.</text>
+<text x="770" y="294" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Three buttons in a row (they wrap on phones).</text>
+<text x="40" y="474" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · One &quot;+ Recall or bulletin&quot;: new, or pick one already recorded</text>
+<text x="40" y="498" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · the dialog&#x27;s first step</text>
+<rect x="40" y="510" width="700" height="320" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="140" y="534" width="500" height="280" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="164" y="570" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">Recall or bulletin</text>
+<rect x="164" y="588" width="452" height="48" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<text x="180" y="617" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">+ A new one</text>
+<text x="164" y="662" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">ALREADY RECORDED (ON YOUR OTHER VEHICLES)</text>
+<rect x="164" y="674" width="452" height="50" rx="10" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="180" y="696" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Rear axle nut may loosen</text>
+<text x="180" y="714" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Recall · NHTSA 24V-123 · on Van</text>
+<rect x="164" y="732" width="452" height="50" rx="10" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="180" y="754" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Seat belt pretensioner</text>
+<text x="180" y="772" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">TSB · Ford 22-2140 · on Car</text>
+<text x="770" y="554" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One button; the choice is inside.</text>
+<text x="770" y="574" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The list shows only when there&#x27;s something to pick.</text>
+<text x="770" y="594" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− One more step for a new one.</text>
+<text x="40" y="864" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">2 · The form (either option): the document, then this vehicle&#x27;s requirement for it</text>
+<text x="40" y="888" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · a dialog (a full-height sheet on phones)</text>
+<rect x="40" y="900" width="980" height="690" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="944" font-size="17" fill="#e8eaed" font-weight="800" text-anchor="start">New recall or bulletin</text>
+<text x="64" y="971" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Type</text>
+<rect x="64" y="978" width="220" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1001.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Recall</text>
+<text x="274" y="1001.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="296" y="971" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Issued by</text>
+<rect x="296" y="978" width="220" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="306" y="1001.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">NHTSA</text>
+<text x="64" y="1038" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">REFERENCE NUMBERS</text>
+<text x="64" y="1061" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Whose</text>
+<rect x="64" y="1068" width="200" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1091.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">NHTSA campaign</text>
+<text x="276" y="1061" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Number</text>
+<rect x="276" y="1068" width="240" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="286" y="1091.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">24V-123</text>
+<text x="64" y="1107" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start"></text>
+<rect x="64" y="1114" width="200" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1137.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Toyota</text>
+<text x="276" y="1107" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start"></text>
+<rect x="276" y="1114" width="240" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="286" y="1137.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">24TA05</text>
+<text x="64" y="1166" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Another number</text>
+<text x="64" y="1193" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Title</text>
+<rect x="64" y="1200" width="452" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1223.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Rear axle nut may loosen</text>
+<text x="64" y="1253" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">What it&#x27;s about</text>
+<rect x="64" y="1260" width="452" height="52" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1291.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">The nut may not be torqued to spec…</text>
+<text x="64" y="1329" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Remedy</text>
+<rect x="64" y="1336" width="452" height="44" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1363.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Dealers will retorque the nut, free.</text>
+<text x="64" y="1397" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Issued</text>
+<rect x="64" y="1404" width="140" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1427.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">1 Mar 2024</text>
+<text x="216" y="1397" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Effective</text>
+<rect x="216" y="1404" width="140" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="226" y="1427.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">15 Mar 2024</text>
+<text x="368" y="1397" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Revision</text>
+<rect x="368" y="1404" width="148" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="378" y="1427.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">B</text>
+<text x="64" y="1457" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Applies to, as written</text>
+<rect x="64" y="1464" width="452" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1487.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">2022–2024 Tacoma, VINs …4001 to …9999</text>
+<text x="64" y="1517" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Web address</text>
+<rect x="64" y="1524" width="452" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1547.0" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">https://www.nhtsa.gov/recalls?nhtsaId=24V123</text>
+<rect x="542" y="964" width="476" height="330" rx="12" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="554" y="988" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">ON TEST TRUCK</text>
+<text x="554" y="1007" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Requirement&#x27;s name</text>
+<rect x="554" y="1014" width="440" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="564" y="1037.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Rear axle nut recall</text>
+<text x="554" y="1068" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">How it&#x27;s complied with</text>
+<rect x="554" y="1076" width="84" height="30" rx="8" fill="#5aa9ff"/>
+<text x="596.0" y="1096" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">One-time</text>
+<rect x="644" y="1076" width="91" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="689.5" y="1096" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">Recurring</text>
+<text x="554" y="1128" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">One-time: the first finished job that does it closes it.</text>
+<text x="554" y="1160" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Does it apply?</text>
+<rect x="554" y="1168" width="77" height="30" rx="8" fill="#5aa9ff"/>
+<text x="592.5" y="1188" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Applies</text>
+<rect x="637" y="1168" width="126" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="700.0" y="1188" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">Not applicable</text>
+<rect x="769" y="1168" width="112" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="825.0" y="1188" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">Under review</text>
+<text x="554" y="1220" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Not applicable asks why (e.g. &quot;Built after the VIN range&quot;).</text>
+<rect x="774" y="1252" width="108" height="36" rx="9" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="828.0" y="1275.0" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Cancel</text>
+<rect x="890" y="1252" width="92" height="36" rx="9" fill="#5aa9ff"/>
+<text x="936.0" y="1275.0" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Save</text>
+<text x="554" y="1334" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The PDF (and photos) are added once it&#x27;s saved, on its</text>
+<text x="554" y="1354" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">own page, like a document&#x27;s scans: they&#x27;re the recall&#x27;s, so</text>
+<text x="554" y="1374" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">every vehicle that links it sees them.</text>
+<text x="554" y="1394" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The name starts as the title (shortened to 40 characters).</text>
+<text x="554" y="1414" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Editing it later changes it for every vehicle that links it,</text>
+<text x="554" y="1434" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">so only a Maintainer of all of them (or the Admin) may.</text>
+<text x="40" y="1624" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">3 · The requirement dialog gains the same two choices (any requirement, linked or not)</text>
+<text x="40" y="1648" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Change requirement</text>
+<rect x="40" y="1660" width="600" height="320" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="1717" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Name</text>
+<rect x="64" y="1724" width="552" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1747.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Engine oil &amp; filter</text>
+<text x="64" y="1782" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">How it&#x27;s complied with</text>
+<rect x="64" y="1790" width="91" height="30" rx="8" fill="#5aa9ff"/>
+<text x="109.5" y="1810" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Recurring</text>
+<rect x="161" y="1790" width="84" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="203.0" y="1810" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">One-time</text>
+<text x="64" y="1844" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DUE · WHICHEVER COMES FIRST</text>
+<text x="64" y="1853" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start"></text>
+<rect x="64" y="1860" width="552" height="36" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1883.0" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Every 5,000 mi on the Odometer</text>
+<text x="64" y="1920" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Does it apply?</text>
+<rect x="64" y="1928" width="77" height="30" rx="8" fill="#5aa9ff"/>
+<text x="102.5" y="1948" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Applies</text>
+<rect x="147" y="1928" width="126" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="210.0" y="1948" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">Not applicable</text>
+<rect x="279" y="1928" width="112" height="30" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="335.0" y="1948" font-size="12" fill="#e8eaed" font-weight="700" text-anchor="middle">Under review</text>
+<text x="680" y="1704" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">One-time hides the intervals (an initial deadline is Phase 5).</text>
+<text x="680" y="1724" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A linked one shows &quot;Recall · NHTSA 24V-123 · Open it ›&quot; at the top.</text>
+<text x="680" y="1744" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Not applicable: a reason field appears under the choice.</text>
+<text x="40" y="2014" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">4 · The Schedule (everyone): where recalls go, and how each stands</text>
+<text x="40" y="2048" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One list; closed and ruled-out ones move to the bottom section</text>
+<text x="40" y="2072" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Schedule</text>
+<rect x="40" y="2084" width="700" height="500" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="64" y="2114" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="2138" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Engine oil &amp; filter</text>
+<text x="78" y="2160" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Every 5,000 mi or 6 months · last done 12 Oct 2026 at 52,310 mi</text>
+<rect x="64" y="2194" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="2218" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Rear axle nut recall</text>
+<rect x="659.6" y="2204" width="44.4" height="22" rx="11" fill="#3a2f15" stroke="#d29922" stroke-width="1.2"/>
+<text x="681.8000000000001" y="2219" font-size="10.5" fill="#d29922" font-weight="700" text-anchor="middle">OPEN</text>
+<text x="78" y="2240" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">One-time · Recall · NHTSA 24V-123 ›</text>
+<rect x="64" y="2274" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="2298" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Seat belt bulletin</text>
+<rect x="606.8" y="2284" width="97.19999999999999" height="22" rx="11" fill="#2a2f37" stroke="#9aa1ab" stroke-width="1.2"/>
+<text x="655.4" y="2299" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">UNDER REVIEW</text>
+<text x="78" y="2320" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">One-time · TSB · Ford 22-2140 ›</text>
+<text x="64" y="2376" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DONE AND RULED OUT</text>
+<line x1="64" y1="2384" x2="716" y2="2384" stroke="#333a45" stroke-width="1"/>
+<rect x="64" y="2398" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="2422" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Airbag inflator recall</text>
+<rect x="560.6" y="2408" width="143.39999999999998" height="22" rx="11" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="632.3" y="2423" font-size="10.5" fill="#3fb950" font-weight="700" text-anchor="middle">COMPLIED 2 MAR 2026</text>
+<text x="78" y="2444" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">One-time · Recall · NHTSA 23V-555 › · Brake job, 2 Mar 2026</text>
+<rect x="64" y="2478" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="2502" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel pump recall</text>
+<rect x="593.6" y="2488" width="110.39999999999999" height="22" rx="11" fill="#2a2f37" stroke="#9aa1ab" stroke-width="1.2"/>
+<text x="648.8000000000001" y="2503" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">NOT APPLICABLE</text>
+<text x="78" y="2524" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Built after the VIN range</text>
+<text x="780" y="2048" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A section of their own, above your own schedule</text>
+<text x="780" y="2072" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Schedule</text>
+<rect x="780" y="2084" width="700" height="500" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="804" y="2120" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">RECALLS AND BULLETINS</text>
+<line x1="804" y1="2128" x2="1456" y2="2128" stroke="#333a45" stroke-width="1"/>
+<rect x="804" y="2138" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="818" y="2162" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Rear axle nut recall</text>
+<rect x="1399.6" y="2148" width="44.4" height="22" rx="11" fill="#3a2f15" stroke="#d29922" stroke-width="1.2"/>
+<text x="1421.8" y="2163" font-size="10.5" fill="#d29922" font-weight="700" text-anchor="middle">OPEN</text>
+<text x="818" y="2184" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">NHTSA 24V-123 ›</text>
+<rect x="804" y="2212" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="818" y="2236" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Airbag inflator recall</text>
+<rect x="1300.6" y="2222" width="143.39999999999998" height="22" rx="11" fill="#15301d" stroke="#3fb950" stroke-width="1.2"/>
+<text x="1372.3" y="2237" font-size="10.5" fill="#3fb950" font-weight="700" text-anchor="middle">COMPLIED 2 MAR 2026</text>
+<text x="818" y="2258" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">NHTSA 23V-555 › · Brake job, 2 Mar 2026</text>
+<rect x="804" y="2286" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="818" y="2310" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel pump recall</text>
+<rect x="1333.6" y="2296" width="110.39999999999999" height="22" rx="11" fill="#2a2f37" stroke="#9aa1ab" stroke-width="1.2"/>
+<text x="1388.8" y="2311" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">NOT APPLICABLE</text>
+<text x="818" y="2332" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Built after the VIN range</text>
+<text x="804" y="2384" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">YOUR SCHEDULE</text>
+<line x1="804" y1="2392" x2="1456" y2="2392" stroke="#333a45" stroke-width="1"/>
+<rect x="804" y="2402" width="652" height="71" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="818" y="2426" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Engine oil &amp; filter</text>
+<text x="818" y="2448" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Every 5,000 mi or 6 months · last done 12 Oct 2026</text>
+<text x="40" y="2614" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Either way: a recall&#x27;s &quot;›&quot; opens it (its details, PDF, and the vehicles that link it, with Edit for whoever may). A one-time requirement of your own (not a recall)</text>
+<text x="40" y="2634" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">is in A&#x27;s list, or in B&#x27;s &quot;Your schedule&quot;. Turned-off ones stay at the very bottom, as today.</text>
+<text x="40" y="2682" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">5 · Status chips: OPEN (amber) · UNDER REVIEW (grey) · COMPLIED &lt;date&gt; (green) · NOT APPLICABLE (grey, with the reason) · a recurring one shows none</text>
+</svg>

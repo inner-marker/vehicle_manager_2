@@ -13,7 +13,7 @@
 //! The view is in the address: `/vehicles/:id/tab/maintenance`, `…/tab/jobs`, `…/tab/set-up`.
 
 use dioxus::prelude::*;
-use domain::api::{AssetView, AssetsOutcome, RequirementView, ScheduleOutcome};
+use domain::api::{AssetView, AssetsOutcome, ReferenceView, RequirementView, ScheduleOutcome};
 use domain::asset::AssetId;
 use domain::dates::format_date;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
@@ -24,12 +24,18 @@ use domain::meter::{Meter, MeterId, MeterUnit};
 use domain::notes::Notes;
 use domain::preferences::Preferences;
 use domain::quantity::{parse_reading, reading_value, show_reading};
+use domain::reference::ReferenceDocumentId;
 use domain::requirement::{
-    Bundle, BundleId, CalendarUnit, DoneTask, IntervalRule, Requirement, RequirementId,
-    check_bundle, check_rules, copy_schedule,
+    Applicability, Bundle, BundleId, CalendarUnit, ComplianceMode, DoneTask, IntervalRule,
+    Requirement, RequirementId, check_bundle, check_rules, copy_schedule,
 };
 
+use super::compliance::{ComplianceChoices, TypedCompliance, chip_date, is_settled, status_chip};
 use super::problem_from_error;
+use super::references::{
+    ReferenceDialog, ReferenceLine, ReferencePicker, ReferenceSheet, short_name,
+    summary as reference_summary, use_references,
+};
 use super::squawks::use_device_zone;
 use super::timeline::{Shown, Timeline};
 use super::vehicle_setup::{RowButtons, SectionHeading};
@@ -335,9 +341,9 @@ fn ScheduleView(
     reloads: Signal<u32>,
     on_set_up: EventHandler<()>,
 ) -> Element {
-    let units = use_units();
-    let zone = use_device_zone();
     let mut copying = use_signal(|| false);
+    let known = use_references(reloads);
+    let mut filter = use_signal(|| ScheduleFilter::Open);
     if schedule.requirements.is_empty() {
         return rsx! {
             section { class: "vehicle-panel schedule-empty",
@@ -357,11 +363,20 @@ fn ScheduleView(
             }
         };
     }
-    let (on, off): (Vec<RequirementView>, Vec<RequirementView>) = schedule
+    // Open (the default) hides complied, not-applicable, and turned-off ones; All shows them
+    // (the human's note, milestone 9 test).
+    let shown: Vec<RequirementView> = schedule
         .requirements
         .iter()
+        .filter(|view| filter() == ScheduleFilter::All || is_open(view))
         .cloned()
-        .partition(|view| view.requirement.enabled);
+        .collect();
+    let hidden = schedule.requirements.len() - shown.len();
+    // Your own schedule, then recalls and bulletins, each in its own section.
+    let (recalls, own): (Vec<RequirementView>, Vec<RequirementView>) = shown
+        .into_iter()
+        .partition(|view| view.requirement.reference.is_some());
+    let refs = known();
     let name_of = |id: RequirementId| {
         schedule
             .requirements
@@ -372,29 +387,33 @@ fn ScheduleView(
     };
     rsx! {
         div { class: "schedule",
-            for view in on {
-                section { key: "{view.id}", class: "schedule-card",
-                    div { class: "schedule-card-text",
-                        span { class: "schedule-card-name", {view.requirement.name.as_str().to_owned()} }
-                        span { class: "schedule-card-rules",
-                            {rules_text(&view.requirement.rules, &vehicle.meters, view.last_done.as_ref().and_then(|done| done.next_due.as_deref()), &units())}
-                        }
-                    }
-                    div { class: "schedule-card-last",
-                        span { class: "schedule-card-label", {tr(messages::SCHEDULE_LAST_DONE).to_uppercase()} }
-                        match &view.last_done {
-                            Some(done) => rsx! {
-                                span { class: "schedule-card-when", {last_done_text(done, &view.requirement, &vehicle.meters, &zone(), &units())} }
-                                Link { class: "schedule-card-job", to: Route::EventDetail { event_id: done.event.to_string() }, {tr(messages::SCHEDULE_THE_JOB)} }
-                            },
-                            None => rsx! { span { class: "schedule-card-when muted", {tr(messages::SCHEDULE_NOT_DONE)} } },
-                        }
+            div { class: "chip-row schedule-filter", role: "group",
+                for each in [ScheduleFilter::Open, ScheduleFilter::All] {
+                    button {
+                        key: "{each:?}",
+                        class: if filter() == each { "chip-filter on" } else { "chip-filter" },
+                        r#type: "button",
+                        "aria-pressed": filter() == each,
+                        onclick: move |_| filter.set(each),
+                        {tr(each.label())}
                     }
                 }
             }
-            if !off.is_empty() {
+            if !own.is_empty() {
+                h3 { class: "section-heading", {tr(messages::SCHEDULE_YOUR_SCHEDULE).to_uppercase()} }
+                for view in own {
+                    ScheduleCard { key: "{view.id}", view, vehicle: vehicle.clone(), refs: refs.clone() }
+                }
+            }
+            if !recalls.is_empty() {
+                h3 { class: "section-heading", {tr(messages::SCHEDULE_RECALLS).to_uppercase()} }
+                for view in recalls {
+                    ScheduleCard { key: "{view.id}", view, vehicle: vehicle.clone(), refs: refs.clone() }
+                }
+            }
+            if filter() == ScheduleFilter::Open && hidden > 0 {
                 p { class: "muted-note",
-                    {tr_with(messages::SCHEDULE_TURNED_OFF, &[("names", MessageArg::from(off.iter().map(|view| view.requirement.name.as_str().to_owned()).collect::<Vec<_>>().join(", ")))])}
+                    {tr_with(messages::SCHEDULE_HIDDEN, &[("count", MessageArg::from(i64::try_from(hidden).unwrap_or(i64::MAX)))])}
                 }
             }
             if !schedule.bundles.is_empty() {
@@ -424,6 +443,113 @@ fn ScheduleView(
     }
 }
 
+/// Which requirements the Schedule shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScheduleFilter {
+    /// What still applies: not complied with, applicable, and turned on.
+    Open,
+    /// Everything.
+    All,
+}
+
+impl ScheduleFilter {
+    const fn label(self) -> MessageId {
+        match self {
+            Self::Open => messages::SCHEDULE_FILTER_OPEN,
+            Self::All => messages::SCHEDULE_FILTER_ALL,
+        }
+    }
+}
+
+/// Whether a requirement still applies: turned on, and neither complied with nor ruled out.
+fn is_open(view: &RequirementView) -> bool {
+    view.requirement.enabled && !is_settled(view.status)
+}
+
+/// What a requirement's card or row says under its name: its rules (a recurring one), or
+/// "One-time" and the recall it's for; and why it doesn't apply, if it doesn't.
+fn detail_line(
+    view: &RequirementView,
+    meters: &[(MeterId, Meter)],
+    refs: &[ReferenceView],
+    units: &Preferences,
+) -> String {
+    let requirement = &view.requirement;
+    let mut parts = Vec::new();
+    if requirement.mode == ComplianceMode::OneTime {
+        parts.push(tr(ComplianceMode::OneTime.label()));
+    } else {
+        parts.push(rules_text(
+            &requirement.rules,
+            meters,
+            view.last_done
+                .as_ref()
+                .and_then(|done| done.next_due.as_deref()),
+            units,
+        ));
+    }
+    if let Some(found) = requirement
+        .reference
+        .and_then(|id| refs.iter().find(|known| known.id == id))
+    {
+        parts.push(reference_summary(&found.document));
+    }
+    if let Applicability::NotApplicable { reason } = &requirement.applicability {
+        parts.push(reason.as_str().to_owned());
+    }
+    parts.join(" · ")
+}
+
+/// One requirement in the Schedule: its name, status chip, what it says, the recall it's for
+/// (opens it), and when it was last done.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ScheduleCard(view: RequirementView, vehicle: AssetView, refs: Vec<ReferenceView>) -> Element {
+    let units = use_units();
+    let zone = use_device_zone();
+    let mut showing = use_signal(|| false);
+    let chip = if view.requirement.enabled {
+        status_chip(view.status, &view.requirement.applicability, |at| {
+            chip_date(at, &zone(), &units())
+        })
+    } else {
+        Some((tr(messages::SCHEDULE_OFF), "status-chip muted"))
+    };
+    let reference = view.requirement.reference;
+    rsx! {
+        section { class: "schedule-card",
+            div { class: "schedule-card-text",
+                span { class: "schedule-card-name",
+                    {view.requirement.name.as_str().to_owned()}
+                    if let Some((text, class)) = chip {
+                        span { class, {text} }
+                    }
+                }
+                span { class: "schedule-card-rules", {detail_line(&view, &vehicle.meters, &refs, &units())} }
+                if reference.is_some() {
+                    button { class: "link-button", r#type: "button", onclick: move |_| showing.set(true), {format!("{} ›", tr(messages::REFERENCE_OPEN))} }
+                }
+            }
+            div { class: "schedule-card-last",
+                span { class: "schedule-card-label", {tr(messages::SCHEDULE_LAST_DONE).to_uppercase()} }
+                match &view.last_done {
+                    Some(done) => rsx! {
+                        span { class: "schedule-card-when", {last_done_text(done, &view.requirement, &vehicle.meters, &zone(), &units())} }
+                        Link { class: "schedule-card-job", to: Route::EventDetail { event_id: done.event.to_string() }, {tr(messages::SCHEDULE_THE_JOB)} }
+                    },
+                    None => rsx! { span { class: "schedule-card-when muted", {tr(messages::SCHEDULE_NOT_DONE)} } },
+                }
+            }
+        }
+        if let (Some(id), true) = (reference, showing()) {
+            ReferenceSheet { id, vehicle, on_close: move |()| showing.set(false) }
+        }
+    }
+}
+
 // --- Set up ------------------------------------------------------------------------------
 
 /// What a dialog in Set up is doing.
@@ -436,6 +562,12 @@ enum Editing {
     RemoveRequirement(RequirementId, String),
     RemoveBundle(BundleId, String),
     Copy,
+    /// **+ Recall or bulletin**: new, or one already recorded (1B).
+    PickReference,
+    NewReference,
+    LinkReference(Box<ReferenceView>),
+    /// A recall's own view (after adding one, to attach its PDF).
+    ShowReference(ReferenceDocumentId),
 }
 
 /// The Set up view: the requirements and bundles, with their dialogs.
@@ -447,6 +579,13 @@ enum Editing {
 fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> Element {
     let units = use_units();
     let mut editing = use_signal(|| None::<Editing>);
+    let known = use_references(reloads);
+    let linked: Vec<ReferenceDocumentId> = schedule
+        .requirements
+        .iter()
+        .filter_map(|view| view.requirement.reference)
+        .collect();
+    let refs = known();
     let name_of = |id: RequirementId| {
         schedule
             .requirements
@@ -464,6 +603,10 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                         button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Copy)), {tr(messages::SCHEDULE_COPY_FROM)} }
                     }
                     button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::NewRequirement)), {tr(messages::SCHEDULE_ADD_REQUIREMENT)} }
+                    // Nothing new once the vehicle's disposal is finalized (#067).
+                    if vehicle.standing.takes_new_records {
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::PickReference)), {tr(messages::SCHEDULE_ADD_REFERENCE)} }
+                    }
                 }
             }
             if schedule.requirements.is_empty() {
@@ -473,9 +616,7 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                 div { key: "{view.id}", class: if view.requirement.enabled { "setup-row" } else { "setup-row off" },
                     div { class: "setup-row-text",
                         span { class: "setup-row-name", {view.requirement.name.as_str().to_owned()} }
-                        span { class: "setup-row-detail",
-                            {rules_text(&view.requirement.rules, &vehicle.meters, view.last_done.as_ref().and_then(|done| done.next_due.as_deref()), &units())}
-                        }
+                        span { class: "setup-row-detail", {detail_line(&view, &vehicle.meters, &refs, &units())} }
                         if !view.requirement.enabled {
                             span { class: "setup-row-detail", {tr(messages::SCHEDULE_OFF)} }
                         }
@@ -533,6 +674,28 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
             Some(Editing::RemoveRequirement(id, name)) => rsx! { RemoveDialog { target: Removal::Requirement(id), name, reloads, on_close: close } },
             Some(Editing::RemoveBundle(id, name)) => rsx! { RemoveDialog { target: Removal::Bundle(id), name, reloads, on_close: close } },
             Some(Editing::Copy) => rsx! { CopyDialog { vehicle, reloads, on_close: close } },
+            Some(Editing::PickReference) => rsx! {
+                ReferencePicker {
+                    known: refs,
+                    linked,
+                    on_new: move |()| editing.set(Some(Editing::NewReference)),
+                    on_pick: move |view: ReferenceView| editing.set(Some(Editing::LinkReference(Box::new(view)))),
+                    on_close: close,
+                }
+            },
+            Some(Editing::NewReference) => rsx! {
+                ReferenceDialog {
+                    vehicle,
+                    existing: None,
+                    on_saved: move |id| {
+                        reloads += 1;
+                        editing.set(Some(Editing::ShowReference(id)));
+                    },
+                    on_close: close,
+                }
+            },
+            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), reloads, on_close: close } },
+            Some(Editing::ShowReference(id)) => rsx! { ReferenceSheet { id, vehicle, on_close: close } },
         }
     }
 }
@@ -635,18 +798,29 @@ struct TypedRequirement {
     rules: Vec<TypedRule>,
 }
 
-/// The requirement to save, or the problem with what's typed.
+/// The requirement to save, or the problem with what's typed: a one-time one keeps no
+/// intervals (#068), and `reference` is the recall or bulletin it's for.
 fn requirement_from(
     typed: &TypedRequirement,
+    compliance: &TypedCompliance,
+    reference: Option<ReferenceDocumentId>,
     asset: AssetId,
     meters: &[(MeterId, Meter)],
 ) -> Result<Requirement, MessageId> {
+    let one_time = compliance.mode == ComplianceMode::OneTime;
     Ok(Requirement {
         asset,
         name: Label::parse(&typed.name).map_err(domain::label::LabelError::message)?,
         notes: Notes::parse(&typed.notes).map_err(domain::notes::NotesError::message)?,
         enabled: typed.enabled,
-        rules: rules_from(&typed.rules, meters)?,
+        rules: if one_time {
+            Vec::new()
+        } else {
+            rules_from(&typed.rules, meters)?
+        },
+        reference,
+        mode: compliance.mode,
+        applicability: compliance.applicability()?,
     })
 }
 
@@ -659,11 +833,15 @@ fn requirement_from(
 fn RequirementDialog(
     vehicle: AssetView,
     existing: Option<(RequirementId, Requirement)>,
+    /// A new requirement for this recall or bulletin (from **+ Recall or bulletin**).
+    #[props(default)]
+    link: Option<ReferenceView>,
     reloads: Signal<u32>,
     on_close: EventHandler<()>,
 ) -> Element {
     let meters = vehicle.meters.clone();
     let start = existing.clone();
+    let start_link = link.clone();
     let mut typed = use_signal(|| match &start {
         Some((_, requirement)) => TypedRequirement {
             name: requirement.name.as_str().to_owned(),
@@ -676,12 +854,32 @@ fn RequirementDialog(
                 .collect(),
         },
         None => TypedRequirement {
-            name: String::new(),
+            name: start_link
+                .as_ref()
+                .map(|view| short_name(&view.document.title))
+                .unwrap_or_default(),
             notes: String::new(),
             enabled: true,
             rules: Vec::new(),
         },
     });
+    let start = existing.clone();
+    let linking = link.is_some();
+    let compliance = use_signal(|| match &start {
+        Some((_, requirement)) => {
+            TypedCompliance::from_stored(requirement.mode, &requirement.applicability)
+        }
+        // A recall is most often done once.
+        None if linking => TypedCompliance {
+            mode: ComplianceMode::OneTime,
+            ..TypedCompliance::default()
+        },
+        None => TypedCompliance::default(),
+    });
+    let reference = existing
+        .as_ref()
+        .and_then(|(_, requirement)| requirement.reference)
+        .or_else(|| link.as_ref().map(|view| view.id));
     let mut problem = use_signal(|| None::<MessageId>);
     let mut busy = use_signal(|| false);
     let rules = typed().rules;
@@ -709,13 +907,14 @@ fn RequirementDialog(
         if busy() {
             return;
         }
-        let requirement = match requirement_from(&typed(), asset, &save_meters) {
-            Ok(requirement) => requirement,
-            Err(message) => {
-                problem.set(Some(message));
-                return;
-            }
-        };
+        let requirement =
+            match requirement_from(&typed(), &compliance(), reference, asset, &save_meters) {
+                Ok(requirement) => requirement,
+                Err(message) => {
+                    problem.set(Some(message));
+                    return;
+                }
+            };
         busy.set(true);
         spawn(async move {
             let result = match editing_id {
@@ -747,6 +946,9 @@ fn RequirementDialog(
                 onclick: move |event| event.stop_propagation(),
                 onsubmit: save,
                 h2 { class: "dialog-title", {title} }
+                if let Some(reference) = reference {
+                    ReferenceLine { reference, vehicle: vehicle.clone() }
+                }
                 label { class: "field",
                     span { class: "field-label", {tr(messages::SCHEDULE_NAME)} }
                     input { class: "field-input", value: typed().name, maxlength: "40", oninput: move |event| typed.write().name = event.value() }
@@ -759,6 +961,8 @@ fn RequirementDialog(
                     input { r#type: "checkbox", checked: typed().enabled, onchange: move |event| typed.write().enabled = event.checked() }
                     span { {tr(messages::SCHEDULE_IN_USE)} }
                 }
+                ComplianceChoices { compliance }
+                if compliance().mode == ComplianceMode::Recurring {
                 h3 { class: "section-heading", {tr(messages::SCHEDULE_DUE_WHEN).to_uppercase()} }
                 for (index, rule) in rules.iter().cloned().enumerate() {
                     div { key: "{index}", class: "rule-row",
@@ -793,6 +997,7 @@ fn RequirementDialog(
                     }
                 }
                 p { class: "muted-note", {tr(messages::SCHEDULE_RULES_HINT)} }
+                }
                 if let Some(message) = problem() {
                     p { class: "form-error", role: "alert", {tr(message)} }
                 }
@@ -1344,6 +1549,9 @@ mod tests {
                 meter: test_id(21),
                 every: 360_000,
             }],
+            reference: None,
+            mode: ComplianceMode::Recurring,
+            applicability: Applicability::Applies,
         };
         let done = DoneTask {
             requirement: test_id(40),

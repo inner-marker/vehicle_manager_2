@@ -32,7 +32,6 @@ use domain::event_check::{
 use domain::id::DeviceId;
 use domain::inbox::{Message, forgotten_job_message};
 use domain::log_area;
-use domain::meter::EventKind;
 use domain::profile::event_kinds;
 use domain::squawk::{SquawkId, status};
 use domain::time::{Clock, UnixMillis};
@@ -73,15 +72,6 @@ fn either(result: Result<EventsOutcome, EventsOutcome>) -> EventsOutcome {
     result.unwrap_or_else(|outcome| outcome)
 }
 
-/// What logging `kind` needs.
-const fn log_action(kind: EventKind) -> AssetAction {
-    match kind {
-        EventKind::Fuel => AssetAction::LogFuel,
-        EventKind::Reading => AssetAction::LogReading,
-        EventKind::Maintenance | EventKind::Repair => AssetAction::LogMaintenance,
-    }
-}
-
 impl AssetsContext<'_> {
     fn permits(&self, action: AssetAction, scope: AssetScope) -> bool {
         permits_on_asset(&self.user.grants, self.user.mode, action, scope)
@@ -90,7 +80,8 @@ impl AssetsContext<'_> {
     /// Whether the person may change, finalize, or correct `event`.
     pub(crate) fn may_manage(&self, event: &Event, scope: AssetScope) -> bool {
         self.permits(AssetAction::ManageEvents, scope)
-            || (event.logged_by == self.user.user && self.permits(log_action(event.kind), scope))
+            || (event.logged_by == self.user.user
+                && self.permits(AssetAction::to_log(event.kind), scope))
     }
 
     /// The event and its vehicle's scope, if the person can see it.
@@ -222,6 +213,9 @@ impl AssetsContext<'_> {
             let outstanding = self.outstanding_squawks(event.asset, &leave_out).await?;
             (requirements, outstanding)
         };
+        let lifecycle = crate::lifecycle::records(self.database, event.asset, &leave_out)
+            .await
+            .map_err(|error| failed("lifecycle", &error))?;
         let context = CheckContext {
             kinds: &kinds,
             meters: &meters,
@@ -231,6 +225,7 @@ impl AssetsContext<'_> {
             may_override_readings: self.permits(AssetAction::OverrideReadings, scope),
             requirements: &requirements,
             outstanding_squawks: &outstanding_squawks,
+            lifecycle: &lifecycle,
         };
         let warnings = if finishing {
             check_finish(event, &context)
@@ -438,7 +433,7 @@ async fn add_event(
         .visible(input.asset)
         .await
         .map_err(|outcome| from_assets(&outcome))?;
-    if !context.permits(log_action(input.kind), scope) {
+    if !context.permits(AssetAction::to_log(input.kind), scope) {
         return Err(EventsOutcome::NotAllowed);
     }
     let kind = input.kind;

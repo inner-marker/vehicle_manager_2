@@ -36,6 +36,7 @@ use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::location::Coordinates;
 use crate::meter::EventKind;
+use crate::reference::ReferenceDocumentId;
 use crate::squawk::SquawkId;
 use crate::time::UnixMillis;
 use crate::user::UserId;
@@ -281,13 +282,18 @@ impl PhotoSize {
     }
 
     /// The default for a photo on an event of `kind` (milestone 8, choice 8): Small on
-    /// fuel-ups and readings (a pump or a gauge), Medium on everything else. A profile can
+    /// fuel-ups and readings (a pump or a gauge), Medium on everything else (work, paperwork). A profile can
     /// change it ([`crate::profile::Profile::photo_size`]).
     #[must_use]
     pub const fn default_for(kind: EventKind) -> Self {
         match kind {
             EventKind::Fuel | EventKind::Reading => Self::Small,
-            EventKind::Maintenance | EventKind::Repair => Self::Medium,
+            EventKind::Maintenance
+            | EventKind::Repair
+            | EventKind::Acquired
+            | EventKind::SentOut
+            | EventKind::Returned
+            | EventKind::Disposed => Self::Medium,
         }
     }
 }
@@ -361,6 +367,12 @@ pub enum AttachmentOwner {
         /// Which document.
         document: AssetDocumentId,
     },
+    /// A reference document (a recall's or bulletin's PDF): shared, so on no one vehicle
+    /// (milestone 9, #068).
+    Reference {
+        /// Which reference document.
+        reference: ReferenceDocumentId,
+    },
 }
 
 impl AttachmentOwner {
@@ -369,8 +381,17 @@ impl AttachmentOwner {
     pub const fn event(self) -> Option<EventId> {
         match self {
             Self::Event { event, .. } => Some(event),
-            Self::Vehicle | Self::Squawk { .. } | Self::Document { .. } => None,
+            Self::Vehicle
+            | Self::Squawk { .. }
+            | Self::Document { .. }
+            | Self::Reference { .. } => None,
         }
+    }
+
+    /// Whether it's on a vehicle (everything but a reference document is).
+    #[must_use]
+    pub const fn on_a_vehicle(self) -> bool {
+        !matches!(self, Self::Reference { .. })
     }
 
     /// Where it is after task `removed` leaves its event's list: a later task's place moves up
@@ -389,9 +410,11 @@ impl AttachmentOwner {
                     Some(task - 1)
                 },
             },
-            Self::Vehicle | Self::Event { .. } | Self::Squawk { .. } | Self::Document { .. } => {
-                self
-            }
+            Self::Vehicle
+            | Self::Event { .. }
+            | Self::Squawk { .. }
+            | Self::Document { .. }
+            | Self::Reference { .. } => self,
         }
     }
 }
@@ -444,8 +467,8 @@ impl Content {
 /// One attachment.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Attachment {
-    /// Which vehicle it's about.
-    pub asset: AssetId,
+    /// Which vehicle it's about; none only for a reference document's (shared by vehicles).
+    pub asset: Option<AssetId>,
     /// What it's on.
     pub owner: AttachmentOwner,
     /// The file shown: the JPEG, or the PDF.
@@ -488,7 +511,7 @@ record_patch! {
     AttachmentPatch
     {
         /// See [`Attachment::asset`] (set when added).
-        asset: AssetId,
+        asset: Option<AssetId>,
         /// See [`Attachment::owner`].
         owner: AttachmentOwner,
         /// See [`Attachment::file`] (set when added).
@@ -561,7 +584,8 @@ pub fn for_correction(original: &[Attachment], correction: EventId) -> Vec<Attac
             }),
             AttachmentOwner::Vehicle
             | AttachmentOwner::Squawk { .. }
-            | AttachmentOwner::Document { .. } => None,
+            | AttachmentOwner::Document { .. }
+            | AttachmentOwner::Reference { .. } => None,
         })
         .collect()
 }
@@ -633,8 +657,13 @@ pub fn check_original(file_type: Option<FileType>, bytes: u64) -> Result<(), Att
 /// # Errors
 ///
 /// [`AttachmentProblem::NoSize`], [`AttachmentProblem::CameraTooLong`],
-/// [`AttachmentProblem::NoPages`], or [`AttachmentProblem::NoSuchTask`].
+/// [`AttachmentProblem::NoPages`], [`AttachmentProblem::NoSuchTask`], or
+/// [`AttachmentProblem::WrongVehicle`] (a reference document's on a vehicle, or anything else
+/// on none).
 pub fn check(attachment: &Attachment, tasks: usize) -> Result<(), AttachmentProblem> {
+    if attachment.asset.is_some() != attachment.owner.on_a_vehicle() {
+        return Err(AttachmentProblem::WrongVehicle);
+    }
     match &attachment.content {
         Content::Photo {
             width,
@@ -666,7 +695,8 @@ pub fn check(attachment: &Attachment, tasks: usize) -> Result<(), AttachmentProb
         AttachmentOwner::Vehicle
         | AttachmentOwner::Event { .. }
         | AttachmentOwner::Squawk { .. }
-        | AttachmentOwner::Document { .. } => Ok(()),
+        | AttachmentOwner::Document { .. }
+        | AttachmentOwner::Reference { .. } => Ok(()),
     }
 }
 
@@ -710,6 +740,8 @@ pub enum AttachmentProblem {
     OriginalsOff,
     /// An attachment on a finished event (correct the event instead, choice 6).
     EventFinished,
+    /// A reference document's attachment on a vehicle, or anything else on none.
+    WrongVehicle,
 }
 
 impl AttachmentProblem {
@@ -735,6 +767,7 @@ impl AttachmentProblem {
             Self::NotUploaded => messages::ATTACHMENT_NOT_UPLOADED,
             Self::OriginalsOff => messages::ATTACHMENT_ORIGINALS_OFF,
             Self::EventFinished => messages::ATTACHMENT_EVENT_FINISHED,
+            Self::WrongVehicle => messages::SOMETHING_WENT_WRONG,
         }
     }
 }
@@ -754,7 +787,7 @@ mod tests {
 
     fn photo(owner: AttachmentOwner) -> Attachment {
         Attachment {
-            asset: test_id(1),
+            asset: Some(test_id(1)),
             owner,
             file: stored(1, 600_000),
             thumbnail: Some(stored(2, 30_000)),
@@ -1026,5 +1059,30 @@ mod tests {
             ..AttachmentPatch::default()
         };
         assert!(moved.only_moves());
+    }
+
+    #[test]
+    fn a_reference_documents_attachment_is_on_no_vehicle() {
+        let shared = Attachment {
+            asset: None,
+            ..photo(AttachmentOwner::Reference {
+                reference: test_id(70),
+            })
+        };
+        assert_eq!(check(&shared, 0), Ok(()));
+        let on_a_vehicle = Attachment {
+            asset: Some(test_id(1)),
+            ..shared.clone()
+        };
+        assert_eq!(
+            check(&on_a_vehicle, 0),
+            Err(AttachmentProblem::WrongVehicle)
+        );
+        let lost = Attachment {
+            asset: None,
+            ..photo(AttachmentOwner::Vehicle)
+        };
+        assert_eq!(check(&lost, 0), Err(AttachmentProblem::WrongVehicle));
+        assert!(for_correction(&[shared], test_id(2)).is_empty());
     }
 }

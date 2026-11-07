@@ -7,6 +7,11 @@
 //! sheet, step 7f). **Maintenance** and **Repair** open the work log (step 7i), for
 //! Maintainers in Maintainer or Admin mode.
 //!
+//! **Vehicle's life** (milestone 9, option A of `docs/ui-sketches/p2m9-lifecycle-options.svg`):
+//! below them, the lifecycle kinds that fit now (Sent out while it isn't out, Returned while it
+//! is, Acquired and Disposed until recorded), for whoever may record them. A vehicle whose
+//! disposal is finalized takes nothing new, so it isn't offered at all.
+//!
 //! **Last time's vehicle** is remembered on this device (the browser's local storage), so it
 //! survives a reload.
 
@@ -93,21 +98,35 @@ pub(crate) fn use_log_chooser() -> LogChooser {
     use_context::<LogChooser>()
 }
 
-/// The kinds of events the person may log on `vehicle` in `mode`: its kind's (#030), limited by
-/// their role there and the mode (plan §6).
+/// The kinds of events the person may log on `vehicle` in `mode`: its kind's everyday ones
+/// (#030), then the lifecycle ones that fit now (#067), limited by their role there and the mode
+/// (plan §6). None once its disposal is finalized.
 pub(crate) fn loggable_kinds(vehicle: &AssetSummary, mode: ActiveMode) -> Vec<EventKind> {
-    let kinds = event_kinds(&vehicle.asset.kind);
-    let allowed = vehicle.role.min(mode.cap());
-    [
-        (EventKind::Fuel, AssetAction::LogFuel),
-        (EventKind::Reading, AssetAction::LogReading),
-        (EventKind::Maintenance, AssetAction::LogMaintenance),
-        (EventKind::Repair, AssetAction::LogMaintenance),
-    ]
-    .into_iter()
-    .filter(|(kind, action)| kinds.contains(kind) && allowed >= action.required_role())
-    .map(|(kind, _)| kind)
-    .collect()
+    kinds_for(&vehicle.asset, vehicle.role, &vehicle.standing, mode)
+}
+
+/// What [`loggable_kinds`] gives, from a vehicle's parts (its page has them too).
+pub(super) fn kinds_for(
+    asset: &domain::asset::Asset,
+    role: domain::access::Role,
+    standing: &domain::lifecycle::Standing,
+    mode: ActiveMode,
+) -> Vec<EventKind> {
+    let allowed = role.min(mode.cap());
+    if !standing.takes_new_records {
+        return Vec::new();
+    }
+    event_kinds(&asset.kind)
+        .into_iter()
+        .chain(standing.lifecycle_kinds())
+        .filter(|kind| allowed >= AssetAction::to_log(*kind).required_role())
+        .collect()
+}
+
+/// Whether + Log has anything for `vehicle` in `mode`: a kind of event, or an issue.
+pub(crate) fn may_log_for(vehicle: &AssetSummary, mode: ActiveMode) -> bool {
+    !loggable_kinds(vehicle, mode).is_empty()
+        || (vehicle.standing.takes_new_records && may_open_squawks(vehicle.role, mode))
 }
 
 /// What a kind's tile says under its name.
@@ -117,6 +136,10 @@ const fn kind_detail(kind: EventKind) -> domain::i18n::MessageId {
         EventKind::Reading => messages::LOG_READING_DETAIL,
         EventKind::Maintenance => messages::LOG_MAINTENANCE_DETAIL,
         EventKind::Repair => messages::LOG_REPAIR_DETAIL,
+        EventKind::Acquired => messages::LOG_ACQUIRED_DETAIL,
+        EventKind::SentOut => messages::LOG_SENT_OUT_DETAIL,
+        EventKind::Returned => messages::LOG_RETURNED_DETAIL,
+        EventKind::Disposed => messages::LOG_DISPOSED_DETAIL,
     }
 }
 
@@ -160,7 +183,6 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
     let sheet = use_squawk_sheet();
     let vehicles = use_vehicles();
     let auth = use_auth();
-    let navigator = use_navigator();
     let mode = match auth() {
         AuthState::SignedIn(session) => session.mode,
         AuthState::Loading
@@ -174,7 +196,7 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
         .map(|garage| garage.assets)
         .unwrap_or_default()
         .into_iter()
-        .filter(|vehicle| !loggable_kinds(vehicle, mode).is_empty())
+        .filter(|vehicle| may_log_for(vehicle, mode))
         .collect();
     choices.sort_by_key(|vehicle| Some(vehicle.id) != last);
     let first = start
@@ -189,11 +211,15 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
         .iter()
         .find(|vehicle| Some(vehicle.id) == chosen)
         .cloned();
-    let kinds = chosen_vehicle
+    let (life, everyday): (Vec<EventKind>, Vec<EventKind>) = chosen_vehicle
         .as_ref()
         .map(|vehicle| loggable_kinds(vehicle, mode))
-        .unwrap_or_default();
-    let squawkable = chosen_vehicle.filter(|vehicle| may_open_squawks(vehicle.role, mode));
+        .unwrap_or_default()
+        .into_iter()
+        .partition(|kind| kind.is_lifecycle());
+    let squawkable = chosen_vehicle.filter(|vehicle| {
+        vehicle.standing.takes_new_records && may_open_squawks(vehicle.role, mode)
+    });
     rsx! {
         label { class: "field",
             span { class: "field-label", {tr(messages::LOG_VEHICLE)} }
@@ -215,34 +241,8 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
             }
         }
         div { class: "log-tiles",
-            for kind in kinds {
-                button {
-                    key: "{event_value(kind)}",
-                    class: "log-tile",
-                    r#type: "button",
-                    onclick: move |_| {
-                        if let Some(asset) = chosen {
-                            tracing::debug!(target: log_area::UI, %asset, kind = event_value(kind), "log form opened");
-                            navigator.push(Route::LogForm {
-                                asset_id: asset.to_string(),
-                                kind: event_value(kind).to_owned(),
-                            });
-                            on_done.call(());
-                        }
-                    },
-                    span { class: "log-tile-icon",
-                        match kind {
-                            EventKind::Fuel => "⛽",
-                            EventKind::Reading => "⏱",
-                            EventKind::Maintenance => "🔧",
-                            EventKind::Repair => "🛠",
-                        }
-                    }
-                    span { class: "log-tile-text",
-                        span { class: "log-tile-name", {tr(kind.label())} }
-                        span { class: "log-tile-detail", {tr(kind_detail(kind))} }
-                    }
-                }
+            for kind in everyday {
+                KindTile { key: "{event_value(kind)}", kind, chosen, on_done }
             }
             if let Some(vehicle) = squawkable {
                 button {
@@ -261,6 +261,59 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
                 }
             }
         }
+        if !life.is_empty() {
+            h3 { class: "section-heading", {tr(messages::LOG_VEHICLE_LIFE).to_uppercase()} }
+            div { class: "log-tiles life",
+                for kind in life {
+                    KindTile { key: "{event_value(kind)}", kind, chosen, on_done }
+                }
+            }
+        }
+    }
+}
+
+/// One kind's tile: opens its form for the chosen vehicle.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn KindTile(kind: EventKind, chosen: Option<AssetId>, on_done: EventHandler<()>) -> Element {
+    let navigator = use_navigator();
+    rsx! {
+        button {
+            class: "log-tile",
+            r#type: "button",
+            onclick: move |_| {
+                if let Some(asset) = chosen {
+                    tracing::debug!(target: log_area::UI, %asset, kind = event_value(kind), "log form opened");
+                    navigator.push(Route::LogForm {
+                        asset_id: asset.to_string(),
+                        kind: event_value(kind).to_owned(),
+                    });
+                    on_done.call(());
+                }
+            },
+            span { class: "log-tile-icon", {kind_icon(kind)} }
+            span { class: "log-tile-text",
+                span { class: "log-tile-name", {tr(kind.label())} }
+                span { class: "log-tile-detail", {tr(kind_detail(kind))} }
+            }
+        }
+    }
+}
+
+/// A kind's icon, as on its tile and its Timeline row.
+pub(crate) const fn kind_icon(kind: EventKind) -> &'static str {
+    match kind {
+        EventKind::Fuel => "⛽",
+        EventKind::Reading => "⏱",
+        EventKind::Maintenance => "🔧",
+        EventKind::Repair => "🛠",
+        EventKind::Acquired => "🔑",
+        EventKind::SentOut => "🚚",
+        EventKind::Returned => "↩",
+        EventKind::Disposed => "🏁",
     }
 }
 
@@ -285,6 +338,7 @@ mod tests {
 
     fn vehicle(kind: &str, role: Role) -> AssetSummary {
         AssetSummary {
+            standing: domain::lifecycle::Standing::default(),
             id: test_id(1),
             asset: Asset {
                 kind: AssetKind::parse(kind).unwrap(),
@@ -327,13 +381,46 @@ mod tests {
                 EventKind::Fuel,
                 EventKind::Reading,
                 EventKind::Maintenance,
-                EventKind::Repair
+                EventKind::Repair,
+                EventKind::SentOut
             ],
-            "maintenance and repairs for a Maintainer, in that mode"
+            "maintenance, repairs, and sending it out for a Maintainer, in that mode"
         );
         assert_eq!(
             loggable_kinds(&vehicle("truck", Role::Maintainer), ActiveMode::Driver),
             both,
+        );
+    }
+
+    #[test]
+    fn the_lifecycle_kinds_follow_the_role_and_what_fits_now() {
+        let life = |vehicle: &AssetSummary, mode| -> Vec<EventKind> {
+            loggable_kinds(vehicle, mode)
+                .into_iter()
+                .filter(|kind| kind.is_lifecycle())
+                .collect()
+        };
+        assert_eq!(
+            life(&vehicle("truck", Role::Maintainer), ActiveMode::Maintainer),
+            vec![EventKind::SentOut],
+            "a Maintainer sends it out"
+        );
+        assert_eq!(
+            life(&vehicle("truck", Role::Admin), ActiveMode::Admin),
+            vec![EventKind::SentOut, EventKind::Acquired, EventKind::Disposed]
+        );
+        assert!(life(&vehicle("truck", Role::Driver), ActiveMode::Driver).is_empty());
+        let mut out = vehicle("trailer", Role::Maintainer);
+        out.standing.sent_out = Some(test_id(9));
+        assert_eq!(
+            life(&out, ActiveMode::Maintainer),
+            vec![EventKind::Returned]
+        );
+        let mut gone = vehicle("truck", Role::Admin);
+        gone.standing.takes_new_records = false;
+        assert!(
+            loggable_kinds(&gone, ActiveMode::Admin).is_empty(),
+            "nothing new"
         );
     }
 }

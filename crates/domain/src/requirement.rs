@@ -13,6 +13,11 @@
 //! tasks may each have their own intervals. Both belong to one vehicle; **copying a schedule**
 //! from another vehicle copies them, never links them (#031).
 //!
+//! **Milestone 9 (#068):** a requirement can link a recall or bulletin
+//! ([`crate::reference`]), be **one-time** (closed by the first finished task that does it)
+//! or recurring ([`ComplianceMode`]), and **apply, not apply** (with a reason), or be **under
+//! review** ([`Applicability`]). Its [`RequirementStatus`] is worked out from those.
+//!
 //! "What's due" is Phase 5. Milestone 7 keeps the rules and shows when each requirement was
 //! **last done** (from the finished task that signed it off). The calendar arithmetic is here
 //! already, tested, for Phase 5 to use.
@@ -37,13 +42,14 @@
 use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetId;
-use crate::command::{Record, record_patch};
-use crate::event::{EventId, Reading};
+use crate::command::{Clearable, Record, record_patch};
+use crate::event::{EventId, Reading, Reason};
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::label::Label;
 use crate::meter::{Meter, MeterId};
 use crate::notes::Notes;
+use crate::reference::ReferenceDocumentId;
 use crate::time::UnixMillis;
 
 /// The ID of a requirement.
@@ -115,12 +121,55 @@ pub enum IntervalRule {
     },
 }
 
+/// How a requirement is complied with (plan §3, layer 2). More modes join in Phase 5
+/// (an initial deadline then recurring, and recurring until a terminating action).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ComplianceMode {
+    /// Again and again, under its interval rules (your own schedule).
+    #[default]
+    Recurring,
+    /// Once: the first finished task that does it closes it (most recalls).
+    OneTime,
+}
+
+impl ComplianceMode {
+    /// Every mode, in the order the form offers them.
+    pub const ALL: [Self; 2] = [Self::Recurring, Self::OneTime];
+
+    /// The mode's name.
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::Recurring => messages::COMPLIANCE_RECURRING,
+            Self::OneTime => messages::COMPLIANCE_ONE_TIME,
+        }
+    }
+}
+
+/// Whether a requirement applies to its vehicle (plan §3, layer 2).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "applies", rename_all = "kebab-case")]
+pub enum Applicability {
+    /// It applies (the default).
+    #[default]
+    Applies,
+    /// It doesn't, and why (e.g. "Built after the VIN range"): out of the schedule, still
+    /// listed.
+    NotApplicable {
+        /// Why.
+        reason: Reason,
+    },
+    /// Not decided yet.
+    UnderReview,
+}
+
 /// Something done to one vehicle, and how often.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Requirement {
     /// Which vehicle.
     pub asset: AssetId,
-    /// Its name, e.g. "Engine oil & filter".
+    /// Its name, e.g. "Engine oil & filter", or a recall's title.
     pub name: Label,
     /// Notes (e.g. the oil to use).
     pub notes: Notes,
@@ -128,6 +177,83 @@ pub struct Requirement {
     pub enabled: bool,
     /// When it comes due: whichever rule first. None: done when needed.
     pub rules: Vec<IntervalRule>,
+    /// The recall or bulletin it's for; none for your own schedule (milestone 9, #068).
+    #[serde(default)]
+    pub reference: Option<ReferenceDocumentId>,
+    /// Recurring or one-time.
+    #[serde(default)]
+    pub mode: ComplianceMode,
+    /// Whether it applies to this vehicle.
+    #[serde(default)]
+    pub applicability: Applicability,
+}
+
+/// Where a requirement stands (worked out, never stored).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "kebab-case")]
+pub enum RequirementStatus {
+    /// Not done yet (a one-time one), or still being decided.
+    Open,
+    /// A one-time one, done.
+    Complied {
+        /// The event whose task did it.
+        event: EventId,
+        /// When.
+        at: UnixMillis,
+    },
+    /// A recurring one in use.
+    Active,
+    /// It doesn't apply to this vehicle.
+    NotApplicable,
+}
+
+impl RequirementStatus {
+    /// The status's name.
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::Open => messages::REQUIREMENT_STATUS_OPEN,
+            Self::Complied { .. } => messages::REQUIREMENT_STATUS_COMPLIED,
+            Self::Active => messages::REQUIREMENT_STATUS_ACTIVE,
+            Self::NotApplicable => messages::REQUIREMENT_STATUS_NOT_APPLICABLE,
+        }
+    }
+}
+
+impl Requirement {
+    /// Where requirement `id` stands, from the finished tasks that did requirements (`done`):
+    /// not applicable if so decided; a one-time one complied with by the first task that did
+    /// it, or open (also while under review); a recurring one active (open while under
+    /// review).
+    #[must_use]
+    pub fn status(&self, id: RequirementId, done: &[DoneTask]) -> RequirementStatus {
+        match (&self.applicability, self.mode) {
+            (Applicability::NotApplicable { .. }, _) => RequirementStatus::NotApplicable,
+            (Applicability::Applies | Applicability::UnderReview, ComplianceMode::OneTime) => done
+                .iter()
+                .filter(|task| task.requirement == id)
+                .min_by_key(|task| (task.at, task.event))
+                .map_or(RequirementStatus::Open, |task| {
+                    RequirementStatus::Complied {
+                        event: task.event,
+                        at: task.at,
+                    }
+                }),
+            (Applicability::UnderReview, ComplianceMode::Recurring) => RequirementStatus::Open,
+            (Applicability::Applies, ComplianceMode::Recurring) => RequirementStatus::Active,
+        }
+    }
+
+    /// Whether it's on the schedule (what comes due): turned on, not ruled out, and not a
+    /// one-time one already done.
+    #[must_use]
+    pub fn on_schedule(&self, id: RequirementId, done: &[DoneTask]) -> bool {
+        self.enabled
+            && matches!(
+                self.status(id, done),
+                RequirementStatus::Open | RequirementStatus::Active
+            )
+    }
 }
 
 record_patch! {
@@ -144,6 +270,12 @@ record_patch! {
         enabled: bool,
         /// See [`Requirement::rules`] (the whole list).
         rules: Vec<IntervalRule>,
+        /// See [`Requirement::reference`].
+        reference: Clearable<ReferenceDocumentId>,
+        /// See [`Requirement::mode`].
+        mode: ComplianceMode,
+        /// See [`Requirement::applicability`].
+        applicability: Applicability,
     }
 }
 
@@ -157,6 +289,9 @@ impl RequirementPatch {
             notes: Some(requirement.notes),
             enabled: Some(requirement.enabled),
             rules: Some(requirement.rules),
+            reference: Some(Clearable::from_option(requirement.reference)),
+            mode: Some(requirement.mode),
+            applicability: Some(requirement.applicability),
         }
     }
 }
@@ -229,6 +364,10 @@ pub enum RequirementProblem {
     InUse,
     /// Copying a schedule onto a vehicle that already has requirements.
     ScheduleNotEmpty,
+    /// A one-time requirement with interval rules (an initial deadline is Phase 5).
+    OneTimeWithRules,
+    /// A link to a reference document that doesn't exist.
+    UnknownReference,
 }
 
 impl RequirementProblem {
@@ -236,7 +375,7 @@ impl RequirementProblem {
     #[must_use]
     pub const fn message(self) -> MessageId {
         match self {
-            Self::UnknownMeter => messages::SOMETHING_WENT_WRONG,
+            Self::UnknownMeter | Self::UnknownReference => messages::SOMETHING_WENT_WRONG,
             Self::BadInterval => messages::REQUIREMENT_BAD_INTERVAL,
             Self::BadCalendar => messages::REQUIREMENT_BAD_CALENDAR,
             Self::BadDate => messages::DATE_BAD_DATE,
@@ -245,6 +384,7 @@ impl RequirementProblem {
             Self::BadBundleItem => messages::BUNDLE_BAD_ITEM,
             Self::InUse => messages::REQUIREMENT_IN_USE,
             Self::ScheduleNotEmpty => messages::SCHEDULE_NOT_EMPTY,
+            Self::OneTimeWithRules => messages::REQUIREMENT_ONE_TIME_WITH_RULES,
         }
     }
 }
@@ -293,6 +433,28 @@ pub fn check_rules(
                 }
             }
         }
+    }
+    Ok(())
+}
+
+/// Checks a requirement's mode and link: a one-time one has no interval rules, and a linked
+/// reference document is one of the household's (`references`).
+///
+/// # Errors
+///
+/// [`RequirementProblem::OneTimeWithRules`] or [`RequirementProblem::UnknownReference`].
+pub fn check_compliance(
+    requirement: &Requirement,
+    references: &[ReferenceDocumentId],
+) -> Result<(), RequirementProblem> {
+    if requirement.mode == ComplianceMode::OneTime && !requirement.rules.is_empty() {
+        return Err(RequirementProblem::OneTimeWithRules);
+    }
+    if requirement
+        .reference
+        .is_some_and(|reference| !references.contains(&reference))
+    {
+        return Err(RequirementProblem::UnknownReference);
     }
     Ok(())
 }
@@ -522,6 +684,9 @@ mod tests {
                     end_of_month: false,
                 },
             ],
+            reference: None,
+            mode: ComplianceMode::Recurring,
+            applicability: Applicability::Applies,
         }
     }
 
@@ -789,7 +954,7 @@ mod tests {
     #[test]
     fn patches_set_every_field_and_survive_the_trip() {
         let patch = RequirementPatch::all(oil());
-        assert_eq!(patch.changed_fields().len(), 5);
+        assert_eq!(patch.changed_fields().len(), 8);
         let json = serde_json::to_string(&patch).unwrap();
         assert!(json.contains("\"rule\":\"calendar\""), "{json}");
         assert_eq!(
@@ -802,5 +967,119 @@ mod tests {
             requirements: vec![test_id(40)],
         });
         assert_eq!(bundle.changed_fields().len(), 3);
+    }
+
+    fn done_task(event: u32, requirement: u32, at: i64) -> DoneTask {
+        DoneTask {
+            requirement: test_id(requirement),
+            at: UnixMillis::from_millis(at),
+            event: test_id(event),
+            readings: vec![],
+            next_due: None,
+        }
+    }
+
+    fn recall() -> Requirement {
+        Requirement {
+            name: Label::parse("Rear axle nut recall").unwrap(),
+            rules: vec![],
+            reference: Some(test_id(70)),
+            mode: ComplianceMode::OneTime,
+            ..oil()
+        }
+    }
+
+    #[test]
+    fn a_one_time_requirement_is_closed_by_the_first_task_that_does_it() {
+        let id = test_id(40);
+        assert_eq!(recall().status(id, &[]), RequirementStatus::Open);
+        assert!(recall().on_schedule(id, &[]));
+        let done = [
+            done_task(11, 40, 300),
+            done_task(10, 40, 200),
+            done_task(12, 41, 100),
+        ];
+        assert_eq!(
+            recall().status(id, &done),
+            RequirementStatus::Complied {
+                event: test_id(10),
+                at: UnixMillis::from_millis(200)
+            }
+        );
+        assert!(
+            !recall().on_schedule(id, &done),
+            "done, so off the schedule"
+        );
+    }
+
+    #[test]
+    fn a_recurring_requirement_stays_active_after_it_is_done() {
+        let id = test_id(40);
+        let done = [done_task(10, 40, 200)];
+        assert_eq!(oil().status(id, &done), RequirementStatus::Active);
+        assert!(oil().on_schedule(id, &done));
+        let off = Requirement {
+            enabled: false,
+            ..oil()
+        };
+        assert!(!off.on_schedule(id, &done), "turned off");
+    }
+
+    #[test]
+    fn applicability_decides_before_the_mode() {
+        let id = test_id(40);
+        let ruled_out = Requirement {
+            applicability: Applicability::NotApplicable {
+                reason: Reason::parse("Built after the VIN range").unwrap(),
+            },
+            ..recall()
+        };
+        assert_eq!(ruled_out.status(id, &[]), RequirementStatus::NotApplicable);
+        assert!(
+            !ruled_out.on_schedule(id, &[]),
+            "out of the schedule, still listed"
+        );
+        let reviewing = Requirement {
+            applicability: Applicability::UnderReview,
+            ..oil()
+        };
+        assert_eq!(reviewing.status(id, &[]), RequirementStatus::Open);
+        assert!(reviewing.on_schedule(id, &[]));
+    }
+
+    #[test]
+    fn a_one_time_requirement_has_no_intervals_and_links_a_known_reference() {
+        assert_eq!(check_compliance(&recall(), &[test_id(70)]), Ok(()));
+        assert_eq!(
+            check_compliance(&recall(), &[]),
+            Err(RequirementProblem::UnknownReference)
+        );
+        let with_rules = Requirement {
+            rules: oil().rules,
+            ..recall()
+        };
+        assert_eq!(
+            check_compliance(&with_rules, &[test_id(70)]),
+            Err(RequirementProblem::OneTimeWithRules)
+        );
+        assert_eq!(check_compliance(&oil(), &[]), Ok(()), "your own schedule");
+    }
+
+    #[test]
+    fn a_requirement_stored_before_milestone_9_reads_as_recurring_and_applying() {
+        let mut json = serde_json::to_value(oil()).unwrap();
+        let fields = json.as_object_mut().unwrap();
+        for field in ["reference", "mode", "applicability"] {
+            fields.remove(field);
+        }
+        let read: Requirement = serde_json::from_value(json).unwrap();
+        assert_eq!(read, oil());
+        let ruled_out = Applicability::NotApplicable {
+            reason: Reason::parse("No sunroof").unwrap(),
+        };
+        assert_eq!(
+            serde_json::to_string(&ruled_out).unwrap(),
+            r#"{"applies":"not-applicable","reason":"No sunroof"}"#
+        );
     }
 }

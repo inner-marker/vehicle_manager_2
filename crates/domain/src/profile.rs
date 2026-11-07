@@ -171,12 +171,12 @@ pub fn profiles() -> Result<&'static [Profile], ProfileError> {
     PROFILES.as_deref().map_err(Clone::clone)
 }
 
-/// The kinds of events an asset of `kind` has: its profile's, or all of them for a kind
-/// without a profile.
+/// The everyday kinds of events an asset of `kind` has: its profile's, or all of them for a
+/// kind without a profile. Every asset also has the lifecycle kinds ([`EventKind::LIFECYCLE`]).
 #[must_use]
 pub fn event_kinds(kind: &AssetKind) -> Vec<EventKind> {
     profile(kind).map_or_else(
-        || EventKind::ALL.to_vec(),
+        || EventKind::EVERYDAY.to_vec(),
         |profile| profile.event_kinds.clone(),
     )
 }

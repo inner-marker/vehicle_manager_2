@@ -110,7 +110,7 @@ mod attachments {
 
     fn photo(store: &FileStore, owner: AttachmentOwner) -> Attachment {
         Attachment {
-            asset: test_id(TRUCK),
+            asset: Some(test_id(TRUCK)),
             owner,
             file: store.put(b"\xFF\xD8\xFF a photo").unwrap(),
             thumbnail: Some(store.put(b"\xFF\xD8\xFF its thumbnail").unwrap()),

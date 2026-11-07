@@ -394,6 +394,11 @@ pub struct AssetSummary {
     /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
     #[serde(default)]
     pub plate: Option<String>,
+    /// What its lifecycle events say about it now: the status it shows (from them where they
+    /// say, out for service or disposed; otherwise what Setup says, `asset.status`), and more
+    /// (milestone 9, #067).
+    #[serde(default)]
+    pub standing: crate::lifecycle::Standing,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -440,6 +445,9 @@ pub struct AssetView {
     /// Its current license plate, as shown ("NC · NCX 4471"), if it has one.
     #[serde(default)]
     pub plate: Option<String>,
+    /// What its lifecycle events say about it now (milestone 9, #067).
+    #[serde(default)]
+    pub standing: crate::lifecycle::Standing,
 }
 
 /// How one person's access changes in a move, for the preview.
@@ -1050,6 +1058,107 @@ pub struct RequirementView {
     pub requirement: crate::requirement::Requirement,
     /// The latest finished task that did it, if any.
     pub last_done: Option<crate::requirement::DoneTask>,
+    /// Where it stands (open, complied, active, not applicable).
+    pub status: crate::requirement::RequirementStatus,
+}
+
+/// A reference document as typed in (everything but who added it and when).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferenceInput {
+    /// See [`crate::reference::ReferenceDocument::doc_type`].
+    pub doc_type: crate::reference::ReferenceType,
+    /// See [`crate::reference::ReferenceDocument::authority`].
+    pub authority: Option<String>,
+    /// See [`crate::reference::ReferenceDocument::numbers`].
+    pub numbers: Vec<crate::reference::ReferenceNumber>,
+    /// See [`crate::reference::ReferenceDocument::title`].
+    pub title: String,
+    /// See [`crate::reference::ReferenceDocument::description`].
+    pub description: crate::notes::Notes,
+    /// See [`crate::reference::ReferenceDocument::remedy`].
+    pub remedy: crate::notes::Notes,
+    /// See [`crate::reference::ReferenceDocument::issued_on`].
+    pub issued_on: Option<crate::dates::CalendarDate>,
+    /// See [`crate::reference::ReferenceDocument::effective_on`].
+    pub effective_on: Option<crate::dates::CalendarDate>,
+    /// See [`crate::reference::ReferenceDocument::revision`].
+    pub revision: Option<String>,
+    /// See [`crate::reference::ReferenceDocument::supersedes`].
+    pub supersedes: Option<crate::reference::ReferenceDocumentId>,
+    /// See [`crate::reference::ReferenceDocument::applicability`].
+    pub applicability: crate::notes::Notes,
+    /// See [`crate::reference::ReferenceDocument::url`].
+    pub url: Option<String>,
+}
+
+/// The requirement a new reference document starts with, on one vehicle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferenceLink {
+    /// Which vehicle.
+    pub asset: crate::asset::AssetId,
+    /// The requirement's name (e.g. a shortened title).
+    pub name: crate::label::Label,
+    /// One-time (most recalls) or recurring.
+    pub mode: crate::requirement::ComplianceMode,
+    /// Whether it applies.
+    pub applicability: crate::requirement::Applicability,
+}
+
+/// One reference document as the person sees it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferenceView {
+    /// Its ID.
+    pub id: crate::reference::ReferenceDocumentId,
+    /// The document.
+    pub document: crate::reference::ReferenceDocument,
+    /// The vehicles linking it that the person can see, with their names.
+    pub vehicles: Vec<(crate::asset::AssetId, String)>,
+    /// The person may change it or its attachments (a Maintainer of every linked vehicle, or
+    /// the household's Admin in Admin mode).
+    pub may_change: bool,
+}
+
+/// The answer to a reference document request (#068).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ReferencesOutcome {
+    /// The reference documents the person can read, by title.
+    References {
+        /// Each one.
+        references: Vec<ReferenceView>,
+    },
+    /// One reference document.
+    Reference {
+        /// It.
+        view: Box<ReferenceView>,
+    },
+    /// A reference document was added (with its first requirement) or changed.
+    Saved {
+        /// Its ID.
+        id: crate::reference::ReferenceDocumentId,
+        /// The requirement it started with, when it was added.
+        requirement: Option<crate::requirement::RequirementId>,
+    },
+    /// Done.
+    Done,
+    /// There's no such reference document or vehicle (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// The reference document was refused.
+    Invalid {
+        /// Why.
+        problem: crate::reference::ReferenceProblem,
+    },
+    /// The requirement it starts with was refused.
+    InvalidRequirement {
+        /// Why.
+        problem: crate::requirement::RequirementProblem,
+    },
+    /// It can't be removed while a requirement links it.
+    InUse,
+    /// The server couldn't do it right now.
+    Unavailable,
 }
 
 /// The answer to a requirements or bundles request (a vehicle's maintenance schedule).

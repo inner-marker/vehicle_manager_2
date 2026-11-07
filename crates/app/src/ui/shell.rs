@@ -80,12 +80,10 @@ pub(crate) fn Shell() -> Element {
         }
         // A log form: "Fuel-up · Truck".
         Route::LogForm { asset_id, kind } => {
-            let kind = match kind.as_str() {
-                "fuel" => messages::EVENT_KIND_FUEL,
-                "maintenance" => messages::EVENT_KIND_MAINTENANCE,
-                "repair" => messages::EVENT_KIND_REPAIR,
-                _ => messages::EVENT_KIND_READING,
-            };
+            let kind = super::screens::event_from_value(kind).map_or(
+                messages::EVENT_KIND_READING,
+                domain::meter::EventKind::label,
+            );
             vehicle_name(vehicles, asset_id)
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
         }
@@ -133,16 +131,26 @@ pub(crate) fn Shell() -> Element {
     let mut menu_open = use_signal(|| false);
     let close_menu = move |_| menu_open.set(false);
 
-    // Users appears only for the household's Admin (who can enter Admin mode).
-    let is_household_admin = matches!(
-        auth(),
-        super::auth::AuthState::SignedIn(session)
-            if session.available_modes.contains(&domain::access::ActiveMode::Admin)
-    );
+    // Users and Groups appear only for the household's Admin, in Admin mode (#069): only the
+    // household's Admin can enter it.
+    let in_admin_mode = mode() == Some(domain::access::ActiveMode::Admin);
     let items: Vec<NavItem> = nav_items()
         .into_iter()
-        .filter(|item| is_household_admin || !item.admin_only)
+        .filter(|item| in_admin_mode || !item.admin_only)
         .collect();
+    // + Log only when there's something the person may log (#069): for this page's vehicle,
+    // or, elsewhere, for any vehicle they can see.
+    let loggable = |vehicle: &domain::api::AssetSummary| {
+        mode().is_some_and(|mode| super::screens::may_log_for(vehicle, mode))
+    };
+    let garage = vehicles.garage.read().clone();
+    let may_log = garage.is_some_and(|garage| match here {
+        Some(id) => garage
+            .assets
+            .iter()
+            .any(|vehicle| vehicle.id == id && loggable(vehicle)),
+        None => garage.assets.iter().any(loggable),
+    });
     let main_items: Vec<NavItem> = items
         .iter()
         .filter(|i| i.section == NavSection::Main)
@@ -206,9 +214,11 @@ pub(crate) fn Shell() -> Element {
                         span { class: "sync-status-label", {tr(messages::SYNC_STATUS_UNKNOWN)} }
                     }
                     div { class: "topbar-theme", ThemeToggle {} }
-                    button { class: "log-button", r#type: "button", onclick: move |_| chooser.open(here),
-                        IconView { icon: Icon::Add }
-                        span { {tr(messages::ACTION_LOG)} }
+                    if may_log {
+                        button { class: "log-button", r#type: "button", onclick: move |_| chooser.open(here),
+                            IconView { icon: Icon::Add }
+                            span { {tr(messages::ACTION_LOG)} }
+                        }
                     }
                     super::auth::InstanceTag {}
                     if let AuthState::SignedIn(session) = auth() {
@@ -243,8 +253,10 @@ pub(crate) fn Shell() -> Element {
                     }
                 }
             }
-            button { class: "fab", r#type: "button", "aria-label": tr(messages::ACTION_LOG), onclick: move |_| chooser.open(here),
-                IconView { icon: Icon::Add }
+            if may_log {
+                button { class: "fab", r#type: "button", "aria-label": tr(messages::ACTION_LOG), onclick: move |_| chooser.open(here),
+                    IconView { icon: Icon::Add }
+                }
             }
             super::screens::LogChooserDialog {}
             super::screens::SquawkSheetDialog {}

@@ -41,6 +41,7 @@ use serde::{Deserialize, Serialize};
 use crate::command::{Patch, Record};
 use crate::group::GroupId;
 use crate::id::{AssetId, Id};
+use crate::meter::EventKind;
 use crate::user::UserId;
 
 /// A role, from least to most powerful; each includes every lower one.
@@ -156,6 +157,11 @@ pub enum AssetAction {
     KeepOriginals,
     /// Add, renew, and remove official documents and license plates (milestone 8, choice 7).
     ManageDocuments,
+    /// Send the asset out for service and record its return (milestone 9, #067).
+    SendOut,
+    /// Record how the asset was acquired or disposed of: they change what the household owns
+    /// (#067).
+    RecordOwnership,
 }
 
 impl AssetAction {
@@ -170,8 +176,21 @@ impl AssetAction {
             | Self::ConfigureMaintenance
             | Self::ManageEvents
             | Self::KeepOriginals
-            | Self::ManageDocuments => Role::Maintainer,
-            Self::ManageAsset | Self::OverrideReadings => Role::Admin,
+            | Self::ManageDocuments
+            | Self::SendOut => Role::Maintainer,
+            Self::ManageAsset | Self::OverrideReadings | Self::RecordOwnership => Role::Admin,
+        }
+    }
+
+    /// What logging an event of `kind` needs.
+    #[must_use]
+    pub const fn to_log(kind: EventKind) -> Self {
+        match kind {
+            EventKind::Fuel => Self::LogFuel,
+            EventKind::Reading => Self::LogReading,
+            EventKind::Maintenance | EventKind::Repair => Self::LogMaintenance,
+            EventKind::SentOut | EventKind::Returned => Self::SendOut,
+            EventKind::Acquired | EventKind::Disposed => Self::RecordOwnership,
         }
     }
 }
@@ -437,6 +456,35 @@ mod tests {
         assert_eq!(role_on(&grants, scope(TRUCK)), Some(Role::Maintainer));
         assert_eq!(role_on(&grants, scope(CAR)), Some(Role::Driver));
         assert_eq!(role_on(&[on(TRUCK, Role::Admin)], scope(CAR)), None);
+    }
+
+    #[test]
+    fn maintainers_send_out_and_admins_buy_and_dispose() {
+        let maintainer = [on(TRUCK, Role::Maintainer)];
+        let admin = [on(TRUCK, Role::Admin)];
+        let may = |grants: &[RoleGrant], mode, kind| {
+            permits_on_asset(grants, mode, AssetAction::to_log(kind), scope(TRUCK))
+        };
+        assert!(may(&maintainer, ActiveMode::Maintainer, EventKind::SentOut));
+        assert!(may(
+            &maintainer,
+            ActiveMode::Maintainer,
+            EventKind::Returned
+        ));
+        assert!(!may(
+            &maintainer,
+            ActiveMode::Maintainer,
+            EventKind::Acquired
+        ));
+        assert!(!may(
+            &maintainer,
+            ActiveMode::Maintainer,
+            EventKind::Disposed
+        ));
+        assert!(!may(&admin, ActiveMode::Maintainer, EventKind::Disposed));
+        assert!(may(&admin, ActiveMode::Admin, EventKind::Disposed));
+        assert!(may(&admin, ActiveMode::Admin, EventKind::Acquired));
+        assert!(!may(&admin, ActiveMode::Driver, EventKind::SentOut));
     }
 
     #[test]
@@ -730,6 +778,8 @@ mod tests {
             Just(AssetAction::DispositionSquawk),
             Just(AssetAction::ConfigureMaintenance),
             Just(AssetAction::ManageAsset),
+            Just(AssetAction::SendOut),
+            Just(AssetAction::RecordOwnership),
         ]
     }
 
