@@ -73,14 +73,14 @@ One run on the **test server** (decision #062). **Start only once milestone 8 is
 | [x] | 30 | Pick it | **New requirement**: "Recall · NHTSA campaign 24V-123 · Open it ›" at the top, the name filled in, **One-time** chosen, no intervals. |
 | [x] | 31 | **Not applicable** → **Save**; then **Why not?** `Built after the VIN range` → **Save** | First "Say why it doesn't apply…", then saved. **Schedule**: under **DONE AND NOT APPLICABLE**, the recall with **Not applicable** (grey) and "… · Built after the VIN range". |
 | [x] | 32 | **Open it ›** on either vehicle | **On**: "Test truck, Disposal test". The PDF is there on both. **Edit** → revision `B` → **Save**: the view shows it, on both vehicles. |
-| [ ] | 33 | `Test truck` → **+ Log** → **Maintenance**, with a task for the recall's requirement (and the odometer), **Finish…** → **Finish and lock** | The Schedule moves the recall to **DONE AND NOT APPLICABLE** with **Complied <date>** (green), and its job under **LAST DONE**. |
+| [x] | 33 | `Test truck` → **+ Log** → **Maintenance**, with a task for the recall's requirement (and the odometer), **Finish…** → **Finish and lock** | The Schedule moves the recall to **DONE AND NOT APPLICABLE** with **Complied <date>** (green), and its job under **LAST DONE**. |
 | [x] | 34 | **Set up** → **Edit** the oil requirement: **One-time**, then **Recurring** again → **Cancel** | One-time hides **DUE · WHICHEVER COMES FIRST** and says "Done once: the first finished job that does it closes it."; Recurring brings the intervals back. Nothing saved. |
 | [x] | 35 | **Phone**, Sam: `Test truck` → **Maintenance** | **Schedule** and **Jobs** only (no Set up). The recall's **Open it ›** shows its details and PDF, with **no Edit** and **no + Add**. |
 | [x] | 36 | **Mac**, `admin`: **Leave** Admin mode (Driver mode), then the sidebar and **Settings** | **No Users or Groups**. Settings has **no You / Household picker** and no **Keep photo originals** row. `Test truck` → **Setup**: "Changing this vehicle's setup needs Maintainer or Admin mode." Back in **Admin mode**: Users, Groups, and the picker are back. |
 | [x] | 37 | **Admin mode** → **Users** → add `vera` as a **Viewer**; sign in as her (a private window), choose her password | No **+ Log** and no **+**; `Test truck` has **no + Issue**; **Setup** says "You can see this vehicle's setup; a Maintainer or the Admin changes it."; Settings has no picker and no originals row. |
 | [x] | 38 | **Phone**, Sam: Settings, then `Test truck` → **Setup** | No picker, no originals row. Setup: "You can see this vehicle's setup; a Maintainer or the Admin changes it." |
-| [ ] | 39 | **Phone**, Sam: open `<test server>/vehicles/<Test truck's ID>/log/maintenance` (copy the ID from the address bar on its page) | "Your role or mode doesn't allow that. Switch mode, or ask your Admin." (not a form). |
-| [ ] | 40 | `sudo docker logs --since 30m vehiclemanager-test 2>&1 \| grep -E "ERROR\|WARN"` | No `ERROR` lines (a `WARN` for a refused change from steps 5, 16, 31, or 39 is fine). |
+| [x] | 39 | **Phone**, Sam: open `<test server>/vehicles/<Test truck's ID>/log/maintenance` (copy the ID from the address bar on its page) | "Your role or mode doesn't allow that. Switch mode, or ask your Admin." (not a form). |
+| [x] | 40 | `sudo docker logs --since 30m vehiclemanager-test 2>&1 \| grep -E "ERROR\|WARN"` | No `ERROR` lines (a `WARN` for a refused change from steps 5, 16, 31, or 39 is fine). |
 
 ## 4. If a step fails, capture
 
@@ -91,7 +91,7 @@ One run on the **test server** (decision #062). **Start only once milestone 8 is
 
 ## 5. Results
 
-**The run** (the human, on the test server, 2026-11-06): steps 1–32 and 34–38 passed. Step 33 passed too: the recall showed **Complied** once the job was finished (first reported as a bug, then withdrawn by the human; a server test now covers it, `a_finished_job_with_a_task_for_a_recall_closes_it`). **Steps 39 and 40** were still to do. The human's findings, and what came of each:
+**The run** (the human, on the test server, 2026-11-06): **all 40 steps passed**, including a look at the changes below on the next milestone image. Step 33's recall showed **Complied** once the job was finished (first reported as a bug, then withdrawn by the human; a server test now covers it, `a_finished_job_with_a_task_for_a_recall_closes_it`). The human's findings, and what came of each:
 
 - *Recall view: "What it's about" and "Remedy" right-justified; a darker background for what the user filled in.* **Done:** the recall's view puts each label above its value, which sits left-aligned on the input background (`.reference-rows`).
 - *Recalls and bulletins listed separately from other requirements, in the Schedule and in the job form's menus.* **Done:** the Schedule has **YOUR SCHEDULE** and **RECALLS AND BULLETINS** sections, and the job form has **+ From a recall or bulletin…** beside **+ From a requirement…** (each listing only its own).
