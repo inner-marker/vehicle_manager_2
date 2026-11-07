@@ -160,6 +160,10 @@ pub(super) fn WorkLog(
         })
         .cloned()
         .collect();
+    let (recall_free, own_free): (Vec<RequirementView>, Vec<RequirementView>) = free
+        .iter()
+        .cloned()
+        .partition(|view| view.requirement.reference.is_some());
     let high_word = high_severity_name(&vehicle.asset.kind, domain::i18n::Translator::english());
     let titles: Vec<String> = typed.tasks.iter().map(|task| task.title.clone()).collect();
     let asset = vehicle.asset.clone();
@@ -227,20 +231,28 @@ pub(super) fn WorkLog(
             }
             // New tasks go at the bottom, so these sit below the last one.
             div { class: "check-row work-adds",
-                if !free.is_empty() {
-                    select {
-                        class: "field-input work-add",
-                        onchange: move |event| {
-                            let picked = for_menu.iter().find(|view| view.id.to_string() == event.value()).cloned();
-                            if let Some(view) = picked {
-                                let mut typed = work.write();
-                                typed.tasks.push(requirement_task(&view));
-                                open.set(Some(typed.tasks.len() - 1));
+                // Your own schedule's, and recalls' and bulletins', each in its own menu (the
+                // human's note, milestone 9 test).
+                for (items, prompt) in [(own_free, messages::WORK_FROM_REQUIREMENT), (recall_free, messages::WORK_FROM_RECALL)] {
+                    if !items.is_empty() {
+                        select {
+                            key: "{prompt.as_str()}",
+                            class: "field-input work-add",
+                            onchange: {
+                                let for_menu = for_menu.clone();
+                                move |event: FormEvent| {
+                                    let picked = for_menu.iter().find(|view| view.id.to_string() == event.value()).cloned();
+                                    if let Some(view) = picked {
+                                        let mut typed = work.write();
+                                        typed.tasks.push(requirement_task(&view));
+                                        open.set(Some(typed.tasks.len() - 1));
+                                    }
+                                }
+                            },
+                            option { value: "", selected: true, {tr(prompt)} }
+                            for view in items {
+                                option { key: "{view.id}", value: "{view.id}", {view.requirement.name.as_str().to_owned()} }
                             }
-                        },
-                        option { value: "", selected: true, {tr(messages::WORK_FROM_REQUIREMENT)} }
-                        for view in free {
-                            option { key: "{view.id}", value: "{view.id}", {view.requirement.name.as_str().to_owned()} }
                         }
                     }
                 }

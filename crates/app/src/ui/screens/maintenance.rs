@@ -343,6 +343,7 @@ fn ScheduleView(
 ) -> Element {
     let mut copying = use_signal(|| false);
     let known = use_references(reloads);
+    let mut filter = use_signal(|| ScheduleFilter::Open);
     if schedule.requirements.is_empty() {
         return rsx! {
             section { class: "vehicle-panel schedule-empty",
@@ -362,14 +363,19 @@ fn ScheduleView(
             }
         };
     }
-    let (on, off): (Vec<RequirementView>, Vec<RequirementView>) = schedule
+    // Open (the default) hides complied, not-applicable, and turned-off ones; All shows them
+    // (the human's note, milestone 9 test).
+    let shown: Vec<RequirementView> = schedule
         .requirements
         .iter()
+        .filter(|view| filter() == ScheduleFilter::All || is_open(view))
         .cloned()
-        .partition(|view| view.requirement.enabled);
-    // Complied-with and not-applicable ones go below the rest (4A).
-    let (settled, on): (Vec<RequirementView>, Vec<RequirementView>) =
-        on.into_iter().partition(|view| is_settled(view.status));
+        .collect();
+    let hidden = schedule.requirements.len() - shown.len();
+    // Your own schedule, then recalls and bulletins, each in its own section.
+    let (recalls, own): (Vec<RequirementView>, Vec<RequirementView>) = shown
+        .into_iter()
+        .partition(|view| view.requirement.reference.is_some());
     let refs = known();
     let name_of = |id: RequirementId| {
         schedule
@@ -381,18 +387,33 @@ fn ScheduleView(
     };
     rsx! {
         div { class: "schedule",
-            for view in on {
-                ScheduleCard { key: "{view.id}", view, vehicle: vehicle.clone(), refs: refs.clone() }
+            div { class: "chip-row schedule-filter", role: "group",
+                for each in [ScheduleFilter::Open, ScheduleFilter::All] {
+                    button {
+                        key: "{each:?}",
+                        class: if filter() == each { "chip-filter on" } else { "chip-filter" },
+                        r#type: "button",
+                        "aria-pressed": filter() == each,
+                        onclick: move |_| filter.set(each),
+                        {tr(each.label())}
+                    }
+                }
             }
-            if !settled.is_empty() {
-                h3 { class: "section-heading", {tr(messages::SCHEDULE_SETTLED).to_uppercase()} }
-                for view in settled {
+            if !own.is_empty() {
+                h3 { class: "section-heading", {tr(messages::SCHEDULE_YOUR_SCHEDULE).to_uppercase()} }
+                for view in own {
                     ScheduleCard { key: "{view.id}", view, vehicle: vehicle.clone(), refs: refs.clone() }
                 }
             }
-            if !off.is_empty() {
+            if !recalls.is_empty() {
+                h3 { class: "section-heading", {tr(messages::SCHEDULE_RECALLS).to_uppercase()} }
+                for view in recalls {
+                    ScheduleCard { key: "{view.id}", view, vehicle: vehicle.clone(), refs: refs.clone() }
+                }
+            }
+            if filter() == ScheduleFilter::Open && hidden > 0 {
                 p { class: "muted-note",
-                    {tr_with(messages::SCHEDULE_TURNED_OFF, &[("names", MessageArg::from(off.iter().map(|view| view.requirement.name.as_str().to_owned()).collect::<Vec<_>>().join(", ")))])}
+                    {tr_with(messages::SCHEDULE_HIDDEN, &[("count", MessageArg::from(i64::try_from(hidden).unwrap_or(i64::MAX)))])}
                 }
             }
             if !schedule.bundles.is_empty() {
@@ -420,6 +441,29 @@ fn ScheduleView(
             }
         }
     }
+}
+
+/// Which requirements the Schedule shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScheduleFilter {
+    /// What still applies: not complied with, applicable, and turned on.
+    Open,
+    /// Everything.
+    All,
+}
+
+impl ScheduleFilter {
+    const fn label(self) -> MessageId {
+        match self {
+            Self::Open => messages::SCHEDULE_FILTER_OPEN,
+            Self::All => messages::SCHEDULE_FILTER_ALL,
+        }
+    }
+}
+
+/// Whether a requirement still applies: turned on, and neither complied with nor ruled out.
+fn is_open(view: &RequirementView) -> bool {
+    view.requirement.enabled && !is_settled(view.status)
 }
 
 /// What a requirement's card or row says under its name: its rules (a recurring one), or
@@ -467,9 +511,13 @@ fn ScheduleCard(view: RequirementView, vehicle: AssetView, refs: Vec<ReferenceVi
     let units = use_units();
     let zone = use_device_zone();
     let mut showing = use_signal(|| false);
-    let chip = status_chip(view.status, &view.requirement.applicability, |at| {
-        chip_date(at, &zone(), &units())
-    });
+    let chip = if view.requirement.enabled {
+        status_chip(view.status, &view.requirement.applicability, |at| {
+            chip_date(at, &zone(), &units())
+        })
+    } else {
+        Some((tr(messages::SCHEDULE_OFF), "status-chip muted"))
+    };
     let reference = view.requirement.reference;
     rsx! {
         section { class: "schedule-card",

@@ -22,6 +22,7 @@ mod lifecycle {
     use domain::label::Label;
     use domain::lifecycle::{Disposal, DisposalMethod, LifecycleDetails, Party, Return, SendOut};
     use domain::location::{LocationSource, Place, TimeZone};
+    use domain::meter::EventKind;
     use domain::notes::Notes;
     use domain::reference::{RECALL, ReferenceType};
     use domain::requirement::{Applicability, ComplianceMode, Requirement};
@@ -468,6 +469,67 @@ mod lifecycle {
         assert_eq!(
             server::references::remove(&maintain, id).await,
             ReferencesOutcome::InUse
+        );
+    }
+
+    #[tokio::test]
+    async fn a_finished_job_with_a_task_for_a_recall_closes_it() {
+        use domain::event::{ReadingSet, Task, WorkDetails};
+        use domain::requirement::RequirementStatus;
+
+        let (_temp, database, stuart, _sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
+        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        let ReferencesOutcome::Saved {
+            requirement: Some(recall),
+            ..
+        } = server::references::add(&shop, recall(), link(truck)).await
+        else {
+            panic!("the recall wasn't added");
+        };
+        let odometer = page(&shop, truck).await.meters[0].0;
+        let mut job = input(truck, 1, send_out("2023-11-20"));
+        job.kind = EventKind::Maintenance;
+        job.lifecycle = None;
+        job.readings = vec![domain::event::Reading {
+            meter: odometer,
+            value: 80_000_000,
+        }];
+        job.work = Some(WorkDetails {
+            tasks: vec![Task {
+                title: Label::parse("Axle nut recall").unwrap(),
+                requirement: Some(recall),
+                notes: Notes::default(),
+                parts: vec![],
+                labor_seconds: None,
+                labor_cost_minor: None,
+                resets_from: ReadingSet::Start,
+                next_due: None,
+            }],
+            end_readings: vec![],
+            dispositions: vec![],
+            currency: domain::preferences::CurrencyCode::USD,
+            complaint: None,
+            cause: None,
+        });
+        let job = saved(&add(&shop, job).await);
+        assert_eq!(
+            server::events::finish(&shop, job).await,
+            EventsOutcome::Done
+        );
+        let ScheduleOutcome::Schedule { requirements, .. } =
+            server::schedule::view(&shop, truck).await
+        else {
+            panic!("no schedule");
+        };
+        let view = requirements.iter().find(|view| view.id == recall).unwrap();
+        assert_eq!(view.last_done.as_ref().map(|done| done.event), Some(job));
+        assert!(
+            matches!(view.status, RequirementStatus::Complied { event, .. } if event == job),
+            "{:?}",
+            view.status
         );
     }
 }

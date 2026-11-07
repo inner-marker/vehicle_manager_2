@@ -366,7 +366,6 @@ schedule-when-needed = When needed
 schedule-last-done = Last done
 schedule-not-done = Not done yet
 schedule-the-job = The job ›
-schedule-turned-off = Turned off: { $names }
 schedule-bundles = Service bundles
 schedule-requirements = Requirements
 schedule-empty-title = No schedule yet
@@ -1527,6 +1526,14 @@ reference-open-source = Open the source ↗
 reference-files = PDF and photos
 reference-open = Open it
 schedule-add-reference = + Recall or bulletin
-schedule-settled = Done and not applicable
 action-close = Close
 setup-view-only-role = You can see this vehicle's setup; a Maintainer or the Admin changes it.
+schedule-filter-open = Open
+schedule-filter-all = All
+schedule-your-schedule = Your schedule
+schedule-recalls = Recalls and bulletins
+schedule-hidden = { $count ->
+    [one] 1 more is done, not applicable, or turned off: All shows it.
+   *[other] { $count } more are done, not applicable, or turned off: All shows them.
+}
+work-from-recall = + From a recall or bulletin…

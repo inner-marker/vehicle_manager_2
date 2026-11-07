@@ -567,9 +567,9 @@ pub(super) fn ReferenceSheet(
             let may_change = view.may_change;
             rsx! {
                 h2 { class: "dialog-title", {document.title} }
-                dl { class: "event-rows",
+                dl { class: "reference-rows",
                     for (label, value) in rows {
-                        div { key: "{label.as_str()}", class: "event-row",
+                        div { key: "{label.as_str()}", class: "reference-row",
                             dt { {tr(label)} }
                             dd { {value} }
                         }

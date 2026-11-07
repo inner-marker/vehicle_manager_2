@@ -4301,3 +4301,30 @@ body:has(.photo-viewer) {
     display: block;
     margin-bottom: 8px;
 }
+
+/* A recall's view: each label above what was typed, which sits left-aligned on the input
+   background, so the two never look alike (the human's note, milestone 9 test). */
+.reference-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+}
+
+.reference-row dt {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.reference-row dd {
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

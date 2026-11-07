@@ -1740,8 +1740,6 @@ define_messages! {
     SCHEDULE_NOT_DONE => "schedule-not-done",
     /// Schedule card: the job that last did it.
     SCHEDULE_THE_JOB => "schedule-the-job",
-    /// Schedule: turned-off requirements; takes `names`.
-    SCHEDULE_TURNED_OFF => "schedule-turned-off",
     /// Schedule and Set up: the bundles.
     SCHEDULE_BUNDLES => "schedule-bundles",
     /// Set up: the requirements.
@@ -2518,10 +2516,20 @@ define_messages! {
     REFERENCE_OPEN => "reference-open",
     /// Set up: add a recall or bulletin.
     SCHEDULE_ADD_REFERENCE => "schedule-add-reference",
-    /// Schedule: the bottom section.
-    SCHEDULE_SETTLED => "schedule-settled",
     /// A button: close.
     ACTION_CLOSE => "action-close",
     /// Setup: view only, for someone whose role doesn't change setup.
     SETUP_VIEW_ONLY_ROLE => "setup-view-only-role",
+    /// Schedule: show what still applies.
+    SCHEDULE_FILTER_OPEN => "schedule-filter-open",
+    /// Schedule: show everything.
+    SCHEDULE_FILTER_ALL => "schedule-filter-all",
+    /// Schedule: your own requirements.
+    SCHEDULE_YOUR_SCHEDULE => "schedule-your-schedule",
+    /// Schedule: recalls and bulletins.
+    SCHEDULE_RECALLS => "schedule-recalls",
+    /// Schedule: how many Open hides; takes `count`.
+    SCHEDULE_HIDDEN => "schedule-hidden",
+    /// Work log: a task for a recall or bulletin.
+    WORK_FROM_RECALL => "work-from-recall",
 }
