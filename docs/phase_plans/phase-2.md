@@ -1353,7 +1353,7 @@
 |---|---|---|---|---|
 | R.0 | ☑️ | `docs: the v0.2.0 release plan` | This plan, the issue review, and decision #070 (question 1) | none |
 | R.a | ☑️ | `test(storage): the v0.2.0 migration fixture` | The ignored test that writes it, and the fixture | none |
-| R.b | ⬜ | `docs: README` | Question 3 (and 5) | none |
+| R.b | ☑️ | `docs: README` | Question 3 (and 5) | none |
 | R.c | ⬜ | `docs: v0.2.0 regression checklist` | Question 2; `docs/deploying-nas.md` for question 1 | none |
 | R.d | ⬜ | `chore: release v0.2.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
 | R.e | — | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main` (a merge commit); the tag; the Release workflow; the main server on the new image | — |
@@ -1361,3 +1361,4 @@
 **Written so far**
 - **R.0:** decision #070 (from `v0.2.0` the main server runs release images). The release workflow already builds its image without test timers, tagged `:0.2.0` and `:latest`.
 - **R.a:** `crates/server/tests/make_fixture.rs` (ignored; `cargo test -p server --test make_fixture -- --ignored`) makes `crates/storage/tests/fixtures/v0.2.0.sqlite` through the server's own pipeline: the two test users, one truck, a fuel-up, a requirement and a finished job doing it (with a part), an issue, a plate, a registration with a one-page PDF (its file isn't in the fixture; only the database is), a recall with its one-time requirement, and a send-out: 20 commands, schema 15, written with `VACUUM INTO`. It refuses to overwrite a fixture already there. `migration_fixtures.rs` now also checks each fixture's vehicles still have their events, its other records are readable, and `integrity_check` is ok. The fixtures README says how the next release makes its own.
+- **R.b:** `README.md` (issue #16): what the app is and its status; **Getting started** for the household (the address and temporary password, choosing a password, the Garage and a vehicle's tabs, + Log and the 24-hour draft, the modes, Messages, Settings, who to ask); running it (the deploy guide, the images and decision #070, the desktop app from source); the repository (the crates, the documents, the branches and PR titles, what CI checks on pull requests and into `main`); the license. Its facts were checked against the code (the 12-character password minimum, the image name, the workflows' steps).
