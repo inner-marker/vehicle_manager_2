@@ -12,7 +12,7 @@ The server runs as a Docker container from the image `ghcr.io/inner-marker/vehic
 | Folder | `/volume1/docker/vehicle_manager` | `/volume1/docker/vehicle_manager_test` |
 | Port on the NAS | 8410 | 8411 |
 | Address | `https://<nas-name>.<tailnet>.ts.net` | `https://<nas-name>.<tailnet>.ts.net:8443` |
-| Image | `dev` (no test timers) | `milestone-<name>`, or `dev` |
+| Image | A release, e.g. `0.2.0` (decision #070) | `milestone-<name>`, or `dev` |
 | In `.env` | `VEHICLEMANAGER_PROJECT_NAME=vehiclemanager`, `VEHICLEMANAGER_INSTANCE=` | `VEHICLEMANAGER_PROJECT_NAME=vehiclemanager-test`, `VEHICLEMANAGER_INSTANCE=test` |
 
 - **The test server says so** with a **TEST SERVER** tag (just **TEST** on a phone) and its browser tab's title.
@@ -42,10 +42,11 @@ The server runs as a Docker container from the image `ghcr.io/inner-marker/vehic
 
 | Tag | What it is | Use it for |
 |---|---|---|
-| `dev` | Newest build of the `dev` branch, **without** test timers | The main server: every milestone once it has passed on the test server and merged |
-| `milestone-<name>` (e.g. `milestone-p2-m7-maintenance`) | Newest build of a milestone branch, **with** test timers | The test server: testing a milestone before its PR |
+| `0.2.0` (each release's `X.Y.Z`) | A release, from the release workflow, **without** test timers | **The main server** (decision #070): it moves to a new release only when its `.env` says so |
+| `dev` | Newest build of the `dev` branch, **without** test timers | The test server: a regression pass before a release, or what's merged since |
+| `milestone-<name>` (e.g. `milestone-p2-m9-lifecycle`) | Newest build of a milestone branch, **with** test timers | The test server: testing a milestone before its PR |
 | `sha-<commit>` | One exact build | Pinning, or rolling back to a known-good build |
-| `0.1.0`, `latest` | Releases (from the release workflow) | Normal use once releases exist |
+| `latest` | The newest release | Not used on the NAS, so an update is always a deliberate change of tag |
 
 ## One-time setup
 
@@ -138,13 +139,28 @@ sudo docker compose pull
 sudo docker compose up -d
 ```
 
-This pulls the newest image for the tag in `.env` and recreates the container. `data/` is untouched.
+This pulls the newest image for the tag in `.env` and recreates the container. `data/` is untouched. In Container Manager, the Project's *Action → Build* may do the same; if the new image doesn't show up, use the commands above.
 
-> **Before an update that rebuilds tables, copy `data/` too.** The server always backs the database up before upgrading it (`data/backups/pre-migration-…`), but an upgrade that rebuilds tables (milestone 9's migration 0015: `events` and `attachments`) is worth a full copy of `data/` first, the database and `files/` together: `sudo docker compose stop`, `sudo cp -a data ../vehicle_manager-before-<release>`, `sudo docker compose start`, then the two update commands. Do it on the test server first, then on main when the milestone merges into `dev`. In Container Manager, the Project's *Action → Build* may do the same; if the new image doesn't show up, use the commands above.
+**Moving the main server to a new release** (decision #070), once it's tagged and its Release workflow has published the image:
+
+1. **Copy `data/` first** (the database and `files/` together):
+
+   ```sh
+   cd /volume1/docker/vehicle_manager
+   sudo docker compose stop
+   sudo cp -a data ../vehicle_manager-before-X.Y.Z
+   sudo docker compose start
+   ```
+
+2. In `.env`, set `VEHICLEMANAGER_IMAGE_TAG=X.Y.Z`.
+3. Run the two update commands above, then `sudo docker logs --since 5m vehiclemanager 2>&1`: `database open` with the expected `schema_now`, `database integrity check passed`, and no `ERROR` lines.
+4. Once it's been fine for a while, the copy can go: `sudo rm -rf ../vehicle_manager-before-X.Y.Z`.
+
+> **The server always backs the database up before upgrading it** (`data/backups/pre-migration-…`), but that's the database alone; the copy in step 1 keeps `files/` with it, and matters most when an upgrade rebuilds tables (as `v0.2.0`'s migration 0015 does with `events` and `attachments`). The test server gets the same release first, through the regression pass.
 
 ## Rolling back
 
-Set `VEHICLEMANAGER_IMAGE_TAG=sha-<commit>` in `.env` to a known-good build (the "Server image" workflow run lists the tags it pushed), then run the two update commands. Set it back to `dev` (or a release) afterwards.
+Set `VEHICLEMANAGER_IMAGE_TAG=sha-<commit>` in `.env` to a known-good build (the "Server image" workflow run lists the tags it pushed), then run the two update commands. Set it back to the release (main) or `dev` (test) afterwards.
 
 > **After a database upgrade, an older build won't open the database.** A newer image may upgrade the database's schema (backing it up first, in `data/backups/`). Rolling back to a build from before that upgrade makes the server refuse the database: it keeps running but reports itself unhealthy, and its log says `can't open the database` with "newer than this app". Either go forward again, or restore the matching pre-upgrade backup the same way as a snapshot (below), knowing that anything saved since the upgrade is lost.
 
@@ -299,7 +315,7 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 
    Open `https://<nas-name>.<tailnet>.ts.net` (no port): first-time setup, and **no** TEST SERVER tag. Tailscale already sends 443 to 8410, so nothing more is needed there.
 
-10. **After this change merges into `dev`** and its "Server image" run finishes: in main's `.env` set `VEHICLEMANAGER_IMAGE_TAG=dev`, then update main (see "Updating"). From then on main runs without test timers: setting `VEHICLEMANAGER_TEST_MINUTES` there only logs `test timers setting ignored` ("this build doesn't include test timers").
+10. **After this change merges into `dev`** and its "Server image" run finishes: in main's `.env` set `VEHICLEMANAGER_IMAGE_TAG=dev` (from `v0.2.0` on, a release tag instead: decision #070), then update main (see "Updating"). From then on main runs without test timers: setting `VEHICLEMANAGER_TEST_MINUTES` there only logs `test timers setting ignored` ("this build doesn't include test timers").
 
 **Afterwards:**
 - **Bookmarks and the desktop app:** main is the address without a port; the test server is `:8443`. The desktop app keeps one server address: set it to main's, and use a browser for the test server.
