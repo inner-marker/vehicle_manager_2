@@ -84,7 +84,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dioxus",
  "dirs",
@@ -2023,7 +2023,7 @@ dependencies = [
 
 [[package]]
 name = "domain"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fluent-bundle",
  "jiff",
@@ -2587,7 +2587,7 @@ dependencies = [
 
 [[package]]
 name = "geocoder"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "domain",
  "proptest",
@@ -5691,7 +5691,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "argon2",
  "axum",
@@ -6121,7 +6121,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "storage"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "domain",
  "serde",

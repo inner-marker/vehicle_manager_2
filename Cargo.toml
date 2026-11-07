@@ -15,7 +15,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
+version = "0.2.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
 edition = "2024"
 license = "MIT OR Apache-2.0"   # standard Rust dual license; crates inherit with `license.workspace = true`
 rust-version = "1.95"           # matches rust-toolchain.toml
