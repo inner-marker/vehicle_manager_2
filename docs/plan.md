@@ -134,9 +134,9 @@ Devices don't send database rows or SQL. They send a log of **typed domain comma
 - Each device keeps a **cursor** and pulls **current state of records changed since its cursor**, rather than replaying commands.
 - Simple, and a device can always catch up, even after a long time offline.
 
-**Deletes** become **tombstones** on the server, so they propagate through pull. Tombstones are purged once every device's cursor has passed them.
+**Deletes** become **tombstones** on the server, so they propagate through pull. Tombstones are **kept forever** (`docs/decisions.md` #072), so a device offline for any length of time still learns of every delete.
 
-**Photos and blobs** sync separately and lazily, so record sync stays fast on a weak signal.
+**Photos and blobs** sync separately and lazily, so record sync stays fast on a weak signal: on the desktop, thumbnails and PDFs download automatically, photos when opened, originals on request (#072).
 
 **Commands as a stable API.** The command format is versioned independently of the database schema. An old app version sends old-format commands, and the server **upcasts** them to the current format before applying (see Schema & versioning).
 
@@ -1838,9 +1838,12 @@ Each phase has open questions in section 10 that must be resolved before work on
 ### Phase 3: Local-first & sync.
 - **First: the app icon** (the human, 2026-11-04): the desktop window's and the browser tab's icon (Dioxus's `Config::with_icon` on desktop; a favicon on the web), before the desktop app gets more use.
 - **Also first: the exact build on Diagnostics** (the human, 2026-11-08; GitHub issue #37): the commit, image tag, and build date beside the version, so a test can confirm from the app which image it's running.
-- Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
+- **Also first: window title and launch settings** (GitHub #19): window size and position remembered, always-on-top.
+- **For the desktop app** (the web stays online-only, #071; `docs/decisions.md` #072): an encrypted local SQLite database per server, offline logging, command outbox, tombstones (kept forever), incremental pull, and lazy file sync (thumbnails and PDFs automatically, photos when opened).
+- **Pairing** (moved from Phase 6, #072): signing in on a desktop pairs it (device key, token tied to it, PIN); **Settings → Devices** signs devices out; a list of recent servers.
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
+- Milestones: `docs/phase_plans/phase-3.md`.
 
 ### Phase 4: Mobile (Moved to post-MVP)
 *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
@@ -1851,7 +1854,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 
 ### Phase 6: Polish.
-- **Phase 6: Polish.** Import/export, pairing flow, reports
+- **Phase 6: Polish.** Import/export, reports (pairing moved to Phase 3, #072)
 - **multi-page document capture in the web UI**
 - **standalone mode** (single device, no server, local backups, upgrade path to a server).
 - Built-in Help Documents
@@ -1935,10 +1938,10 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 ### Phase 3: Local-first & sync
 
 - ~~**Web app:** local-first too (browser storage), or online-only, talking to the server directly?~~ *Settled: online-only, storing nothing in the browser (#071, `docs/sub-plans/04-security.md` §7.1).*
-- **Device pairing flow:** how a new device joins (QR code, pairing code, Admin approval?). Needed before multiple devices sync.
-- **Version support window:** how many older API versions the server accepts.
-- **Tombstone purge policy:** how long tombstones are kept when a device stays offline for a long time.
-- **Blob sync rules:** which photos and attachments each device downloads automatically vs. on demand.
+- ~~**Device pairing flow:** how a new device joins (QR code, pairing code, Admin approval?).~~ *Settled: signing in pairs the device; Settings → Devices signs it out (#072).*
+- ~~**Version support window:** how many older API versions the server accepts.~~ *Settled: the current one and the one before (#072).*
+- ~~**Tombstone purge policy:** how long tombstones are kept when a device stays offline for a long time.~~ *Settled: kept forever; erased files keep an audit record (#072).*
+- ~~**Blob sync rules:** which photos and attachments each device downloads automatically vs. on demand.~~ *Settled: thumbnails and PDFs automatically, photos when opened, originals on request (#072).*
 
 ### Phase 5: Maintenance intelligence
 

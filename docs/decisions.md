@@ -834,3 +834,18 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Hashing:** at most 2 at once, each waiting up to 10 seconds; a sign-in that can't get a turn answers "try again in 5 seconds", other password checks answer "unavailable".
   - **Limits:** bodies over 2 MB get 413 (uploads 51 MB); 1 minute to answer (uploads and downloads 10 minutes), else 408. Bodies other than uploads are read in full before the handler runs, because Dioxus's server functions panic on a body they can't read.
   - A failed sign-in logs the counted client address at `info` (no username or password), the start of the fail2ban format planned for Phase 6.
+
+### 072. Phase 3: the desktop goes local-first; signing in pairs it; tombstones are kept forever
+*Decided: 2026-11-08 · Plan: §3 Sync protocol, §6 Security, §9 Phase 3, §10 Phase 3 questions · Phase plan: `phase-3.md` · Builds on #027, #043, #065, #071*
+
+- **Decision:**
+  - **Scope:** Phase 3 builds the full sync engine (encrypted local database, outbox, push and pull, loss detection) for the **desktop app**. The web app stays online-only (#071); the phone apps (post-MVP, #041) reuse the engine.
+  - **Pairing is signing in:** the first sign-in on a desktop takes the server address, username, and password; it makes the device key, gets a token tied to it, and asks for a PIN (sub-plan 04 §4.1, §6). **Settings → Devices** lists and signs out devices. No pairing codes and no Admin approval. Pairing moves from Phase 6's list into Phase 3, since sync needs it.
+  - **Recent servers:** the desktop's `settings.json` keeps a list of servers (address, name, TEST tag, database ID, last used), offered at sign-in with "Another server…". Each server's local data lives in its own folder named by the server's **database ID**, so a server that moves to a new address keeps its data. Switching servers restarts the app (Dioxus sets the address once per run, #027).
+  - **API versions:** the server accepts the current API version and the one before, upcasting the older one's commands. An app further behind is told to update and keeps its outbox.
+  - **Tombstones are kept forever.** Deletes are rare (records are archived, and finalized events are corrected, not deleted), so the table stays small and no device can miss a delete however long it's offline. A purge can be added later if it's ever needed.
+  - **Erased photos and PDFs keep an audit record** on the server: the file's and its thumbnail's SHA-256, size, type, and name; the record it belonged to; who removed it and when; and when the file was erased (#065's 8-day wait). No content is kept. An audit can show the file existed and was removed, and check a copy someone produces.
+  - **Files on the desktop:** thumbnails and PDFs download automatically (registration and insurance are what's needed offline); photos download when opened and are then kept; originals (#036) only on request.
+  - **Also in Phase 3:** the app icon, the exact build on Diagnostics (GitHub #37), and window title and launch settings (#19). #24 (main photo) and #26 (saving a place from the fuel-up form) wait for a later phase.
+- **Why:** the human, 2026-11-08, choosing the recommended options except tombstones ("keep forever", with the audit record for erased files as their idea). The desktop is the only offline-capable app before the phone apps, and building the engine now means the phone apps add no new sync design. Signing in is the same trust as the web, with the device key and PIN added.
+- **Later, with email** (sub-plan 03): a new user gets an emailed "Create your new password" link, valid 10 minutes, from the Admin, instead of a temporary password.
