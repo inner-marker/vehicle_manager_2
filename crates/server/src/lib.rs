@@ -8,6 +8,7 @@
 pub mod assets;
 pub mod attachments;
 pub mod auth;
+pub mod client_address;
 pub mod codes;
 pub mod commands;
 pub mod documents;
@@ -17,6 +18,7 @@ pub mod health;
 pub mod ids;
 pub mod jobs;
 pub mod lifecycle;
+pub mod limits;
 pub mod login_limiter;
 pub mod messages;
 pub mod passwords;

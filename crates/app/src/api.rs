@@ -1529,21 +1529,24 @@ mod server_side {
         FullstackContext::current()?.extension::<SignedIn>()
     }
 
-    /// Where the request came from, for the login limit. The server listens only on the
-    /// NAS's loopback, behind `tailscale serve`, which names the real client in
-    /// `X-Forwarded-For`; without it, all requests share one key.
+    /// Where the request came from, for the login limit: the address the trusted proxies
+    /// (`tailscale serve`) put in `X-Forwarded-For`, never one the client wrote itself
+    /// (`server::client_address`, decision #071).
     pub(super) fn client_key() -> String {
-        FullstackContext::current()
-            .and_then(|context| {
-                context
-                    .parts_mut()
-                    .headers
-                    .get("x-forwarded-for")
-                    .and_then(|value| value.to_str().ok())
-                    .and_then(|value| value.split(',').next())
-                    .map(|first| first.trim().to_owned())
-            })
-            .unwrap_or_else(|| "unknown".to_owned())
+        let forwarded_for = FullstackContext::current().and_then(|context| {
+            context
+                .parts_mut()
+                .headers
+                .get_all("x-forwarded-for")
+                .iter()
+                .filter_map(|value| value.to_str().ok())
+                .map(str::to_owned)
+                .reduce(|all, next| format!("{all},{next}"))
+        });
+        server::client_address::client_from_forwarded(
+            forwarded_for.as_deref(),
+            server::client_address::proxy_hops(),
+        )
     }
 
     /// Sets the session cookie to `token`, or clears it with `None`.

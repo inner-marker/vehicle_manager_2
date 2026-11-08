@@ -181,6 +181,20 @@ fn compose_passes_the_instance_name_empty_by_default() {
 }
 
 #[test]
+fn compose_passes_the_proxy_count_empty_by_default() {
+    // server::client_address::PROXY_HOPS_ENV_NAME (decision #071); empty means 1.
+    let hops = env_var_name("PROXY_HOPS");
+    assert!(
+        COMPOSE.contains(&format!("{hops}: ${{{hops}:-}}")),
+        "compose.yaml must pass {hops}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE.lines().any(|line| line == format!("{hops}=")),
+        ".env.example must list {hops}, empty"
+    );
+}
+
+#[test]
 fn image_and_container_never_run_as_root() {
     assert!(
         DOCKERFILE.contains("\nUSER 10001:10001\n"),

@@ -76,7 +76,7 @@ web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's pa
 
 # Dev-only
 proptest = "1"                    # property-based tests (AGENTS.md §7)
-http-body-util = "0.1.5"        # reading response bodies in middleware tests
+http-body-util = "0.1.5"        # body size limits; reading response bodies in middleware tests
 tempfile = "3.27.0"
 
 # ---------------------------------------------------------------------------
