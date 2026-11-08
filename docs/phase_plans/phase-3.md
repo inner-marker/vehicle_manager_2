@@ -30,7 +30,7 @@
 
 | # | Milestone | Status | What it delivers | You can check | Likely new dependencies (approved per step) |
 |---|---|---|---|---|---|
-| 1 | **Groundwork** | ⬜ | The **app icon** (desktop window and browser tab); the **exact build on Diagnostics** (commit, image tag, build date; GitHub #37); **window title and launch settings** (window size and position remembered, always-on-top option; #19); **secret types and log tiers** with a test that no secret reaches a log (sub-plan 04 §7.4); the **SQLCipher spike**: an encrypted SQLite database through sqlx on macOS, Windows, and Linux in CI, with its effect on build time and size (sub-plan 04 §7.1) | The icon in the Dock and the tab; Diagnostics shows `milestone-p3-m1-…` and its commit; the window reopens where it was | `secrecy`; SQLCipher via `libsqlite3-sys` (spike only) |
+| 1 | **Groundwork** | 🔨 | The **app icon** (desktop window and browser tab); the **exact build on Diagnostics** (commit, image tag, build date; GitHub #37); **window title and launch settings** (window size and position remembered, always-on-top option; #19); **secret types and log tiers** with a test that no secret reaches a log (sub-plan 04 §7.4); the **SQLCipher spike**: an encrypted SQLite database through sqlx on macOS, Windows, and Linux in CI, with its effect on build time and size (sub-plan 04 §7.1) | The icon in the Dock and the tab; Diagnostics shows `milestone-p3-m1-…` and its commit; the window reopens where it was | `secrecy`; SQLCipher via `libsqlite3-sys` (spike only) |
 | 2 | **Devices & pairing** | ⬜ | **Recent servers:** `settings.json` keeps a list (address, name, TEST tag, database ID, last used), shown as choices at sign-in plus "Another server…"; switching restarts the app (#027). **Signing in pairs the desktop** (#072): it makes a device key (Ed25519) kept in the OS keychain, gets a device token tied to it (kept in the keychain, not memory), and **signs every request** (DPoP-style); the server refuses the token without the signature. **Settings → Devices:** each device and browser, its last use, sign one out or all others; the Admin can do the same from Users | Pair the Mac; quit and reopen without signing in; copy the token to `curl` and see it refused; sign the Mac out from the web | `keyring`, `ed25519-dalek` |
 | 3 | **App lock & PIN** | ⬜ | A **PIN per person per device**, set after pairing (6+ digits, no repeats or runs); the app **locks after 15 idle minutes** (a setting); the password also unlocks; **5 wrong PINs** → password needed, **10** → signed out and the local key forgotten; failed unlocks reported to the Admin at the next sync; forgot-PIN by password (sub-plan 04 §4.1) | Lock, unlock with the PIN; five wrong PINs ask for the password | none expected (Argon2 already in use) |
 | 4 | **Local database & pull** | ⬜ | The **desktop database:** SQLCipher, one per server, in a folder named by the server's database ID; its key wrapped by the keychain and the PIN. **Pull:** the first full download, then records changed since the device's cursor, with tombstones (kept forever, #072). **One data layer** for screens: the web calls the server as now, the desktop reads its own database, so the desktop works offline **for reading**. Migrations run on the desktop database too | With Wi-Fi off, the desktop still shows the Garage, timelines, and documents; a change on the web appears on the desktop after reconnecting | SQLCipher (per the spike) |
@@ -66,3 +66,26 @@
 ## Step details
 
 *Detailed plans are added here as each milestone is planned and approved. Steps are numbered per milestone (1.0, 1a, …).*
+
+### Milestone 1 plan: groundwork
+
+*Agreed 2026-11-08 · branch `milestone/p3-m1-groundwork` · sketches: `docs/ui-sketches/p3m1-icon-options.svg`, `p3m1-icon-gauge-options.svg`*
+
+**Choices (the human, 2026-11-08):**
+- **Icon:** the gauge, as drawn (**A1**): a blue tile, a white dial with three ticks, an orange needle, and an odometer window below.
+- **Window (#19):** the desktop reopens at its last size and position (and maximized or full screen), moved back on screen if its monitor is gone; **Settings → You → "Keep window on top"**, desktop only, off by default.
+- **Title (#19):** always "Vehicle Manager"; the test server keeps its TEST SERVER prefix.
+- **Exact build (#37):** on **Diagnostics → About** only.
+
+| Step | Status | What |
+|---|---|---|
+| **1.0** `docs:` | 🔨 | This plan; the icon sheets. |
+| **1a** `feat(app):` icon | ⬜ | The A1 gauge as one master SVG (`crates/app/assets/`); PNGs at 16, 32, 180, 192, and 512 px made from it by an ignored test using `resvg` (test-only, like `make_fixture`) and committed. **Web:** the favicon (SVG, PNG fallbacks, Apple touch icon). **Desktop:** the window icon (Windows, Linux); the Dock icon on macOS for `dx serve` runs (Dioxus's `with_icon` sets only a window icon, which macOS ignores; a macOS-only call, checked when the step starts); the bundle icon in `Dioxus.toml` for release packages. |
+| **1b** `feat(app):` title and window (#19) | ⬜ | The page and window title "Vehicle Manager". The desktop's window size, position, and maximized or full-screen state saved in `settings.json` and restored, back on screen if needed. "Keep window on top" in Settings → You on the desktop, saved per computer in `settings.json` (not synced). |
+| **1c** `feat:` exact build (#37) | ⬜ | The image workflows pass the commit, image tag, and build date as Docker build arguments, declared just before the Rust build so dependency layers stay cached; the binary keeps them. Local builds take the commit from `git` (marked "modified" with uncommitted changes), or "local build". The handshake carries the server's build; Diagnostics → About shows it, and on the desktop the app's own build too. Tests for the fallbacks. |
+| **1d** `feat:` secret types and log tiers | ⬜ | Passwords, tokens, PINs, and codes held in `secrecy::SecretString` (or the token's own type) from the moment a server function receives them, printing as `[redacted]`. A logging rule in AGENTS.md: what each level may contain. A test captures the logs through setup, sign-in, a failed sign-in, a password change, and a recovery, and checks no secret appears (the setup and recovery codes stay in the log on purpose, #028, #047). Sub-plan 04 §7.4. |
+| **1e** `ci:` SQLCipher spike | ⬜ | `spikes/sqlcipher/`, **outside the workspace** so its SQLCipher build never mixes into the server's: creates an encrypted database through sqlx, reopens it with the right key, and checks that a wrong key fails and the file isn't plain SQLite. A manually started workflow runs it on macOS, Windows, and Linux, with the system's crypto and with bundled OpenSSL, recording build time and size. The results are written here for milestone 4. Sub-plan 04 §7.1. |
+| **1f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m1-groundwork.md`), run on the test server with the desktop app. |
+
+**New dependencies (approved with this plan):** `resvg` (dev only), `secrecy`; SQLCipher in the spike only; `objc2-app-kit` only if the Dock icon needs it (already in the build through Dioxus).
+
