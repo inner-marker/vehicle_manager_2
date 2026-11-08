@@ -816,3 +816,16 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Release images are built without test timers, like `:dev` (#054).
 - **Why:** the human, 2026-11-07, as recommended: from `v0.2.0` the rest of the household uses the main server, so its records should change only at a release, after the regression pass, not whenever `dev` moves.
 - **Unaffected:** migrations still freeze once merged into `dev` (#062), since every release comes from `dev`.
+
+### 071. Security sub-plan confirmed: what's built when; the web app is online-only
+*Decided: 2026-11-07 · Plan: §6 Security (defense in depth), §9 Phases 3, 6, 7 · Sub-plan: `docs/sub-plans/04-security.md` · Issues #27–#31*
+
+- **Decision:** the security sub-plan is confirmed as drafted, with its open questions settled as proposed:
+  - **Before Phase 3 code** (a `fix/` branch, before the app icon): the per-client sign-in limit trusts `X-Forwarded-For` only from a known proxy (`VEHICLEMANAGER_TRUSTED_PROXIES`, loopback by default); a cap on concurrent password hashing; request size and time limits.
+  - **Phase 3:** secret types and log tiers first; then, with the device database and pairing, an encrypted (SQLCipher) device database, OS secure storage, a device key pair that signs each request (DPoP-style), an app lock with a per-device PIN, and a Devices list for signing devices out.
+  - **The web app is online-only:** it stores nothing in the browser (`no-store`, cleared at sign-out), has no PIN, and keeps idle sign-out (#049).
+  - **After 10 wrong PINs** a device signs out and forgets its local key.
+  - **Admin-mode re-auth:** password or PIN, per Admin (Phase 6); no "none".
+  - **Phase 6:** API-wide rate limits, growing sign-in delays kept in the database, a fail2ban log format, the internet-facing deployment guide, and custom roles (#27) in their own sub-plan.
+  - **Phase 7:** server database, attachment, snapshot, and backup encryption, with a recovery key and rotation. Until then, the NAS guide recommends an encrypted shared folder.
+- **Why:** the human, 2026-11-07, as recommended. What's hard to change later (the device database's format, the pairing protocol) is built in Phase 3; a client could set its own `X-Forwarded-For` and get around the per-client limit; custom roles sync as data, so they follow sync.
