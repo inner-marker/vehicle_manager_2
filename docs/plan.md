@@ -10,6 +10,7 @@ A self-hosted app for tracking vehicles, everything that happens to them, and th
 - *`docs/sub-plans/01-signatures-and-records.md`: electronic signatures and record-keeping (draft; see Logbook entries, statement templates & signatures).*
 - *`docs/sub-plans/02-voice-capture.md`: hands-free logging of fuel-ups, readings, and squawks by voice, saved as drafts (draft; see Fast logging).*
 - *`docs/sub-plans/03-email-and-password-reset.md`: optional email over SMTP, email password reset, and later email notifications (draft; see Security → Application, and In-app notifications).*
+- *`docs/sub-plans/04-security.md`: app lock and PIN, devices and device-bound tokens, internet-facing hardening, encryption at rest, and secrets in logs, placed by phase (confirmed, #071; GitHub issues #28–#31; see Security (defense in depth)).*
 
 **Long-term aspiration (well past MVP):** extend the app, or a sibling app built on the same core, to **aircraft maintenance records**, alongside or instead of ground vehicles. Aircraft features are not being planned yet, but early data-model decisions are made so they won't block it (see Aircraft-ready groundwork).
 
@@ -1448,6 +1449,8 @@ For the MVP there is no separate backup of the master database. Device copies ac
 
 Dioxus provides no encryption or authentication on its own; server functions are ordinary HTTP endpoints. The design assumes a bad actor could be **on the home network**, not just the internet.
 
+*The draft `docs/sub-plans/04-security.md` details the app lock and PIN, device-bound tokens, internet-facing servers, encryption at rest, and secrets in logs, and places each in a phase.*
+
 **Network**
 - Server listens on **localhost only** and is published with **`tailscale serve`**, which provides HTTPS with a real certificate on the MagicDNS name. Nothing is exposed on the LAN, even at home.
 - **Tailscale ACLs:** deny by default; only approved devices can reach the app.
@@ -1930,7 +1933,7 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 
 ### Phase 3: Local-first & sync
 
-- **Web app:** local-first too (browser storage), or online-only, talking to the server directly?
+- ~~**Web app:** local-first too (browser storage), or online-only, talking to the server directly?~~ *Settled: online-only, storing nothing in the browser (#071, `docs/sub-plans/04-security.md` §7.1).*
 - **Device pairing flow:** how a new device joins (QR code, pairing code, Admin approval?). Needed before multiple devices sync.
 - **Version support window:** how many older API versions the server accepts.
 - **Tombstone purge policy:** how long tombstones are kept when a device stays offline for a long time.
