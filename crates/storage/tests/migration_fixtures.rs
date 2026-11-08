@@ -2,7 +2,8 @@
 //!
 //! From `v0.2.0` on, a copy of a database made by each release is saved in
 //! `tests/fixtures/` (see `tests/fixtures/README.md`). This test copies each one to a
-//! temporary folder, opens it, and checks it reaches the latest schema with its ID intact.
+//! temporary folder, opens it, and checks it reaches the latest schema with its ID intact, its
+//! vehicles, events, and other records still readable, and the database sound.
 
 use std::path::Path;
 
@@ -43,6 +44,29 @@ async fn every_release_fixture_migrates_to_the_latest_schema() {
             "{} lost its database ID",
             fixture.display()
         );
+        // Its records came through: every fixture has users, a vehicle, and events
+        // (from v0.2.0, the first with a database), readable by this build.
+        assert!(
+            !database.assets().await.unwrap().is_empty(),
+            "{}",
+            fixture.display()
+        );
+        for (id, _) in database.assets().await.unwrap() {
+            assert!(
+                !database.events_of(id).await.unwrap().is_empty(),
+                "{} lost its events",
+                fixture.display()
+            );
+            database.requirements_of(id).await.unwrap();
+            database.attachments_of(id).await.unwrap();
+            database.documents_of(id).await.unwrap();
+        }
+        database.reference_documents().await.unwrap();
+        let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
+            .fetch_one(database.pool())
+            .await
+            .unwrap();
+        assert_eq!(integrity, "ok", "{}", fixture.display());
         database.close().await;
     }
 }

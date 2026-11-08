@@ -1317,3 +1317,54 @@
     - **a Maintainer in Maintainer mode:** meters, fields, Set up, and documents, but no Edit details, Move, or Delete, no vehicle photos, and no picker.
 - **9h:** `docs/test-plans/p2m9-lifecycle.md`, 40 steps on the test server: a full copy of `data/` before the upgrade (migration 0015 rebuilds `events` and `attachments`), the upgrade and its log, everything from milestones 7 and 8 still there; a send-out (refused without a shop, then late), its banner, Messages, and Sam's view, then the return; an acquisition; a second vehicle disposed of (refused without how, the confirmation, the draft, archived, finalized with nothing new offered, then withdrawn by a correction); a recall with two numbers and a long title, its PDF, its Schedule card; linking it to the second vehicle as not applicable; editing it for both; complying with it in a job; one-time hiding the intervals; and the sweep as the Admin in Driver mode, a new Viewer, and Sam, with a direct address that's refused. `docs/deploying-nas.md`'s **Updating** gains a note: before an update that rebuilds tables, copy `data/` (test server first, then main when the milestone merges).
 - **From the test run** (2026-11-06; `docs/test-plans/p2m9-lifecycle.md` §5): the recall's view shows labels above left-aligned values on the input background; the Schedule has **Your schedule** and **Recalls and bulletins** sections and an **Open / All** filter (Open, the default, hides complied, not-applicable, and turned-off ones; the human's choice, replacing 9f's bottom section); the job form has **+ From a recall or bulletin…** beside **+ From a requirement…**. The reported "still Open after finishing" was withdrawn by the human (it shows Complied); a server test now covers it. No new dependency.
+
+### The `v0.2.0` release plan
+*Approved 2026-11-07 · Branch: `release/v0.2.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #026, #062, #070*
+
+**Goal:** Phase 2 ends with **`v0.2.0`** tagged on `main`: the first release with a database, and the one the rest of the household starts using (on the main server). Along the way: the release's **migration fixture**, a **README** (issue #16), a short **regression pass** on the test server, and the changelog.
+
+**Phase 2's exit criteria** (plan §10 Phase 2; the milestone table): milestones 1–9 are all ✅, each with its test plan run and recorded. The Phase 2 open questions are all answered (#028–#040).
+
+**Reviewed against** ideas 1–21, sub-plans 01–03, the open GitHub issues, and Phase 2's open questions (none), 2026-11-07. Phase 3's open questions (web storage, pairing, the API support window, tombstone purge, blob sync) are for when Phase 3 is planned, not this release.
+- **Ideas and sub-plans:** no effect on the release.
+- **GitHub issues:**
+  - **#16 README:** belongs in this release (question 3).
+  - **#19 Title and launch config:** done by PR #22; the human decides whether to close it.
+  - **#24 Vehicle main photo** and **#26 Save a new place from a log form:** neither is needed for the release; proposed for **Phase 6 (Polish)**, each "requires further discussion" as the issues say.
+  - **#27 Custom roles and permissions:** changes the role model (#045); proposed for discussion before Phase 3 is planned (question 4).
+  - **#28 Login and PIN**, **#30 Device-bound tokens**, **#31 Encryption at rest**, **#29 Internet-facing hardening:** a family of security work, most of it about device copies, which arrive in Phase 3. Today the server is reached only over the tailnet; sign-ins already have a limiter (`server::login_limiter`); the desktop app keeps its token in memory only (#027, which answers #30's "check how it's stored today"); attachments are named by their plain SHA-256 (#065, which #31 flags). Proposed: **none before `v0.2.0`**, and a **security sub-plan** written before Phase 3 that places each item in a phase (question 4).
+  - **#15 Small-business app:** post-MVP; no effect.
+
+**Questions for the human, and the answers** (2026-11-07: all five as recommended):
+1. **Which image the main server runs after the release.** Today main runs `:dev` (#062), so every `docker compose pull` there takes whatever `dev` has. **Recommended:** from `v0.2.0` on, **main runs release tags** (`:0.2.0`, then each new release), so the household's records change only at a release; the test server keeps the milestone and `:dev` images. This refines #062, so it would get a decision.
+2. **The regression pass before tagging** (plan §9: "Before a release, the relevant plans are re-run as a manual regression checklist"). **Recommended:** a short `docs/test-plans/v0.2.0-regression.md`, about 25 steps on the test server with the `:dev` image after the release PR is merged into `dev`. It covers sign-in and modes, the Garage, a fuel-up, a job with a recall task, a photo and a PDF, documents and plates, a send-out and return, Messages, the nightly snapshot, and the sweep as Sam. The full milestone plans aren't re-run.
+3. **The README** (#16). **Recommended:** in this release: what the app is, its status (`v0.2.0`, server and web; desktop runs from source), how to run it (links to `docs/deploying-nas.md`), how the repository works (the `dev` and `main` branches, milestone branches, PR titles, releases), where the plans and decisions live, and the license.
+4. **The security issues (#27–#31).** **Recommended:** nothing in this release; before Phase 3 is planned, a **sub-plan** (`docs/sub-plans/04-security.md`) gathers #28, #29, #30, and #31 (and asks where #27's custom roles go), for the human to review like the others.
+5. **A page for the household's first users.** **Recommended:** a short **Getting started** section in the README (or `docs/using.md`): signing in and choosing a password, the modes, + Log, Issues, and who to ask. The built-in Help is Phase 6.
+
+**Choices from the plan** (no question needed):
+- **The fixture** `crates/storage/tests/fixtures/v0.2.0.sqlite` is made by this release's code with a few made-up records: a vehicle, a fuel-up, a finished job with a task and a part, a squawk, a document, a plate, a recall, and a send-out, with no personal data. A test marked `#[ignore]` writes it (`cargo test -p storage --test make_fixture -- --ignored`), so it can be made again the same way; once committed it's never edited (the fixtures README).
+- **The version** goes to `0.2.0` in the root `Cargo.toml`. The API version stays as it is (it's separate, plan §8). The changelog comes from `git cliff --tag v0.2.0`; it's read before the release PR, and fixed at the source if an entry reads badly.
+- **The migration headers** that still say "may change until v0.2.0" stay as they are (decision #062; sqlx checksums them).
+
+**Steps:**
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| R.0 | ☑️ | `docs: the v0.2.0 release plan` | This plan, the issue review, and decision #070 (question 1) | none |
+| R.a | ☑️ | `test(storage): the v0.2.0 migration fixture` | The ignored test that writes it, and the fixture | none |
+| R.b | ☑️ | `docs: README` | Question 3 (and 5) | none |
+| R.c | ☑️ | `docs: v0.2.0 regression checklist` | Question 2; `docs/deploying-nas.md` for question 1 | none |
+| R.d | ☑️ | `chore: release v0.2.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.e | — | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main` (a merge commit); the tag; the Release workflow; the main server on the new image | — |
+
+**Written so far**
+- **R.0:** decision #070 (from `v0.2.0` the main server runs release images). The release workflow already builds its image without test timers, tagged `:0.2.0` and `:latest`.
+- **R.a:** `crates/server/tests/make_fixture.rs` (ignored; `cargo test -p server --test make_fixture -- --ignored`) makes `crates/storage/tests/fixtures/v0.2.0.sqlite` through the server's own pipeline: the two test users, one truck, a fuel-up, a requirement and a finished job doing it (with a part), an issue, a plate, a registration with a one-page PDF (its file isn't in the fixture; only the database is), a recall with its one-time requirement, and a send-out: 20 commands, schema 15, written with `VACUUM INTO`. It refuses to overwrite a fixture already there. `migration_fixtures.rs` now also checks each fixture's vehicles still have their events, its other records are readable, and `integrity_check` is ok. The fixtures README says how the next release makes its own.
+- **R.b:** `README.md` (issue #16): what the app is and its status; **Getting started** for the household (the address and temporary password, choosing a password, the Garage and a vehicle's tabs, + Log and the 24-hour draft, the modes, Messages, Settings, who to ask); running it (the deploy guide, the images and decision #070, the desktop app from source); the repository (the crates, the documents, the branches and PR titles, what CI checks on pull requests and into `main`); the license. Its facts were checked against the code (the 12-character password minimum, the image name, the workflows' steps).
+- **R.c:** `docs/test-plans/v0.2.0-regression.md`, 25 steps on the test server with `:dev` after the release PR merges into `dev`: the startup log and version, signing in and Admin mode, users, the Garage and adding a vehicle, Sam's fuel-up with a photo and an issue, a repair signing the issue off and its correction, the Schedule's filter and sections, a recall with a PDF closed by a job, a document renewal, a send-out and return, a disposal, Messages, a household setting, the sweep as Sam and the Viewer, the nightly snapshot and file check, and no errors. **Decision #070 in the deploy guide:** the server table and image tags (main on a release such as `0.2.0`; `:dev` for the test server; `latest` unused), **Moving the main server to a new release** under Updating (copy `data/`, change the tag, update, read the log), and `deploy/.env.example` now starts at `0.2.0`.
+- **The regression pass** (`docs/test-plans/v0.2.0-regression.md`): 24 of 25 steps passed on `:dev`; step 2 (the version) is checked once the release PR's `:dev` is up.
+- **R.d:** the version is `0.2.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` has its `## [0.2.0]` section from `git cliff --tag v0.2.0`. Two things found while reading it:
+  - **`release/v0.2.0` had started from the milestone 9 branch,** not the up-to-date `dev`, so the changelog (and the branch) missed PR #25's Diagnostics fix. `dev` was merged into the branch and the changelog made again.
+  - **`cliff.toml` linked "(#NNN)" to pull requests,** which only ever caught decision numbers (PRs are merge commits, #021, and those are skipped), so six entries pointed at the wrong PRs. It now writes "(decision NNN)" instead.
+  - Accepted as they are: four entries listed twice (commits that were made twice), and "V0.2.0" capitalized by the changelog's formatting.

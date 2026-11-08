@@ -805,3 +805,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **The server still checks everything;** hiding is only so people aren't shown what they can't do.
 - **Why:** the human, 2026-11-05: "things should only show if the user's currently-selected role allows them to see/use it. Not just for admin." `v0.2.0` is when the rest of the household starts using the app.
 - **Unaffected:** the vehicle page's "view only" note; the mode rules and timeouts (#049).
+
+### 070. From `v0.2.0` on, the main server runs release images; the test server runs the others
+*Decided: 2026-11-07 · Plan: §7 Deployment, §8 Versioning · Phase plan: phase-2.md, the `v0.2.0` release plan, question 1 · Refines #062*
+
+- **Decision:**
+  - **Main runs a release's image** (`:0.2.0`, then each new release's `:X.Y.Z`), set in its `.env` as `VEHICLEMANAGER_IMAGE_TAG`. It moves to a new release by changing that tag; it never runs `:dev` again.
+  - **The test server runs everything else:** `:milestone-<name>`, `:dev`, or a `:sha-` build (unchanged from #062).
+  - **`:latest`** (pushed with each release) is not used on the NAS, so an update is always a deliberate change of tag.
+  - Release images are built without test timers, like `:dev` (#054).
+- **Why:** the human, 2026-11-07, as recommended: from `v0.2.0` the rest of the household uses the main server, so its records should change only at a release, after the regression pass, not whenever `dev` moves.
+- **Unaffected:** migrations still freeze once merged into `dev` (#062), since every release comes from `dev`.
