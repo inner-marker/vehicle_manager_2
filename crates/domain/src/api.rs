@@ -897,10 +897,13 @@ impl AttachmentPart {
     }
 }
 
+/// The start of every attachment download's path.
+pub const DOWNLOAD_PATH_PREFIX: &str = "/api/v1/attachments/";
+
 /// Where one part of an attachment is downloaded: `/api/v1/attachments/<id>/<part>`.
 #[must_use]
 pub fn download_path(id: crate::attachment::AttachmentId, part: AttachmentPart) -> String {
-    format!("/api/v1/attachments/{id}/{}", part.as_str())
+    format!("{DOWNLOAD_PATH_PREFIX}{id}/{}", part.as_str())
 }
 
 /// The answer to an attachment request.

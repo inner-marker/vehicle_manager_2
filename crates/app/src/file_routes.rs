@@ -18,8 +18,8 @@ use server::sessions::SignedIn;
 
 use crate::logging::SystemClock;
 
-/// The most an upload's body may be: a PDF at the limit, with room to spare.
-const UPLOAD_LIMIT: usize = 51 * 1024 * 1024;
+/// The most an upload's body may be (the limits layer also enforces it, decision #071).
+const UPLOAD_LIMIT: usize = server::limits::UPLOAD_BODY_LIMIT;
 
 /// The upload and download routes, to merge into the server's router (inside the auth layer).
 pub fn routes<S>() -> Router<S>

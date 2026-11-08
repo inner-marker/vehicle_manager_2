@@ -1837,6 +1837,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 ### Phase 3: Local-first & sync.
 - **First: the app icon** (the human, 2026-11-04): the desktop window's and the browser tab's icon (Dioxus's `Config::with_icon` on desktop; a favicon on the web), before the desktop app gets more use.
+- **Also first: the exact build on Diagnostics** (the human, 2026-11-08; GitHub issue #37): the commit, image tag, and build date beside the version, so a test can confirm from the app which image it's running.
 - Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.

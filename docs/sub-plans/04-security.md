@@ -20,11 +20,11 @@
 | Admin mode | Asks for the password; ends after 15 idle minutes (#049). |
 | Recovery | An Admin resets anyone's password (#046); an Admin's own recovery uses a one-time code in the server log (#047). |
 | Desktop credential | Typed in, kept in memory only (#027). |
-| Hashing on the server | Argon2 runs on `spawn_blocking`, with no limit on how many run at once. |
+| Hashing on the server | Argon2 runs on `spawn_blocking`, with no limit on how many run at once. *(Now at most 2 at once: §5.1, done.)* |
 | Data at rest | Plain SQLite on the NAS; attachments stored as files named by their SHA-256 (#065); snapshots and backups unencrypted. |
 | Logs | `tracing`, with no rule or type that keeps secrets out. |
 
-**One gap found while reading:** the "per client" key for failed sign-ins is the **first `X-Forwarded-For` entry** (`app::api::server_side::client_key`). A client can send its own header, so on an internet-facing server it could change that key on every try and get past the per-client limit. (The per-username limit still holds.) Proposed fix in §5.
+**One gap found while reading:** the "per client" key for failed sign-ins is the **first `X-Forwarded-For` entry** (`app::api::server_side::client_key`). A client can send its own header, so on an internet-facing server it could change that key on every try and get past the per-client limit. (The per-username limit still holds.) **Fixed** in `fix/sign-in-hardening` (§5.1).
 
 ## 3. Who we defend against
 
@@ -60,9 +60,9 @@
 ### 5.1 In the app
 | Item | Phase | Notes |
 |---|---|---|
-| **Trust `X-Forwarded-For` only from a known proxy** | **Now** (a `fix/` branch before Phase 3 code) | A setting, `VEHICLEMANAGER_TRUSTED_PROXIES` (default: loopback, which is what `tailscale serve` uses). Take the right-most address not in that list; otherwise use the connection's own address. |
-| **Cap concurrent password hashes** | Now, with the fix above | A semaphore (e.g. 2 at once on the NAS's 4 cores); requests beyond it wait briefly, then get "Try again shortly". A login flood then can't take all the CPU. |
-| **Request size and time limits** | Now, with the fix above | Axum's body limit, sized for the largest upload the app accepts, and a request timeout. |
+| **Use only the `X-Forwarded-For` entry the proxies wrote** | **Done** (`fix/sign-in-hardening`) | `VEHICLEMANAGER_PROXY_HOPS` (default 1, for `tailscale serve`): the entry that many places from the right is the client; too few entries is `direct` (`server::client_address`). Counting replaced the first idea, a list of trusted proxy addresses, because the server never sees the connection's own address (decision #071, amended). |
+| **Cap concurrent password hashes** | **Done**, with the fix above | At most 2 at once, each waiting up to 10 seconds; then sign-in answers "try again in 5 seconds" (`server::passwords`). |
+| **Request size and time limits** | **Done**, with the fix above | 2 MB bodies (uploads 51 MB) → 413; 1 minute to answer (uploads and downloads 10 minutes) → 408 (`server::limits`). |
 | Rate limits on the whole API, per client and per account | Phase 6 | `tower_governor` or a small limiter of our own; sync traffic sets the numbers, so it waits for Phase 3. |
 | Growing delays after repeated failures | Phase 6 | Extends `login_limiter`: 5 failures → 15 minutes as now, then doubling up to a day. Kept in the database so a restart doesn't clear it. |
 | Failed sign-ins logged in a fixed format | Phase 6 | One line per failure with the client address, for fail2ban or CrowdSec; the deployment guide gives the filter. |
@@ -123,7 +123,7 @@ See open question 4.
 
 | When | What |
 |---|---|
-| **Now** (one `fix/` branch, before Phase 3 code) | Trusted proxies for `X-Forwarded-For`; a cap on concurrent hashing; request size and time limits (§5.1). |
+| **Now** (one `fix/` branch, before Phase 3 code) | **Done** (`fix/sign-in-hardening`): the client address from counted proxies; a cap on concurrent hashing; request size and time limits (§5.1). |
 | **Phase 3, early** | Secret types and log tiers, with the test (§7.4). The SQLCipher spike (§7.1). |
 | **Phase 3, with the device database and pairing** | SQLCipher device database; OS secure storage; the device key pair and signed requests; app lock with a PIN; the Devices list and revoking (§4.1, §4.3, §6, §7.1). Web online-only with `no-store`. |
 | **Phase 6** | Admin-mode re-auth choice; API-wide rate limits; growing delays kept in the database; the fail2ban log format; the internet-facing deployment guide (§4.2, §5). Custom roles, in their own sub-plan (§8). |

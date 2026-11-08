@@ -74,6 +74,7 @@ fn launch(log_handles: Option<LogHandles>) {
     let paths = server_paths();
     // Before the router: the auth layer names the session cookie after it.
     server::startup::set_instance(server_instance());
+    server::client_address::set_proxy_hops(server_proxy_hops());
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {
         let log_handles = log_handles.clone();
@@ -98,7 +99,10 @@ fn launch(log_handles: Option<LogHandles>) {
             let app = Router::new()
                 .merge(app::file_routes::routes())
                 .serve_dioxus_application(config, app::ui::App);
-            Ok(server::auth::protect(app, auth))
+            // Size and time limits outside the auth layer, so an oversized request is
+            // refused before anything else (decision #071).
+            let app = server::auth::protect(app, auth);
+            Ok(server::limits::apply(app, server::limits::Limits::SERVER))
         }
     })
 }
@@ -182,6 +186,18 @@ fn server_instance() -> Option<domain::identity::InstanceName> {
             None
         }
     }
+}
+
+/// How many proxies sit in front of the server, from `VEHICLEMANAGER_PROXY_HOPS` (decision
+/// #071): 1 (`tailscale serve`) if unset. An invalid count is ignored, with a warning.
+#[cfg(feature = "server")]
+fn server_proxy_hops() -> server::client_address::ProxyHops {
+    let env_var = domain::identity::env_var_name(server::client_address::PROXY_HOPS_ENV_NAME);
+    let setting = std::env::var(&env_var).unwrap_or_default();
+    server::client_address::ProxyHops::parse(&setting).unwrap_or_else(|error| {
+        tracing::warn!(target: log_area::APP, env_var = %env_var, %error, "proxy count ignored; using 1");
+        server::client_address::ProxyHops::default()
+    })
 }
 
 /// The local development data folder, used when `VEHICLEMANAGER_DATA_DIR` isn't set.

@@ -103,6 +103,8 @@ sudo /var/packages/Tailscale/target/bin/tailscale serve --bg --https=8443 http:/
 
 The address is then `https://<nas-name>.<tailnet>.ts.net:8443`.
 
+**`tailscale serve` is the one proxy in front of the server,** which is what the server assumes (`VEHICLEMANAGER_PROXY_HOPS` empty, meaning 1; decision #071). It adds each visitor's tailnet address to the request, and the sign-in limit counts failures by that address. Set `VEHICLEMANAGER_PROXY_HOPS=2` only if another proxy (e.g. Caddy) also sits in front; a wrong number makes the limit see the wrong addresses.
+
 ### 6. Create the first Admin
 
 A new server has no users. Until it has one, it writes a one-time **setup code** to its log at every start (decision #028). The setup and recovery codes go **only to the container's log** (`docker logs`), never to the files in `data/logs/`, so log files you share for debugging never contain them:
@@ -383,6 +385,8 @@ The database ID is the same as before (it's inside the snapshot), so devices tre
 - **Diagnostics shows "Server health: Fail":** the database couldn't be opened or failed a check; nothing is being saved. The container log says which (`can't open the database` or `database integrity problem`). See "Database, backups, and snapshots".
 - **`can't open the place data`:** the file in `VEHICLEMANAGER_GEODATA_FILE` is missing or isn't place data; empty the setting to use the image's own, then `sudo docker compose up -d`.
 - **`job skipped` for the nightly snapshot:** the snapshot folder set in `VEHICLEMANAGER_SNAPSHOT_DIR` isn't there (e.g. the USB disk isn't mounted). The household's Admin also sees it in **Messages** (in Admin mode), as does a failed snapshot or hourly check; the message goes away once the cause is fixed.
+- **Failed sign-ins:** each one logs `sign-in refused` with the visitor's address (`client="100.x.y.z"`, a tailnet address), never the username or password: `sudo docker logs --since 1h vehiclemanager 2>&1 | grep 'sign-in refused'`. `client="direct"` means the request didn't come through `tailscale serve` (or `VEHICLEMANAGER_PROXY_HOPS` is too high).
+- **`request refused: body too large` (413) or `request timed out` (408):** a request over the size limit (2 MB; uploads 51 MB) or not answered in time (1 minute; uploads and downloads 10 minutes). The app never sends one that large; a timeout means the server was stuck, so look at the lines before it.
 - **Pulls fail with "denied":** the GHCR package is still private (setup step 2).
 - **Signing in to one server signs you out of the other:** one of them still has `compose.yaml` from before the split, which doesn't pass `VEHICLEMANAGER_INSTANCE`. Download the new one (as in "Splitting", step 3), check with `sudo docker compose config`, and `sudo docker compose up -d`.
 - **The main server shows a TEST SERVER tag:** its `.env` sets `VEHICLEMANAGER_INSTANCE`. Empty it, then `sudo docker compose up -d`.

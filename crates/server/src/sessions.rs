@@ -23,7 +23,7 @@ use storage::{Database, StorageError};
 
 use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
-use crate::passwords::{hash_password, needs_rehash, verify_password};
+use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
 
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
@@ -142,18 +142,28 @@ impl From<NewIdError> for SignInError {
 }
 
 /// A real hash of a throwaway password, checked when the username doesn't exist, so a wrong
-/// username takes as long as a wrong password. Made once, at the first such attempt.
+/// username takes as long as a wrong password. Made once, at the first such attempt that
+/// gets a turn to hash (a busy server tries again next time).
 static DUMMY_HASH: tokio::sync::OnceCell<String> = tokio::sync::OnceCell::const_new();
 
 async fn dummy_hash() -> String {
     DUMMY_HASH
-        .get_or_init(|| async {
-            hash_password("never a real password".to_owned())
-                .await
-                .unwrap_or_default()
-        })
+        .get_or_try_init(|| hash_password("never a real password".to_owned()))
         .await
-        .clone()
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// When too many passwords are being checked at once, sign-in answers "try again" after
+/// this long (decision #071).
+pub const BUSY_RETRY_MILLIS: i64 = 5_000;
+
+impl From<Busy> for SignInError {
+    fn from(Busy: Busy) -> Self {
+        Self::RateLimited {
+            retry_after_millis: BUSY_RETRY_MILLIS,
+        }
+    }
 }
 
 /// Signs a user in. `client` identifies where the request came from, for the rate limit.
@@ -178,19 +188,19 @@ pub async fn sign_in(
 
     let Some(user) = find_signable_user(database, username).await? else {
         // Same work as a real check, so timing doesn't reveal that the user doesn't exist.
-        let _ = verify_password(password, dummy_hash().await).await;
+        let _ = verify_password(password, dummy_hash().await).await?;
         limiter.record_failure(&keys, now);
-        tracing::debug!(target: log_area::AUTH, "sign-in refused: unknown or disabled user");
+        tracing::info!(target: log_area::AUTH, client, "sign-in refused: unknown or disabled user");
         return Err(SignInError::InvalidCredentials);
     };
     let stored_hash = database.password_hash(user.id).await?;
     let matches = match stored_hash.clone() {
-        Some(hash) => verify_password(password.clone(), hash).await,
+        Some(hash) => verify_password(password.clone(), hash).await?,
         None => false,
     };
     if !matches {
         limiter.record_failure(&keys, now);
-        tracing::debug!(target: log_area::AUTH, user = %user.id, "sign-in refused: wrong password");
+        tracing::info!(target: log_area::AUTH, client, user = %user.id, "sign-in refused: wrong password");
         return Err(SignInError::InvalidCredentials);
     }
     limiter.clear(&user_key);
@@ -379,7 +389,9 @@ pub async fn switch_mode(
             .await
             .map_err(|_| SwitchModeError::Unavailable)?;
         let matches = match (password, hash) {
-            (Some(password), Some(hash)) => verify_password(password, hash).await,
+            (Some(password), Some(hash)) => verify_password(password, hash)
+                .await
+                .map_err(|Busy| SwitchModeError::Unavailable)?,
             _ => false,
         };
         if !matches {
@@ -445,7 +457,9 @@ pub async fn change_password(
         .await
         .map_err(|_| ChangePasswordError::Unavailable)?;
     let matches = match stored {
-        Some(hash) => verify_password(current, hash).await,
+        Some(hash) => verify_password(current, hash)
+            .await
+            .map_err(|Busy| ChangePasswordError::Unavailable)?,
         None => false,
     };
     if !matches {

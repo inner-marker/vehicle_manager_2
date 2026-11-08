@@ -40,6 +40,13 @@ pub async fn upload(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadOutc
         .send()
         .await
         .map_err(|error| error.to_string())?;
+    // The server's size limit (`server::limits`) refuses an oversized body before the upload
+    // route sees it; it's the same refusal as the check before sending.
+    if response.status() == StatusCode::PAYLOAD_TOO_LARGE {
+        return Ok(UploadOutcome::Invalid {
+            problem: domain::attachment::AttachmentProblem::PdfTooLarge,
+        });
+    }
     response
         .json::<UploadOutcome>()
         .await
