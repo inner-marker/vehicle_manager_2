@@ -1,6 +1,6 @@
 # Phase 2: Data model & server storage (plan)
 
-*Agreed 2026-10-29 · Roadmap: `docs/plan.md` §9 Phase 2 · Open questions: none (decisions #028–#041)*
+*Agreed 2026-10-29 · ✅ **Complete:** exit criteria met; released as `v0.2.0` on 2026-11-08 · Roadmap: `docs/plan.md` §9 Phase 2 · Open questions: none (decisions #028–#041)*
 
 **Goal:** the household can really use the app, online, from the web UI on the NAS (phones and computers) and the macOS desktop app. Vehicles, meters, fuel-ups, readings, maintenance, repairs, squawks, photos, and documents are stored in the server's SQLite database, every change goes through a command, and the data survives restarts, updates, and a bad day (integrity checks and nightly snapshots).
 
@@ -1319,7 +1319,7 @@
 - **From the test run** (2026-11-06; `docs/test-plans/p2m9-lifecycle.md` §5): the recall's view shows labels above left-aligned values on the input background; the Schedule has **Your schedule** and **Recalls and bulletins** sections and an **Open / All** filter (Open, the default, hides complied, not-applicable, and turned-off ones; the human's choice, replacing 9f's bottom section); the job form has **+ From a recall or bulletin…** beside **+ From a requirement…**. The reported "still Open after finishing" was withdrawn by the human (it shows Complied); a server test now covers it. No new dependency.
 
 ### The `v0.2.0` release plan
-*Approved 2026-11-07 · Branch: `release/v0.2.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #026, #062, #070*
+*Approved 2026-11-07 · ✅ Released 2026-11-08 · Branch: `release/v0.2.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #026, #062, #070*
 
 **Goal:** Phase 2 ends with **`v0.2.0`** tagged on `main`: the first release with a database, and the one the rest of the household starts using (on the main server). Along the way: the release's **migration fixture**, a **README** (issue #16), a short **regression pass** on the test server, and the changelog.
 
@@ -1356,7 +1356,7 @@
 | R.b | ☑️ | `docs: README` | Question 3 (and 5) | none |
 | R.c | ☑️ | `docs: v0.2.0 regression checklist` | Question 2; `docs/deploying-nas.md` for question 1 | none |
 | R.d | ☑️ | `chore: release v0.2.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
-| R.e | — | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main` (a merge commit); the tag; the Release workflow; the main server on the new image | — |
+| R.e | ✅ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main` (a merge commit); the tag; the Release workflow; the main server on the new image | — |
 
 **Written so far**
 - **R.0:** decision #070 (from `v0.2.0` the main server runs release images). The release workflow already builds its image without test timers, tagged `:0.2.0` and `:latest`.
@@ -1368,3 +1368,8 @@
   - **`release/v0.2.0` had started from the milestone 9 branch,** not the up-to-date `dev`, so the changelog (and the branch) missed PR #25's Diagnostics fix. `dev` was merged into the branch and the changelog made again.
   - **`cliff.toml` linked "(#NNN)" to pull requests,** which only ever caught decision numbers (PRs are merge commits, #021, and those are skipped), so six entries pointed at the wrong PRs. It now writes "(decision NNN)" instead.
   - Accepted as they are: four entries listed twice (commits that were made twice), and "V0.2.0" capitalized by the changelog's formatting.
+- **R.e (the human, 2026-11-08):** the release PR (#33) merged into `dev`; the regression pass's step 2 showed App `0.2.0` on the rebuilt `:dev`, so all 25 steps passed; `dev` merged into `main` (#34, a merge commit); `v0.2.0` tagged on `main`; the Release workflow passed its guards and the Main gate, published the image as `:0.2.0` and `:latest`, and created the GitHub Release; the main server moved to `0.2.0` (decision #070) after copying its `data/`. Issue #16 closed.
+  - **The first tag landed on the old `main`** (the `v0.1.0` merge), pushed before #34 had merged. The Release workflow's guard refused it ("tag v0.2.0 doesn't match the Cargo.toml version 0.1.0") before anything was published; the tag was deleted and pushed again on #34's merge, as `docs/releasing.md`'s failure table says.
+
+**Phase 2 is complete:** its exit criteria are met (real users on the NAS, the household's vehicles and every kind of event with places and photos, roles enforced, finalized events only corrected, and data that survives restarts and updates with nightly snapshots), all nine milestones are in `main`, and `v0.2.0` is the household's release. Next: Phase 3 (`docs/plan.md` §9), starting with the app icon, once its plan and open questions are settled; before that, the security sub-plan (the release plan's question 4).
+
