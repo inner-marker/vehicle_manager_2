@@ -44,7 +44,17 @@ use theme::ThemeChoice;
 /// The app's single stylesheet: theme colors and the three layouts.
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
-/// The root component: provides the theme, loads the stylesheet, and starts the router.
+/// The app icon (phase-3.md 1a): the master SVG, for browsers that take an SVG favicon.
+const ICON_SVG: Asset = asset!("/assets/app-icon/icon.svg");
+
+/// The app icon at 32 px, for browsers without SVG favicons.
+const ICON_32: Asset = asset!("/assets/app-icon/icon-32.png");
+
+/// The app icon at 180 px: an iPhone's home screen, when the web app is added to it.
+const ICON_180: Asset = asset!("/assets/app-icon/icon-180.png");
+
+/// The root component: provides the theme, loads the stylesheet and the icon, and starts the
+/// router.
 ///
 /// Expects the debug log's `LogHandles` in context (`LaunchBuilder::with_context`);
 /// without them the log viewer says logging isn't running.
@@ -56,6 +66,9 @@ pub fn App() -> Element {
 
     rsx! {
         Stylesheet { href: MAIN_CSS }
+        document::Link { rel: "icon", href: ICON_SVG.to_string(), r#type: "image/svg+xml" }
+        document::Link { rel: "icon", href: ICON_32.to_string(), r#type: "image/png", sizes: "32x32" }
+        document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
         div { class: "app", "data-theme": theme().attribute(),
             auth::AuthGate { Router::<Route> {} }
         }

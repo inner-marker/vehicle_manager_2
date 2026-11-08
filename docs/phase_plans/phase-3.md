@@ -79,8 +79,8 @@
 
 | Step | Status | What |
 |---|---|---|
-| **1.0** `docs:` | 🔨 | This plan; the icon sheets. |
-| **1a** `feat(app):` icon | ⬜ | The A1 gauge as one master SVG (`crates/app/assets/`); PNGs at 16, 32, 180, 192, and 512 px made from it by an ignored test using `resvg` (test-only, like `make_fixture`) and committed. **Web:** the favicon (SVG, PNG fallbacks, Apple touch icon). **Desktop:** the window icon (Windows, Linux); the Dock icon on macOS for `dx serve` runs (Dioxus's `with_icon` sets only a window icon, which macOS ignores; a macOS-only call, checked when the step starts); the bundle icon in `Dioxus.toml` for release packages. |
+| **1.0** `docs:` | ☑️ | This plan; the icon sheets. |
+| **1a** `feat(app):` icon | ☑️ | The A1 gauge as one master SVG (`crates/app/assets/`); PNGs at 16, 32, 180, 192, and 512 px made from it by an ignored test using `resvg` (test-only, like `make_fixture`) and committed. **Web:** the favicon (SVG, PNG fallbacks, Apple touch icon). **Desktop:** the window icon (Windows, Linux); the Dock icon on macOS for `dx serve` runs (Dioxus's `with_icon` sets only a window icon, which macOS ignores; a macOS-only call, checked when the step starts); the bundle icon in `Dioxus.toml` for release packages. |
 | **1b** `feat(app):` title and window (#19) | ⬜ | The page and window title "Vehicle Manager". The desktop's window size, position, and maximized or full-screen state saved in `settings.json` and restored, back on screen if needed. "Keep window on top" in Settings → You on the desktop, saved per computer in `settings.json` (not synced). |
 | **1c** `feat:` exact build (#37) | ⬜ | The image workflows pass the commit, image tag, and build date as Docker build arguments, declared just before the Rust build so dependency layers stay cached; the binary keeps them. Local builds take the commit from `git` (marked "modified" with uncommitted changes), or "local build". The handshake carries the server's build; Diagnostics → About shows it, and on the desktop the app's own build too. Tests for the fallbacks. |
 | **1d** `feat:` secret types and log tiers | ⬜ | Passwords, tokens, PINs, and codes held in `secrecy::SecretString` (or the token's own type) from the moment a server function receives them, printing as `[redacted]`. A logging rule in AGENTS.md: what each level may contain. A test captures the logs through setup, sign-in, a failed sign-in, a password change, and a recovery, and checks no secret appears (the setup and recovery codes stay in the log on purpose, #028, #047). Sub-plan 04 §7.4. |
@@ -88,4 +88,9 @@
 | **1f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m1-groundwork.md`), run on the test server with the desktop app. |
 
 **New dependencies (approved with this plan):** `resvg` (dev only), `secrecy`; SQLCipher in the spike only; `objc2-app-kit` only if the Dock icon needs it (already in the build through Dioxus).
+
+**Step 1a notes (2026-11-08):**
+- **No Dock icon from code on macOS:** setting it needs `NSApplication::setApplicationIconImage`, which is `unsafe`, and the workspace forbids `unsafe` code. A Mac gets the icon from the app bundle (`dx bundle --platform desktop`); a plain `dx serve` run keeps the generic one. Windows and Linux get it as the window icon. So `objc2-app-kit` wasn't added.
+- **`crates/app/Dioxus.toml`** (new): the bundle's identifier (the bundle ID, #016), its icons **largest first** (dx 0.7.10 makes every macOS size from the first one, so a small first icon came out blurry), and a **publisher, "Inner Marker"** (`dx bundle` requires one; taken from the bundle ID's owner). `tests/make_icons.rs` checks the identifier and that each icon exists, and that the committed PNGs still match the SVG (within a shade, since drawing differs slightly between CPUs).
+- **For the release packages (later):** the bundle is still named `App.app` after the crate; its display name ("Vehicle Manager") is set when packages are planned. The icon fills its whole square, so in the Mac Dock it looks a little larger than Apple's own icons, which leave a margin; a padded Mac version can come with the packages.
 

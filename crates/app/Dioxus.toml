@@ -1,0 +1,16 @@
+# Settings for `dx` (the Dioxus CLI). Only what differs from its defaults.
+
+# The release packages (`dx bundle`; phase-3.md 1a). The identifier is the app's bundle ID,
+# which never changes once packages are installed (`domain::identity::BUNDLE_ID`, decision
+# #016); the icons are made from `assets/app-icon/icon.svg`. Both are checked by
+# `tests/make_icons.rs`.
+[bundle]
+identifier = "com.innermarker.vehiclemanager"
+publisher = "Inner Marker"
+# Largest first: dx 0.7.10 makes the macOS icon's sizes from the first one.
+icon = [
+    "assets/app-icon/icon-512.png",
+    "assets/app-icon/icon-256.png",
+    "assets/app-icon/icon-128.png",
+    "assets/app-icon/icon-32.png",
+]

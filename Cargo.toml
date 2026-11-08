@@ -78,6 +78,9 @@ web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's pa
 proptest = "1"                    # property-based tests (AGENTS.md §7)
 http-body-util = "0.1.5"        # body size limits; reading response bodies in middleware tests
 tempfile = "3.27.0"
+# Draws the app icon's PNGs from its SVG, in an ignored test (phase-3.md 1a); no text or
+# fonts needed.
+resvg = { version = "0.49.0", default-features = false }
 
 # ---------------------------------------------------------------------------
 # Rustc lints

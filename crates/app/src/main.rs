@@ -222,6 +222,10 @@ fn launch(log_handles: Option<LogHandles>) {
     launcher.launch(app::ui::App);
 }
 
+/// The app icon for the desktop window, at 256 px (made from `assets/app-icon/icon.svg`).
+#[cfg(all(feature = "desktop", not(feature = "server")))]
+const APP_ICON_PNG: &[u8] = include_bytes!("../assets/app-icon/icon-256.png");
+
 /// The desktop window's starting size, in logical pixels (a laptop screen, with room to spare).
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 const WINDOW_SIZE: (f64, f64) = (1200.0, 820.0);
@@ -230,7 +234,7 @@ const WINDOW_SIZE: (f64, f64) = (1200.0, 820.0);
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 const WINDOW_MIN_SIZE: (f64, f64) = (400.0, 600.0);
 
-/// The desktop window: its title, starting and smallest size, and never kept on top (Dioxus
+/// The desktop window: its title and icon, starting and smallest size, and never kept on top (Dioxus
 /// keeps a debug build's window on top of others by default). No right-click menu, so no
 /// Reload or Inspect, and no developer tools (Dioxus turns them on only with that menu). No
 /// menu bar on Windows and Linux, where Dioxus's default one shows inside the window; macOS
@@ -247,9 +251,17 @@ fn desktop_config() -> dioxus::desktop::Config {
         .with_inner_size(LogicalSize::new(WINDOW_SIZE.0, WINDOW_SIZE.1))
         .with_min_inner_size(LogicalSize::new(WINDOW_MIN_SIZE.0, WINDOW_MIN_SIZE.1))
         .with_always_on_top(false);
-    let config = Config::new()
+    let mut config = Config::new()
         .with_window(window)
         .with_disable_context_menu(true);
+    // The app icon (phase-3.md 1a) as the window's icon: the taskbar on Windows and Linux.
+    // macOS ignores window icons; its Dock icon comes from the app bundle (`Dioxus.toml`).
+    match dioxus::desktop::icon_from_memory::<dioxus::desktop::tao::window::Icon>(APP_ICON_PNG) {
+        Ok(icon) => config = config.with_icon(icon),
+        Err(error) => {
+            tracing::warn!(target: log_area::APP, %error, "the app icon couldn't be loaded; using the default");
+        }
+    }
     if cfg!(target_os = "macos") {
         config
     } else {
