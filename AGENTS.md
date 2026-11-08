@@ -12,8 +12,18 @@ The code must stay **human-readable and human-maintainable**, even though most o
 - **`docs/ideas-to-discuss.md`** lists ideas that are **not decided.** Never implement anything from it; if a task touches one of those ideas, point it out and ask.
 - **`docs/decisions.md`** records settled decisions (SQLite everywhere, HLC ordering, table per event type, etc.). Do not re-open a recorded decision; if you think one is wrong, say so and stop.
 - For any task larger than a small fix, **write a short plan and wait for approval** before writing code.
+- **New or redesigned screens:** the plan includes **SVG layout options** saved in `docs/ui-sketches/` for the human to choose from (usually two or three; one when only one makes sense). Build the chosen one (decision #040).
 - **`docs/phase_plans/`** holds the agreed plan for each roadmap phase (`phase-N.md`), so the human can follow along. Once a phase plan, or the detailed plan for one of its PRs, is agreed, **save it there** and keep its status column current as work progresses. When a new phase plan file is created, **link it from that phase's section** in `docs/plan.md` §9 Roadmap.
 - **Before starting work on a roadmap phase,** check that phase's section in "Open Questions by Phase" in `docs/plan.md`. If any question is unresolved, **ask the user and stop** until it's answered. Then record the answer in `docs/decisions.md`, update the plan, and remove the question from the list.
+- **`docs/sub-plans/`** holds smaller, detailed design plans for one feature area, so `docs/plan.md` stays clean. Each sub-plan is **linked from `docs/plan.md`** (its list near the top, and the section it details), which keeps only a short summary. When a design grows too detailed for the plan, propose moving it into a sub-plan. **Naming:** `NN-topic.md`, where `NN` is the next two-digit number in the order sub-plans are added (`01-signatures-and-records.md`, `02-voice-capture.md`, …), so they sort oldest first; a number is never reused or changed, and there's no `-plan` suffix. A sub-plan marked draft is not part of the plan until the human confirms it.
+- **Digital signatures are on hold:** don't implement any part of them until the human's records and signatures plan, `docs/sub-plans/01-signatures-and-records.md` (draft), is reviewed and confirmed (`docs/ideas-to-discuss.md` idea 12).
+- **Every new phase plan or milestone plan starts with a review** of `docs/ideas-to-discuss.md`, every sub-plan in `docs/sub-plans/`, **the open GitHub issues** (`gh issue list`; the human often adds issues and bug reports from a phone), and (for a phase) that phase's open questions in `docs/plan.md` §10. For each idea, sub-plan, and issue, decide whether:
+  - it **belongs** in this phase or milestone (for a phase plan, also say **which milestone** it fits);
+  - it needs **cheap groundwork now**: something small (a field, a column, a naming choice) that would mean a migration or rework if left for later;
+  - or it has **no effect** now.
+
+  Put a short **"Reviewed against"** note in the plan: what's proposed, what needs the human's decision first, and what had no effect (one line, by idea number, sub-plan name, and issue number). A bug report in released code can be raised as its own fix branch instead of waiting for the milestone. **Only propose:** draft sub-plans and undecided ideas aren't built until the human confirms them, and a conflict with a recorded decision is raised as a question, not resolved.
+- **Whenever you review open questions, ideas, or sub-plans** (for a plan or otherwise), **review the open GitHub issues too.** Read-only `gh issue list` and `gh issue view` are fine; closing, labelling, or commenting on an issue is outward-facing, so ask first.
 - Don't answer open questions yourself by picking a default. If a question blocks only part of a task, say which part and continue with the rest.
 - **`../xplm-oxide`** (the human's X-Plane plugin library) is available as **read-only reference** context. Look at it for conventions or when a task mentions it; never edit it, and don't add it as a dependency unless that is recorded in `docs/decisions.md`.
 
@@ -37,7 +47,7 @@ The workspace has four crates. **Dependencies flow one way:** `domain` ← `stor
 | Sync commands and upcasters | `domain` | The **only** way data is changed |
 | HLC | `domain` | |
 | Row structs, `TryFrom` row ↔ domain, queries, snapshots | `storage` | The **only** place unit conversion and rounding happen |
-| Migrations | `storage` (`migrations/`) | Numbered, forward-only, **never edit a released migration** |
+| Migrations | `storage` (`migrations/`) | Numbered, forward-only. **Never edit a migration once it's merged into `dev`, not even a comment** (the main server runs `dev`, decision #062; sqlx checksums each applied file, so any edit makes existing databases refuse to open); one on a milestone branch may change until its PR merges |
 | Sync engine, auth/permission enforcement, integrity checks, admin ops | `server` (library) | Used by the NAS server and (later) desktop host mode |
 | UI components | `app` | Never touches the database directly; never contains business rules |
 | Server functions | `app` (server feature) | Thin: authenticate, call into `server`/`domain`, respond |
@@ -135,12 +145,14 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 
 **Manual test plans (when the human must verify something)**
 
-If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/<feature>.md`:
+If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/p<phase>m<milestone>-<feature>.md`:
 
 1. **Intended behavior:** what the feature should do, including edge cases and what should be rejected.
 2. **Setup:** device, data, mode, and server state needed first.
 3. **Checklist:** numbered steps, each with its **expected result**, so each item is clearly pass or fail.
 4. **If a step fails, capture:** which debug log area and level to enable before testing (e.g. `sync` at `debug`), what to export afterward (Settings → Diagnostics → Export), and any screenshots or error messages.
+
+**Container logs by time, not by line count:** steps that read the server's log use `docker logs --since 5m <container>` (or a time that fits the step), never `--tail N`. The server logs a line for every route it registers at startup, so a fixed number of lines cuts off the first startup messages as the API grows (the human, 2026-11-04).
 
 When the human reports a failure, **ask for the exported debug log** (preferably the JSON-lines export, limited to the relevant time range and areas) and other captured details. **Read and analyze the log before proposing a fix;** don't guess.
 
@@ -150,7 +162,7 @@ Add **useful `tracing` messages** at debug level in new code paths (never loggin
 
 - **One focused task per change.** Don't refactor, rename, or reformat unrelated code.
 - **No new dependencies without approval.** Propose them in your plan with a reason.
-- Don't modify generated code, released migrations, or `Cargo.lock` by hand.
+- Don't modify generated code, migrations merged into `dev`, or `Cargo.lock` by hand.
 - Keep commits small, with clear messages describing *why*.
 
 ## 8a. Branches, commits, and pull requests

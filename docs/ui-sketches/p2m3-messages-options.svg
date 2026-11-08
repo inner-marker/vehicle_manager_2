@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1560" viewBox="0 0 1560 1560" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1560" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 3e · Messages: the message center (decisions #040, #050): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Messages come from what&#x27;s true now; each person marks them read or dismisses them. Admin messages show only in Admin mode. Both options share the badge and the urgent banner (top).</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both options · the unread badge (sidebar and phone tabs) and the urgent banner on every screen</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Any screen · an urgent message is showing</text>
+<rect x="40" y="166" width="700" height="150" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="200" height="146" rx="0" fill="#1d2128"/>
+<text x="62" y="206" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Garage</text>
+<text x="62" y="246" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<rect x="50" y="264" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="286" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Messages</text>
+<rect x="192" y="271" width="28" height="20" rx="10" fill="#ff6b6b"/>
+<text x="206" y="286" font-size="11.5" fill="#ffffff" font-weight="800" text-anchor="middle">2</text>
+<rect x="242" y="168" width="496" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="242" y="216" width="496" height="32" rx="0" fill="#3a1618"/>
+<line x1="242" y1="248" x2="738" y2="248" stroke="#ff6b6b" stroke-width="2"/>
+<text x="256" y="237" font-size="10.5" fill="#ff6b6b" font-weight="800" text-anchor="start">URGENT</text>
+<text x="312" y="237" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">The server isn&#x27;t accepting changes</text>
+<text x="724" y="237" font-size="12.5" fill="#ff6b6b" font-weight="700" text-anchor="end">View</text>
+<text x="258" y="276" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The banner shows the newest urgent message;</text>
+<text x="258" y="296" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">View opens it in Messages. Dismiss there hides it.</text>
+<text x="780" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · bottom tabs</text>
+<rect x="780" y="166" width="250" height="150" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="798" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="782" y="260" width="246" height="54" rx="0" fill="#1d2128"/>
+<text x="822" y="296" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="middle">Garage</text>
+<text x="904" y="296" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="middle">Due &amp; squawks</text>
+<text x="986" y="296" font-size="11" fill="#5aa9ff" font-weight="700" text-anchor="middle">Messages</text>
+<rect x="962" y="266" width="22" height="16" rx="8" fill="#ff6b6b"/>
+<text x="973" y="278" font-size="10" fill="#ffffff" font-weight="800" text-anchor="middle">2</text>
+<text x="1062" y="196" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Badge = unread messages you can see now</text>
+<text x="1062" y="218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(Admin messages count only in Admin mode).</text>
+<text x="1062" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Severity colors: urgent red, warning amber, info blue.</text>
+<text x="1062" y="262" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Urgent messages never rely on color alone:</text>
+<text x="1062" y="284" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">they also say URGENT.</text>
+<text x="40" y="370" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One list of cards; each card shows everything and has its buttons (Mark read, Dismiss, one action)</text>
+<text x="40" y="400" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode</text>
+<rect x="40" y="412" width="900" height="560" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="414" width="200" height="556" rx="0" fill="#1d2128"/>
+<text x="62" y="452" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Garage</text>
+<text x="62" y="492" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<rect x="50" y="510" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="532" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Messages</text>
+<rect x="192" y="517" width="28" height="20" rx="10" fill="#ff6b6b"/>
+<text x="206" y="532" font-size="11.5" fill="#ffffff" font-weight="800" text-anchor="middle">2</text>
+<text x="62" y="572" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="62" y="612" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<rect x="242" y="414" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="445" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Messages</text>
+<rect x="762" y="424" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="443" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="424" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="443" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="266" y="482" width="48.5" height="30" rx="15" fill="#5aa9ff"/>
+<text x="290.25" y="502" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">All</text>
+<rect x="322.5" y="482" width="71.0" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="358.0" y="502" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Urgent</text>
+<rect x="401.5" y="482" width="78.5" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="440.75" y="502" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Warning</text>
+<rect x="488.0" y="482" width="56.0" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="516.0" y="502" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Info</text>
+<text x="906" y="502" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="end">2 unread</text>
+<rect x="266" y="528" width="650" height="104" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="266" y="528" width="6" height="104" rx="3" fill="#ff6b6b"/>
+<circle cx="288" cy="550" r="5" fill="#5aa9ff"/>
+<text x="302" y="555" font-size="14.5" fill="#e8eaed" font-weight="800" text-anchor="start">The server isn&#x27;t accepting changes</text>
+<text x="900" y="555" font-size="11.5" fill="#ff6b6b" font-weight="700" text-anchor="end">URGENT · Today 06:12</text>
+<text x="302" y="578" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The server found a problem in its database. You can still look around, but nothing can be sa…</text>
+<rect x="302" y="594" width="140" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="372" y="614" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Open Diagnostics</text>
+<rect x="450" y="594" width="96" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="498" y="614" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Mark read</text>
+<rect x="554" y="594" width="80" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="594" y="614" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Dismiss</text>
+<rect x="266" y="644" width="650" height="124" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="266" y="644" width="6" height="124" rx="3" fill="#f5b942"/>
+<circle cx="288" cy="666" r="5" fill="#5aa9ff"/>
+<text x="302" y="671" font-size="14.5" fill="#e8eaed" font-weight="800" text-anchor="start">The nightly snapshot failed</text>
+<text x="900" y="671" font-size="11.5" fill="#f5b942" font-weight="700" text-anchor="end">WARNING · Today 07:00</text>
+<text x="302" y="694" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">See the details below and the server&#x27;s log. Until this is fixed, there&#x27;s no new backup.</text>
+<rect x="302" y="704" width="590" height="24" rx="6" fill="#14171c"/>
+<text x="312" y="721" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">can&#x27;t write the snapshot: disk full</text>
+<rect x="302" y="730" width="140" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="372" y="750" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Open Diagnostics</text>
+<rect x="450" y="730" width="96" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="498" y="750" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Mark read</text>
+<rect x="554" y="730" width="80" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="594" y="750" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Dismiss</text>
+<rect x="266" y="780" width="650" height="124" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="266" y="780" width="6" height="124" rx="3" fill="#f5b942"/>
+<text x="302" y="807" font-size="14.5" fill="#e8eaed" font-weight="500" text-anchor="start">The nightly snapshot was skipped</text>
+<text x="900" y="807" font-size="11.5" fill="#f5b942" font-weight="700" text-anchor="end">WARNING · 29 Oct 2026</text>
+<text x="302" y="830" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">See the details below and the server&#x27;s log. Until this is fixed, there&#x27;s no new backup.</text>
+<rect x="302" y="840" width="590" height="24" rx="6" fill="#14171c"/>
+<text x="312" y="857" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">snapshot folder /snapshots is missing (not mounted?)</text>
+<rect x="302" y="866" width="140" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="372" y="886" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Open Diagnostics</text>
+<rect x="450" y="866" width="80" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="490" y="886" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Dismiss</text>
+<text x="980" y="400" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Driver mode</text>
+<rect x="980" y="412" width="250" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="438" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="442" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="468" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Messages</text>
+<rect x="996" y="494" width="48.5" height="30" rx="15" fill="#5aa9ff"/>
+<text x="1020.25" y="514" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">All</text>
+<rect x="1052.5" y="494" width="71.0" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1088.0" y="514" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Urgent</text>
+<rect x="1131.5" y="494" width="63.5" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1163.25" y="514" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Warn…</text>
+<rect x="996" y="538" width="218" height="170" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="996" y="538" width="6" height="170" rx="3" fill="#ff6b6b"/>
+<circle cx="1012" cy="558" r="5" fill="#5aa9ff"/>
+<text x="1024" y="563" font-size="13.5" fill="#e8eaed" font-weight="800" text-anchor="start">The server isn&#x27;t</text>
+<text x="1024" y="581" font-size="13.5" fill="#e8eaed" font-weight="800" text-anchor="start">accepting changes</text>
+<text x="1024" y="602" font-size="11" fill="#ff6b6b" font-weight="700" text-anchor="start">URGENT · Today 06:12</text>
+<text x="1024" y="624" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The server found a problem</text>
+<text x="1024" y="641" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">in its database. You can</text>
+<text x="1024" y="658" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">still look around, but…</text>
+<rect x="1012" y="670" width="92" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1058" y="689" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Mark read</text>
+<rect x="1110" y="670" width="92" height="28" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1156" y="689" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Dismiss</text>
+<text x="996" y="736" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(No details or Admin messages</text>
+<text x="996" y="756" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">in Driver mode.)</text>
+<text x="1262" y="442" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Everything visible at once; one tap</text>
+<text x="1262" y="464" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   for any action.</text>
+<text x="1262" y="486" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Works the same on phone and desktop.</text>
+<text x="1262" y="508" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Long messages make a long page.</text>
+<text x="1262" y="530" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Read means pressing Mark read</text>
+<text x="1262" y="552" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (or Dismiss).</text>
+<text x="40" y="1010" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · List and detail (like Users): compact rows on the left; the chosen message on the right; opening one marks it read</text>
+<text x="40" y="1040" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode</text>
+<rect x="40" y="1052" width="900" height="470" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1054" width="200" height="466" rx="0" fill="#1d2128"/>
+<text x="62" y="1092" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Garage</text>
+<text x="62" y="1132" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<rect x="50" y="1150" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="1172" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Messages</text>
+<rect x="192" y="1157" width="28" height="20" rx="10" fill="#ff6b6b"/>
+<text x="206" y="1172" font-size="11.5" fill="#ffffff" font-weight="800" text-anchor="middle">2</text>
+<text x="62" y="1212" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="62" y="1252" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<rect x="242" y="1054" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="1085" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Messages</text>
+<rect x="762" y="1064" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="1083" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="1064" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="1083" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="258" y="1118" width="48.5" height="30" rx="15" fill="#5aa9ff"/>
+<text x="282.25" y="1138" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">All</text>
+<rect x="314.5" y="1118" width="71.0" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="350.0" y="1138" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Urgent</text>
+<rect x="393.5" y="1118" width="78.5" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="432.75" y="1138" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Warning</text>
+<rect x="480.0" y="1118" width="56.0" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="508.0" y="1138" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Info</text>
+<rect x="258" y="1162" width="316" height="56" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="258" y="1162" width="5" height="56" rx="3" fill="#ff6b6b"/>
+<circle cx="276" cy="1182" r="4.5" fill="#5aa9ff"/>
+<text x="288" y="1185" font-size="12.5" fill="#e8eaed" font-weight="800" text-anchor="start">The server isn&#x27;t accepting changes</text>
+<text x="288" y="1205" font-size="11" fill="#ff6b6b" font-weight="700" text-anchor="start">URGENT · Today 06:12</text>
+<rect x="258" y="1224" width="316" height="56" rx="8" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<rect x="258" y="1224" width="5" height="56" rx="3" fill="#f5b942"/>
+<text x="288" y="1247" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">The nightly snapshot failed</text>
+<text x="288" y="1267" font-size="11" fill="#f5b942" font-weight="700" text-anchor="start">WARNING · Today 07:00</text>
+<rect x="258" y="1286" width="316" height="56" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="258" y="1286" width="5" height="56" rx="3" fill="#f5b942"/>
+<text x="288" y="1309" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">The nightly snapshot was skipped</text>
+<text x="288" y="1329" font-size="11" fill="#f5b942" font-weight="700" text-anchor="start">WARNING · 29 Oct 2026</text>
+<text x="592" y="1142" font-size="11.5" fill="#f5b942" font-weight="800" text-anchor="start">WARNING · Today 07:00</text>
+<text x="592" y="1170" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">The nightly snapshot failed</text>
+<text x="592" y="1202" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">See the details below and the server&#x27;s log.</text>
+<text x="592" y="1222" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Until this is fixed, there&#x27;s no new backup.</text>
+<text x="592" y="1260" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DETAILS (Admin mode)</text>
+<rect x="592" y="1268" width="326" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="602" y="1287" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">can&#x27;t write the snapshot: disk full</text>
+<rect x="592" y="1318" width="160" height="38" rx="10" fill="#5aa9ff"/>
+<text x="672.0" y="1342.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Open Diagnostics</text>
+<rect x="762" y="1318" width="100" height="38" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="812.0" y="1342.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Dismiss</text>
+<text x="592" y="1384" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Opening it marked it read (the dot went).</text>
+<text x="980" y="1040" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · list → page (← Messages)</text>
+<rect x="980" y="1052" width="250" height="470" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1078" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1082" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="1108" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">← Messages</text>
+<text x="996" y="1146" font-size="11" fill="#f5b942" font-weight="800" text-anchor="start">WARNING · Today 07:00</text>
+<text x="996" y="1170" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">The nightly snapshot</text>
+<text x="996" y="1190" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">failed</text>
+<text x="996" y="1218" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">See the details below and</text>
+<text x="996" y="1236" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">the server&#x27;s log. Until this</text>
+<text x="996" y="1254" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">is fixed, there&#x27;s no new</text>
+<text x="996" y="1272" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">backup.</text>
+<rect x="996" y="1300" width="218" height="44" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1004" y="1318" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">can&#x27;t write the snapshot:</text>
+<text x="1004" y="1334" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">disk full</text>
+<rect x="996" y="1358" width="218" height="38" rx="10" fill="#5aa9ff"/>
+<text x="1105.0" y="1382.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Open Diagnostics</text>
+<rect x="996" y="1404" width="218" height="38" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1105.0" y="1428.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Dismiss</text>
+<text x="1262" y="1082" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ A tidy list, even with many messages.</text>
+<text x="1262" y="1104" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Same pattern as Users (familiar).</text>
+<text x="1262" y="1126" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Reading marks it read; no extra button.</text>
+<text x="1262" y="1148" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− One more tap to see a message&#x27;s text.</text>
+<text x="1262" y="1170" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Phones go list → page → back.</text>
+</svg>

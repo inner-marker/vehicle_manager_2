@@ -1,0 +1,347 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2870" viewBox="0 0 1560 2870" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2870" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 7i · The maintenance and repair work log: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Tasks (from a requirement, a bundle, or typed), parts with unit prices, labor time and cost, readings at the start (and end), the vehicle&#x27;s open squawks signed off or deferred, new squawks, a repair&#x27;s complaint and cause; saved as a draft, then Finish.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One form in sections, like the fuel-up form: everything has its place; totals and Finish stay at the bottom</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · + Log › Maintenance (a draft being filled in)</text>
+<rect x="40" y="166" width="900" height="1180" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance · Test truck</text>
+<rect x="758" y="178" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="178" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="80" y="244" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHEN AND WHERE</text>
+<text x="900" y="244" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Change</text>
+<text x="80" y="268" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Today · 9:41 am · 📍 Asheville, NC</text>
+<text x="80" y="310" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">READINGS</text>
+<rect x="147.6" y="299" width="66" height="16" rx="8" fill="#2a3a52"/>
+<text x="180.6" y="311" font-size="9" fill="#5aa9ff" font-weight="800" text-anchor="middle">REQUIRED</text>
+<text x="80" y="336" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Odometer at the start (mi)</text>
+<rect x="80" y="344" width="180" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="88" y="363" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">52,644</text>
+<text x="274" y="363" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">last 52,310 · 1 Nov</text>
+<text x="500" y="363" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Readings at the end (after a test drive)</text>
+<text x="80" y="408" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="80" y="420" width="190" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="175.0" y="439" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ From a requirement ▾</text>
+<rect x="278" y="420" width="150" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="353.0" y="439" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ From a bundle ▾</text>
+<rect x="436" y="420" width="90" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="481.0" y="439" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Task</text>
+<rect x="80" y="462" width="820" height="330" rx="10" fill="#1d2128" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="94" y="488" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="260" y="488" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">for: Engine oil &amp; filter (every 5,000 mi or 6 months)</text>
+<text x="886" y="488" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<text x="94" y="518" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">PARTS</text>
+<text x="94" y="536" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">What</text>
+<text x="344" y="536" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Part number</text>
+<text x="504" y="536" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Quantity</text>
+<text x="614" y="536" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Unit price</text>
+<text x="734" y="536" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Cost</text>
+<rect x="94" y="544" width="226" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="102" y="563" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Oil filter</text>
+<rect x="344" y="544" width="136" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="352" y="563" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">FL-500S</text>
+<rect x="504" y="544" width="86" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="512" y="563" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">1</text>
+<rect x="614" y="544" width="96" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="622" y="563" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">12.99</text>
+<text x="734" y="563" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">$12.99</text>
+<text x="886" y="563" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<rect x="94" y="578" width="226" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="102" y="597" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Engine oil 5W-30</text>
+<rect x="344" y="578" width="136" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="352" y="597" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start"></text>
+<rect x="504" y="578" width="86" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="512" y="597" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">5.5 qt</text>
+<rect x="614" y="578" width="96" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="622" y="597" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">8.99</text>
+<text x="734" y="597" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">$49.45</text>
+<text x="886" y="597" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<text x="94" y="632" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Part</text>
+<text x="94" y="662" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Labor</text>
+<rect x="94" y="670" width="90" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="102" y="689" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">0:30</text>
+<text x="192" y="689" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">h:mm</text>
+<rect x="250" y="670" width="100" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="258" y="689" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">45.00</text>
+<text x="358" y="689" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">USD</text>
+<text x="480" y="662" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Resets the requirement from</text>
+<rect x="480" y="670" width="220" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="483.0" y="673" width="104.0" height="24" rx="12" fill="#5aa9ff"/>
+<text x="535.0" y="690" font-size="11.5" fill="#0b1420" font-weight="800" text-anchor="middle">Start</text>
+<text x="645.0" y="690" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">End readings</text>
+<text x="94" y="728" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
+<rect x="94" y="736" width="792" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="102" y="755" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Drain plug gasket replaced</text>
+<text x="886" y="780" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="end">Task: $107.44</text>
+<rect x="80" y="804" width="820" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="831" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">▸ Brake light bulbs</text>
+<text x="886" y="831" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="end">2 parts · 0:10 · $24.98</text>
+<text x="80" y="878" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS · 2 TO SIGN OFF OR DEFER</text>
+<rect x="320.4" y="867" width="66" height="16" rx="8" fill="#2a3a52"/>
+<text x="353.4" y="879" font-size="9" fill="#5aa9ff" font-weight="800" text-anchor="middle">REQUIRED</text>
+<rect x="80" y="892" width="820" height="118" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="94" y="906" width="154.8" height="22" rx="11" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="171.4" y="921" font-size="10.5" fill="#ff6b6b" font-weight="800" text-anchor="middle">HIGH · Not drivable</text>
+<text x="270" y="922" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Brake lights out, both sides</text>
+<rect x="94" y="938" width="180" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="97.0" y="941" width="84.0" height="24" rx="12" fill="#5aa9ff"/>
+<text x="139.0" y="958" font-size="11.5" fill="#0b1420" font-weight="800" text-anchor="middle">Sign off</text>
+<text x="229.0" y="958" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Defer</text>
+<text x="294" y="958" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Fixed by</text>
+<rect x="354" y="940" width="180" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="959" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Brake light bulbs ▾</text>
+<text x="294" y="994" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
+<rect x="354" y="976" width="520" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="362" y="995" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">New bulbs, both sides</text>
+<rect x="80" y="1020" width="820" height="88" rx="10" fill="#1d2128" stroke="#f5b942" stroke-width="1.5"/>
+<rect x="94" y="1034" width="39.6" height="22" rx="11" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="113.8" y="1049" font-size="10.5" fill="#5aa9ff" font-weight="800" text-anchor="middle">LOW</text>
+<text x="150" y="1050" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle from the rear on bumps</text>
+<rect x="94" y="1064" width="180" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="139.0" y="1084" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Sign off</text>
+<rect x="187.0" y="1067" width="84.0" height="24" rx="12" fill="#5aa9ff"/>
+<text x="229.0" y="1084" font-size="11.5" fill="#0b1420" font-weight="800" text-anchor="middle">Defer</text>
+<text x="294" y="1084" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Why</text>
+<rect x="330" y="1066" width="330" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="338" y="1085" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Parts on order</text>
+<text x="680" y="1084" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Severity</text>
+<rect x="740" y="1066" width="140" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="750" y="1085" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Medium ▾</text>
+<text x="80" y="1130" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Found something new? Open a squawk</text>
+<text x="80" y="1170" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO AND NOTES</text>
+<text x="900" y="1170" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">▸</text>
+<text x="80" y="1194" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Done by Joe&#x27;s Auto · no notes</text>
+<rect x="42" y="1276" width="896" height="68" rx="0" fill="#1d2128"/>
+<line x1="42" y1="1276" x2="938" y2="1276" stroke="#333a45" stroke-width="1"/>
+<text x="80" y="1306" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">TOTAL</text>
+<text x="80" y="1328" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">$132.42 · 2 tasks</text>
+<rect x="570" y="1288" width="150" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="645.0" y="1315.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Save draft</text>
+<rect x="730" y="1288" width="170" height="44" rx="10" fill="#5aa9ff"/>
+<text x="815.0" y="1315.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finish…</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the same form</text>
+<rect x="980" y="166" width="260" height="760" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Maintenance · Test truck</text>
+<text x="996" y="254" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">WHEN AND WHERE</text>
+<text x="996" y="274" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Today · 📍 Asheville</text>
+<text x="996" y="308" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">READINGS · REQUIRED</text>
+<text x="996" y="328" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Odometer 52,644 · + End</text>
+<text x="996" y="362" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TASKS</text>
+<rect x="996" y="372" width="110" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1051.0" y="391" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Requirement</text>
+<rect x="1114" y="372" width="108" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1168.0" y="391" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Bundle</text>
+<rect x="996" y="412" width="226" height="96" rx="10" fill="#1d2128" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="1008" y="434" font-size="13.5" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1008" y="454" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Oil filter · 1 × 12.99</text>
+<text x="1008" y="470" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Engine oil · 5.5 × 8.99</text>
+<text x="1008" y="490" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Labor 0:30 · $45</text>
+<text x="1210" y="434" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="996" y="516" width="226" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="541" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">▸ Brake light bulbs · $24.98</text>
+<text x="996" y="572" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">SQUAWKS · 2 TO DEAL WITH</text>
+<rect x="996" y="582" width="226" height="100" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1008" y="592" width="46.8" height="22" rx="11" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="1031.4" y="607" font-size="10.5" fill="#ff6b6b" font-weight="800" text-anchor="middle">HIGH</text>
+<text x="1008" y="634" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Brake lights out</text>
+<rect x="1008" y="644" width="202" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1011.0" y="647" width="95.0" height="24" rx="12" fill="#5aa9ff"/>
+<text x="1058.5" y="664" font-size="11.5" fill="#0b1420" font-weight="800" text-anchor="middle">Sign off</text>
+<text x="1159.5" y="664" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Defer</text>
+<rect x="996" y="690" width="226" height="100" rx="10" fill="#1d2128" stroke="#f5b942" stroke-width="1.5"/>
+<rect x="1008" y="700" width="39.6" height="22" rx="11" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="1027.8" y="715" font-size="10.5" fill="#5aa9ff" font-weight="800" text-anchor="middle">LOW</text>
+<text x="1008" y="742" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rattle</text>
+<rect x="1008" y="752" width="202" height="30" rx="15" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1058.5" y="772" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Sign off</text>
+<rect x="1112.0" y="755" width="95.0" height="24" rx="12" fill="#5aa9ff"/>
+<text x="1159.5" y="772" font-size="11.5" fill="#0b1420" font-weight="800" text-anchor="middle">Defer</text>
+<rect x="982" y="842" width="256" height="82" rx="0" fill="#1d2128"/>
+<text x="996" y="868" font-size="13" fill="#e8eaed" font-weight="800" text-anchor="start">$132.42 · 2 tasks</text>
+<rect x="996" y="880" width="104" height="38" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1048.0" y="904.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Save</text>
+<rect x="1110" y="880" width="112" height="38" rx="10" fill="#5aa9ff"/>
+<text x="1166.0" y="904.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finish…</text>
+<text x="980" y="954" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A task&#x27;s details open in a sheet (✎) on phones.</text>
+<text x="980" y="994" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Familiar: the fuel-up form&#x27;s shape.</text>
+<text x="980" y="1016" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Every part of the job has one place;</text>
+<text x="980" y="1038" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   easy to check over before Finish.</text>
+<text x="980" y="1060" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The squawks to deal with are a list</text>
+<text x="980" y="1082" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   to work through, not something to</text>
+<text x="980" y="1104" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   remember.</text>
+<text x="980" y="1126" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Long for a big service (fold tasks).</text>
+<text x="980" y="1148" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Typing during the work means scrolling</text>
+<text x="980" y="1170" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   to the right section.</text>
+<text x="40" y="1414" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A work log: add items in any order as the work happens; a checklist at the top says what Finish still needs</text>
+<text x="40" y="1444" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · + Log › Maintenance</text>
+<rect x="40" y="1456" width="900" height="900" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1458" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="1489" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance · Test truck</text>
+<rect x="758" y="1468" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="1487" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="1468" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="1487" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<rect x="80" y="1530" width="820" height="92" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1556" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Draft · today · 📍 Asheville, NC</text>
+<text x="886" y="1556" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="end">$132.42</text>
+<text x="94" y="1580" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="start">TO FINISH</text>
+<rect x="94" y="1588" width="94.0" height="24" rx="12" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="141.0" y="1604" font-size="11.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Odometer ✓</text>
+<rect x="196.0" y="1588" width="72.4" height="24" rx="12" fill="#1f2a3a" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="232.2" y="1604" font-size="11.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Place ✓</text>
+<rect x="276.4" y="1588" width="130.0" height="24" rx="12" fill="#3a2f15" stroke="#f5b942" stroke-width="1.5"/>
+<text x="341.4" y="1604" font-size="11.5" fill="#f5b942" font-weight="700" text-anchor="middle">Squawks: 1 of 2</text>
+<rect x="750" y="1580" width="136" height="34" rx="10" fill="#5aa9ff"/>
+<text x="818.0" y="1602.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finish…</text>
+<text x="80" y="1654" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">THE LOG</text>
+<text x="900" y="1654" font-size="11" fill="#9aa1ab" font-weight="500" text-anchor="end">newest last</text>
+<rect x="80" y="1668" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1694" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="124" y="1694" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Odometer at the start · 52,644 mi</text>
+<text x="840" y="1694" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">9:41 am</text>
+<text x="886" y="1694" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1716" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1742" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="124" y="1742" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Task · Engine oil &amp; filter (5,000-mile service)</text>
+<text x="840" y="1742" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">9:42</text>
+<text x="886" y="1742" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1764" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1790" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">🔩</text>
+<text x="124" y="1790" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Part · Oil filter FL-500S · 1 × $12.99</text>
+<text x="840" y="1790" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">9:44</text>
+<text x="886" y="1790" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1812" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1838" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">🔩</text>
+<text x="124" y="1838" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Part · Engine oil 5W-30 · 5.5 qt × $8.99</text>
+<text x="840" y="1838" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">9:50</text>
+<text x="886" y="1838" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1860" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1886" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">⚠</text>
+<text x="124" y="1886" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Squawk signed off · Brake lights out · new bulbs (task: Brake light bulbs)</text>
+<text x="840" y="1886" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">10:05</text>
+<text x="886" y="1886" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1908" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1934" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="124" y="1934" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Task · Brake light bulbs · 2 parts · 0:10</text>
+<text x="840" y="1934" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">10:12</text>
+<text x="886" y="1934" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="1956" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="1982" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">⚠</text>
+<text x="124" y="1982" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Squawk found · Coolant smell · Low</text>
+<text x="840" y="1982" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">10:20</text>
+<text x="886" y="1982" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="2004" width="820" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="94" y="2030" font-size="14" fill="#e8eaed" font-weight="400" text-anchor="start">⏲</text>
+<text x="124" y="2030" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">  Labor · Engine oil &amp; filter · 0:30 · $45.00</text>
+<text x="840" y="2030" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">10:31</text>
+<text x="886" y="2030" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="end">✎</text>
+<rect x="80" y="2062" width="820" height="110" rx="12" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<text x="94" y="2088" font-size="13" fill="#e8eaed" font-weight="800" text-anchor="start">+ Add to the log</text>
+<rect x="94" y="2102" width="52.8" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="120.4" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Task</text>
+<rect x="154.8" y="2102" width="117.60000000000001" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="213.60000000000002" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">From a bundle</text>
+<rect x="280.40000000000003" y="2102" width="52.8" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="306.8" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Part</text>
+<rect x="341.20000000000005" y="2102" width="60.0" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="371.20000000000005" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Labor</text>
+<rect x="409.20000000000005" y="2102" width="74.4" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="446.40000000000003" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Reading</text>
+<rect x="491.6" y="2102" width="139.2" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="561.2" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign off / defer</text>
+<rect x="638.8" y="2102" width="96.0" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="686.8" y="2121" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">New squawk</text>
+<rect x="94" y="2138" width="146.4" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="167.2" y="2157" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Complaint &amp; cause</text>
+<rect x="248.4" y="2138" width="52.8" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="274.8" y="2157" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Note</text>
+<text x="80" y="2326" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Parts and labor ask which task they belong to; the log can also be viewed grouped by task.</text>
+<text x="980" y="1444" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · logging during the work</text>
+<rect x="980" y="1456" width="260" height="760" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1482" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1486" width="256" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="1512" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Maintenance · Test truck</text>
+<rect x="996" y="1538" width="226" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1560" font-size="13" fill="#e8eaed" font-weight="800" text-anchor="start">Draft · $132.42</text>
+<rect x="1008" y="1572" width="150" height="24" rx="12" fill="#3a2f15" stroke="#f5b942" stroke-width="1.5"/>
+<text x="1083" y="1588" font-size="11" fill="#f5b942" font-weight="700" text-anchor="middle">Squawks: 1 of 2</text>
+<rect x="996" y="1620" width="226" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1646" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="1032" y="1646" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Engine oil &amp; filter</text>
+<rect x="996" y="1668" width="226" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1694" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">🔩</text>
+<text x="1032" y="1694" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Oil filter · 1 × 12.99</text>
+<rect x="996" y="1716" width="226" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1742" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">⚠</text>
+<text x="1032" y="1742" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Signed off: Brake lights</text>
+<rect x="996" y="1764" width="226" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="1790" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="1032" y="1790" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Brake light bulbs · 0:10</text>
+<rect x="982" y="1886" width="256" height="328" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="1090" y="1896" width="40" height="4" rx="2" fill="#9aa1ab"/>
+<text x="996" y="1926" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="start">Add to the log</text>
+<rect x="996" y="1946" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1050" y="1984" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Task</text>
+<rect x="1112" y="1946" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1166" y="1984" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Part</text>
+<rect x="996" y="2018" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1050" y="2056" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Labor</text>
+<rect x="1112" y="2018" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1166" y="2056" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Reading</text>
+<rect x="996" y="2090" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1050" y="2128" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Squawk</text>
+<rect x="1112" y="2090" width="108" height="62" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1166" y="2128" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Note</text>
+<text x="980" y="2244" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Made for the phone in the garage:</text>
+<text x="980" y="2266" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   log each thing as it&#x27;s done.</text>
+<text x="980" y="2288" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The checklist says what Finish needs.</text>
+<text x="980" y="2310" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Times show the order of the work.</text>
+<text x="980" y="2332" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Parts and labor must name their task.</text>
+<text x="980" y="2354" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Harder to review as a whole (a</text>
+<text x="980" y="2376" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   &quot;grouped by task&quot; view helps).</text>
+<text x="980" y="2398" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− New: nothing else in the app works</text>
+<text x="980" y="2420" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   this way.</text>
+<text x="40" y="2464" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both · Finish: the checks, then a confirmation (#034); a repair adds Complaint and Cause</text>
+<text x="40" y="2494" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Finish refused: something&#x27;s missing</text>
+<rect x="40" y="2506" width="560" height="330" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="70" y="2530" width="500" height="284" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="94" y="2568" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Finish this job?</text>
+<text x="94" y="2604" font-size="14" fill="#3fb950" font-weight="800" text-anchor="start">✓</text>
+<text x="116" y="2604" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Readings: Odometer 52,644 mi</text>
+<text x="94" y="2634" font-size="14" fill="#3fb950" font-weight="800" text-anchor="start">✓</text>
+<text x="116" y="2634" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Where: Asheville, NC</text>
+<text x="94" y="2664" font-size="14" fill="#ff6b6b" font-weight="800" text-anchor="start">✕</text>
+<text x="116" y="2664" font-size="13" fill="#ff6b6b" font-weight="600" text-anchor="start">Rattle from the rear on bumps: sign off or defer it</text>
+<text x="94" y="2714" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Finishing locks it: a mistake is fixed with a correction.</text>
+<rect x="356" y="2750" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="406.0" y="2775.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Back</text>
+<rect x="466" y="2750" width="90" height="40" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="511" y="2775" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="middle">Finish</text>
+<text x="640" y="2494" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">A repair: complaint and cause (in A, a section; in B, a log item)</text>
+<rect x="640" y="2506" width="500" height="330" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="660" y="2530" width="460" height="284" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="680" y="2560" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">REPAIR</text>
+<text x="680" y="2588" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Complaint: what was wrong</text>
+<rect x="680" y="2596" width="420" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="688" y="2615" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Squeal when braking</text>
+<text x="680" y="2648" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Cause: the diagnosis</text>
+<rect x="680" y="2656" width="420" height="28" rx="6" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="688" y="2675" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Front pads worn to the backing plate</text>
+<text x="680" y="2710" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The tasks are the correction (#032).</text>
+<text x="680" y="2730" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A repair often starts from a squawk:</text>
+<text x="680" y="2750" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">&quot;Repair this&quot; on a squawk&#x27;s page fills in</text>
+<text x="680" y="2770" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">the complaint and signs it off on Finish.</text>
+<text x="1180" y="2534" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Both:</text>
+<text x="1180" y="2556" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Saved as a draft any time;</text>
+<text x="1180" y="2578" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   Finish only when done.</text>
+<text x="1180" y="2600" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Bundles add their tasks;</text>
+<text x="1180" y="2622" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   a requirement&#x27;s name becomes</text>
+<text x="1180" y="2644" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   the task&#x27;s title.</text>
+<text x="1180" y="2666" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Words follow the household</text>
+<text x="1180" y="2688" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (&quot;Issues&quot;).</text>
+</svg>

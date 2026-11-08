@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1780" viewBox="0 0 1560 1780" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1780" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2f · Mode switching, the Admin indicator, and signing out: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Every session starts in Driver mode. Admin mode asks for the password again (the dialog is the same in both options) and ends after 15 idle minutes.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Two chips in the top bar: a mode chip (Driver ▾) and an account chip (Stuart ▾); Admin mode adds an orange banner</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Driver mode, mode menu open</text>
+<rect x="40" y="166" width="720" height="400" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="150" height="396" rx="0" fill="#1d2128"/>
+<text x="62" y="248" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Garage</text>
+<text x="62" y="280" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Due &amp; squawks</text>
+<text x="62" y="312" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Messages</text>
+<text x="62" y="344" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Timeline</text>
+<text x="62" y="376" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Reports</text>
+<line x1="58" y1="414" x2="176" y2="414" stroke="#333a45" stroke-width="1.5"/>
+<text x="62" y="444" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles</text>
+<text x="62" y="476" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Users</text>
+<text x="62" y="508" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Settings</text>
+<text x="62" y="540" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Diagnostics</text>
+<rect x="192" y="168" width="566" height="50" rx="0" fill="#1d2128"/>
+<text x="208" y="200" font-size="18" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="498.4" y="178" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
+<text x="529.4" y="198" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
+<rect x="568.4" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="610.8" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
+<rect x="661.1999999999999" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="703.5999999999999" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="212" y="238" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="483" y="238" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="560" y="216" width="190" height="126" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="576" y="247" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">✓  Driver</text>
+<text x="576" y="285" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Maintainer</text>
+<text x="576" y="323" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Admin</text>
+<text x="736" y="323" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">🔒 password</text>
+<text x="800" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode (on the Users screen)</text>
+<rect x="800" y="166" width="720" height="400" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="802" y="168" width="150" height="396" rx="0" fill="#1d2128"/>
+<rect x="802" y="168" width="5" height="396" rx="0" fill="#f0883e"/>
+<text x="822" y="248" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Garage</text>
+<text x="822" y="280" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Due &amp; squawks</text>
+<text x="822" y="312" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Messages</text>
+<text x="822" y="344" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Timeline</text>
+<text x="822" y="376" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Reports</text>
+<line x1="818" y1="414" x2="936" y2="414" stroke="#333a45" stroke-width="1.5"/>
+<text x="822" y="444" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles</text>
+<text x="822" y="476" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Users</text>
+<text x="822" y="508" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Settings</text>
+<text x="822" y="540" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Diagnostics</text>
+<rect x="952" y="168" width="566" height="50" rx="0" fill="#1d2128"/>
+<text x="968" y="200" font-size="18" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="1266.0" y="178" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
+<text x="1297.0" y="198" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
+<rect x="1336.0" y="178" width="77.19999999999999" height="30" rx="15" fill="#f0883e"/>
+<text x="1374.6" y="198" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="1421.2" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1463.6000000000001" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="952" y="218" width="566" height="38" rx="0" fill="#3a2615"/>
+<line x1="952" y1="256" x2="1518" y2="256" stroke="#f0883e" stroke-width="2"/>
+<text x="968" y="242" font-size="11.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<text x="1056" y="242" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Changes affect the whole household · ends after 15 idle min</text>
+<rect x="1438" y="224" width="68" height="26" rx="13" fill="#f0883e"/>
+<text x="1472" y="242" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Leave</text>
+<rect x="972" y="276" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1243" y="276" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="40" y="608" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · account menu (S ▾)</text>
+<rect x="40" y="620" width="250" height="470" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="646" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="42" y="650" width="246" height="50" rx="0" fill="#1d2128"/>
+<text x="58" y="682" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="131.2" y="660" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="173.6" y="680" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
+<rect x="224.0" y="660" width="52" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="250.0" y="680" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">S ▾</text>
+<rect x="108" y="706" width="170" height="126" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="124" y="737" font-size="13.5" fill="#9aa1ab" font-weight="500" text-anchor="start">    Stuart (stuart)</text>
+<text x="124" y="775" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Change password</text>
+<text x="124" y="813" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Sign out</text>
+<text x="320" y="608" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Admin mode</text>
+<rect x="320" y="620" width="250" height="470" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="338" y="646" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="322" y="650" width="246" height="50" rx="0" fill="#1d2128"/>
+<text x="338" y="682" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="418.8" y="660" width="77.19999999999999" height="30" rx="15" fill="#f0883e"/>
+<text x="457.4" y="680" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="504.0" y="660" width="52" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="530.0" y="680" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">S ▾</text>
+<rect x="322" y="700" width="246" height="38" rx="0" fill="#3a2615"/>
+<line x1="322" y1="738" x2="568" y2="738" stroke="#f0883e" stroke-width="2"/>
+<text x="338" y="724" font-size="11.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<text x="426" y="724" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">ends after 15 idle min</text>
+<text x="338" y="770" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Tap Admin ▾ to leave Admin mode.</text>
+<rect x="610" y="640" width="440" height="230" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="632" y="680" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Enter Admin mode</text>
+<text x="632" y="704" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Type your password to confirm. Admin mode ends</text>
+<text x="632" y="722" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">after 15 minutes without activity.</text>
+<text x="632" y="744" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="632" y="752" width="396" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="644" y="777" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="858" y="810" width="170" height="44" rx="10" fill="#f0883e"/>
+<text x="943.0" y="837.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Enter Admin mode</text>
+<rect x="748" y="810" width="100" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="798.0" y="837.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="610" y="896" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The password dialog (both options).</text>
+<text x="1090" y="660" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Mode is always one tap away, on every screen.</text>
+<text x="1090" y="682" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Admin mode is impossible to miss: banner, orange chip,</text>
+<text x="1090" y="704" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   orange sidebar edge.</text>
+<text x="1090" y="726" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Your account (password, sign out) is kept apart</text>
+<text x="1090" y="748" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   from the mode, so they&#x27;re never confused.</text>
+<text x="1090" y="770" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two chips take top-bar space on phones.</text>
+<text x="40" y="1150" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · One account button holds everything (name, mode, password, sign out); Admin mode tints the whole top bar</text>
+<text x="40" y="1180" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · account menu open</text>
+<rect x="40" y="1192" width="720" height="400" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1194" width="150" height="396" rx="0" fill="#1d2128"/>
+<text x="62" y="1274" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Garage</text>
+<text x="62" y="1306" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Due &amp; squawks</text>
+<text x="62" y="1338" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Messages</text>
+<text x="62" y="1370" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Timeline</text>
+<text x="62" y="1402" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Reports</text>
+<line x1="58" y1="1440" x2="176" y2="1440" stroke="#333a45" stroke-width="1.5"/>
+<text x="62" y="1470" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles</text>
+<text x="62" y="1502" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Users</text>
+<text x="62" y="1534" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Settings</text>
+<text x="62" y="1566" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Diagnostics</text>
+<rect x="192" y="1194" width="566" height="50" rx="0" fill="#1d2128"/>
+<text x="208" y="1226" font-size="18" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="522.8" y="1204" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
+<text x="553.8" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
+<rect x="592.8" y="1204" width="153.2" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="669.4" y="1224" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart · Driver ▾</text>
+<rect x="212" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="483" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="490" y="1248" width="256" height="214" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="506" y="1276" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Stuart (stuart)</text>
+<rect x="506" y="1290" width="224" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="508" y="1292" width="72" height="30" rx="15" fill="#5aa9ff"/>
+<text x="544" y="1312" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Driver</text>
+<text x="617" y="1312" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="middle">Maint.</text>
+<text x="690" y="1312" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="middle">Admin 🔒</text>
+<line x1="502" y1="1340" x2="734" y2="1340" stroke="#333a45" stroke-width="1.5"/>
+<text x="506" y="1370" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Change password</text>
+<text x="506" y="1406" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Sign out</text>
+<text x="506" y="1444" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On phones: the same, inside ☰.</text>
+<text x="800" y="1180" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode</text>
+<rect x="800" y="1192" width="720" height="400" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="802" y="1194" width="150" height="396" rx="0" fill="#1d2128"/>
+<text x="822" y="1274" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Garage</text>
+<text x="822" y="1306" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Due &amp; squawks</text>
+<text x="822" y="1338" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Messages</text>
+<text x="822" y="1370" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Timeline</text>
+<text x="822" y="1402" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Reports</text>
+<line x1="818" y1="1440" x2="936" y2="1440" stroke="#333a45" stroke-width="1.5"/>
+<text x="822" y="1470" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles</text>
+<text x="822" y="1502" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Users</text>
+<text x="822" y="1534" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Settings</text>
+<text x="822" y="1566" font-size="13.5" fill="#e8eaed" font-weight="400" text-anchor="start">Diagnostics</text>
+<rect x="952" y="1194" width="566" height="50" rx="0" fill="#3a2615"/>
+<text x="968" y="1226" font-size="18" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="1290.4" y="1204" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
+<text x="1321.4" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
+<rect x="1360.4" y="1204" width="145.6" height="30" rx="15" fill="#f0883e"/>
+<text x="1433.2" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Stuart · Admin ▾</text>
+<line x1="952" y1="1244" x2="1518" y2="1244" stroke="#f0883e" stroke-width="2"/>
+<rect x="972" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1243" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="40" y="1630" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One place for everything about you; a tidier top bar.</text>
+<text x="40" y="1652" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Changing mode takes two taps.</text>
+<text x="40" y="1674" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Admin mode shows only as a tint and the button colour.</text>
+</svg>

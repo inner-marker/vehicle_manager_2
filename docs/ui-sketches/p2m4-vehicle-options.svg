@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2400" viewBox="0 0 1560 2400" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2400" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 4f · A vehicle&#x27;s page: tabs, the Overview dashboard, and Setup (decisions #040, #051, #052): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Overview starts the per-vehicle dashboard (readiness, coming due, squawks, fuel arrive later). Setup holds details, meters, custom fields, required readings, the group, and archiving.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Header and tabs across the top; Overview as dashboard panels; Setup as stacked sections</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Overview (Admin mode)</text>
+<rect x="40" y="166" width="900" height="620" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="200" height="616" rx="0" fill="#1d2128"/>
+<text x="62" y="202" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="202" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="218" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="240" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="240" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<text x="62" y="278" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">✈</text>
+<text x="86" y="278" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Hangar</text>
+<line x1="54" y1="298" x2="230" y2="298" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="328" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<text x="86" y="366" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="404" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="86" y="442" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<rect x="242" y="168" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="762" y="178" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="197" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="178" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="262" y="236" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">← Garage</text>
+<text x="262" y="272" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="296" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<rect x="262" y="308" width="71.19999999999999" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="297.6" y="324" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<rect x="339.2" y="308" width="177.6" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="428.0" y="324" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">VIN 1FTFW1E50MFA00000</text>
+<rect x="522.8" y="308" width="74" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="559.8" y="324" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">⌂ Garage</text>
+<text x="918" y="272" font-size="12" fill="#3fb950" font-weight="700" text-anchor="end">In service</text>
+<line x1="262" y1="370" x2="350.8" y2="370" stroke="#5aa9ff" stroke-width="3"/>
+<text x="306.4" y="360" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="395.2" y="360" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="495.40000000000003" y="360" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="580.4000000000001" y="360" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="657.8000000000001" y="360" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<text x="739.0" y="360" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="371" x2="918" y2="371" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="388" width="320" height="100" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="412" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">READY TO USE?</text>
+<text x="276" y="438" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Arrives with what&#x27;s due (Phase 5).</text>
+<rect x="598" y="388" width="320" height="100" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="612" y="412" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">COMING DUE</text>
+<text x="612" y="438" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Next services (Phase 5).</text>
+<rect x="262" y="500" width="320" height="100" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="524" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">OPEN SQUAWKS</text>
+<text x="276" y="550" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Squawks arrive in milestone 7.</text>
+<rect x="598" y="500" width="320" height="100" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="612" y="524" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">LATEST FUEL-UPS</text>
+<text x="612" y="550" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Fuel-ups arrive in milestone 6.</text>
+<rect x="262" y="612" width="656" height="140" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="636" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="276" y="668" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Odometer</text>
+<text x="442" y="668" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">miles</text>
+<text x="592" y="668" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Required for fuel-ups</text>
+<text x="276" y="698" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Engine hours</text>
+<text x="442" y="698" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">hours · 0.1</text>
+<text x="592" y="698" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Required for maintenance</text>
+<text x="276" y="734" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Readings appear here from milestone 6.</text>
+<text x="262" y="776" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Tabs without content yet say which milestone fills them (Timeline, Fuel: 6; Maintenance: 7; Documents: 8).</text>
+<text x="40" y="812" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Setup (Admin mode)</text>
+<rect x="40" y="824" width="900" height="760" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="826" width="200" height="756" rx="0" fill="#1d2128"/>
+<text x="62" y="860" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="860" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="876" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="898" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="898" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<text x="62" y="936" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">✈</text>
+<text x="86" y="936" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Hangar</text>
+<line x1="54" y1="956" x2="230" y2="956" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="986" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<text x="86" y="1024" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="1062" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="86" y="1100" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<rect x="242" y="826" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="857" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="762" y="836" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="855" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="836" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="855" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="262" y="894" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">← Garage</text>
+<text x="262" y="930" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="954" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<rect x="262" y="966" width="71.19999999999999" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="297.6" y="982" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<rect x="339.2" y="966" width="177.6" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="428.0" y="982" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">VIN 1FTFW1E50MFA00000</text>
+<rect x="522.8" y="966" width="74" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="559.8" y="982" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">⌂ Garage</text>
+<text x="918" y="930" font-size="12" fill="#3fb950" font-weight="700" text-anchor="end">In service</text>
+<text x="306.4" y="1018" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Overview</text>
+<text x="395.2" y="1018" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="495.40000000000003" y="1018" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="580.4000000000001" y="1018" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="657.8000000000001" y="1018" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<line x1="706.0" y1="1028" x2="772.0" y2="1028" stroke="#5aa9ff" stroke-width="3"/>
+<text x="739.0" y="1018" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Setup</text>
+<line x1="262" y1="1029" x2="918" y2="1029" stroke="#333a45" stroke-width="1"/>
+<text x="262" y="1058" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DETAILS</text>
+<line x1="262" y1="1066" x2="918" y2="1066" stroke="#333a45" stroke-width="1"/>
+<rect x="788" y="1040" width="130" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="853" y="1059" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Edit details</text>
+<text x="262" y="1084" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Make Ford · Model F-150 · Year 2021 · Colour Blue</text>
+<text x="262" y="1106" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Description: Synthetic oil only.</text>
+<text x="262" y="1146" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<line x1="262" y1="1154" x2="918" y2="1154" stroke="#333a45" stroke-width="1"/>
+<rect x="788" y="1128" width="130" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="853" y="1147" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Add meter</text>
+<rect x="262" y="1162" width="656" height="38" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1187" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Odometer</text>
+<text x="442" y="1187" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Distance · miles · whole</text>
+<text x="906" y="1187" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<rect x="262" y="1206" width="656" height="38" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1231" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Engine hours</text>
+<text x="442" y="1231" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Duration · hours · tenths</text>
+<text x="906" y="1231" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<text x="262" y="1270" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">CUSTOM FIELDS</text>
+<line x1="262" y1="1278" x2="918" y2="1278" stroke="#333a45" stroke-width="1"/>
+<rect x="788" y="1252" width="130" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="853" y="1271" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Add field</text>
+<rect x="262" y="1286" width="656" height="38" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1311" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Trip time</text>
+<text x="462" y="1311" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Fuel-ups · Duration</text>
+<rect x="782" y="1295" width="40" height="22" rx="11" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="811" cy="1306" r="8" fill="#0b1420"/>
+<text x="906" y="1311" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit</text>
+<rect x="262" y="1330" width="656" height="38" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1355" font-size="13.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Trip EV distance</text>
+<text x="462" y="1355" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Fuel-ups · Distance</text>
+<rect x="782" y="1339" width="40" height="22" rx="11" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="793" cy="1350" r="8" fill="#9aa1ab"/>
+<text x="906" y="1355" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit</text>
+<text x="262" y="1394" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">REQUIRED READINGS</text>
+<line x1="262" y1="1402" x2="918" y2="1402" stroke="#333a45" stroke-width="1"/>
+<text x="462" y="1418" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">Fuel-up</text>
+<text x="552" y="1418" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">Reading</text>
+<text x="652" y="1418" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="752" y="1418" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">Repair</text>
+<text x="262" y="1448" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Odometer</text>
+<rect x="452" y="1434" width="20" height="20" rx="4" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<text x="462" y="1449" font-size="13" fill="#0b1420" font-weight="800" text-anchor="middle">✓</text>
+<rect x="552" y="1434" width="20" height="20" rx="4" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="652" y="1434" width="20" height="20" rx="4" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<text x="662" y="1449" font-size="13" fill="#0b1420" font-weight="800" text-anchor="middle">✓</text>
+<rect x="752" y="1434" width="20" height="20" rx="4" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<text x="762" y="1449" font-size="13" fill="#0b1420" font-weight="800" text-anchor="middle">✓</text>
+<text x="262" y="1480" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Engine hours</text>
+<rect x="452" y="1466" width="20" height="20" rx="4" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="552" y="1466" width="20" height="20" rx="4" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="652" y="1466" width="20" height="20" rx="4" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<text x="662" y="1481" font-size="13" fill="#0b1420" font-weight="800" text-anchor="middle">✓</text>
+<rect x="752" y="1466" width="20" height="20" rx="4" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="262" y="1516" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">GROUP AND STATUS</text>
+<line x1="262" y1="1524" x2="918" y2="1524" stroke="#333a45" stroke-width="1"/>
+<text x="262" y="1542" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">⌂ Garage</text>
+<rect x="372" y="1526" width="150" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="447" y="1545" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Move to another…</text>
+<text x="562" y="1542" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">Status: In service ▾</text>
+<rect x="788" y="1526" width="130" height="28" rx="8" fill="#14171c" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="853" y="1545" font-size="12" fill="#ff6b6b" font-weight="700" text-anchor="middle">Delete…</text>
+<text x="40" y="1624" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">A · Move to another group (preview first) and Delete (type the name)</text>
+<rect x="40" y="1636" width="440" height="250" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="1672" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Move Truck</text>
+<text x="64" y="1704" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">To</text>
+<rect x="64" y="1712" width="392" height="38" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="1736" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">✈ Hangar</text>
+<text x="444" y="1736" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="64" y="1774" font-size="12" fill="#9aa1ab" font-weight="700" text-anchor="start">Who&#x27;s affected</text>
+<text x="64" y="1796" font-size="13" fill="#ff6b6b" font-weight="600" text-anchor="start">Sam: Driver → no access</text>
+<text x="64" y="1818" font-size="13" fill="#3fb950" font-weight="600" text-anchor="start">Alex: no access → Maintainer</text>
+<rect x="236" y="1838" width="100" height="36" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="286.0" y="1861.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="346" y="1838" width="110" height="36" rx="10" fill="#5aa9ff"/>
+<text x="401.0" y="1861.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Move</text>
+<rect x="520" y="1636" width="420" height="250" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="544" y="1672" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Delete Truck?</text>
+<text x="544" y="1702" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Only for a vehicle added by mistake: its records go</text>
+<text x="544" y="1722" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">with it. To keep its history, set its status to</text>
+<text x="544" y="1742" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Retired or Disposed instead.</text>
+<text x="544" y="1762" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Type Truck to confirm.</text>
+<text x="544" y="1780" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start"></text>
+<rect x="544" y="1788" width="372" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="556" y="1813" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Truck</text>
+<rect x="706" y="1838" width="100" height="36" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="756.0" y="1861.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="816" y="1838" width="100" height="36" rx="10" fill="#ff6b6b"/>
+<text x="866.0" y="1861.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Delete</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Overview</text>
+<rect x="980" y="166" width="250" height="620" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">← Truck</text>
+<text x="996" y="260" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="996" y="270" width="71.19999999999999" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1031.6" y="286" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<line x1="996" y1="336" x2="1084.8" y2="336" stroke="#5aa9ff" stroke-width="3"/>
+<text x="1040.4" y="326" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="1129.2" y="326" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="1218.0" y="326" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Mainten…</text>
+<line x1="996" y1="337" x2="1214" y2="337" stroke="#333a45" stroke-width="1"/>
+<rect x="996" y="352" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="376" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">READY TO USE?</text>
+<text x="1010" y="402" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Arrives later</text>
+<rect x="996" y="424" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="448" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">COMING DUE</text>
+<text x="1010" y="474" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Arrives later</text>
+<rect x="996" y="496" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="520" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">OPEN SQUAWKS</text>
+<text x="1010" y="546" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Arrives later</text>
+<rect x="996" y="568" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="592" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">LATEST FUEL-UPS</text>
+<text x="1010" y="618" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Arrives later</text>
+<rect x="996" y="640" width="218" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1010" y="664" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="996" y="724" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Tabs scroll sideways (#040).</text>
+<text x="1262" y="196" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The plan&#x27;s tab layout (#040), unchanged.</text>
+<text x="1262" y="218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Overview&#x27;s panels match the dashboard</text>
+<text x="1262" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (#051); empty ones say when they fill.</text>
+<text x="1262" y="262" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Setup keeps every change on one tab.</text>
+<text x="1262" y="284" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Setup is a long page for a vehicle</text>
+<text x="1262" y="306" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   with many meters and fields.</text>
+<text x="40" y="1924" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · A summary column on the left (always visible); tabs on the right; Setup split into sub-tabs</text>
+<text x="40" y="1954" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Overview</text>
+<rect x="40" y="1966" width="900" height="420" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1968" width="200" height="416" rx="0" fill="#1d2128"/>
+<text x="62" y="2002" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="2002" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="2018" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="2040" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="2040" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<text x="62" y="2078" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">✈</text>
+<text x="86" y="2078" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Hangar</text>
+<line x1="54" y1="2098" x2="230" y2="2098" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="2128" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; squawks</text>
+<text x="86" y="2166" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="2204" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Timeline</text>
+<text x="86" y="2242" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Reports</text>
+<rect x="242" y="1968" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="1999" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="762" y="1978" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="1997" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="1978" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="1997" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="262" y="2028" width="220" height="340" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<rect x="276" y="2042" width="192" height="110" rx="8" fill="#262b34"/>
+<text x="372" y="2102" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="middle" font-style="italic">Photo (milestone 8)</text>
+<text x="276" y="2178" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="276" y="2198" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">2021 Ford F-150</text>
+<rect x="276" y="2208" width="71.19999999999999" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="311.6" y="2224" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<rect x="276" y="2238" width="74" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="313.0" y="2254" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">⌂ Garage</text>
+<text x="276" y="2290" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">METERS</text>
+<text x="276" y="2312" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Odometer · miles</text>
+<text x="276" y="2332" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Engine hours · hours</text>
+<line x1="498" y1="2058" x2="586.8" y2="2058" stroke="#5aa9ff" stroke-width="3"/>
+<text x="542.4" y="2048" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="631.1999999999999" y="2048" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="712.3999999999999" y="2048" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maint.</text>
+<text x="778.4" y="2048" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="836.8" y="2048" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Docs</text>
+<text x="898.9999999999999" y="2048" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="498" y1="2059" x2="918" y2="2059" stroke="#333a45" stroke-width="1"/>
+<rect x="498" y="2076" width="420" height="90" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="512" y="2100" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">READY TO USE?</text>
+<text x="512" y="2126" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Phase 5.</text>
+<rect x="498" y="2176" width="420" height="90" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="512" y="2200" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">COMING DUE</text>
+<text x="512" y="2226" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Phase 5.</text>
+<rect x="498" y="2276" width="420" height="90" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="512" y="2300" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">OPEN SQUAWKS</text>
+<text x="512" y="2326" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">Milestone 7.</text>
+<text x="498" y="2382" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Setup (B): sub-tabs Details | Meters | Fields | Readings | Group</text>
+<text x="980" y="1954" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone</text>
+<rect x="980" y="1966" width="250" height="420" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="1992" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="1996" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="2022" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">← Truck</text>
+<rect x="996" y="2046" width="218" height="90" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="2074" font-size="16" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="1008" y="2094" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">2021 Ford F-150</text>
+<rect x="1008" y="2104" width="71.19999999999999" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1043.6" y="2120" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">ABC 123</text>
+<line x1="996" y1="2178" x2="1084.8" y2="2178" stroke="#5aa9ff" stroke-width="3"/>
+<text x="1040.4" y="2168" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="1129.2" y="2168" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="1218.0" y="2168" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Mainten…</text>
+<line x1="996" y1="2179" x2="1214" y2="2179" stroke="#333a45" stroke-width="1"/>
+<text x="996" y="2214" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(Summary on top, then tabs.)</text>
+<text x="1262" y="1996" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Identity and meters always visible,</text>
+<text x="1262" y="2018" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   whichever tab is open.</text>
+<text x="1262" y="2040" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Setup split into small sub-tabs.</text>
+<text x="1262" y="2062" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Less room for each tab&#x27;s content.</text>
+<text x="1262" y="2084" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two levels of tabs in Setup.</text>
+</svg>

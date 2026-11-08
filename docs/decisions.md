@@ -39,6 +39,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 
 - **Decision:** every change gets an HLC stamp (48-bit ms + 16-bit counter packed into a `u64`, device ID as tiebreak). Drafts and configuration use last-write-wins per record. Finalized events are immutable and corrected by amendments.
 - **Why:** device clocks drift; HLC gives a total, deterministic order without heavy conflict machinery.
+- **Refined by #043:** last-write-wins is now **per field**, with field-level commands.
 
 ### 005. Sync: push typed commands, pull current state
 *Decided: before 2026-10-19 · Plan: §3 Sync protocol*
@@ -201,6 +202,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - An environment variable keeps it out of the repo and lets the exit criterion ("a wrong credential is rejected cleanly") be tested.
   - Failing closed means a misconfigured server can't be open by accident.
 - **Replaced later by:** web login with session cookies (Phase 2 open question) and per-device tokens hashed with argon2 (Phase 3 pairing). Rate limiting arrives with them.
+- **Retired 2026-10-30** (Phase 2 step 2e): replaced by sign-in with sessions (#028). The variable, its handling, and the Connection panel's credential field are gone.
 
 ### 025. First server image is linux/amd64; arm64 later
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
@@ -240,3 +242,577 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Dioxus 0.7.10 stores the server address once per process (`set_server_url` is a `OnceLock`, and Dioxus falls back to `http://127.0.0.1:8080` if it's unset), so it can't change while the app runs.
   - Phase 2 logins replace the test credential, so saving it now would add a keychain dependency for nothing.
   - The exit criterion doesn't need packages, and packaging belongs with the release pipeline it runs in.
+
+### 028. Login: username and password with session cookies; first Admin by one-time setup code
+*Decided: 2026-10-29 · Plan: §6 Security (Application), §10 Phase 2 open questions · Replaces the Phase 1 test credential (#024)*
+
+- **Decision:**
+  - **Sign-in is a username and password.** Passwords are hashed with **argon2** on the server. Login attempts are rate-limited.
+  - **The web UI gets a session cookie** after login: `HttpOnly`, `Secure`, `SameSite=Strict`. The auth middleware accepts it on every `/api/` request.
+  - **Native apps** (desktop now, mobile later) sign in with the same username and password until Phase 3 pairing issues per-device tokens.
+  - **First Admin:** while the server has no users, it writes a **one-time setup code** to its log at every startup. The first visitor enters the code, then chooses the Admin's username and password. The code stops working once an Admin exists.
+  - **Passkeys are later,** not in Phase 2.
+- **Why:**
+  - A password is enough behind Tailscale (only approved devices can reach the server), and works the same in every browser and in the native apps.
+  - The setup code means only someone who can read the server's log (NAS access) can claim Admin, so another tailnet device can't get there first.
+  - Passkeys need extra browser and platform work for little gain on a private tailnet.
+
+### 029. Display preferences: per user, with server-wide defaults; each setting its own record
+*Decided: 2026-10-29 · Plan: §10 Phase 2 open questions; ideas-to-discuss.md idea 7 (in part)*
+
+- **Decision:**
+  - **Units** (distance, volume, and the rest, chosen separately, so miles with litres is allowed), **default currency**, **language**, and **date format** have **server-wide defaults** set by the Admin.
+  - **Each user can override any of them.** A user's choices follow them to every device they sign in on.
+  - **Not per device.** The theme stays the only device-only setting.
+  - **Each setting is its own record** (one per user per setting, and one per server default), stamped with the **HLC** of the change. Changes go through commands like every other write. Two devices changing settings offline then merge by **last-write-wins per setting**: a newer change to one setting doesn't undo an older change to a different one.
+  - Display only: stored values stay metric integers and currency codes (§3, AGENTS.md).
+- **Why:**
+  - One household default saves every user setting things up, while still allowing a personal choice.
+  - A record per setting makes #004 (last-write-wins per record, by HLC) work per setting, without a new merge rule. The HLC is the "timestamp": it follows real time, but stays ordered even when device clocks disagree.
+  - Per-device units would show the same person different numbers on phone and laptop.
+- **Idea 7 (layered settings):** this sets two layers, server and user. Whether device and asset layers are needed is still open.
+
+### 030. Phase 2 asset kinds and profiles; trip computer readings on fuel-ups
+*Decided: 2026-10-29 · Plan: §3 Asset profiles, Custom fields, §10 Phase 2 open questions*
+
+- **Decision: six kinds ship in Phase 2,** each as a profile (seed data, never `if kind == ...`):
+
+  | Kind | Default meters | Event types | Extra sections |
+  |---|---|---|---|
+  | Car | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Truck | Odometer | Fuel, maintenance, repair, reading | Fuel economy, towing and hauling |
+  | Motorcycle | Odometer | Fuel, maintenance, repair, reading | Fuel economy |
+  | Trailer | none (odometer optional) | Maintenance, repair, reading | none |
+  | Generator | Run hours | Fuel, maintenance, repair, reading | none |
+  | Other equipment | none (add any) | Maintenance, repair, reading | none |
+
+  - Identifier types: VIN or serial number, and license plate.
+  - Expected documents: title, registration, and insurance for cars, trucks, motorcycles, and trailers.
+  - A fuel-up requires the odometer (run hours for the generator).
+  - Boats, aircraft, and components are later; the model already allows them.
+- **Decision: groundwork for trip computer readings** (what the vehicle's own display reports at a fill-up):
+  - **Quantity types for custom fields:** besides text, number, date, yes/no, and choice list, a custom field can be a **distance**, **duration** (entered and shown as `HH:MM:SS`), **volume**, or **fuel economy**. Values are stored as integers in base units (meters, seconds, milliliters, meters per liter) and displayed in the user's units (#029).
+  - **Profiles can ship custom field definitions** per event type, which the user can turn off or extend. Car, truck, and motorcycle fuel-ups ship with **trip time** (duration) and **trip EV distance** (distance; for hybrids, off by default), and the user can add more (e.g. trip distance, average speed).
+  - **Vehicle-reported fuel economy is a real, optional column** on the fuel-up details, not a custom field, because the app compares it with its own calculated fuel economy, and the plan's rule is that anything the app computes on gets a real column (§3 Custom fields).
+- **Why:**
+  - These six cover the household's vehicles and equipment, and "other equipment" catches anything else without a new profile.
+  - Trip computer values vary by vehicle, so most belong in defined custom fields; the one the app calculates with gets a column, so comparisons are plain SQL.
+
+### 031. Intervals and service bundles belong to one asset; templates are copies
+*Decided: 2026-10-29 · Plan: §3 Recurring maintenance, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Every requirement's interval rules and every service bundle belong to one asset.** There's no live link to a shared definition.
+  - **Phase 2:** "Copy schedule from another asset" copies its requirements, interval rules, and bundles onto a new asset, where they can then be changed.
+  - **Phase 5 (with what's due):** **named household templates** (e.g. "F-150 factory schedule"). Applying one **copies** it onto the asset; editing the template later doesn't change assets it was applied to. The copy may remember which template it came from, for information only.
+  - Factory schedules from reference data packs (post-MVP) arrive as templates too.
+- **Why:**
+  - Each asset drifts from its siblings (synthetic oil on one truck, not the other). A live link would let one template edit silently move every asset's due dates.
+  - Copies keep each asset's schedule stable and its history easy to follow, and templates can be added later without changing how intervals are stored.
+
+### 032. Repairs reuse maintenance tasks, plus complaint and cause; labor on every task
+*Decided: 2026-10-29 · Plan: §3 Maintenance & repair events, data model, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **A repair event uses the same workflow and task structure as maintenance:** draft while in progress, tasks with parts, cost, and notes, squawk sign-off or deferral, and the same finishing checks.
+  - **`repair_details`** (1:1 with a repair event, per #006) holds two optional fields: **complaint** (what was wrong, as noticed) and **cause** (the diagnosis). The **correction** is the event's tasks.
+  - **Every task, maintenance or repair, gets optional labor:** **labor time** (entered as `HH:MM`, stored in seconds) and its cost split into **parts cost** and **labor cost** (minor units plus currency).
+  - **A task's requirement is optional:** a repair task often fixes something no interval tracks.
+  - Squawks resolved by a repair link to it through the existing squawk sign-off; nothing new.
+- **Why:**
+  - One task structure means one set of rules; a separate repair model would duplicate them.
+  - Complaint, cause, and correction is how repair shops write up work, and it makes a repair's history readable later.
+  - Labor on every task makes "shop vs. DIY" and labor cost reports possible for maintenance too.
+
+### 033. Towing and hauling are percentages, shown by profile with a per-asset switch
+*Decided: 2026-10-29 · Plan: §3 Driving conditions & towing, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Towing % and hauling % are integer percentages (0–100),** like highway %, not yes/no flags. Entered with the detent slider; stored as plain integers.
+  - **Both default to 0%,** so a normal fill-up needs no extra input.
+  - **Shown on kinds whose profile has the "towing and hauling" section** (the truck, #030), and on **any other asset where the user turns it on** (e.g. a car pulling a small trailer).
+  - Fuel-ups keep listing which asset(s) were towed.
+- **Why:**
+  - One tank often mixes towing and normal driving; a flag would label the whole tank "towing" and distort both averages.
+  - Percentages let fuel economy be broken down by condition, as the plan describes.
+  - The per-asset switch follows the plan's rule that an asset's settings start from its profile and can be changed per asset.
+
+### 034. When events finalize; confirm before finalizing by hand
+*Decided: 2026-10-29 · Plan: §3 Finalized records and amendments, Maintenance & repair events, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Fuel-ups and readings finalize 24 hours after their last edit,** or sooner with **Finalize now**. Every edit restarts the 24 hours.
+  - **Maintenance and repair events finalize only when the user taps Finish,** which runs the finishing checks first. They **never finalize automatically.**
+  - **A forgotten job** (a maintenance or repair draft untouched for **14 days**) gets a reminder in the message center. It's only a reminder; nothing is locked.
+  - **Later event types** (documents, lifecycle) default to 24 hours after the last edit unless their own section says otherwise.
+  - **The delays are defaults the Admin can change** per event type.
+  - **The server finalizes automatically,** so every device agrees on when an event locked.
+  - **Finalizing by hand always asks for confirmation** ("Finalize this event?"), for both Finalize now and Finish: the dialog says that afterwards it can only be corrected with an amendment, and has Finalize and Cancel buttons. Automatic finalizing has no dialog.
+- **Why:**
+  - Finalizing can't be undone, so tapping it by accident shouldn't lock an event.
+  - A 24-hour window lets a mistyped odometer be fixed without an amendment.
+  - Maintenance can take a weekend or wait weeks for parts; locking it halfway would force amendments for normal work.
+
+### 035. Nightly snapshots in the same pool for now, with a configurable folder for a USB disk later
+*Decided: 2026-10-29 · Plan: §6 Data integrity & loss detection, Backups, §10 Phase 2 open questions · Changes the plan's "different NAS disk"*
+
+- **Decision:**
+  - **The nightly `VACUUM INTO` snapshot goes to `data/snapshots/` by default,** in the same storage pool as the live database. The server keeps the **last 7** and integrity-checks each one after writing it.
+  - **Groundwork for a USB disk:** the snapshot folder is configurable (`VEHICLEMANAGER_SNAPSHOT_DIR`, built from `APP_ID`), so it can later point at a second mount in `compose.yaml`, such as a USB disk. If that folder is missing or not writable, the server keeps running, skips the snapshot, and reports it (log and Admin message).
+  - **Not a focus now:** no USB setup, Hyper Backup task, or docs for it in Phase 2. They come later, or with offsite backups (post-MVP).
+- **Why:**
+  - The DS1019+ has one storage pool (4 data disks + 1 parity), so there's no "different NAS disk". Its parity already survives one failed disk.
+  - Same-pool snapshots still cover what they're mainly for: corruption, a bad migration, a bad sync, and accidental deletion.
+  - A configurable folder makes a USB disk (or any second volume) a deployment change later, not a code change.
+- **Not covered until offsite backups:** losing the whole pool or the NAS.
+
+### 036. Photos: Small, Medium, or Large JPEG per photo; originals only for Maintainers and Admins
+*Decided: 2026-10-29 · Plan: §3 Photos from the web UI on a phone, Asset photos, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Every stored photo is a JPEG** (quality 85), turned upright, plus a **400 px thumbnail**. HEIC and other formats are converted. **Upload limit: 25 MB** per photo.
+  - **A size picker on every photo:**
+
+    | Size | Long edge | Typical size | For |
+    |---|---|---|---|
+    | **Small** | 1280 px | ~200 KB | Meter close-ups, receipts, labels |
+    | **Medium** (default) | 2560 px | ~0.5–1 MB | General photos |
+    | **Large** | 4096 px | ~2–3 MB | Damage, condition at the start of an event |
+
+    A photo smaller than the chosen size is never enlarged. **Profiles can set the default size per event type** (e.g. Small on fuel-ups and readings).
+  - **Keep original (gated):** a Maintainer (on that asset) or an Admin can also keep the **original file exactly as taken** (HEIC or camera JPEG), alongside the JPEG the app shows. Others never see the option. The Admin can turn the option off server-wide.
+    - An original keeps everything the camera wrote, including GPS. **Exports leave originals out** unless chosen, with a warning that they include location and camera details.
+  - **Metadata follows the existing photo rule:** time taken, GPS, and camera are read before resizing and kept as structured fields (shown in the photo's details and offered as suggestions); exports strip GPS by default. The JPEG files themselves carry no metadata.
+  - **Where it happens:** the browser or app resizes to the chosen size before upload (less data to send); the server checks type, size, and dimensions, and converts anything that isn't a correctly sized JPEG.
+  - The image-processing crate (likely `image`, plus HEIC support) is proposed for approval when the photo step is planned.
+- **Why:**
+  - Photos live in the database, so their size drives database, sync, and snapshot size. Choosing per photo keeps quick shots small and evidence photos sharp.
+  - Originals are large and hold the most private metadata, so they're limited to the roles that do maintenance and documentation.
+
+### 037. Documents: 50 MB per PDF; pdf.js as the viewer on every platform
+*Decided: 2026-10-29 · Plan: §3 Attachments, Official asset documents, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Limit: 50 MB per PDF,** with no separate page limit.
+  - **The server checks every upload** really is a PDF within the limit, and records its **page count** (shown on the document card, e.g. "12 pages").
+  - **Viewer: Mozilla's pdf.js** (Apache-2.0), bundled with the app and used **on every platform:** web, macOS, Linux, Windows, and later mobile.
+  - **Every PDF also has Download / Open in system viewer.**
+  - The exact pdf.js version is proposed for approval when the documents step is planned.
+- **Why:**
+  - Size, not page count, is what affects the database, sync, and snapshots. 50 MB fits receipts, invoices, registrations, and most owner's manuals; very large manuals are better kept outside the app.
+  - Linux's WebKitGTK can't show PDFs itself, and one bundled viewer looks and works the same everywhere, with room for thumbnails and search later.
+
+### 038. Offline geocoder: GeoNames cities1000 and Natural Earth 1:10m, nearest boundary as a fallback
+*Decided: 2026-10-29 · Plan: §3 Reverse geocoding, §10 Phase 2 open questions (geocoder dataset; geocoding on device vs. server) · **Cities changed to cities500 by #059***
+
+- **Decision:**
+  - **Cities:** GeoNames **cities1000** (every place with at least 1,000 people), nearest place wins.
+  - **States/provinces and countries:** **Natural Earth admin boundaries at 1:10m**, slightly simplified for size.
+  - **Outside every polygon, the nearest one is used.** Natural Earth doesn't trace exact coastlines, so a point on a beach, pier, causeway, or island can fall just outside its country or state. The lookup then takes the **nearest country, and the nearest state/province** (within that country where possible), by distance to the boundary. A point never ends up with no country or state.
+  - **Shipped as a versioned data file** the server loads at startup, not compiled into the program, so the data can be updated without a new build (and fits reference data packs later).
+  - **The crate** (`reverse_geocoder` or a small lookup of our own) is chosen, with dependency approval, when the location step is planned.
+  - **Phones (Phase 4):** a budget of about **15–20 MB** for the bundled data, checked in Phase 4. If it's too large, phones store coordinates and the server fills in the place at sync, as the plan already allows.
+  - **Attribution:** "Contains GeoNames data (CC BY 4.0)" on the About screen.
+  - The looked-up place is a suggestion; the user can still correct the event's city, state, and country.
+- **Why:**
+  - cities1000 resolves small towns without the size of cities500; cities5000 would put small-town events in the next bigger town.
+  - Coarser boundaries put events near a border in the wrong state, and the nearest-boundary fallback covers the coastline gaps any simplified dataset has.
+
+### 039. No map picker in Phase 2; map tiles decided with the event map
+*Decided: 2026-10-29 · Plan: §3 Event location, Event map (post-MVP), §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Phase 2 has no map.** An event's location comes from the device's **GPS**, a **saved place**, or **manual entry** (city, state, country, with the geocoder's suggestion).
+  - **The map picker arrives with the post-MVP event map,** and both use the same tile source, decided then.
+  - **Preferred option for then:** self-hosted tiles, a **PMTiles** file (Protomaps) for the region, served by the server on the tailnet: no outside service or usage limits, and it works offline. The alternative is an online OpenStreetMap-based tile provider.
+  - The `map` location source stays in the data model, so map picks need no migration later.
+- **Why:**
+  - GPS, saved places, and manual entry cover nearly every real event without an online dependency.
+  - One tile decision for both map features avoids choosing twice.
+
+### 040. UI direction for Phase 2 screens; SVG layout options before building each screen
+*Decided: 2026-10-29 · Plan: §5 UI direction, §10 Phase 2 open questions*
+
+- **Decision:**
+  - **Garage cards:** ordered by **urgency** by default (overdue → due soon → OK, then most recent activity). Each user can switch to **My order** and drag cards (a per-user setting, #029).
+  - **Vehicle detail:** a header (photo, name, main identifiers, current meter readings) and tabs **Overview** (next due, open squawks, latest fill-ups and fuel economy, last activity), **Timeline**, **Maintenance** (requirements, intervals, bundles), **Fuel** (fill-ups, economy by condition), **Documents**, and **Setup** (meters, profile overrides, custom fields). On phones the tabs are a scrollable row.
+  - **Message center:** an inbox, newest first and unread on top, with a severity marker (info / warning / urgent); each message can be marked read, dismissed, and have one action; filters by severity and vehicle.
+  - **Log viewer:** the Phase 1 viewer stays; search and export come later.
+  - **Garage-friendly:** touch targets at least **48 px**, large numbers, high contrast in both themes, and nothing that needs precise taps (no tiny icons or hover-only controls).
+  - **Quick logging:** the **+ Log** chooser (Fuel-up, Reading, Squawk, Maintenance) remembers the last vehicle and offers "Same vehicle as last time"; the fuel-up form starts with the odometer (last value as a hint), then volume and price; a vehicle card's long-press or ⋯ menu offers "Log fuel-up for this vehicle".
+  - **Process:** before a screen is built, its step plan includes **SVG layout options** in `docs/ui-sketches/` for the human to choose from: usually two or three, or **one when only one makes sense**. The chosen layout is linked from the step plan.
+- **Why:**
+  - Urgency first puts what needs attention on top; a personal order covers households that think in their own order.
+  - The tabs group a vehicle's information the way it's used, and the garage-friendly rules come from using the app with gloves or dirty hands.
+  - Choosing between drawn options is quicker and clearer than describing a layout in words.
+
+### 041. Mobile apps move to post-MVP
+*Decided: 2026-10-29 · Plan: §9 Roadmap (Post-MVP: Mobile), §10 Open questions · Replaces "Phase 4: Mobile"*
+
+- **Decision:**
+  - The Android and iOS apps, and everything that needs them (offline "glovebox", native camera and document scanning, native location, the bundled geocoder), are **post-MVP**.
+  - **Phones use the web UI** over Tailscale in the meantime: camera and photo library through the browser, browser location, and the adaptive narrow layout.
+  - **The phase numbers stay** (Phase 3, then 5 and 6) so existing references remain valid.
+  - Phase 4's open questions move: mobile distribution and camera to Post-MVP; **desktop signing** to Phase 6, since it's needed by the first release with desktop packages.
+- **Why (the human's reasons):** the web UI already works on phones; app signing, sideloading, and distribution are a burden for the first mobile release; and the focus is on core features first.
+
+### 042. Record IDs are UUIDv7; human-friendly record numbers later
+*Decided: 2026-10-29 · Plan: §3 Data model, §9 Roadmap · Was idea 5 in ideas-to-discuss.md*
+
+- **Decision:**
+  - **Every record's ID is a UUIDv7,** generated on the device that creates the record (as the plan already required for offline use).
+  - **The database ID** (plan §6) is a UUIDv7 too.
+  - **Human-friendly record numbers** (e.g. "F-150 entry 42") are **later**, with reports or logbooks (post-MVP). When added, the server assigns them as events finalize, and a migration numbers existing finalized events in finalize order.
+- **Why:**
+  - UUIDv7 starts with the creation time, so IDs sort in creation order: SQLite appends new rows instead of inserting them at random places, and IDs in logs line up with time. It's as unique as random UUIDs, and can only be chosen before records exist.
+  - It reveals roughly when a record was created, which doesn't matter for private, self-hosted data.
+  - Nothing in Phase 2 prints records, and numbers can be added later without losing anything.
+
+### 043. Field-level commands with last-write-wins per field; unknown fields and types are kept
+*Decided: 2026-10-29 · Plan: §3 Sync & conflict handling, Sync protocol · Was idea 1 in ideas-to-discuss.md · **Refines #004** (per record → per field)*
+
+- **Decision:**
+  - **Update commands carry only the fields that changed,** each with its new absolute value, never the whole record.
+  - **Conflicts resolve per field:** the server stores the HLC (and device ID) of the last accepted change **for each field** of each record. An incoming change to a field applies only if its HLC is newer than that field's; changes to different fields always merge. A record's own HLC is the newest of its fields', for ordering pulls.
+  - **Creates** set every field with the command's HLC. **Deletes** are tombstones with their own HLC; a change older than the tombstone is ignored.
+  - **Unknown fields are kept:** an app that receives fields it doesn't know stores and returns them untouched instead of dropping them. **Unknown event types** are kept too and shown as "Unsupported record. Update the app to view."
+  - Finalized events stay immutable (#004); amendments are new records.
+- **Why:**
+  - Whole-record updates from an older app would silently delete fields it doesn't know about.
+  - With field-level commands, last-write-wins per *record* could still drop an older-stamped edit to a *different* field (e.g. price on the laptop, notes on an offline phone). Per-field clocks merge those, like per-setting records do in #029.
+  - The command format is the hardest thing to change after release, so it's settled before the first command exists (Phase 2 milestone 1).
+
+### 044. One background job system on the server
+*Decided: 2026-10-29 · Plan: §6 Data integrity, Backups · Was idea 9 in ideas-to-discuss.md*
+
+- **Decision:**
+  - **One small scheduler inside the server** runs all timed work: the nightly snapshot and periodic integrity checks first (Phase 2 milestone 1), then automatic finalizing, forgotten-job reminders, document expirations, re-geocoding, and later reference data refreshes.
+  - **Each job's last run, result, and next run** are stored in the database and logged.
+  - **Failures become Admin messages** in the message center (once it exists, milestone 3).
+  - **An Admin "Jobs" status view** comes later, when there are enough jobs to need one.
+  - Built on the server's existing async runtime (tokio timers); no scheduler crate.
+- **Why:** one place to see, log, and test timed work, instead of several ad-hoc timers.
+
+### 045. Roles are granted on one asset or on all assets; groups later
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · ideas-to-discuss.md idea 6 (in part)*
+
+- **Decision:**
+  - **A role grant targets one asset, or "all assets".** "All assets" includes assets added later, so a household member gets one grant instead of one per vehicle.
+  - **Grants combine** as the plan already says: a person's permissions on an asset are the union of every grant that covers it.
+  - **The grant's target is an extensible kind** (`Asset(id)` or `AllAssets`), so a third kind, `Group(id)`, can be added later without changing existing grants.
+  - **Groups ("garages") wait** until there's a real need (a club, co-ownership, a second household).
+- **Why:** covers a household with almost no setup, avoids building group screens in Phase 2, and keeps the door open for groups.
+
+### 046. User management: list and detail; server-made temporary passwords; no orange sidebar edge
+*Decided: 2026-10-30 · Plan: §5 UI direction, §6 Users, roles & permissions · Phase plan: phase-2.md step 2g · Sketch: `docs/ui-sketches/p2m2-users-options.svg`, option A*
+
+- **Decision:**
+  - **The Users screen is a list and a detail page** (option A): users on the left, the selected person's roles and account actions on the right; on phones, the list then a page per person. Per-vehicle roles go under the person's **Roles** in milestone 4.
+  - **Temporary passwords are made by the server** (12 characters from the setup code's unambiguous alphabet) and shown to the Admin **once**, when adding a user or resetting a password. The user must choose their own at their next sign-in. Admins never type or see anyone's real password.
+  - **Disable and reset ask "Are you sure?" first.** For the last enabled Admin, disabling and changing the role are unavailable, with the reason shown.
+  - **Admin mode shows as the orange mode chip and the banner only**, with no orange edge on the sidebar (removed from step 2f).
+- **Why:** one page per person has room for per-vehicle roles later and keeps destructive actions visible; server-made temporary passwords are never weak or reused; the banner and chip are enough to make Admin mode unmistakable.
+
+### 047. Password recovery: a one-time code in the server log, for Admins
+*Decided: 2026-10-30 · Plan: §6 Users, roles & permissions · Phase plan: phase-2.md step 2h · Extends #028*
+
+- **Decision:**
+  - The sign-in screen has a **"Forgot your password?"** link for everyone. It asks for the username and always answers **"Ask your Admin for further instructions."**, whatever the username is.
+  - **Only for an Admin account** does the server then write a **one-time recovery code** to its log (like the setup code). Entering the username, the code, and a new password signs them in and **ends all their other sessions**.
+  - The code works **once** and **expires after 15 minutes**; requests and wrong codes count toward the sign-in attempt limit. It's kept in memory only.
+  - Anyone else who forgot their password asks an Admin, who resets it from the Users screen (#046).
+- **Why:**
+  - If the only Admin forgets their password, there's otherwise no way back in.
+  - Only someone who can read the NAS's log can finish a recovery, like first-Admin setup; anyone on the tailnet can ask, but can't use the code.
+  - One generic answer for everyone reveals nothing about which usernames exist or which are Admins, and a real Admin knows to check the log.
+
+### 048. Settings: tabs and buttons; the units, formats, and defaults offered
+*Decided: 2026-10-30 · Plan: §5 UI direction · Phase plan: phase-2.md step 2i · Sketch: `docs/ui-sketches/p2m2-settings-options.svg`, option B · Refines #029*
+
+- **Decision:**
+  - **Layout (option B):** two tabs, **You** and **Household** (the Household tab works only in Admin mode). Each setting is a row of buttons; on the You tab each has a **"Use household default"** switch. Currency and language use a list. The theme stays under **This device**. Changes save at once.
+  - **Choices and household defaults** (the default is listed first):
+    - **Distance:** miles, kilometers.
+    - **Fuel volume:** US gallons, imperial gallons, liters.
+    - **Fuel economy:** mpg (US), mpg (UK), L/100 km, km/L.
+    - **Pressure** (e.g. tires): psi, kPa, bar.
+    - **Date format:** **30 Oct 2026**, 10/30/2026, 30/10/2026, 2026-10-30.
+    - **Currency:** any ISO 4217 code; default USD, with common ones listed first.
+    - **Language:** English (US) only, for now.
+  - **Storage (refines #029):** one preferences record for the household and one per user, **one field per setting**. With last-write-wins per field (#043), each setting still merges on its own, as #029 requires. A user's unset field means "follow the household default".
+- **Why:** the human preferred buttons and an explicit "use household default" switch; pressure and the day-month-name date were asked for; per-field records give #029's per-setting merging without a second kind of record ID.
+
+### 049. Leave Admin mode and sign out when idle
+*Decided: 2026-10-30 · Phase plan: phase-2.md milestone 3 (its first step) · Refines #028 (sessions) and #048 (adds a setting)*
+
+- **Decision:**
+  - **The app watches for inactivity** while someone is signed in. Only real input counts: pointer down, key down, wheel or scroll, touch. Background requests don't.
+  - **After 15 idle minutes in Admin mode,** the app leaves Admin mode by itself (as **Leave** does) and shows a short notice: "Admin mode ended after 15 idle minutes."
+  - **After a longer idle time,** the app signs out and the sign-in card shows a short notice ("You were signed out after N idle hours."). A setting, **Sign out when idle**, offers 1 hour, 4 hours, **8 hours** (default), 24 hours, and Never.
+  - **Keeping the server in step:** while in Admin mode, the app checks its session at most once a minute (the server's own interval for recording use), and only if there was input since the last check. Real work keeps Admin mode alive on the server even without other requests, and the app notices at once if the server ended Admin mode or the session.
+  - **The server stays the authority:** its 15 idle minutes for Admin mode and 30 idle days for sessions are unchanged and still apply when the app is closed.
+  - **How (no new dependency):** one long-lived `document::eval` script records the last input and reports the idle time to Rust about every 15 seconds; this works on web and desktop. The decision itself (stay, keep alive, leave Admin, sign out) is a pure function, unit-tested.
+  - **The setting is per person** (settled 2026-10-31, milestone 3 plan): a new field on the preferences record (#048), so each person chooses their own and the household sets the default, like the units.
+- **Why:**
+  - Today the app only notices the end of Admin mode at the next navigation or click, so the orange banner can outlive Admin mode on a screen left open.
+  - A browser left open could stay signed in for up to 30 idle days.
+  - Raised by the human during the milestone 2 NAS test.
+
+### 050. Messages are derived from the current state; only read and dismissed are stored
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md milestone 3 · Refines #040 (message center), #044 (job failures become Admin messages)*
+
+- **Decision:**
+  - **A message is worked out from what's true now,** not saved when something happens: "Last night's snapshot failed" exists while the snapshot job's latest result is a failure; later, "Oil change due soon" exists while the interval says so. When the cause is fixed, the message goes away by itself.
+  - **Each message has a stable key** built from its cause (e.g. `job-failed:nightly-snapshot:<finish time>`), so the same cause is the same message everywhere, and a new failure is a new message.
+  - **Only each person's mark is stored:** read and dismissed, per key, through the command pipeline. A dismissed message stays dismissed; a new key shows again.
+  - **Who sees a message** follows roles and mode: Admin messages only in Admin mode; asset messages only for assets the person can view.
+- **Why:**
+  - The plan says messages are "generated locally from synced data", so they work offline with no push infrastructure (Phase 3); derived messages need no message table to sync or clean up.
+  - A message can't go stale: one that's still showing is still true.
+  - The human chose this over storing each message as a row (which would keep a history but need its own syncing and cleanup).
+
+### 051. A per-vehicle dashboard and a "Ready to use?" summary
+*Decided: 2026-10-31 · Plan: §4 Readiness, Squawks, Asset profiles; §5 UI direction; §10 Phase 5 open questions · Refines #040 (the Overview tab)*
+
+- **Decision:**
+  - **The vehicle's Overview tab is its dashboard:** "Ready to use?" at the top, then time and distance to each major service, open and deferred squawks (blocking ones first), latest fill-ups, and last activity. The Garage card shows the same readiness as a badge.
+  - **Readiness is generic, from profiles:** requirements and official documents can be **needed for use**; profiles set the defaults per kind, and each asset can change them. Each profile lists **operation types** ("ready for what?"), each adding its own items (e.g. IFR, for hire, heavy towing). No kind-specific code.
+  - **Squawks can block use,** marked when opened or at any disposition.
+  - **Each item shows why** (✓ or ✗, its due date or meter value, a link), with a warning before it's due.
+  - **Advisory only:** the summary reflects the records and certifies nothing; for aircraft, the pilot in command decides airworthiness.
+  - **Phasing:** the Overview shell in Phase 2 milestone 4; the squawk flag in milestone 7 (it can't be filled in later); the summary, operation types, and service countdowns in Phase 5; aviation items in the aircraft phase; a person's currency (e.g. a pilot's flight review and medical) post-MVP, with credentials.
+- **Why:**
+  - The human asked for one place per vehicle showing open squawks and what's coming due, and for aircraft, airworthiness for a flight.
+  - "Road-ready" and "airworthy" are the same question; making it data keeps aircraft possible without special cases.
+  - Readiness depends on the intended use (IFR needs more than VFR), so a single yes/no would be wrong.
+
+### 052. Groups: every asset in exactly one; roles can be granted per group
+*Decided: 2026-10-31 · Plan: §4 Asset, Asset lifecycle & components; §5 UI direction; §6 Users, roles & permissions · Phase plan: phase-2.md milestone 4 · Was idea 6 in ideas-to-discuss.md · Extends #045*
+
+- **Decision:**
+  - **Every asset is in exactly one group,** the place it lives ("Garage", "Hangar", "Boathouse", "Storage", …). Each group has a **name** and an **icon** from a built-in set; an uploaded logo can come after Phase 2 milestone 8 (images).
+  - **A default group,** "Garage" with the garage icon, is created at setup, so every asset always has a group and a one-place household never has to think about it.
+  - **Roles can be granted on a group,** as a third grant target next to one asset and all assets (#045 reserved it). A group grant covers every asset in the group, including ones added later. Permissions remain the union of all of a person's grants.
+  - **Assets can move** between groups, kept in the asset's history. **Access follows the current group;** before a move is confirmed, the app shows who gains and who loses access.
+  - **Components** are in their parent's group while installed and inherit its access; uninstalled, they have their own group.
+  - **The household Admin stays global** (users, server, settings). A per-group Admin could come much later.
+  - **The Garage screen** shows a section per group; filters can use groups.
+  - **Built in Phase 2 milestone 4,** with assets: the groups table, the default group, the asset's group, group grants, moving assets, and a screen to manage groups (SVG options first, #040).
+- **Why:**
+  - The human wants every asset assigned to a group with its own name and icon, and different permissions per group.
+  - One group per asset keeps permissions and the Garage screen easy to follow; an asset that needs different people uses a per-asset grant.
+  - Deciding before milestone 4 means the first asset is already in a group, with nothing to move later.
+
+### 053. Messages screen: list and detail, with a divider; the badge and the urgent banner
+*Decided: 2026-10-31 · Plan: §5 In-app notifications · Phase plan: phase-2.md step 3e · Sketches: `docs/ui-sketches/p2m3-messages-options.svg` (option B), drawn as `docs/ui-sketches/p2m3-messages-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **List and detail,** like the Users screen (#046): short rows on the left (severity stripe and word, title, time, an unread dot), the chosen message on the right (text, Admin-only details, one action, **Dismiss**). **Opening a message marks it read;** there's no Mark read button. Dismissing it chooses the next one.
+  - **A clear divider on wide and medium screens:** a full-height grey line between the columns, with the list on a slightly darker panel.
+  - **Phones:** the list, then a page per message with **← Messages**.
+  - **Filters:** All, Urgent, Warning, Info (by vehicle once vehicles exist, milestone 4). Newest first, unread on top.
+  - **Everywhere:** an unread badge on **Messages** (sidebar and phone tabs; Admin messages count only in Admin mode), and a red **urgent banner** under the top bar on every screen while an urgent message is showing, with **View**.
+  - **Severity** is a colour stripe (red urgent, amber warning, blue info) **and** the word, never colour alone.
+- **Why:** the human chose option B and asked for a stronger line between the columns on large screens. The list stays tidy as Phase 5 adds maintenance, squawk, and document messages, and it works like Users.
+
+### 054. Test timers: minutes instead of hours, on test images only
+*Decided: 2026-11-01 · Phase plan: phase-2.md step 3i · Applies to #044 (jobs), #047 (recovery codes), #049 (idle)*
+
+- **Decision:**
+  - **Two locks:** test timers are **built only into test images** (the `test-timers` build option, turned on only by the Dev image workflow for `dev` and `milestone-…` images; never in a release or the main gate's check build), and **switched on only by `VEHICLEMANAGER_TEST_MINUTES`** = N, from 1 to 5. Anything else, or the setting on a release, is ignored with a warning.
+  - **What N shortens:** Admin mode's idle limit → N minutes; Sign out when idle 1 h / 4 h / 8 h / 24 h → N / 2N / 3N / 4N minutes (still in order); the Admin keep-alive and the server's "last used" → every 15 seconds; messages reload on an open screen → every minute; the nightly snapshot and the hourly check → every N minutes; recovery codes → N minutes.
+  - **Never shortened:** the sign-in attempt limit (it protects against guessing) and the 30-day session.
+  - **The server decides and tells the app** with the session (`SessionInfo::timers`), so the browser, the phone, and the desktop app all follow the NAS's setting.
+  - **Visible:** a `TEST TIMERS ON` warning at startup, a **TEST TIMERS · N min** tag in the top bar, and each sign-out choice shows its test length.
+- **Why:** manual test plans had steps of an hour or a night; the human asked for 1–5 minute timers on milestone test builds. Two locks make sure a real install can't run them.
+
+### 055. Notes are a Markdown subset, shown as plain text until rendering arrives
+*Decided: 2026-11-01 · Plan: §3 Event, Squawks, Asset · Phase plan: phase-2.md milestone 4 · Was idea 8 in ideas-to-discuss.md*
+
+- **Decision:**
+  - Every free-text notes field (an asset's description first, then event notes, squawks, tasks, documents) is stored as **text in a small Markdown subset:** bold, italics, lists, and links.
+  - **For now it's entered and shown as plain text** (the Markdown characters show as typed). A Markdown editor and rendering (screens, PDF and Word reports) come later.
+  - Nothing else (no HTML, images, or tables); anything outside the subset shows as typed.
+- **Why:** changing the format later would mean converting every note; a subset keeps notes readable as plain text today and renderable later, in reports too (the idea's own suggestion, chosen by the human).
+
+### 056. Vehicles: groups in the sidebar, cards per group, a Sort menu, and adding a vehicle in two steps
+*Decided: 2026-11-01 · Plan: §5 UI direction (Home "Garage" screen) · Phase plan: phase-2.md step 4e · Sketches: `docs/ui-sketches/p2m4-garage-options.svg` (option A), drawn as `docs/ui-sketches/p2m4-garage-chosen.svg` · Refines #040*
+
+- **Decision:**
+  - **Each group is a sidebar item,** with its icon and name, opening that group's own page (only its vehicles; **+ Add vehicle** starts in it). Above them, **All vehicles** shows every group as a section; it appears only when the person can see more than one group, so a one-group household sees just **Garage**. The screen called "Garage" goes away: "Garage" only ever means the group. The sidebar shows the groups the person can see a vehicle in (every group, for the household's Admin in Admin mode), in name order; on the icon-only sidebar, each group shows its icon with its name as a tooltip. The lower "Vehicles" placeholder becomes **Groups** (managing groups, the household's Admin, step 4g).
+  - **Phones:** the first bottom tab is **Vehicles**; a menu at the top picks All vehicles or a group, and the ☰ menu lists the groups too. Each group page has its own address, so bookmarks and Back work per group.
+  - **Cards in a grid, a section per group** (its icon, name, and count) on All vehicles. Cards show the name, kind with year, make, and model, and the plate or serial number; photos, readings, due items, and squawks fill them in as milestones 6–8 add them. **Show archived** adds retired and disposed vehicles, dimmed.
+  - **A Sort menu** instead of the earlier "urgency or My order" toggle: **Newest activity**, **Name (A–Z)**, or **Custom**. Custom shows **Arrange**, which puts ▲▼ buttons (48 px) on each card until **Done**. The sort applies within each group; groups stay in name order. The sort and the custom order are each person's own, saved like their other settings. **Urgency** joins the menu when vehicles have due items (Phase 5).
+  - **+ Add vehicle** (the household's Admin, in Admin mode) is a two-step dialog: the **kind** as large tiles, then the **details** (name, make, model, year, colour, that kind's identifiers, group).
+  - **Pinning** vehicles to the top of their group is for later (idea 15).
+- **Why:** the human chose option A, asked for the common Sort-menu convention, and asked for the groups in the sidebar (which also ends "Garage" meaning both a screen and a group); cards are where the Garage is heading (#040), and choosing the kind first keeps the details form to that kind's identifiers.
+
+### 057. A vehicle's page (header, tabs, Overview, Setup); stable field keys; calculations in Phase 5
+*Decided: 2026-11-01 · Plan: §3 Custom fields, §5 UI direction · Phase plan: phase-2.md step 4f · Sketch: `docs/ui-sketches/p2m4-vehicle-options.svg`, option A · Refines #040, #051*
+
+- **Decision:**
+  - **Layout (option A):** a header (name; kind, year, make, model, colour; identifiers and group as chips; status), then the tabs Overview, Timeline, Maintenance, Fuel, Documents, Setup across the top (scrolling sideways on phones). Tabs without content yet say which milestone fills them.
+  - **Overview** is the dashboard (#051) as panels: Ready to use? and Coming due (Phase 5), Open squawks (milestone 7), Latest fuel-ups (milestone 6), and the meters (now).
+  - **Setup** is one page of sections: Details (Edit details), Meters (+ Add meter; edit, remove), Custom fields (+ Add field; on/off, edit), Required readings (a grid of meters × event kinds), and Group and status (Move to another…, with who gains and loses access shown first; the status; Delete…, with the name typed).
+  - **Every custom field has a stable key** (e.g. `trip-ev-distance`) beside its label: from the profile (or later a catalogue) for built-in fields, made from the label (unique on the vehicle) for fields people add. Formulas, reports, comparisons across vehicles, and voice logging (idea 14) refer to fields by key, so renaming a label never breaks them. The key is shown, read-only, on Setup.
+  - **Calculated fields** (formulas over built-in and custom fields, unit-aware, worked out when shown and never stored) come in **Phase 5**, with fuel-economy statistics. A **catalogue of ready-made fields and sets** (e.g. "Trip computer (hybrid)": trip distance, time, EV distance, fuel economy) is idea 16.
+- **Why:** the human chose option A and asked for richer trip-computer fields and calculations; keys cost little before any field has values and would mean backfilling every vehicle later.
+
+
+### 058. Groups screen (list and detail) and roles as a list with + Add role
+*Decided: 2026-11-01 · Plan: §6 Roles · Phase plan: phase-2.md step 4g · Sketch: `docs/ui-sketches/p2m4-groups-roles-options.svg` (Groups option B, roles option A) · Refines #046, #052*
+
+- **Decision:**
+  - **Groups** is a screen under Manage (the household's Admin, in Admin mode), laid out like Users: the groups on the left (icon, name, count; **+ Add group**), the chosen group on the right: its **name and icon** (saved when changed), its **vehicles** (each opens its page), **who sees it** (each person's role there and where it comes from: all vehicles, this group, or one of its vehicles), and **Delete group**, only for an empty group that isn't the last (otherwise greyed out with the reason). On phones: the list, then a page per group. Moving a vehicle stays on its own Setup tab, with its preview (#057).
+  - **Roles on the Users screen** are a list of the roles the person has, each with its role menu and ✕: on **all vehicles**, **a group**, or **one vehicle**. **+ Add role** opens a dialog: what it's on (all vehicles, a group, or a vehicle) and the role; adding one where they already have a role replaces it. A note says roles add up: on each vehicle, the highest applies.
+  - The list of users summarises each person's roles (e.g. "Admin · all vehicles", or "Maintainer · Hangar" when they have one role elsewhere, or "3 roles").
+- **Why:** the human chose as recommended: seeing who can see a group belongs next to the group, and a short list of roles avoids menus that look like they lower a role but can't (the highest role always applies).
+
+### 059. Location: our own geocoder on a GeoPackage built with GDAL; saved places are each person's aliases
+*Decided: 2026-11-02 · Plan: §3 Event location, Saved places, Reverse geocoding · Phase plan: phase-2.md milestone 5 · Refines #038*
+
+- **Decision:**
+  - **The geocoder is our own,** with only what's needed: the containing country and state or province, the nearest boundary when a point is outside every polygon (#038), and the nearest city with its **IANA time zone** (milestone 6 needs one on every event). **Lookups go through a spatial index** (R-tree), never a scan.
+  - **The data file is a GeoPackage** (`.gpkg`, the OGC standard): a SQLite database with three layers (countries, states and provinces, cities), each with its R-tree index, and a metadata table (data version, sources, checksums, licences). The server reads it read-only through `sqlx`; no new dependency.
+  - **It's built in a short-lived Docker stage** from the official GDAL image (pinned version and digest): pinned GeoNames **`cities500`** and Natural Earth 1:10m downloads, refused unless their SHA-256 matches, then `ogr2ogr`. Only the `.gpkg` reaches the runtime image; GDAL never runs on the NAS. A development script does the same with `docker run --rm`. The file is never committed.
+  - **Cities: GeoNames `cities500`** (every place with at least 500 people), changed from #038's `cities1000`: the raw file grows from about 32 MB to 41 MB, for better accuracy in small places.
+  - **If the file is missing or broken,** the server still starts; location falls back to saved places and typed entry, and an Admin message says so.
+  - **Saved places are each person's own and act as aliases:** a name, coordinates, a radius (150 m by default, 25 m–2 km), and the city, state, and country. Choosing one, or being inside its radius, copies all of it into the event, so editing or removing a place never changes past events. Each person manages their own; no role is needed.
+  - **Places** is a screen under Manage for everyone; attribution goes in an **About** section on Diagnostics.
+- **Why:**
+  - The human asked for our own lookup with a good spatial index, and for common file formats where possible. GeoPackage is the standard, opens in QGIS and GDAL, and is SQLite, which the server already reads.
+  - SpatiaLite needs a native extension; FlatGeobuf needs one file per layer and two new crates; GeoJSON has no index; GDAL is the reference tool for writing GeoPackages, and a build stage keeps it off the NAS.
+  - `cities500`: the human's choice; it names more small places correctly, and the size is fine on the NAS (phones are post-MVP, #038's budget).
+  - Saved places as each person's aliases: the human's choice; copying keeps events unchanged when places change.
+
+### 060. Places: one list with a place dialog that puts "where" first
+*Decided: 2026-11-02 · Plan: §3 Event location, Saved places · Phase plan: phase-2.md step 5f · Sketch: `docs/ui-sketches/p2m5-places-options.svg` (Places A, dialog A) · Refines #059*
+
+- **Decision:**
+  - **Places** (under Manage, for everyone): one list of the person's saved places, each with its name, city, state, and country, its radius, **Edit**, and **Remove**; **+ Add place**. Phones show the same list; tapping a place edits it.
+  - **The place dialog is the location picker** milestone 6's events reuse, in three parts: **1 · Where** (**Use my location**, or **Type coordinates**, with the accuracy and age of the fix), **2 · Place** (the suggestion fills city, state or province, and country, all editable; any city or state can be typed), **3 · Name and radius**.
+  - **What it can say:** offshore ("nearest is …, check it"); inside a saved place ("You're at Home garage; its city, state, and country are used"); place lookup unavailable ("type the city, state, and country").
+  - **About** on Diagnostics: the app version, the place data version (or "not available"), and the GeoNames and Natural Earth credits.
+  - **Not built from the sketch:** its "typed" mark on places whose city isn't from the place data. A saved place doesn't record where its city came from, and the city as typed already shows.
+- **Why:** the human chose as recommended: places are short lists, one dialog serves adding, editing, and later events, and putting "where" first follows the plan's fallback order and shows where each value came from.
+
+### 061. The location picker offers nearby places, with their distance, direction, and type
+*Decided: 2026-11-02 · Plan: §3 Reverse geocoding · Phase plan: phase-2.md step 5f.2 · Refines #059, #060*
+
+- **Decision:**
+  - After **Use my location** or typed coordinates, the picker lists **up to 5 nearby places** in the point's country, **within 25 km**, each with its **name**, **distance and compass direction** (eight points: N, NE, E, …, in the person's miles or kilometers), and **type**. Choosing one fills **City or town**; the state or province and country still come from the boundaries at the point. Typing any city still works.
+  - **The default choice is the nearest place that isn't a district;** districts stay in the list, labelled. A district is GeoNames `PPLX`, **or a numbered part of a bigger place within 25 km**: its name, a space, then a digit (e.g. "Paris 04 Hôtel-de-Ville" beside Paris, "Lyon 3e" beside Lyon), because GeoNames codes some cities' districts as ordinary places (asked for during the test run).
+  - **Types,** from GeoNames' feature code and population (population only approximates size): **Capital** (`PPLC`), **District** (`PPLX`), **Locality** (`PPLL`), otherwise **City** (100,000+ people), **Town** (10,000+), or **Village**; a seat of an administrative division (`PPLA`–`PPLA4`) adds its role, e.g. "Town · county seat".
+  - **The data gains each place's feature code and population, and leaves out abandoned, destroyed, and historical places** (`PPLQ`, `PPLW`, `PPLH`, `PPLCH`), which could otherwise be "the nearest town". The data version becomes **`2026-11-02.2`** (same sources, new build); the file's format version becomes 2.
+  - **Layout:** option A of `docs/ui-sketches/p2m5-nearby-options.svg`: a list of tappable rows above **City or town** ("Nearby: choose the city or town"), the chosen one marked; typing over the field still works.
+  - **Where's buttons show the choice:** **Use my location** and **Type coordinates** are both plain until one is chosen; the chosen one is highlighted (asked for during the test run).
+- **Why:** the human asked for choices on "my location"; the nearest GeoNames place can be a district in a big city or a small locality, and seeing the few nearest, labelled, lets the person pick the name they use.
+
+### 062. A test server beside the everyday ("main") server; migrations freeze in `dev`
+*Decided: 2026-11-03 · Plan: §7 Deployment · Phase plan: phase-2.md, between milestones 6 and 7 · Closes idea 20 · Refines #026, #054*
+
+- **Decision:**
+  - **Two servers on the NAS, each its own Container Manager Project with its own data folder:**
+    - **Main**, the one the household uses: `/volume1/docker/vehicle_manager`, port 8410, `https://<nas>.<tailnet>.ts.net`. It runs **`:dev`**.
+    - **Test**: `/volume1/docker/vehicle_manager_test`, port 8411, `https://<nas>.<tailnet>.ts.net:8443`. It runs **`:milestone-<name>`** images (or `:dev`, or a `:sha-` build), and test plans run on it from now on.
+    - **Today's install becomes the test server** (its test vehicles and events with it); **main starts empty**, with a new Admin.
+  - **`:dev` is built without test timers;** milestone images keep them (#054). So main can't run test timers even by mistake, and test timers stay a test-server thing.
+  - **A server instance name,** `VEHICLEMANAGER_INSTANCE` (empty on main; `test` on the test server):
+    - it names the session cookie (`vehiclemanager_session` on main, `vehiclemanager_test_session` on test). Both servers answer on the same NAS hostname, and browsers share cookies across ports, so they'd otherwise sign each other out;
+    - the app shows a **TEST SERVER** tag in the top bar and on the sign-in card, and the browser tab's title says "(test)".
+  - **The test server keeps its own data.** When a test needs real data, a documented step copies main's newest nightly snapshot in (it stays on the NAS). The copy keeps main's database ID, which doesn't matter until sync arrives (Phase 3).
+  - **Migrations freeze once merged into `dev`:** main runs `dev`, so a merged migration never changes. One on a milestone branch may still change until its PR merges. This replaces "may change until v0.2.0". **Existing migration files keep their old header comment:** sqlx checksums each applied migration, comments included, so editing one would make existing databases refuse to open. New migrations start with: `-- Final once merged into dev (decision #062).`
+- **Why:** the app is close to everyday use (the human, 2026-11-03). Tests write records that can't be deleted (finalized events are only corrected), and test timers change how a server behaves; neither belongs on the household's server. Waiting for the v0.2.0 release would keep Phase 2's work out of real use until the end of the phase.
+- **Unaffected:** releases (`:<version>`, `:latest`) and the release process; `main` still holds released code only.
+
+### 063. Squawks have a severity: Low, Medium, or High; High keeps the asset out of use
+*Decided: 2026-11-03 · Plan: §3 Squawks, Readiness · Phase plan: phase-2.md milestone 7, choice 1 · Refines #051 · Raised by sub-plan 02 (voice capture)*
+
+- **Decision:**
+  - **Every squawk has a severity: Low, Medium, or High.** **A new squawk starts at Low**: a squawk doesn't keep an asset out of use unless someone says so.
+  - **High keeps the asset out of use** (what aviation calls a grounding squawk). It replaces #051's yes-or-no "blocks use": Phase 5's readiness summary counts High squawks.
+  - **Each kind's profile names High:** "Not drivable" (car, truck, motorcycle), "Not towable" (trailer), "Out of service" (generator, other equipment); aircraft (later) "Grounding". Shown as e.g. "High · Not drivable". A new kind brings its own word.
+  - **Severity can change** when the squawk is opened and at any disposition (signed off or deferred), and each change is kept in its history.
+- **Why:** the human, 2026-11-03: "A squawk should not block by default. In aviation there are 'grounding' squawks. I like low/medium/high severity with high as 'grounding'." Sub-plan 02 had asked whether a spoken squawk should carry a severity; three levels answer that too, and one of them is what readiness needs.
+- **Unaffected:** the required disposition at every maintenance or repair (plan §3), and deferrals not carrying over.
+
+### 064. The household chooses what squawks are called: Issues (the default), Squawks, Faults, or Write-ups
+*Decided: 2026-11-03 · Plan: §3 Squawks, §5 Preferences · Phase plan: phase-2.md milestone 7, choice 13 · Refines #051, #063*
+
+- **Decision:**
+  - **The Admin chooses one word for the whole household,** in Settings' household section: **Issues** (the default for a new household), **Squawks**, **Faults**, or **Write-ups**. People can't choose their own; every screen, message, and button uses the household's word.
+  - **Only the words on screen change.** The code, the API, the database, and these documents keep saying "squawk" (AGENTS.md terminology).
+  - Messages that name them get the word, its plural, a capitalized form, and its article ("an issue", "a squawk") from the translator, so no screen has to pass it.
+- **Why:** the human, 2026-11-03: "Squawk is familiar in the aviation community, but might not be outside of it." One household-wide word keeps lists that mix vehicles consistent; per-kind words were considered and turned down.
+- **Unaffected:** what squawks are and do (#051, #063).
+
+### 065. Photos and documents are files on disk, each named by its SHA-256; the database holds what they are
+*Decided: 2026-11-04 · Plan: §4 Asset, Attachment; §7 Data & operations · Phase plan: phase-2.md milestone 8, question 1 · Closes idea 3 · Refines #035, #036*
+
+- **Decision:**
+  - **Every stored file** (a photo's JPEG and thumbnail, a kept original, a PDF and its first-page thumbnail) **is a file in `data/files/`,** named by the SHA-256 of its contents (`data/files/ab/cdef…`), behind a small storage interface in `storage`. It's written once and **never changed**; the same file attached twice is stored once.
+  - **The database holds the attachment records** (owner, kind, size, page count, original name, photo metadata) and the hashes they point to.
+  - **The integrity check** verifies files against their hashes, and reports a missing or damaged one as an Admin message (#050).
+  - **A file is erased only when nothing points to it any more** (removed attachments are soft-deleted, #043).
+  - **Backups and restores are the database plus `data/files/`.** Nightly snapshots stay database-only (#035): files never change, so the folder needs no copies of its own. Copying main into the test server (#062) copies both.
+- **Why:** the plan kept photos as blobs in the database, but every nightly snapshot copies the whole database and 7 are kept, so each photo and PDF would take about 8× its size on the NAS. Files named by their hash keep snapshots small, make damage detectable, and can move to other storage later without touching the records.
+- **Unaffected:** the photo sizes, originals, and metadata (#036); the PDF limit and viewer (#037); lazy blob sync (Phase 3).
+
+### 066. License plates are their own records, with an issuing authority and a history
+*Decided: 2026-11-04 · Plan: §3 Official asset documents; §4 Asset · Phase plan: phase-2.md milestone 8, question 5*
+
+- **Decision:**
+  - **A plate is a record on the vehicle:** an issuing authority (a US state or Canadian province from a list, a country, or other text), a number, and from / until dates. **The current plate** shows on the vehicle's page; **earlier ones are its history,** e.g. after a move to another state.
+  - **A registration links to the plate it's for;** renewing the registration updates that plate's expiration.
+  - **Plates only, for now.** Other identifiers (VIN, serial, a boat's registration number) stay typed identifiers; the record is general enough to add other kinds later.
+  - **Existing plates move over:** a migration turns each `plate` identifier into a vehicle's first plate record, with **no authority yet**, and the vehicle's page asks for one.
+- **Why:** the human, 2026-11-03: a plate belongs to a state and changes when the vehicle moves; a typed identifier has neither an authority nor a history.
+- **Unaffected:** the other typed identifiers (#030).
+
+### 067. Lifecycle events: Acquired, Sent out, Returned, and Disposed; a disposed vehicle takes corrections but nothing new
+*Decided: 2026-11-05 · Plan: §3 Asset lifecycle & components · Phase plan: phase-2.md milestone 9, questions 1–4 · Refines #034*
+
+- **Decision:**
+  - **Four new kinds of event** on a vehicle's Timeline, from **+ Log**, each with attachments and the normal draft, finalize, and correction rules (#034):
+    - **Acquired:** date, from whom, price and currency, condition notes, the starting readings. One per vehicle, added any time (vehicles already in the app get one when someone has the details); the add-vehicle form doesn't ask for it.
+    - **Sent out:** date, the shop, a work order number, the expected return date, shipping and tracking, the estimated cost. Sets the status to **Out for service**.
+    - **Returned:** date, the final cost, notes. Sets the status back to what it was before.
+    - **Disposed:** how (sold, traded in, scrapped, given away, returned to the vendor, lost or stolen, other), date, to whom, price, the final readings, notes. Sets the status to **Disposed**.
+  - **Who:** a Maintainer records Sent out and Returned; the vehicle's Admin records Acquired and Disposed. The shop's work while the vehicle is out is an ordinary maintenance job, performed by the shop.
+  - **A disposed vehicle takes no new records** (events, squawks, documents) once its disposal is finished, but **corrections are still allowed** on its finished records, including the disposal itself (correcting it to "not disposed" undoes a mistake). It stays viewable and in reports.
+  - **An overdue return:** a day after the expected return date with no Returned event, a message (#050) for the vehicle's Maintainers and whoever sent it out.
+- **Why:** the human, 2026-11-05: questions 1, 3, and 4 as recommended; for 2, "Corrections can be done to disposed assets, but no new events."
+- **Unaffected:** the five statuses and archiving (milestone 4); delete for mistakes.
+
+### 068. Reference documents (recalls and bulletins); requirements get a compliance mode and an applicability
+*Decided: 2026-11-05 · Plan: §3 Requirements & compliance; §4 Requirement, ReferenceDocument · Phase plan: phase-2.md milestone 9, questions 5–6*
+
+- **Decision:**
+  - **A reference document** is a shared household record: type and issuing authority, reference numbers, title, description, remedy, issued and effective dates, a revision, applicability as written, a URL, and attachments. A Maintainer adds one from a vehicle's Maintenance › Set up, which also makes that vehicle's requirement for it; other vehicles can link the same record. A household-wide list waits.
+  - **Every requirement has a mode:** **Recurring** (with its rules, as before) or **One-time** (the first finished task that does it closes it). Initial-then-recurring and terminating-action modes are Phase 5.
+  - **Every requirement has an applicability:** **Applies** (the default), **Not applicable** (a reason required; out of the schedule but still listed), or **Under review**. Its status (open, complied, active, not applicable) is worked out, not stored.
+- **Why:** the human, 2026-11-05, as recommended; the plan's aircraft-ready groundwork for Phase 2.
+  - **Its types:** recall, technical service bulletin, service bulletin, manufacturer schedule, other (airworthiness directives come with aircraft).
+  - **Its attachments belong to it, not to a vehicle** (2026-11-05): anyone who can see a vehicle whose requirement links it can read it and its attachments. **Changing it** needs a Maintainer of every vehicle that links it, or the household's Admin in Admin mode, since a change shows on all of them.
+- **Unaffected:** interval rules and service bundles (#031).
+
+### 069. Everything shows only if the person's role, capped by their current mode, allows it
+*Decided: 2026-11-05 · Plan: §5 UI direction; §6 Users, roles & permissions · Phase plan: phase-2.md milestone 9, questions 7–8 · Refines #045, #046*
+
+- **Decision:**
+  - **A screen, tab, button, menu item, or field shows only if the person may use it** with their role capped by their current mode (on that vehicle, where roles are per vehicle). This holds for every role and mode, not just the Admin's. Nothing is shown only to be refused.
+  - So **Users, Groups, and Settings' Household tab** show only for the household's Admin in Admin mode; the mode menu is the way in.
+  - **The server still checks everything;** hiding is only so people aren't shown what they can't do.
+- **Why:** the human, 2026-11-05: "things should only show if the user's currently-selected role allows them to see/use it. Not just for admin." `v0.2.0` is when the rest of the household starts using the app.
+- **Unaffected:** the vehicle page's "view only" note; the mode rules and timeouts (#049).
+
+### 070. From `v0.2.0` on, the main server runs release images; the test server runs the others
+*Decided: 2026-11-07 · Plan: §7 Deployment, §8 Versioning · Phase plan: phase-2.md, the `v0.2.0` release plan, question 1 · Refines #062*
+
+- **Decision:**
+  - **Main runs a release's image** (`:0.2.0`, then each new release's `:X.Y.Z`), set in its `.env` as `VEHICLEMANAGER_IMAGE_TAG`. It moves to a new release by changing that tag; it never runs `:dev` again.
+  - **The test server runs everything else:** `:milestone-<name>`, `:dev`, or a `:sha-` build (unchanged from #062).
+  - **`:latest`** (pushed with each release) is not used on the NAS, so an update is always a deliberate change of tag.
+  - Release images are built without test timers, like `:dev` (#054).
+- **Why:** the human, 2026-11-07, as recommended: from `v0.2.0` the rest of the household uses the main server, so its records should change only at a release, after the regression pass, not whenever `dev` moves.
+- **Unaffected:** migrations still freeze once merged into `dev` (#062), since every release comes from `dev`.

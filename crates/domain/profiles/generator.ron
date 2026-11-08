@@ -1,0 +1,18 @@
+// Generator (decision #030): run hours, which a fuel-up requires.
+(
+    id: "generator",
+    version: 2,
+    name: "profile-generator",
+    event_kinds: [fuel, reading, maintenance, repair],
+    sections: [],
+    identifiers: [
+        (kind: "serial", name: "identifier-serial"),
+    ],
+    // What a High squawk means for this kind (#063).
+    high_severity: "squawk-high-out-of-service",
+    documents: [],
+    meters: [
+        (name: "meter-run-hours", dimension: duration, unit: Some(hours), precision: 1, required_for: [fuel]),
+    ],
+    fields: [],
+)

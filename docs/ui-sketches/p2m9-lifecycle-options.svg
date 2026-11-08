@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2720" viewBox="0 0 1560 2720" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2720" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 9e · Lifecycle events: options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Acquired, Sent out, Returned, and Disposed (#067): from + Log, on the vehicle&#x27;s page, and in the Timeline. Only what the person may record is offered.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">1 · + Log: where the four lifecycle kinds go (Sent out and Returned for a Maintainer; Acquired and Disposed for the vehicle&#x27;s Admin)</text>
+<text x="40" y="158" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Below the everyday kinds, under &quot;Vehicle&#x27;s life&quot;</text>
+<text x="40" y="182" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · a Maintainer, vehicle not out</text>
+<rect x="40" y="194" width="260" height="580" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="220" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="42" y="294" width="256" height="478" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="150" y="304" width="40" height="4" rx="2" fill="#9aa1ab"/>
+<text x="58" y="336" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="58" y="354" width="224" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="378.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Test truck · last time</text>
+<text x="270" y="378.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="58" y="404" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="434.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="106" y="431.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<rect x="58" y="456" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="486.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="106" y="483.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<rect x="58" y="508" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="538.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="106" y="535.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance</text>
+<rect x="58" y="560" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="590.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🛠</text>
+<text x="106" y="587.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Repair</text>
+<text x="58" y="630" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">VEHICLE&#x27;S LIFE</text>
+<rect x="58" y="640" width="224" height="54" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="675.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🚚</text>
+<text x="106" y="665.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sent out</text>
+<text x="106" y="683.0" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">To a shop, and when it&#x27;s due back</text>
+<text x="170" y="736" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="330" y="182" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the Admin in Admin mode, while it&#x27;s out</text>
+<rect x="330" y="194" width="260" height="580" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="348" y="220" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="332" y="294" width="256" height="478" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<rect x="440" y="304" width="40" height="4" rx="2" fill="#9aa1ab"/>
+<text x="348" y="336" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="348" y="354" width="224" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="360" y="378.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Test truck · last time</text>
+<text x="560" y="378.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="348" y="404" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="434.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="396" y="431.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<rect x="348" y="456" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="486.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⏱</text>
+<text x="396" y="483.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Reading</text>
+<rect x="348" y="508" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="538.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="396" y="535.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance</text>
+<rect x="348" y="560" width="224" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="590.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🛠</text>
+<text x="396" y="587.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Repair</text>
+<text x="348" y="630" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">VEHICLE&#x27;S LIFE</text>
+<rect x="348" y="640" width="224" height="48" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="672.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">↩</text>
+<text x="396" y="662.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Returned</text>
+<text x="396" y="680.0" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Back from Joe&#x27;s Auto</text>
+<rect x="348" y="696" width="108" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="726.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🔑</text>
+<text x="396" y="723.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Acquired</text>
+<rect x="464" y="696" width="108" height="44" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="480" y="726.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🏁</text>
+<text x="512" y="723.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Disposed</text>
+<text x="460" y="760" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="620" y="234" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Everything to log is in one place.</text>
+<text x="620" y="255" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Only what fits now: Returned only while it&#x27;s out,</text>
+<text x="620" y="276" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   Sent out only while it isn&#x27;t, Acquired only if</text>
+<text x="620" y="297" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   none is recorded yet, Disposed only once.</text>
+<text x="620" y="318" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Drivers never see the section (it&#x27;s empty).</text>
+<text x="620" y="339" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− The sheet gets taller for the Admin.</text>
+<text x="40" y="824" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · One &quot;Vehicle&#x27;s life…&quot; tile that opens the four</text>
+<text x="40" y="848" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · step 1</text>
+<rect x="40" y="860" width="260" height="430" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="886" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="42" y="960" width="256" height="328" rx="18" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<text x="58" y="1002" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Log</text>
+<rect x="58" y="1020" width="224" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1044.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Test truck · last time</text>
+<text x="270" y="1044.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="58" y="1070" width="224" height="46" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1101.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">⛽</text>
+<text x="106" y="1098.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Fuel-up</text>
+<rect x="58" y="1124" width="224" height="46" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1155.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🔧</text>
+<text x="106" y="1152.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Maintenance</text>
+<rect x="58" y="1178" width="224" height="46" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1209.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">📋</text>
+<text x="106" y="1206.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Vehicle&#x27;s life…</text>
+<text x="330" y="848" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · step 2</text>
+<rect x="330" y="860" width="260" height="430" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="348" y="886" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="348" y="920" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Vehicle&#x27;s life</text>
+<rect x="348" y="944" width="224" height="56" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="980.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🚚</text>
+<text x="396" y="970.0" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sent out</text>
+<text x="396" y="988.0" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">To a shop</text>
+<rect x="348" y="1010" width="224" height="56" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="1046.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🔑</text>
+<text x="396" y="1036.0" font-size="14.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Acquired</text>
+<text x="396" y="1054.0" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">How it was bought</text>
+<rect x="348" y="1076" width="224" height="56" rx="12" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="364" y="1112.0" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🏁</text>
+<text x="396" y="1102.0" font-size="14.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Disposed</text>
+<text x="396" y="1120.0" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Sold, traded, scrapped</text>
+<text x="348" y="1158" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(The Admin&#x27;s; a Maintainer sees</text>
+<text x="348" y="1176" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"> only Sent out or Returned.)</text>
+<text x="620" y="904" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The everyday sheet stays as short as today.</text>
+<text x="620" y="925" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− One more tap, for things done rarely anyway.</text>
+<text x="620" y="946" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A Maintainer&#x27;s step 2 has one tile in it.</text>
+<text x="40" y="1324" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">2 · The forms: the usual log form (When and where, readings, notes, photos), with the kind&#x27;s own section first</text>
+<text x="40" y="1348" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Sent out</text>
+<rect x="40" y="1360" width="300" height="600" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="58" y="1386" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="58" y="1416" font-size="13" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Test truck</text>
+<text x="58" y="1446" font-size="19" fill="#e8eaed" font-weight="800" text-anchor="start">Sent out</text>
+<text x="58" y="1476" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">THE SHOP</text>
+<text x="58" y="1500" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Shop or vendor</text>
+<rect x="58" y="1508" width="264" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1532.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Joe&#x27;s Auto</text>
+<text x="58" y="1562" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Contact (optional)</text>
+<rect x="58" y="1570" width="264" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1594.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">555-0100</text>
+<text x="58" y="1624" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Work order</text>
+<rect x="58" y="1632" width="124" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1656.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">WO-1182</text>
+<text x="198" y="1624" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Due back</text>
+<rect x="198" y="1632" width="124" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="210" y="1656.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">20 Nov 2026</text>
+<text x="58" y="1686" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Estimate</text>
+<rect x="58" y="1694" width="264" height="38" rx="8" fill="#0d1014" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1718.0" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">$450.00</text>
+<rect x="58" y="1746" width="264" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1771" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">▸  Shipping</text>
+<text x="310" y="1771" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">none</text>
+<rect x="58" y="1794" width="264" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1819" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">▸  When and where</text>
+<text x="310" y="1819" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">Today · Asheville</text>
+<rect x="58" y="1842" width="264" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="70" y="1867" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">▸  Readings</text>
+<text x="310" y="1867" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">52,310 mi</text>
+<rect x="58" y="1898" width="264" height="40" rx="10" fill="#5aa9ff"/>
+<text x="190.0" y="1923.0" font-size="13.5" fill="#0b1420" font-weight="700" text-anchor="middle">Save</text>
+<text x="370" y="1394" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Acquired: From (seller, dealer, maker; optional), Price, then</text>
+<text x="370" y="1415" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   the starting readings. Shown first for a vehicle with no events.</text>
+<text x="370" y="1436" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Returned: &quot;Back from Joe&#x27;s Auto (sent 14 Nov)&quot; shown, not chosen;</text>
+<text x="370" y="1457" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   Final cost (the estimate as a hint). Its work is an ordinary job.</text>
+<text x="370" y="1478" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Disposed: How (Sold · Traded in · Scrapped · Given away · Returned</text>
+<text x="370" y="1499" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   to the vendor · Lost or stolen · Other), To whom, Price, final</text>
+<text x="370" y="1520" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   readings. Saving asks first: &quot;Once finalized, nothing new can be</text>
+<text x="370" y="1541" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   added to Test truck; its records can still be corrected.&quot;</text>
+<text x="370" y="1562" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Money uses the same amount-and-currency field as jobs.</text>
+<text x="370" y="1583" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every one is a draft for 24 hours, like a fuel-up (Finalize now).</text>
+<text x="370" y="1604" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Correcting a disposal offers &quot;It wasn&#x27;t disposed of after all&quot;.</text>
+<text x="40" y="2004" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">3 · The vehicle&#x27;s page while it&#x27;s out for service</text>
+<text x="40" y="2038" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · A banner under the header, on every tab</text>
+<text x="40" y="2062" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide</text>
+<rect x="40" y="2074" width="700" height="270" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="2108" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="64" y="2138" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Test truck</text>
+<text x="64" y="2158" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="64" y="2170" width="122.0" height="24" rx="12" fill="#3a2f15" stroke="#d29922" stroke-width="1.2"/>
+<text x="125.0" y="2186" font-size="11" fill="#d29922" font-weight="700" text-anchor="middle">OUT FOR SERVICE</text>
+<rect x="64" y="2198" width="652" height="62" rx="10" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<text x="80" y="2236" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🚚</text>
+<text x="114" y="2224" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">At Joe&#x27;s Auto since 14 Nov · due back 20 Nov</text>
+<text x="114" y="2244" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">WO-1182 · estimate $450.00</text>
+<rect x="579.8" y="2213" width="122.2" height="32" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="640.9" y="2234" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">Record return</text>
+<line x1="64" y1="2304" x2="143.6" y2="2304" stroke="#5aa9ff" stroke-width="3"/>
+<text x="103.8" y="2295" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="176.2" y="2295" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues</text>
+<text x="248.60000000000002" y="2295" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="339.0" y="2295" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="432.99999999999994" y="2295" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<text x="505.4" y="2295" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="64" y1="2305" x2="716" y2="2305" stroke="#333a45" stroke-width="1"/>
+<text x="780" y="2038" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · The header&#x27;s status chip, and a card on Overview only</text>
+<text x="780" y="2062" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide</text>
+<rect x="780" y="2074" width="700" height="270" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="804" y="2108" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="804" y="2138" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Test truck</text>
+<text x="804" y="2158" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="804" y="2170" width="122.0" height="24" rx="12" fill="#3a2f15" stroke="#d29922" stroke-width="1.2"/>
+<text x="865.0" y="2186" font-size="11" fill="#d29922" font-weight="700" text-anchor="middle">OUT FOR SERVICE</text>
+<line x1="804" y1="2232" x2="883.6" y2="2232" stroke="#5aa9ff" stroke-width="3"/>
+<text x="843.8" y="2223" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="916.2" y="2223" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues</text>
+<text x="988.6" y="2223" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="1079.0" y="2223" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="1173.0000000000002" y="2223" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<text x="1245.4" y="2223" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="804" y1="2233" x2="1456" y2="2233" stroke="#333a45" stroke-width="1"/>
+<rect x="804" y="2250" width="320" height="84" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="818" y="2274" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">OUT FOR SERVICE</text>
+<text x="818" y="2298" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Joe&#x27;s Auto · due back 20 Nov</text>
+<text x="818" y="2320" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Record return ›</text>
+<text x="40" y="2370" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Overdue (either option): the chip and banner turn amber, &quot;2 days late&quot;, with the same message in Messages (9d). A: always visible; B: quieter, Overview only.</text>
+<text x="40" y="2404" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">4 · A disposed vehicle (finalized)</text>
+<text x="40" y="2428" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · + Log, Add, and Open issue are hidden for this vehicle</text>
+<rect x="40" y="2440" width="700" height="250" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="2474" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="64" y="2504" font-size="21" fill="#e8eaed" font-weight="800" text-anchor="start">Test truck</text>
+<text x="64" y="2524" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150</text>
+<rect x="64" y="2536" width="74.4" height="24" rx="12" fill="#2a2f37" stroke="#9aa1ab" stroke-width="1.2"/>
+<text x="101.2" y="2552" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="middle">DISPOSED</text>
+<rect x="64" y="2564" width="652" height="62" rx="10" fill="#2a2f37" stroke="#4a535e" stroke-width="1.5"/>
+<text x="80" y="2602" font-size="20" fill="#e8eaed" font-weight="400" text-anchor="start">🏁</text>
+<text x="114" y="2590" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sold on 2 Dec 2026 to a neighbour</text>
+<text x="114" y="2610" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Its records stay; they can be corrected, but nothing new can be added.</text>
+<line x1="64" y1="2670" x2="143.6" y2="2670" stroke="#5aa9ff" stroke-width="3"/>
+<text x="103.8" y="2661" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Overview</text>
+<text x="176.2" y="2661" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues</text>
+<text x="248.60000000000002" y="2661" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<text x="339.0" y="2661" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Maintenance</text>
+<text x="432.99999999999994" y="2661" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Documents</text>
+<text x="505.4" y="2661" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="64" y1="2671" x2="716" y2="2671" stroke="#333a45" stroke-width="1"/>
+<text x="780" y="2404" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">5 · Timeline rows</text>
+<rect x="780" y="2440" width="700" height="60" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="794" y="2477" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">🏁</text>
+<text x="826" y="2465" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Disposed · 2 Dec 2026</text>
+<text x="826" y="2485" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Sold to a neighbour · $8,000.00</text>
+<rect x="1414.0" y="2458" width="54.0" height="24" rx="12" fill="#15263a" stroke="#5aa9ff" stroke-width="1.2"/>
+<text x="1441.0" y="2474" font-size="11" fill="#5aa9ff" font-weight="700" text-anchor="middle">DRAFT</text>
+<rect x="780" y="2508" width="700" height="60" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="794" y="2545" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">↩</text>
+<text x="826" y="2533" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Returned · 18 Nov 2026</text>
+<text x="826" y="2553" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">From Joe&#x27;s Auto · $512.50</text>
+<rect x="780" y="2576" width="700" height="60" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="794" y="2613" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">🚚</text>
+<text x="826" y="2601" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sent out · 14 Nov 2026</text>
+<text x="826" y="2621" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Joe&#x27;s Auto · WO-1182 · due back 20 Nov</text>
+<rect x="780" y="2644" width="700" height="60" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="794" y="2681" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="start">🔑</text>
+<text x="826" y="2669" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Acquired · 3 Jun 2021</text>
+<text x="826" y="2689" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">From Main St Motors · $24,000.00 · 12 mi</text>
+</svg>

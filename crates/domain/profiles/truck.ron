@@ -1,0 +1,22 @@
+// Truck (decision #030): a car's setup, plus towing and hauling.
+(
+    id: "truck",
+    version: 3,
+    name: "profile-truck",
+    event_kinds: [fuel, reading, maintenance, repair],
+    sections: [r#fuel-economy, r#towing-hauling],
+    // License plates are their own records (#066), not identifiers.
+    identifiers: [
+        (kind: "vin", name: "identifier-vin"),
+    ],
+    // What a High squawk means for this kind (#063).
+    high_severity: "squawk-high-not-drivable",
+    documents: ["document-title", "document-registration", "document-insurance"],
+    meters: [
+        (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
+    ],
+    fields: [
+        (key: "trip-time", label: "field-trip-time", shown_on: [fuel], kind: {"type": "duration"}, enabled: true, range: None),
+        (key: "trip-ev-distance", label: "field-trip-ev-distance", shown_on: [fuel], kind: {"type": "distance"}, enabled: false, range: None),
+    ],
+)

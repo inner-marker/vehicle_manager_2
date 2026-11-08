@@ -26,7 +26,11 @@
 /// assert!(earlier < later);
 /// assert_eq!(later.as_millis(), 1_700_000_000_001);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+// Serialized as the plain number of milliseconds (e.g. in API answers).
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct UnixMillis(i64);
 
 impl UnixMillis {
@@ -69,6 +73,14 @@ impl UnixMillis {
 pub trait Clock {
     /// Returns the current instant.
     fn now(&self) -> UnixMillis;
+}
+
+/// A shared reference to a clock is a clock, so one clock can feed several users
+/// (e.g. a test's `ManualClock` and the `HlcClock` under test).
+impl<T: Clock + ?Sized> Clock for &T {
+    fn now(&self) -> UnixMillis {
+        (**self).now()
+    }
 }
 
 #[cfg(test)]

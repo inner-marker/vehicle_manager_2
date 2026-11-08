@@ -39,6 +39,14 @@ impl CaptureLayer {
 impl<S: Subscriber> Layer<S> for CaptureLayer {
     fn on_event(&self, event: &Event<'_>, _context: Context<'_, S>) {
         let metadata = event.metadata();
+        // Console-only events (one-time codes) never reach the log files or the viewer.
+        if metadata
+            .fields()
+            .field(domain::log_area::CONSOLE_ONLY_FIELD)
+            .is_some()
+        {
+            return;
+        }
         let mut visitor = FieldCollector::default();
         event.record(&mut visitor);
 
@@ -116,6 +124,23 @@ mod tests {
 
     use super::*;
     use crate::logging::ring_buffer::RingBuffer;
+
+    #[test]
+    fn console_only_events_never_reach_the_sinks() {
+        let clock = Arc::new(ManualClock::new(UnixMillis::from_millis(1_700_000_000_000)));
+        let buffer = Arc::new(RingBuffer::new(10));
+        let capture = CaptureLayer::new(clock, vec![Arc::clone(&buffer) as Arc<dyn EntrySink>]);
+        let subscriber = tracing_subscriber::registry().with(capture);
+
+        tracing::subscriber::with_default(subscriber, || {
+            tracing::warn!(target: log_area::AUTH, console_only = true, setup_code = "K7QM-4XRT", "a code");
+            tracing::info!(target: log_area::AUTH, "an ordinary line");
+        });
+
+        let entries = buffer.snapshot();
+        assert_eq!(entries.len(), 1, "only the ordinary line");
+        assert_eq!(entries[0].message, "an ordinary line");
+    }
 
     #[test]
     fn capture_records_level_area_message_and_fields() {

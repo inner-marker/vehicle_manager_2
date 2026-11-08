@@ -9,12 +9,13 @@ resolver = "3"                           # Rust 2024 edition resolver
 members = [
     "crates/domain",   # pure logic; no I/O; compiles to WASM
     "crates/storage",  # SQLite/sqlx, migrations, row <-> domain conversion; native only
+    "crates/geocoder", # offline place lookup from a GeoPackage (#059); native only
     "crates/server",   # sync engine, auth, integrity, admin ops (library); native only
     "crates/app",      # Dioxus UI (web/desktop/mobile) + thin server functions
 ]
 
 [workspace.package]
-version = "0.1.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
+version = "0.2.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
 edition = "2024"
 license = "MIT OR Apache-2.0"   # standard Rust dual license; crates inherit with `license.workspace = true`
 rust-version = "1.95"           # matches rust-toolchain.toml
@@ -26,27 +27,55 @@ rust-version = "1.95"           # matches rust-toolchain.toml
 # Internal crates (dependency direction: domain <- storage <- server <- app)
 domain = { path = "crates/domain" }
 storage = { path = "crates/storage" }
+geocoder = { path = "crates/geocoder" }
 server = { path = "crates/server" }
 
 # External crates
 dioxus = "=0.7.10"              # exact pin: must match the installed Dioxus CLI (`dx --version`)
 # Server-side HTTP: auth middleware in `server` (phase-1.md step 7). Same versions Dioxus uses.
 axum = { version = "0.8.9", default-features = false }
+# Password hashing (argon2id; decision #028, phase-2.md milestone 2). Default features: salts
+# come from the OS through `getrandom`, which the server already uses.
+argon2 = "0.6.0"
 dirs = "6.0.0"                   # per-user data folder on desktop; already used by dioxus-desktop
+getrandom = "0.4.3"             # OS randomness for new IDs on the server (approved, phase-2.md 1d)
 fluent-bundle = "0.16.0"        # translation engine (Project Fluent); see decisions.md #022
+# SQLite with bundled SQLite (same version everywhere), embedded migrations, and the
+# tokio runtime the server already uses. Runtime-checked queries: no `query!` macros
+# (phase-2.md milestone 1 plan); `macros` is only for `sqlx::migrate!`.
+sqlx = { version = "0.9.0", default-features = false, features = ["sqlite-bundled", "runtime-tokio", "migrate", "macros"] }
 serde = { version = "1.0.229", features = ["derive"] }
+# Asset profiles as RON seed files compiled into domain (decision #030; approved, phase-2.md 4b).
+ron = "0.12.3"
+# Time zones and dates (approved, phase-2.md milestone 6). The zone database is built in, so
+# the NAS image (no tzdata), the desktop app, and the browser all use the same rules.
+jiff = { version = "0.2.39", default-features = false, features = ["std", "tzdb-bundle-always"] }
+# Quantities and unit conversions in the domain (approved, phase-2.md milestone 6, #007).
+uom = { version = "0.38.0", default-features = false, features = ["std", "si", "f64"] }
+sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
+# Photos: JPEG and PNG only, pure Rust (phase-2.md 8d, #036; approved 2026-11-04).
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png"] }
+# Photo metadata (time, GPS, camera) read in the app before resizing (phase-2.md 8e, #036;
+# approved 2026-11-04). Pure Rust, so it works in the browser too.
+kamadak-exif = "0.6.1"
+# PDFs: checked and their pages counted (phase-2.md 8d, #037; approved 2026-11-04).
+lopdf = { version = "0.47.0", default-features = false }
 tower = { version = "0.5.3", default-features = false }
 tracing = "0.1.44"
 # No env-filter: per-area levels use the lighter `Targets` filter. No ansi: colored
 # terminal output would add nu-ansi-term (phase-1.md step 4).
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["std", "registry", "fmt"] }
 tracing-wasm = "0.2.1"          # browser devtools console output (web only)
+# UUIDv7 record IDs (decisions.md #042). No features: domain supplies the time and
+# random bytes itself, and needs no std-only or RNG code.
+uuid = { version = "1.28.0", default-features = false }
 unic-langid = "0.9.6"           # language identifiers (e.g. en-US) for fluent-bundle
 web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's panics there)
 
 # Dev-only
+proptest = "1"                    # property-based tests (AGENTS.md §7)
 http-body-util = "0.1.5"        # reading response bodies in middleware tests
 tempfile = "3.27.0"
 

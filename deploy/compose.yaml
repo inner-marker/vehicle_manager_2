@@ -1,21 +1,22 @@
 # The server on the NAS, as a Container Manager "Project" (docs/deploying-nas.md).
 #
 # Copy this file to the Project folder (e.g. /volume1/docker/vehicle_manager/) next to
-# a `.env` file made from `.env.example`. Settings that differ per NAS, and the
-# credential, live in `.env`, which is never committed.
+# a `.env` file made from `.env.example`. Settings that differ per NAS live in `.env`,
+# which is never committed.
 #
 # Variable names must match domain::identity::env_var_name(...);
 # crates/app/tests/deploy_config.rs checks them.
 
-# Same as the Container Manager Project name. Without it, `docker compose` over SSH names
-# the project after the folder (`vehicle_manager`) and refuses to touch the Project's
-# container ("container name already in use").
-name: vehiclemanager
+# Same as the Container Manager Project name: `vehiclemanager` for the household's main
+# server, `vehiclemanager-test` for the test server beside it (decision #062). Without it,
+# `docker compose` over SSH names the project after the folder and refuses to touch the
+# Project's container ("container name already in use").
+name: ${VEHICLEMANAGER_PROJECT_NAME:-vehiclemanager}
 
 services:
   vehiclemanager:
     image: ghcr.io/inner-marker/vehicle_manager_2:${VEHICLEMANAGER_IMAGE_TAG:-dev}
-    container_name: vehiclemanager
+    container_name: ${VEHICLEMANAGER_PROJECT_NAME:-vehiclemanager}
     restart: unless-stopped
 
     # Run as the NAS's own `vehiclemanager` user, so it owns the files in ./data.
@@ -27,13 +28,27 @@ services:
       - "127.0.0.1:${VEHICLEMANAGER_HOST_PORT:-8410}:8080"
 
     environment:
-      # Empty or missing means the server refuses every API request (decisions.md #024).
-      VEHICLEMANAGER_TEST_CREDENTIAL: ${VEHICLEMANAGER_TEST_CREDENTIAL:-}
+      # Empty on the household's main server; `test` on the test server beside it (decision
+      # #062): its own session cookie, and a TEST SERVER tag in the app.
+      VEHICLEMANAGER_INSTANCE: ${VEHICLEMANAGER_INSTANCE:-}
+      # Optional: a snapshot folder other than /data/snapshots (decisions.md #035). Empty
+      # means the default. A folder set here is never created, so it must be mounted below.
+      VEHICLEMANAGER_SNAPSHOT_DIR: ${VEHICLEMANAGER_SNAPSHOT_DIR:-}
+      # Test images only (milestone images, for the test server): 1 to 5 shortens the idle and
+      # job timers to minutes (decisions.md #054). Empty means normal timers; `dev` and release
+      # images ignore it.
+      VEHICLEMANAGER_TEST_MINUTES: ${VEHICLEMANAGER_TEST_MINUTES:-}
+      # Optional: a place data file other than the one in the image (decisions.md #059), e.g.
+      # a newer one copied to /data. Empty means the image's own.
+      VEHICLEMANAGER_GEODATA_FILE: ${VEHICLEMANAGER_GEODATA_FILE:-}
 
-    # The data folder: logs now, the database from Phase 2. Must be a local NAS
+    # The data folder: database, backups, snapshots, and logs. Must be a local NAS
     # volume, never a network share (decisions.md #002).
     volumes:
       - ./data:/data
+      # For snapshots on a USB disk (later; not set up yet), mount it here and set
+      # VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots in .env, e.g.:
+      # - /volumeUSB1/usbshare/vehicle_manager_snapshots:/snapshots
 
     # Hardening: nothing in the container is writable except /data and a small /tmp;
     # no Linux capabilities; no privilege escalation.

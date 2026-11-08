@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1560" viewBox="0 0 1560 1560" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1560" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2f · Sign-in and first-Admin setup: two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Dark theme shown. &quot;App Name&quot; is a placeholder until the display name is chosen. Pick A or B (or mix: e.g. A&#x27;s sign-in with B&#x27;s setup).</text>
+<text x="40" y="128" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Centered card: one simple card on a plain page, same on every screen size</text>
+<text x="40" y="158" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide (web, desktop)</text>
+<rect x="40" y="170" width="620" height="470" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="190" y="210" width="320" height="390" rx="14" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="214" y="250" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Sign in</text>
+<text x="214" y="278" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
+<text x="214" y="310" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="214" y="318" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="226" y="343" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="214" y="380" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="214" y="388" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="226" y="413" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="214" y="456" width="272" height="44" rx="10" fill="#5aa9ff"/>
+<text x="350.0" y="483.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Sign in</text>
+<text x="214" y="528" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Forgot it? Ask your household&#x27;s Admin.</text>
+<text x="350" y="628" font-size="11.5" fill="#3fb950" font-weight="500" text-anchor="middle">● Server OK · v0.2.0</text>
+<text x="690" y="158" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone</text>
+<rect x="690" y="170" width="250" height="540" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="708" y="196" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="708" y="240" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Sign in</text>
+<text x="708" y="268" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
+<text x="708" y="300" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="708" y="308" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="333" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="708" y="370" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="708" y="378" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="403" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="708" y="436" width="214" height="34" rx="8" fill="#3a1d1d" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="720" y="458" font-size="13" fill="#ff6b6b" font-weight="600" text-anchor="start">Wrong username or password.</text>
+<rect x="708" y="482" width="214" height="44" rx="10" fill="#5aa9ff"/>
+<text x="815.0" y="509.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Sign in</text>
+<text x="708" y="546" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Forgot it? Ask your household&#x27;s Admin.</text>
+<text x="970" y="158" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · first-time setup (same card style)</text>
+<rect x="970" y="170" width="250" height="700" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="988" y="196" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="988" y="220" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Set up</text>
+<text x="988" y="248" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">No one has an account yet.</text>
+<text x="988" y="266" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">You&#x27;ll be this server&#x27;s Admin.</text>
+<rect x="988" y="280" width="214" height="62" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="302" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The setup code is in the</text>
+<text x="1000" y="322" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">server&#x27;s log (see the guide).</text>
+<text x="988" y="360" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Setup code</text>
+<rect x="988" y="368" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="393" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XXXX-XXXX-XXXX-XXXX</text>
+<text x="988" y="426" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="988" y="434" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="459" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="988" y="492" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Your name</text>
+<rect x="988" y="500" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="525" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Stuart</text>
+<text x="988" y="558" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password (12+ characters)</text>
+<rect x="988" y="566" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="591" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<text x="988" y="624" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password again</text>
+<rect x="988" y="632" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="657" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="988" y="692" width="214" height="44" rx="10" fill="#5aa9ff"/>
+<text x="1095.0" y="719.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Create Admin and sign in</text>
+<text x="1250" y="200" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Simple; one layout to learn.</text>
+<text x="1250" y="222" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The setup screen replaces sign-in</text>
+<text x="1262" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">automatically while no one exists.</text>
+<text x="1250" y="262" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Errors show in the card, above the</text>
+<text x="1262" y="280" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">button (left phone: a wrong password).</text>
+<text x="1250" y="302" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Plain; no room to explain the app.</text>
+<text x="40" y="930" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · Split panel on wide screens; setup in two steps (code first, then your account)</text>
+<text x="40" y="960" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide (web, desktop)</text>
+<rect x="40" y="972" width="620" height="470" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="974" width="300" height="466" rx="8" fill="#18324f"/>
+<text x="68" y="1040" font-size="26" fill="#e8eaed" font-weight="800" text-anchor="start">App Name</text>
+<text x="68" y="1070" font-size="14" fill="#b8d4f3" font-weight="400" text-anchor="start">Maintenance, fuel, and history</text>
+<text x="68" y="1090" font-size="14" fill="#b8d4f3" font-weight="400" text-anchor="start">for every vehicle in the household.</text>
+<text x="68" y="1400" font-size="12" fill="#3fb950" font-weight="500" text-anchor="start">● Server OK · nas.tailnet</text>
+<text x="366" y="1030" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Sign in</text>
+<text x="366" y="1058" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
+<text x="366" y="1090" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="366" y="1098" width="270" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="378" y="1123" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="366" y="1160" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="366" y="1168" width="270" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="378" y="1193" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="366" y="1236" width="270" height="44" rx="10" fill="#5aa9ff"/>
+<text x="501.0" y="1263.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Sign in</text>
+<text x="366" y="1308" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Forgot it? Ask your household&#x27;s Admin.</text>
+<text x="690" y="960" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone (panel shrinks to a band)</text>
+<rect x="690" y="972" width="250" height="500" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="708" y="998" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="692" y="1010" width="246" height="64" rx="0" fill="#18324f"/>
+<text x="710" y="1048" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">App Name</text>
+<text x="708" y="1100" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Sign in</text>
+<text x="708" y="1128" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
+<text x="708" y="1160" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="708" y="1168" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="1193" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="708" y="1230" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
+<rect x="708" y="1238" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="720" y="1263" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
+<rect x="708" y="1306" width="214" height="44" rx="10" fill="#5aa9ff"/>
+<text x="815.0" y="1333.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Sign in</text>
+<text x="708" y="1378" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Forgot it? Ask your household&#x27;s Admin.</text>
+<text x="970" y="960" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · setup, step 1 of 2</text>
+<rect x="970" y="972" width="250" height="500" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="988" y="998" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<text x="988" y="1022" font-size="11" fill="#5aa9ff" font-weight="800" text-anchor="start">STEP 1 OF 2</text>
+<text x="988" y="1048" font-size="24" fill="#e8eaed" font-weight="800" text-anchor="start">Setup code</text>
+<text x="988" y="1076" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">From the server&#x27;s log.</text>
+<text x="988" y="1100" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Setup code</text>
+<rect x="988" y="1108" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1000" y="1133" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XXXX-XXXX-XXXX-XXXX</text>
+<rect x="988" y="1170" width="214" height="44" rx="10" fill="#5aa9ff"/>
+<text x="1095.0" y="1197.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Next</text>
+<text x="988" y="1238" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Step 2 asks for your username,</text>
+<text x="988" y="1256" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">name, and password, then signs</text>
+<text x="988" y="1274" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">you in as the Admin.</text>
+<text x="1250" y="1002" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Room to say what the app is.</text>
+<text x="1250" y="1024" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Setup checks the code before</text>
+<text x="1262" y="1042" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">asking for anything else.</text>
+<text x="1250" y="1064" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two layouts (wide / narrow).</text>
+<text x="1250" y="1086" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− One more step during setup.</text>
+</svg>

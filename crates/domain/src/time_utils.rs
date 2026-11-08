@@ -38,6 +38,54 @@ pub fn format_utc_iso8601(instant: UnixMillis) -> String {
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{milli:03}Z")
 }
 
+/// Formats an instant as a compact ISO-8601 "basic format" UTC timestamp for file
+/// names, e.g. `20231114T221320Z`: no colons (not allowed in Windows file names), and
+/// file names sort in time order. Seconds precision.
+///
+/// # Examples
+///
+/// ```
+/// use domain::time::UnixMillis;
+/// use domain::time_utils::format_utc_file_stamp;
+///
+/// let instant = UnixMillis::from_millis(1_700_000_000_123);
+/// assert_eq!(format_utc_file_stamp(instant), "20231114T221320Z");
+/// ```
+pub fn format_utc_file_stamp(instant: UnixMillis) -> String {
+    let millis = instant.as_millis();
+    let (year, month, day) = civil_from_days(millis.div_euclid(MILLIS_PER_DAY));
+    let millis_of_day = millis.rem_euclid(MILLIS_PER_DAY);
+    let hour = millis_of_day / 3_600_000;
+    let minute = millis_of_day / 60_000 % 60;
+    let second = millis_of_day / 1_000 % 60;
+
+    format!("{year:04}{month:02}{day:02}T{hour:02}{minute:02}{second:02}Z")
+}
+
+/// Formats an instant as a UTC date and time to the minute, e.g. `2023-11-14 22:13`.
+///
+/// A stopgap for times shown to people until dates are formatted with each person's
+/// preferences and time zone (Phase 2 milestone 6); callers say it's UTC.
+///
+/// # Examples
+///
+/// ```
+/// use domain::time::UnixMillis;
+/// use domain::time_utils::format_utc_minute;
+///
+/// let instant = UnixMillis::from_millis(1_700_000_000_123);
+/// assert_eq!(format_utc_minute(instant), "2023-11-14 22:13");
+/// ```
+pub fn format_utc_minute(instant: UnixMillis) -> String {
+    let millis = instant.as_millis();
+    let (year, month, day) = civil_from_days(millis.div_euclid(MILLIS_PER_DAY));
+    let millis_of_day = millis.rem_euclid(MILLIS_PER_DAY);
+    let hour = millis_of_day / 3_600_000;
+    let minute = millis_of_day / 60_000 % 60;
+
+    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}")
+}
+
 /// Converts days since 1970-01-01 to a proleptic Gregorian `(year, month, day)`.
 ///
 /// Howard Hinnant's `civil_from_days` algorithm
@@ -95,6 +143,16 @@ mod tests {
         assert_eq!(format(1_709_164_800_000), "2024-02-29T00:00:00.000Z");
         assert_eq!(format(951_782_400_000), "2000-02-29T00:00:00.000Z");
         assert_eq!(format(4_107_542_400_000), "2100-03-01T00:00:00.000Z");
+    }
+
+    #[test]
+    fn file_stamps_have_no_colons_and_sort_in_time_order() {
+        let earlier = format_utc_file_stamp(UnixMillis::from_millis(1_704_067_199_999));
+        let later = format_utc_file_stamp(UnixMillis::from_millis(1_704_067_200_000));
+        assert_eq!(earlier, "20231231T235959Z");
+        assert_eq!(later, "20240101T000000Z");
+        assert!(earlier < later);
+        assert!(!earlier.contains(':'));
     }
 
     #[test]

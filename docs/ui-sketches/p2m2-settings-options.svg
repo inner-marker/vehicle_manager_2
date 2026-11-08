@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1640" viewBox="0 0 1560 1640" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1640" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2i · Settings: your preferences and the household defaults (decision #029): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Display only: stored values never change. Each person can follow the household default or choose their own; an Admin sets the defaults in Admin mode. The theme stays per device.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · One page of sections; each of your settings is a menu whose first choice is &quot;Household default (…)&quot;</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Admin mode (Household defaults shows only in Admin mode)</text>
+<rect x="40" y="166" width="900" height="650" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<rect x="762" y="178" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802" y="197" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="178" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="42" y="216" width="896" height="28" rx="0" fill="#3a2615"/>
+<line x1="42" y1="244" x2="938" y2="244" stroke="#f0883e" stroke-width="2"/>
+<text x="56" y="235" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<text x="72" y="278" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">YOUR PREFERENCES</text>
+<text x="72" y="296" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Follow the household default, or choose your own.</text>
+<text x="72" y="335" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Distance</text>
+<rect x="302" y="312" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="335" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Kilometers</text>
+<text x="530" y="335" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="379" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Fuel volume</text>
+<rect x="302" y="356" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="379" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Household default (US gallons)</text>
+<text x="530" y="379" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="423" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Fuel economy</text>
+<rect x="302" y="400" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="423" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Household default (mpg (US))</text>
+<text x="530" y="423" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="467" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Currency</text>
+<rect x="302" y="444" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="467" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Household default (US dollar (USD))</text>
+<text x="530" y="467" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="511" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Language</text>
+<rect x="302" y="488" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="511" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Household default (English (US))</text>
+<text x="530" y="511" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="555" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Date format</text>
+<rect x="302" y="532" width="240" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="314" y="555" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Household default (10/30/2026)</text>
+<text x="530" y="555" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="278" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">HOUSEHOLD DEFAULTS</text>
+<text x="560" y="296" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">For everyone who hasn&#x27;t chosen their own.</text>
+<text x="560" y="335" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Distance</text>
+<rect x="710" y="312" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="335" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Miles</text>
+<text x="888" y="335" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="379" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Fuel volume</text>
+<rect x="710" y="356" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="379" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">US gallons</text>
+<text x="888" y="379" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="423" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Fuel economy</text>
+<rect x="710" y="400" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="423" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">mpg (US)</text>
+<text x="888" y="423" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="467" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Currency</text>
+<rect x="710" y="444" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="467" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">US dollar (USD)</text>
+<text x="888" y="467" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="511" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Language</text>
+<rect x="710" y="488" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="511" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">English (US)</text>
+<text x="888" y="511" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="560" y="555" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Date format</text>
+<rect x="710" y="532" width="190" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="722" y="555" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">10/30/2026</text>
+<text x="888" y="555" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="72" y="608" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">THIS DEVICE</text>
+<text x="72" y="650" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Theme</text>
+<rect x="302" y="628" width="240" height="36" rx="18" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="343" y="651" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">Light</text>
+<rect x="383" y="630" width="78" height="32" rx="16" fill="#5aa9ff"/>
+<text x="422" y="651" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Dark</text>
+<text x="501" y="651" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">System</text>
+<text x="72" y="694" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Example: Stuart chose Kilometers; everything else follows the household.</text>
+<text x="72" y="716" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Changes save at once (no Save button); each setting is its own record (#029).</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Driver mode</text>
+<rect x="980" y="166" width="250" height="650" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<text x="996" y="262" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">YOUR PREFERENCES</text>
+<text x="996" y="294" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Distance</text>
+<rect x="996" y="302" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="325" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Kilometers</text>
+<text x="1202" y="325" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="356" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Fuel volume</text>
+<rect x="996" y="364" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="387" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Default (US gallons)</text>
+<text x="1202" y="387" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="418" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Fuel economy</text>
+<rect x="996" y="426" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="449" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Default (mpg (US))</text>
+<text x="1202" y="449" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="480" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Currency</text>
+<rect x="996" y="488" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="511" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Default (US dollar (USD))</text>
+<text x="1202" y="511" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="542" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Language</text>
+<rect x="996" y="550" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="573" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Default (English (US))</text>
+<text x="1202" y="573" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="604" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Date format</text>
+<rect x="996" y="612" width="218" height="36" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="635" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="start">Default (10/30/2026)</text>
+<text x="1202" y="635" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="996" y="672" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">THIS DEVICE</text>
+<text x="996" y="700" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Theme: Light · Dark · System</text>
+<text x="1262" y="196" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Everything on one page.</text>
+<text x="1262" y="218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ &quot;Household default (Miles)&quot; says exactly</text>
+<text x="1262" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   what you&#x27;ll get.</text>
+<text x="1262" y="262" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Household defaults appear only in</text>
+<text x="1262" y="284" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   Admin mode, beside your own.</text>
+<text x="1262" y="306" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Long menus for currency and language.</text>
+<text x="40" y="870" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · Two tabs (You | Household); each setting is a row of buttons, with a &quot;Use household default&quot; switch</text>
+<text x="40" y="900" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · &quot;You&quot; tab</text>
+<rect x="40" y="912" width="900" height="560" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="914" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="945" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<rect x="762" y="924" width="80" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="802" y="943" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
+<rect x="850" y="924" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888" y="943" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="72" y="982" width="250" height="36" rx="18" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<rect x="74" y="984" width="124" height="32" rx="16" fill="#5aa9ff"/>
+<text x="136" y="1005" font-size="13" fill="#0b1420" font-weight="700" text-anchor="middle">You</text>
+<text x="260" y="1005" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Household</text>
+<text x="336" y="1005" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(Household: Admin mode only)</text>
+<text x="72" y="1066" font-size="14" fill="#e8eaed" font-weight="600" text-anchor="start">Distance</text>
+<rect x="72" y="1076" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="114.0" y="1098" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Miles</text>
+<rect x="162" y="1076" width="100" height="34" rx="8" fill="#5aa9ff"/>
+<text x="212.0" y="1098" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Kilometers</text>
+<rect x="620" y="1079" width="44" height="26" rx="13" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="633" cy="1092" r="9" fill="#9aa1ab"/>
+<text x="676" y="1097" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Use household default</text>
+<text x="72" y="1146" font-size="14" fill="#e8eaed" font-weight="600" text-anchor="start">Fuel volume</text>
+<rect x="72" y="1156" width="84" height="34" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="114.0" y="1178" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">US gal</text>
+<rect x="162" y="1156" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="204.0" y="1178" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Imp gal</text>
+<rect x="252" y="1156" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="294.0" y="1178" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Liters</text>
+<rect x="620" y="1159" width="44" height="26" rx="13" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="651" cy="1172" r="9" fill="#0b1420"/>
+<text x="676" y="1177" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Use household default</text>
+<text x="72" y="1226" font-size="14" fill="#e8eaed" font-weight="600" text-anchor="start">Fuel economy</text>
+<rect x="72" y="1236" width="84" height="34" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="114.0" y="1258" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">mpg US</text>
+<rect x="162" y="1236" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="204.0" y="1258" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">mpg UK</text>
+<rect x="252" y="1236" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="294.0" y="1258" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">L/100 km</text>
+<rect x="342" y="1236" width="84" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="384.0" y="1258" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">km/L</text>
+<rect x="620" y="1239" width="44" height="26" rx="13" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="651" cy="1252" r="9" fill="#0b1420"/>
+<text x="676" y="1257" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Use household default</text>
+<text x="72" y="1306" font-size="14" fill="#e8eaed" font-weight="600" text-anchor="start">Date format</text>
+<rect x="72" y="1316" width="100" height="34" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="122.0" y="1338" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="middle">10/30/2026</text>
+<rect x="178" y="1316" width="100" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="228.0" y="1338" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">30/10/2026</text>
+<rect x="284" y="1316" width="100" height="34" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="334.0" y="1338" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">2026-10-30</text>
+<rect x="620" y="1319" width="44" height="26" rx="13" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="651" cy="1332" r="9" fill="#0b1420"/>
+<text x="676" y="1337" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Use household default</text>
+<text x="72" y="1382" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Currency and language: a searchable list (too many for buttons). Theme sits below, under This device.</text>
+<text x="980" y="900" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · &quot;You&quot; tab</text>
+<rect x="980" y="912" width="250" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="938" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="942" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="968" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<rect x="996" y="994" width="218" height="32" rx="16" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<rect x="998" y="996" width="108" height="28" rx="14" fill="#5aa9ff"/>
+<text x="1052" y="1015" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">You</text>
+<text x="1160" y="1015" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="middle">Household</text>
+<text x="996" y="1046" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Distance</text>
+<rect x="996" y="1056" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1031" y="1076" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">Miles</text>
+<rect x="1070" y="1056" width="70" height="30" rx="8" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<text x="1105" y="1076" font-size="11" fill="#0b1420" font-weight="600" text-anchor="middle">Kilometer</text>
+<text x="996" y="1106" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">○ Household default</text>
+<text x="996" y="1130" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Fuel volume</text>
+<rect x="996" y="1140" width="70" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1031" y="1160" font-size="11" fill="#e8eaed" font-weight="600" text-anchor="middle">US gal</text>
+<rect x="1070" y="1140" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1105" y="1160" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">Imp gal</text>
+<rect x="1144" y="1140" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1179" y="1160" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">Liters</text>
+<text x="996" y="1190" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">✓ Household default</text>
+<text x="996" y="1214" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Fuel economy</text>
+<rect x="996" y="1224" width="70" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1031" y="1244" font-size="11" fill="#e8eaed" font-weight="600" text-anchor="middle">mpg US</text>
+<rect x="1070" y="1224" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1105" y="1244" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">mpg UK</text>
+<rect x="1144" y="1224" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1179" y="1244" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">L/100 km</text>
+<text x="996" y="1274" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">✓ Household default</text>
+<text x="996" y="1298" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="start">Date format</text>
+<rect x="996" y="1308" width="70" height="30" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1031" y="1328" font-size="11" fill="#e8eaed" font-weight="600" text-anchor="middle">10/30/202</text>
+<rect x="1070" y="1308" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1105" y="1328" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">30/10/202</text>
+<rect x="1144" y="1308" width="70" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1179" y="1328" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="middle">2026-10-3</text>
+<text x="996" y="1358" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">✓ Household default</text>
+<text x="1262" y="942" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One tap to choose; the choices are visible.</text>
+<text x="1262" y="964" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The switch makes &quot;following&quot; explicit.</text>
+<text x="1262" y="986" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two places to look (tabs).</text>
+<text x="1262" y="1008" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Rows of buttons crowd on phones.</text>
+</svg>

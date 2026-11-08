@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1740" viewBox="0 0 1560 1740" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1740" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2g · User management (Admin mode only): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Adds users, sets their roles (on all vehicles for now; per-vehicle roles get a picker in milestone 4), disables users, and resets passwords. There&#x27;s always at least one Admin.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · List and detail: users on the left, the selected user&#x27;s roles and actions on the right</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Users, Alex selected</text>
+<rect x="40" y="166" width="900" height="560" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="140" height="556" rx="0" fill="#1d2128"/>
+<rect x="42" y="168" width="5" height="556" rx="0" fill="#f0883e"/>
+<text x="60" y="236" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Garage</text>
+<text x="60" y="266" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Due &amp; squawks</text>
+<text x="60" y="296" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Messages</text>
+<text x="60" y="326" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Timeline</text>
+<text x="60" y="356" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Reports</text>
+<text x="60" y="410" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles</text>
+<text x="60" y="440" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">Users</text>
+<text x="60" y="470" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Settings</text>
+<text x="60" y="500" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Diagnostics</text>
+<rect x="182" y="168" width="756" height="48" rx="0" fill="#1d2128"/>
+<text x="198" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="762" y="178" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802.0" y="197" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="178" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888.0" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="182" y="216" width="756" height="30" rx="0" fill="#3a2615"/>
+<line x1="182" y1="246" x2="938" y2="246" stroke="#f0883e" stroke-width="2"/>
+<text x="196" y="236" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<rect x="198" y="262" width="300" height="44" rx="10" fill="#5aa9ff"/>
+<text x="348" y="290" font-size="14" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add user</text>
+<rect x="198" y="318" width="300" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="212" y="342" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Stuart</text>
+<text x="212" y="362" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Admin · all vehicles</text>
+<rect x="442" y="336" width="44" height="24" rx="12" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="464.0" y="353" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">You</text>
+<rect x="198" y="390" width="300" height="62" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="212" y="414" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Alex</text>
+<text x="212" y="434" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Maintainer · all vehicles</text>
+<rect x="198" y="462" width="300" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="212" y="486" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Sam</text>
+<text x="212" y="506" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Driver · all vehicles</text>
+<rect x="198" y="534" width="300" height="62" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="212" y="558" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">Pat</text>
+<text x="212" y="578" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Viewer · all vehicles</text>
+<rect x="410" y="552" width="76" height="24" rx="12" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="448.0" y="569" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Disabled</text>
+<text x="520" y="284" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Alex</text>
+<text x="520" y="306" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">alex</text>
+<text x="520" y="348" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">ROLES</text>
+<rect x="520" y="358" width="400" height="52" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="534" y="389" font-size="14" fill="#e8eaed" font-weight="600" text-anchor="start">All vehicles</text>
+<rect x="752" y="368" width="120" height="32" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="766" y="389" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Maintainer</text>
+<text x="862" y="389" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="906" y="389" font-size="14" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<text x="520" y="434" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-style="italic">One vehicle: available once vehicles exist (milestone 4).</text>
+<text x="520" y="476" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">ACCOUNT</text>
+<rect x="520" y="488" width="190" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="615" y="513" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Reset password…</text>
+<rect x="722" y="488" width="140" height="40" rx="10" fill="#1d2128" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="792" y="513" font-size="13.5" fill="#ff6b6b" font-weight="600" text-anchor="middle">Disable…</text>
+<text x="520" y="556" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Disabling signs Alex out everywhere; it can be undone.</text>
+<text x="520" y="576" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">For the last Admin, Disable and changing the role are</text>
+<text x="520" y="594" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">greyed out, with the reason shown.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · the list (tap a user for their page)</text>
+<rect x="980" y="166" width="250" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="1110" y="202" width="64" height="28" rx="14" fill="#f0883e"/>
+<text x="1142.0" y="221" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="982" y="236" width="246" height="24" rx="0" fill="#3a2615"/>
+<text x="992" y="253" font-size="10" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<rect x="994" y="274" width="222" height="56" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1006" y="296" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Stuart</text>
+<text x="1006" y="316" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Admin · all vehicles</text>
+<text x="1204" y="308" font-size="18" fill="#9aa1ab" font-weight="600" text-anchor="end">›</text>
+<rect x="994" y="338" width="222" height="56" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1006" y="360" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Alex</text>
+<text x="1006" y="380" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Maintainer · all vehicles</text>
+<text x="1204" y="372" font-size="18" fill="#9aa1ab" font-weight="600" text-anchor="end">›</text>
+<rect x="994" y="402" width="222" height="56" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1006" y="424" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sam</text>
+<text x="1006" y="444" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Driver · all vehicles</text>
+<text x="1204" y="436" font-size="18" fill="#9aa1ab" font-weight="600" text-anchor="end">›</text>
+<rect x="994" y="466" width="222" height="56" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1006" y="488" font-size="13.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Pat</text>
+<text x="1006" y="508" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Viewer · all vehicles</text>
+<text x="1204" y="500" font-size="18" fill="#9aa1ab" font-weight="600" text-anchor="end">›</text>
+<rect x="994" y="540" width="222" height="44" rx="10" fill="#5aa9ff"/>
+<text x="1105" y="567" font-size="14" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add user</text>
+<text x="1262" y="196" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Everything about one person in one place.</text>
+<text x="1262" y="218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Familiar (like Settings on a phone).</text>
+<text x="1262" y="240" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Room to grow: per-vehicle roles in</text>
+<text x="1262" y="262" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   milestone 4 go under ROLES.</text>
+<text x="1262" y="284" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Two levels on phones (list, then page).</text>
+<text x="40" y="780" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Both options: adding a user, and the temporary password (resetting a password shows the same result)</text>
+<rect x="40" y="810" width="420" height="450" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="62" y="850" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Add a user</text>
+<text x="62" y="872" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
+<rect x="62" y="880" width="376" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="905" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">sam</text>
+<text x="62" y="938" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Their name</text>
+<rect x="62" y="946" width="376" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="971" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Sam</text>
+<text x="62" y="1004" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Role on all vehicles</text>
+<rect x="62" y="1012" width="376" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="74" y="1037" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Driver</text>
+<text x="424" y="1037" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="62" y="1084" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">A temporary password is made for them; they</text>
+<text x="62" y="1102" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">choose their own at their first sign-in.</text>
+<rect x="62" y="1132" width="176" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="150.0" y="1159.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="262" y="1132" width="176" height="44" rx="10" fill="#5aa9ff"/>
+<text x="350.0" y="1159.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Add user</text>
+<rect x="500" y="810" width="420" height="300" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="522" y="850" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Sam&#x27;s temporary password</text>
+<text x="522" y="876" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Give it to Sam. It&#x27;s shown only this once.</text>
+<rect x="522" y="896" width="376" height="56" rx="10" fill="#14171c" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="710" y="932" font-size="22" fill="#e8eaed" font-weight="700" text-anchor="middle" font-family="ui-monospace, Menlo, monospace">QX7M-K2PD-9WRT</text>
+<rect x="522" y="970" width="176" height="44" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="610.0" y="997.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Copy</text>
+<rect x="722" y="970" width="176" height="44" rx="10" fill="#5aa9ff"/>
+<text x="810.0" y="997.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Done</text>
+<text x="522" y="1044" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Sam must choose a new password at sign-in.</text>
+<text x="960" y="840" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The server makes the temporary password (12 random</text>
+<text x="960" y="862" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">characters from an unambiguous alphabet, like the setup</text>
+<text x="960" y="884" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">code), so it&#x27;s never weak or reused. Admins never</text>
+<text x="960" y="906" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">type or see anyone&#x27;s real password.</text>
+<text x="960" y="928" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="960" y="950" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Disable and reset ask &quot;Are you sure?&quot; first.</text>
+<text x="40" y="1310" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · One card per user, with the role and actions on the card; changes in small dialogs</text>
+<text x="40" y="1340" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Users</text>
+<rect x="40" y="1352" width="900" height="330" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1354" width="896" height="48" rx="0" fill="#1d2128"/>
+<text x="58" y="1385" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Users</text>
+<rect x="762" y="1364" width="80" height="28" rx="14" fill="#f0883e"/>
+<text x="802.0" y="1383" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
+<rect x="850" y="1364" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="888.0" y="1383" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<rect x="42" y="1402" width="896" height="30" rx="0" fill="#3a2615"/>
+<line x1="42" y1="1432" x2="938" y2="1432" stroke="#f0883e" stroke-width="2"/>
+<text x="56" y="1422" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
+<rect x="762" y="1448" width="160" height="40" rx="10" fill="#5aa9ff"/>
+<text x="842" y="1473" font-size="13.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add user</text>
+<rect x="62" y="1504" width="410" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="1532" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Stuart</text>
+<text x="78" y="1554" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">stuart</text>
+<rect x="252" y="1524" width="136" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="262" y="1544" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Admin</text>
+<text x="380" y="1544" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="450" y="1546" font-size="20" fill="#9aa1ab" font-weight="700" text-anchor="end">⋯</text>
+<rect x="492" y="1504" width="410" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="508" y="1532" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Alex</text>
+<text x="508" y="1554" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">alex</text>
+<rect x="682" y="1524" width="136" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="692" y="1544" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Maintainer</text>
+<text x="810" y="1544" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="880" y="1546" font-size="20" fill="#9aa1ab" font-weight="700" text-anchor="end">⋯</text>
+<rect x="62" y="1586" width="410" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="78" y="1614" font-size="14.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sam</text>
+<text x="78" y="1636" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">sam</text>
+<rect x="252" y="1606" width="136" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="262" y="1626" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Driver</text>
+<text x="380" y="1626" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="450" y="1628" font-size="20" fill="#9aa1ab" font-weight="700" text-anchor="end">⋯</text>
+<rect x="492" y="1586" width="410" height="70" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="508" y="1614" font-size="14.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Pat</text>
+<text x="508" y="1636" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">pat</text>
+<rect x="682" y="1606" width="136" height="30" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="692" y="1626" font-size="12.5" fill="#9aa1ab" font-weight="500" text-anchor="start">Viewer</text>
+<text x="810" y="1626" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="880" y="1628" font-size="20" fill="#9aa1ab" font-weight="700" text-anchor="end">⋯</text>
+<text x="980" y="1390" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The role changes right on the card.</text>
+<text x="980" y="1412" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One screen on every size; no second level.</text>
+<text x="980" y="1434" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Little room for per-vehicle roles later</text>
+<text x="980" y="1456" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (they&#x27;d need their own dialog).</text>
+<text x="980" y="1478" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Reset / disable hide behind ⋯.</text>
+</svg>

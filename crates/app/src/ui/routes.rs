@@ -4,8 +4,9 @@ use dioxus::prelude::*;
 use domain::i18n::{MessageId, messages};
 
 use super::screens::{
-    Diagnostics, Due, Garage, LogEvent, Messages, NotFound, Reports, Settings, Timeline,
-    VehicleDetail, Vehicles,
+    AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
+    LogEvent, LogForm, Messages, NotFound, Places, RepairSquawk, Reports, Settings, SquawkDetail,
+    Timeline, Users, VehicleDetail, VehicleTab,
 };
 use super::shell::Shell;
 
@@ -14,8 +15,9 @@ use super::shell::Shell;
 #[rustfmt::skip]
 pub(crate) enum Route {
     #[layout(Shell)]
+        // Every group's vehicles (#056); a group's own page is below.
         #[route("/")]
-        Garage {},
+        AllVehicles {},
         #[route("/due")]
         Due {},
         #[route("/messages")]
@@ -24,13 +26,41 @@ pub(crate) enum Route {
         Timeline {},
         #[route("/reports")]
         Reports {},
-        #[route("/vehicles")]
-        Vehicles {},
+        // One group's vehicles (#056).
+        #[route("/vehicles/group/:group_id")]
+        GroupVehicles { group_id: String },
         // The UI says "vehicle"; the field is `asset_id` (AGENTS.md terminology rule).
         #[route("/vehicles/:asset_id")]
         VehicleDetail { asset_id: String },
         #[route("/log")]
         LogEvent {},
+        // A fuel-up or reading form for one vehicle (step 6g).
+        // A vehicle's page on one tab (e.g. back from an event to the Fuel tab).
+        #[route("/vehicles/:asset_id/tab/:tab")]
+        VehicleTab { asset_id: String, tab: String },
+        #[route("/vehicles/:asset_id/log/:kind")]
+        LogForm { asset_id: String, kind: String },
+        // One event, and changing or correcting it (step 6h).
+        #[route("/events/:event_id")]
+        EventDetail { event_id: String },
+        #[route("/events/:event_id/edit")]
+        EditEvent { event_id: String },
+        #[route("/events/:event_id/correct")]
+        CorrectEvent { event_id: String },
+        // One squawk (step 7f).
+        #[route("/squawks/:squawk_id")]
+        SquawkDetail { squawk_id: String },
+        // A repair started from a squawk (step 7i, Repair this).
+        #[route("/squawks/:squawk_id/repair")]
+        RepairSquawk { squawk_id: String },
+        #[route("/users")]
+        Users {},
+        // Managing groups (#058).
+        #[route("/groups")]
+        Groups {},
+        // Each person's saved places (#060).
+        #[route("/places")]
+        Places {},
         #[route("/settings")]
         Settings {},
         #[route("/diagnostics")]
@@ -41,17 +71,26 @@ pub(crate) enum Route {
 }
 
 impl Route {
-    /// The title shown in the top bar for this screen.
+    /// The title shown in the top bar for this screen (a group's page shows the group's name
+    /// instead; see the shell).
     pub(crate) const fn title(&self) -> MessageId {
         match self {
-            Self::Garage {} => messages::NAV_GARAGE,
+            Self::AllVehicles {} => messages::NAV_ALL_VEHICLES,
+            Self::GroupVehicles { .. } => messages::NAV_VEHICLES,
             Self::Due {} => messages::NAV_DUE_AND_SQUAWKS,
             Self::Messages {} => messages::NAV_MESSAGES,
             Self::Timeline {} => messages::NAV_TIMELINE,
             Self::Reports {} => messages::NAV_REPORTS,
-            Self::Vehicles {} => messages::NAV_VEHICLES,
-            Self::VehicleDetail { .. } => messages::SCREEN_VEHICLE_DETAIL,
-            Self::LogEvent {} => messages::SCREEN_LOG_EVENT,
+            Self::VehicleDetail { .. } | Self::VehicleTab { .. } => messages::SCREEN_VEHICLE_DETAIL,
+            Self::LogEvent {} | Self::LogForm { .. } => messages::SCREEN_LOG_EVENT,
+            Self::EventDetail { .. } => messages::SCREEN_EVENT,
+            Self::EditEvent { .. } => messages::SCREEN_EDIT_EVENT,
+            Self::CorrectEvent { .. } => messages::SCREEN_CORRECT_EVENT,
+            Self::SquawkDetail { .. } => messages::SCREEN_SQUAWK,
+            Self::RepairSquawk { .. } => messages::EVENT_KIND_REPAIR,
+            Self::Users {} => messages::NAV_USERS,
+            Self::Groups {} => messages::NAV_GROUPS,
+            Self::Places {} => messages::NAV_PLACES,
             Self::Settings {} => messages::NAV_SETTINGS,
             Self::Diagnostics {} => messages::NAV_DIAGNOSTICS,
             Self::NotFound { .. } => messages::SCREEN_NOT_FOUND,
@@ -67,16 +106,43 @@ mod tests {
 
     fn every_route() -> Vec<Route> {
         vec![
-            Route::Garage {},
+            Route::AllVehicles {},
+            Route::GroupVehicles {
+                group_id: "0192f3a4".to_owned(),
+            },
             Route::Due {},
             Route::Messages {},
             Route::Timeline {},
             Route::Reports {},
-            Route::Vehicles {},
             Route::VehicleDetail {
                 asset_id: "0192f3a4".to_owned(),
             },
             Route::LogEvent {},
+            Route::VehicleTab {
+                asset_id: "0192f3a4".to_owned(),
+                tab: "fuel".to_owned(),
+            },
+            Route::LogForm {
+                asset_id: "0192f3a4".to_owned(),
+                kind: "fuel".to_owned(),
+            },
+            Route::EventDetail {
+                event_id: "0192f3a5".to_owned(),
+            },
+            Route::EditEvent {
+                event_id: "0192f3a5".to_owned(),
+            },
+            Route::CorrectEvent {
+                event_id: "0192f3a5".to_owned(),
+            },
+            Route::SquawkDetail {
+                squawk_id: "0192f3a6".to_owned(),
+            },
+            Route::RepairSquawk {
+                squawk_id: "0192f3a6".to_owned(),
+            },
+            Route::Groups {},
+            Route::Places {},
             Route::Settings {},
             Route::Diagnostics {},
         ]
@@ -96,7 +162,14 @@ mod tests {
 
     #[test]
     fn routes_use_the_planned_paths() {
-        assert_eq!(Route::Garage {}.to_string(), "/");
+        assert_eq!(Route::AllVehicles {}.to_string(), "/");
+        assert_eq!(
+            Route::GroupVehicles {
+                group_id: "abc".to_owned()
+            }
+            .to_string(),
+            "/vehicles/group/abc"
+        );
         assert_eq!(Route::Due {}.to_string(), "/due");
         assert_eq!(
             Route::VehicleDetail {

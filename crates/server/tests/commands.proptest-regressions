@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 26ae1fc8614af39376e9d644a4b1c7352f1640616a530fe1396a2924a481d4dd # shrinks to edits = [(false, 0, None, None), (true, 4057, Some(0), None), (false, 0, None, None), (true, 4057, Some(1), None)], shuffle_seed = 5635233662979245960

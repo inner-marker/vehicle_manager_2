@@ -5,7 +5,7 @@
 //! add their own `/api/...` paths to it.
 //!
 //! **`https://` is required**, except `http://` to this computer (a loopback host such as
-//! `localhost` or `127.0.0.1`) for local development. The credential travels with every
+//! `localhost` or `127.0.0.1`) for local development. The session token travels with every
 //! request, so it must never cross a network unencrypted (decision #027).
 //!
 //! # Examples

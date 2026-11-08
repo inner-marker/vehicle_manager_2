@@ -20,6 +20,8 @@ doc = false             # avoids a rustdoc output collision with the `app` libra
 [dependencies]
 domain.workspace = true
 dioxus = { workspace = true, features = ["fullstack", "router"] }
+jiff.workspace = true
+kamadak-exif.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
@@ -52,6 +54,9 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dep:storage", "dep:server"]
+# Short timers for manual testing (#054): honoured only with this feature, which only the
+# Dev image workflow turns on (milestone and dev images), never a release.
+test-timers = []
 
 [lints]
 workspace = true

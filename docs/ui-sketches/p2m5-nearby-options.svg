@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1430" viewBox="0 0 1560 1430" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="1430" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 5f.2 · Nearby places in the location picker (decision #061): two options</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">After Use my location or typed coordinates: up to 5 places within 25 km in the same country, with distance, direction, and type. The default skips districts.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · A list of choices: tap one to fill City or town (the default is marked)</text>
+<rect x="40" y="144" width="460" height="640" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="180" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Add a place</text>
+<text x="64" y="210" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">1 · WHERE</text>
+<rect x="64" y="220" width="412" height="48" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="241" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">48.85660, 2.35220</text>
+<text x="76" y="259" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">± 12 m · just now</text>
+<text x="64" y="294" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">2 · PLACE</text>
+<text x="64" y="320" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">NEARBY: CHOOSE THE CITY OR TOWN</text>
+<rect x="64" y="330" width="412" height="40" rx="8" fill="#262b34" stroke="#5aa9ff" stroke-width="2"/>
+<circle cx="84" cy="350" r="7" fill="none" stroke="#5aa9ff" stroke-width="2"/>
+<circle cx="84" cy="350" r="3.5" fill="#5aa9ff"/>
+<text x="100" y="355" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Paris</text>
+<text x="464" y="355" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">1.9 km SW · Capital</text>
+<rect x="64" y="376" width="412" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="84" cy="396" r="7" fill="none" stroke="#9aa1ab" stroke-width="2"/>
+<text x="100" y="401" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 04 Hôtel-de-Ville</text>
+<text x="464" y="401" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">0.4 km NE · District</text>
+<rect x="64" y="422" width="412" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="84" cy="442" r="7" fill="none" stroke="#9aa1ab" stroke-width="2"/>
+<text x="100" y="447" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 03 Temple</text>
+<text x="464" y="447" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">1.1 km N · District</text>
+<rect x="64" y="468" width="412" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="84" cy="488" r="7" fill="none" stroke="#9aa1ab" stroke-width="2"/>
+<text x="100" y="493" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 01 Louvre</text>
+<text x="464" y="493" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">1.3 km W · District</text>
+<rect x="64" y="514" width="412" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="84" cy="534" r="7" fill="none" stroke="#9aa1ab" stroke-width="2"/>
+<text x="100" y="539" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Montreuil</text>
+<text x="464" y="539" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">7.2 km E · City</text>
+<text x="64" y="568" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">City or town</text>
+<rect x="64" y="576" width="200" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="601" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Paris</text>
+<text x="276" y="568" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">State or province</text>
+<rect x="276" y="576" width="200" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="288" y="601" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Paris</text>
+<text x="64" y="640" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Country</text>
+<rect x="64" y="648" width="412" height="38" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="672.0" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">France</text>
+<text x="464" y="672.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<text x="64" y="710" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Not in the list? Type the city or town above.</text>
+<text x="64" y="734" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Time zone Europe/Paris · place data 2026-11-02.2</text>
+<text x="540" y="184" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Every choice visible at once, with</text>
+<text x="540" y="206" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   its distance, direction, and type.</text>
+<text x="540" y="228" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One tap; easy with gloves (48 px rows).</text>
+<text x="540" y="250" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− Takes about 230 px of height</text>
+<text x="540" y="272" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (the dialog scrolls on phones).</text>
+<text x="540" y="312" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · A</text>
+<rect x="540" y="324" width="250" height="560" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="558" y="350" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="554" y="364" width="222" height="500" rx="12" fill="#1d2128" stroke="#4a535e" stroke-width="1.5"/>
+<text x="566" y="390" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">2 · PLACE</text>
+<rect x="566" y="402" width="198" height="50" rx="8" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="578" y="423" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Paris</text>
+<text x="578" y="441" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">1.9 km SW · Capital</text>
+<rect x="566" y="460" width="198" height="50" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="578" y="481" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 04 Hôtel-de-Vill</text>
+<text x="578" y="499" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">0.4 km NE · District</text>
+<rect x="566" y="518" width="198" height="50" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="578" y="539" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 03 Temple</text>
+<text x="578" y="557" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">1.1 km N · District</text>
+<rect x="566" y="576" width="198" height="50" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="578" y="597" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 01 Louvre</text>
+<text x="578" y="615" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">1.3 km W · District</text>
+<rect x="566" y="634" width="198" height="50" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="578" y="655" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Montreuil</text>
+<text x="578" y="673" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">7.2 km E · City</text>
+<text x="566" y="704" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">City or town</text>
+<rect x="566" y="712" width="198" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="578" y="737" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Paris</text>
+<text x="40" y="924" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">B · The City or town field becomes a menu of the nearby places, with &#x27;Type another…&#x27; at the end</text>
+<rect x="40" y="944" width="460" height="470" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="64" y="980" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Add a place</text>
+<text x="64" y="1010" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">1 · WHERE</text>
+<rect x="64" y="1020" width="412" height="48" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="1041" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start" font-family="ui-monospace, Menlo, monospace">48.85660, 2.35220</text>
+<text x="76" y="1059" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">± 12 m · just now</text>
+<text x="64" y="1094" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">2 · PLACE</text>
+<text x="64" y="1120" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">City or town</text>
+<rect x="64" y="1128" width="412" height="38" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="76" y="1152.0" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Paris · 1.9 km SW · Capital</text>
+<text x="464" y="1152.0" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="end">▾</text>
+<rect x="64" y="1172" width="412" height="214" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<rect x="68" y="1178" width="404" height="30" rx="6" fill="#14171c" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="80" y="1198" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Paris</text>
+<text x="464" y="1198" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">1.9 km SW · Capital</text>
+<text x="80" y="1232" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 04 Hôtel-de-Ville</text>
+<text x="464" y="1232" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">0.4 km NE · District</text>
+<text x="80" y="1266" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 03 Temple</text>
+<text x="464" y="1266" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">1.1 km N · District</text>
+<text x="80" y="1300" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Paris 01 Louvre</text>
+<text x="464" y="1300" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">1.3 km W · District</text>
+<text x="80" y="1334" font-size="13" fill="#e8eaed" font-weight="500" text-anchor="start">Montreuil</text>
+<text x="464" y="1334" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="end">7.2 km E · City</text>
+<text x="80" y="1368" font-size="13" fill="#5aa9ff" font-weight="500" text-anchor="start">Type another…</text>
+<text x="64" y="1406" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(The menu, open.)</text>
+<text x="540" y="984" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Compact: no extra height when closed.</text>
+<text x="540" y="1006" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Feels like a normal form field.</text>
+<text x="540" y="1028" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− The choices are hidden until opened,</text>
+<text x="540" y="1050" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   so it&#x27;s easy to miss that there are any.</text>
+<text x="540" y="1072" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− A typed city needs the extra step</text>
+<text x="540" y="1094" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   &#x27;Type another…&#x27;.</text>
+</svg>

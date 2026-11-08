@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="2580" viewBox="0 0 1560 2580" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect x="0" y="0" width="1560" height="2580" rx="0" fill="#0d1014"/>
+<text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 7g · The Maintenance tab, redrawn: Schedule, Jobs, and Set up in one tab</text>
+<text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">The human&#x27;s direction (2026-11-03): option A&#x27;s interface, with setting up and tracking maintenance both under the Maintenance tab. A segmented control switches views; Set up only for Maintainers.</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Schedule (everyone): what&#x27;s tracked and when each was last done, option A&#x27;s cards</text>
+<text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Maintenance › Schedule (a Driver sees only Schedule and Jobs)</text>
+<rect x="40" y="166" width="900" height="620" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="168" width="200" height="616" rx="0" fill="#1d2128"/>
+<text x="62" y="202" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="202" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="218" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="240" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="240" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<line x1="54" y1="260" x2="230" y2="260" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="290" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; issues</text>
+<text x="86" y="328" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="366" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<rect x="242" y="168" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="199" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="676" y="178" width="74" height="28" rx="14" fill="#5aa9ff"/>
+<text x="713" y="197" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">+ Log</text>
+<rect x="758" y="178" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="178" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="262" y="236" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="262" y="268" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="290" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<text x="306.4" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Overview</text>
+<text x="402.8" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues · 2</text>
+<text x="499.2" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<line x1="543.6" y1="340" x2="655.2" y2="340" stroke="#5aa9ff" stroke-width="3"/>
+<text x="599.4" y="330" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="684.4000000000001" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="742.8000000000001" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Docs</text>
+<text x="805.0" y="330" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="341" x2="918" y2="341" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="358" width="231.20000000000002" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="266" y="361" width="89.2" height="28" rx="14" fill="#5aa9ff"/>
+<text x="310.6" y="380" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">Schedule</text>
+<text x="385.0" y="380" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Jobs</text>
+<text x="452.0" y="380" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Set up</text>
+<rect x="262" y="408" width="656" height="64" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="434" font-size="14.5" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="276" y="456" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 5,000 mi or 6 months</text>
+<text x="904" y="428" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="end">LAST DONE</text>
+<text x="904" y="448" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">3 Nov 2026 · 52,644 mi</text>
+<text x="904" y="464" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Oil change ›</text>
+<rect x="262" y="480" width="656" height="64" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="506" font-size="14.5" fill="#e8eaed" font-weight="800" text-anchor="start">Rotate tires</text>
+<text x="276" y="528" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">When needed</text>
+<text x="904" y="500" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="end">LAST DONE</text>
+<text x="904" y="520" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="end">Not done yet</text>
+<rect x="262" y="552" width="656" height="64" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="578" font-size="14.5" fill="#e8eaed" font-weight="800" text-anchor="start">State inspection</text>
+<text x="276" y="600" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On a fixed date · next 30 Nov 2026</text>
+<text x="904" y="572" font-size="10" fill="#9aa1ab" font-weight="800" text-anchor="end">LAST DONE</text>
+<text x="904" y="592" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">2 Dec 2025</text>
+<text x="904" y="608" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Inspection ›</text>
+<text x="262" y="646" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="start">Turned off: Timing belt</text>
+<text x="262" y="678" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">BUNDLES</text>
+<text x="262" y="700" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">5,000-mile service: Engine oil &amp; filter, Rotate tires</text>
+<text x="262" y="744" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Phase 5 adds what&#x27;s due (next to Last done); this view gets it then.</text>
+<text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Schedule</text>
+<rect x="980" y="166" width="250" height="620" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="998" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="982" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="996" y="222" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="996" y="262" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="1048.0" y="296" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues · 2</text>
+<line x1="1100.0" y1="306" x2="1211.6" y2="306" stroke="#5aa9ff" stroke-width="3"/>
+<text x="1155.8" y="296" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="1240.8" y="296" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<line x1="996" y1="307" x2="1214" y2="307" stroke="#333a45" stroke-width="1"/>
+<rect x="996" y="322" width="218" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1000.0" y="325" width="70.0" height="28" rx="14" fill="#5aa9ff"/>
+<text x="1035.0" y="344" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">Schedule</text>
+<text x="1105.0" y="344" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Jobs</text>
+<text x="1175.0" y="344" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Set up</text>
+<rect x="996" y="370" width="218" height="86" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="394" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1008" y="414" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 5,000 mi or 6 months</text>
+<text x="1008" y="436" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Last: 3 Nov 2026 · 52,644 mi</text>
+<text x="1008" y="450" font-size="11" fill="#5aa9ff" font-weight="600" text-anchor="start">Oil change ›</text>
+<rect x="996" y="466" width="218" height="86" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="490" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Rotate tires</text>
+<text x="1008" y="510" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">When needed</text>
+<text x="1008" y="532" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Last: Not done yet</text>
+<rect x="996" y="562" width="218" height="86" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1008" y="586" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">State inspection</text>
+<text x="1008" y="606" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On a fixed date · next 30 Nov </text>
+<text x="1008" y="628" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Last: 2 Dec 2025</text>
+<text x="1008" y="642" font-size="11" fill="#5aa9ff" font-weight="600" text-anchor="start">Inspection ›</text>
+<text x="1260" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · no schedule yet</text>
+<rect x="1260" y="166" width="250" height="620" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<text x="1278" y="192" font-size="11.5" fill="#9aa1ab" font-weight="600" text-anchor="start">9:41</text>
+<rect x="1262" y="196" width="246" height="40" rx="0" fill="#1d2128"/>
+<text x="1276" y="222" font-size="14" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="1276" y="262" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Van</text>
+<text x="1312.8" y="296" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues</text>
+<line x1="1349.6" y1="306" x2="1461.1999999999998" y2="306" stroke="#5aa9ff" stroke-width="3"/>
+<text x="1405.3999999999999" y="296" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="1490.3999999999999" y="296" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<line x1="1276" y1="307" x2="1494" y2="307" stroke="#333a45" stroke-width="1"/>
+<rect x="1276" y="322" width="218" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<rect x="1280.0" y="325" width="70.0" height="28" rx="14" fill="#5aa9ff"/>
+<text x="1315.0" y="344" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">Schedule</text>
+<text x="1385.0" y="344" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Jobs</text>
+<text x="1455.0" y="344" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Set up</text>
+<rect x="1276" y="370" width="218" height="200" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1385" y="410" font-size="15" fill="#e8eaed" font-weight="800" text-anchor="middle">No schedule yet</text>
+<text x="1385" y="432" font-size="11.5" fill="#9aa1ab" font-weight="500" text-anchor="middle">Track oil, tires, inspections…</text>
+<rect x="1290" y="454" width="190" height="40" rx="10" fill="#5aa9ff"/>
+<text x="1385.0" y="479.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Set it up</text>
+<rect x="1290" y="504" width="190" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1385.0" y="529.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Copy from Truck…</text>
+<text x="1276" y="600" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">For Maintainers; others see</text>
+<text x="1276" y="618" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">&quot;Nothing is tracked yet.&quot;</text>
+<text x="40" y="824" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Jobs (everyone): the vehicle&#x27;s maintenance and repairs, drafts first; filled in by step 7i&#x27;s work log</text>
+<text x="40" y="854" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Maintenance › Jobs</text>
+<rect x="40" y="866" width="900" height="520" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="868" width="200" height="516" rx="0" fill="#1d2128"/>
+<text x="62" y="902" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="902" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="918" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="940" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="940" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<line x1="54" y1="960" x2="230" y2="960" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="990" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; issues</text>
+<text x="86" y="1028" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="1066" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<rect x="242" y="868" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="899" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="676" y="878" width="74" height="28" rx="14" fill="#5aa9ff"/>
+<text x="713" y="897" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">+ Log</text>
+<rect x="758" y="878" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="897" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="878" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="897" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="262" y="936" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="262" y="968" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="990" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<text x="306.4" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Overview</text>
+<text x="402.8" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues · 2</text>
+<text x="499.2" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<line x1="543.6" y1="1040" x2="655.2" y2="1040" stroke="#5aa9ff" stroke-width="3"/>
+<text x="599.4" y="1030" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="684.4000000000001" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="742.8000000000001" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Docs</text>
+<text x="805.0" y="1030" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="1041" x2="918" y2="1041" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="1058" width="231.20000000000002" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="310.6" y="1080" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Schedule</text>
+<rect x="355.2" y="1061" width="59.6" height="28" rx="14" fill="#5aa9ff"/>
+<text x="385.0" y="1080" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">Jobs</text>
+<text x="452.0" y="1080" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Set up</text>
+<rect x="262" y="1108" width="656" height="58" rx="10" fill="#1d2128" stroke="#5aa9ff" stroke-width="2"/>
+<text x="276" y="1132" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Repair · 10 Nov 2026</text>
+<text x="276" y="1152" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Brakes squeal · 1 task</text>
+<rect x="822" y="1124" width="82" height="24" rx="12" fill="#14171c" stroke="#5aa9ff" stroke-width="1.5"/>
+<text x="863" y="1141" font-size="11.5" fill="#5aa9ff" font-weight="700" text-anchor="middle">Draft</text>
+<rect x="262" y="1174" width="656" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="1198" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 3 Nov 2026</text>
+<text x="276" y="1218" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Oil change · 2 tasks · 1 issue deferred</text>
+<text x="904" y="1208" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="end">$86.40</text>
+<rect x="262" y="1240" width="656" height="58" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="276" y="1264" font-size="14" fill="#e8eaed" font-weight="800" text-anchor="start">Maintenance · 2 Dec 2025</text>
+<text x="276" y="1284" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">State inspection · 1 task</text>
+<text x="904" y="1274" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="end">$25.00</text>
+<text x="262" y="1322" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Like the Fuel tab: the Timeline&#x27;s rows, only maintenance and repairs. A row opens</text>
+<text x="262" y="1342" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">the event&#x27;s page (7j). Until 7i adds the work log, it says none are logged yet.</text>
+<text x="980" y="884" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Why a Jobs view here:</text>
+<text x="980" y="906" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ &quot;Tracking maintenance&quot; in one place: what&#x27;s due</text>
+<text x="980" y="928" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   (Schedule) and what was done (Jobs).</text>
+<text x="980" y="950" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ A draft left open is easy to find (and the</text>
+<text x="980" y="972" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   forgotten-job message links to it).</text>
+<text x="980" y="994" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ The Timeline still shows everything together.</text>
+<text x="40" y="1434" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Set up (Maintainers, in Maintainer or Admin mode): option A&#x27;s sections and dialogs, moved here from Setup</text>
+<text x="40" y="1464" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Maintenance › Set up</text>
+<rect x="40" y="1476" width="900" height="690" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="42" y="1478" width="200" height="686" rx="0" fill="#1d2128"/>
+<text x="62" y="1512" font-size="14" fill="#9aa1ab" font-weight="700" text-anchor="start">▤</text>
+<text x="86" y="1512" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">All vehicles</text>
+<rect x="50" y="1528" width="184" height="34" rx="8" fill="#262b34"/>
+<text x="62" y="1550" font-size="14" fill="#5aa9ff" font-weight="700" text-anchor="start">⌂</text>
+<text x="86" y="1550" font-size="13.5" fill="#5aa9ff" font-weight="700" text-anchor="start">Garage</text>
+<line x1="54" y1="1570" x2="230" y2="1570" stroke="#333a45" stroke-width="1"/>
+<text x="86" y="1600" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due &amp; issues</text>
+<text x="86" y="1638" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Messages</text>
+<text x="86" y="1676" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">Settings</text>
+<rect x="242" y="1478" width="696" height="48" rx="0" fill="#1d2128"/>
+<text x="258" y="1509" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Truck</text>
+<rect x="676" y="1488" width="74" height="28" rx="14" fill="#5aa9ff"/>
+<text x="713" y="1507" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">+ Log</text>
+<rect x="758" y="1488" width="104" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="810" y="1507" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Maintainer ▾</text>
+<rect x="870" y="1488" width="56" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="898" y="1507" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Sam</text>
+<text x="262" y="1546" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">‹ Garage</text>
+<text x="262" y="1578" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Truck</text>
+<text x="262" y="1600" font-size="13" fill="#9aa1ab" font-weight="400" text-anchor="start">Truck · 2021 Ford F-150 · Blue</text>
+<text x="306.4" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Overview</text>
+<text x="402.8" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Issues · 2</text>
+<text x="499.2" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Timeline</text>
+<line x1="543.6" y1="1650" x2="655.2" y2="1650" stroke="#5aa9ff" stroke-width="3"/>
+<text x="599.4" y="1640" font-size="13" fill="#5aa9ff" font-weight="700" text-anchor="middle">Maintenance</text>
+<text x="684.4000000000001" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Fuel</text>
+<text x="742.8000000000001" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Docs</text>
+<text x="805.0" y="1640" font-size="13" fill="#9aa1ab" font-weight="500" text-anchor="middle">Setup</text>
+<line x1="262" y1="1651" x2="918" y2="1651" stroke="#333a45" stroke-width="1"/>
+<rect x="262" y="1668" width="231.20000000000002" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="310.6" y="1690" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Schedule</text>
+<text x="385.0" y="1690" font-size="12.5" fill="#9aa1ab" font-weight="600" text-anchor="middle">Jobs</text>
+<rect x="414.8" y="1671" width="74.4" height="28" rx="14" fill="#5aa9ff"/>
+<text x="452.0" y="1690" font-size="12.5" fill="#0b1420" font-weight="800" text-anchor="middle">Set up</text>
+<text x="262" y="1738" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">REQUIREMENTS</text>
+<line x1="262" y1="1746" x2="918" y2="1746" stroke="#333a45" stroke-width="1"/>
+<rect x="803" y="1718" width="115" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="860.5" y="1737" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Requirement</text>
+<rect x="701" y="1718" width="94" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="748.0" y="1737" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Copy from…</text>
+<rect x="262" y="1756" width="656" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1781" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Engine oil &amp; filter</text>
+<text x="462" y="1781" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 5,000 mi or 6 months</text>
+<text x="906" y="1781" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<rect x="262" y="1802" width="656" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1827" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rotate tires</text>
+<text x="462" y="1827" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">When needed</text>
+<text x="906" y="1827" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<rect x="262" y="1848" width="656" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1873" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">State inspection</text>
+<text x="462" y="1873" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On a fixed date · next 30 Nov 2026</text>
+<text x="906" y="1873" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<rect x="262" y="1894" width="656" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="1919" font-size="13.5" fill="#9aa1ab" font-weight="700" text-anchor="start">Timing belt</text>
+<text x="462" y="1919" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 100,000 mi</text>
+<rect x="732" y="1904" width="34" height="20" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="749" y="1918" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="middle">Off</text>
+<text x="906" y="1919" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<text x="262" y="1972" font-size="11.5" fill="#9aa1ab" font-weight="800" text-anchor="start">SERVICE BUNDLES</text>
+<line x1="262" y1="1980" x2="918" y2="1980" stroke="#333a45" stroke-width="1"/>
+<rect x="838" y="1952" width="80" height="28" rx="8" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="878.0" y="1971" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Bundle</text>
+<rect x="262" y="1990" width="656" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="274" y="2015" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">5,000-mile service</text>
+<text x="462" y="2015" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Engine oil &amp; filter, Rotate tires</text>
+<text x="906" y="2015" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Edit · Remove</text>
+<text x="262" y="2062" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Remove: only one no task has done (turn it off instead); it leaves its bundles too.</text>
+<text x="262" y="2082" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Copy from…: only while there are no requirements (the dialog from the first sheet).</text>
+<text x="262" y="2102" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Setup&#x27;s tab keeps meters and fields, with a line: &quot;The maintenance schedule is under</text>
+<text x="262" y="2122" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Maintenance › Set up.&quot;</text>
+<text x="980" y="1464" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Add or edit a requirement (option A&#x27;s dialog)</text>
+<rect x="980" y="1476" width="540" height="620" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
+<rect x="1000" y="1500" width="500" height="576" rx="14" fill="#1d2128" stroke="#4a535e" stroke-width="2"/>
+<text x="1024" y="1538" font-size="18" fill="#e8eaed" font-weight="800" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1024" y="1558" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Name</text>
+<rect x="1024" y="1566" width="452" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1036" y="1591" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Engine oil &amp; filter</text>
+<text x="1024" y="1628" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes (optional)</text>
+<rect x="1024" y="1636" width="452" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1036" y="1661" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">5W-30 synthetic, 6 qt</text>
+<text x="1024" y="1714" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">In use</text>
+<rect x="1436" y="1700" width="40" height="22" rx="11" fill="#5aa9ff" stroke="#333a45" stroke-width="1.5"/>
+<circle cx="1465" cy="1711" r="8" fill="#0b1420"/>
+<text x="1024" y="1752" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">DUE WHEN, WHICHEVER COMES FIRST</text>
+<rect x="1024" y="1764" width="452" height="58" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1036" y="1786" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Odometer</text>
+<text x="1036" y="1810" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Every</text>
+<rect x="1084" y="1792" width="90" height="26" rx="6" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1096" y="1810" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">5,000</text>
+<text x="1184" y="1810" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">mi</text>
+<text x="1464" y="1800" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<rect x="1024" y="1832" width="452" height="58" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
+<text x="1036" y="1854" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Calendar</text>
+<text x="1036" y="1878" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">Every</text>
+<rect x="1084" y="1860" width="60" height="26" rx="6" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1096" y="1878" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">6</text>
+<text x="1154" y="1878" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">months</text>
+<rect x="1234" y="1864" width="18" height="18" rx="4" fill="#14171c" stroke="#9aa1ab" stroke-width="1.5"/>
+<text x="1260" y="1878" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="start">Due by the end of the month</text>
+<text x="1464" y="1868" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<rect x="1024" y="1904" width="130" height="26" rx="7" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1089.0" y="1921" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Meter rule</text>
+<rect x="1164" y="1904" width="140" height="26" rx="7" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1234.0" y="1921" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Calendar rule</text>
+<rect x="1314" y="1904" width="120" height="26" rx="7" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
+<text x="1374.0" y="1921" font-size="11.5" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Fixed date</text>
+<text x="1024" y="1952" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">No rules: done when needed.</text>
+<rect x="1256" y="2016" width="100" height="40" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
+<text x="1306.0" y="2041.0" font-size="14.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="1368" y="2016" width="108" height="40" rx="10" fill="#5aa9ff"/>
+<text x="1422.0" y="2041.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Save</text>
+<text x="40" y="2204" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Thoughts:</text>
+<text x="40" y="2226" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ One tab for maintenance: Schedule to read, Jobs for what was done, Set up to change it.</text>
+<text x="40" y="2248" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ A segmented control, like Settings&#x27; You / Household: switching never leaves the tab.</text>
+<text x="40" y="2270" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Drivers and Viewers see Schedule and Jobs only, so their tab stays simple.</text>
+<text x="40" y="2292" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">+ Considered: an &quot;Edit schedule&quot; toggle over the cards. Set up has its own lists (turned-off</text>
+<text x="40" y="2314" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   ones, bundles, removing), so a separate view stays tidier than edit buttons on every card.</text>
+<text x="40" y="2336" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">− The tab now has its own sub-navigation (one more tap to set up; Set up is rare).</text>
+<text x="800" y="2226" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The address keeps the view (/vehicles/…/tab/maintenance?view=set-up),</text>
+<text x="800" y="2248" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">so a link (e.g. from Setup&#x27;s line) lands on Set up.</text>
+</svg>

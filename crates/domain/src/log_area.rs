@@ -30,6 +30,12 @@ pub const DATABASE: &str = "database";
 /// Authentication and permissions. Never log tokens, cookies, or credentials.
 pub const AUTH: &str = "auth";
 
+/// A field that keeps an event out of the log files and the in-app viewer: it's printed only
+/// on the console (what `docker logs` shows on the NAS). For one-time codes that prove the
+/// reader has access to the server (the setup and recovery codes), which must not end up in
+/// log files that get shared when debugging. Log it as `console_only = true`.
+pub const CONSOLE_ONLY_FIELD: &str = "console_only";
+
 /// Every area, in the order the log viewer lists them.
 pub const ALL: [&str; 5] = [APP, UI, SYNC, DATABASE, AUTH];
 

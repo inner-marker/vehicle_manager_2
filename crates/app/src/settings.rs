@@ -4,7 +4,8 @@
 //! must always start, so a missing, unreadable, or invalid file means "nothing saved",
 //! with a warning in the log; it never stops the app.
 //!
-//! **Never put the credential here:** it stays in memory only (#024, #027).
+//! **Never put the session token here:** the desktop app keeps it in memory only (#027;
+//! phase-2.md milestone 2).
 //! Native-only; the web app has no files.
 
 use std::io;

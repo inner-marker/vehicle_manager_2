@@ -42,6 +42,7 @@ pub(crate) fn Diagnostics() -> Element {
     let Some(handles) = handles else {
         return rsx! {
             ConnectionPanel {}
+            About {}
             p { class: "placeholder", {tr(messages::LOG_VIEWER_UNAVAILABLE)} }
         };
     };
@@ -57,6 +58,7 @@ pub(crate) fn Diagnostics() -> Element {
 
     rsx! {
         ConnectionPanel {}
+        About {}
         div { class: "log-controls",
             label {
                 {tr(messages::LOG_VIEWER_MIN_LEVEL)}
@@ -109,28 +111,70 @@ pub(crate) fn Diagnostics() -> Element {
         if visible.is_empty() {
             p { class: "placeholder", {tr(messages::LOG_VIEWER_EMPTY)} }
         } else {
-            table { class: "log-table",
-                thead {
-                    tr {
-                        th { {tr(messages::LOG_VIEWER_TIME)} }
-                        th { {tr(messages::LOG_VIEWER_LEVEL)} }
-                        th { {tr(messages::LOG_VIEWER_AREA)} }
-                        th { {tr(messages::LOG_VIEWER_MESSAGE)} }
+            // Only the list scrolls sideways on a narrow screen, never the page (issue #23).
+            div { class: "log-table-scroll",
+                table { class: "log-table",
+                    thead {
+                        tr {
+                            th { {tr(messages::LOG_VIEWER_TIME)} }
+                            th { {tr(messages::LOG_VIEWER_LEVEL)} }
+                            th { {tr(messages::LOG_VIEWER_AREA)} }
+                            th { {tr(messages::LOG_VIEWER_MESSAGE)} }
+                        }
                     }
-                }
-                tbody {
-                    for (index, entry) in visible.iter().enumerate() {
-                        tr { key: "{index}", class: "level-{entry.level.as_str()}",
-                            td { class: "log-time", {format_utc_iso8601(entry.time())} }
-                            td { {tr(level_label(entry.level))} }
-                            td { {area_label(&entry.area)} }
-                            td {
-                                {entry.message.clone()}
-                                span { class: "log-fields", " {format_fields(entry)}" }
+                    tbody {
+                        for (index, entry) in visible.iter().enumerate() {
+                            tr { key: "{index}", class: "level-{entry.level.as_str()}",
+                                td { class: "log-time", {format_utc_iso8601(entry.time())} }
+                                td { {tr(level_label(entry.level))} }
+                                td { {area_label(&entry.area)} }
+                                td {
+                                    {entry.message.clone()}
+                                    span { class: "log-fields", " {format_fields(entry)}" }
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/// About (#060): the app's version, the place data's version, and the data credits.
+#[component]
+fn About() -> Element {
+    let mut info = use_signal(|| None::<Option<domain::api::PlaceDataInfo>>);
+    // After mounting only (never during server rendering).
+    use_effect(move || {
+        spawn(async move {
+            if let Ok(domain::api::PlacesOutcome::DataInfo { info: data }) =
+                crate::api::get_place_data().await
+            {
+                info.set(Some(data));
+            }
+        });
+    });
+    let data = info().flatten();
+    let version = data.as_ref().map_or_else(
+        || tr(messages::ABOUT_PLACE_DATA_UNAVAILABLE),
+        |data| data.data_version.clone(),
+    );
+    let credits = data
+        .as_ref()
+        .map(|data| data.attribution.clone())
+        .filter(|credit| !credit.is_empty())
+        .unwrap_or_else(|| tr(messages::ABOUT_CREDITS_DEFAULT));
+    rsx! {
+        section { class: "about",
+            h3 { class: "section-heading", {tr(messages::ABOUT_HEADING).to_uppercase()} }
+            dl { class: "about-list",
+                dt { {tr(messages::ABOUT_APP)} }
+                dd { {env!("CARGO_PKG_VERSION")} }
+                dt { {tr(messages::ABOUT_PLACE_DATA)} }
+                dd { if info().is_some() { {version} } else { {tr(messages::LOADING)} } }
+                dt { {tr(messages::ABOUT_CREDITS)} }
+                dd { {credits} }
             }
         }
     }
