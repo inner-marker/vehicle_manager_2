@@ -12,15 +12,16 @@ use std::sync::Mutex;
 
 use dioxus::prelude::dioxus_fullstack::{HeaderMap, HeaderValue, set_request_headers};
 use domain::api::{API_VERSION, API_VERSION_HEADER};
+use domain::secret::Secret;
 
 /// The desktop app's session token, while signed in.
-static SESSION_TOKEN: Mutex<Option<String>> = Mutex::new(None);
+static SESSION_TOKEN: Mutex<Option<Secret>> = Mutex::new(None);
 
 /// Whether this build gets a session token from sign-in (and sends it) rather than a cookie.
 pub const USES_SESSION_TOKEN: bool = cfg!(any(feature = "desktop", feature = "mobile"));
 
 /// Remembers (or, with `None`, forgets) the session token, and updates the request headers.
-pub fn set_session_token(token: Option<String>) {
+pub fn set_session_token(token: Option<Secret>) {
     *SESSION_TOKEN
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner) = token;
@@ -33,7 +34,7 @@ pub fn apply_request_headers() {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
-    set_request_headers(request_headers(token.as_deref()));
+    set_request_headers(request_headers(token.as_ref().map(Secret::expose)));
 }
 
 /// The headers a request to the server carries right now (for the file routes, which aren't
@@ -44,7 +45,7 @@ pub fn current_headers() -> HeaderMap {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
-    request_headers(token.as_deref())
+    request_headers(token.as_ref().map(Secret::expose))
 }
 
 /// The API version header, plus `Authorization: Bearer` when there's a token. A token with

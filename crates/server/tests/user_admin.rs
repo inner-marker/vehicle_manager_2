@@ -132,7 +132,11 @@ mod user_admin {
         users
     }
 
-    async fn add(context: &AdminContext<'_>, username: &str, role: Role) -> (UserId, String) {
+    async fn add(
+        context: &AdminContext<'_>,
+        username: &str,
+        role: Role,
+    ) -> (UserId, domain::secret::Secret) {
         let UserAdminOutcome::TemporaryPassword { password } =
             add_user(context, username, username, role).await
         else {
@@ -174,9 +178,10 @@ mod user_admin {
         let (sam, password) = add(&context, "sam", Role::Driver).await;
 
         assert_eq!(
-            password.len(),
+            password.expose().len(),
             14,
-            "12 characters in groups of 4: {password}"
+            "12 characters in groups of 4: {}",
+            password.expose()
         );
         let summary = users(&context)
             .await

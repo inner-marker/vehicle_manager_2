@@ -39,6 +39,7 @@ pub mod profile;
 pub mod quantity;
 pub mod reference;
 pub mod requirement;
+pub mod secret;
 pub mod server_address;
 pub mod squawk;
 pub mod time;

@@ -16,10 +16,10 @@ mod first_admin {
 
     fn request(code: &str, username: &str, display_name: &str, password: String) -> SetupRequest {
         SetupRequest {
-            code: code.to_owned(),
+            code: code.into(),
             username: username.to_owned(),
             display_name: display_name.to_owned(),
-            password,
+            password: password.into(),
         }
     }
 

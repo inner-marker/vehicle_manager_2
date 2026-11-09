@@ -26,6 +26,7 @@ use crate::health::Health;
 use crate::ids::new_id;
 use crate::passwords::hash_password;
 use crate::sessions::SignedIn;
+use domain::secret::Secret;
 
 /// Characters in a temporary password (before the dashes): 12, the minimum password length.
 const TEMPORARY_PASSWORD_CHARS: usize = 12;
@@ -175,9 +176,10 @@ fn is_enabled(users: &[StoredUser], user: UserId) -> bool {
 }
 
 /// A new temporary password, and its hash.
-async fn temporary_password() -> Result<(String, String), String> {
-    let password =
-        group_by_four(&random_code(TEMPORARY_PASSWORD_CHARS).map_err(|error| error.to_string())?);
+async fn temporary_password() -> Result<(Secret, String), String> {
+    let password = Secret::new(group_by_four(
+        &random_code(TEMPORARY_PASSWORD_CHARS).map_err(|error| error.to_string())?,
+    ));
     let hash = hash_password(password.clone())
         .await
         .map_err(|error| error.to_string())?;
