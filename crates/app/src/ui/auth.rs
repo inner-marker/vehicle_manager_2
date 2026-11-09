@@ -108,9 +108,14 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
         }
         crate::pairing::forget();
     }
+    let signed_in = matches!(next, AuthState::SignedIn(_));
     if *state.peek() != next {
-        tracing::debug!(target: log_area::AUTH, signed_in = matches!(next, AuthState::SignedIn(_)), "session state changed");
+        tracing::debug!(target: log_area::AUTH, signed_in, "session state changed");
         state.set(next);
+    }
+    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run.
+    if signed_in {
+        crate::ui::recent_servers::remember_once(SERVER_INSTANCE.peek().clone()).await;
     }
 }
 

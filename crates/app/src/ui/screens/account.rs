@@ -291,6 +291,8 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
                     tracing::info!(target: log_area::AUTH, paired = key.is_some(), "signed in");
                     crate::pairing::finish_sign_in(token, key);
                     state.set(AuthState::SignedIn(session));
+                    crate::ui::recent_servers::remember_once(crate::ui::auth::SERVER_INSTANCE())
+                        .await;
                 }
                 Ok(SignInOutcome::InvalidCredentials) => {
                     password.set(String::new());
@@ -315,6 +317,7 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
                 h1 { class: "auth-title", {tr(messages::SIGN_IN_TITLE)} }
                 p { class: "auth-subtitle", {tr(messages::SIGN_IN_SUBTITLE)} }
                 SignedOutNotice {}
+                crate::ui::recent_servers::ServerList {}
                 Field { label: messages::FIELD_USERNAME, value: username, autocomplete: "username", autofocus: true }
                 Field { label: messages::FIELD_PASSWORD, value: password, kind: "password", autocomplete: "current-password" }
                 FormError { message: error() }

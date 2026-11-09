@@ -410,6 +410,22 @@ define_messages! {
 
     /// Sign-in screen: the link to recover a password.
     SIGN_IN_FORGOT_LINK => "sign-in-forgot-link",
+    /// Sign-in (desktop): the recent servers' heading (phase-3.md 2d).
+    SIGN_IN_SERVER => "sign-in-server",
+    /// Sign-in (desktop): opens the field for another server's address.
+    SIGN_IN_ANOTHER_SERVER => "sign-in-another-server",
+    /// Sign-in (desktop): the new server address field.
+    SIGN_IN_SERVER_ADDRESS => "sign-in-server-address",
+    /// Sign-in (desktop): saves the typed server address.
+    SIGN_IN_USE_SERVER => "sign-in-use-server",
+    /// Sign-in (desktop): another server was chosen; it takes a restart.
+    SIGN_IN_REOPEN_TO_SWITCH => "sign-in-reopen-to-switch",
+    /// A recent server: used today.
+    SERVER_LAST_USED_TODAY => "server-last-used-today",
+    /// A recent server: used yesterday.
+    SERVER_LAST_USED_YESTERDAY => "server-last-used-yesterday",
+    /// A recent server: used some days ago.
+    SERVER_LAST_USED_DAYS => "server-last-used-days",
     /// Recovery: heading of the username step.
     RECOVERY_TITLE => "recovery-title",
     /// Recovery: the username step's instruction.

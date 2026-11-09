@@ -259,6 +259,14 @@ users-back = ← Users
 ## Password recovery (decision #047)
 
 sign-in-forgot-link = Forgot your password?
+sign-in-server = SERVER
+sign-in-another-server = + Another server…
+sign-in-server-address = Server address
+sign-in-use-server = Use this server
+sign-in-reopen-to-switch = Saved. Quit and reopen the app to switch to { $address }.
+server-last-used-today = Last used today
+server-last-used-yesterday = Last used yesterday
+server-last-used-days = Last used { $days } days ago
 recovery-title = Forgot your password?
 recovery-subtitle = Enter your username.
 recovery-continue = Continue

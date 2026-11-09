@@ -170,6 +170,10 @@ pub struct Handshake {
     /// unknown.
     #[serde(default)]
     pub build: crate::build_info::BuildInfo,
+    /// The server's database ID (phase-3.md 2d): the same server even at a new address. Missing
+    /// from older servers.
+    #[serde(default)]
+    pub database_id: Option<String>,
 }
 
 /// Who is signed in, as the client sees it (from the session check and sign-in).

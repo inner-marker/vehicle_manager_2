@@ -74,6 +74,7 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
         server_time_ms: SystemClock.now().as_millis(),
         healthy: ::server::health::current().is_healthy(),
         build: crate::build_info::this_build(),
+        database_id: ::server::startup::database_id().map(|id| id.to_string()),
     })
 }
 

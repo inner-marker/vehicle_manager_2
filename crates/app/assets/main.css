@@ -642,6 +642,66 @@ a.secondary-button {
     cursor: pointer;
 }
 
+/* ---------- Desktop sign-in: recent servers (p3m2-devices-options.svg, option 1A) ---------- */
+
+.server-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.server-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.server-card.on {
+    border-color: var(--accent);
+}
+
+.server-dot {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+}
+
+.server-card.on .server-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.server-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.server-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.server-detail {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
 /* ---------- Mode and account chips, menus, dialog (p2m2-mode-options.svg, option A) ---------- */
 
 .chip-anchor {
