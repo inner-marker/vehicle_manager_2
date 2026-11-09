@@ -215,6 +215,8 @@ define_messages! {
     API_ERROR_CLIENT_TOO_OLD => "api-error-client-too-old",
     /// Refusal reason: the app is newer than the server.
     API_ERROR_CLIENT_TOO_NEW => "api-error-client-too-new",
+    /// A paired device's request wasn't signed properly (phase-3.md 2b).
+    API_ERROR_DEVICE_SIGNATURE => "api-error-device-signature",
 
     /// Shown while the app checks who's signed in.
     LOADING => "loading",

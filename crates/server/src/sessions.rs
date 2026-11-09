@@ -25,6 +25,7 @@ use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
 use domain::device::DeviceKind;
+use domain::device_signature::SignatureError;
 use domain::secret::Secret;
 use storage::devices::StoredDevice;
 
@@ -52,23 +53,11 @@ impl fmt::Debug for SessionToken {
     }
 }
 
-/// The SHA-256 of a presented token, or `None` if it isn't 64 hex characters.
+/// The SHA-256 of a presented token, or `None` if it isn't 64 hex characters (the same as
+/// the desktop computes for its signatures: `domain::device_signature::token_hash`).
 #[must_use]
 pub fn token_hash(token: &str) -> Option<[u8; 32]> {
-    let bytes = decode_hex(token)?;
-    Some(Sha256::digest(bytes).into())
-}
-
-fn decode_hex(text: &str) -> Option<[u8; TOKEN_BYTES]> {
-    if text.len() != TOKEN_BYTES * 2 {
-        return None;
-    }
-    let mut bytes = [0; TOKEN_BYTES];
-    for (byte, pair) in bytes.iter_mut().zip(text.as_bytes().chunks_exact(2)) {
-        let pair = core::str::from_utf8(pair).ok()?;
-        *byte = u8::from_str_radix(pair, 16).ok()?;
-    }
-    Some(bytes)
+    domain::device_signature::token_hash(token)
 }
 
 /// A new random token and its hash.
@@ -307,6 +296,10 @@ async fn grants_of(database: &Database, user: UserId) -> Result<Vec<RoleGrant>, 
 /// has expired, or its user is disabled or gone. Extends the session, and drops Admin mode
 /// after its idle limit or a mode the user's grants no longer allow.
 ///
+/// **A paired device's session is never accepted here** (its requests must be signed): the
+/// auth layer uses [`resolve_signed`], which checks the signature first. This is for sessions
+/// without a key (browsers) and for tests.
+///
 /// `timers` gives the Admin idle limit (shared with the app's idle watcher, #049) and how often
 /// a session's last use is written: at most once per keep-alive interval, so ordinary requests
 /// don't each cost a database write.
@@ -320,12 +313,57 @@ pub async fn resolve(
     now: UnixMillis,
     timers: Timers,
 ) -> Result<Option<SignedIn>, StorageError> {
+    let resolved = resolve_signed(database, token_hash, now, timers, |_| {
+        Err(SignatureError::Missing)
+    })
+    .await?;
+    Ok(match resolved {
+        Resolved::SignedIn(signed_in) => Some(signed_in),
+        Resolved::NotSignedIn | Resolved::BadSignature(_) => None,
+    })
+}
+
+/// What a presented session token turned out to be.
+#[derive(Debug, Clone)]
+pub enum Resolved {
+    /// A valid session (and, for a paired device, a valid signature).
+    SignedIn(SignedIn),
+    /// No such session, or it ended, or its user is disabled or gone.
+    NotSignedIn,
+    /// The session is a paired device's, and the request's signature was refused.
+    BadSignature(SignatureError),
+}
+
+/// As [`resolve`], but for a session whose device has a key, `check_signature` is called with
+/// that key **before anything is written** (so a copied token alone can't even keep a session
+/// alive); if it refuses, so does this (phase-3.md 2b, #073). Sessions without a key (browsers)
+/// don't call it.
+///
+/// # Errors
+///
+/// [`StorageError`] if the database fails.
+pub async fn resolve_signed(
+    database: &Database,
+    token_hash: [u8; 32],
+    now: UnixMillis,
+    timers: Timers,
+    check_signature: impl FnOnce(&[u8; 32]) -> Result<(), SignatureError>,
+) -> Result<Resolved, StorageError> {
     let Some(session) = database.session(token_hash).await? else {
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
     };
     if session.expires_at <= now {
         database.delete_session(token_hash).await?;
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
+    }
+    let key = database
+        .device(session.device)
+        .await?
+        .and_then(|device| device.public_key);
+    if let Some(key) = key
+        && let Err(error) = check_signature(&key)
+    {
+        return Ok(Resolved::BadSignature(error));
     }
     let Some(user) = database
         .user(session.user)
@@ -333,7 +371,7 @@ pub async fn resolve(
         .filter(|user| !user.user.disabled)
     else {
         database.delete_sessions_of(session.user).await?;
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
     };
     let grants = grants_of(database, user.id).await?;
     let mode = effective_mode(&session, &grants, now, timers);
@@ -344,7 +382,7 @@ pub async fn resolve(
         let expires_at = UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS);
         database.touch_session(token_hash, now, expires_at).await?;
     }
-    Ok(Some(SignedIn {
+    Ok(Resolved::SignedIn(SignedIn {
         token_hash,
         user: user.id,
         username: user.user.username,

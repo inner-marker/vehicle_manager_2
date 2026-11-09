@@ -133,6 +133,7 @@ api-error-missing-api-version = The app didn't send its API version.
 api-error-malformed-api-version = The server couldn't read the app's API version.
 api-error-client-too-old = This app is too old for the server. Update the app.
 api-error-client-too-new = This app is newer than the server. Update the server first.
+api-error-device-signature = This device's sign-in couldn't be confirmed. If the computer's clock is far off, fix it; otherwise sign in again.
 
 ## Signing in, first-Admin setup, modes, and the account menu
 

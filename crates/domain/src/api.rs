@@ -51,11 +51,14 @@ pub enum ApiError {
     ClientTooOld,
     /// The client's API version is newer than the server's: update the server first.
     ClientTooNew,
+    /// A paired device's request had no valid signature (missing, out of time, reused, or not
+    /// its key; phase-3.md 2b, #073).
+    DeviceSignature,
 }
 
 impl ApiError {
     /// Every reason, for exhaustive tests and the UI.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::MissingCredential,
         Self::InvalidCredential,
         Self::AuthNotConfigured,
@@ -63,12 +66,13 @@ impl ApiError {
         Self::MalformedApiVersion,
         Self::ClientTooOld,
         Self::ClientTooNew,
+        Self::DeviceSignature,
     ];
 
     /// The HTTP status the server responds with.
     pub const fn http_status(self) -> u16 {
         match self {
-            Self::MissingCredential | Self::InvalidCredential => 401,
+            Self::MissingCredential | Self::InvalidCredential | Self::DeviceSignature => 401,
             Self::AuthNotConfigured => 503,
             Self::MissingApiVersion | Self::MalformedApiVersion | Self::ClientTooNew => 400,
             // 426 Upgrade Required: the client must update to talk to this server.
@@ -86,6 +90,7 @@ impl ApiError {
             Self::MalformedApiVersion => messages::API_ERROR_MALFORMED_API_VERSION,
             Self::ClientTooOld => messages::API_ERROR_CLIENT_TOO_OLD,
             Self::ClientTooNew => messages::API_ERROR_CLIENT_TOO_NEW,
+            Self::DeviceSignature => messages::API_ERROR_DEVICE_SIGNATURE,
         }
     }
 
@@ -93,7 +98,10 @@ impl ApiError {
     pub const fn is_auth_failure(self) -> bool {
         matches!(
             self,
-            Self::MissingCredential | Self::InvalidCredential | Self::AuthNotConfigured
+            Self::MissingCredential
+                | Self::InvalidCredential
+                | Self::AuthNotConfigured
+                | Self::DeviceSignature
         )
     }
 
@@ -108,6 +116,7 @@ impl ApiError {
             Self::MalformedApiVersion => "malformed API version header",
             Self::ClientTooOld => "client API version is too old",
             Self::ClientTooNew => "client API version is newer than the server",
+            Self::DeviceSignature => "device signature missing or not valid",
         }
     }
 }
@@ -1397,7 +1406,8 @@ mod tests {
             [
                 ApiError::MissingCredential,
                 ApiError::InvalidCredential,
-                ApiError::AuthNotConfigured
+                ApiError::AuthNotConfigured,
+                ApiError::DeviceSignature
             ]
         );
     }

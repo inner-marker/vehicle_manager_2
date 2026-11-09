@@ -24,7 +24,11 @@ use std::sync::Arc;
 use domain::time::Clock;
 use storage::Database;
 
-use crate::sessions::{self, SignedIn, token_hash};
+use crate::sessions::{self, Resolved, SignedIn, token_hash};
+use domain::device_signature::{self, DeviceSignature, Scope, SignatureError};
+use domain::time::UnixMillis;
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 use axum::Router;
 use axum::body::Body;
@@ -88,6 +92,48 @@ impl SessionSource {
 pub struct AuthConfig {
     /// Where sessions are checked; `None` refuses every protected request.
     sessions: Option<SessionSource>,
+    /// Request signatures already used (phase-3.md 2b).
+    nonces: Arc<UsedNonces>,
+}
+
+/// Request-scope signatures already accepted, so each is accepted only once. Kept in memory
+/// for twice a signature's time window; a restart forgets them, which reopens at most that
+/// window for a request someone already captured (and capturing one means breaking HTTPS).
+#[derive(Default)]
+pub struct UsedNonces {
+    seen: Mutex<HashMap<NonceKey, i64>>,
+}
+
+/// A used nonce: the session's token hash and the nonce.
+type NonceKey = ([u8; 32], [u8; 16]);
+
+// Shows only how many are remembered, not the sessions' token hashes.
+impl fmt::Debug for UsedNonces {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let remembered = self
+            .seen
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .len();
+        formatter
+            .debug_struct("UsedNonces")
+            .field("remembered", &remembered)
+            .finish()
+    }
+}
+
+impl UsedNonces {
+    /// Records `nonce` for the session `token_hash` at `now`; `false` if it was already used.
+    /// Forgets entries older than twice the request window as it goes.
+    pub fn first_use(&self, token_hash: [u8; 32], nonce: [u8; 16], now: UnixMillis) -> bool {
+        let mut seen = self
+            .seen
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let keep_after = now.as_millis() - 2 * device_signature::REQUEST_WINDOW_MILLIS;
+        seen.retain(|_, at| *at > keep_after);
+        seen.insert((token_hash, nonce), now.as_millis()).is_none()
+    }
 }
 
 impl AuthConfig {
@@ -96,13 +142,17 @@ impl AuthConfig {
     pub fn new(source: SessionSource) -> Self {
         Self {
             sessions: Some(source),
+            nonces: Arc::default(),
         }
     }
 
     /// Refuses every protected request (only public paths work).
     #[must_use]
-    pub const fn refuse_all() -> Self {
-        Self { sessions: None }
+    pub fn refuse_all() -> Self {
+        Self {
+            sessions: None,
+            nonces: Arc::default(),
+        }
     }
 }
 
@@ -111,6 +161,7 @@ impl fmt::Debug for AuthConfig {
         formatter
             .debug_struct("AuthConfig")
             .field("sessions", &self.sessions.is_some())
+            .field("nonces", &self.nonces)
             .finish()
     }
 }
@@ -133,8 +184,27 @@ async fn require_auth(
     if !is_api_path(request.uri()) {
         return next.run(request).await;
     }
-    let signed_in = signed_in_from(&config, request.headers()).await;
     let public = PUBLIC_API_PATHS.contains(&request.uri().path());
+    let method = request.method().as_str().to_owned();
+    let path = request.uri().path_and_query().map_or_else(
+        || request.uri().path().to_owned(),
+        |path| path.as_str().to_owned(),
+    );
+    let signed_in = match signed_in_from(&config, request.headers(), &method, &path).await {
+        Ok(signed_in) => signed_in,
+        // A paired device's request without a valid signature: refused, except on a public
+        // path, which then goes on as if no session came with it.
+        Err(error) if !public => {
+            tracing::info!(
+                target: log_area::AUTH,
+                path = request.uri().path(),
+                reason = %error,
+                "API request refused: device signature"
+            );
+            return refusal_response(ApiError::DeviceSignature);
+        }
+        Err(_) => None,
+    };
     match check_request(&config, request.headers(), signed_in.is_some(), public) {
         Ok(()) => {
             if let Some(signed_in) = signed_in {
@@ -155,23 +225,50 @@ async fn require_auth(
     }
 }
 
-/// The signed-in user behind the request's session token, if it has a valid one.
-async fn signed_in_from(config: &AuthConfig, headers: &HeaderMap) -> Option<SignedIn> {
-    let source = config.sessions.as_ref()?;
-    let hash = presented_session_token(headers).and_then(|token| token_hash(&token))?;
-    let database = (source.database)()?;
-    match sessions::resolve(
-        &database,
-        hash,
-        source.clock.now(),
-        crate::startup::timers(),
-    )
-    .await
-    {
-        Ok(signed_in) => signed_in,
+/// The signed-in user behind the request's session token, if it has a valid one. For a paired
+/// device's session, the request's signature is checked first (phase-3.md 2b, #073).
+///
+/// # Errors
+///
+/// [`SignatureError`] if the session is a paired device's and the signature is missing,
+/// malformed, out of time, reused, or wrong.
+async fn signed_in_from(
+    config: &AuthConfig,
+    headers: &HeaderMap,
+    method: &str,
+    path: &str,
+) -> Result<Option<SignedIn>, SignatureError> {
+    let Some(source) = config.sessions.as_ref() else {
+        return Ok(None);
+    };
+    let Some(hash) = presented_session_token(headers).and_then(|token| token_hash(&token)) else {
+        return Ok(None);
+    };
+    let Some(database) = (source.database)() else {
+        return Ok(None);
+    };
+    let now = source.clock.now();
+    let check = |key: &[u8; 32]| {
+        let header = headers
+            .get(device_signature::HEADER)
+            .ok_or(SignatureError::Missing)?
+            .to_str()
+            .map_err(|_| SignatureError::Malformed)?;
+        let signature = DeviceSignature::parse(header)?;
+        signature.verify(key, method, path, &hash, now)?;
+        if signature.scope == Scope::Request && !config.nonces.first_use(hash, signature.nonce, now)
+        {
+            return Err(SignatureError::Reused);
+        }
+        Ok(())
+    };
+    match sessions::resolve_signed(&database, hash, now, crate::startup::timers(), check).await {
+        Ok(Resolved::SignedIn(signed_in)) => Ok(Some(signed_in)),
+        Ok(Resolved::NotSignedIn) => Ok(None),
+        Ok(Resolved::BadSignature(error)) => Err(error),
         Err(error) => {
             tracing::error!(target: log_area::AUTH, %error, "can't check the session");
-            None
+            Ok(None)
         }
     }
 }
