@@ -14,3 +14,7 @@ icon = [
     "assets/app-icon/icon-128.png",
     "assets/app-icon/icon-32.png",
 ]
+
+# The browser tab's title before the app loads; the app then sets it itself (phase-3.md 1b).
+[web.app]
+title = "Vehicle Manager"

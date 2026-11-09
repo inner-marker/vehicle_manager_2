@@ -99,3 +99,11 @@ fn the_bundle_uses_the_app_id_and_existing_icons() {
         );
     }
 }
+
+#[test]
+fn the_web_page_starts_with_the_app_name_as_its_title() {
+    assert!(
+        DIOXUS_TOML.contains(&format!("title = \"{}\"", domain::identity::DISPLAY_NAME)),
+        "Dioxus.toml's [web.app] title must be domain::identity::DISPLAY_NAME"
+    );
+}

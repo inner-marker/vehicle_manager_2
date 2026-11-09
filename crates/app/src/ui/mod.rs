@@ -18,6 +18,8 @@
 
 mod account;
 pub(crate) mod auth;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) mod desktop_window;
 mod icons;
 pub(crate) mod idle;
 pub(crate) mod inbox;
@@ -65,14 +67,46 @@ pub fn App() -> Element {
     idle::provide_idle_context();
 
     rsx! {
+        Title { {page_title(auth::SERVER_INSTANCE())} }
         Stylesheet { href: MAIN_CSS }
         document::Link { rel: "icon", href: ICON_SVG.to_string(), r#type: "image/svg+xml" }
         document::Link { rel: "icon", href: ICON_32.to_string(), r#type: "image/png", sizes: "32x32" }
         document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
+        DesktopWindow {}
         div { class: "app", "data-theme": theme().attribute(),
             auth::AuthGate { Router::<Route> {} }
         }
     }
+}
+
+/// The page's (and the desktop window's) title: always the app's name (phase-3.md 1b, GitHub
+/// #19), with a second server's tag in front, e.g. "test server · Vehicle Manager" (#062).
+fn page_title(instance: Option<String>) -> String {
+    let name = domain::identity::DISPLAY_NAME;
+    instance.map_or_else(
+        || name.to_owned(),
+        |instance| {
+            let tag = tr_with(
+                domain::i18n::messages::INSTANCE_TAG,
+                &[("name", MessageArg::from(instance.as_str()))],
+            );
+            format!("{tag} · {name}")
+        },
+    )
+}
+
+/// The desktop window's keeper (its place remembered; phase-3.md 1b).
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[component]
+fn DesktopWindow() -> Element {
+    rsx! { desktop_window::WindowKeeper {} }
+}
+
+/// Nothing on the web.
+#[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+#[component]
+fn DesktopWindow() -> Element {
+    rsx! {}
 }
 
 /// What the household calls squawks (#064), as its place in [`SquawkWord::ALL`]: read by

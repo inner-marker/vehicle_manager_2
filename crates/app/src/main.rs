@@ -234,8 +234,9 @@ const WINDOW_SIZE: (f64, f64) = (1200.0, 820.0);
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 const WINDOW_MIN_SIZE: (f64, f64) = (400.0, 600.0);
 
-/// The desktop window: its title and icon, starting and smallest size, and never kept on top (Dioxus
-/// keeps a debug build's window on top of others by default). No right-click menu, so no
+/// The desktop window: its title and icon, its saved place (or the starting size), its
+/// smallest size, and whether it stays on top (off unless chosen in Settings; Dioxus would
+/// keep a debug build's window on top by default; phase-3.md 1b). No right-click menu, so no
 /// Reload or Inspect, and no developer tools (Dioxus turns them on only with that menu). No
 /// menu bar on Windows and Linux, where Dioxus's default one shows inside the window; macOS
 /// keeps the default, whose Edit menu makes copy and paste work in text fields.
@@ -244,13 +245,33 @@ const WINDOW_MIN_SIZE: (f64, f64) = (400.0, 600.0);
 /// the setting that turns its keyboard shortcuts off.
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 fn desktop_config() -> dioxus::desktop::Config {
-    use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
+    use dioxus::desktop::tao::window::Fullscreen;
+    use dioxus::desktop::{Config, LogicalPosition, LogicalSize, WindowBuilder};
 
-    let window = WindowBuilder::new()
+    let saved = app::data_folder::platform_data_folder()
+        .map(|folder| app::settings::load(&folder))
+        .unwrap_or_default();
+    let mut window = WindowBuilder::new()
         .with_title(domain::identity::DISPLAY_NAME)
-        .with_inner_size(LogicalSize::new(WINDOW_SIZE.0, WINDOW_SIZE.1))
         .with_min_inner_size(LogicalSize::new(WINDOW_MIN_SIZE.0, WINDOW_MIN_SIZE.1))
-        .with_always_on_top(false);
+        .with_always_on_top(saved.keep_on_top);
+    // The saved place; the app's window keeper moves it back on screen if it can't be seen.
+    match saved
+        .window
+        .filter(app::window_placement::WindowPlacement::is_valid)
+        .map(|placement| placement.at_least(WINDOW_MIN_SIZE))
+    {
+        Some(placement) => {
+            window = window
+                .with_inner_size(LogicalSize::new(placement.width, placement.height))
+                .with_position(LogicalPosition::new(placement.x, placement.y))
+                .with_maximized(placement.maximized);
+            if placement.fullscreen {
+                window = window.with_fullscreen(Some(Fullscreen::Borderless(None)));
+            }
+        }
+        None => window = window.with_inner_size(LogicalSize::new(WINDOW_SIZE.0, WINDOW_SIZE.1)),
+    }
     let mut config = Config::new()
         .with_window(window)
         .with_disable_context_menu(true);

@@ -15,3 +15,5 @@ pub mod logging;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod settings;
 pub mod ui;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod window_placement;

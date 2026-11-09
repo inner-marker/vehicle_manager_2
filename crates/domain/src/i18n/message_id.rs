@@ -449,6 +449,10 @@ define_messages! {
     SETTINGS_THIS_DEVICE => "settings-this-device",
     /// Settings: the theme row.
     SETTINGS_THEME => "settings-theme",
+    /// Settings: the desktop's "keep window on top" row (phase-3.md 1b).
+    SETTINGS_KEEP_ON_TOP => "settings-keep-on-top",
+    /// Settings: the words beside the "keep window on top" switch.
+    SETTINGS_KEEP_ON_TOP_NOTE => "settings-keep-on-top-note",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.
