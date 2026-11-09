@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1760" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 3 · milestone 2 · Devices and pairing: layout options</text>
+<text x="24" y="64" font-size="13" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme shown. Each row: two options side by side. Wording is a draft.</text>
+<text x="24" y="100" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · Desktop sign-in with recent servers</text>
+<text x="24" y="120" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">First sign-in on a computer, or after this device was signed out. Picking another server than this run's: "Quit and reopen to switch".</text>
+<rect x="24" y="140" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="44" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1A · Server list above the form</text>
+<text x="44" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every known server, one click; the current one checked</text>
+<rect x="84" y="210" width="340" height="380" rx="8" fill="#1d2128" stroke="#333a45" />
+<text x="104" y="240" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Sign in</text>
+<text x="104" y="266" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="start">SERVER</text>
+<rect x="104" y="276" width="300" height="44" rx="8" fill="#262b34" stroke="#5aa9ff" />
+<circle cx="122" cy="298" r="6" fill="#5aa9ff" stroke="#5aa9ff" stroke-width="2"/>
+<text x="138" y="295" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Home</text>
+<text x="138" y="311" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">nas.tail1234.ts.net · Last used today</text>
+<rect x="104" y="328" width="300" height="44" rx="8" fill="#262b34" stroke="#333a45" />
+<circle cx="122" cy="350" r="6" fill="none" stroke="#9aa1ab" stroke-width="2"/>
+<text x="138" y="347" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Home</text>
+<rect x="184" y="335" width="40.8" height="16" rx="8" fill="#f5b942" stroke="#f5b942" />
+<text x="204.4" y="347" font-size="10" fill="#1a0e04" font-weight="700" text-anchor="middle">TEST</text>
+<text x="138" y="363" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">nas.tail1234.ts.net:8443 · Last used Nov 8</text>
+<text x="104" y="398" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Another server…</text>
+<text x="104" y="424" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Username</text>
+<rect x="104" y="430" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="114" y="450" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">stuart</text>
+<text x="104" y="474" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Password</text>
+<rect x="104" y="480" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="114" y="500" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">••••••••••••</text>
+<rect x="104" y="528" width="300" height="34" rx="6" fill="#5aa9ff" stroke="#5aa9ff" />
+<text x="254.0" y="549.5" font-size="12.5" fill="#0b1420" font-weight="600" text-anchor="middle">Sign in</text>
+<rect x="516" y="140" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="536" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1B · Server picker in the form</text>
+<text x="536" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Compact; the list opens from the first field</text>
+<rect x="576" y="210" width="340" height="300" rx="8" fill="#1d2128" stroke="#333a45" />
+<text x="596" y="240" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="start">Sign in</text>
+<text x="596" y="258" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Server</text>
+<rect x="596" y="264" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="606" y="284" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Home — nas.tail1234.ts.net</text>
+<text x="880" y="284" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">▾</text>
+<text x="596" y="308" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Username</text>
+<rect x="596" y="314" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="606" y="334" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">stuart</text>
+<text x="596" y="358" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Password</text>
+<rect x="596" y="364" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="606" y="384" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">••••••••••••</text>
+<rect x="596" y="412" width="300" height="34" rx="6" fill="#5aa9ff" stroke="#5aa9ff" />
+<text x="746.0" y="433.5" font-size="12.5" fill="#0b1420" font-weight="600" text-anchor="middle">Sign in</text>
+<text x="596" y="470" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Another server…</text>
+<rect x="596" y="524" width="300" height="76" rx="8" fill="#262b34" stroke="#5aa9ff" />
+<text x="608" y="544" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">✓ Home — nas.tail1234.ts.net</text>
+<text x="608" y="566" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">   Home — …ts.net:8443</text>
+<rect x="766" y="554" width="40.8" height="16" rx="8" fill="#f5b942" stroke="#f5b942" />
+<text x="786.4" y="566" font-size="10" fill="#1a0e04" font-weight="700" text-anchor="middle">TEST</text>
+<text x="608" y="588" font-size="12" fill="#5aa9ff" font-weight="400" text-anchor="start">   Another server…</text>
+<text x="24" y="640" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · Settings → Devices (everyone)</text>
+<text x="24" y="660" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Your signed-in desktops and browsers. Sign out one, or all others. A signed-out desktop must pair again (its key is removed).</text>
+<rect x="24" y="680" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="44" y="710" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · A section on the You tab</text>
+<text x="44" y="730" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Below the sign-in settings; no new tab</text>
+<rect x="44" y="744" width="420" height="34" rx="8" fill="#1d2128" stroke="#333a45" />
+<rect x="50" y="749" width="94" height="24" rx="6" fill="#5aa9ff" stroke="#333a45" />
+<text x="97" y="765" font-size="12" fill="#0b1420" font-weight="600" text-anchor="middle">You</text>
+<rect x="150" y="749" width="94" height="24" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="197" y="765" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Household</text>
+<text x="44" y="802" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">…units, formats, sign out when idle…</text>
+<text x="44" y="828" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="start">DEVICES</text>
+<rect x="44" y="838" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="60" y="868" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
+<text x="86" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Stuarts-MacBook-Pro</text>
+<rect x="230.7" y="847" width="91.2" height="16" rx="8" fill="#5aa9ff" stroke="#5aa9ff" />
+<text x="276.3" y="859" font-size="10" fill="#0b1420" font-weight="700" text-anchor="middle">This device</text>
+<text x="86" y="876" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · paired Nov 9 · Active now</text>
+<rect x="44" y="894" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="60" y="924" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▯</text>
+<text x="86" y="915" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Safari on iPhone</text>
+<text x="86" y="932" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · 2 hours ago</text>
+<rect x="382" y="903" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="417.0" y="922.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="44" y="950" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="60" y="980" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▯</text>
+<text x="86" y="971" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Chrome on Mac</text>
+<text x="86" y="988" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Yesterday</text>
+<rect x="382" y="959" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="417.0" y="978.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="44" y="1006" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="60" y="1036" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
+<text x="86" y="1027" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Desktop app (older version)</text>
+<text x="86" y="1044" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app, unsigned · Nov 5</text>
+<rect x="382" y="1015" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="417.0" y="1034.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="44" y="1068" width="200" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="144.0" y="1087.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out everywhere else</text>
+<text x="44" y="1120" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="start">THIS DEVICE</text>
+<text x="44" y="1140" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Theme · Keep window on top</text>
+<rect x="516" y="680" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="536" y="710" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · Its own tab</text>
+<text x="536" y="730" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">You | Devices | Household; room to grow (PIN, lock: milestone 3)</text>
+<rect x="536" y="744" width="420" height="34" rx="8" fill="#1d2128" stroke="#333a45" />
+<rect x="542" y="749" width="94" height="24" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="589" y="765" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">You</text>
+<rect x="642" y="749" width="94" height="24" rx="6" fill="#5aa9ff" stroke="#333a45" />
+<text x="689" y="765" font-size="12" fill="#0b1420" font-weight="600" text-anchor="middle">Devices</text>
+<rect x="742" y="749" width="94" height="24" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="789" y="765" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Household</text>
+<text x="536" y="802" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Where you're signed in. Signing out a desktop app means</text>
+<text x="536" y="818" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">signing in on it again (it pairs again).</text>
+<rect x="536" y="838" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="552" y="868" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
+<text x="578" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Stuarts-MacBook-Pro</text>
+<rect x="722.7" y="847" width="91.2" height="16" rx="8" fill="#5aa9ff" stroke="#5aa9ff" />
+<text x="768.3000000000001" y="859" font-size="10" fill="#0b1420" font-weight="700" text-anchor="middle">This device</text>
+<text x="578" y="876" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · paired Nov 9 · Active now</text>
+<rect x="874" y="847" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="909.0" y="866.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Rename</text>
+<rect x="536" y="894" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="552" y="924" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▯</text>
+<text x="578" y="915" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Safari on iPhone</text>
+<text x="578" y="932" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · 2 hours ago</text>
+<rect x="874" y="903" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="909.0" y="922.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="536" y="950" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="552" y="980" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▯</text>
+<text x="578" y="971" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Chrome on Mac</text>
+<text x="578" y="988" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Yesterday</text>
+<rect x="874" y="959" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="909.0" y="978.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="536" y="1006" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="552" y="1036" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
+<text x="578" y="1027" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Desktop app (older version)</text>
+<text x="578" y="1044" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app, unsigned · Nov 5</text>
+<rect x="874" y="1015" width="70" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="909.0" y="1034.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="536" y="1068" width="200" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="636.0" y="1087.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out everywhere else</text>
+<text x="24" y="1180" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Admin mode: a person's devices (Users screen)</text>
+<text x="24" y="1200" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">For a lost laptop or phone: the household Admin signs out one device, or all of someone's.</text>
+<rect x="24" y="1220" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="44" y="1250" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · A dialog from the person's row</text>
+<text x="44" y="1270" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Users list stays as it is; "Devices (3)" opens this</text>
+<rect x="44" y="1284" width="420" height="44" rx="8" fill="#1d2128" stroke="#f0883e" />
+<text x="60" y="1304" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Sam</text>
+<text x="60" y="1320" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Driver · all vehicles</text>
+<rect x="324" y="1291" width="120" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="384.0" y="1310.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Devices (3)</text>
+<rect x="44" y="1342" width="420" height="330" rx="10" fill="#0d0f13" opacity="0.7"/>
+<rect x="64" y="1352" width="380" height="310" rx="10" fill="#1d2128" stroke="#333a45" />
+<text x="84" y="1380" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Sam's devices</text>
+<rect x="84" y="1396" width="340" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="98" y="1416" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Sams-Laptop</text>
+<text x="98" y="1432" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · Today</text>
+<rect x="340" y="1404" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="376.0" y="1423.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="84" y="1450" width="340" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="98" y="1470" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Safari on iPhone</text>
+<text x="98" y="1486" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Yesterday</text>
+<rect x="340" y="1458" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="376.0" y="1477.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="84" y="1504" width="340" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="98" y="1524" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Chrome on Windows</text>
+<text x="98" y="1540" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Nov 2</text>
+<rect x="340" y="1512" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="376.0" y="1531.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="84" y="1564" width="200" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="184.0" y="1583.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out all of Sam's devices</text>
+<rect x="364" y="1614" width="60" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="394.0" y="1633.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Close</text>
+<rect x="516" y="1220" width="460" height="470" rx="12" fill="#14171c" stroke="#14171c" />
+<text x="536" y="1250" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · Inline under the person's row</text>
+<text x="536" y="1270" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Expands in place; no dialog</text>
+<rect x="536" y="1284" width="420" height="44" rx="8" fill="#1d2128" stroke="#f0883e" />
+<text x="552" y="1304" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Sam</text>
+<text x="552" y="1320" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Driver · all vehicles</text>
+<text x="846" y="1310" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">Devices (3) ▴</text>
+<rect x="536" y="1332" width="420" height="238" rx="8" fill="#191c22" stroke="#333a45" />
+<rect x="552" y="1344" width="388" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="566" y="1364" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Sams-Laptop</text>
+<text x="566" y="1380" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · Today</text>
+<rect x="856" y="1352" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="892.0" y="1371.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="552" y="1398" width="388" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="566" y="1418" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Safari on iPhone</text>
+<text x="566" y="1434" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Yesterday</text>
+<rect x="856" y="1406" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="892.0" y="1425.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="552" y="1452" width="388" height="46" rx="8" fill="#262b34" stroke="#333a45" />
+<text x="566" y="1472" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Chrome on Windows</text>
+<text x="566" y="1488" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Browser · Nov 2</text>
+<rect x="856" y="1460" width="72" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="892.0" y="1479.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out</text>
+<rect x="552" y="1516" width="200" height="30" rx="6" fill="#262b34" stroke="#333a45" />
+<text x="652.0" y="1535.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Sign out all of Sam's devices</text>
+<rect x="536" y="1582" width="420" height="44" rx="8" fill="#1d2128" stroke="#333a45" />
+<text x="552" y="1602" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Alex</text>
+<text x="552" y="1618" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Maintainer · Garage</text>
+<text x="846" y="1610" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="start">Devices (1) ▾</text>
+<text x="24" y="1720" font-size="13" fill="#1b1f24" font-weight="700" text-anchor="start">Recommended: 1A, 2B, 3A. End of sheet.</text>
+</svg>

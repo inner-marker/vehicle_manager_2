@@ -1458,7 +1458,7 @@ Dioxus provides no encryption or authentication on its own; server functions are
 
 **Application**
 - **Two credential types, one auth middleware:**
-  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
+  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone). Pairing is signing in on the device; each request is signed with the device's key (`docs/decisions.md` #073).
   - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
   - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
   - **Forgotten passwords:** an Admin resets anyone's with a temporary password (#046); an Admin who forgot their own uses a one-time recovery code in the server log (#047). **Optional email** (any SMTP provider) and an email reset link are proposed in the draft `docs/sub-plans/03-email-and-password-reset.md` (idea 13).
