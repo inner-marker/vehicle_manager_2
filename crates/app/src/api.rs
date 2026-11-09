@@ -17,6 +17,7 @@ use domain::api::{
     PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
     SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
+use domain::secret::Secret;
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -72,6 +73,7 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
         min_supported_api_version: MIN_SUPPORTED_API_VERSION,
         server_time_ms: SystemClock.now().as_millis(),
         healthy: ::server::health::current().is_healthy(),
+        build: crate::build_info::this_build(),
     })
 }
 
@@ -86,7 +88,7 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
 #[post("/api/v1/sign-in")]
 pub(crate) async fn sign_in(
     username: String,
-    password: String,
+    password: Secret,
     want_token: bool,
 ) -> ServerFnResult<SignInOutcome> {
     use ::server::sessions::SignInError;
@@ -110,7 +112,7 @@ pub(crate) async fn sign_in(
             server_side::set_session_cookie(Some(token.as_str()));
             Ok(SignInOutcome::SignedIn {
                 session: server_side::session_info(&signed_in),
-                token: want_token.then(|| token.as_str().to_owned()),
+                token: want_token.then(|| Secret::new(token.as_str())),
             })
         }
         Err(SignInError::InvalidCredentials) => Ok(SignInOutcome::InvalidCredentials),
@@ -154,10 +156,10 @@ pub(crate) async fn session() -> ServerFnResult<SessionState> {
 /// Only transport errors; refusals are [`SetupOutcome`] values.
 #[post("/api/v1/setup")]
 pub(crate) async fn setup(
-    code: String,
+    code: Secret,
     username: String,
     display_name: String,
-    password: String,
+    password: Secret,
     want_token: bool,
 ) -> ServerFnResult<SetupOutcome> {
     use ::server::setup::SetupError;
@@ -231,7 +233,7 @@ pub(crate) async fn setup(
         reason = "server functions must be async; this one only checks memory"
     )
 )]
-pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupCodeOutcome> {
+pub(crate) async fn check_setup_code(code: Secret) -> ServerFnResult<CheckSetupCodeOutcome> {
     if !::server::setup::is_open() {
         return Ok(CheckSetupCodeOutcome::AlreadySetUp);
     }
@@ -242,7 +244,7 @@ pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupC
             retry_after_seconds: (retry_after_millis + 999) / 1000,
         });
     }
-    if ::server::setup::code_is_valid(&code) {
+    if ::server::setup::code_is_valid(code.expose()) {
         Ok(CheckSetupCodeOutcome::Valid)
     } else {
         server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
@@ -257,8 +259,8 @@ pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupC
 /// Refused by the auth layer without a session; refusals are [`ChangePasswordOutcome`] values.
 #[post("/api/v1/password")]
 pub(crate) async fn change_password(
-    current: String,
-    new: String,
+    current: Secret,
+    new: Secret,
 ) -> ServerFnResult<ChangePasswordOutcome> {
     use ::server::sessions::ChangePasswordError;
 
@@ -313,7 +315,7 @@ pub(crate) async fn sign_out() -> ServerFnResult<()> {
 #[post("/api/v1/mode")]
 pub(crate) async fn switch_mode(
     mode: domain::access::ActiveMode,
-    password: Option<String>,
+    password: Option<Secret>,
 ) -> ServerFnResult<SwitchModeOutcome> {
     use ::server::sessions::SwitchModeError;
 
@@ -372,8 +374,8 @@ pub(crate) async fn request_recovery(username: String) -> ServerFnResult<()> {
 #[post("/api/v1/recovery/complete")]
 pub(crate) async fn complete_recovery(
     username: String,
-    code: String,
-    new_password: String,
+    code: Secret,
+    new_password: Secret,
     want_token: bool,
 ) -> ServerFnResult<RecoveryOutcome> {
     use ::server::recovery::RecoveryError;
@@ -396,7 +398,7 @@ pub(crate) async fn complete_recovery(
             server_side::set_session_cookie(Some(token.as_str()));
             RecoveryOutcome::SignedIn {
                 session: server_side::session_info(&signed_in),
-                token: want_token.then(|| token.as_str().to_owned()),
+                token: want_token.then(|| Secret::new(token.as_str())),
             }
         }
         Err(RecoveryError::WrongCode) => RecoveryOutcome::WrongCode,

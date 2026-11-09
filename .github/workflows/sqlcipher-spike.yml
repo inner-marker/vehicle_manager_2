@@ -1,0 +1,92 @@
+# The SQLCipher spike (phase-3.md 1e; docs/sub-plans/04-security.md 7.1): builds
+# spikes/sqlcipher on macOS, Windows, and Linux, with plain SQLite (for comparison), with
+# SQLCipher on the platform's crypto, and with SQLCipher on OpenSSL built in; runs its checks;
+# and writes each build's time and size to the run's summary. Runs when the spike or this
+# file changes, or by hand (Actions → SQLCipher spike → Run workflow, which GitHub offers only
+# once this file is on the default branch, `dev`).
+name: SQLCipher spike
+
+on:
+  push:
+    paths:
+      - "spikes/sqlcipher/**"
+      - ".github/workflows/sqlcipher-spike.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spike:
+    name: ${{ matrix.os }} · ${{ matrix.variant }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Every combination runs, so one failure still shows the others' results.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        variant: [plain, system-crypto, vendored-openssl]
+    defaults:
+      run:
+        shell: bash
+        working-directory: spikes/sqlcipher
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # rust-toolchain.toml (at the repository root) pins the toolchain, as everywhere else.
+      # No build cache: the build time is part of what's measured.
+      - name: Install pinned toolchain
+        run: rustup toolchain install && rustc --version
+
+      # On Windows, the system-crypto build needs OpenSSL; the runner image has one, but keeps
+      # libcrypto.lib in a subfolder (lib\VC\x64\MD), so its folders are named explicitly.
+      # (The first run failed with "cannot open input file 'libcrypto.lib'".)
+      - name: Point at the runner's OpenSSL (Windows, system crypto)
+        if: runner.os == 'Windows' && matrix.variant == 'system-crypto'
+        run: |
+          for dir in "/c/Program Files/OpenSSL" "/c/Program Files/OpenSSL-Win64"; do
+            [ -d "$dir" ] || continue
+            lib=$(find "$dir/lib" -iname libcrypto.lib | grep -i "x64" | grep -i "/MD/" | head -1)
+            [ -n "$lib" ] || lib=$(find "$dir/lib" -iname libcrypto.lib | head -1)
+            echo "OPENSSL_LIB_DIR=$(cygpath -w "$(dirname "$lib")")" >> "$GITHUB_ENV"
+            echo "OPENSSL_INCLUDE_DIR=$(cygpath -w "$dir/include")" >> "$GITHUB_ENV"
+            # The program links to OpenSSL's DLLs, which must be found when it runs.
+            echo "$(cygpath -w "$dir/bin")" >> "$GITHUB_PATH"
+            echo "Using OpenSSL in $dir (libcrypto.lib in $(dirname "$lib"))"
+            break
+          done
+
+      # Building OpenSSL from source on Windows needs the full Strawberry Perl, not the minimal
+      # one that comes with Git's bash, which comes first on bash's PATH. (The first run failed
+      # with "Can't locate Locale/Maketext/Simple.pm".) openssl-src takes its Perl from
+      # OPENSSL_SRC_PERL.
+      - name: Use Strawberry Perl (Windows, bundled OpenSSL)
+        if: runner.os == 'Windows' && matrix.variant == 'vendored-openssl'
+        run: |
+          echo 'OPENSSL_SRC_PERL=C:\Strawberry\perl\bin\perl.exe' >> "$GITHUB_ENV"
+          /c/Strawberry/perl/bin/perl -v | head -2
+
+      - name: Build (timed)
+        id: build
+        run: |
+          if [ "${{ matrix.variant }}" = "plain" ]; then FEATURES=""; else FEATURES="--features ${{ matrix.variant }}"; fi
+          start=$(date +%s)
+          cargo build --release --locked $FEATURES
+          end=$(date +%s)
+          binary=target/release/sqlcipher-spike
+          [ -f "$binary.exe" ] && binary="$binary.exe"
+          size=$(wc -c < "$binary" | tr -d ' ')
+          echo "seconds=$((end - start))" >> "$GITHUB_OUTPUT"
+          echo "megabytes=$(awk "BEGIN { printf \"%.1f\", $size / 1048576 }")" >> "$GITHUB_OUTPUT"
+          echo "binary=$binary" >> "$GITHUB_OUTPUT"
+          echo "Built in $((end - start)) s; binary $size bytes"
+
+      # Plain SQLite has no SQLCipher, so its checks would fail by design; it's only measured.
+      - name: Run the checks
+        if: matrix.variant != 'plain'
+        run: ${{ steps.build.outputs.binary }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "| ${{ matrix.os }} | ${{ matrix.variant }} | ${{ steps.build.outcome }} | ${{ steps.build.outputs.seconds }} s | ${{ steps.build.outputs.megabytes }} MB | ${{ job.status }} |" >> "$GITHUB_STEP_SUMMARY"

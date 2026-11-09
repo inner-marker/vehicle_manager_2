@@ -251,3 +251,31 @@ fn the_geocoder_data_is_built_from_the_pinned_sources_everywhere() {
     // Only the data file reaches the runtime image.
     assert!(DOCKERFILE.contains("COPY --from=geodata /out/ /app/geodata/"));
 }
+
+/// The reusable image workflow, which passes the build's identity to `docker build`.
+const SERVER_IMAGE_WORKFLOW: &str = include_str!("../../../.github/workflows/server-image.yml");
+
+#[test]
+fn the_image_names_its_exact_build() {
+    // phase-3.md 1c (#37): the workflow passes each build argument, and the Dockerfile hands
+    // it to the build under the name domain::build_info reads.
+    let pairs = [
+        ("BUILD_COMMIT", domain::build_info::COMMIT_ENV),
+        ("BUILD_TAG", domain::build_info::TAG_ENV),
+        ("BUILD_DATE", domain::build_info::DATE_ENV),
+    ];
+    for (argument, env_name) in pairs {
+        assert!(
+            SERVER_IMAGE_WORKFLOW.contains(&format!("{argument}=${{{{")),
+            "server-image.yml must pass the {argument} build argument"
+        );
+        assert!(
+            DOCKERFILE.contains(&format!("ARG {argument}=")),
+            "the Dockerfile must declare ARG {argument}"
+        );
+        assert!(
+            DOCKERFILE.contains(&format!("{env_name}=\"${argument}\"")),
+            "the Dockerfile must pass {argument} to the build as {env_name}"
+        );
+    }
+}

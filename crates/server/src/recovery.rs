@@ -24,6 +24,7 @@ use crate::codes::{group_by_four, random_code};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::hash_password;
 use crate::sessions::{SessionToken, SignedIn, sign_in};
+use domain::secret::Secret;
 
 /// Characters in a recovery code (before the dashes), as for the setup code.
 const CODE_CHARS: usize = 16;
@@ -129,8 +130,8 @@ pub async fn complete(
     database: &Database,
     limiter: &LoginLimiter,
     username: &str,
-    code: &str,
-    new_password: String,
+    code: &Secret,
+    new_password: Secret,
     client: &str,
     clock: &(dyn Clock + Sync),
 ) -> Result<(SessionToken, SignedIn), RecoveryError> {
@@ -140,13 +141,13 @@ pub async fn complete(
     limiter
         .check(&key_refs, now)
         .map_err(RecoveryError::RateLimited)?;
-    check_new_password(&new_password).map_err(RecoveryError::InvalidPassword)?;
+    check_new_password(new_password.expose()).map_err(RecoveryError::InvalidPassword)?;
 
     let Some(user) = recoverable_admin(database, username).await else {
         limiter.record_failure(&key_refs, now);
         return Err(RecoveryError::WrongCode);
     };
-    if !take_code(user, code, now) {
+    if !take_code(user, code.expose(), now) {
         limiter.record_failure(&key_refs, now);
         tracing::debug!(target: log_area::AUTH, %user, "recovery refused: wrong or expired code");
         return Err(RecoveryError::WrongCode);
@@ -299,7 +300,7 @@ mod tests {
             database,
             limiter,
             "stuart",
-            "AAAA-AAAA-AAAA-AAAA",
+            &Secret::from("AAAA-AAAA-AAAA-AAAA"),
             "a new password!".into(),
             "d",
             clock,
@@ -310,7 +311,7 @@ mod tests {
             database,
             limiter,
             "stuart",
-            code,
+            &Secret::from(code),
             "short".into(),
             "e",
             clock,
@@ -347,7 +348,7 @@ mod tests {
             &database,
             &limiter,
             "stuart",
-            &loose,
+            &Secret::from(loose.as_str()),
             "a new password!".into(),
             "g",
             &clock,
@@ -372,7 +373,7 @@ mod tests {
             &database,
             &limiter,
             "stuart",
-            &code,
+            &Secret::from(code.as_str()),
             "another new one!".into(),
             "h",
             &clock,
@@ -392,7 +393,7 @@ mod tests {
             &database,
             &limiter,
             "stuart",
-            &fresh,
+            &Secret::from(fresh.as_str()),
             "too late for this".into(),
             "j",
             &late,

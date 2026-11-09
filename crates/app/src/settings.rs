@@ -1,6 +1,7 @@
 //! Device settings saved in `settings.json` in the data folder (`crate::data_folder`).
 //!
-//! For now it holds only the desktop app's server address (decision #027). The app
+//! It holds the desktop app's server address (decision #027), and where its window was and
+//! whether it stays on top (phase-3.md 1b): things about this computer, never synced. The app
 //! must always start, so a missing, unreadable, or invalid file means "nothing saved",
 //! with a warning in the log; it never stops the app.
 //!
@@ -15,16 +16,22 @@ use domain::log_area;
 use domain::server_address::{ServerAddress, ServerAddressError};
 use serde::{Deserialize, Serialize};
 
+use crate::window_placement::WindowPlacement;
+
 /// The settings file inside the data folder.
 pub const SETTINGS_FILE_NAME: &str = "settings.json";
 
 /// Everything in `settings.json`. Missing fields take their defaults and unknown ones
 /// are ignored, so older and newer versions of the app can read each other's files.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     /// The server the desktop app talks to, as typed by the user (checked again on load).
     pub server_address: Option<String>,
+    /// Where the desktop window was when last moved or resized.
+    pub window: Option<WindowPlacement>,
+    /// Whether the desktop window stays on top of other windows (off by default).
+    pub keep_on_top: bool,
 }
 
 /// Why saving a server address failed.
@@ -72,6 +79,17 @@ pub fn save(data_folder: &Path, settings: &Settings) -> io::Result<()> {
     let temporary = data_folder.join(format!("{SETTINGS_FILE_NAME}.tmp"));
     std::fs::write(&temporary, text)?;
     std::fs::rename(&temporary, data_folder.join(SETTINGS_FILE_NAME))
+}
+
+/// Changes the settings in `data_folder` with `change`, keeping the rest.
+///
+/// # Errors
+///
+/// Returns the I/O error if the file can't be written.
+pub fn update(data_folder: &Path, change: impl FnOnce(&mut Settings)) -> io::Result<()> {
+    let mut settings = load(data_folder);
+    change(&mut settings);
+    save(data_folder, &settings)
 }
 
 /// The saved server address, if there is one and it still follows the rules. An
@@ -135,10 +153,34 @@ mod tests {
         let folder = temp.path().join("vehiclemanager");
         let settings = Settings {
             server_address: Some("https://nas.example.ts.net".into()),
+            window: Some(WindowPlacement {
+                x: 40.0,
+                y: 60.0,
+                width: 1100.0,
+                height: 760.0,
+                maximized: true,
+                fullscreen: false,
+            }),
+            keep_on_top: true,
         };
         save(&folder, &settings).unwrap();
         assert_eq!(load(&folder), settings);
         assert!(!folder.join(format!("{SETTINGS_FILE_NAME}.tmp")).exists());
+    }
+
+    #[test]
+    fn update_changes_one_setting_and_keeps_the_rest() {
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("vehiclemanager");
+        save_server_address(Some(&folder), "https://nas.example.ts.net").unwrap();
+        update(&folder, |settings| settings.keep_on_top = true).unwrap();
+        let read = load(&folder);
+        assert!(read.keep_on_top);
+        assert_eq!(
+            read.server_address.as_deref(),
+            Some("https://nas.example.ts.net")
+        );
+        assert_eq!(read.window, None);
     }
 
     #[test]

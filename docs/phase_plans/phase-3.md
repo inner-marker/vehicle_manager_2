@@ -30,7 +30,7 @@
 
 | # | Milestone | Status | What it delivers | You can check | Likely new dependencies (approved per step) |
 |---|---|---|---|---|---|
-| 1 | **Groundwork** | ⬜ | The **app icon** (desktop window and browser tab); the **exact build on Diagnostics** (commit, image tag, build date; GitHub #37); **window title and launch settings** (window size and position remembered, always-on-top option; #19); **secret types and log tiers** with a test that no secret reaches a log (sub-plan 04 §7.4); the **SQLCipher spike**: an encrypted SQLite database through sqlx on macOS, Windows, and Linux in CI, with its effect on build time and size (sub-plan 04 §7.1) | The icon in the Dock and the tab; Diagnostics shows `milestone-p3-m1-…` and its commit; the window reopens where it was | `secrecy`; SQLCipher via `libsqlite3-sys` (spike only) |
+| 1 | **Groundwork** | ☑️ | The **app icon** (desktop window and browser tab); the **exact build on Diagnostics** (commit, image tag, build date; GitHub #37); **window title and launch settings** (window size and position remembered, always-on-top option; #19); **secret types and log tiers** with a test that no secret reaches a log (sub-plan 04 §7.4); the **SQLCipher spike**: an encrypted SQLite database through sqlx on macOS, Windows, and Linux in CI, with its effect on build time and size (sub-plan 04 §7.1) | The icon in the Dock and the tab; Diagnostics shows `milestone-p3-m1-…` and its commit; the window reopens where it was | `secrecy`; SQLCipher via `libsqlite3-sys` (spike only) |
 | 2 | **Devices & pairing** | ⬜ | **Recent servers:** `settings.json` keeps a list (address, name, TEST tag, database ID, last used), shown as choices at sign-in plus "Another server…"; switching restarts the app (#027). **Signing in pairs the desktop** (#072): it makes a device key (Ed25519) kept in the OS keychain, gets a device token tied to it (kept in the keychain, not memory), and **signs every request** (DPoP-style); the server refuses the token without the signature. **Settings → Devices:** each device and browser, its last use, sign one out or all others; the Admin can do the same from Users | Pair the Mac; quit and reopen without signing in; copy the token to `curl` and see it refused; sign the Mac out from the web | `keyring`, `ed25519-dalek` |
 | 3 | **App lock & PIN** | ⬜ | A **PIN per person per device**, set after pairing (6+ digits, no repeats or runs); the app **locks after 15 idle minutes** (a setting); the password also unlocks; **5 wrong PINs** → password needed, **10** → signed out and the local key forgotten; failed unlocks reported to the Admin at the next sync; forgot-PIN by password (sub-plan 04 §4.1) | Lock, unlock with the PIN; five wrong PINs ask for the password | none expected (Argon2 already in use) |
 | 4 | **Local database & pull** | ⬜ | The **desktop database:** SQLCipher, one per server, in a folder named by the server's database ID; its key wrapped by the keychain and the PIN. **Pull:** the first full download, then records changed since the device's cursor, with tombstones (kept forever, #072). **One data layer** for screens: the web calls the server as now, the desktop reads its own database, so the desktop works offline **for reading**. Migrations run on the desktop database too | With Wi-Fi off, the desktop still shows the Garage, timelines, and documents; a change on the web appears on the desktop after reconnecting | SQLCipher (per the spike) |
@@ -66,3 +66,72 @@
 ## Step details
 
 *Detailed plans are added here as each milestone is planned and approved. Steps are numbered per milestone (1.0, 1a, …).*
+
+### Milestone 1 plan: groundwork
+
+*Agreed 2026-11-08 · branch `milestone/p3-m1-groundwork` · sketches: `docs/ui-sketches/p3m1-icon-options.svg`, `p3m1-icon-gauge-options.svg`*
+
+**Choices (the human, 2026-11-08):**
+- **Icon:** the gauge, as drawn (**A1**): a blue tile, a white dial with three ticks, an orange needle, and an odometer window below.
+- **Window (#19):** the desktop reopens at its last size and position (and maximized or full screen), moved back on screen if its monitor is gone; **Settings → You → "Keep window on top"**, desktop only, off by default.
+- **Title (#19):** always "Vehicle Manager"; the test server keeps its TEST SERVER prefix.
+- **Exact build (#37):** on **Diagnostics → About** only.
+
+| Step | Status | What |
+|---|---|---|
+| **1.0** `docs:` | ☑️ | This plan; the icon sheets. |
+| **1a** `feat(app):` icon | ☑️ | The A1 gauge as one master SVG (`crates/app/assets/`); PNGs at 16, 32, 180, 192, and 512 px made from it by an ignored test using `resvg` (test-only, like `make_fixture`) and committed. **Web:** the favicon (SVG, PNG fallbacks, Apple touch icon). **Desktop:** the window icon (Windows, Linux); the Dock icon on macOS for `dx serve` runs (Dioxus's `with_icon` sets only a window icon, which macOS ignores; a macOS-only call, checked when the step starts); the bundle icon in `Dioxus.toml` for release packages. |
+| **1b** `feat(app):` title and window (#19) | ☑️ | The page and window title "Vehicle Manager". The desktop's window size, position, and maximized or full-screen state saved in `settings.json` and restored, back on screen if needed. "Keep window on top" in Settings → You on the desktop, saved per computer in `settings.json` (not synced). |
+| **1c** `feat:` exact build (#37) | ☑️ | The image workflows pass the commit, image tag, and build date as Docker build arguments, declared just before the Rust build so dependency layers stay cached; the binary keeps them. Local builds take the commit from `git` (marked "modified" with uncommitted changes), or "local build". The handshake carries the server's build; Diagnostics → About shows it, and on the desktop the app's own build too. Tests for the fallbacks. |
+| **1d** `feat:` secret types and log tiers | ☑️ | Passwords, tokens, PINs, and codes held in `secrecy::SecretString` (or the token's own type) from the moment a server function receives them, printing as `[redacted]`. A logging rule in AGENTS.md: what each level may contain. A test captures the logs through setup, sign-in, a failed sign-in, a password change, and a recovery, and checks no secret appears (the setup and recovery codes stay in the log on purpose, #028, #047). Sub-plan 04 §7.4. |
+| **1e** `ci:` SQLCipher spike | ☑️ | `spikes/sqlcipher/`, **outside the workspace** so its SQLCipher build never mixes into the server's: creates an encrypted database through sqlx, reopens it with the right key, and checks that a wrong key fails and the file isn't plain SQLite. A manually started workflow runs it on macOS, Windows, and Linux, with the system's crypto and with bundled OpenSSL, recording build time and size. The results are written here for milestone 4. Sub-plan 04 §7.1. |
+| **1f** `docs:` | ☑️ | The test plan (`docs/test-plans/p3m1-groundwork.md`), run on the test server with the desktop app. |
+
+**New dependencies (approved with this plan):** `resvg` (dev only), `secrecy`; SQLCipher in the spike only; `objc2-app-kit` only if the Dock icon needs it (already in the build through Dioxus).
+
+**Step 1a notes (2026-11-08):**
+- **No Dock icon from code on macOS:** setting it needs `NSApplication::setApplicationIconImage`, which is `unsafe`, and the workspace forbids `unsafe` code. A Mac gets the icon from the app bundle (`dx bundle --platform desktop`); a plain `dx serve` run keeps the generic one. Windows and Linux get it as the window icon. So `objc2-app-kit` wasn't added.
+- **`crates/app/Dioxus.toml`** (new): the bundle's identifier (the bundle ID, #016), its icons **largest first** (dx 0.7.10 makes every macOS size from the first one, so a small first icon came out blurry), and a **publisher, "Inner Marker"** (`dx bundle` requires one; taken from the bundle ID's owner). `tests/make_icons.rs` checks the identifier and that each icon exists, and that the committed PNGs still match the SVG (within a shade, since drawing differs slightly between CPUs).
+- **For the release packages (later):** the bundle is still named `App.app` after the crate; its display name ("Vehicle Manager") is set when packages are planned. The icon fills its whole square, so in the Mac Dock it looks a little larger than Apple's own icons, which leave a margin; a padded Mac version can come with the packages.
+
+**Step 1b notes (2026-11-08):**
+- **Title:** the page and window title is "Vehicle Manager"; on the test server, "test server · Vehicle Manager" (set once the app knows the server's instance; before that, `Dioxus.toml`'s starting title). The title moved from the TEST SERVER tag to the app's root, so it's set in one place.
+- **Window:** `settings.json` keeps the window's place (logical pixels, so it survives a screen with another scale) and "keep on top". The place is noted on every move or resize and written at most once a second, and again when the window loses focus, closes, or the app quits. While maximized or full screen, the normal place is kept, so leaving those returns to it. A place that can't be seen (less than a 120 × 40 strip of the title bar on any monitor) moves to the middle of the main monitor.
+- **"Keep window on top"** is in Settings → **This device** (beside Theme), not "You": it belongs to the computer, not the person.
+
+**Step 1c notes (2026-11-08):**
+- **`domain::build_info::BuildInfo`:** the commit (shortened to 7), "modified", the image tag, and the build date; each optional, and an odd value (not hexadecimal, characters Docker tags don't allow, too long) is dropped rather than shown. One line: `dev · a885ac6 · 2026-11-08 19:02 UTC`, or `local build · a885ac6 · uncommitted changes`.
+- **Where the values come from:** `server-image.yml` passes `BUILD_COMMIT` (the workflow's commit), `BUILD_TAG` (metadata-action's `version`: the branch's tag, or a release's version), and `BUILD_DATE`; the `Dockerfile` hands them to `dx bundle` as `VEHICLEMANAGER_BUILD_*`, declared just before that step. A local build's `crates/app/build.rs` asks `git` for the commit and uncommitted changes (rechecked when a commit is made or something is staged). Inside Docker there's no `.git`, so the image relies on the arguments. `deploy_config.rs` checks the workflow, the `Dockerfile`, and the names agree.
+- **What shows:** Diagnostics → About gains **Build** (this app's own; the web app and its server share one, being built together) and **Server** (its version and build: always on the desktop, and on the web only when the server has moved on since the page loaded). The handshake carries the server's build (an optional field, so older apps ignore it), and the server's "app starting" log line names it too.
+
+**Step 1d notes (2026-11-08):**
+- **`domain::secret::Secret` instead of `secrecy`:** Dioxus sends server-function arguments as JSON both ways, and `secrecy`'s `SecretString` deliberately can't be serialized. `Secret` is a small type of our own: `Debug` prints `[redacted]`, there's no `Display`, the text is reached only through `.expose()`, and on the wire it's a plain string (`serde(transparent)`), so the API didn't change. Unlike `secrecy`, it doesn't wipe its memory when dropped (that needs a dependency or `unsafe`); the risk here is logs. No new dependency.
+- **Where it's used:** every password, code, and token parameter of the server functions (sign-in, setup, the setup-code check, password change, Admin mode, recovery), the matching `server` functions down to hashing, the tokens and temporary passwords in the answers (`SignInOutcome`, `SetupOutcome`, `RecoveryOutcome`, `UserAdminOutcome`), and the desktop's in-memory token.
+- **The rule** is in AGENTS.md ("What logs may contain"): no secrets or record text at any level; IDs, not contents; the setup and recovery codes only with `console_only = true` (never the log files or the in-app viewer); what each level is for.
+- **`crates/server/tests/secrets_in_logs.rs`** runs setup, sign-in, a wrong password, Admin mode, a password change, adding a user, a password reset, and a recovery at trace level, and fails if any secret reaches the log or a code appears in a line that isn't console-only. Checked by logging a password on purpose: the test failed.
+
+**Step 1e notes (2026-11-08):**
+- **`spikes/sqlcipher/`** is its own workspace with its own `Cargo.lock` (and ignored by Docker), so its SQLCipher build of `libsqlite3-sys` can never mix into the server's plain SQLite through Cargo's feature unification. It uses the app's sqlx (0.9.0, `sqlite-bundled`), and chooses SQLCipher through the same `libsqlite3-sys` (0.37.0) with one of two features: **system crypto** (`bundled-sqlcipher`: Apple's CommonCrypto on macOS, the system OpenSSL elsewhere) or **bundled OpenSSL** (`bundled-sqlcipher-vendored-openssl`).
+- **Seven checks:** it's SQLCipher (`PRAGMA cipher_version`); create and write; the file has no plain SQLite header and the text isn't visible in it; the right key reads; a wrong key and no key are refused ("file is not a database"); `PRAGMA rekey` keeps the data and retires the old key. sqlx sends the `key` pragma before anything else by design (`sqlx-sqlite` 0.9.0, `options/mod.rs`).
+- **macOS (local, Apple Silicon, release builds from clean):**
+
+  | Build | Time | Binary | Checks |
+  |---|---|---|---|
+  | Plain SQLite | 16.6 s | 3.0 MB | (not run) |
+  | SQLCipher, Apple's crypto | 18.2 s | 3.1 MB | 7 of 7 |
+  | SQLCipher, bundled OpenSSL | 42.7 s | 6.7 MB | 7 of 7 |
+
+- **All three platforms** (`.github/workflows/sqlcipher-spike.yml`, run 2026-11-09 on GitHub's runners; cold builds, including downloading crates; it runs when the spike changes, or by hand once it's on `dev`):
+
+  | | Plain SQLite | SQLCipher, system crypto | SQLCipher, bundled OpenSSL |
+  |---|---|---|---|
+  | **Linux** | 72 s, 3.4 MB | 74 s, 3.5 MB, 7 of 7 | 124 s, 8.3 MB, 7 of 7 |
+  | **macOS** | 78 s, 2.9 MB | 31 s, 2.9 MB, 7 of 7 | 142 s, 6.4 MB, 7 of 7 |
+  | **Windows** | 90 s, 2.4 MB | 86 s, 2.5 MB, 7 of 7 | 594 s, 6.5 MB, 7 of 7 |
+
+- **What Windows needed** (the first run's two Windows SQLCipher builds failed on the build machine, not on SQLCipher): system crypto needs OpenSSL installed and named (`OPENSSL_LIB_DIR`, `OPENSSL_INCLUDE_DIR`; the runner's keeps `libcrypto.lib` in `lib\VC\x64\MD`), and the program then needs OpenSSL's DLLs to run, so a Windows package would have to ship them. Bundled OpenSSL needs the full Strawberry Perl (`OPENSSL_SRC_PERL`), not Git's minimal one, and takes about 10 minutes to build in CI.
+- **Recommendation for milestone 4** (to settle when it's planned): **macOS: system crypto** (Apple's CommonCrypto, part of the OS, almost no cost); **Windows: bundled OpenSSL** (self-contained: no DLLs to ship or keep patched; the slow build only hits CI and Windows developers); **Linux: system crypto** (OpenSSL is on every desktop distribution, and `.deb` and `.rpm` packages can name it as a dependency), or bundled if a self-contained binary matters more than 5 MB. Cargo can choose per platform: an optional `libsqlite3-sys` with different SQLCipher features in `[target.'cfg(...)'.dependencies]` tables, switched on only by the desktop build, so the server (and its Linux image) keeps plain SQLite until Phase 7.
+- **Not tested yet (for Phase 7):** that a SQLCipher build opens an existing plain database with no key (SQLCipher documents that it does), and SQLCipher's `sqlcipher_export` for encrypting an existing database in place.
+
+**Milestone 1 test (2026-11-09):** `docs/test-plans/p3m1-groundwork.md` passed on the test server, except the desktop window's **size** isn't restored (its place and a maximized state are) and the second-monitor step wasn't run; both moved to the Polish phase with the human's request to reorganize Settings (`docs/plan.md` §9 Phase 6).
+

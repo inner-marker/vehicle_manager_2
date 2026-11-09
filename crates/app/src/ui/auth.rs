@@ -76,8 +76,8 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
     }
 }
 
-/// The **TEST SERVER** tag (and the tab's title), on a server that isn't the household's main
-/// one; nothing on the main server.
+/// The **TEST SERVER** tag on a server that isn't the household's main one (the tab's title
+/// says so too: `ui::page_title`); nothing on the main server.
 #[component]
 pub(crate) fn InstanceTag() -> Element {
     let Some(name) = SERVER_INSTANCE() else {
@@ -88,7 +88,6 @@ pub(crate) fn InstanceTag() -> Element {
         &[("name", domain::i18n::MessageArg::from(name.as_str()))],
     );
     rsx! {
-        Title { {label.clone()} }
         span { class: "instance-tag", title: tr(domain::i18n::messages::INSTANCE_TAG_NOTE),
             // The full "TEST SERVER", or just "TEST" in a phone's crowded top bar.
             span { class: "instance-tag-full", {label} }

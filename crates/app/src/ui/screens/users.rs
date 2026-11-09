@@ -76,7 +76,10 @@ enum Dialog {
     Add,
     ConfirmDisable(UserSummary),
     ConfirmReset(UserSummary),
-    TemporaryPassword { name: String, password: String },
+    TemporaryPassword {
+        name: String,
+        password: domain::secret::Secret,
+    },
 }
 
 /// The Users screen.
@@ -288,7 +291,7 @@ fn UsersDialog(
                     Dialog::Add => rsx! { AddUserForm { close: on_close, next: on_next, changed: on_changed } },
                     Dialog::ConfirmDisable(user) => rsx! { ConfirmDisable { user, on_close, on_changed } },
                     Dialog::ConfirmReset(user) => rsx! { ConfirmReset { user, on_close, on_next, on_changed } },
-                    Dialog::TemporaryPassword { name, password } => rsx! { TemporaryPassword { name, password, on_close } },
+                    Dialog::TemporaryPassword { name, password } => rsx! { TemporaryPassword { name, password: password.into_exposed(), on_close } },
                 }
             }
         }

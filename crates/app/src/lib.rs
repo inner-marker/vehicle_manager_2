@@ -5,6 +5,7 @@
 //! its modules unit-testable and lets later code use them before the UI does.
 
 pub mod api;
+pub mod build_info;
 pub mod client;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
@@ -15,3 +16,5 @@ pub mod logging;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod settings;
 pub mod ui;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod window_placement;

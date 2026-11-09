@@ -155,6 +155,10 @@ pub struct Handshake {
     /// server refuses changes. Missing from servers before Phase 2, which counts as healthy.
     #[serde(default = "healthy_by_default")]
     pub healthy: bool,
+    /// The server's exact build (phase-3.md 1c). Missing from older servers, which reads as
+    /// unknown.
+    #[serde(default)]
+    pub build: crate::build_info::BuildInfo,
 }
 
 /// Who is signed in, as the client sees it (from the session check and sign-in).
@@ -199,7 +203,7 @@ pub enum SetupOutcome {
         /// The new Admin.
         session: SessionInfo,
         /// The session token, if asked for (the desktop app).
-        token: Option<String>,
+        token: Option<crate::secret::Secret>,
     },
     /// The setup code is wrong.
     WrongCode,
@@ -294,7 +298,7 @@ pub enum UserAdminOutcome {
     /// Done; give this temporary password to the user. Shown once.
     TemporaryPassword {
         /// The password, e.g. `QX7M-K2PD-9WRT`, typed exactly as shown.
-        password: String,
+        password: crate::secret::Secret,
     },
     /// Not in Admin mode, or not the household's Admin.
     NotAllowed,
@@ -327,7 +331,7 @@ pub enum RecoveryOutcome {
         /// Who signed in.
         session: SessionInfo,
         /// The session token, if asked for (the desktop app).
-        token: Option<String>,
+        token: Option<crate::secret::Secret>,
     },
     /// The code is wrong, used, or expired.
     WrongCode,
@@ -1266,7 +1270,7 @@ pub enum SignInOutcome {
         /// Who signed in.
         session: SessionInfo,
         /// The session token, for the desktop app.
-        token: Option<String>,
+        token: Option<crate::secret::Secret>,
     },
     /// Unknown username or wrong password (deliberately not saying which).
     InvalidCredentials,

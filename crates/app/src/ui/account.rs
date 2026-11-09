@@ -32,7 +32,7 @@ const fn mode_label(mode: ActiveMode) -> MessageId {
 /// Asks the server to switch mode, then refreshes the session. Returns the error to show,
 /// if any (only Admin's password can be wrong).
 pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option<String> {
-    match api::switch_mode(mode, password).await {
+    match api::switch_mode(mode, password.map(domain::secret::Secret::new)).await {
         Ok(SwitchModeOutcome::Switched { mode }) => {
             tracing::info!(target: log_area::AUTH, ?mode, "mode switched");
             None

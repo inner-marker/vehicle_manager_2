@@ -13,6 +13,7 @@
 use argon2::password_hash::phc::PasswordHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use argon2::{Algorithm, Argon2, Params};
+use domain::secret::Secret;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
@@ -100,9 +101,10 @@ impl std::error::Error for HashError {}
 ///
 /// [`HashError`] if the OS has no random bytes for the salt, the blocking task fails, or
 /// too many are being hashed ([`Busy`]).
-pub async fn hash_password(password: String) -> Result<String, HashError> {
+pub async fn hash_password(password: Secret) -> Result<String, HashError> {
     TURNS
         .run(move || {
+            let password = password.into_exposed();
             Argon2::default()
                 .hash_password(password.as_bytes())
                 .map(|hash| hash.to_string())
@@ -118,9 +120,10 @@ pub async fn hash_password(password: String) -> Result<String, HashError> {
 /// # Errors
 ///
 /// [`Busy`] if too many passwords are being checked at once.
-pub async fn verify_password(password: String, hash: String) -> Result<bool, Busy> {
+pub async fn verify_password(password: Secret, hash: String) -> Result<bool, Busy> {
     let checked = TURNS
         .run(move || {
+            let password = password.into_exposed();
             // The parameters come from the hash itself, so older hashes still verify.
             Argon2::default()
                 .verify_password(password.as_bytes(), hash.as_str())
@@ -167,7 +170,7 @@ mod tests {
                 .await
                 .unwrap()
         );
-        assert!(!verify_password(String::new(), hash).await.unwrap());
+        assert!(!verify_password(Secret::default(), hash).await.unwrap());
     }
 
     #[tokio::test]

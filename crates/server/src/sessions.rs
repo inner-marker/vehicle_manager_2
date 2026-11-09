@@ -24,6 +24,7 @@ use storage::{Database, StorageError};
 use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
+use domain::secret::Secret;
 
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
@@ -148,7 +149,7 @@ static DUMMY_HASH: tokio::sync::OnceCell<String> = tokio::sync::OnceCell::const_
 
 async fn dummy_hash() -> String {
     DUMMY_HASH
-        .get_or_try_init(|| hash_password("never a real password".to_owned()))
+        .get_or_try_init(|| hash_password(Secret::new("never a real password")))
         .await
         .cloned()
         .unwrap_or_default()
@@ -175,7 +176,7 @@ pub async fn sign_in(
     database: &Database,
     limiter: &LoginLimiter,
     username: &str,
-    password: String,
+    password: Secret,
     client: &str,
     now: UnixMillis,
 ) -> Result<(SessionToken, SignedIn), SignInError> {
@@ -225,7 +226,7 @@ async fn find_signable_user(
 
 /// Replaces an old-parameter hash after a successful sign-in; a failure only means it waits
 /// for the next sign-in.
-async fn upgrade_hash(database: &Database, user: UserId, password: String, now: UnixMillis) {
+async fn upgrade_hash(database: &Database, user: UserId, password: Secret, now: UnixMillis) {
     match hash_password(password).await {
         Ok(hash) => {
             if let Err(error) = database.set_password_hash(user, &hash, now).await {
@@ -377,7 +378,7 @@ pub async fn switch_mode(
     database: &Database,
     signed_in: &SignedIn,
     mode: ActiveMode,
-    password: Option<String>,
+    password: Option<Secret>,
     now: UnixMillis,
 ) -> Result<ActiveMode, SwitchModeError> {
     if !signed_in.available_modes().contains(&mode) {
@@ -446,12 +447,12 @@ pub enum ChangePasswordError {
 pub async fn change_password(
     database: &Database,
     signed_in: &SignedIn,
-    current: String,
-    new: String,
+    current: Secret,
+    new: Secret,
     health: crate::health::Health,
     clock: &(dyn domain::time::Clock + Sync),
 ) -> Result<(), ChangePasswordError> {
-    domain::user::check_new_password(&new).map_err(ChangePasswordError::Invalid)?;
+    domain::user::check_new_password(new.expose()).map_err(ChangePasswordError::Invalid)?;
     let stored = database
         .password_hash(signed_in.user)
         .await

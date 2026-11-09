@@ -10,6 +10,7 @@ use domain::api::{
 };
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
+use domain::secret::Secret;
 
 use crate::api;
 use crate::client;
@@ -196,9 +197,13 @@ fn RecoverWithCode(username: String, on_back: EventHandler<()>) -> Element {
         busy.set(true);
         let username = username.clone();
         spawn(async move {
-            let result =
-                api::complete_recovery(username, code(), password(), client::USES_SESSION_TOKEN)
-                    .await;
+            let result = api::complete_recovery(
+                username,
+                Secret::new(code()),
+                Secret::new(password()),
+                client::USES_SESSION_TOKEN,
+            )
+            .await;
             busy.set(false);
             match result {
                 Ok(RecoveryOutcome::SignedIn { session, token }) => {
@@ -269,7 +274,12 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
         }
         busy.set(true);
         spawn(async move {
-            let result = api::sign_in(username(), password(), client::USES_SESSION_TOKEN).await;
+            let result = api::sign_in(
+                username(),
+                Secret::new(password()),
+                client::USES_SESSION_TOKEN,
+            )
+            .await;
             busy.set(false);
             match result {
                 Ok(SignInOutcome::SignedIn { session, token }) => {
@@ -358,7 +368,7 @@ fn SetupCode(
         }
         busy.set(true);
         spawn(async move {
-            let result = api::check_setup_code(code()).await;
+            let result = api::check_setup_code(Secret::new(code())).await;
             busy.set(false);
             match result {
                 Ok(CheckSetupCodeOutcome::Valid) => {
@@ -427,10 +437,10 @@ fn SetupAccount(
         busy.set(true);
         spawn(async move {
             let result = api::setup(
-                code(),
+                Secret::new(code()),
                 username(),
                 display_name(),
-                password(),
+                Secret::new(password()),
                 client::USES_SESSION_TOKEN,
             )
             .await;
@@ -526,7 +536,7 @@ pub(crate) fn ChangePasswordForm(
         }
         busy.set(true);
         spawn(async move {
-            let result = api::change_password(current(), new()).await;
+            let result = api::change_password(Secret::new(current()), Secret::new(new())).await;
             busy.set(false);
             match result {
                 Ok(ChangePasswordOutcome::Changed) => {

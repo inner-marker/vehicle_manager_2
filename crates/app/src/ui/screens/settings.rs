@@ -285,6 +285,7 @@ pub(crate) fn Settings() -> Element {
                 span { class: "setting-label", {tr(messages::SETTINGS_THEME)} }
                 ThemeToggle {}
             }
+            KeepOnTop {}
         }
     }
 }
@@ -727,4 +728,18 @@ mod tests {
             assert_eq!(setting.index(Preferences::default()), 0, "{setting:?}");
         }
     }
+}
+
+/// The desktop's "Keep window on top" row (phase-3.md 1b).
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[component]
+fn KeepOnTop() -> Element {
+    rsx! { crate::ui::desktop_window::KeepOnTopRow {} }
+}
+
+/// Nothing on the web: a browser's window isn't the app's.
+#[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+#[component]
+fn KeepOnTop() -> Element {
+    rsx! {}
 }

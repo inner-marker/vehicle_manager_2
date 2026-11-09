@@ -28,6 +28,7 @@ use crate::commands::{ApplyError, issue};
 use crate::health::Health;
 use crate::ids::new_id;
 use crate::passwords::hash_password;
+use domain::secret::Secret;
 
 /// Characters in a code.
 const CODE_CHARS: usize = 16;
@@ -42,13 +43,13 @@ static SETUP_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 #[derive(Clone)]
 pub struct SetupRequest {
     /// The setup code from the server log.
-    pub code: String,
+    pub code: Secret,
     /// The Admin's username.
     pub username: String,
     /// The Admin's display name.
     pub display_name: String,
     /// The Admin's password.
-    pub password: String,
+    pub password: Secret,
 }
 
 // Never prints the code or password.
@@ -135,13 +136,13 @@ pub async fn create_first_admin(
     {
         return Err(SetupError::AlreadySetUp);
     }
-    if !code_matches(&code) {
+    if !code_matches(code.expose()) {
         tracing::debug!(target: log_area::AUTH, "setup refused: wrong code");
         return Err(SetupError::WrongCode);
     }
     let username = Username::parse(&username).map_err(SetupError::InvalidUsername)?;
     let display_name = check_display_name(&display_name).map_err(SetupError::InvalidDisplayName)?;
-    check_new_password(&password).map_err(SetupError::InvalidPassword)?;
+    check_new_password(password.expose()).map_err(SetupError::InvalidPassword)?;
     let hash = hash_password(password)
         .await
         .map_err(|_| SetupError::Unavailable)?;
