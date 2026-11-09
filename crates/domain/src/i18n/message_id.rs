@@ -1117,6 +1117,14 @@ define_messages! {
     ABOUT_HEADING => "about-heading",
     /// About: the app's version.
     ABOUT_APP => "about-app",
+    /// About: the exact build's row (phase-3.md 1c).
+    ABOUT_BUILD => "about-build",
+    /// About: the server's version and build, when it isn't this app's.
+    ABOUT_SERVER => "about-server",
+    /// About: a build not made by the image workflows.
+    ABOUT_BUILD_LOCAL => "about-build-local",
+    /// About: a local build with uncommitted changes.
+    ABOUT_BUILD_MODIFIED => "about-build-modified",
     /// About: the place data's version.
     ABOUT_PLACE_DATA => "about-place-data",
     /// About: the server couldn't open its place data.

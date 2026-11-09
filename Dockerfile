@@ -45,12 +45,23 @@ COPY . .
 #
 # TEST_TIMERS=true builds in test timers (decision #054): only the Dev image workflow sets it
 # (dev and milestone images); a release never does, so a release can't shorten its timers.
+#
+# BUILD_COMMIT, BUILD_TAG, and BUILD_DATE name this exact build on Diagnostics (phase-3.md
+# 1c, GitHub #37); the image workflows set them, and the app reads them at compile time as
+# VEHICLEMANAGER_BUILD_* (domain::build_info; crates/app/tests/deploy_config.rs checks the
+# names). Declared here, just before the build, so they never invalidate earlier layers.
 ARG TEST_TIMERS=false
+ARG BUILD_COMMIT=""
+ARG BUILD_TAG=""
+ARG BUILD_DATE=""
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cd crates/app \
     && if [ "$TEST_TIMERS" = "true" ]; then FEATURES="--features test-timers"; else FEATURES=""; fi \
-    && dx bundle --platform web --release $FEATURES --out-dir /out
+    && VEHICLEMANAGER_BUILD_COMMIT="$BUILD_COMMIT" \
+       VEHICLEMANAGER_BUILD_TAG="$BUILD_TAG" \
+       VEHICLEMANAGER_BUILD_DATE="$BUILD_DATE" \
+       dx bundle --platform web --release $FEATURES --out-dir /out
 
 # ---------- Runtime stage ----------
 FROM debian:trixie-slim

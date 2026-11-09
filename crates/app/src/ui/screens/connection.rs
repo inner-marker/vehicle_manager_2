@@ -373,6 +373,7 @@ mod tests {
             min_supported_api_version: domain::api::API_VERSION,
             server_time_ms: 0,
             healthy,
+            build: domain::build_info::BuildInfo::default(),
         }
     }
 

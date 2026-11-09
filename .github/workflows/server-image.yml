@@ -50,6 +50,11 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: ${{ inputs.tags }}
 
+      # When this build was made, as Diagnostics shows it (phase-3.md 1c).
+      - name: Build date
+        id: date
+        run: echo "value=$(date -u '+%Y-%m-%d %H:%M UTC')" >> "$GITHUB_OUTPUT"
+
       # The GitHub Actions cache keeps the dx CLI layer and Rust build cache between
       # runs, so only changed layers rebuild.
       - name: Build${{ inputs.push && ' and push' || '' }}
@@ -60,7 +65,12 @@ jobs:
           push: ${{ inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # The commit, the image tag (metadata-action's "version": the branch's tag, or the
+          # release's version), and the date name this exact build on Diagnostics (#37).
           build-args: |
             TEST_TIMERS=${{ inputs.test-timers }}
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_TAG=${{ steps.meta.outputs.version }}
+            BUILD_DATE=${{ steps.date.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -155,6 +155,10 @@ pub struct Handshake {
     /// server refuses changes. Missing from servers before Phase 2, which counts as healthy.
     #[serde(default = "healthy_by_default")]
     pub healthy: bool,
+    /// The server's exact build (phase-3.md 1c). Missing from older servers, which reads as
+    /// unknown.
+    #[serde(default)]
+    pub build: crate::build_info::BuildInfo,
 }
 
 /// Who is signed in, as the client sees it (from the session check and sign-in).

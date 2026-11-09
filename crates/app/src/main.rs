@@ -17,7 +17,9 @@ fn main() {
             None
         }
     };
-    tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), "app starting");
+    // The exact build too (phase-3.md 1c), so the log says which image is running.
+    let build = app::build_info::this_build().label("local build", "uncommitted changes");
+    tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), build = %build, "app starting");
 
     launch(log_handles);
 }

@@ -141,10 +141,16 @@ pub(crate) fn Diagnostics() -> Element {
     }
 }
 
-/// About (#060): the app's version, the place data's version, and the data credits.
+/// About (#060): the app's version and exact build (phase-3.md 1c), the server's when it
+/// differs, the place data's version, and the data credits.
+///
+/// The web app and its server come from one image, so they share a build; the **Server** row
+/// shows on the web only when the server has moved on since the page loaded. The desktop app
+/// is built on its own, so it always shows it.
 #[component]
 fn About() -> Element {
     let mut info = use_signal(|| None::<Option<domain::api::PlaceDataInfo>>);
+    let mut server = use_signal(|| None::<domain::api::Handshake>);
     // After mounting only (never during server rendering).
     use_effect(move || {
         spawn(async move {
@@ -152,6 +158,9 @@ fn About() -> Element {
                 crate::api::get_place_data().await
             {
                 info.set(Some(data));
+            }
+            if let Ok(handshake) = crate::api::handshake().await {
+                server.set(Some(handshake));
             }
         });
     });
@@ -165,12 +174,31 @@ fn About() -> Element {
         .map(|data| data.attribution.clone())
         .filter(|credit| !credit.is_empty())
         .unwrap_or_else(|| tr(messages::ABOUT_CREDITS_DEFAULT));
+    let own = crate::build_info::this_build();
+    let label = |build: &domain::build_info::BuildInfo| {
+        build.label(
+            &tr(messages::ABOUT_BUILD_LOCAL),
+            &tr(messages::ABOUT_BUILD_MODIFIED),
+        )
+    };
+    let own_build = label(&own);
+    let server_row = server().and_then(|handshake| {
+        let differs = handshake.build != own || handshake.app_version != env!("CARGO_PKG_VERSION");
+        (cfg!(feature = "desktop") || differs)
+            .then(|| format!("{} · {}", handshake.app_version, label(&handshake.build)))
+    });
     rsx! {
         section { class: "about",
             h3 { class: "section-heading", {tr(messages::ABOUT_HEADING).to_uppercase()} }
             dl { class: "about-list",
                 dt { {tr(messages::ABOUT_APP)} }
                 dd { {env!("CARGO_PKG_VERSION")} }
+                dt { {tr(messages::ABOUT_BUILD)} }
+                dd { {own_build} }
+                if let Some(server_row) = server_row {
+                    dt { {tr(messages::ABOUT_SERVER)} }
+                    dd { {server_row} }
+                }
                 dt { {tr(messages::ABOUT_PLACE_DATA)} }
                 dd { if info().is_some() { {version} } else { {tr(messages::LOADING)} } }
                 dt { {tr(messages::ABOUT_CREDITS)} }
