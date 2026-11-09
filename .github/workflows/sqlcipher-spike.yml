@@ -38,17 +38,33 @@ jobs:
       - name: Install pinned toolchain
         run: rustup toolchain install && rustc --version
 
-      # On Windows, the system-crypto build needs OpenSSL; the runner image has one.
+      # On Windows, the system-crypto build needs OpenSSL; the runner image has one, but keeps
+      # libcrypto.lib in a subfolder (lib\VC\x64\MD), so its folders are named explicitly.
+      # (The first run failed with "cannot open input file 'libcrypto.lib'".)
       - name: Point at the runner's OpenSSL (Windows, system crypto)
         if: runner.os == 'Windows' && matrix.variant == 'system-crypto'
         run: |
           for dir in "/c/Program Files/OpenSSL" "/c/Program Files/OpenSSL-Win64"; do
-            if [ -d "$dir" ]; then
-              echo "OPENSSL_DIR=$(cygpath -w "$dir")" >> "$GITHUB_ENV"
-              echo "Using OpenSSL in $dir"
-              break
-            fi
+            [ -d "$dir" ] || continue
+            lib=$(find "$dir/lib" -iname libcrypto.lib | grep -i "x64" | grep -i "/MD/" | head -1)
+            [ -n "$lib" ] || lib=$(find "$dir/lib" -iname libcrypto.lib | head -1)
+            echo "OPENSSL_LIB_DIR=$(cygpath -w "$(dirname "$lib")")" >> "$GITHUB_ENV"
+            echo "OPENSSL_INCLUDE_DIR=$(cygpath -w "$dir/include")" >> "$GITHUB_ENV"
+            # The program links to OpenSSL's DLLs, which must be found when it runs.
+            echo "$(cygpath -w "$dir/bin")" >> "$GITHUB_PATH"
+            echo "Using OpenSSL in $dir (libcrypto.lib in $(dirname "$lib"))"
+            break
           done
+
+      # Building OpenSSL from source on Windows needs the full Strawberry Perl, not the minimal
+      # one that comes with Git's bash, which comes first on bash's PATH. (The first run failed
+      # with "Can't locate Locale/Maketext/Simple.pm".) openssl-src takes its Perl from
+      # OPENSSL_SRC_PERL.
+      - name: Use Strawberry Perl (Windows, bundled OpenSSL)
+        if: runner.os == 'Windows' && matrix.variant == 'vendored-openssl'
+        run: |
+          echo 'OPENSSL_SRC_PERL=C:\Strawberry\perl\bin\perl.exe' >> "$GITHUB_ENV"
+          /c/Strawberry/perl/bin/perl -v | head -2
 
       - name: Build (timed)
         id: build
@@ -63,6 +79,7 @@ jobs:
           echo "seconds=$((end - start))" >> "$GITHUB_OUTPUT"
           echo "megabytes=$(awk "BEGIN { printf \"%.1f\", $size / 1048576 }")" >> "$GITHUB_OUTPUT"
           echo "binary=$binary" >> "$GITHUB_OUTPUT"
+          echo "Built in $((end - start)) s; binary $size bytes"
 
       # Plain SQLite has no SQLCipher, so its checks would fail by design; it's only measured.
       - name: Run the checks
