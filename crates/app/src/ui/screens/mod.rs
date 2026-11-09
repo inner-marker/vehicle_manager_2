@@ -4,6 +4,7 @@ mod account;
 mod attachments;
 mod compliance;
 mod connection;
+mod devices;
 mod diagnostics;
 mod documents;
 mod event_page;

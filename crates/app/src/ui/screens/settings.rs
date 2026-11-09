@@ -187,6 +187,8 @@ impl ButtonSetting {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tab {
     You,
+    /// Where you're signed in (phase-3.md 2e; sketch option 2B).
+    Devices,
     Household,
 }
 
@@ -228,7 +230,11 @@ pub(crate) fn Settings() -> Element {
 
     // The Household tab is the household Admin's, in Admin mode only (#069): everyone else,
     // and the Admin in another mode, sees just their own settings, with no picker.
-    let shown = if in_admin_mode { tab() } else { Tab::You };
+    let shown = if in_admin_mode || tab() != Tab::Household {
+        tab()
+    } else {
+        Tab::You
+    };
     let save = move |patch: PreferencesPatch| {
         let household = in_admin_mode && tab() == Tab::Household;
         spawn(async move {
@@ -243,24 +249,34 @@ pub(crate) fn Settings() -> Element {
 
     rsx! {
         div { class: "settings",
-            if in_admin_mode {
             div { class: "segmented", role: "tablist",
                 button {
-                    class: if tab() == Tab::You { "segment on" } else { "segment" },
+                    class: if shown == Tab::You { "segment on" } else { "segment" },
                     role: "tab",
-                    "aria-selected": tab() == Tab::You,
+                    "aria-selected": shown == Tab::You,
                     onclick: move |_| tab.set(Tab::You),
                     {tr(messages::SETTINGS_TAB_YOU)}
                 }
                 button {
-                    class: if tab() == Tab::Household { "segment on" } else { "segment" },
+                    class: if shown == Tab::Devices { "segment on" } else { "segment" },
                     role: "tab",
-                    "aria-selected": tab() == Tab::Household,
-                    onclick: move |_| tab.set(Tab::Household),
-                    {tr(messages::SETTINGS_TAB_HOUSEHOLD)}
+                    "aria-selected": shown == Tab::Devices,
+                    onclick: move |_| tab.set(Tab::Devices),
+                    {tr(messages::SETTINGS_TAB_DEVICES)}
+                }
+                if in_admin_mode {
+                    button {
+                        class: if shown == Tab::Household { "segment on" } else { "segment" },
+                        role: "tab",
+                        "aria-selected": shown == Tab::Household,
+                        onclick: move |_| tab.set(Tab::Household),
+                        {tr(messages::SETTINGS_TAB_HOUSEHOLD)}
+                    }
                 }
             }
-            }
+            if shown == Tab::Devices {
+                super::devices::DevicesTab {}
+            } else {
             if let Some(message) = error() {
                 p { class: "form-error", role: "alert", {message} }
             }
@@ -286,6 +302,7 @@ pub(crate) fn Settings() -> Element {
                 ThemeToggle {}
             }
             KeepOnTop {}
+            }
         }
     }
 }

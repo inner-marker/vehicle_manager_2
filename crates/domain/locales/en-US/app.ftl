@@ -284,6 +284,37 @@ recovery-wrong-code = That code isn't right, or it has expired.
 
 settings-tab-you = You
 settings-tab-household = Household
+settings-tab-devices = Devices
+devices-help = Where you're signed in. Signing out a desktop app means signing in on it again (it pairs again).
+devices-this-device = This device
+devices-browser = Browser
+devices-desktop = Desktop app
+devices-desktop-older = Desktop app (older version)
+devices-kind-desktop = Desktop app
+devices-kind-browser = Browser
+devices-kind-desktop-older = Desktop app, unsigned
+devices-seen-now = Active now
+devices-seen-minutes = { $minutes } min ago
+devices-seen-hours = { $hours ->
+    [one] 1 hour ago
+   *[other] { $hours } hours ago
+}
+devices-seen-yesterday = Yesterday
+devices-seen-days = { $days } days ago
+devices-sign-out = Sign out
+devices-sign-out-others = Sign out everywhere else
+devices-sign-out-others-confirm = Sign out every other device and browser? Desktop apps will need to sign in again.
+devices-rename = Rename
+devices-name = Name
+devices-only-this = You're signed in only here.
+devices-unavailable = The devices couldn't be loaded or changed. Try again.
+devices-name-empty = Type a name.
+devices-name-too-long = Use 64 characters or fewer.
+devices-name-control = Keep the name on one line.
+users-devices = Devices ({ $count })
+users-devices-title = { $name }'s devices
+users-devices-sign-out-all = Sign out all of { $name }'s devices
+users-devices-none = Not signed in anywhere.
 settings-you-help = Follow the household default, or choose your own. Changes save at once.
 settings-household-help = For everyone who hasn't chosen their own.
 settings-household-admin-only = Switch to Admin mode to change the household defaults.

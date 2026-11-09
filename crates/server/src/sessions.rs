@@ -161,8 +161,11 @@ impl From<Busy> for SignInError {
 /// The device a sign-in comes from (phase-3.md 2c, #073).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SigningInDevice {
-    /// A web browser: a cookie, no key.
-    Browser,
+    /// A web browser: a cookie, no key; named from its user agent if it could be.
+    Browser {
+        /// e.g. "Safari on iPhone".
+        name: Option<DeviceName>,
+    },
     /// A desktop app too old to pair (API version 1, `v0.2.0`): a token, no key. Shown as
     /// "Desktop app (older version)".
     OlderDesktop,
@@ -196,7 +199,7 @@ pub async fn sign_in(
         password,
         client,
         now,
-        SigningInDevice::Browser,
+        SigningInDevice::Browser { name: None },
     )
     .await
 }
@@ -286,10 +289,10 @@ async fn start_session(
         SignInError::Unavailable
     })?;
     let device = new_id(now)?;
-    // Every session belongs to a device (#073): a browser (named later from its user agent,
-    // milestone 2e), an older desktop app (no key), or a desktop pairing with its key.
+    // Every session belongs to a device (#073): a browser (named from its user agent), an older
+    // desktop app (no key), or a desktop pairing with its key.
     let (kind, name, public_key) = match signing_in {
-        SigningInDevice::Browser => (DeviceKind::Browser, None, None),
+        SigningInDevice::Browser { name } => (DeviceKind::Browser, name, None),
         SigningInDevice::OlderDesktop => (DeviceKind::Desktop, None, None),
         SigningInDevice::Desktop { public_key, name } => {
             (DeviceKind::Desktop, name, Some(public_key))

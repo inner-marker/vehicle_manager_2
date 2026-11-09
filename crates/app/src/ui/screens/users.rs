@@ -76,6 +76,8 @@ enum Dialog {
     Add,
     ConfirmDisable(UserSummary),
     ConfirmReset(UserSummary),
+    /// A person's devices (phase-3.md 2e; sketch option 3A).
+    Devices(UserSummary),
     TemporaryPassword {
         name: String,
         password: domain::secret::Secret,
@@ -244,6 +246,7 @@ fn UserDetail(
     };
     let for_disable = user.clone();
     let for_reset = user.clone();
+    let for_devices = user.clone();
 
     rsx! {
         button { class: "link-button users-back", onclick: move |_| on_back.call(()), {tr(messages::USERS_BACK)} }
@@ -256,6 +259,9 @@ fn UserDetail(
         div { class: "account-actions",
             button { class: "secondary-button", onclick: move |_| on_dialog.call(Dialog::ConfirmReset(for_reset.clone())),
                 {tr(messages::USERS_RESET_PASSWORD)}
+            }
+            button { class: "secondary-button", onclick: move |_| on_dialog.call(Dialog::Devices(for_devices.clone())),
+                {tr_with(messages::USERS_DEVICES, &[("count", MessageArg::from(i64::from(user.devices)))])}
             }
             if disabled {
                 button { class: "secondary-button", onclick: enable, {tr(messages::USERS_ENABLE)} }
@@ -291,6 +297,7 @@ fn UsersDialog(
                     Dialog::Add => rsx! { AddUserForm { close: on_close, next: on_next, changed: on_changed } },
                     Dialog::ConfirmDisable(user) => rsx! { ConfirmDisable { user, on_close, on_changed } },
                     Dialog::ConfirmReset(user) => rsx! { ConfirmReset { user, on_close, on_next, on_changed } },
+                    Dialog::Devices(user) => rsx! { super::devices::UserDevices { user, on_close, on_changed } },
                     Dialog::TemporaryPassword { name, password } => rsx! { TemporaryPassword { name, password: password.into_exposed(), on_close } },
                 }
             }

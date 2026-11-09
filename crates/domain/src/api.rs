@@ -307,6 +307,56 @@ pub struct UserSummary {
     pub is_you: bool,
     /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
     pub is_last_admin: bool,
+    /// How many devices they're signed in on (phase-3.md 2e).
+    #[serde(default)]
+    pub devices: u32,
+}
+
+/// A device someone is signed in on, for Settings → Devices and the Admin's view of a person's
+/// devices (phase-3.md 2e, #073).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeviceView {
+    /// Its ID.
+    pub id: crate::id::DeviceId,
+    /// Desktop or browser.
+    pub kind: crate::device::DeviceKind,
+    /// Its name, if it has one.
+    pub name: Option<crate::device::DeviceName>,
+    /// Whether it's a desktop paired with its own key (a desktop without one is an older
+    /// version of the app).
+    pub paired: bool,
+    /// When it was added (its first sign-in).
+    pub added_at: crate::time::UnixMillis,
+    /// When it was last used.
+    pub last_seen: crate::time::UnixMillis,
+    /// It's the device this request came from.
+    pub this_device: bool,
+}
+
+/// The answer to a Devices request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DevicesOutcome {
+    /// The devices, most recently used first.
+    Devices {
+        /// Each signed-in device.
+        devices: Vec<DeviceView>,
+    },
+    /// Done.
+    Done,
+    /// Not signed in.
+    NotSignedIn,
+    /// Not allowed: someone else's device, or another person's devices outside Admin mode.
+    NotAllowed,
+    /// There's no such device (or it's already signed out).
+    NotFound,
+    /// The new name breaks a rule.
+    InvalidName {
+        /// Which rule.
+        reason: crate::device::DeviceNameError,
+    },
+    /// The server can't do it now (see its log).
+    Unavailable,
 }
 
 /// The answer to a Users screen request.

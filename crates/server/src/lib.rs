@@ -11,6 +11,7 @@ pub mod auth;
 pub mod client_address;
 pub mod codes;
 pub mod commands;
+pub mod devices;
 pub mod documents;
 pub mod events;
 pub mod groups;

@@ -455,6 +455,62 @@ define_messages! {
     SETTINGS_TAB_YOU => "settings-tab-you",
     /// Settings: the tab with the household defaults.
     SETTINGS_TAB_HOUSEHOLD => "settings-tab-household",
+    /// Settings: the Devices tab (phase-3.md 2e).
+    SETTINGS_TAB_DEVICES => "settings-tab-devices",
+    /// Devices: the note at the top.
+    DEVICES_HELP => "devices-help",
+    /// Devices: the chip on the device you're using.
+    DEVICES_THIS_DEVICE => "devices-this-device",
+    /// Devices: a browser with no name.
+    DEVICES_BROWSER => "devices-browser",
+    /// Devices: a paired desktop app with no name.
+    DEVICES_DESKTOP => "devices-desktop",
+    /// Devices: a desktop app too old to pair.
+    DEVICES_DESKTOP_OLDER => "devices-desktop-older",
+    /// Devices: the kind line for a paired desktop.
+    DEVICES_KIND_DESKTOP => "devices-kind-desktop",
+    /// Devices: the kind line for a browser.
+    DEVICES_KIND_BROWSER => "devices-kind-browser",
+    /// Devices: the kind line for an older desktop app.
+    DEVICES_KIND_DESKTOP_OLDER => "devices-kind-desktop-older",
+    /// Devices: used in the last few minutes.
+    DEVICES_SEEN_NOW => "devices-seen-now",
+    /// Devices: used some minutes ago.
+    DEVICES_SEEN_MINUTES => "devices-seen-minutes",
+    /// Devices: used some hours ago.
+    DEVICES_SEEN_HOURS => "devices-seen-hours",
+    /// Devices: used yesterday.
+    DEVICES_SEEN_YESTERDAY => "devices-seen-yesterday",
+    /// Devices: used some days ago.
+    DEVICES_SEEN_DAYS => "devices-seen-days",
+    /// Devices: sign one device out.
+    DEVICES_SIGN_OUT => "devices-sign-out",
+    /// Devices: sign out every other device.
+    DEVICES_SIGN_OUT_OTHERS => "devices-sign-out-others",
+    /// Devices: confirming "sign out everywhere else".
+    DEVICES_SIGN_OUT_OTHERS_CONFIRM => "devices-sign-out-others-confirm",
+    /// Devices: rename this device.
+    DEVICES_RENAME => "devices-rename",
+    /// Devices: the name field.
+    DEVICES_NAME => "devices-name",
+    /// Devices: nothing but this device.
+    DEVICES_ONLY_THIS => "devices-only-this",
+    /// Devices: something went wrong.
+    DEVICES_UNAVAILABLE => "devices-unavailable",
+    /// Devices: a name with nothing in it.
+    DEVICES_NAME_EMPTY => "devices-name-empty",
+    /// Devices: a name over 64 characters.
+    DEVICES_NAME_TOO_LONG => "devices-name-too-long",
+    /// Devices: a name with a line break or tab.
+    DEVICES_NAME_CONTROL => "devices-name-control",
+    /// Users: the button opening a person's devices.
+    USERS_DEVICES => "users-devices",
+    /// Users: the devices dialog's title.
+    USERS_DEVICES_TITLE => "users-devices-title",
+    /// Users: sign out all of a person's devices.
+    USERS_DEVICES_SIGN_OUT_ALL => "users-devices-sign-out-all",
+    /// Users: the person has no signed-in devices.
+    USERS_DEVICES_NONE => "users-devices-none",
     /// Settings, You tab: what it's for.
     SETTINGS_YOU_HELP => "settings-you-help",
     /// Settings, Household tab: what it's for.
