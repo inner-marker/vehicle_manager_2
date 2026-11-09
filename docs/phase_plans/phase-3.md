@@ -84,7 +84,7 @@
 | **1b** `feat(app):` title and window (#19) | ☑️ | The page and window title "Vehicle Manager". The desktop's window size, position, and maximized or full-screen state saved in `settings.json` and restored, back on screen if needed. "Keep window on top" in Settings → You on the desktop, saved per computer in `settings.json` (not synced). |
 | **1c** `feat:` exact build (#37) | ☑️ | The image workflows pass the commit, image tag, and build date as Docker build arguments, declared just before the Rust build so dependency layers stay cached; the binary keeps them. Local builds take the commit from `git` (marked "modified" with uncommitted changes), or "local build". The handshake carries the server's build; Diagnostics → About shows it, and on the desktop the app's own build too. Tests for the fallbacks. |
 | **1d** `feat:` secret types and log tiers | ☑️ | Passwords, tokens, PINs, and codes held in `secrecy::SecretString` (or the token's own type) from the moment a server function receives them, printing as `[redacted]`. A logging rule in AGENTS.md: what each level may contain. A test captures the logs through setup, sign-in, a failed sign-in, a password change, and a recovery, and checks no secret appears (the setup and recovery codes stay in the log on purpose, #028, #047). Sub-plan 04 §7.4. |
-| **1e** `ci:` SQLCipher spike | ⬜ | `spikes/sqlcipher/`, **outside the workspace** so its SQLCipher build never mixes into the server's: creates an encrypted database through sqlx, reopens it with the right key, and checks that a wrong key fails and the file isn't plain SQLite. A manually started workflow runs it on macOS, Windows, and Linux, with the system's crypto and with bundled OpenSSL, recording build time and size. The results are written here for milestone 4. Sub-plan 04 §7.1. |
+| **1e** `ci:` SQLCipher spike | 🔨 | `spikes/sqlcipher/`, **outside the workspace** so its SQLCipher build never mixes into the server's: creates an encrypted database through sqlx, reopens it with the right key, and checks that a wrong key fails and the file isn't plain SQLite. A manually started workflow runs it on macOS, Windows, and Linux, with the system's crypto and with bundled OpenSSL, recording build time and size. The results are written here for milestone 4. Sub-plan 04 §7.1. |
 | **1f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m1-groundwork.md`), run on the test server with the desktop app. |
 
 **New dependencies (approved with this plan):** `resvg` (dev only), `secrecy`; SQLCipher in the spike only; `objc2-app-kit` only if the Dock icon needs it (already in the build through Dioxus).
@@ -109,4 +109,17 @@
 - **Where it's used:** every password, code, and token parameter of the server functions (sign-in, setup, the setup-code check, password change, Admin mode, recovery), the matching `server` functions down to hashing, the tokens and temporary passwords in the answers (`SignInOutcome`, `SetupOutcome`, `RecoveryOutcome`, `UserAdminOutcome`), and the desktop's in-memory token.
 - **The rule** is in AGENTS.md ("What logs may contain"): no secrets or record text at any level; IDs, not contents; the setup and recovery codes only with `console_only = true` (never the log files or the in-app viewer); what each level is for.
 - **`crates/server/tests/secrets_in_logs.rs`** runs setup, sign-in, a wrong password, Admin mode, a password change, adding a user, a password reset, and a recovery at trace level, and fails if any secret reaches the log or a code appears in a line that isn't console-only. Checked by logging a password on purpose: the test failed.
+
+**Step 1e notes (2026-11-08):**
+- **`spikes/sqlcipher/`** is its own workspace with its own `Cargo.lock` (and ignored by Docker), so its SQLCipher build of `libsqlite3-sys` can never mix into the server's plain SQLite through Cargo's feature unification. It uses the app's sqlx (0.9.0, `sqlite-bundled`), and chooses SQLCipher through the same `libsqlite3-sys` (0.37.0) with one of two features: **system crypto** (`bundled-sqlcipher`: Apple's CommonCrypto on macOS, the system OpenSSL elsewhere) or **bundled OpenSSL** (`bundled-sqlcipher-vendored-openssl`).
+- **Seven checks:** it's SQLCipher (`PRAGMA cipher_version`); create and write; the file has no plain SQLite header and the text isn't visible in it; the right key reads; a wrong key and no key are refused ("file is not a database"); `PRAGMA rekey` keeps the data and retires the old key. sqlx sends the `key` pragma before anything else by design (`sqlx-sqlite` 0.9.0, `options/mod.rs`).
+- **macOS (local, Apple Silicon, release builds from clean):**
+
+  | Build | Time | Binary | Checks |
+  |---|---|---|---|
+  | Plain SQLite | 16.6 s | 3.0 MB | (not run) |
+  | SQLCipher, Apple's crypto | 18.2 s | 3.1 MB | 7 of 7 |
+  | SQLCipher, bundled OpenSSL | 42.7 s | 6.7 MB | 7 of 7 |
+
+- **Windows and Linux:** `.github/workflows/sqlcipher-spike.yml` builds all three on each platform and runs the checks; it runs when the spike changes (so on the push of this step) or by hand once it's on `dev`. Its results are added here before milestone 1 closes.
 

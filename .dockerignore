@@ -2,6 +2,8 @@
 # Build output (rebuilt inside the image) and the Dioxus CLI's output
 target/
 dist/
+# Experiments outside the workspace (phase-3.md 1e); not part of the image
+spikes/
 
 # Version control and editor/agent settings
 .git/
