@@ -24,7 +24,7 @@ use storage::{Database, StorageError};
 use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
-use domain::device::DeviceKind;
+use domain::device::{DeviceKind, DeviceName};
 use domain::device_signature::SignatureError;
 use domain::secret::Secret;
 use storage::devices::StoredDevice;
@@ -158,7 +158,25 @@ impl From<Busy> for SignInError {
     }
 }
 
-/// Signs a user in. `client` identifies where the request came from, for the rate limit.
+/// The device a sign-in comes from (phase-3.md 2c, #073).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SigningInDevice {
+    /// A web browser: a cookie, no key.
+    Browser,
+    /// A desktop app too old to pair (API version 1, `v0.2.0`): a token, no key. Shown as
+    /// "Desktop app (older version)".
+    OlderDesktop,
+    /// A desktop app pairing: its public key and name. Its requests must then be signed.
+    Desktop {
+        /// Its Ed25519 public key.
+        public_key: [u8; 32],
+        /// Its name, if it sent a usable one.
+        name: Option<DeviceName>,
+    },
+}
+
+/// Signs a user in from a browser. `client` identifies where the request came from, for the
+/// rate limit. See [`sign_in_from`] for other devices.
 ///
 /// # Errors
 ///
@@ -170,6 +188,33 @@ pub async fn sign_in(
     password: Secret,
     client: &str,
     now: UnixMillis,
+) -> Result<(SessionToken, SignedIn), SignInError> {
+    sign_in_from(
+        database,
+        limiter,
+        username,
+        password,
+        client,
+        now,
+        SigningInDevice::Browser,
+    )
+    .await
+}
+
+/// Signs a user in from `device`: a browser, or a desktop pairing (its key and name are
+/// stored with the new session's device).
+///
+/// # Errors
+///
+/// [`SignInError`]; every failure except [`SignInError::Unavailable`] counts toward the limit.
+pub async fn sign_in_from(
+    database: &Database,
+    limiter: &LoginLimiter,
+    username: &str,
+    password: Secret,
+    client: &str,
+    now: UnixMillis,
+    device: SigningInDevice,
 ) -> Result<(SessionToken, SignedIn), SignInError> {
     let user_key = format!("user:{}", username.trim().to_ascii_lowercase());
     let client_key = format!("client:{client}");
@@ -199,7 +244,7 @@ pub async fn sign_in(
     if stored_hash.as_deref().is_some_and(needs_rehash) {
         upgrade_hash(database, user.id, password, now).await;
     }
-    start_session(database, user, now).await
+    start_session(database, user, now, device).await
 }
 
 async fn find_signable_user(
@@ -234,20 +279,29 @@ async fn start_session(
     database: &Database,
     user: storage::users::StoredUser,
     now: UnixMillis,
+    signing_in: SigningInDevice,
 ) -> Result<(SessionToken, SignedIn), SignInError> {
     let (token, token_hash) = new_token().map_err(|error| {
         tracing::error!(target: log_area::AUTH, %error, "sign-in failed: no random bytes");
         SignInError::Unavailable
     })?;
     let device = new_id(now)?;
-    // Every session belongs to a device (#073). A browser until pairing (milestone 2c)
-    // gives desktops their own kind and key; it's named later from its user agent (2e).
+    // Every session belongs to a device (#073): a browser (named later from its user agent,
+    // milestone 2e), an older desktop app (no key), or a desktop pairing with its key.
+    let (kind, name, public_key) = match signing_in {
+        SigningInDevice::Browser => (DeviceKind::Browser, None, None),
+        SigningInDevice::OlderDesktop => (DeviceKind::Desktop, None, None),
+        SigningInDevice::Desktop { public_key, name } => {
+            (DeviceKind::Desktop, name, Some(public_key))
+        }
+    };
+    let paired = public_key.is_some();
     let new_device = StoredDevice {
         id: device,
         user: user.id,
-        kind: DeviceKind::Browser,
-        name: None,
-        public_key: None,
+        kind,
+        name,
+        public_key,
         added_at: now,
         last_seen: now,
         signed_out_at: None,
@@ -267,7 +321,7 @@ async fn start_session(
         )
         .await?;
     let grants = grants_of(database, user.id).await?;
-    tracing::info!(target: log_area::AUTH, user = %user.id, %device, "signed in");
+    tracing::info!(target: log_area::AUTH, user = %user.id, %device, kind = kind.as_str(), paired, "signed in");
     Ok((
         token,
         SignedIn {

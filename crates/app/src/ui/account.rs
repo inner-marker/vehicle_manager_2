@@ -18,7 +18,7 @@ use domain::log_area;
 use super::auth::{AuthState, refresh, use_auth};
 use super::screens::{ChangePasswordForm, problem_from_error};
 use super::{tr, tr_with};
-use crate::{api, client};
+use crate::api;
 
 /// The label of a mode.
 const fn mode_label(mode: ActiveMode) -> MessageId {
@@ -46,13 +46,13 @@ pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option
     }
 }
 
-/// Signs out: tells the server, forgets the desktop token, and refreshes the session (which
-/// shows sign-in). Used by the account chip and the idle watcher.
+/// Signs out: tells the server, forgets the desktop token and its pairing (#073), and refreshes
+/// the session (which shows sign-in). Used by the account chip and the idle watcher.
 pub(super) async fn sign_out(state: Signal<AuthState>) {
     if let Err(error) = api::sign_out().await {
         tracing::warn!(target: log_area::AUTH, %error, "sign-out request failed; forgetting the session anyway");
     }
-    client::set_session_token(None);
+    crate::pairing::forget();
     refresh(state).await;
 }
 

@@ -206,3 +206,21 @@ pub(crate) fn KeepOnTopRow() -> Element {
         }
     }
 }
+
+/// Renews a paired desktop's session signature every 30 seconds (it's accepted for two
+/// minutes; phase-3.md 2b, #073), since Dioxus sends server-function calls with one shared set
+/// of headers. Renders nothing.
+#[component]
+pub(crate) fn SignatureRenewer() -> Element {
+    use_future(|| async {
+        let every =
+            Duration::from_millis(domain::device_signature::SESSION_RENEW_MILLIS.unsigned_abs());
+        loop {
+            tokio::time::sleep(every).await;
+            if crate::client::has_device_key() {
+                crate::client::apply_request_headers();
+            }
+        }
+    });
+    rsx! {}
+}

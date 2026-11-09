@@ -90,21 +90,42 @@ pub(crate) async fn sign_in(
     username: String,
     password: Secret,
     want_token: bool,
+    pairing: Option<domain::api::Pairing>,
 ) -> ServerFnResult<SignInOutcome> {
-    use ::server::sessions::SignInError;
+    use ::server::sessions::{SignInError, SigningInDevice};
 
     let Some(database) = ::server::startup::database() else {
         return Ok(SignInOutcome::Unavailable);
     };
+    // A desktop pairs with its key (#073); one too old to (API version 1) still gets a token.
+    let device = match pairing {
+        Some(pairing) => {
+            let Some(public_key) = domain::device_signature::parse_public_key(&pairing.public_key)
+            else {
+                tracing::warn!(target: domain::log_area::AUTH, "sign-in refused: the pairing key isn't usable");
+                return Ok(SignInOutcome::Unavailable);
+            };
+            SigningInDevice::Desktop {
+                public_key,
+                name: pairing
+                    .name
+                    .as_deref()
+                    .and_then(domain::device::DeviceName::tidy),
+            }
+        }
+        None if want_token => SigningInDevice::OlderDesktop,
+        None => SigningInDevice::Browser,
+    };
     let now = server_side::now();
     let client = server_side::client_key();
-    match ::server::sessions::sign_in(
+    match ::server::sessions::sign_in_from(
         database,
         &server_side::LOGIN_LIMITER,
         &username,
         password,
         &client,
         now,
+        device,
     )
     .await
     {
@@ -211,7 +232,7 @@ pub(crate) async fn setup(
         Err(SetupError::Unavailable) => return Ok(SetupOutcome::Unavailable),
     }
     // Signed straight in, so the new Admin doesn't have to type it all again.
-    Ok(match sign_in(username, password, want_token).await? {
+    Ok(match sign_in(username, password, want_token, None).await? {
         SignInOutcome::SignedIn { session, token } => SetupOutcome::SignedIn { session, token },
         SignInOutcome::InvalidCredentials
         | SignInOutcome::TooManyAttempts { .. }

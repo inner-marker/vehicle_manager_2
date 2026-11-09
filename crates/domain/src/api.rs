@@ -20,10 +20,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::i18n::{MessageId, messages};
 
-/// The API version this build speaks.
-pub const API_VERSION: u32 = 1;
+/// The API version this build speaks. 2 (phase-3.md 2c, #073): a desktop pairs at sign-in
+/// and signs its requests.
+pub const API_VERSION: u32 = 2;
 
-/// The oldest client API version this build's server still accepts.
+/// The oldest client API version this build's server still accepts: the one before (#072).
+/// Version-1 desktop apps (`v0.2.0`) sign in without a key, as "Desktop app (older version)".
 pub const MIN_SUPPORTED_API_VERSION: u32 = 1;
 
 /// Header carrying the client's API version (a plain integer, e.g. `1`).
@@ -201,6 +203,16 @@ pub struct SessionState {
     /// from servers before it existed.
     #[serde(default)]
     pub instance: Option<String>,
+}
+
+/// What a desktop sends with its sign-in to pair (phase-3.md 2c, #073): its public key and a
+/// name. Browsers send none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Pairing {
+    /// The device's Ed25519 public key, as 64 hex characters.
+    pub public_key: String,
+    /// The device's name (the computer's name), if it has one; tidied by the server.
+    pub name: Option<String>,
 }
 
 /// The answer to a first-Admin setup attempt.

@@ -273,3 +273,65 @@ async fn a_browser_session_needs_no_signature() {
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     assert!(!body.contains("device-signature"), "{body}");
 }
+
+#[tokio::test]
+async fn pairing_at_sign_in_stores_the_key_and_the_token_then_needs_signatures() {
+    use server::login_limiter::LoginLimiter;
+    use server::sessions::{SigningInDevice, sign_in_from};
+
+    let (_temp, database, _, _) = common::setup().await;
+    let name = domain::device::DeviceName::parse("Stuarts-MacBook-Pro").unwrap();
+    let (paired_token, signed_in) = sign_in_from(
+        &database,
+        &LoginLimiter::new(),
+        "stuart",
+        "a long password".into(),
+        "laptop",
+        NOW,
+        SigningInDevice::Desktop {
+            public_key: public_key_of(&SECRET),
+            name: Some(name.clone()),
+        },
+    )
+    .await
+    .unwrap();
+    let device = database.device(signed_in.device).await.unwrap().unwrap();
+    assert_eq!(device.kind, DeviceKind::Desktop);
+    assert_eq!(device.name, Some(name));
+    assert_eq!(device.public_key, Some(public_key_of(&SECRET)));
+
+    let router = router(database.clone(), NOW);
+    let paired = paired_token.as_str();
+    let hash = token_hash(paired).unwrap();
+    let signed =
+        DeviceSignature::sign(&SECRET, Scope::Session, "", "", NOW, [9; 16], &hash).to_header();
+    assert_eq!(
+        send(&router, "/api/v1/who", paired, Some(signed)).await,
+        (StatusCode::OK, "stuart".into())
+    );
+    assert!(refused_for_signature(
+        &send(&router, "/api/v1/who", paired, None).await
+    ));
+
+    // An older desktop app (API version 1) gets a token and no key: no signature needed.
+    let (older_token, older) = sign_in_from(
+        &database,
+        &LoginLimiter::new(),
+        "stuart",
+        "a long password".into(),
+        "old-laptop",
+        NOW,
+        SigningInDevice::OlderDesktop,
+    )
+    .await
+    .unwrap();
+    let older_device = database.device(older.device).await.unwrap().unwrap();
+    assert_eq!(
+        (older_device.kind, older_device.public_key),
+        (DeviceKind::Desktop, None)
+    );
+    assert_eq!(
+        send(&router, "/api/v1/who", older_token.as_str(), None).await,
+        (StatusCode::OK, "stuart".into())
+    );
+}

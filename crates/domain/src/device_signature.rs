@@ -280,6 +280,34 @@ impl DeviceSignature {
     }
 }
 
+/// A device's public key from its 64 hex characters, if it's a usable Ed25519 key.
+#[must_use]
+pub fn parse_public_key(hex: &str) -> Option<[u8; 32]> {
+    let bytes: [u8; 32] = from_hex(hex.trim())?;
+    VerifyingKey::from_bytes(&bytes)
+        .ok()
+        .map(|key| key.to_bytes())
+}
+
+/// A public key as 64 hex characters (as [`crate::api::Pairing`] carries it).
+#[must_use]
+pub fn public_key_to_hex(key: &[u8; 32]) -> String {
+    to_hex(key)
+}
+
+/// A secret key (seed) as 64 hex characters, for the desktop's keychain; read back with
+/// [`parse_secret_key`].
+#[must_use]
+pub fn secret_key_to_hex(key: &[u8; 32]) -> String {
+    to_hex(key)
+}
+
+/// A secret key (seed) from its 64 hex characters.
+#[must_use]
+pub fn parse_secret_key(hex: &str) -> Option<[u8; 32]> {
+    from_hex(hex.trim())
+}
+
 /// The public key of the device whose secret key (seed) is `secret_key`.
 #[must_use]
 pub fn public_key_of(secret_key: &[u8; 32]) -> [u8; 32] {
@@ -433,6 +461,15 @@ mod tests {
             check(&signature, "/api/v1/events/edit", &TOKEN, NOW),
             Err(SignatureError::Wrong)
         );
+    }
+
+    #[test]
+    fn keys_round_trip_through_hex_and_bad_ones_are_refused() {
+        let public = public_key_of(&SECRET);
+        assert_eq!(parse_public_key(&public_key_to_hex(&public)), Some(public));
+        assert_eq!(parse_public_key("zz"), None);
+        assert_eq!(parse_public_key(&"0".repeat(63)), None);
+        assert_eq!(parse_secret_key(&secret_key_to_hex(&SECRET)), Some(SECRET));
     }
 
     #[test]

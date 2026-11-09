@@ -95,11 +95,15 @@ fn page_title(instance: Option<String>) -> String {
     )
 }
 
-/// The desktop window's keeper (its place remembered; phase-3.md 1b).
+/// The desktop window's keeper (its place remembered; phase-3.md 1b) and its signature renewer
+/// (phase-3.md 2c).
 #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
 #[component]
 fn DesktopWindow() -> Element {
-    rsx! { desktop_window::WindowKeeper {} }
+    rsx! {
+        desktop_window::WindowKeeper {}
+        desktop_window::SignatureRenewer {}
+    }
 }
 
 /// Nothing on the web.

@@ -211,6 +211,9 @@ const DEV_DATA_DIR: &str = "dev-data";
 fn launch(log_handles: Option<LogHandles>) {
     #[cfg(feature = "desktop")]
     use_saved_server_address();
+    // A paired desktop stays signed in (#073): its key and token, for the server just set.
+    #[cfg(feature = "desktop")]
+    app::pairing::restore();
 
     let mut launcher = dioxus::LaunchBuilder::new();
     // The log viewer reads the handles from context.

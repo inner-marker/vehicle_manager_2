@@ -37,6 +37,14 @@ server = { workspace = true, optional = true }
 # the `desktop` feature, so its tests run in the default native test build.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 dirs.workspace = true
+# The desktop's new device key and request nonces (phase-3.md 2c). Native only: the web app
+# never signs.
+getrandom.workspace = true
+# Desktop only (the `desktop` feature): the keychain, the computer's name, and the timer that
+# renews the session signature (Dioxus desktop already runs on tokio).
+keyring = { workspace = true, optional = true }
+gethostname = { workspace = true, optional = true }
+tokio = { version = "1", default-features = false, features = ["time"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tracing-wasm.workspace = true
@@ -52,7 +60,7 @@ tower = { workspace = true, features = ["util"] }
 [features]
 default = ["web"]
 web = ["dioxus/web"]
-desktop = ["dioxus/desktop"]
+desktop = ["dioxus/desktop", "dep:keyring", "dep:gethostname", "dep:tokio"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dep:storage", "dep:server"]
 # Short timers for manual testing (#054): honoured only with this feature, which only the

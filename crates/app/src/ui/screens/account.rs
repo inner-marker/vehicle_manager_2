@@ -274,19 +274,22 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
         }
         busy.set(true);
         spawn(async move {
+            // A desktop pairs as it signs in (#073): a new key, sent with the sign-in.
+            let pairing = crate::pairing::new_pairing();
+            let (key, pairing) =
+                pairing.map_or((None, None), |(key, pairing)| (Some(key), Some(pairing)));
             let result = api::sign_in(
                 username(),
                 Secret::new(password()),
                 client::USES_SESSION_TOKEN,
+                pairing,
             )
             .await;
             busy.set(false);
             match result {
                 Ok(SignInOutcome::SignedIn { session, token }) => {
-                    tracing::info!(target: log_area::AUTH, "signed in");
-                    if token.is_some() {
-                        client::set_session_token(token);
-                    }
+                    tracing::info!(target: log_area::AUTH, paired = key.is_some(), "signed in");
+                    crate::pairing::finish_sign_in(token, key);
                     state.set(AuthState::SignedIn(session));
                 }
                 Ok(SignInOutcome::InvalidCredentials) => {

@@ -56,6 +56,11 @@ sha2 = "0.11.1"                   # session tokens are stored only as their SHA-
 # A paired desktop's device key and its signed requests (phase-3.md 2b, decision #073). Pure
 # Rust (builds for the browser too); no randomness here: the desktop makes its own key.
 ed25519-dalek = { version = "3.0.0", default-features = false, features = ["zeroize"] }
+# The desktop's device key and token in the OS keychain (phase-3.md 2c, #073): macOS Keychain,
+# Windows Credential Manager, Linux Secret Service (through zbus, pure Rust).
+keyring = "4.2.0"
+# The desktop's default device name: the computer's name (phase-3.md 2c).
+gethostname = "1.1.0"
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
 # Photos: JPEG and PNG only, pure Rust (phase-2.md 8d, #036; approved 2026-11-04).
