@@ -24,7 +24,9 @@ use storage::{Database, StorageError};
 use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
+use domain::device::DeviceKind;
 use domain::secret::Secret;
+use storage::devices::StoredDevice;
 
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
@@ -249,16 +251,31 @@ async fn start_session(
         SignInError::Unavailable
     })?;
     let device = new_id(now)?;
+    // Every session belongs to a device (#073). A browser until pairing (milestone 2c)
+    // gives desktops their own kind and key; it's named later from its user agent (2e).
+    let new_device = StoredDevice {
+        id: device,
+        user: user.id,
+        kind: DeviceKind::Browser,
+        name: None,
+        public_key: None,
+        added_at: now,
+        last_seen: now,
+        signed_out_at: None,
+    };
     database
-        .insert_session(&Session {
-            token_hash,
-            user: user.id,
-            device,
-            created_at: now,
-            last_used: now,
-            expires_at: UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS),
-            active_mode: ActiveMode::Driver,
-        })
+        .insert_device_with_session(
+            &new_device,
+            &Session {
+                token_hash,
+                user: user.id,
+                device,
+                created_at: now,
+                last_used: now,
+                expires_at: UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS),
+                active_mode: ActiveMode::Driver,
+            },
+        )
         .await?;
     let grants = grants_of(database, user.id).await?;
     tracing::info!(target: log_area::AUTH, user = %user.id, %device, "signed in");

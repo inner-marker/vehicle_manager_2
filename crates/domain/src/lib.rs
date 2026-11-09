@@ -14,6 +14,7 @@ pub mod build_info;
 pub mod command;
 pub mod custom_field;
 pub mod dates;
+pub mod device;
 pub mod document;
 pub mod event;
 pub mod event_check;

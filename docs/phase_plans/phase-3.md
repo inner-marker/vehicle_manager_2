@@ -151,8 +151,8 @@
 
 | Step | Status | What |
 |---|---|---|
-| **2.0** `docs:` | 🔨 | This plan, decision #073, the sketch. |
-| **2a** `feat(storage):` devices | ⬜ | Migration 0016: a `devices` table (ID, user, name, kind `desktop`/`browser`, public key for desktops, added, last seen, signed out); every session belongs to a device (existing sessions get a browser device each). Storage functions and tests. |
+| **2.0** `docs:` | ☑️ | This plan, decision #073, the sketch. |
+| **2a** `feat(storage):` devices | ☑️ | Migration 0016: a `devices` table (ID, user, name, kind `desktop`/`browser`, public key for desktops, added, last seen, signed out); every session belongs to a device (existing sessions get a browser device each). Storage functions and tests. |
 | **2b** `feat:` device keys and signed requests | ⬜ | `domain`: the signature's format and what it covers (method, path and query, time, nonce, SHA-256 of the token), parse and verify; `server`: the auth layer requires a valid signature for a session whose device has a key (within 5 minutes of the server's clock; each nonce once, remembered for that window), and refuses the token without one. Tests: a copied token alone, a replayed signature, a changed path, an old time, another device's key. |
 | **2c** `feat(app):` pairing | ⬜ | Desktop sign-in sends a new device's public key and name (the computer's name); the token and key kept in the OS keychain (`keyring`; a file in debug builds), so the desktop stays signed in across restarts; every request signed with the server's time (offset from the handshake); signing out removes them. **API version 2**; version-1 apps (today's desktop) still sign in, without a key, shown as "Desktop app (older version)". |
 | **2d** `feat(app):` recent servers | ⬜ | `settings.json`'s list of servers (address, name, TEST tag, database ID, last used); the desktop sign-in shows them (1A) with "+ Another server…"; another server than this run's: "Quit and reopen to switch". |
@@ -162,3 +162,9 @@
 **New dependencies (approved with this plan):** `ed25519-dalek` (signatures), `keyring` (the OS keychain), `gethostname` (the default device name).
 
 **To settle in the steps:** the browser label's wording (from the user agent, kept short); the exact header name and layout (documented in `domain`).
+
+**Step 2a notes (2026-11-09):**
+- **Migration 0016:** the `devices` table (its `kind` is plain text checked by `domain::device::DeviceKind`, so a kind can be added without a rebuild; `name` is empty until there is one); each existing session gets a device of its own, recorded as an unnamed browser (today's desktop sessions can't be told apart, and end within 30 idle days); `sessions` is rebuilt so its device must exist. The fixture test now also checks foreign keys, and that every migrated session's device can be read.
+- **A device is "signed in" while it has a session that hasn't ended** and hasn't been signed out; the list needs no clean-up job. Signing a device out ends its sessions and stamps it once; the row stays (changes carry its ID). A session's use also updates its device's "last seen".
+- **Every sign-in now stores a device** with its session, in one transaction: a browser until 2c pairs desktops.
+

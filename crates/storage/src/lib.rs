@@ -11,6 +11,7 @@ pub mod attachments;
 pub mod commands;
 pub mod convert;
 pub mod database;
+pub mod devices;
 pub mod documents;
 mod error;
 pub mod events;

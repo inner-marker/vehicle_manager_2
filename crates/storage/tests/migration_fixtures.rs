@@ -67,6 +67,29 @@ async fn every_release_fixture_migrates_to_the_latest_schema() {
             .await
             .unwrap();
         assert_eq!(integrity, "ok", "{}", fixture.display());
+        let broken_links: i64 = sqlx::query_scalar("SELECT count(*) FROM pragma_foreign_key_check")
+            .fetch_one(database.pool())
+            .await
+            .unwrap();
+        assert_eq!(
+            broken_links,
+            0,
+            "{} has broken foreign keys",
+            fixture.display()
+        );
+        // Every session kept has its device (migration 0016), readable by this build.
+        let session_devices: Vec<Vec<u8>> = sqlx::query_scalar("SELECT device_id FROM sessions")
+            .fetch_all(database.pool())
+            .await
+            .unwrap();
+        for bytes in session_devices {
+            let id = storage::convert::id_from_sql(&bytes, "device_id").unwrap();
+            assert!(
+                database.device(id).await.unwrap().is_some(),
+                "{}: a session lost its device",
+                fixture.display()
+            );
+        }
         database.close().await;
     }
 }
