@@ -43,7 +43,7 @@ Rust everywhere: [Dioxus](https://dioxuslabs.com) 0.7 fullstack for the server a
 - [`docs/phase_plans/`](docs/phase_plans/): each phase's plan, milestone by milestone, with what was built.
 - [`docs/sub-plans/`](docs/sub-plans/): detailed designs for one area each (drafts until confirmed).
 - [`docs/ideas-to-discuss.md`](docs/ideas-to-discuss.md): ideas not decided yet.
-- [`docs/test-plans/`](docs/test-plans/): the manual test plans, with their results.
+- [`docs/test-plans/`](docs/test-plans/): the manual test plans still to be run; finished ones, with their results, are in [`docs/test-plans/archive/`](docs/test-plans/archive/).
 - [`docs/ui-sketches/`](docs/ui-sketches/): the SVG layout options each screen was chosen from.
 - [`docs/releasing.md`](docs/releasing.md): how a release is cut.
 - [`AGENTS.md`](AGENTS.md): how the code is written and checked (for AI agents and people alike).
