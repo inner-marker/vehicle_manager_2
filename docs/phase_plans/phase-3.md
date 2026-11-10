@@ -85,7 +85,7 @@
 | **1c** `feat:` exact build (#37) | ☑️ | The image workflows pass the commit, image tag, and build date as Docker build arguments, declared just before the Rust build so dependency layers stay cached; the binary keeps them. Local builds take the commit from `git` (marked "modified" with uncommitted changes), or "local build". The handshake carries the server's build; Diagnostics → About shows it, and on the desktop the app's own build too. Tests for the fallbacks. |
 | **1d** `feat:` secret types and log tiers | ☑️ | Passwords, tokens, PINs, and codes held in `secrecy::SecretString` (or the token's own type) from the moment a server function receives them, printing as `[redacted]`. A logging rule in AGENTS.md: what each level may contain. A test captures the logs through setup, sign-in, a failed sign-in, a password change, and a recovery, and checks no secret appears (the setup and recovery codes stay in the log on purpose, #028, #047). Sub-plan 04 §7.4. |
 | **1e** `ci:` SQLCipher spike | ☑️ | `spikes/sqlcipher/`, **outside the workspace** so its SQLCipher build never mixes into the server's: creates an encrypted database through sqlx, reopens it with the right key, and checks that a wrong key fails and the file isn't plain SQLite. A manually started workflow runs it on macOS, Windows, and Linux, with the system's crypto and with bundled OpenSSL, recording build time and size. The results are written here for milestone 4. Sub-plan 04 §7.1. |
-| **1f** `docs:` | ☑️ | The test plan (`docs/test-plans/p3m1-groundwork.md`), run on the test server with the desktop app. |
+| **1f** `docs:` | ☑️ | The test plan (`docs/test-plans/archive/p3m1-groundwork.md`), run on the test server with the desktop app. |
 
 **New dependencies (approved with this plan):** `resvg` (dev only), `secrecy`; SQLCipher in the spike only; `objc2-app-kit` only if the Dock icon needs it (already in the build through Dioxus).
 
@@ -133,7 +133,7 @@
 - **Recommendation for milestone 4** (to settle when it's planned): **macOS: system crypto** (Apple's CommonCrypto, part of the OS, almost no cost); **Windows: bundled OpenSSL** (self-contained: no DLLs to ship or keep patched; the slow build only hits CI and Windows developers); **Linux: system crypto** (OpenSSL is on every desktop distribution, and `.deb` and `.rpm` packages can name it as a dependency), or bundled if a self-contained binary matters more than 5 MB. Cargo can choose per platform: an optional `libsqlite3-sys` with different SQLCipher features in `[target.'cfg(...)'.dependencies]` tables, switched on only by the desktop build, so the server (and its Linux image) keeps plain SQLite until Phase 7.
 - **Not tested yet (for Phase 7):** that a SQLCipher build opens an existing plain database with no key (SQLCipher documents that it does), and SQLCipher's `sqlcipher_export` for encrypting an existing database in place.
 
-**Milestone 1 test (2026-11-09):** `docs/test-plans/p3m1-groundwork.md` passed on the test server, except the desktop window's **size** isn't restored (its place and a maximized state are) and the second-monitor step wasn't run; both moved to the Polish phase with the human's request to reorganize Settings (`docs/plan.md` §9 Phase 6).
+**Milestone 1 test (2026-11-09):** `docs/test-plans/archive/p3m1-groundwork.md` passed on the test server, except the desktop window's **size** isn't restored (its place and a maximized state are) and the second-monitor step wasn't run; both moved to the Polish phase with the human's request to reorganize Settings (`docs/plan.md` §9 Phase 6).
 
 ### Milestone 2 plan: devices and pairing
 
@@ -157,7 +157,7 @@
 | **2c** `feat(app):` pairing | ☑️ | Desktop sign-in sends a new device's public key and name (the computer's name); the token and key kept in the OS keychain (`keyring`; a file in debug builds), so the desktop stays signed in across restarts; every request signed with the server's time (offset from the handshake); signing out removes them. **API version 2**; version-1 apps (today's desktop) still sign in, without a key, shown as "Desktop app (older version)". |
 | **2d** `feat(app):` recent servers | ☑️ | `settings.json`'s list of servers (address, name, TEST tag, database ID, last used); the desktop sign-in shows them (1A) with "+ Another server…"; another server than this run's: "Quit and reopen to switch". |
 | **2e** `feat:` Devices | ☑️ | Settings → **Devices** tab (2B): your devices and browsers, "This device", Rename (desktops), Sign out, Sign out everywhere else. Users → **Devices (n)** dialog (3A) in Admin mode: a person's devices, Sign out, sign out all. Signing out a desktop removes its key: it must pair again. |
-| **2f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m2-pairing.md`), on the test server with the desktop app. |
+| **2f** `docs:` | ☑️ | The test plan (`docs/test-plans/p3m2-pairing.md`), on the test server with the desktop app. |
 
 **New dependencies (approved with this plan):** `ed25519-dalek` (signatures), `keyring` (the OS keychain), `gethostname` (the default device name).
 
