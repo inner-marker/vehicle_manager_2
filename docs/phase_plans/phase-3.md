@@ -218,7 +218,7 @@
 | **3c** `feat(app):` lock and choose-PIN screens | ☑️ | **Choose a PIN** after pairing (1B); **Locked** (2B) at launch and after the idle time, forgetting the key and token from memory while locked; the password instead; sign out of this computer; the wrong-try steps. |
 | **3d** `feat:` failed-unlock reports | ☑️ | Migration 0017: each device's count of failed unlocks and the last one; a server function the desktop calls after unlocking (and before forgetting itself); a Messages entry for the household Admin, cleared when read. |
 | **3e** `feat(app):` lock settings | ☑️ | Settings → You → This device (3A): **Lock after** and **Change PIN** (the current PIN or the password, then a new one twice). |
-| **3f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m3-app-lock.md`). |
+| **3f** `docs:` | ☑️ | The test plan ([`docs/test-plans/p3m3-app-lock.md`](../test-plans/p3m3-app-lock.md)), on the test server with the desktop app. |
 
 **New dependency (approved with this plan):** `chacha20poly1305` (RustCrypto). `argon2` is already in the workspace.
 
