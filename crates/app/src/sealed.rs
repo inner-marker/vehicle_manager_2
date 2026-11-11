@@ -58,6 +58,10 @@ pub struct SealedCredential {
     /// whose computer this is.
     #[serde(default)]
     pub person: Option<String>,
+    /// When the last wrong try was (Unix milliseconds), for the report after unlocking
+    /// (phase-3.md 3d).
+    #[serde(default)]
+    pub last_wrong_ms: Option<i64>,
 }
 
 /// What's sealed: the key and token as text.
@@ -172,6 +176,7 @@ impl SealedCredential {
             password: seal_with(password, &plain, server)?,
             tries: WrongTries::default(),
             person: None,
+            last_wrong_ms: None,
         })
     }
 
@@ -206,6 +211,7 @@ impl SealedCredential {
         Ok(Self {
             pin: seal_with(pin, &plain_bytes(credential)?, server)?,
             tries: WrongTries::default(),
+            last_wrong_ms: None,
             ..self.clone()
         })
     }

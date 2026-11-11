@@ -2458,6 +2458,10 @@ define_messages! {
     INBOX_OVERDUE_RETURN => "inbox-overdue-return",
     /// Messages: the overdue return's text; takes `vehicle` and `date`.
     INBOX_OVERDUE_RETURN_BODY => "inbox-overdue-return-body",
+    /// Inbox: a desktop unlocked after wrong tries (phase-3.md 3d).
+    INBOX_FAILED_UNLOCKS => "inbox-failed-unlocks",
+    /// Inbox: its text.
+    INBOX_FAILED_UNLOCKS_BODY => "inbox-failed-unlocks-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
     /// Log: what an acquisition records.

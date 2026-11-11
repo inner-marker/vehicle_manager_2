@@ -325,7 +325,8 @@ mod desktop {
 
     /// What one unlock attempt came to.
     enum Attempt {
-        Opened(Credential),
+        /// Opened; with the wrong tries before it (how many, and when the last was), to report.
+        Opened(Credential, Option<(u32, i64)>),
         Wrong(UnlockStep),
         Gone,
     }
@@ -348,12 +349,23 @@ mod desktop {
         .await
         .flatten();
         if let Some(credential) = opened {
-            if sealed.tries != domain::pin::WrongTries::default() {
+            let before = (sealed.tries.total() > 0).then(|| {
+                (
+                    sealed.tries.total(),
+                    sealed.last_wrong_ms.unwrap_or_default(),
+                )
+            });
+            if before.is_some() {
                 sealed.tries = domain::pin::WrongTries::default();
+                sealed.last_wrong_ms = None;
                 let _ = device_credential::save(server(), &sealed);
             }
-            return Attempt::Opened(credential);
+            return Attempt::Opened(credential, before);
         }
+        sealed.last_wrong_ms = Some(
+            <crate::logging::SystemClock as domain::time::Clock>::now(&crate::logging::SystemClock)
+                .as_millis(),
+        );
         sealed.tries = if as_password {
             sealed.tries.wrong_password()
         } else {
@@ -391,12 +403,21 @@ mod desktop {
         let mut wrong = use_signal(|| false);
 
         let mut finish = move |result: Attempt| match result {
-            Attempt::Opened(credential) => {
+            Attempt::Opened(credential, before) => {
                 crate::client::set_session_token(Some(credential.token));
                 crate::client::set_device_key(Some(credential.secret_key));
                 tracing::info!(target: log_area::AUTH, "unlocked");
                 *LOCK.write() = LockState::Open;
-                spawn(async move { auth::refresh(auth).await });
+                spawn(async move {
+                    auth::refresh(auth).await;
+                    // The household Admin hears of the wrong tries before this unlock (#074).
+                    if let Some((count, last)) = before {
+                        let last = domain::time::UnixMillis::from_millis(last);
+                        if let Err(error) = crate::api::report_failed_unlocks(count, last).await {
+                            tracing::warn!(target: log_area::AUTH, %error, "couldn't report the wrong unlock tries");
+                        }
+                    }
+                });
             }
             Attempt::Wrong(UnlockStep::SignOut) | Attempt::Gone => {
                 crate::pairing::forget();

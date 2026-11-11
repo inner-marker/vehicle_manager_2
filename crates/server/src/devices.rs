@@ -196,3 +196,63 @@ pub async fn admin_sign_out(
     tracing::info!(target: log_area::AUTH, admin = %context.admin.user, %user, devices = chosen.len(), "an Admin signed out devices");
     DevicesOutcome::Done
 }
+
+/// Records that this desktop was just unlocked after `count` wrong PINs or passwords, the last
+/// at `last_at` (phase-3.md 3d, #074). A count over the limit can't be real (the desktop would
+/// have signed out), so it's capped; a time in the future becomes now.
+pub async fn report_failed_unlocks(
+    database: &Database,
+    signed_in: &SignedIn,
+    count: u32,
+    last_at: UnixMillis,
+    now: UnixMillis,
+) -> DevicesOutcome {
+    if count == 0 {
+        return DevicesOutcome::Done;
+    }
+    let count = count.min(domain::pin::ALL_TRIES);
+    let at = last_at.min(now);
+    match database
+        .record_failed_unlocks(signed_in.device, count, at)
+        .await
+    {
+        Ok(()) => {
+            tracing::warn!(target: log_area::AUTH, user = %signed_in.user, device = %signed_in.device, count, "a desktop was unlocked after wrong tries");
+            DevicesOutcome::Done
+        }
+        Err(error) => unavailable("report failed unlocks", &error),
+    }
+}
+
+/// A message for each desktop's latest failed-unlock report, for the household Admin (the
+/// inbox shows them in Admin mode only).
+///
+/// # Errors
+///
+/// [`storage::StorageError`] if the database fails.
+pub async fn failed_unlock_messages(
+    database: &Database,
+) -> Result<Vec<domain::inbox::Message>, storage::StorageError> {
+    let mut messages = Vec::new();
+    for report in database.failed_unlock_reports().await? {
+        let person = database
+            .user(report.device.user)
+            .await?
+            .map(|stored| stored.user.display_name)
+            .unwrap_or_default();
+        let name = report
+            .device
+            .name
+            .as_ref()
+            .map(|name| name.as_str().to_owned())
+            .unwrap_or_default();
+        messages.push(domain::inbox::failed_unlocks_message(
+            report.device.id,
+            &name,
+            &person,
+            report.count,
+            report.at,
+        ));
+    }
+    Ok(messages)
+}

@@ -207,7 +207,7 @@
 - **Sketch:** **1B** (choose a PIN with dots and a keypad; the keyboard works too), **2B** (locked: the full window, dots and a keypad; "Use your password instead" and "Sign out" below), **3A** (Lock after and Change PIN under Settings → You → This device).
 - **Rules:** 6 digits or more; no repeats (`111111`) or runs (`123456`, `654321`). The sub-plan's "not your birth year" is dropped: the app doesn't know anyone's birth year.
 - **Wrong tries:** after 5 wrong PINs only the password works; after 10 wrong tries in all, the desktop signs out and forgets its sign-in. The count is kept beside the encrypted sign-in; someone with a copy of the file could try PINs without that limit, each try costing an Argon2 hash (and, in release builds, the keychain stands in the way first).
-- **Failed unlocks are reported:** the desktop tells the server at its next chance (before forgetting itself, if it can); the household Admin sees "N failed unlock attempts on <device>" in Messages.
+- **Failed unlocks are reported:** the desktop tells the server when it's next unlocked; the household Admin sees it in Messages. (Not before forgetting itself after 10 wrong tries: its token is sealed behind the PIN that was never entered, so it can't make a signed request. See step 3d's notes.)
 - **Desktops paired in milestone 2** (unencrypted sign-in) sign in once more after the update, then choose a PIN.
 
 | Step | Status | What |
@@ -216,7 +216,7 @@
 | **3a** `feat(domain):` PIN rules | ☑️ | `domain::pin`: the rules (6+ digits, no repeats or runs) and the wrong-try policy (how many before the password, before signing out), pure and tested; the Lock-after choices. |
 | **3b** `feat(app):` the encrypted sign-in | ☑️ | The stored sign-in becomes two sealed copies (one for the PIN, one for the password; Argon2id and XChaCha20-Poly1305, a fresh salt and nonce each) plus the wrong-try count; unlock by PIN or password; change the PIN. Milestone 2's plain sign-ins are forgotten (sign in again). Tests: right and wrong PIN and password, a changed byte, a copied file without the PIN. |
 | **3c** `feat(app):` lock and choose-PIN screens | ☑️ | **Choose a PIN** after pairing (1B); **Locked** (2B) at launch and after the idle time, forgetting the key and token from memory while locked; the password instead; sign out of this computer; the wrong-try steps. |
-| **3d** `feat:` failed-unlock reports | ⬜ | Migration 0017: each device's count of failed unlocks and the last one; a server function the desktop calls after unlocking (and before forgetting itself); a Messages entry for the household Admin, cleared when read. |
+| **3d** `feat:` failed-unlock reports | ☑️ | Migration 0017: each device's count of failed unlocks and the last one; a server function the desktop calls after unlocking (and before forgetting itself); a Messages entry for the household Admin, cleared when read. |
 | **3e** `feat(app):` lock settings | ⬜ | Settings → You → This device (3A): **Lock after** and **Change PIN** (the current PIN or the password, then a new one twice). |
 | **3f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m3-app-lock.md`). |
 
@@ -235,4 +235,10 @@
 - **Locked:** the PIN, or "Use your password instead"; the wrong-try notes ("2 more wrong PINs and only your password will work", "Use your password. 3 more wrong tries sign this computer out"); after 5 wrong PINs only the password field shows; after 10 wrong tries in all, the sign-in is forgotten and the sign-in card says why. "Sign out of this computer" forgets it at once. Unlocking runs Argon2 on a blocking thread (the desktop's tokio gains its `rt` feature).
 - **The lock screen says whose it is:** the person's display name is kept beside the seals (not sealed; it says only whose computer this is), with the server's host.
 - **Not seen in this session:** the desktop's webview can't be driven or captured here (no Screen Recording permission), so the screens are checked by the test plan; the app starts cleanly with the gate in place.
+
+**Step 3d notes (2026-11-11):**
+- **Changed from the plan:** a desktop can't report "before forgetting itself" after 10 wrong tries: its token is sealed behind the PIN that was never entered, so it can't make a signed request. It reports when it's next **unlocked**: how many wrong tries came before, and when the last was. A desktop that reached 10 just goes quiet; its server session is useless without the device key (also sealed), and the Admin can sign it out from Devices.
+- **Migration 0017:** `devices.failed_unlocks` and `last_failed_unlock_ms`. Only the latest report is kept.
+- **The message** (`domain::inbox::failed_unlocks_message`, derived as #050 does): "Wrong PINs on a computer", "Someone typed 3 wrong PINs or passwords on Garage Mac (Sam) before it was unlocked. If that wasn't Sam, sign the computer out from their Devices on the Users screen." For the household Admin in Admin mode; keyed by the last wrong try's time, so a later report is a new message. The server caps a count at 10 and a time in the future at now.
+- **Not seen in a browser here:** Node isn't installed on this Mac any more (it was for the headless-Chrome checks), so a unit test checks the message's text and the server test checks it reaches the Admin; the test plan checks it in Messages.
 

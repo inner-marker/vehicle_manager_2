@@ -1503,6 +1503,11 @@ event-already-disposed = This vehicle's disposal is already recorded: correct th
 event-vehicle-disposed = This vehicle was disposed of: its records can be corrected, but nothing new added.
 inbox-overdue-return = A vehicle isn't back yet
 inbox-overdue-return-body = { $vehicle } was expected back from service on { $date }. Record its return when it's back, or update the expected date.
+inbox-failed-unlocks = Wrong PINs on a computer
+inbox-failed-unlocks-body = { $count ->
+    [one] Someone typed 1 wrong PIN or password on { $device } ({ $person }) before it was unlocked.
+   *[other] Someone typed { $count } wrong PINs or passwords on { $device } ({ $person }) before it was unlocked.
+} If that wasn't { $person }, sign the computer out from their Devices on the Users screen.
 inbox-open-send-out = Open the send-out
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back
