@@ -374,6 +374,7 @@ mod tests {
             server_time_ms: 0,
             healthy,
             build: domain::build_info::BuildInfo::default(),
+            database_id: None,
         }
     }
 

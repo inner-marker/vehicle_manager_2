@@ -2,9 +2,10 @@
 //! #037).
 //!
 //! Uploads and downloads use the server's plain file routes (`domain::api::UPLOAD_PATH` and
-//! `domain::api::download_path`), not server functions, so they're sent here with the same
-//! headers every server-function call carries ([`crate::client::current_headers`]): the API
-//! version, and on desktop the session token. On the web the session cookie goes with them.
+//! `domain::api::download_path`), not server functions, so they're sent here with the headers
+//! a request carries ([`crate::client::current_headers_for`]): the API version, and on desktop
+//! the session token and a signature for this request alone (#073). On the web the session
+//! cookie goes with them.
 //!
 //! A fetched file is shown from a `data:` URL, because an `<img src>` pointing at the server
 //! couldn't carry those headers.
@@ -32,10 +33,11 @@ async fn base_url() -> Result<String, String> {
 ///
 /// What went wrong reaching the server (not a refusal, which is an [`UploadOutcome`]).
 pub async fn upload(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadOutcome, String> {
-    let url = format!("{}{UPLOAD_PATH}?{}", base_url().await?, purpose.to_query());
+    let path = format!("{UPLOAD_PATH}?{}", purpose.to_query());
+    let url = format!("{}{path}", base_url().await?);
     let response = reqwest::Client::new()
         .post(url)
-        .headers(crate::client::current_headers())
+        .headers(crate::client::current_headers_for("POST", &path))
         .body(bytes)
         .send()
         .await
@@ -59,10 +61,11 @@ pub async fn upload(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadOutc
 ///
 /// What went wrong, including a refusal (e.g. "403 Forbidden").
 pub async fn download(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>, String> {
-    let url = format!("{}{}", base_url().await?, download_path(id, part));
+    let path = download_path(id, part);
+    let url = format!("{}{path}", base_url().await?);
     let response = reqwest::Client::new()
         .get(url)
-        .headers(crate::client::current_headers())
+        .headers(crate::client::current_headers_for("GET", &path))
         .send()
         .await
         .map_err(|error| error.to_string())?;

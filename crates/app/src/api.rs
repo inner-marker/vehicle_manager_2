@@ -13,9 +13,9 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong,
-    PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
-    SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
+    DevicesOutcome, DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage,
+    PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome,
+    SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 use domain::secret::Secret;
 
@@ -74,6 +74,7 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
         server_time_ms: SystemClock.now().as_millis(),
         healthy: ::server::health::current().is_healthy(),
         build: crate::build_info::this_build(),
+        database_id: ::server::startup::database_id().map(|id| id.to_string()),
     })
 }
 
@@ -90,21 +91,46 @@ pub(crate) async fn sign_in(
     username: String,
     password: Secret,
     want_token: bool,
+    pairing: Option<domain::api::Pairing>,
 ) -> ServerFnResult<SignInOutcome> {
-    use ::server::sessions::SignInError;
+    use ::server::sessions::{SignInError, SigningInDevice};
 
     let Some(database) = ::server::startup::database() else {
         return Ok(SignInOutcome::Unavailable);
     };
+    // A desktop pairs with its key (#073); one too old to (API version 1) still gets a token.
+    let device = match pairing {
+        Some(pairing) => {
+            let Some(public_key) = domain::device_signature::parse_public_key(&pairing.public_key)
+            else {
+                tracing::warn!(target: domain::log_area::AUTH, "sign-in refused: the pairing key isn't usable");
+                return Ok(SignInOutcome::Unavailable);
+            };
+            SigningInDevice::Desktop {
+                public_key,
+                name: pairing
+                    .name
+                    .as_deref()
+                    .and_then(domain::device::DeviceName::tidy),
+            }
+        }
+        None if want_token => SigningInDevice::OlderDesktop,
+        None => SigningInDevice::Browser {
+            name: server_side::user_agent()
+                .as_deref()
+                .and_then(domain::device::browser_label),
+        },
+    };
     let now = server_side::now();
     let client = server_side::client_key();
-    match ::server::sessions::sign_in(
+    match ::server::sessions::sign_in_from(
         database,
         &server_side::LOGIN_LIMITER,
         &username,
         password,
         &client,
         now,
+        device,
     )
     .await
     {
@@ -211,7 +237,7 @@ pub(crate) async fn setup(
         Err(SetupError::Unavailable) => return Ok(SetupOutcome::Unavailable),
     }
     // Signed straight in, so the new Admin doesn't have to type it all again.
-    Ok(match sign_in(username, password, want_token).await? {
+    Ok(match sign_in(username, password, want_token, None).await? {
         SignInOutcome::SignedIn { session, token } => SetupOutcome::SignedIn { session, token },
         SignInOutcome::InvalidCredentials
         | SignInOutcome::TooManyAttempts { .. }
@@ -1503,6 +1529,103 @@ pub(crate) async fn reset_user_password(
     .await)
 }
 
+// --- Devices (phase-3.md 2e, #073) ------------------------------------------------------
+
+/// Your signed-in devices and browsers, this one marked.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[get("/api/v1/devices")]
+pub(crate) async fn devices() -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::my_devices(database, signed_in, now).await
+        })
+        .await,
+    )
+}
+
+/// Renames one of your devices.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/rename")]
+pub(crate) async fn rename_device(
+    device: domain::id::DeviceId,
+    name: String,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::rename(database, signed_in, device, &name, now).await
+        })
+        .await,
+    )
+}
+
+/// Signs out one of your devices (not this one).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/sign-out")]
+pub(crate) async fn sign_out_device(
+    device: domain::id::DeviceId,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::sign_out(database, signed_in, device, now).await
+        })
+        .await,
+    )
+}
+
+/// Signs out all your devices except this one.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/sign-out-others")]
+pub(crate) async fn sign_out_other_devices() -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::sign_out_others(database, signed_in, now).await
+        })
+        .await,
+    )
+}
+
+/// A person's signed-in devices: the household Admin, in Admin mode.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/users/devices")]
+pub(crate) async fn user_devices(user: domain::user::UserId) -> ServerFnResult<DevicesOutcome> {
+    Ok(server_side::with_admin_devices(async |context| {
+        ::server::devices::devices_of(&context, user).await
+    })
+    .await)
+}
+
+/// Signs out one of a person's devices, or all of them (`device` `None`): the household
+/// Admin, in Admin mode.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/users/devices/sign-out")]
+pub(crate) async fn sign_out_user_devices(
+    user: domain::user::UserId,
+    device: Option<domain::id::DeviceId>,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(server_side::with_admin_devices(async |context| {
+        ::server::devices::admin_sign_out(&context, user, device).await
+    })
+    .await)
+}
+
 /// Server-side helpers for the server functions above: the current request's signed-in
 /// user and client, the session cookie, and the login limiter.
 #[cfg(feature = "server")]
@@ -1551,6 +1674,18 @@ mod server_side {
         )
     }
 
+    /// The request's `User-Agent`, if it sent one (to name a browser; phase-3.md 2e).
+    pub(super) fn user_agent() -> Option<String> {
+        FullstackContext::current().and_then(|context| {
+            context
+                .parts_mut()
+                .headers
+                .get("user-agent")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+        })
+    }
+
     /// Sets the session cookie to `token`, or clears it with `None`.
     pub(super) fn set_session_cookie(token: Option<&str>) {
         let name = server::auth::session_cookie_name();
@@ -1580,6 +1715,43 @@ mod server_side {
         };
         let Some(admin) = signed_in() else {
             return domain::api::UserAdminOutcome::NotAllowed;
+        };
+        let context = server::user_admin::AdminContext {
+            database,
+            admin: &admin,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` with the database, the signed-in user, and now, or answers that it's
+    /// unavailable or not signed in (phase-3.md 2e).
+    pub(super) async fn with_signed_in_devices(
+        action: impl AsyncFnOnce(
+            &storage::Database,
+            &SignedIn,
+            UnixMillis,
+        ) -> domain::api::DevicesOutcome,
+    ) -> domain::api::DevicesOutcome {
+        let Some(database) = server::startup::database() else {
+            return domain::api::DevicesOutcome::Unavailable;
+        };
+        let Some(signed_in) = signed_in() else {
+            return domain::api::DevicesOutcome::NotSignedIn;
+        };
+        action(database, &signed_in, now()).await
+    }
+
+    /// As [`with_admin`], for the Admin's view of a person's devices.
+    pub(super) async fn with_admin_devices(
+        action: impl AsyncFnOnce(server::user_admin::AdminContext<'_>) -> domain::api::DevicesOutcome,
+    ) -> domain::api::DevicesOutcome {
+        let Some(database) = server::startup::database() else {
+            return domain::api::DevicesOutcome::Unavailable;
+        };
+        let Some(admin) = signed_in() else {
+            return domain::api::DevicesOutcome::NotAllowed;
         };
         let context = server::user_admin::AdminContext {
             database,

@@ -32,6 +32,45 @@ pub struct Settings {
     pub window: Option<WindowPlacement>,
     /// Whether the desktop window stays on top of other windows (off by default).
     pub keep_on_top: bool,
+    /// Servers this desktop has signed in to, most recently used first (phase-3.md 2d).
+    pub servers: Vec<KnownServer>,
+}
+
+/// A server this desktop has signed in to, shown on the sign-in screen (phase-3.md 2d, #073).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KnownServer {
+    /// Its address, as the app uses it (normalized; also what its pairing is filed under).
+    pub address: String,
+    /// Its instance name (e.g. `test`; #062), shown as a tag; `None` on a main server.
+    #[serde(default)]
+    pub instance: Option<String>,
+    /// Its database's ID: the same server even if its address changes (milestone 4 keeps
+    /// this desktop's copy of its data in a folder by this ID).
+    #[serde(default)]
+    pub database_id: Option<String>,
+    /// When this desktop last signed in to it or started with it, in Unix milliseconds.
+    pub last_used_ms: i64,
+}
+
+/// How many servers the list keeps (the oldest are dropped).
+pub const KNOWN_SERVERS_MAX: usize = 10;
+
+/// `servers` with `server` added or updated (matched by address, or by database ID if it moved
+/// to a new address), most recently used first, at most [`KNOWN_SERVERS_MAX`].
+#[must_use]
+pub fn with_known_server(mut servers: Vec<KnownServer>, server: KnownServer) -> Vec<KnownServer> {
+    servers.retain(|known| {
+        known.address != server.address
+            && (server.database_id.is_none() || known.database_id != server.database_id)
+    });
+    servers.push(server);
+    servers.sort_by(|a, b| {
+        b.last_used_ms
+            .cmp(&a.last_used_ms)
+            .then(a.address.cmp(&b.address))
+    });
+    servers.truncate(KNOWN_SERVERS_MAX);
+    servers
 }
 
 /// Why saving a server address failed.
@@ -162,6 +201,12 @@ mod tests {
                 fullscreen: false,
             }),
             keep_on_top: true,
+            servers: vec![KnownServer {
+                address: "https://nas.example.ts.net".into(),
+                instance: None,
+                database_id: Some("0190f0c4-0000-7000-8000-000000000001".into()),
+                last_used_ms: 1_700_000_000_000,
+            }],
         };
         save(&folder, &settings).unwrap();
         assert_eq!(load(&folder), settings);
@@ -248,5 +293,43 @@ mod tests {
             save_server_address(Some(&blocked), "https://nas.example.ts.net"),
             Err(SaveAddressError::Io(_))
         ));
+    }
+
+    fn server(address: &str, database: Option<&str>, last_used_ms: i64) -> KnownServer {
+        KnownServer {
+            address: address.into(),
+            instance: None,
+            database_id: database.map(str::to_owned),
+            last_used_ms,
+        }
+    }
+
+    #[test]
+    fn known_servers_are_updated_in_place_newest_first() {
+        let list = with_known_server(Vec::new(), server("https://a.ts.net", Some("db-a"), 10));
+        let list = with_known_server(list, server("https://b.ts.net:8443", Some("db-b"), 20));
+        let list = with_known_server(list, server("https://a.ts.net", Some("db-a"), 30));
+        let addresses: Vec<&str> = list.iter().map(|known| known.address.as_str()).collect();
+        assert_eq!(addresses, ["https://a.ts.net", "https://b.ts.net:8443"]);
+        assert_eq!(list[0].last_used_ms, 30);
+    }
+
+    #[test]
+    fn a_server_that_moved_replaces_its_old_address() {
+        let list = with_known_server(Vec::new(), server("https://old.ts.net", Some("db-a"), 10));
+        let list = with_known_server(list, server("https://new.ts.net", Some("db-a"), 20));
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].address, "https://new.ts.net");
+    }
+
+    #[test]
+    fn the_list_keeps_the_newest_ten() {
+        let mut list = Vec::new();
+        for n in 0..12 {
+            list = with_known_server(list, server(&format!("https://s{n}.ts.net"), None, n));
+        }
+        assert_eq!(list.len(), KNOWN_SERVERS_MAX);
+        assert_eq!(list[0].address, "https://s11.ts.net");
+        assert!(list.iter().all(|known| known.last_used_ms >= 2));
     }
 }

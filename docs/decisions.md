@@ -235,7 +235,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **macOS is the first desktop platform** for Phase 1's first runs. Linux (WebKitGTK) and Windows follow; all three still build in the PR-to-`main` gate.
   - **The server address is a desktop setting**, saved in `settings.json` in the platform data folder (from `domain::identity::DATA_DIR_NAME`) and **applied at launch**. A changed address takes effect after a restart, and the app says so.
   - Accepted addresses: `https://`, or `http://` only for a loopback host (local `dx serve`).
-  - **The desktop credential is typed in and kept in memory only**, as on the web (#024). No keychain.
+  - **The desktop credential is typed in and kept in memory only**, as on the web (#024). No keychain. *(Replaced by #073, 2026-11-09: a paired desktop keeps its key and token in the OS keychain.)*
   - **Desktop packages** (`.deb`, `.rpm`, and the macOS bundle) are set up with the first release, not in milestone 4. During development the app runs with `dx serve --platform desktop`.
 - **Why:**
   - The human develops on a Mac, so macOS gives the quickest first end-to-end runs. The exit criterion needs "the desktop app", not a particular OS.
@@ -849,3 +849,15 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Also in Phase 3:** the app icon, the exact build on Diagnostics (GitHub #37), and window title and launch settings (#19). #24 (main photo) and #26 (saving a place from the fuel-up form) wait for a later phase.
 - **Why:** the human, 2026-11-08, choosing the recommended options except tombstones ("keep forever", with the audit record for erased files as their idea). The desktop is the only offline-capable app before the phone apps, and building the engine now means the phone apps add no new sync design. Signing in is the same trust as the web, with the device key and PIN added.
 - **Later, with email** (sub-plan 03): a new user gets an emailed "Create your new password" link, valid 10 minutes, from the Admin, instead of a temporary password.
+
+### 073. Desktop pairing: device keys in the OS keychain, signed requests, and a Devices list
+*Decided: 2026-11-09 · Plan: §6 Security → Application · Phase plan: phase-3.md milestone 2 · Sub-plan: 04 §4.3, §6 · Replaces #027's memory-only desktop credential · Builds on #071, #072*
+
+- **Decision:**
+  - **Signing in on a desktop pairs it:** the desktop makes an Ed25519 key pair, sends the public key and a name (the computer's name, renameable) with the sign-in, and gets a token tied to that device. The private key and the token are kept in the **OS keychain**, so the desktop stays signed in across restarts (milestone 3's PIN then protects it). **Debug builds** keep them in a file in the data folder instead, so development rebuilds don't set off Keychain prompts.
+  - **Every request from a paired desktop is signed** in our own compact format, shaped like DPoP (RFC 9449) but without JWTs: the method, path and query, time, a nonce, and the token's hash. The server refuses a paired device's token without a valid signature, a signature more than 5 minutes from its clock, or a nonce already used. The app signs with the server's time (from the handshake). Browsers keep the cookie and no key.
+  - **A `devices` table**: every session belongs to a device, a desktop (with a key) or a browser (named from its user agent).
+  - **Settings → Devices** (its own tab) lists your desktops and browsers, with Sign out and Sign out everywhere else; the household Admin does the same for anyone from Users, in Admin mode. A signed-out desktop's key is removed; it must pair again.
+  - **Recent servers** on the desktop's sign-in screen; choosing another server says "Quit and reopen to switch".
+  - **API version 2**; version-1 desktop apps still sign in, unsigned, shown as "Desktop app (older version)", within #072's window.
+- **Why:** the human, 2026-11-09, choosing the recommended options except "quit and reopen" (over restarting itself). A copied token is useless without the device's key (sub-plan 04 §6); the desktop must stay signed in to work offline (Phase 3), which the memory-only token (#027) couldn't.

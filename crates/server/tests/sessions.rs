@@ -160,6 +160,15 @@ mod sessions {
             .unwrap();
         assert_eq!(resolved.user, signed_in.user);
         assert_eq!(resolved.device, signed_in.device);
+        // The session's device is stored, as a browser until pairing (#073).
+        let devices = database
+            .signed_in_devices_of(signed_in.user, at(1_000))
+            .await
+            .unwrap();
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].id, signed_in.device);
+        assert_eq!(devices[0].kind, domain::device::DeviceKind::Browser);
+        assert_eq!(devices[0].public_key, None);
     }
 
     #[tokio::test]

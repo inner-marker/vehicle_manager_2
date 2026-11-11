@@ -24,7 +24,10 @@ use storage::{Database, StorageError};
 use crate::ids::{NewIdError, new_id};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::{Busy, hash_password, needs_rehash, verify_password};
+use domain::device::{DeviceKind, DeviceName};
+use domain::device_signature::SignatureError;
 use domain::secret::Secret;
+use storage::devices::StoredDevice;
 
 /// A session ends after this long without use: 30 days.
 pub const IDLE_LIFETIME_MILLIS: i64 = 30 * 24 * 60 * 60 * 1000;
@@ -50,23 +53,11 @@ impl fmt::Debug for SessionToken {
     }
 }
 
-/// The SHA-256 of a presented token, or `None` if it isn't 64 hex characters.
+/// The SHA-256 of a presented token, or `None` if it isn't 64 hex characters (the same as
+/// the desktop computes for its signatures: `domain::device_signature::token_hash`).
 #[must_use]
 pub fn token_hash(token: &str) -> Option<[u8; 32]> {
-    let bytes = decode_hex(token)?;
-    Some(Sha256::digest(bytes).into())
-}
-
-fn decode_hex(text: &str) -> Option<[u8; TOKEN_BYTES]> {
-    if text.len() != TOKEN_BYTES * 2 {
-        return None;
-    }
-    let mut bytes = [0; TOKEN_BYTES];
-    for (byte, pair) in bytes.iter_mut().zip(text.as_bytes().chunks_exact(2)) {
-        let pair = core::str::from_utf8(pair).ok()?;
-        *byte = u8::from_str_radix(pair, 16).ok()?;
-    }
-    Some(bytes)
+    domain::device_signature::token_hash(token)
 }
 
 /// A new random token and its hash.
@@ -167,7 +158,28 @@ impl From<Busy> for SignInError {
     }
 }
 
-/// Signs a user in. `client` identifies where the request came from, for the rate limit.
+/// The device a sign-in comes from (phase-3.md 2c, #073).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SigningInDevice {
+    /// A web browser: a cookie, no key; named from its user agent if it could be.
+    Browser {
+        /// e.g. "Safari on iPhone".
+        name: Option<DeviceName>,
+    },
+    /// A desktop app too old to pair (API version 1, `v0.2.0`): a token, no key. Shown as
+    /// "Desktop app (older version)".
+    OlderDesktop,
+    /// A desktop app pairing: its public key and name. Its requests must then be signed.
+    Desktop {
+        /// Its Ed25519 public key.
+        public_key: [u8; 32],
+        /// Its name, if it sent a usable one.
+        name: Option<DeviceName>,
+    },
+}
+
+/// Signs a user in from a browser. `client` identifies where the request came from, for the
+/// rate limit. See [`sign_in_from`] for other devices.
 ///
 /// # Errors
 ///
@@ -179,6 +191,33 @@ pub async fn sign_in(
     password: Secret,
     client: &str,
     now: UnixMillis,
+) -> Result<(SessionToken, SignedIn), SignInError> {
+    sign_in_from(
+        database,
+        limiter,
+        username,
+        password,
+        client,
+        now,
+        SigningInDevice::Browser { name: None },
+    )
+    .await
+}
+
+/// Signs a user in from `device`: a browser, or a desktop pairing (its key and name are
+/// stored with the new session's device).
+///
+/// # Errors
+///
+/// [`SignInError`]; every failure except [`SignInError::Unavailable`] counts toward the limit.
+pub async fn sign_in_from(
+    database: &Database,
+    limiter: &LoginLimiter,
+    username: &str,
+    password: Secret,
+    client: &str,
+    now: UnixMillis,
+    device: SigningInDevice,
 ) -> Result<(SessionToken, SignedIn), SignInError> {
     let user_key = format!("user:{}", username.trim().to_ascii_lowercase());
     let client_key = format!("client:{client}");
@@ -208,7 +247,7 @@ pub async fn sign_in(
     if stored_hash.as_deref().is_some_and(needs_rehash) {
         upgrade_hash(database, user.id, password, now).await;
     }
-    start_session(database, user, now).await
+    start_session(database, user, now, device).await
 }
 
 async fn find_signable_user(
@@ -243,25 +282,49 @@ async fn start_session(
     database: &Database,
     user: storage::users::StoredUser,
     now: UnixMillis,
+    signing_in: SigningInDevice,
 ) -> Result<(SessionToken, SignedIn), SignInError> {
     let (token, token_hash) = new_token().map_err(|error| {
         tracing::error!(target: log_area::AUTH, %error, "sign-in failed: no random bytes");
         SignInError::Unavailable
     })?;
     let device = new_id(now)?;
+    // Every session belongs to a device (#073): a browser (named from its user agent), an older
+    // desktop app (no key), or a desktop pairing with its key.
+    let (kind, name, public_key) = match signing_in {
+        SigningInDevice::Browser { name } => (DeviceKind::Browser, name, None),
+        SigningInDevice::OlderDesktop => (DeviceKind::Desktop, None, None),
+        SigningInDevice::Desktop { public_key, name } => {
+            (DeviceKind::Desktop, name, Some(public_key))
+        }
+    };
+    let paired = public_key.is_some();
+    let new_device = StoredDevice {
+        id: device,
+        user: user.id,
+        kind,
+        name,
+        public_key,
+        added_at: now,
+        last_seen: now,
+        signed_out_at: None,
+    };
     database
-        .insert_session(&Session {
-            token_hash,
-            user: user.id,
-            device,
-            created_at: now,
-            last_used: now,
-            expires_at: UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS),
-            active_mode: ActiveMode::Driver,
-        })
+        .insert_device_with_session(
+            &new_device,
+            &Session {
+                token_hash,
+                user: user.id,
+                device,
+                created_at: now,
+                last_used: now,
+                expires_at: UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS),
+                active_mode: ActiveMode::Driver,
+            },
+        )
         .await?;
     let grants = grants_of(database, user.id).await?;
-    tracing::info!(target: log_area::AUTH, user = %user.id, %device, "signed in");
+    tracing::info!(target: log_area::AUTH, user = %user.id, %device, kind = kind.as_str(), paired, "signed in");
     Ok((
         token,
         SignedIn {
@@ -290,6 +353,10 @@ async fn grants_of(database: &Database, user: UserId) -> Result<Vec<RoleGrant>, 
 /// has expired, or its user is disabled or gone. Extends the session, and drops Admin mode
 /// after its idle limit or a mode the user's grants no longer allow.
 ///
+/// **A paired device's session is never accepted here** (its requests must be signed): the
+/// auth layer uses [`resolve_signed`], which checks the signature first. This is for sessions
+/// without a key (browsers) and for tests.
+///
 /// `timers` gives the Admin idle limit (shared with the app's idle watcher, #049) and how often
 /// a session's last use is written: at most once per keep-alive interval, so ordinary requests
 /// don't each cost a database write.
@@ -303,12 +370,57 @@ pub async fn resolve(
     now: UnixMillis,
     timers: Timers,
 ) -> Result<Option<SignedIn>, StorageError> {
+    let resolved = resolve_signed(database, token_hash, now, timers, |_| {
+        Err(SignatureError::Missing)
+    })
+    .await?;
+    Ok(match resolved {
+        Resolved::SignedIn(signed_in) => Some(signed_in),
+        Resolved::NotSignedIn | Resolved::BadSignature(_) => None,
+    })
+}
+
+/// What a presented session token turned out to be.
+#[derive(Debug, Clone)]
+pub enum Resolved {
+    /// A valid session (and, for a paired device, a valid signature).
+    SignedIn(SignedIn),
+    /// No such session, or it ended, or its user is disabled or gone.
+    NotSignedIn,
+    /// The session is a paired device's, and the request's signature was refused.
+    BadSignature(SignatureError),
+}
+
+/// As [`resolve`], but for a session whose device has a key, `check_signature` is called with
+/// that key **before anything is written** (so a copied token alone can't even keep a session
+/// alive); if it refuses, so does this (phase-3.md 2b, #073). Sessions without a key (browsers)
+/// don't call it.
+///
+/// # Errors
+///
+/// [`StorageError`] if the database fails.
+pub async fn resolve_signed(
+    database: &Database,
+    token_hash: [u8; 32],
+    now: UnixMillis,
+    timers: Timers,
+    check_signature: impl FnOnce(&[u8; 32]) -> Result<(), SignatureError>,
+) -> Result<Resolved, StorageError> {
     let Some(session) = database.session(token_hash).await? else {
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
     };
     if session.expires_at <= now {
         database.delete_session(token_hash).await?;
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
+    }
+    let key = database
+        .device(session.device)
+        .await?
+        .and_then(|device| device.public_key);
+    if let Some(key) = key
+        && let Err(error) = check_signature(&key)
+    {
+        return Ok(Resolved::BadSignature(error));
     }
     let Some(user) = database
         .user(session.user)
@@ -316,7 +428,7 @@ pub async fn resolve(
         .filter(|user| !user.user.disabled)
     else {
         database.delete_sessions_of(session.user).await?;
-        return Ok(None);
+        return Ok(Resolved::NotSignedIn);
     };
     let grants = grants_of(database, user.id).await?;
     let mode = effective_mode(&session, &grants, now, timers);
@@ -327,7 +439,7 @@ pub async fn resolve(
         let expires_at = UnixMillis::from_millis(now.as_millis() + IDLE_LIFETIME_MILLIS);
         database.touch_session(token_hash, now, expires_at).await?;
     }
-    Ok(Some(SignedIn {
+    Ok(Resolved::SignedIn(SignedIn {
         token_hash,
         user: user.id,
         username: user.user.username,

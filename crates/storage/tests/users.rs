@@ -4,10 +4,12 @@
 #[cfg(test)]
 mod users {
     use domain::access::{ActiveMode, GrantTarget, Role, RoleGrant, RoleGrantPatch};
+    use domain::device::DeviceKind;
     use domain::test_support::test_id;
     use domain::time::UnixMillis;
     use domain::user::{User, UserPatch, Username};
     use storage::commands::RecordWriter;
+    use storage::devices::StoredDevice;
     use storage::users::{RoleGrantWriter, Session, UserWriter};
     use storage::{Database, NewDatabaseIds};
 
@@ -29,6 +31,20 @@ mod users {
             display_name: "Stuart".into(),
             disabled: false,
             must_change_password: false,
+        }
+    }
+
+    /// A browser device of `user`'s, added at `NOW`.
+    fn browser(id: domain::id::DeviceId, user: domain::user::UserId) -> StoredDevice {
+        StoredDevice {
+            id,
+            user,
+            kind: DeviceKind::Browser,
+            name: None,
+            public_key: None,
+            added_at: NOW,
+            last_seen: NOW,
+            signed_out_at: None,
         }
     }
 
@@ -258,7 +274,10 @@ mod users {
             expires_at: UnixMillis::from_millis(NOW.as_millis() + 1_000),
             active_mode: ActiveMode::Driver,
         };
-        database.insert_session(&session).await.unwrap();
+        database
+            .insert_device_with_session(&browser(test_id(300), test_id(1)), &session)
+            .await
+            .unwrap();
         assert_eq!(
             database.session([7; 32]).await.unwrap(),
             Some(session.clone())
@@ -290,21 +309,171 @@ mod users {
         let (_temp, database) = database().await;
         create_user(&database, 1, stuart()).await;
         for n in 0..3 {
+            let device = test_id(300 + u32::from(n));
             database
-                .insert_session(&Session {
-                    token_hash: [n; 32],
-                    user: test_id(1),
-                    device: test_id(300 + u32::from(n)),
-                    created_at: NOW,
-                    last_used: NOW,
-                    expires_at: UnixMillis::from_millis(NOW.as_millis() + 1_000),
-                    active_mode: ActiveMode::Driver,
-                })
+                .insert_device_with_session(
+                    &browser(device, test_id(1)),
+                    &Session {
+                        token_hash: [n; 32],
+                        user: test_id(1),
+                        device,
+                        created_at: NOW,
+                        last_used: NOW,
+                        expires_at: UnixMillis::from_millis(NOW.as_millis() + 1_000),
+                        active_mode: ActiveMode::Driver,
+                    },
+                )
                 .await
                 .unwrap();
         }
 
         assert_eq!(database.delete_sessions_of(test_id(1)).await.unwrap(), 3);
         assert_eq!(database.session([0; 32]).await.unwrap(), None);
+    }
+
+    /// A session on `device`, ending at `ends`.
+    fn session_on(token: u8, device: domain::id::DeviceId, ends: UnixMillis) -> Session {
+        Session {
+            token_hash: [token; 32],
+            user: test_id(1),
+            device,
+            created_at: NOW,
+            last_used: NOW,
+            expires_at: ends,
+            active_mode: ActiveMode::Driver,
+        }
+    }
+
+    #[tokio::test]
+    async fn a_desktop_device_and_its_first_session_are_stored_together() {
+        let (_temp, database) = database().await;
+        create_user(&database, 1, stuart()).await;
+        let desktop = StoredDevice {
+            kind: DeviceKind::Desktop,
+            name: Some(domain::device::DeviceName::parse("Stuarts-MacBook-Pro").unwrap()),
+            public_key: Some([9; 32]),
+            ..browser(test_id(310), test_id(1))
+        };
+        let ends = UnixMillis::from_millis(NOW.as_millis() + 1_000);
+        database
+            .insert_device_with_session(&desktop, &session_on(1, desktop.id, ends))
+            .await
+            .unwrap();
+        assert_eq!(
+            database.device(desktop.id).await.unwrap(),
+            Some(desktop.clone())
+        );
+        assert_eq!(
+            database.session([1; 32]).await.unwrap().unwrap().device,
+            desktop.id
+        );
+        assert_eq!(database.device(test_id(311)).await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn a_session_needs_its_device_and_a_failed_sign_in_stores_neither() {
+        let (_temp, database) = database().await;
+        create_user(&database, 1, stuart()).await;
+        let ends = UnixMillis::from_millis(NOW.as_millis() + 1_000);
+        assert!(
+            database
+                .insert_session(&session_on(1, test_id(320), ends))
+                .await
+                .is_err(),
+            "no such device"
+        );
+        // A device for a user who doesn't exist: the device fails, so the session isn't kept.
+        let stray = browser(test_id(321), test_id(99));
+        let mut session = session_on(2, stray.id, ends);
+        session.user = test_id(99);
+        assert!(
+            database
+                .insert_device_with_session(&stray, &session)
+                .await
+                .is_err()
+        );
+        assert_eq!(database.session([2; 32]).await.unwrap(), None);
+        assert_eq!(database.device(stray.id).await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn signed_in_devices_are_those_with_a_live_session_newest_first() {
+        let (_temp, database) = database().await;
+        create_user(&database, 1, stuart()).await;
+        let soon = UnixMillis::from_millis(NOW.as_millis() + 1_000);
+        let later = UnixMillis::from_millis(NOW.as_millis() + 9_000);
+        for (token, n, ends) in [(1, 330, soon), (2, 331, later), (3, 332, later)] {
+            database
+                .insert_device_with_session(
+                    &browser(test_id(n), test_id(1)),
+                    &session_on(token, test_id(n), ends),
+                )
+                .await
+                .unwrap();
+        }
+        // Using 331's session makes it the most recent.
+        let used = UnixMillis::from_millis(NOW.as_millis() + 500);
+        database.touch_session([2; 32], used, later).await.unwrap();
+        let ids = |devices: Vec<StoredDevice>| devices.iter().map(|d| d.id).collect::<Vec<_>>();
+        assert_eq!(
+            ids(database
+                .signed_in_devices_of(test_id(1), NOW)
+                .await
+                .unwrap()),
+            vec![test_id(331), test_id(330), test_id(332)]
+        );
+        assert_eq!(
+            database
+                .device(test_id(331))
+                .await
+                .unwrap()
+                .unwrap()
+                .last_seen,
+            used
+        );
+        // At `soon`, 330's only session has ended.
+        assert_eq!(
+            ids(database
+                .signed_in_devices_of(test_id(1), soon)
+                .await
+                .unwrap()),
+            vec![test_id(331), test_id(332)]
+        );
+    }
+
+    #[tokio::test]
+    async fn a_device_is_renamed_and_signed_out_once() {
+        let (_temp, database) = database().await;
+        create_user(&database, 1, stuart()).await;
+        let ends = UnixMillis::from_millis(NOW.as_millis() + 9_000);
+        let device = browser(test_id(340), test_id(1));
+        database
+            .insert_device_with_session(&device, &session_on(1, device.id, ends))
+            .await
+            .unwrap();
+        let name = domain::device::DeviceName::parse("Safari on iPhone").unwrap();
+        database.rename_device(device.id, &name).await.unwrap();
+        assert_eq!(
+            database.device(device.id).await.unwrap().unwrap().name,
+            Some(name)
+        );
+
+        let first = UnixMillis::from_millis(NOW.as_millis() + 100);
+        let second = UnixMillis::from_millis(NOW.as_millis() + 200);
+        assert_eq!(database.sign_out_device(device.id, first).await.unwrap(), 1);
+        assert_eq!(
+            database.sign_out_device(device.id, second).await.unwrap(),
+            0
+        );
+        let stored = database.device(device.id).await.unwrap().unwrap();
+        assert_eq!(stored.signed_out_at, Some(first), "stamped once");
+        assert_eq!(database.session([1; 32]).await.unwrap(), None);
+        assert!(
+            database
+                .signed_in_devices_of(test_id(1), NOW)
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 }

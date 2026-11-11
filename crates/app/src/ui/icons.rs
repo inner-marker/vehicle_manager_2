@@ -23,6 +23,8 @@ pub(crate) enum Icon {
     System,
     Refresh,
     SyncOff,
+    /// A browser, in Settings → Devices (phase-3.md 2e).
+    Browser,
     /// All vehicles (#056).
     AllVehicles,
     /// Group icons (#052), besides the Garage's.
@@ -63,6 +65,7 @@ impl Icon {
             Self::System => include_str!("../../assets/icons/monitor.svg"),
             Self::Refresh => include_str!("../../assets/icons/refresh-cw.svg"),
             Self::SyncOff => include_str!("../../assets/icons/cloud-off.svg"),
+            Self::Browser => include_str!("../../assets/icons/globe.svg"),
             Self::AllVehicles => include_str!("../../assets/icons/layout-grid.svg"),
             Self::Hangar => include_str!("../../assets/icons/plane.svg"),
             Self::Boathouse => include_str!("../../assets/icons/sailboat.svg"),

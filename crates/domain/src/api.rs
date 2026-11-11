@@ -20,10 +20,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::i18n::{MessageId, messages};
 
-/// The API version this build speaks.
-pub const API_VERSION: u32 = 1;
+/// The API version this build speaks. 2 (phase-3.md 2c, #073): a desktop pairs at sign-in
+/// and signs its requests.
+pub const API_VERSION: u32 = 2;
 
-/// The oldest client API version this build's server still accepts.
+/// The oldest client API version this build's server still accepts: the one before (#072).
+/// Version-1 desktop apps (`v0.2.0`) sign in without a key, as "Desktop app (older version)".
 pub const MIN_SUPPORTED_API_VERSION: u32 = 1;
 
 /// Header carrying the client's API version (a plain integer, e.g. `1`).
@@ -51,11 +53,14 @@ pub enum ApiError {
     ClientTooOld,
     /// The client's API version is newer than the server's: update the server first.
     ClientTooNew,
+    /// A paired device's request had no valid signature (missing, out of time, reused, or not
+    /// its key; phase-3.md 2b, #073).
+    DeviceSignature,
 }
 
 impl ApiError {
     /// Every reason, for exhaustive tests and the UI.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::MissingCredential,
         Self::InvalidCredential,
         Self::AuthNotConfigured,
@@ -63,12 +68,13 @@ impl ApiError {
         Self::MalformedApiVersion,
         Self::ClientTooOld,
         Self::ClientTooNew,
+        Self::DeviceSignature,
     ];
 
     /// The HTTP status the server responds with.
     pub const fn http_status(self) -> u16 {
         match self {
-            Self::MissingCredential | Self::InvalidCredential => 401,
+            Self::MissingCredential | Self::InvalidCredential | Self::DeviceSignature => 401,
             Self::AuthNotConfigured => 503,
             Self::MissingApiVersion | Self::MalformedApiVersion | Self::ClientTooNew => 400,
             // 426 Upgrade Required: the client must update to talk to this server.
@@ -86,6 +92,7 @@ impl ApiError {
             Self::MalformedApiVersion => messages::API_ERROR_MALFORMED_API_VERSION,
             Self::ClientTooOld => messages::API_ERROR_CLIENT_TOO_OLD,
             Self::ClientTooNew => messages::API_ERROR_CLIENT_TOO_NEW,
+            Self::DeviceSignature => messages::API_ERROR_DEVICE_SIGNATURE,
         }
     }
 
@@ -93,7 +100,10 @@ impl ApiError {
     pub const fn is_auth_failure(self) -> bool {
         matches!(
             self,
-            Self::MissingCredential | Self::InvalidCredential | Self::AuthNotConfigured
+            Self::MissingCredential
+                | Self::InvalidCredential
+                | Self::AuthNotConfigured
+                | Self::DeviceSignature
         )
     }
 
@@ -108,6 +118,7 @@ impl ApiError {
             Self::MalformedApiVersion => "malformed API version header",
             Self::ClientTooOld => "client API version is too old",
             Self::ClientTooNew => "client API version is newer than the server",
+            Self::DeviceSignature => "device signature missing or not valid",
         }
     }
 }
@@ -159,6 +170,10 @@ pub struct Handshake {
     /// unknown.
     #[serde(default)]
     pub build: crate::build_info::BuildInfo,
+    /// The server's database ID (phase-3.md 2d): the same server even at a new address. Missing
+    /// from older servers.
+    #[serde(default)]
+    pub database_id: Option<String>,
 }
 
 /// Who is signed in, as the client sees it (from the session check and sign-in).
@@ -192,6 +207,16 @@ pub struct SessionState {
     /// from servers before it existed.
     #[serde(default)]
     pub instance: Option<String>,
+}
+
+/// What a desktop sends with its sign-in to pair (phase-3.md 2c, #073): its public key and a
+/// name. Browsers send none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Pairing {
+    /// The device's Ed25519 public key, as 64 hex characters.
+    pub public_key: String,
+    /// The device's name (the computer's name), if it has one; tidied by the server.
+    pub name: Option<String>,
 }
 
 /// The answer to a first-Admin setup attempt.
@@ -282,6 +307,56 @@ pub struct UserSummary {
     pub is_you: bool,
     /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
     pub is_last_admin: bool,
+    /// How many devices they're signed in on (phase-3.md 2e).
+    #[serde(default)]
+    pub devices: u32,
+}
+
+/// A device someone is signed in on, for Settings → Devices and the Admin's view of a person's
+/// devices (phase-3.md 2e, #073).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeviceView {
+    /// Its ID.
+    pub id: crate::id::DeviceId,
+    /// Desktop or browser.
+    pub kind: crate::device::DeviceKind,
+    /// Its name, if it has one.
+    pub name: Option<crate::device::DeviceName>,
+    /// Whether it's a desktop paired with its own key (a desktop without one is an older
+    /// version of the app).
+    pub paired: bool,
+    /// When it was added (its first sign-in).
+    pub added_at: crate::time::UnixMillis,
+    /// When it was last used.
+    pub last_seen: crate::time::UnixMillis,
+    /// It's the device this request came from.
+    pub this_device: bool,
+}
+
+/// The answer to a Devices request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DevicesOutcome {
+    /// The devices, most recently used first.
+    Devices {
+        /// Each signed-in device.
+        devices: Vec<DeviceView>,
+    },
+    /// Done.
+    Done,
+    /// Not signed in.
+    NotSignedIn,
+    /// Not allowed: someone else's device, or another person's devices outside Admin mode.
+    NotAllowed,
+    /// There's no such device (or it's already signed out).
+    NotFound,
+    /// The new name breaks a rule.
+    InvalidName {
+        /// Which rule.
+        reason: crate::device::DeviceNameError,
+    },
+    /// The server can't do it now (see its log).
+    Unavailable,
 }
 
 /// The answer to a Users screen request.
@@ -1397,7 +1472,8 @@ mod tests {
             [
                 ApiError::MissingCredential,
                 ApiError::InvalidCredential,
-                ApiError::AuthNotConfigured
+                ApiError::AuthNotConfigured,
+                ApiError::DeviceSignature
             ]
         );
     }

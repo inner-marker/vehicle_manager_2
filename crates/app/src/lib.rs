@@ -9,10 +9,13 @@ pub mod build_info;
 pub mod client;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod device_credential;
 #[cfg(feature = "server")]
 pub mod file_routes;
 pub mod files;
 pub mod logging;
+pub mod pairing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod settings;
 pub mod ui;

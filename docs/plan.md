@@ -1458,7 +1458,7 @@ Dioxus provides no encryption or authentication on its own; server functions are
 
 **Application**
 - **Two credential types, one auth middleware:**
-  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
+  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone). Pairing is signing in on the device; each request is signed with the device's key (`docs/decisions.md` #073).
   - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
   - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
   - **Forgotten passwords:** an Admin resets anyone's with a temporary password (#046); an Admin who forgot their own uses a one-time recovery code in the server log (#047). **Optional email** (any SMTP provider) and an email reset link are proposed in the draft `docs/sub-plans/03-email-and-password-reset.md` (idea 13).
@@ -1864,7 +1864,7 @@ Each phase has open questions in section 10 that must be resolved before work on
   - **Pinch to zoom a photo on a phone** zooms and pans just the photo in the viewer, not the whole page (iOS Safari ignores the page's own "don't zoom" setting, so the viewer handles the gestures itself).
   - **Add photos and documents while logging,** before the first save: a new fuel-up, reading, maintenance, or repair (today they can be added once the draft is saved).
 - **After Phase 3 milestone 1's test** (the human, 2026-11-09):
-  - **The desktop window's size isn't restored** under `dx serve`: its position and a maximized state are, its size isn't (`docs/test-plans/p3m1-groundwork.md` step 8). Minor; find why, then retest.
+  - **The desktop window's size isn't restored** under `dx serve`: its position and a maximized state are, its size isn't (`docs/test-plans/archive/p3m1-groundwork.md` step 8). Minor; find why, then retest.
   - **Test with a second monitor** before the end of Phase 6: a window left on a monitor that's since been unplugged opens on the main screen (step 10 of the same plan, not run).
   - **Reorganize Settings:** a column of tabs down the left side, or another way to keep it uncluttered as settings are added (open to ideas).
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).

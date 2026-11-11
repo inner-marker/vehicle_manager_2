@@ -642,6 +642,136 @@ a.secondary-button {
     cursor: pointer;
 }
 
+/* ---------- Desktop sign-in: recent servers (p3m2-devices-options.svg, option 1A) ---------- */
+
+.server-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.server-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.server-card.on {
+    border-color: var(--accent);
+}
+
+.server-dot {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+}
+
+.server-card.on .server-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.server-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.server-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.server-detail {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ---------- Devices (p3m2-devices-options.svg, options 2B and 3A) ---------- */
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.device-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+}
+
+.device-row > .icon {
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.device-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.device-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.device-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.device-detail {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.device-rename,
+.device-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.device-sign-out-others {
+    align-self: flex-start;
+}
+
 /* ---------- Mode and account chips, menus, dialog (p2m2-mode-options.svg, option A) ---------- */
 
 .chip-anchor {
