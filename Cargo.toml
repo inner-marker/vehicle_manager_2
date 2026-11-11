@@ -59,6 +59,9 @@ ed25519-dalek = { version = "3.0.0", default-features = false, features = ["zero
 # The desktop's device key and token in the OS keychain (phase-3.md 2c, #073): macOS Keychain,
 # Windows Credential Manager, Linux Secret Service (through zbus, pure Rust).
 keyring = "4.2.0"
+# Seals the desktop's stored sign-in with a key made from its PIN or password (phase-3.md 3b,
+# #074): XChaCha20-Poly1305. No `getrandom` feature: the app draws its own nonces.
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc"] }
 # The desktop's default device name: the computer's name (phase-3.md 2c).
 gethostname = "1.1.0"
 serde_json = "1.0.154"
@@ -148,3 +151,16 @@ clone_on_ref_ptr = "warn"           # write Arc::clone(&x), not x.clone(), for c
 str_to_string = "warn"              # consistent: use .to_owned()
 large_enum_variant = "warn"         # keeps command/event enums lean
 wildcard_enum_match_arm = "warn"    # `_ =>` hides new enum variants (matters for commands)
+
+# ---------------------------------------------------------------------------
+# Build profiles
+# ---------------------------------------------------------------------------
+# Argon2 (and its BLAKE2 hash) optimized even in debug builds: unoptimized, the desktop's
+# unlock (256 MiB, phase-3.md 3b) takes about 5 s instead of 0.3 s, and the server's password
+# checks are slow too. Only these crates; everything else keeps normal debug builds.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+

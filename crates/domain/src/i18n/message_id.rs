@@ -527,6 +527,26 @@ define_messages! {
     SETTINGS_KEEP_ON_TOP => "settings-keep-on-top",
     /// Settings: the words beside the "keep window on top" switch.
     SETTINGS_KEEP_ON_TOP_NOTE => "settings-keep-on-top-note",
+    /// PIN: something other than digits (phase-3.md milestone 3).
+    PIN_NOT_DIGITS => "pin-not-digits",
+    /// PIN: too few digits.
+    PIN_TOO_SHORT => "pin-too-short",
+    /// PIN: too many digits.
+    PIN_TOO_LONG => "pin-too-long",
+    /// PIN: one digit repeated.
+    PIN_REPEATED => "pin-repeated",
+    /// PIN: a run up or down.
+    PIN_RUN => "pin-run",
+    /// Lock after: 5 minutes.
+    LOCK_AFTER_5 => "lock-after-5",
+    /// Lock after: 15 minutes.
+    LOCK_AFTER_15 => "lock-after-15",
+    /// Lock after: 30 minutes.
+    LOCK_AFTER_30 => "lock-after-30",
+    /// Lock after: 60 minutes.
+    LOCK_AFTER_60 => "lock-after-60",
+    /// Lock after: only when the app opens.
+    LOCK_AFTER_LAUNCH => "lock-after-launch",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.

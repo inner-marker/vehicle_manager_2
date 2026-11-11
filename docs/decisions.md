@@ -861,3 +861,17 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Recent servers** on the desktop's sign-in screen; choosing another server says "Quit and reopen to switch".
   - **API version 2**; version-1 desktop apps still sign in, unsigned, shown as "Desktop app (older version)", within #072's window.
 - **Why:** the human, 2026-11-09, choosing the recommended options except "quit and reopen" (over restarting itself). A copied token is useless without the device's key (sub-plan 04 §6); the desktop must stay signed in to work offline (Phase 3), which the memory-only token (#027) couldn't.
+
+### 074. The desktop's app lock: a required PIN that encrypts its sign-in
+*Decided: 2026-11-11 · Phase plan: phase-3.md milestone 3 · Sub-plan: 04 §4.1 · Builds on #071, #073*
+
+- **Decision:**
+  - **A PIN is required** on every paired desktop, chosen right after pairing: 6 digits or more, no repeats or runs. It never leaves the computer.
+  - **The PIN encrypts the stored sign-in** (the device key and token, #073): a key made from the PIN with Argon2id seals it with XChaCha20-Poly1305. A second copy is sealed with a key made from the **password**, so the password unlocks it too, offline.
+  - **The desktop locks at launch and after an idle time** (15 minutes by default; 5, 15, 30, 60, or only at launch; per computer). While locked, the key and token aren't in memory.
+  - **Wrong tries:** 5 wrong PINs and only the password works; 10 wrong tries in all and the desktop signs out and forgets its sign-in. Failed unlocks are reported to the server when it can, and the household Admin sees them in Messages.
+  - **Screens:** choosing a PIN and the lock screen use dots and a keypad (the keyboard works too); Lock after and Change PIN are under Settings → You → This device.
+  - Desktops paired before this (an unencrypted sign-in) sign in once more, then choose a PIN.
+- **Why:** the human, 2026-11-11, choosing the recommended options except the keypad layouts (1B, 2B). A lost laptop must not open the household's records (sub-plan 04 §3), and milestone 4 keeps those records on the desktop.
+- **Limits, accepted:** the wrong-try count lives beside the encrypted sign-in, so someone who copies the file can try PINs without it, paying an Argon2 hash per try; the release build's keychain is the first barrier.
+
