@@ -333,6 +333,29 @@ lock-after-15 = 15 minutes
 lock-after-30 = 30 minutes
 lock-after-60 = 1 hour
 lock-after-launch = Only when the app opens
+pin-mismatch = The two PINs didn't match. Choose one again.
+pin-choose-title = Choose a PIN
+pin-choose-help = 6 digits or more. This computer asks for it when the app opens and after it's been idle.
+pin-choose-again = Type it again.
+pin-saving = Saving…
+pin-save-failed = The PIN couldn't be saved. Try again.
+lock-title = Locked
+lock-unlock = Unlock
+lock-wrong-pin = Wrong PIN.
+lock-wrong-password = Wrong password.
+lock-pin-tries-left = { $count ->
+    [one] 1 more wrong PIN and only your password will work.
+   *[other] { $count } more wrong PINs and only your password will work.
+}
+lock-password-only = Use your password. { $count ->
+    [one] 1 more wrong try signs this computer out.
+   *[other] { $count } more wrong tries sign this computer out.
+}
+lock-unlocking = Unlocking…
+lock-use-password = Use your password instead
+lock-use-pin = Use your PIN instead
+lock-sign-out = Sign out of this computer
+lock-signed-out = Signed out of this computer after too many wrong tries. Sign in to use it again.
 setting-distance = Distance
 setting-volume = Fuel volume
 setting-economy = Fuel economy

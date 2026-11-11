@@ -47,15 +47,21 @@ fn server() -> &'static str {
 }
 
 /// After a successful sign-in: keeps `token`, and with `key` (a desktop that paired) the key
-/// too, for this run. Keeping them for the next run means sealing them with a PIN, which the
-/// "Choose a PIN" screen does (phase-3.md 3c, #074).
-pub fn finish_sign_in(token: Option<Secret>, key: Option<[u8; 32]>) {
+/// too, for this run; then a paired desktop asks for a PIN (required, #074), which seals them
+/// with it and with `password` (the one just typed) for the next run.
+pub fn finish_sign_in(token: Option<Secret>, key: Option<[u8; 32]>, password: &Secret) {
     let Some(token) = token else {
         return;
     };
     // The token first, so the key's first signature is over it.
     client::set_session_token(Some(token));
     client::set_device_key(key);
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if key.is_some() {
+        crate::ui::lock::choose_pin_after_pairing(password.clone());
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let _ = password;
 }
 
 /// At launch: whether this desktop has a sealed sign-in for its server. It's opened by the PIN

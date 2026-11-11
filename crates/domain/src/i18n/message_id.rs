@@ -547,6 +547,40 @@ define_messages! {
     LOCK_AFTER_60 => "lock-after-60",
     /// Lock after: only when the app opens.
     LOCK_AFTER_LAUNCH => "lock-after-launch",
+    /// PIN: the second entry didn't match the first.
+    PIN_MISMATCH => "pin-mismatch",
+    /// Choose a PIN: the title.
+    PIN_CHOOSE_TITLE => "pin-choose-title",
+    /// Choose a PIN: the first entry's help.
+    PIN_CHOOSE_HELP => "pin-choose-help",
+    /// Choose a PIN: the second entry.
+    PIN_CHOOSE_AGAIN => "pin-choose-again",
+    /// Choose a PIN: sealing the sign-in.
+    PIN_SAVING => "pin-saving",
+    /// Choose a PIN: sealing or keeping it failed.
+    PIN_SAVE_FAILED => "pin-save-failed",
+    /// Locked: the title.
+    LOCK_TITLE => "lock-title",
+    /// Locked: the password form's button.
+    LOCK_UNLOCK => "lock-unlock",
+    /// Locked: a wrong PIN.
+    LOCK_WRONG_PIN => "lock-wrong-pin",
+    /// Locked: a wrong password.
+    LOCK_WRONG_PASSWORD => "lock-wrong-password",
+    /// Locked: wrong PINs left before only the password works.
+    LOCK_PIN_TRIES_LEFT => "lock-pin-tries-left",
+    /// Locked: only the password works now.
+    LOCK_PASSWORD_ONLY => "lock-password-only",
+    /// Locked: opening the sign-in.
+    LOCK_UNLOCKING => "lock-unlocking",
+    /// Locked: switch to the password.
+    LOCK_USE_PASSWORD => "lock-use-password",
+    /// Locked: switch back to the PIN.
+    LOCK_USE_PIN => "lock-use-pin",
+    /// Locked: sign out of this computer.
+    LOCK_SIGN_OUT => "lock-sign-out",
+    /// The sign-in card after too many wrong unlocks.
+    LOCK_SIGNED_OUT => "lock-signed-out",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.

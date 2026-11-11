@@ -54,6 +54,10 @@ pub struct SealedCredential {
     password: Seal,
     /// Wrong PINs and passwords since the last unlock.
     pub tries: WrongTries,
+    /// Whose sign-in it is (their display name), for the lock screen. Not sealed: it says only
+    /// whose computer this is.
+    #[serde(default)]
+    pub person: Option<String>,
 }
 
 /// What's sealed: the key and token as text.
@@ -167,6 +171,7 @@ impl SealedCredential {
             pin: seal_with(pin, &plain, server)?,
             password: seal_with(password, &plain, server)?,
             tries: WrongTries::default(),
+            person: None,
         })
     }
 

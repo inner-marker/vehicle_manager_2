@@ -215,7 +215,7 @@
 | **3.0** `docs:` | ☑️ | This plan, decision #074, the sketch; milestone 2's test plan archived. |
 | **3a** `feat(domain):` PIN rules | ☑️ | `domain::pin`: the rules (6+ digits, no repeats or runs) and the wrong-try policy (how many before the password, before signing out), pure and tested; the Lock-after choices. |
 | **3b** `feat(app):` the encrypted sign-in | ☑️ | The stored sign-in becomes two sealed copies (one for the PIN, one for the password; Argon2id and XChaCha20-Poly1305, a fresh salt and nonce each) plus the wrong-try count; unlock by PIN or password; change the PIN. Milestone 2's plain sign-ins are forgotten (sign in again). Tests: right and wrong PIN and password, a changed byte, a copied file without the PIN. |
-| **3c** `feat(app):` lock and choose-PIN screens | ⬜ | **Choose a PIN** after pairing (1B); **Locked** (2B) at launch and after the idle time, forgetting the key and token from memory while locked; the password instead; sign out of this computer; the wrong-try steps. |
+| **3c** `feat(app):` lock and choose-PIN screens | ☑️ | **Choose a PIN** after pairing (1B); **Locked** (2B) at launch and after the idle time, forgetting the key and token from memory while locked; the password instead; sign out of this computer; the wrong-try steps. |
 | **3d** `feat:` failed-unlock reports | ⬜ | Migration 0017: each device's count of failed unlocks and the last one; a server function the desktop calls after unlocking (and before forgetting itself); a Messages entry for the household Admin, cleared when read. |
 | **3e** `feat(app):` lock settings | ⬜ | Settings → You → This device (3A): **Lock after** and **Change PIN** (the current PIN or the password, then a new one twice). |
 | **3f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m3-app-lock.md`). |
@@ -228,4 +228,11 @@
 - **Debug builds** compile `argon2` and `blake2` optimized (`[profile.dev.package]` in the workspace `Cargo.toml`): unoptimized, an unlock took about 5 s. The server's password checks in debug builds get faster too.
 - **`device_credential` stores only the sealed form** (keychain, or the file in debug builds). A pairing stored unsealed in milestone 2 is recognized, removed, and the desktop signs in once more.
 - **Between 3b and 3c** the desktop doesn't stay signed in across launches: the sealed sign-in is written and opened by the screens in 3c.
+
+**Step 3c notes (2026-11-11):**
+- **`ui::lock::LockGate`** stands in front of the whole app on the desktop: **Choose a PIN** right after pairing (the token, key, and the password typed at sign-in wait in memory only until the PIN seals them), and **Locked** at launch (when a sealed sign-in exists) and after the idle time (the idle watcher locks once "Lock after", from `settings.json`, has passed with no input). While locked, the key and token aren't in memory and nothing behind the gate runs.
+- **The keypad** (1B, 2B): dots for the digits typed (at least six shown), keys 1–9, ✓, 0, ⌫; the keyboard works too (digits, Backspace, Enter). A PIN is typed, then typed again; a rule broken or a mismatch says why.
+- **Locked:** the PIN, or "Use your password instead"; the wrong-try notes ("2 more wrong PINs and only your password will work", "Use your password. 3 more wrong tries sign this computer out"); after 5 wrong PINs only the password field shows; after 10 wrong tries in all, the sign-in is forgotten and the sign-in card says why. "Sign out of this computer" forgets it at once. Unlocking runs Argon2 on a blocking thread (the desktop's tokio gains its `rt` feature).
+- **The lock screen says whose it is:** the person's display name is kept beside the seals (not sealed; it says only whose computer this is), with the server's host.
+- **Not seen in this session:** the desktop's webview can't be driven or captured here (no Screen Recording permission), so the screens are checked by the test plan; the app starts cleanly with the gate in place.
 

@@ -772,6 +772,128 @@ a.secondary-button {
     align-self: flex-start;
 }
 
+/* ---------- Desktop app lock (p3m3-lock-options.svg, options 1B and 2B) ---------- */
+
+.lock-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    box-sizing: border-box;
+    background: var(--bg);
+}
+
+.lock-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+}
+
+.lock-title {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.lock-subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.lock-problem {
+    margin: 0;
+    color: var(--error);
+    font-size: 0.9rem;
+}
+
+.keypad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 8px;
+    border-radius: 14px;
+    outline: none;
+}
+
+.keypad:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.pin-dots {
+    display: flex;
+    gap: 10px;
+    min-height: 16px;
+}
+
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+}
+
+.pin-dot.on {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.keypad-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 12px;
+}
+
+.keypad-key {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.keypad-key.ok {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.keypad-key:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.lock-password {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+}
+
+.lock-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lock-links .link-button {
+    align-self: center;
+}
+
+.link-button.muted {
+    color: var(--text-muted);
+}
+
 /* ---------- Mode and account chips, menus, dialog (p2m2-mode-options.svg, option A) ---------- */
 
 .chip-anchor {

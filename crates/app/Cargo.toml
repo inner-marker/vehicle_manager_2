@@ -44,11 +44,12 @@ getrandom.workspace = true
 # (Argon2id) seals it (XChaCha20-Poly1305). Native only; tested in the default build.
 argon2.workspace = true
 chacha20poly1305.workspace = true
-# Desktop only (the `desktop` feature): the keychain, the computer's name, and the timer that
-# renews the session signature (Dioxus desktop already runs on tokio).
+# Desktop only (the `desktop` feature): the keychain, the computer's name, the timer that
+# renews the session signature, and a blocking thread for unlocking (Argon2 takes ~0.3 s;
+# Dioxus desktop already runs on tokio).
 keyring = { workspace = true, optional = true }
 gethostname = { workspace = true, optional = true }
-tokio = { version = "1", default-features = false, features = ["time"], optional = true }
+tokio = { version = "1", default-features = false, features = ["time", "rt"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tracing-wasm.workspace = true
