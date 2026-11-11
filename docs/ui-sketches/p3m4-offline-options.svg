@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1250" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 3 · milestone 4 · Local copy and pull (desktop): layout options</text>
+<text x="24" y="64" font-size="13" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme shown. Each row: two options side by side. Wording is a draft.</text>
+<text x="24" y="100" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · Offline: the desktop is showing its own copy</text>
+<text x="24" y="120" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Shown only while the server can't be reached. Reading works; saving waits for milestone 5.</text>
+<rect x="24" y="140" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1A · A tag in the top bar</text>
+<text x="44" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Beside the TEST SERVER tag; hover for the details</text>
+<rect x="44" y="176" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="58" y="201" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
+<text x="84" y="201" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<rect x="150" y="186" width="150" height="22" rx="11" fill="#3a2f14" stroke="#f2b84b"/>
+<text x="225" y="201" font-size="11" fill="#f2b84b" font-weight="600" text-anchor="middle">OFFLINE · copy 10:42</text>
+<text x="450" y="201" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<rect x="44" y="230" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="252" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Outback · 84,210 mi</text>
+<rect x="44" y="272" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="294" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Tacoma · 132,904 mi</text>
+<rect x="44" y="314" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="336" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Trailer</text>
+<rect x="150" y="362" width="300" height="44" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="160" y="380" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Can't reach the server. Showing this</text>
+<text x="160" y="396" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">computer's copy from 10:42 (tooltip).</text>
+<rect x="516" y="140" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1B · A strip under the top bar</text>
+<text x="536" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Always spelled out while offline</text>
+<rect x="536" y="176" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="550" y="201" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
+<text x="576" y="201" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<text x="942" y="201" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<rect x="536" y="220" width="420" height="30" rx="4" fill="#3a2f14" stroke="#f2b84b"/>
+<text x="548" y="240" font-size="11" fill="#f2b84b" font-weight="400" text-anchor="start">Offline: this computer's copy from 10:42. Saving needs the server.</text>
+<rect x="536" y="260" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="548" y="282" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Outback · 84,210 mi</text>
+<rect x="536" y="302" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="548" y="324" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Tacoma · 132,904 mi</text>
+<rect x="536" y="344" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="548" y="366" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Trailer</text>
+<text x="24" y="470" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · Where the copy's status lives</text>
+<text x="24" y="490" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">How up to date it is, the first download's progress, and Sync now.</text>
+<rect x="24" y="510" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="540" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · A row under Settings → This device</text>
+<text x="44" y="560" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Beside Lock after and PIN</text>
+<rect x="44" y="546" width="420" height="236" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="60" y="570" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">THIS DEVICE</text>
+<text x="60" y="600" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Theme</text>
+<text x="300" y="600" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Dark ▾</text>
+<text x="60" y="630" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Keep window on top</text>
+<text x="300" y="630" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">○ Off</text>
+<text x="60" y="660" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Lock after</text>
+<text x="300" y="660" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">15 minutes ▾</text>
+<text x="60" y="690" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">PIN</text>
+<text x="300" y="690" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Change PIN</text>
+<text x="60" y="720" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Offline copy</text>
+<text x="300" y="720" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Up to date · 2 min ago</text>
+<rect x="300" y="732" width="100" height="26" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="350" y="749" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Sync now</text>
+<text x="60" y="770" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">First time: "Downloading… 1,240 of 3,100 records"</text>
+<rect x="516" y="510" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="540" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · A section on Diagnostics</text>
+<text x="536" y="560" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">With the server's health and the logs</text>
+<rect x="536" y="546" width="420" height="236" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="570" font-size="11" fill="#9aa1ab" font-weight="700" text-anchor="start">OFFLINE COPY</text>
+<text x="552" y="600" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Status</text>
+<text x="700" y="600" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Up to date</text>
+<text x="552" y="628" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Last pull</text>
+<text x="700" y="628" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">2 min ago (10:42)</text>
+<text x="552" y="656" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Records</text>
+<text x="700" y="656" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">3,100</text>
+<text x="552" y="684" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Size on disk</text>
+<text x="700" y="684" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">4.2 MB</text>
+<text x="552" y="712" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Folder</text>
+<text x="700" y="712" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">…/servers/0193…-test</text>
+<rect x="552" y="742" width="100" height="26" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="602" y="759" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Sync now</text>
+<text x="24" y="890" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Saving while offline (milestone 4 reads only)</text>
+<text x="24" y="910" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Offline writes come in milestone 5; until then a save needs the server.</text>
+<rect x="24" y="930" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="960" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · Save buttons turn off</text>
+<text x="44" y="980" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every form's Save, Delete, Finish…</text>
+<rect x="44" y="966" width="420" height="190" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="60" y="992" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Log a fuel-up</text>
+<rect x="60" y="1006" width="388" height="30" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="70" y="1026" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">12.4 gal</text>
+<rect x="60" y="1046" width="388" height="30" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="70" y="1066" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">84,402 mi</text>
+<rect x="328" y="1094" width="120" height="30" rx="6" fill="#2b3340" stroke="#333a45"/>
+<text x="388" y="1114" font-size="12.5" fill="#6b7380" font-weight="600" text-anchor="middle">Save</text>
+<text x="60" y="1142" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Saving needs the server (offline).</text>
+<rect x="516" y="930" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="960" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · Save says why it can't</text>
+<text x="536" y="980" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">One message for every form; what you typed stays</text>
+<rect x="536" y="966" width="420" height="190" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="992" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Log a fuel-up</text>
+<rect x="552" y="1006" width="388" height="30" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="562" y="1026" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">12.4 gal</text>
+<rect x="552" y="1046" width="388" height="30" rx="6" fill="#262b34" stroke="#333a45"/>
+<text x="562" y="1066" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">84,402 mi</text>
+<rect x="820" y="1094" width="120" height="30" rx="6" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="880" y="1114" font-size="12.5" fill="#0b1420" font-weight="600" text-anchor="middle">Save</text>
+<text x="552" y="1142" font-size="11" fill="#ff8a80" font-weight="400" text-anchor="start">Can't save while offline. What you typed is kept.</text>
+<text x="24" y="1230" font-size="13" fill="#1b1f24" font-weight="700" text-anchor="start">Recommended: 1A, 2A, 3B. End of sheet.</text>
+</svg>
