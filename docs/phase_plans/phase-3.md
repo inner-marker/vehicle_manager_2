@@ -217,7 +217,7 @@
 | **3b** `feat(app):` the encrypted sign-in | ☑️ | The stored sign-in becomes two sealed copies (one for the PIN, one for the password; Argon2id and XChaCha20-Poly1305, a fresh salt and nonce each) plus the wrong-try count; unlock by PIN or password; change the PIN. Milestone 2's plain sign-ins are forgotten (sign in again). Tests: right and wrong PIN and password, a changed byte, a copied file without the PIN. |
 | **3c** `feat(app):` lock and choose-PIN screens | ☑️ | **Choose a PIN** after pairing (1B); **Locked** (2B) at launch and after the idle time, forgetting the key and token from memory while locked; the password instead; sign out of this computer; the wrong-try steps. |
 | **3d** `feat:` failed-unlock reports | ☑️ | Migration 0017: each device's count of failed unlocks and the last one; a server function the desktop calls after unlocking (and before forgetting itself); a Messages entry for the household Admin, cleared when read. |
-| **3e** `feat(app):` lock settings | ⬜ | Settings → You → This device (3A): **Lock after** and **Change PIN** (the current PIN or the password, then a new one twice). |
+| **3e** `feat(app):` lock settings | ☑️ | Settings → You → This device (3A): **Lock after** and **Change PIN** (the current PIN or the password, then a new one twice). |
 | **3f** `docs:` | ⬜ | The test plan (`docs/test-plans/p3m3-app-lock.md`). |
 
 **New dependency (approved with this plan):** `chacha20poly1305` (RustCrypto). `argon2` is already in the workspace.
@@ -241,4 +241,9 @@
 - **Migration 0017:** `devices.failed_unlocks` and `last_failed_unlock_ms`. Only the latest report is kept.
 - **The message** (`domain::inbox::failed_unlocks_message`, derived as #050 does): "Wrong PINs on a computer", "Someone typed 3 wrong PINs or passwords on Garage Mac (Sam) before it was unlocked. If that wasn't Sam, sign the computer out from their Devices on the Users screen." For the household Admin in Admin mode; keyed by the last wrong try's time, so a later report is a new message. The server caps a count at 10 and a time in the future at now.
 - **Not seen in a browser here:** Node isn't installed on this Mac any more (it was for the headless-Chrome checks), so a unit test checks the message's text and the server test checks it reaches the Admin; the test plan checks it in Messages.
+
+**Step 3e notes (2026-11-11):**
+- **Where:** two rows under Settings → **This device**, after Theme and Keep window on top, on a desktop with a sealed sign-in only (`ui::lock::LockSettings`). They show on every tab but Devices, like the other This device rows.
+- **Lock after:** a list (5, 15, 30, or 60 minutes, or only when the app opens), saved in `settings.json` at once. The idle watcher reads it at each check (every 15 s), so a change counts without restarting.
+- **Change PIN** opens a small form under the row: the current PIN (or "Use your password instead"), the new PIN, and the new PIN again. The new PIN's rules and the match are checked first, so a typo there costs no try. A wrong current PIN or password counts as a wrong unlock (it's the same check): after 5 wrong PINs the form asks for the password, and the 10th wrong try signs the desktop out as the lock screen does. Wrong tries before a successful change are reported to the Admin as after an unlock. The password's seal is kept; the new PIN clears the count.
 

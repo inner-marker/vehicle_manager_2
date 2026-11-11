@@ -197,12 +197,13 @@ async fn watch(
         idle.notice.set(None);
     }
     let mut tracker = Tracker::default();
-    // A paired desktop also locks after its idle time (phase-3.md 3c, #074).
-    let lock_after = crate::ui::lock::lock_after_millis();
     while let Ok((now, last_input)) = eval.recv::<(i64, i64)>().await {
         let AuthState::SignedIn(session) = auth.peek().clone() else {
             break;
         };
+        // A paired desktop also locks after its idle time (phase-3.md 3c, #074); read each
+        // time, so a change in Settings counts at once.
+        let lock_after = crate::ui::lock::lock_after_millis();
         if lock_after.is_some_and(|after| now.saturating_sub(last_input) >= after) {
             crate::ui::lock::lock_now();
             break;

@@ -581,6 +581,22 @@ define_messages! {
     LOCK_SIGN_OUT => "lock-sign-out",
     /// The sign-in card after too many wrong unlocks.
     LOCK_SIGNED_OUT => "lock-signed-out",
+    /// Settings → This device: how long idle before the desktop locks.
+    SETTINGS_LOCK_AFTER => "settings-lock-after",
+    /// Settings → This device: the PIN row's label.
+    SETTINGS_PIN => "settings-pin",
+    /// Change PIN: the button and the form's title.
+    PIN_CHANGE => "pin-change",
+    /// Change PIN: the current PIN's field.
+    PIN_CHANGE_CURRENT => "pin-change-current",
+    /// Change PIN: the password's field (instead of the current PIN).
+    PIN_CHANGE_PASSWORD => "pin-change-password",
+    /// Change PIN: the new PIN's field.
+    PIN_CHANGE_NEW => "pin-change-new",
+    /// Change PIN: the new PIN again.
+    PIN_CHANGE_NEW_AGAIN => "pin-change-new-again",
+    /// Change PIN: done.
+    PIN_CHANGED => "pin-changed",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.

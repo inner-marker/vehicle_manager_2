@@ -11,6 +11,8 @@
 //!   sealed sign-in; after 5 wrong PINs only the password works, after 10 wrong tries the
 //!   desktop signs out and forgets it.
 //!
+//! [`LockSettings`] adds **Lock after** and **Change PIN** to Settings → This device (3e).
+//!
 //! Unlocking runs Argon2 (about 0.3 s) on a blocking thread, so the window stays responsive.
 //! The web app has no lock: [`LockGate`] just shows the app there.
 
@@ -99,7 +101,7 @@ mod desktop {
     use dioxus::prelude::*;
     use domain::i18n::{MessageArg, MessageId, messages};
     use domain::log_area;
-    use domain::pin::{UnlockStep, check_new_pin};
+    use domain::pin::{LockAfter, UnlockStep, check_new_pin};
     use domain::secret::Secret;
 
     use super::{LOCK, LockState};
@@ -382,6 +384,269 @@ mod desktop {
         Attempt::Wrong(step)
     }
 
+    /// Tells the household Admin of the wrong tries before an unlock (phase-3.md 3d, #074).
+    async fn report(before: Option<(u32, i64)>) {
+        if let Some((count, last)) = before {
+            let last = domain::time::UnixMillis::from_millis(last);
+            if let Err(error) = crate::api::report_failed_unlocks(count, last).await {
+                tracing::warn!(target: log_area::AUTH, %error, "couldn't report the wrong unlock tries");
+            }
+        }
+    }
+
+    /// Too many wrong tries (or the sign-in is gone): signs this desktop out, with a notice on
+    /// the sign-in card.
+    fn signed_out_by_lock(auth: Signal<auth::AuthState>) {
+        crate::pairing::forget();
+        *SIGNED_OUT_BY_LOCK.write() = true;
+        *LOCK.write() = LockState::Open;
+        spawn(async move { auth::refresh(auth).await });
+    }
+
+    /// Settings → This device: "Lock after" (kept in `settings.json`, per computer).
+    #[expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )]
+    #[component]
+    pub(super) fn LockAfterRow() -> Element {
+        let mut current = use_signal(|| {
+            crate::data_folder::platform_data_folder()
+                .map(|folder| crate::settings::load(&folder).lock_after)
+                .unwrap_or_default()
+        });
+        rsx! {
+            div { class: "setting-row",
+                span { class: "setting-label", {tr(messages::SETTINGS_LOCK_AFTER)} }
+                select {
+                    class: "role-select",
+                    // The value is the choice's index in LockAfter::ALL.
+                    onchange: move |event| {
+                        let Some(picked) = event
+                            .value()
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|index| LockAfter::ALL.get(index).copied())
+                        else {
+                            return;
+                        };
+                        current.set(picked);
+                        let saved = crate::data_folder::platform_data_folder()
+                            .map(|folder| crate::settings::update(&folder, |saved| saved.lock_after = picked));
+                        if let Some(Err(error)) = saved {
+                            tracing::warn!(target: log_area::APP, %error, "couldn't save 'lock after'");
+                        }
+                    },
+                    for (index, choice) in LockAfter::ALL.iter().enumerate() {
+                        option { key: "{index}", value: "{index}", selected: *choice == current(), {tr(choice.label())} }
+                    }
+                }
+            }
+        }
+    }
+
+    /// What changing the PIN came to.
+    enum Changed {
+        Done,
+        /// The new PIN broke a rule, or the two didn't match: nothing was tried.
+        Refused(MessageId),
+        /// The current PIN or password was wrong (counted like a wrong unlock).
+        Wrong(UnlockStep),
+        Failed,
+        SignedOut,
+    }
+
+    /// Changes the PIN: checks the new one, then opens the sign-in with `current` (the PIN, or
+    /// the password), counting a wrong one as a wrong unlock, and seals it with the new PIN.
+    async fn change_pin(current: Secret, as_password: bool, new: &str, again: &str) -> Changed {
+        let pin = match check_new_pin(new) {
+            Ok(pin) => pin,
+            Err(error) => return Changed::Refused(error.message()),
+        };
+        if pin.expose() != again.trim() {
+            return Changed::Refused(messages::PIN_MISMATCH);
+        }
+        let (credential, before) = match attempt(current, as_password).await {
+            Attempt::Opened(credential, before) => (credential, before),
+            Attempt::Wrong(UnlockStep::SignOut) | Attempt::Gone => return Changed::SignedOut,
+            Attempt::Wrong(step) => return Changed::Wrong(step),
+        };
+        report(before).await;
+        // Loaded again: the attempt cleared the wrong tries.
+        let Some(sealed) = device_credential::load(server()) else {
+            return Changed::Failed;
+        };
+        let address = server().to_owned();
+        let renewed = off_the_ui(move || sealed.with_new_pin(&credential, &address, &pin))
+            .await
+            .and_then(Result::ok);
+        let Some(renewed) = renewed else {
+            return Changed::Failed;
+        };
+        match device_credential::save(server(), &renewed) {
+            Ok(()) => {
+                tracing::info!(target: log_area::AUTH, "PIN changed");
+                Changed::Done
+            }
+            Err(error) => {
+                tracing::warn!(target: log_area::AUTH, %error, "couldn't keep the sign-in sealed with the new PIN");
+                Changed::Failed
+            }
+        }
+    }
+
+    /// Settings → This device: "Change PIN", which opens a small form: the current PIN (or the
+    /// password), then the new one twice.
+    #[expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )]
+    #[component]
+    pub(super) fn ChangePinRow() -> Element {
+        let auth = use_auth();
+        let mut open = use_signal(|| false);
+        let mut use_password = use_signal(|| false);
+        let mut current = use_signal(String::new);
+        let mut new = use_signal(String::new);
+        let mut again = use_signal(String::new);
+        let mut busy = use_signal(|| false);
+        let mut problem = use_signal(|| None::<String>);
+        let mut done = use_signal(|| false);
+        let mut close = move || {
+            open.set(false);
+            use_password.set(false);
+            current.set(String::new());
+            new.set(String::new());
+            again.set(String::new());
+            problem.set(None);
+        };
+        let submit = move |event: FormEvent| {
+            event.prevent_default();
+            let typed = Secret::new(current());
+            let as_password = use_password();
+            let (new_pin, new_again) = (new(), again());
+            busy.set(true);
+            spawn(async move {
+                let result = change_pin(typed, as_password, &new_pin, &new_again).await;
+                busy.set(false);
+                match result {
+                    Changed::Done => {
+                        close();
+                        done.set(true);
+                    }
+                    Changed::Refused(message) => {
+                        new.set(String::new());
+                        again.set(String::new());
+                        problem.set(Some(tr(message)));
+                    }
+                    Changed::Wrong(step) => {
+                        current.set(String::new());
+                        if matches!(step, UnlockStep::PasswordOnly { .. }) {
+                            use_password.set(true);
+                        }
+                        let wrong = tr(if as_password {
+                            messages::LOCK_WRONG_PASSWORD
+                        } else {
+                            messages::LOCK_WRONG_PIN
+                        });
+                        problem.set(Some(match tries_note(step) {
+                            Some(note) => format!("{wrong} {note}"),
+                            None => wrong,
+                        }));
+                    }
+                    Changed::Failed => problem.set(Some(tr(messages::PIN_SAVE_FAILED))),
+                    Changed::SignedOut => signed_out_by_lock(auth),
+                }
+            });
+        };
+        // After 5 wrong PINs only the password opens the sign-in, here as on the lock screen.
+        let only_password = open()
+            && device_credential::load(server()).is_some_and(|sealed| {
+                matches!(sealed.tries.step(), UnlockStep::PasswordOnly { .. })
+            });
+        let by_password = use_password() || only_password;
+        rsx! {
+            div { class: "setting-row",
+                span { class: "setting-label", {tr(messages::SETTINGS_PIN)} }
+                if !open() {
+                    button {
+                        class: "secondary-button",
+                        r#type: "button",
+                        onclick: move |_| {
+                            done.set(false);
+                            open.set(true);
+                        },
+                        {tr(messages::PIN_CHANGE)}
+                    }
+                }
+                if done() {
+                    span { class: "muted-note", role: "status", {tr(messages::PIN_CHANGED)} }
+                }
+            }
+            if open() {
+                form { class: "device-rename", onsubmit: submit,
+                    label { class: "field",
+                        span { class: "field-label",
+                            if by_password { {tr(messages::PIN_CHANGE_PASSWORD)} } else { {tr(messages::PIN_CHANGE_CURRENT)} }
+                        }
+                        input {
+                            class: "field-input",
+                            r#type: "password",
+                            inputmode: if by_password { "text" } else { "numeric" },
+                            autocomplete: if by_password { "current-password" } else { "off" },
+                            value: current(),
+                            oninput: move |event| current.set(event.value()),
+                        }
+                    }
+                    if !only_password {
+                        button {
+                            class: "link-button",
+                            r#type: "button",
+                            onclick: move |_| {
+                                current.set(String::new());
+                                use_password.set(!use_password());
+                            },
+                            if use_password() { {tr(messages::LOCK_USE_PIN)} } else { {tr(messages::LOCK_USE_PASSWORD)} }
+                        }
+                    }
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::PIN_CHANGE_NEW)} }
+                        input {
+                            class: "field-input",
+                            r#type: "password",
+                            inputmode: "numeric",
+                            autocomplete: "off",
+                            maxlength: "{domain::pin::PIN_MAX_DIGITS}",
+                            value: new(),
+                            oninput: move |event| new.set(event.value()),
+                        }
+                    }
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::PIN_CHANGE_NEW_AGAIN)} }
+                        input {
+                            class: "field-input",
+                            r#type: "password",
+                            inputmode: "numeric",
+                            autocomplete: "off",
+                            maxlength: "{domain::pin::PIN_MAX_DIGITS}",
+                            value: again(),
+                            oninput: move |event| again.set(event.value()),
+                        }
+                    }
+                    if let Some(message) = problem() {
+                        p { class: "form-error", role: "alert", {message} }
+                    }
+                    div { class: "form-buttons",
+                        button { class: "secondary-button", r#type: "button", disabled: busy(), onclick: move |_| close(), {tr(messages::ACTION_CANCEL)} }
+                        button { class: "primary-button", r#type: "submit", disabled: busy(),
+                            if busy() { {tr(messages::PIN_SAVING)} } else { {tr(messages::PIN_CHANGE)} }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Locked (option 2B): the PIN on a keypad, or the password; and signing out.
     #[expect(
         unused_qualifications,
@@ -410,21 +675,10 @@ mod desktop {
                 *LOCK.write() = LockState::Open;
                 spawn(async move {
                     auth::refresh(auth).await;
-                    // The household Admin hears of the wrong tries before this unlock (#074).
-                    if let Some((count, last)) = before {
-                        let last = domain::time::UnixMillis::from_millis(last);
-                        if let Err(error) = crate::api::report_failed_unlocks(count, last).await {
-                            tracing::warn!(target: log_area::AUTH, %error, "couldn't report the wrong unlock tries");
-                        }
-                    }
+                    report(before).await;
                 });
             }
-            Attempt::Wrong(UnlockStep::SignOut) | Attempt::Gone => {
-                crate::pairing::forget();
-                *SIGNED_OUT_BY_LOCK.write() = true;
-                *LOCK.write() = LockState::Open;
-                spawn(async move { auth::refresh(auth).await });
-            }
+            Attempt::Wrong(UnlockStep::SignOut) | Attempt::Gone => signed_out_by_lock(auth),
             Attempt::Wrong(next) => {
                 wrong.set(true);
                 if matches!(next, UnlockStep::PasswordOnly { .. }) {
@@ -516,6 +770,20 @@ mod desktop {
             }
         }
     }
+}
+
+/// Settings → This device (phase-3.md 3e, option 3A): **Lock after** and **Change PIN**, on a
+/// desktop with a sealed sign-in. Nothing on the web.
+#[component]
+pub(crate) fn LockSettings() -> Element {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if crate::pairing::has_sealed_sign_in() {
+        return rsx! {
+            desktop::LockAfterRow {}
+            desktop::ChangePinRow {}
+        };
+    }
+    rsx! {}
 }
 
 /// On the sign-in card: "Signed out after too many wrong tries", once. Nothing on the web.
