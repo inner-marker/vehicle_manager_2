@@ -60,6 +60,10 @@ pub struct SealedCredential {
     /// whose computer this is.
     #[serde(default)]
     pub person: Option<String>,
+    /// Their username, to open the app as them with no connection (phase-3.md 4e). Not sealed,
+    /// like `person`.
+    #[serde(default)]
+    pub username: Option<String>,
     /// When the last wrong try was (Unix milliseconds), for the report after unlocking
     /// (phase-3.md 3d).
     #[serde(default)]
@@ -181,6 +185,7 @@ impl SealedCredential {
             password: seal_with(password, &plain, server)?,
             tries: WrongTries::default(),
             person: None,
+            username: None,
             last_wrong_ms: None,
         })
     }

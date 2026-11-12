@@ -44,6 +44,8 @@ pub(crate) use messages::Messages;
 pub(crate) use placeholders::{Due, NotFound, Reports, Timeline};
 pub(crate) use places::Places;
 pub(crate) use settings::Settings;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) use squawks::use_device_zone;
 pub(crate) use squawks::{SquawkDetail, SquawkSheetDialog, provide_squawk_sheet};
 pub(crate) use users::Users;
 pub(crate) use vehicle::{VehicleDetail, VehicleTab};

@@ -265,6 +265,23 @@ impl Database {
         })
     }
 
+    /// How many records the synced tables hold (live and deleted), for Diagnostics.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails.
+    pub async fn record_count(&self) -> Result<u64, StorageError> {
+        let mut total: u64 = 0;
+        for table in RECORD_TABLES {
+            let count: i64 =
+                sqlx::query_scalar(AssertSqlSafe(format!("SELECT COUNT(*) FROM {table}")))
+                    .fetch_one(self.pool())
+                    .await?;
+            total = total.saturating_add(to_u64(count, "count")?);
+        }
+        Ok(total)
+    }
+
     /// Where the copy's pull stands, or `None` if this isn't a copy.
     ///
     /// # Errors

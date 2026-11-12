@@ -26,6 +26,7 @@ pub(crate) mod inbox;
 pub(crate) mod location;
 pub(crate) mod lock;
 pub(crate) mod nav;
+pub(crate) mod offline;
 pub(crate) mod pdfs;
 pub(crate) mod photos;
 pub(crate) mod recent_servers;
@@ -75,7 +76,12 @@ pub fn App() -> Element {
         document::Link { rel: "icon", href: ICON_32.to_string(), r#type: "image/png", sizes: "32x32" }
         document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
         DesktopWindow {}
-        div { class: "app", "data-theme": theme().attribute(),
+        div {
+            class: "app",
+            "data-theme": theme().attribute(),
+            // Offline on the desktop: the stylesheet turns saving off (phase-3.md 4e).
+            "data-offline": if offline::is_offline_now() { "true" } else { "false" },
+            style: offline::saving_note(),
             lock::LockGate {
                 auth::AuthGate { Router::<Route> {} }
             }

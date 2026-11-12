@@ -4586,3 +4586,42 @@ body:has(.photo-viewer) {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+
+/* ---------- Offline on the desktop (phase-3.md 4e; sketch options 1A and 3A) ---------- */
+
+/* "OFFLINE · copy 10:42": the TEST SERVER tag's shape, outlined in amber so the two differ. */
+.offline-tag {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 12px;
+    color: var(--warn);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* Saving needs the server until milestone 5: Save, Delete, Finish (and Log) turn off. */
+.app[data-offline="true"] main.content .primary-button,
+.app[data-offline="true"] main.content .danger-button,
+.app[data-offline="true"] main.content button[type="submit"],
+.app[data-offline="true"] .log-button {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.app[data-offline="true"] main.content .form-buttons {
+    flex-wrap: wrap;
+}
+
+/* The note beside each form's buttons; its words come from the app's root (`--offline-note`),
+   so they're in the person's language. */
+.app[data-offline="true"] main.content .form-buttons::before {
+    content: var(--offline-note);
+    flex-basis: 100%;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-align: right;
+}

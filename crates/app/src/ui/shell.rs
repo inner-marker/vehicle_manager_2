@@ -221,6 +221,7 @@ pub(crate) fn Shell() -> Element {
                         }
                     }
                     super::auth::InstanceTag {}
+                    super::offline::OfflineTag {}
                     if let AuthState::SignedIn(session) = auth() {
                         if let Some(minutes) = session.timers.test_minutes() {
                             span { class: "test-timers-tag", title: tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))]),

@@ -243,7 +243,7 @@ mod desktop {
                 }
                 Some(pin) => {
                     let person = if let auth::AuthState::SignedIn(session) = auth() {
-                        Some(session.display_name)
+                        Some((session.display_name, session.username.as_str().to_owned()))
                     } else {
                         None
                     };
@@ -281,7 +281,7 @@ mod desktop {
     }
 
     /// Seals the sign-in in memory with `pin` and the password typed at sign-in, and keeps it.
-    async fn seal_and_save(pin: Secret, person: Option<String>) -> Result<(), MessageId> {
+    async fn seal_and_save(pin: Secret, person: Option<(String, String)>) -> Result<(), MessageId> {
         let (Some(key), Some(token)) =
             (crate::client::device_key(), crate::client::session_token())
         else {
@@ -305,7 +305,7 @@ mod desktop {
         let Some(mut sealed) = sealed else {
             return Err(messages::PIN_SAVE_FAILED);
         };
-        sealed.person = person;
+        (sealed.person, sealed.username) = person.unzip();
         device_credential::save(server(), &sealed).map_err(|error| {
             tracing::warn!(target: log_area::AUTH, %error, "couldn't keep the sealed sign-in");
             messages::PIN_SAVE_FAILED

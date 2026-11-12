@@ -344,15 +344,91 @@ pub fn CopyPuller() -> Element {
             AuthState::Loading | AuthState::Unreachable(_) => {}
         }
     });
-    use_future(|| async {
+    use_future(move || async move {
         loop {
             if let Some(copy) = current() {
+                let was_offline = is_offline();
                 pull_until_current(&copy).await;
+                // Back online: the real session replaces the offline one (4e).
+                if was_offline && !is_offline() {
+                    tracing::info!(target: log_area::SYNC, "the server can be reached again");
+                    crate::ui::auth::refresh(auth).await;
+                }
             }
             let _ = tokio::time::timeout(PULL_EVERY, PULL_NOW.notified()).await;
         }
     });
     rsx! {}
+}
+
+/// Whether the last pull couldn't reach the server (screens show the OFFLINE tag and turn
+/// saving off; phase-3.md 4e).
+#[must_use]
+pub fn is_offline() -> bool {
+    matches!(*STATUS.peek(), CopyStatus::Offline { .. })
+}
+
+/// The session to open the app with when the server can't be reached (phase-3.md 4e): the
+/// person this desktop is sealed for, in **Driver mode** (Admin mode needs the server), with no
+/// mode to switch to. `None` unless the copy is open and was complete at its last pull.
+pub async fn offline_session() -> Option<domain::api::SessionInfo> {
+    let copy = current()?;
+    let state = copy.pull_state().await.ok()??;
+    if !state.complete() {
+        return None;
+    }
+    let sealed = crate::device_credential::load(server())?;
+    let username = domain::user::Username::parse(sealed.username.as_deref()?).ok()?;
+    copy.user_by_username(&username).await.ok()??;
+    tracing::info!(target: log_area::SYNC, "the server can't be reached; opening this computer's copy");
+    *STATUS.write() = CopyStatus::Offline {
+        since: state.last_pull,
+    };
+    Some(domain::api::SessionInfo {
+        display_name: sealed
+            .person
+            .unwrap_or_else(|| username.as_str().to_owned()),
+        username,
+        must_change_password: false,
+        mode: domain::access::ActiveMode::Driver,
+        available_modes: Vec::new(),
+        timers: domain::timers::Timers::NORMAL,
+    })
+}
+
+/// What Diagnostics shows about the copy (2B): its folder, its size on disk, and how many
+/// records it holds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CopyDetails {
+    /// The folder.
+    pub folder: PathBuf,
+    /// Its files' total size, in bytes.
+    pub bytes: u64,
+    /// The records in it (live and deleted).
+    pub records: u64,
+    /// When the last pull finished, if one has.
+    pub last_pull: Option<UnixMillis>,
+}
+
+/// The open copy's details, if there is one.
+pub async fn details() -> Option<CopyDetails> {
+    let copy = current()?;
+    let (folder, _) = place_of(server())?;
+    let bytes = std::fs::read_dir(&folder)
+        .ok()?
+        .filter_map(Result::ok)
+        .filter_map(|entry| entry.metadata().ok())
+        .filter(std::fs::Metadata::is_file)
+        .map(|metadata| metadata.len())
+        .sum();
+    let records = copy.record_count().await.ok()?;
+    let last_pull = copy.pull_state().await.ok()??.last_pull;
+    Some(CopyDetails {
+        folder,
+        bytes,
+        records,
+        last_pull,
+    })
 }
 
 #[cfg(test)]

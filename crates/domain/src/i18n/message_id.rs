@@ -597,6 +597,42 @@ define_messages! {
     PIN_CHANGE_NEW_AGAIN => "pin-change-new-again",
     /// Change PIN: done.
     PIN_CHANGED => "pin-changed",
+    /// The top bar while offline, with the copy's time (sketch 1A).
+    OFFLINE_TAG => "offline-tag",
+    /// The top bar while offline, before the copy has ever been pulled.
+    OFFLINE_TAG_NO_TIME => "offline-tag-no-time",
+    /// The OFFLINE tag's tooltip, with the copy's time.
+    OFFLINE_TAG_NOTE => "offline-tag-note",
+    /// Beside a form's buttons while offline (sketch 3A).
+    OFFLINE_SAVING_NOTE => "offline-saving-note",
+    /// Diagnostics: the copy's section (sketch 2B).
+    COPY_HEADING => "copy-heading",
+    /// Diagnostics: the copy's status.
+    COPY_STATUS => "copy-status",
+    /// Diagnostics: the last pull.
+    COPY_LAST_PULL => "copy-last-pull",
+    /// Diagnostics: the records in the copy.
+    COPY_RECORDS => "copy-records",
+    /// Diagnostics: the copy's size on disk.
+    COPY_SIZE => "copy-size",
+    /// Diagnostics: the copy's folder.
+    COPY_FOLDER => "copy-folder",
+    /// Diagnostics: pull now.
+    COPY_SYNC_NOW => "copy-sync-now",
+    /// The copy's status: none open.
+    COPY_CLOSED => "copy-closed",
+    /// The copy's status: downloading, with progress.
+    COPY_DOWNLOADING => "copy-downloading",
+    /// The copy's status: up to date.
+    COPY_UP_TO_DATE => "copy-up-to-date",
+    /// The copy's status: offline.
+    COPY_OFFLINE => "copy-offline",
+    /// The copy's status: another schema version.
+    COPY_OTHER_SCHEMA => "copy-other-schema",
+    /// The copy's status: a failure.
+    COPY_FAILED => "copy-failed",
+    /// Diagnostics: never pulled.
+    COPY_NEVER => "copy-never",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.

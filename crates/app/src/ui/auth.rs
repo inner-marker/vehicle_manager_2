@@ -8,6 +8,10 @@
 //! 4. a **forced password change** after an Admin set a temporary password;
 //! 5. otherwise, the app itself.
 //!
+//! **Offline** (a desktop that can't reach its server but has a complete copy; phase-3.md
+//! 4e), the app opens as the person the desktop is sealed for, in Driver mode, reading the
+//! copy; the copy's puller asks again once the server answers.
+//!
 //! [`refresh`] asks the server again; call it after anything that changes the session
 //! (sign-in, sign-out, mode switch, password change) and on navigation, so an Admin mode
 //! the server ended after 15 idle minutes stops showing.
@@ -99,7 +103,18 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
     {
         SERVER_INSTANCE.write().clone_from(&session.instance);
     }
-    let next = state_from(answer);
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut next = state_from(answer);
+    // No connection: a desktop with a complete copy opens it, in Driver mode (phase-3.md 4e).
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if matches!(next, AuthState::Unreachable(_))
+        && let Some(session) = crate::local_copy::offline_session().await
+    {
+        next = AuthState::SignedIn(session);
+    }
     // A token the server no longer accepts is useless; forget it (and a desktop's pairing:
     // it was signed out, perhaps from Settings -> Devices).
     if matches!(next, AuthState::SignedOut) {
