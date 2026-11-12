@@ -101,6 +101,17 @@ fn the_bundle_uses_the_app_id_and_existing_icons() {
 }
 
 #[test]
+fn the_mac_app_is_named_after_the_app() {
+    assert!(
+        DIOXUS_TOML.contains(&format!(
+            "bundle_name = \"{}\"",
+            domain::identity::DISPLAY_NAME
+        )),
+        "Dioxus.toml's [bundle.macos] bundle_name must be domain::identity::DISPLAY_NAME"
+    );
+}
+
+#[test]
 fn the_web_page_starts_with_the_app_name_as_its_title() {
     assert!(
         DIOXUS_TOML.contains(&format!("title = \"{}\"", domain::identity::DISPLAY_NAME)),

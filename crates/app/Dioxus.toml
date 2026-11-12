@@ -15,6 +15,11 @@ icon = [
     "assets/app-icon/icon-32.png",
 ]
 
+# The macOS app's name (its `.app` folder, Finder, the Dock, and the menu bar); without it, dx
+# 0.7.10 names it after the crate, "App". Windows and Linux have no such setting in this dx.
+[bundle.macos]
+bundle_name = "Vehicle Manager"
+
 # The browser tab's title before the app loads; the app then sets it itself (phase-3.md 1b).
 [web.app]
 title = "Vehicle Manager"
