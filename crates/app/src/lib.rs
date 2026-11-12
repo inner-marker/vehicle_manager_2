@@ -14,6 +14,8 @@ pub mod device_credential;
 #[cfg(feature = "server")]
 pub mod file_routes;
 pub mod files;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod local_copy;
 pub mod logging;
 pub mod pairing;
 #[cfg(not(target_arch = "wasm32"))]

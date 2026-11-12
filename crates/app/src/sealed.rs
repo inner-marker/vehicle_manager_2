@@ -1,7 +1,8 @@
 //! The desktop's stored sign-in, sealed with its PIN and its password (phase-3.md 3b,
 //! decision #074; sub-plan 04 §4.1).
 //!
-//! The device key and session token (`crate::device_credential::Credential`) are stored as
+//! The device key, session token, and the key of this computer's copy of the server's records
+//! (`crate::device_credential::Credential`; the copy is milestone 4's, #075) are stored as
 //! **two sealed copies**: one opened by the PIN, one by the password, so either unlocks the
 //! desktop with no connection. Each copy has its own random salt and nonce:
 //!
@@ -22,8 +23,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::device_credential::Credential;
 
-/// The format's version (a new one is a new kind of seal).
-const VERSION: u32 = 2;
+/// The format's version (a new one is a new kind of seal). 3 added the copy's key (phase-3.md
+/// 4c); an older seal is forgotten, and the desktop signs in once more.
+const VERSION: u32 = 3;
 
 /// Argon2id memory, in KiB: 256 MiB. With [`KDF_PASSES`], one unlock takes about 0.3 s on an
 /// Apple M-series Mac (measured 2026-11-11), so trying every 6-digit PIN on a copy of the file
@@ -64,11 +66,12 @@ pub struct SealedCredential {
     pub last_wrong_ms: Option<i64>,
 }
 
-/// What's sealed: the key and token as text.
+/// What's sealed: the keys and token as text.
 #[derive(Serialize, Deserialize)]
 struct Plain {
     secret_key: Secret,
     token: Secret,
+    database_key: Secret,
 }
 
 fn to_hex(bytes: &[u8]) -> String {
@@ -144,6 +147,7 @@ fn open_with(seal: &Seal, secret: &Secret, server: &str) -> Option<Credential> {
     Some(Credential {
         secret_key: domain::device_signature::parse_secret_key(plain.secret_key.expose())?,
         token: plain.token,
+        database_key: from_hex(plain.database_key.expose())?.try_into().ok()?,
     })
 }
 
@@ -153,6 +157,7 @@ fn plain_bytes(credential: &Credential) -> Result<Vec<u8>, String> {
             &credential.secret_key,
         )),
         token: credential.token.clone(),
+        database_key: Secret::new(to_hex(&credential.database_key)),
     })
     .map_err(|error| error.to_string())
 }
@@ -178,6 +183,13 @@ impl SealedCredential {
             person: None,
             last_wrong_ms: None,
         })
+    }
+
+    /// Whether this is the current format (an older one is forgotten: the desktop signs in once
+    /// more).
+    #[must_use]
+    pub const fn is_current(&self) -> bool {
+        self.version == VERSION
     }
 
     /// The sign-in, if `pin` is this computer's PIN for `server`.
@@ -227,6 +239,7 @@ mod tests {
         Credential {
             secret_key: [7; 32],
             token: Secret::new("ab".repeat(32)),
+            database_key: [9; 32],
         }
     }
 
@@ -285,6 +298,10 @@ mod tests {
             "the token isn't readable"
         );
         assert!(!stored.contains("0707070707"), "the key isn't readable");
+        assert!(
+            !stored.contains("0909090909"),
+            "the copy's key isn't readable"
+        );
         assert!(!stored.contains("284917") && !stored.contains("long password"));
         let back: SealedCredential = serde_json::from_str(&stored).unwrap();
         assert_eq!(

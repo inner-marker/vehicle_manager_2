@@ -75,11 +75,16 @@ pub fn has_sealed_sign_in() -> bool {
     false
 }
 
-/// Forgets the token and, on a desktop, the pairing (here and in the keychain).
+/// Forgets the token and, on a desktop, the pairing (here and in the keychain) and this
+/// computer's copy of the server's records (#075).
 pub fn forget() {
     #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
-    if client::has_device_key() {
-        crate::device_credential::forget(server());
+    {
+        if client::has_device_key() {
+            crate::device_credential::forget(server());
+        }
+        // Not `spawn`: this runs from screens that are about to go.
+        dioxus::core::spawn_forever(crate::local_copy::delete());
     }
     client::set_device_key(None);
     client::set_session_token(None);

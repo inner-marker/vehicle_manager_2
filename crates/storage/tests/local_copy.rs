@@ -130,4 +130,66 @@ mod encrypted {
             .unwrap();
         assert_eq!(id, test_id::<()>(3).to_bytes().to_vec());
     }
+
+    #[tokio::test]
+    async fn a_pulled_page_lands_in_an_encrypted_copy() {
+        use domain::sync::PullPage;
+        use storage::NewDatabaseIds;
+        use storage::sync::{PullScope, schema_version};
+
+        // A server with one user, as the command pipeline would leave it.
+        let server_temp = tempfile::tempdir().unwrap();
+        let ids = NewDatabaseIds {
+            database_id: test_id(1),
+            server_device_id: test_id(2),
+        };
+        let (server_db, _) = Database::open(server_temp.path(), now(), ids)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO users (id, username, display_name, disabled, must_change_password, sequence)
+             VALUES (?, 'sam', 'Samantha Quillfeather', 0, 0, 1)",
+        )
+        .bind(test_id::<()>(10).to_bytes().to_vec())
+        .execute(server_db.pool())
+        .await
+        .unwrap();
+        sqlx::query("UPDATE database_meta SET last_sequence = 1")
+            .execute(server_db.pool())
+            .await
+            .unwrap();
+        let scope = PullScope {
+            user: test_id(10),
+            household: test_id(1),
+        };
+        let read = server_db.read_pull_page(&scope, 0, 500).await.unwrap();
+        let page = PullPage {
+            database_id: test_id(1),
+            schema: schema_version(),
+            cursor: 0,
+            next_cursor: read.next_cursor,
+            server_sequence: read.server_sequence,
+            tables: read.tables,
+        };
+
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("copy");
+        let (copy, _) = Database::open_local(&folder, &LocalKey::new(KEY), &server(1, ""), now())
+            .await
+            .unwrap();
+        copy.apply_pull_page(&page, now()).await.unwrap();
+        let name: String = sqlx::query_scalar("SELECT display_name FROM users")
+            .fetch_one(copy.pool())
+            .await
+            .unwrap();
+        assert_eq!(name, "Samantha Quillfeather");
+        assert_eq!(copy.pull_state().await.unwrap().unwrap().cursor, 1);
+        copy.close().await;
+        let bytes = std::fs::read(folder.join(database_file_name())).unwrap();
+        let marker = b"Samantha Quillfeather";
+        assert!(
+            !bytes.windows(marker.len()).any(|window| window == marker),
+            "the name isn't readable on disk"
+        );
+    }
 }

@@ -99,14 +99,15 @@ fn page_title(instance: Option<String>) -> String {
     )
 }
 
-/// The desktop window's keeper (its place remembered; phase-3.md 1b) and its signature renewer
-/// (phase-3.md 2c).
+/// The desktop window's keeper (its place remembered; phase-3.md 1b), its signature renewer
+/// (phase-3.md 2c), and its copy's puller (phase-3.md 4c).
 #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
 #[component]
 fn DesktopWindow() -> Element {
     rsx! {
         desktop_window::WindowKeeper {}
         desktop_window::SignatureRenewer {}
+        crate::local_copy::CopyPuller {}
     }
 }
 
