@@ -55,6 +55,23 @@ pub fn set_device_key(key: Option<[u8; 32]>) {
     apply_request_headers();
 }
 
+/// The device key held now (a paired desktop, signed in), to seal it with a PIN.
+#[must_use]
+pub fn device_key() -> Option<[u8; 32]> {
+    *DEVICE_KEY
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// The session token held now (the desktop), to seal it with a PIN.
+#[must_use]
+pub fn session_token() -> Option<Secret> {
+    SESSION_TOKEN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
 /// Whether this app holds a device key (a paired desktop, signed in).
 #[must_use]
 pub fn has_device_key() -> bool {

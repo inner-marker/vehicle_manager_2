@@ -282,3 +282,52 @@ async fn all_of_the_admins_own_devices_leaves_the_one_in_use() {
         "not the device in use"
     );
 }
+
+#[tokio::test]
+async fn a_report_of_wrong_unlocks_becomes_an_admin_message_and_a_later_one_replaces_it() {
+    use domain::inbox::MessageKind;
+    use server::devices::{failed_unlock_messages, report_failed_unlocks};
+
+    let (_temp, database, _, sam) = common::setup().await;
+    rename(&database, &sam, sam.device, "Garage Mac", NOW).await;
+    assert!(failed_unlock_messages(&database).await.unwrap().is_empty());
+
+    let earlier = domain::time::UnixMillis::from_millis(NOW.as_millis() - 60_000);
+    assert_eq!(
+        report_failed_unlocks(&database, &sam, 3, earlier, NOW).await,
+        DevicesOutcome::Done
+    );
+    let messages = failed_unlock_messages(&database).await.unwrap();
+    assert_eq!(messages.len(), 1);
+    assert_eq!(messages[0].audience, domain::inbox::Audience::AdminMode);
+    let MessageKind::FailedUnlocks {
+        device_name,
+        person,
+        count,
+        ..
+    } = &messages[0].kind
+    else {
+        panic!("expected a failed-unlocks message");
+    };
+    assert_eq!(
+        (device_name.as_str(), person.as_str(), *count),
+        ("Garage Mac", "sam", 3)
+    );
+
+    // A later report replaces it; a count over the limit is capped; a future time becomes now.
+    let future = domain::time::UnixMillis::from_millis(NOW.as_millis() + 3_600_000);
+    report_failed_unlocks(&database, &sam, 99, future, NOW).await;
+    let messages = failed_unlock_messages(&database).await.unwrap();
+    assert_eq!(messages.len(), 1);
+    let MessageKind::FailedUnlocks { count, .. } = &messages[0].kind else {
+        panic!("expected a failed-unlocks message");
+    };
+    assert_eq!(*count, domain::pin::ALL_TRIES);
+    assert_eq!(messages[0].raised_at, NOW);
+    // Nothing to report: nothing changes.
+    assert_eq!(
+        report_failed_unlocks(&database, &sam, 0, NOW, NOW).await,
+        DevicesOutcome::Done
+    );
+    assert_eq!(failed_unlock_messages(&database).await.unwrap().len(), 1);
+}

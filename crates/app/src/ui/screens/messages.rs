@@ -177,6 +177,27 @@ fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> St
                 ),
             ],
         ),
+        MessageKind::FailedUnlocks {
+            device_name,
+            person,
+            count,
+            ..
+        } => {
+            // An unnamed desktop is "Desktop app".
+            let device = if device_name.is_empty() {
+                tr(messages::DEVICES_DESKTOP)
+            } else {
+                device_name.clone()
+            };
+            tr_with(
+                kind.body(),
+                &[
+                    ("device", MessageArg::from(device.as_str())),
+                    ("person", MessageArg::from(person.as_str())),
+                    ("count", MessageArg::from(i64::from(*count))),
+                ],
+            )
+        }
         MessageKind::JobFailed { .. }
         | MessageKind::JobSkipped { .. }
         | MessageKind::ServerUnhealthy { .. }
@@ -227,5 +248,32 @@ fn MessageDetail(
                 {tr(messages::MESSAGES_DISMISS)}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_unlocks_message_names_the_computer_and_its_person() {
+        let units = domain::preferences::Preferences::default();
+        let kind = |name: &str, count| MessageKind::FailedUnlocks {
+            device: domain::test_support::test_id(1),
+            device_name: name.to_owned(),
+            person: "Sam".into(),
+            count,
+        };
+        let text = body_text(&kind("Garage Mac", 3), &units);
+        assert!(
+            text.starts_with("Someone typed 3 wrong PINs or passwords on Garage Mac (Sam)"),
+            "{text}"
+        );
+        assert!(text.contains("sign the computer out"), "{text}");
+        let one = body_text(&kind("", 1), &units);
+        assert!(
+            one.contains("1 wrong PIN or password on Desktop app (Sam)"),
+            "{one}"
+        );
     }
 }

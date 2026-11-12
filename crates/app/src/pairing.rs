@@ -2,9 +2,9 @@
 //!
 //! Signing in on a desktop pairs it: [`new_pairing`] makes a device key and names the device
 //! (the computer's name), the sign-in sends the public half, and [`finish_sign_in`] keeps the
-//! key and token (in memory for this run, and in the keychain for the next: see
-//! `crate::device_credential`). At launch, [`restore`] picks them up again, so the desktop
-//! stays signed in. [`forget`] undoes it (signing out, or the server no longer accepts it).
+//! key and token for this run. They're kept for the next run sealed with a PIN (and the
+//! password; `crate::sealed`, phase-3.md 3b), opened on the lock screen (3c). [`forget`] undoes
+//! it (signing out, or the server no longer accepts it).
 //! Browsers never pair: these do nothing there but keep the token.
 
 use domain::api::Pairing;
@@ -47,39 +47,29 @@ fn server() -> &'static str {
 }
 
 /// After a successful sign-in: keeps `token`, and with `key` (a desktop that paired) the key
-/// too, for this run and the next.
-pub fn finish_sign_in(token: Option<Secret>, key: Option<[u8; 32]>) {
+/// too, for this run; then a paired desktop asks for a PIN (required, #074), which seals them
+/// with it and with `password` (the one just typed) for the next run.
+pub fn finish_sign_in(token: Option<Secret>, key: Option<[u8; 32]>, password: &Secret) {
     let Some(token) = token else {
         return;
     };
-    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
-    if let Some(secret_key) = key {
-        let credential = crate::device_credential::Credential {
-            secret_key,
-            token: token.clone(),
-        };
-        match crate::device_credential::save(server(), &credential) {
-            Ok(()) => {
-                tracing::info!(target: domain::log_area::AUTH, "paired; this device stays signed in");
-            }
-            Err(error) => {
-                tracing::warn!(target: domain::log_area::AUTH, %error, "paired, but couldn't keep the sign-in; it lasts until the app quits");
-            }
-        }
-    }
     // The token first, so the key's first signature is over it.
     client::set_session_token(Some(token));
     client::set_device_key(key);
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if key.is_some() {
+        crate::ui::lock::choose_pin_after_pairing(password.clone());
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let _ = password;
 }
 
-/// At launch: picks up this desktop's pairing with its server, if it has one. Returns whether
-/// it did (the session check then confirms the server still accepts it).
-pub fn restore() -> bool {
+/// At launch: whether this desktop has a sealed sign-in for its server. It's opened by the PIN
+/// or password on the lock screen (phase-3.md 3c); until then nothing is in memory.
+#[must_use]
+pub fn has_sealed_sign_in() -> bool {
     #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
-    if let Some(credential) = crate::device_credential::load(server()) {
-        client::set_session_token(Some(credential.token));
-        client::set_device_key(Some(credential.secret_key));
-        tracing::info!(target: domain::log_area::AUTH, "restored this device's sign-in");
+    if crate::device_credential::load(server()).is_some() {
         return true;
     }
     false

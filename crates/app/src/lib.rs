@@ -17,6 +17,8 @@ pub mod files;
 pub mod logging;
 pub mod pairing;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod sealed;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod settings;
 pub mod ui;
 #[cfg(not(target_arch = "wasm32"))]

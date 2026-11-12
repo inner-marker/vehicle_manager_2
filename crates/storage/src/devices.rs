@@ -182,4 +182,68 @@ impl Database {
         transaction.commit().await?;
         Ok(ended)
     }
+
+    /// Records a desktop's report of `count` wrong unlock tries, the last at `at` (migration
+    /// 0017, phase-3.md 3d): replaces any earlier report.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if the query fails.
+    pub async fn record_failed_unlocks(
+        &self,
+        id: DeviceId,
+        count: u32,
+        at: UnixMillis,
+    ) -> Result<(), StorageError> {
+        sqlx::query(
+            "UPDATE devices SET failed_unlocks = ?, last_failed_unlock_ms = ? WHERE id = ?",
+        )
+        .bind(i64::from(count))
+        .bind(at.as_millis())
+        .bind(id_to_sql(id))
+        .execute(self.pool())
+        .await?;
+        Ok(())
+    }
+
+    /// Every device's latest failed-unlock report, oldest first.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn failed_unlock_reports(&self) -> Result<Vec<FailedUnlockReport>, StorageError> {
+        sqlx::query(
+            "SELECT id, user_id, kind, name, public_key, added_at_ms, last_seen_ms, signed_out_at_ms,
+                    failed_unlocks, last_failed_unlock_ms
+             FROM devices
+             WHERE failed_unlocks > 0 AND last_failed_unlock_ms IS NOT NULL
+             ORDER BY last_failed_unlock_ms",
+        )
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(|row| {
+            let count: i64 = row.try_get("failed_unlocks")?;
+            let at: i64 = row.try_get("last_failed_unlock_ms")?;
+            Ok(FailedUnlockReport {
+                device: device_from_row(row)?,
+                count: u32::try_from(count).map_err(|_| StorageError::InvalidValue {
+                    column: "failed_unlocks",
+                })?,
+                at: UnixMillis::from_millis(at),
+            })
+        })
+        .collect()
+    }
+}
+
+/// A device's latest failed-unlock report (phase-3.md 3d).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FailedUnlockReport {
+    /// The device.
+    pub device: StoredDevice,
+    /// How many wrong tries came before the unlock.
+    pub count: u32,
+    /// When the last wrong try was.
+    pub at: UnixMillis,
 }

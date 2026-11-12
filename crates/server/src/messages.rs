@@ -1,7 +1,8 @@
 //! The message center on the server (decisions #040, #050).
 //!
 //! Messages are derived from the server's state each time they're asked for (its health, each
-//! job's latest run, the person's forgotten maintenance jobs, #034, and overdue returns, #067);
+//! job's latest run, the person's forgotten maintenance jobs, #034, overdue returns, #067, and
+//! desktops unlocked after wrong tries, #074);
 //! only each person's read and dismissed marks are stored, one record per person and message,
 //! through the command pipeline. A person can only mark messages they can see.
 
@@ -81,9 +82,13 @@ async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>,
     let overdue = crate::lifecycle::overdue_returns_for(&assets)
         .await
         .map_err(|_| InboxOutcome::Unavailable)?;
+    let failed_unlocks = crate::devices::failed_unlock_messages(context.database)
+        .await
+        .map_err(|error| unavailable(&error))?;
     let mut messages = server_messages(&state);
     messages.extend(forgotten);
     messages.extend(overdue);
+    messages.extend(failed_unlocks);
     Ok(messages)
 }
 

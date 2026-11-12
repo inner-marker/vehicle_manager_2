@@ -24,6 +24,7 @@ mod icons;
 pub(crate) mod idle;
 pub(crate) mod inbox;
 pub(crate) mod location;
+pub(crate) mod lock;
 pub(crate) mod nav;
 pub(crate) mod pdfs;
 pub(crate) mod photos;
@@ -75,7 +76,9 @@ pub fn App() -> Element {
         document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
         DesktopWindow {}
         div { class: "app", "data-theme": theme().attribute(),
-            auth::AuthGate { Router::<Route> {} }
+            lock::LockGate {
+                auth::AuthGate { Router::<Route> {} }
+            }
         }
     }
 }

@@ -323,6 +323,47 @@ settings-this-device = THIS DEVICE
 settings-theme = Theme
 settings-keep-on-top = Keep window on top
 settings-keep-on-top-note = Above other windows, on this computer
+pin-not-digits = Use digits only.
+pin-too-short = Use at least 6 digits.
+pin-too-long = Use 12 digits or fewer.
+pin-repeated = Don't repeat one digit.
+pin-run = Don't use a run like 123456.
+lock-after-5 = 5 minutes
+lock-after-15 = 15 minutes
+lock-after-30 = 30 minutes
+lock-after-60 = 1 hour
+lock-after-launch = Only when the app opens
+pin-mismatch = The two PINs didn't match. Choose one again.
+pin-choose-title = Choose a PIN
+pin-choose-help = 6 digits or more. This computer asks for it when the app opens and after it's been idle.
+pin-choose-again = Type it again.
+pin-saving = Saving…
+pin-save-failed = The PIN couldn't be saved. Try again.
+lock-title = Locked
+lock-unlock = Unlock
+lock-wrong-pin = Wrong PIN.
+lock-wrong-password = Wrong password.
+lock-pin-tries-left = { $count ->
+    [one] 1 more wrong PIN and only your password will work.
+   *[other] { $count } more wrong PINs and only your password will work.
+}
+lock-password-only = Use your password. { $count ->
+    [one] 1 more wrong try signs this computer out.
+   *[other] { $count } more wrong tries sign this computer out.
+}
+lock-unlocking = Unlocking…
+lock-use-password = Use your password instead
+lock-use-pin = Use your PIN instead
+lock-sign-out = Sign out of this computer
+lock-signed-out = Signed out of this computer after too many wrong tries. Sign in to use it again.
+settings-lock-after = Lock after
+settings-pin = PIN
+pin-change = Change PIN
+pin-change-current = Current PIN
+pin-change-password = Your password
+pin-change-new = New PIN
+pin-change-new-again = New PIN again
+pin-changed = PIN changed. Use the new one from now on.
 setting-distance = Distance
 setting-volume = Fuel volume
 setting-economy = Fuel economy
@@ -1470,6 +1511,11 @@ event-already-disposed = This vehicle's disposal is already recorded: correct th
 event-vehicle-disposed = This vehicle was disposed of: its records can be corrected, but nothing new added.
 inbox-overdue-return = A vehicle isn't back yet
 inbox-overdue-return-body = { $vehicle } was expected back from service on { $date }. Record its return when it's back, or update the expected date.
+inbox-failed-unlocks = Wrong PINs on a computer
+inbox-failed-unlocks-body = { $count ->
+    [one] Someone typed 1 wrong PIN or password on { $device } ({ $person }) before it was unlocked.
+   *[other] Someone typed { $count } wrong PINs or passwords on { $device } ({ $person }) before it was unlocked.
+} If that wasn't { $person }, sign the computer out from their Devices on the Users screen.
 inbox-open-send-out = Open the send-out
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back

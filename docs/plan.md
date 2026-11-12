@@ -1867,6 +1867,8 @@ Each phase has open questions in section 10 that must be resolved before work on
   - **The desktop window's size isn't restored** under `dx serve`: its position and a maximized state are, its size isn't (`docs/test-plans/archive/p3m1-groundwork.md` step 8). Minor; find why, then retest.
   - **Test with a second monitor** before the end of Phase 6: a window left on a monitor that's since been unplugged opens on the main screen (step 10 of the same plan, not run).
   - **Reorganize Settings:** a column of tabs down the left side, or another way to keep it uncluttered as settings are added (open to ideas).
+- **After Phase 3 milestone 3's test** (the human, 2026-11-11):
+  - **Lock now** in the account menu (under the person's name) on a desktop with a PIN, to lock the app at once without waiting for Lock after.
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.

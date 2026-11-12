@@ -1596,6 +1596,25 @@ pub(crate) async fn sign_out_other_devices() -> ServerFnResult<DevicesOutcome> {
     )
 }
 
+/// This desktop was just unlocked after `count` wrong PINs or passwords, the last at `last_at`
+/// (phase-3.md 3d): the household Admin sees it in Messages.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/failed-unlocks")]
+pub(crate) async fn report_failed_unlocks(
+    count: u32,
+    last_at: domain::time::UnixMillis,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::report_failed_unlocks(database, signed_in, count, last_at, now).await
+        })
+        .await,
+    )
+}
+
 /// A person's signed-in devices: the household Admin, in Admin mode.
 ///
 /// # Errors

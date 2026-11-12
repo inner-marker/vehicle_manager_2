@@ -527,6 +527,76 @@ define_messages! {
     SETTINGS_KEEP_ON_TOP => "settings-keep-on-top",
     /// Settings: the words beside the "keep window on top" switch.
     SETTINGS_KEEP_ON_TOP_NOTE => "settings-keep-on-top-note",
+    /// PIN: something other than digits (phase-3.md milestone 3).
+    PIN_NOT_DIGITS => "pin-not-digits",
+    /// PIN: too few digits.
+    PIN_TOO_SHORT => "pin-too-short",
+    /// PIN: too many digits.
+    PIN_TOO_LONG => "pin-too-long",
+    /// PIN: one digit repeated.
+    PIN_REPEATED => "pin-repeated",
+    /// PIN: a run up or down.
+    PIN_RUN => "pin-run",
+    /// Lock after: 5 minutes.
+    LOCK_AFTER_5 => "lock-after-5",
+    /// Lock after: 15 minutes.
+    LOCK_AFTER_15 => "lock-after-15",
+    /// Lock after: 30 minutes.
+    LOCK_AFTER_30 => "lock-after-30",
+    /// Lock after: 60 minutes.
+    LOCK_AFTER_60 => "lock-after-60",
+    /// Lock after: only when the app opens.
+    LOCK_AFTER_LAUNCH => "lock-after-launch",
+    /// PIN: the second entry didn't match the first.
+    PIN_MISMATCH => "pin-mismatch",
+    /// Choose a PIN: the title.
+    PIN_CHOOSE_TITLE => "pin-choose-title",
+    /// Choose a PIN: the first entry's help.
+    PIN_CHOOSE_HELP => "pin-choose-help",
+    /// Choose a PIN: the second entry.
+    PIN_CHOOSE_AGAIN => "pin-choose-again",
+    /// Choose a PIN: sealing the sign-in.
+    PIN_SAVING => "pin-saving",
+    /// Choose a PIN: sealing or keeping it failed.
+    PIN_SAVE_FAILED => "pin-save-failed",
+    /// Locked: the title.
+    LOCK_TITLE => "lock-title",
+    /// Locked: the password form's button.
+    LOCK_UNLOCK => "lock-unlock",
+    /// Locked: a wrong PIN.
+    LOCK_WRONG_PIN => "lock-wrong-pin",
+    /// Locked: a wrong password.
+    LOCK_WRONG_PASSWORD => "lock-wrong-password",
+    /// Locked: wrong PINs left before only the password works.
+    LOCK_PIN_TRIES_LEFT => "lock-pin-tries-left",
+    /// Locked: only the password works now.
+    LOCK_PASSWORD_ONLY => "lock-password-only",
+    /// Locked: opening the sign-in.
+    LOCK_UNLOCKING => "lock-unlocking",
+    /// Locked: switch to the password.
+    LOCK_USE_PASSWORD => "lock-use-password",
+    /// Locked: switch back to the PIN.
+    LOCK_USE_PIN => "lock-use-pin",
+    /// Locked: sign out of this computer.
+    LOCK_SIGN_OUT => "lock-sign-out",
+    /// The sign-in card after too many wrong unlocks.
+    LOCK_SIGNED_OUT => "lock-signed-out",
+    /// Settings → This device: how long idle before the desktop locks.
+    SETTINGS_LOCK_AFTER => "settings-lock-after",
+    /// Settings → This device: the PIN row's label.
+    SETTINGS_PIN => "settings-pin",
+    /// Change PIN: the button and the form's title.
+    PIN_CHANGE => "pin-change",
+    /// Change PIN: the current PIN's field.
+    PIN_CHANGE_CURRENT => "pin-change-current",
+    /// Change PIN: the password's field (instead of the current PIN).
+    PIN_CHANGE_PASSWORD => "pin-change-password",
+    /// Change PIN: the new PIN's field.
+    PIN_CHANGE_NEW => "pin-change-new",
+    /// Change PIN: the new PIN again.
+    PIN_CHANGE_NEW_AGAIN => "pin-change-new-again",
+    /// Change PIN: done.
+    PIN_CHANGED => "pin-changed",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.
@@ -2404,6 +2474,10 @@ define_messages! {
     INBOX_OVERDUE_RETURN => "inbox-overdue-return",
     /// Messages: the overdue return's text; takes `vehicle` and `date`.
     INBOX_OVERDUE_RETURN_BODY => "inbox-overdue-return-body",
+    /// Inbox: a desktop unlocked after wrong tries (phase-3.md 3d).
+    INBOX_FAILED_UNLOCKS => "inbox-failed-unlocks",
+    /// Inbox: its text.
+    INBOX_FAILED_UNLOCKS_BODY => "inbox-failed-unlocks-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
     /// Log: what an acquisition records.

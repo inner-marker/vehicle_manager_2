@@ -476,4 +476,31 @@ mod users {
                 .is_empty()
         );
     }
+
+    #[tokio::test]
+    async fn a_failed_unlock_report_replaces_the_last_one() {
+        let (_temp, database) = database().await;
+        create_user(&database, 1, stuart()).await;
+        let ends = UnixMillis::from_millis(NOW.as_millis() + 9_000);
+        let device = browser(test_id(350), test_id(1));
+        database
+            .insert_device_with_session(&device, &session_on(1, device.id, ends))
+            .await
+            .unwrap();
+        assert!(database.failed_unlock_reports().await.unwrap().is_empty());
+        let first = UnixMillis::from_millis(NOW.as_millis() + 100);
+        let second = UnixMillis::from_millis(NOW.as_millis() + 200);
+        database
+            .record_failed_unlocks(device.id, 3, first)
+            .await
+            .unwrap();
+        database
+            .record_failed_unlocks(device.id, 2, second)
+            .await
+            .unwrap();
+        let reports = database.failed_unlock_reports().await.unwrap();
+        assert_eq!(reports.len(), 1);
+        assert_eq!((reports[0].count, reports[0].at), (2, second));
+        assert_eq!(reports[0].device.id, device.id);
+    }
 }

@@ -201,6 +201,13 @@ async fn watch(
         let AuthState::SignedIn(session) = auth.peek().clone() else {
             break;
         };
+        // A paired desktop also locks after its idle time (phase-3.md 3c, #074); read each
+        // time, so a change in Settings counts at once.
+        let lock_after = crate::ui::lock::lock_after_millis();
+        if lock_after.is_some_and(|after| now.saturating_sub(last_input) >= after) {
+            crate::ui::lock::lock_now();
+            break;
+        }
         let now = UnixMillis::from_millis(now);
         let (state, entered_admin) =
             tracker.observe(session.mode, now, UnixMillis::from_millis(last_input));

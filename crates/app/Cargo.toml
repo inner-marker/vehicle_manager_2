@@ -40,11 +40,16 @@ dirs.workspace = true
 # The desktop's new device key and request nonces (phase-3.md 2c). Native only: the web app
 # never signs.
 getrandom.workspace = true
-# Desktop only (the `desktop` feature): the keychain, the computer's name, and the timer that
-# renews the session signature (Dioxus desktop already runs on tokio).
+# The desktop's sealed sign-in (phase-3.md 3b, #074): a key made from the PIN or password
+# (Argon2id) seals it (XChaCha20-Poly1305). Native only; tested in the default build.
+argon2.workspace = true
+chacha20poly1305.workspace = true
+# Desktop only (the `desktop` feature): the keychain, the computer's name, the timer that
+# renews the session signature, and a blocking thread for unlocking (Argon2 takes ~0.3 s;
+# Dioxus desktop already runs on tokio).
 keyring = { workspace = true, optional = true }
 gethostname = { workspace = true, optional = true }
-tokio = { version = "1", default-features = false, features = ["time"], optional = true }
+tokio = { version = "1", default-features = false, features = ["time", "rt"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tracing-wasm.workspace = true

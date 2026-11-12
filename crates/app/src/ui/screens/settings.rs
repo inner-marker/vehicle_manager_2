@@ -302,6 +302,7 @@ pub(crate) fn Settings() -> Element {
                 ThemeToggle {}
             }
             KeepOnTop {}
+            crate::ui::lock::LockSettings {}
             }
         }
     }
