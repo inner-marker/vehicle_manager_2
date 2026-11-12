@@ -25,6 +25,13 @@ pub enum StorageError {
     Migrate(sqlx::migrate::MigrateError),
     /// A file or folder couldn't be created or written.
     Io(std::io::Error),
+    /// This build has no SQLCipher, so it can't open an encrypted copy (only the desktop's
+    /// build has it; phase-3.md 4a).
+    NotEncrypted,
+    /// The copy's key is wrong, or the file isn't a database.
+    WrongKey,
+    /// The copy in this folder is of another server.
+    OtherServer,
 }
 
 impl fmt::Display for StorageError {
@@ -39,6 +46,18 @@ impl fmt::Display for StorageError {
             Self::Sqlx(error) => write!(formatter, "database error: {error}"),
             Self::Migrate(error) => write!(formatter, "migration failed: {error}"),
             Self::Io(error) => write!(formatter, "file error: {error}"),
+            Self::NotEncrypted => write!(
+                formatter,
+                "this build can't encrypt a database (no SQLCipher)"
+            ),
+            Self::WrongKey => write!(
+                formatter,
+                "the database's key is wrong, or it isn't a database"
+            ),
+            Self::OtherServer => write!(
+                formatter,
+                "the database in this folder is another server's copy"
+            ),
         }
     }
 }
@@ -49,7 +68,12 @@ impl std::error::Error for StorageError {
             Self::Sqlx(error) => Some(error),
             Self::Migrate(error) => Some(error),
             Self::Io(error) => Some(error),
-            Self::NewerSchema { .. } | Self::InvalidValue { .. } | Self::Finalized => None,
+            Self::NewerSchema { .. }
+            | Self::InvalidValue { .. }
+            | Self::Finalized
+            | Self::NotEncrypted
+            | Self::WrongKey
+            | Self::OtherServer => None,
         }
     }
 }

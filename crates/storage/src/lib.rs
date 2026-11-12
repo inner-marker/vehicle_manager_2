@@ -1,5 +1,6 @@
 //! SQLite storage for devices and the server: migrations, row structs,
-//! row ↔ domain `TryFrom` conversions, queries, and snapshots.
+//! row ↔ domain `TryFrom` conversions, queries, and snapshots; and the desktop's encrypted
+//! copy (`local`, with the `sqlcipher` feature).
 //!
 //! This is the **only** place unit conversion and rounding happen between the
 //! integer database representation and the `uom` domain types.
@@ -18,6 +19,7 @@ pub mod events;
 pub mod files;
 mod integrity;
 pub mod jobs;
+pub mod local;
 pub mod message_marks;
 pub mod places;
 pub mod preferences;
@@ -29,3 +31,4 @@ pub mod users;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
 pub use error::StorageError;
+pub use local::{CopyOf, LocalKey, LocalOpenReport};

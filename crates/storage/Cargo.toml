@@ -15,6 +15,21 @@ sha2.workspace = true
 sqlx.workspace = true
 tracing.workspace = true
 
+# SQLCipher for the desktop's encrypted copy (phase-3.md 4a, decision #075), chosen per platform
+# as the spike measured (phase-3.md 1e): the platform's crypto on macOS (CommonCrypto) and Linux
+# (the system OpenSSL); OpenSSL built in on Windows, which has none. The version is the one sqlx
+# uses, so this only picks its build. Off unless the `sqlcipher` feature is on: the server keeps
+# plain SQLite (until Phase 7, #071).
+[target.'cfg(not(windows))'.dependencies]
+libsqlite3-sys = { version = "0.37.0", default-features = false, optional = true, features = ["bundled-sqlcipher"] }
+
+[target.'cfg(windows)'.dependencies]
+libsqlite3-sys = { version = "0.37.0", default-features = false, optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
+
+[features]
+# The desktop app's build: SQLite with SQLCipher, so `Database::open_local` can encrypt.
+sqlcipher = ["dep:libsqlite3-sys"]
+
 [dev-dependencies]
 domain = { workspace = true, features = ["test-support"] }
 tempfile.workspace = true
