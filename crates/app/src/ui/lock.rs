@@ -388,8 +388,16 @@ mod desktop {
     async fn report(before: Option<(u32, i64)>) {
         if let Some((count, last)) = before {
             let last = domain::time::UnixMillis::from_millis(last);
-            if let Err(error) = crate::api::report_failed_unlocks(count, last).await {
-                tracing::warn!(target: log_area::AUTH, %error, "couldn't report the wrong unlock tries");
+            match crate::api::report_failed_unlocks(count, last).await {
+                Ok(domain::api::DevicesOutcome::Done) => {
+                    tracing::info!(target: log_area::AUTH, count, "reported the wrong unlock tries");
+                }
+                Ok(outcome) => {
+                    tracing::warn!(target: log_area::AUTH, ?outcome, "the server refused the wrong unlock tries' report");
+                }
+                Err(error) => {
+                    tracing::warn!(target: log_area::AUTH, %error, "couldn't report the wrong unlock tries");
+                }
             }
         }
     }
@@ -400,7 +408,9 @@ mod desktop {
         crate::pairing::forget();
         *SIGNED_OUT_BY_LOCK.write() = true;
         *LOCK.write() = LockState::Open;
-        spawn(async move { auth::refresh(auth).await });
+        // Not `spawn`: opening the gate unmounts the screen that called this, which would
+        // cancel the task with it.
+        dioxus::core::spawn_forever(async move { auth::refresh(auth).await });
     }
 
     /// Settings → This device: "Lock after" (kept in `settings.json`, per computer).
@@ -673,7 +683,9 @@ mod desktop {
                 crate::client::set_device_key(Some(credential.secret_key));
                 tracing::info!(target: log_area::AUTH, "unlocked");
                 *LOCK.write() = LockState::Open;
-                spawn(async move {
+                // Not `spawn`: opening the gate unmounts this screen, and its tasks with it, so
+                // the report was cancelled before it was sent.
+                dioxus::core::spawn_forever(async move {
                     auth::refresh(auth).await;
                     report(before).await;
                 });
@@ -712,7 +724,7 @@ mod desktop {
         let sign_out = move |_| {
             crate::pairing::forget();
             *LOCK.write() = LockState::Open;
-            spawn(async move { auth::refresh(auth).await });
+            dioxus::core::spawn_forever(async move { auth::refresh(auth).await });
         };
         let who = match person {
             Some(name) => format!("{name} · {}", server_label()),
