@@ -32,6 +32,8 @@ pub enum StorageError {
     WrongKey,
     /// The copy in this folder is of another server.
     OtherServer,
+    /// A pull page that doesn't start where the copy's cursor is.
+    OutOfStep,
 }
 
 impl fmt::Display for StorageError {
@@ -58,6 +60,10 @@ impl fmt::Display for StorageError {
                 formatter,
                 "the database in this folder is another server's copy"
             ),
+            Self::OutOfStep => write!(
+                formatter,
+                "the pulled page doesn't start where this copy is"
+            ),
         }
     }
 }
@@ -73,7 +79,8 @@ impl std::error::Error for StorageError {
             | Self::Finalized
             | Self::NotEncrypted
             | Self::WrongKey
-            | Self::OtherServer => None,
+            | Self::OtherServer
+            | Self::OutOfStep => None,
         }
     }
 }

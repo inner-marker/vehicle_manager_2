@@ -27,6 +27,7 @@ pub mod references;
 pub mod requirements;
 pub mod snapshot;
 pub mod squawks;
+pub mod sync;
 pub mod users;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};

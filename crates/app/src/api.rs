@@ -18,6 +18,7 @@ use domain::api::{
     SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 use domain::secret::Secret;
+use domain::sync::PullOutcome;
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -1615,6 +1616,22 @@ pub(crate) async fn report_failed_unlocks(
     )
 }
 
+/// The next page of changes after `cursor` for this desktop's copy (phase-3.md 4b, decision
+/// #075): paired desktops only, and only if `schema` is the server's schema version.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PullOutcome`] values.
+#[post("/api/v1/sync/pull")]
+pub(crate) async fn pull(cursor: u64, schema: i64) -> ServerFnResult<PullOutcome> {
+    Ok(
+        server_side::with_pull(async |database, database_id, signed_in| {
+            ::server::sync::pull(database, database_id, signed_in, cursor, schema).await
+        })
+        .await,
+    )
+}
+
 /// A person's signed-in devices: the household Admin, in Admin mode.
 ///
 /// # Errors
@@ -1760,6 +1777,25 @@ mod server_side {
             return domain::api::DevicesOutcome::NotSignedIn;
         };
         action(database, &signed_in, now()).await
+    }
+
+    /// For a pull: the database, its ID, and who's asking (refusals as [`PullOutcome`]).
+    pub(super) async fn with_pull(
+        action: impl AsyncFnOnce(
+            &storage::Database,
+            domain::id::DatabaseId,
+            &SignedIn,
+        ) -> domain::sync::PullOutcome,
+    ) -> domain::sync::PullOutcome {
+        let (Some(database), Some(database_id)) =
+            (server::startup::database(), server::startup::database_id())
+        else {
+            return domain::sync::PullOutcome::Unavailable;
+        };
+        let Some(signed_in) = signed_in() else {
+            return domain::sync::PullOutcome::NotSignedIn;
+        };
+        action(database, database_id, &signed_in).await
     }
 
     /// As [`with_admin`], for the Admin's view of a person's devices.
