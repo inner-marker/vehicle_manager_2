@@ -1,0 +1,53 @@
+# Manual test plan: Phase 3 milestone 4, local database and pull
+
+*Phase 3 milestone 4 · branch `milestone/p3-m4-local-copy` · `docs/phase_plans/phase-3.md` · decision #075 · sketch `docs/ui-sketches/p3m4-offline-options.svg` (1A, 2B, 3A)*
+
+## 1. Intended behavior
+
+- **The desktop keeps an encrypted copy** of the household's records (SQLCipher), in `servers/<database ID>-test` in its data folder (just `<database ID>` for a main server). Its key is sealed with the sign-in, so the PIN or the password opens it. The file is unreadable without it.
+- **What's in it:** the household's records and your own preferences, saved places, garage order, and message marks. Never passwords, sessions, devices, jobs, or other people's private rows.
+- **Pull:** the first download right after choosing a PIN, then every minute, at every unlock, before each screen reads, and at **Sync now**.
+- **Screens read the copy** on the desktop with the server's own read code, so they show the same as the web. Saving still goes to the server.
+- **Offline:** with no connection, unlocking opens the copy in **Driver mode**, with an amber **OFFLINE · copy 3:42 pm** tag in the top bar. Save, Delete, Finish, and Log are dimmed, with "Saving needs the server (offline)." beside each form's buttons. When the server is back, the tag goes and the real session returns.
+- **Diagnostics → Offline copy:** status, last pull, records, size, folder, **Sync now**.
+- **Signing out deletes the copy.**
+- **Files** (photos, PDFs) still come from the server: offline, they don't open. That's milestone 6.
+- **The web app is unchanged.**
+
+## 2. Setup
+
+- The "Server image" run for the newest code push to `milestone/p3-m4-local-copy` finished.
+- **The test server** (`:8443`): `VEHICLEMANAGER_IMAGE_TAG=milestone-p3-m4-local-copy` in its `.env`, then `sudo docker compose pull && sudo docker compose up -d` in its folder.
+- **The desktop app** from this branch, pointed at the test server: `cd crates/app && dx serve --platform desktop`. The first build takes longer than before: it now builds SQLCipher and the server's read code.
+- The test server has a vehicle with a few events, a document, and a photo (from earlier tests).
+
+## 3. Checklist
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 1 | **NAS:** `sudo docker logs --since 10m vehiclemanager-test 2>&1 \| grep -E "app starting\|database open"` | `build=milestone-p3-m4-local-copy · …`; `database open … schema_now=18` (`schema_before=17` on the first start). |
+| [ ] | 2 | **Desktop:** start it | The **sign-in card** (milestone 3's sealed sign-in is from an older format and is forgotten). The `dx serve` terminal says "…from an older version of the app; it signs in once more". |
+| [ ] | 3 | Sign in, choose a PIN | The app opens. Within a few seconds, **Diagnostics → Offline copy** says **Up to date**, with a last pull (UTC), some records, a size, and a folder ending in `-test`. |
+| [ ] | 4 | **Encrypted:** Mac Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` then `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/vehiclemanager.sqlite; echo` | One folder, `<database ID>-test`. The 15 bytes are gibberish, **not** `SQLite format 3`. |
+| [ ] | 5 | **Desktop:** the Garage, a vehicle's timeline, an event, its squawks, documents, and maintenance schedule | All as on the web. |
+| [ ] | 6 | **Mac browser:** log a reading on that vehicle. **Desktop:** open the vehicle's timeline (or click away and back) | The reading is there (the desktop catches its copy up before reading). |
+| [ ] | 7 | **Desktop:** log a fuel-up, then open it | Saved, and it shows straight away. |
+| [ ] | 8 | **Desktop:** Admin mode (your password), open Users and a vehicle's settings | As before (Users still comes from the server; vehicle pages from the copy, as Admin). Back to Driver mode. |
+| [ ] | 9 | **Offline at unlock:** quit the desktop (⌘Q). Turn the Mac's **Wi-Fi off**. Start it, type the PIN | Locked, then the app, in **Driver mode**, with **OFFLINE · copy (time)** in the top bar (hover: "Can't reach the server…"). |
+| [ ] | 10 | Offline: the Garage, a timeline, an event, documents, the schedule | All there, as they were. A photo or PDF doesn't open (files are milestone 6). |
+| [ ] | 11 | Offline: open the log form (from a vehicle) and an event's Edit | **Save** (and Delete, Finish) are dimmed and can't be clicked; "Saving needs the server (offline)." beside the buttons. The top bar's **Log** is dimmed. |
+| [ ] | 12 | Offline: **Diagnostics → Offline copy** | Status **Offline: can't reach the server**; the last pull is still shown. |
+| [ ] | 13 | **Wi-Fi on.** Wait up to a minute (or Diagnostics → **Sync now**) | The OFFLINE tag goes; Status **Up to date**; saving works again. The mode chip shows your real session (Driver). |
+| [ ] | 14 | **The server goes away while open:** **NAS:** `sudo docker stop vehiclemanager-test`. **Desktop:** open another vehicle (or a timeline) | The OFFLINE tag appears; the screen still shows (from the copy); you're still signed in. |
+| [ ] | 15 | **NAS:** `sudo docker start vehiclemanager-test`. **Desktop:** Diagnostics → **Sync now** | The tag goes; Up to date. |
+| [ ] | 16 | **Locked, then unlocked online:** Settings → Lock after → 5 minutes, wait (or quit and start), unlock | Up to date again; anything logged on the web meanwhile shows. Set Lock after back. |
+| [ ] | 17 | **Signing out deletes the copy:** account menu → Sign out. Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` | The `-test` folder is gone. |
+| [ ] | 18 | Sign in again, choose a PIN | A new copy downloads (Diagnostics: Up to date), in a new `-test` folder. |
+| [ ] | 19 | **Mac browser:** the Garage, a timeline, Diagnostics | As before: no OFFLINE tag, no Offline copy section. |
+| [ ] | 20 | Afterwards: **leave the test server on `:milestone-p3-m4-local-copy`** until this milestone merges, then move it to `:dev` | Its database is now at schema 18; today's `:dev` (schema 17) would refuse to open it. |
+
+## 4. If a step fails, capture
+
+- **Desktop:** the terminal running `dx serve`, and Diagnostics → the log viewer with **Area: Sync** (Minimum level: Debug): "pulled a page", "no pull: can't reach the server", "this computer's copy is open", "the server can be reached again".
+- **Container log:** `sudo docker logs --since 30m vehiclemanager-test 2>&1 | grep -i pull`.
+- **Never share** a PIN, a password, a token, `.env`, a cookie, `device-credentials.json`, or the copy's file.
