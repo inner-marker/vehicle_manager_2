@@ -59,6 +59,7 @@ pub(crate) fn Diagnostics() -> Element {
     rsx! {
         ConnectionPanel {}
         About {}
+        OfflineCopy {}
         div { class: "log-controls",
             label {
                 {tr(messages::LOG_VIEWER_MIN_LEVEL)}
@@ -208,6 +209,111 @@ fn About() -> Element {
     }
 }
 
+/// The desktop's **Offline copy** (phase-3.md 4e; sketch option 2B): what it's doing, its last
+/// pull, how many records it holds, its size and folder, and **Sync now**.
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn OfflineCopy() -> Element {
+    use crate::local_copy::{CopyStatus, STATUS};
+
+    let mut details = use_signal(|| None::<crate::local_copy::CopyDetails>);
+    // Again whenever the status changes (a pull finished, the copy opened or closed).
+    use_effect(move || {
+        let _changed = STATUS();
+        spawn(async move {
+            details.set(crate::local_copy::details().await);
+        });
+    });
+    let status = match STATUS() {
+        CopyStatus::Closed => tr(messages::COPY_CLOSED),
+        CopyStatus::Downloading { cursor, of } => tr_with(
+            messages::COPY_DOWNLOADING,
+            &[
+                (
+                    "done",
+                    MessageArg::from(i64::try_from(cursor).unwrap_or(i64::MAX)),
+                ),
+                (
+                    "total",
+                    MessageArg::from(i64::try_from(of).unwrap_or(i64::MAX)),
+                ),
+            ],
+        ),
+        CopyStatus::UpToDate { .. } => tr(messages::COPY_UP_TO_DATE),
+        CopyStatus::Offline { .. } => tr(messages::COPY_OFFLINE),
+        CopyStatus::OtherSchema { server, app } => tr_with(
+            messages::COPY_OTHER_SCHEMA,
+            &[
+                ("server", MessageArg::from(server)),
+                ("app", MessageArg::from(app)),
+            ],
+        ),
+        CopyStatus::Failed => tr(messages::COPY_FAILED),
+    };
+    let shown = details();
+    let last_pull = shown
+        .as_ref()
+        .and_then(|shown| shown.last_pull)
+        .map_or_else(
+            || tr(messages::COPY_NEVER),
+            |at| {
+                tr_with(
+                    messages::MESSAGES_TIME_UTC,
+                    &[(
+                        "time",
+                        MessageArg::from(domain::time_utils::format_utc_minute(at)),
+                    )],
+                )
+            },
+        );
+    rsx! {
+        section { class: "about",
+            h3 { class: "section-heading", {tr(messages::COPY_HEADING).to_uppercase()} }
+            dl { class: "about-list",
+                dt { {tr(messages::COPY_STATUS)} }
+                dd { {status} }
+                if let Some(shown) = shown {
+                    dt { {tr(messages::COPY_LAST_PULL)} }
+                    dd { {last_pull} }
+                    dt { {tr(messages::COPY_RECORDS)} }
+                    dd { "{shown.records}" }
+                    dt { {tr(messages::COPY_SIZE)} }
+                    dd { {megabytes(shown.bytes)} }
+                    dt { {tr(messages::COPY_FOLDER)} }
+                    dd { class: "mono", {shown.folder.display().to_string()} }
+                }
+            }
+            button {
+                class: "secondary-button",
+                r#type: "button",
+                onclick: move |_| crate::local_copy::pull_soon(),
+                {tr(messages::COPY_SYNC_NOW)}
+            }
+        }
+    }
+}
+
+/// Nothing on the web: it keeps no copy.
+#[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+#[component]
+fn OfflineCopy() -> Element {
+    rsx! {}
+}
+
+/// `bytes` as "4.2 MB".
+#[cfg_attr(
+    all(not(test), not(all(feature = "desktop", not(target_arch = "wasm32")))),
+    expect(dead_code, reason = "only the desktop shows its copy's size")
+)]
+fn megabytes(bytes: u64) -> String {
+    let tenths = bytes.saturating_add(52_428) / 104_857;
+    format!("{}.{} MB", tenths / 10, tenths % 10)
+}
+
 /// The entries to show: at or above `min_level`, in `area` if one is chosen, newest first.
 pub(crate) fn visible_entries(
     entries: &[LogEntry],
@@ -266,6 +372,13 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
+
+    #[test]
+    fn a_copys_size_reads_in_megabytes_to_a_tenth() {
+        assert_eq!(megabytes(0), "0.0 MB");
+        assert_eq!(megabytes(4_400_000), "4.2 MB");
+        assert_eq!(megabytes(1_048_576), "1.0 MB");
+    }
 
     fn entry(time_ms: i64, level: LogLevel, area: &str) -> LogEntry {
         LogEntry {

@@ -30,6 +30,7 @@ use domain::log_area;
 use super::problem_from_error;
 use super::squawks::use_device_zone;
 use crate::api;
+use crate::data;
 use crate::files;
 use crate::ui::location::place_text;
 use crate::ui::pdfs::{PdfPages, PdfState, ZOOMS, first_page_thumbnail};
@@ -68,7 +69,7 @@ struct Loaded {
 }
 
 async fn load(asset: AssetId, owner: AttachmentOwner) -> Result<Loaded, MessageId> {
-    match api::attachments(asset, owner).await {
+    match data::attachments(asset, owner).await {
         Ok(AttachmentsOutcome::Attachments {
             attachments,
             may_add,

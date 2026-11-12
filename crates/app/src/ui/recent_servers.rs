@@ -55,13 +55,23 @@ pub(crate) async fn remember(instance: Option<String>) {
     use domain::time::Clock;
 
     let address = dioxus_fullstack::get_server_url().to_owned();
-    let database_id = crate::api::handshake()
+    let handshake = crate::client::within(crate::client::SESSION_WAIT, crate::api::handshake())
         .await
-        .ok()
-        .and_then(|handshake| handshake.database_id);
+        .ok();
     let Some(data_folder) = crate::data_folder::platform_data_folder() else {
         return;
     };
+    // No handshake: keep the database ID on file, which names this server's copy's folder
+    // (phase-3.md 4e).
+    let database_id = handshake
+        .and_then(|handshake| handshake.database_id)
+        .or_else(|| {
+            settings::load(&data_folder)
+                .servers
+                .into_iter()
+                .find(|known| known.address == address)
+                .and_then(|known| known.database_id)
+        });
     let server = KnownServer {
         address,
         instance,
@@ -74,6 +84,8 @@ pub(crate) async fn remember(instance: Option<String>) {
     if let Err(error) = saved {
         tracing::warn!(target: domain::log_area::APP, %error, "couldn't remember this server");
     }
+    // A first pairing's copy waits for the database ID just remembered (phase-3.md 4c).
+    crate::local_copy::open_if_waiting().await;
 }
 
 /// The server cards above the sign-in form (desktop only).

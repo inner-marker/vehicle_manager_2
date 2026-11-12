@@ -26,13 +26,16 @@ pub use crate::sealed::SealedCredential;
 /// The file the debug build (or a computer without a keychain) keeps credentials in.
 pub const CREDENTIALS_FILE_NAME: &str = "device-credentials.json";
 
-/// One pairing: this device's secret key and its session token on one server.
+/// One pairing: this device's secret key and its session token on one server, and the key of
+/// this computer's copy of that server's records (phase-3.md 4c, #075).
 #[derive(Clone, PartialEq, Eq)]
 pub struct Credential {
     /// The device's Ed25519 secret key (its seed).
     pub secret_key: [u8; 32],
     /// The session token the server gave it.
     pub token: Secret,
+    /// The key the copy is encrypted with (`storage::local`).
+    pub database_key: [u8; 32],
 }
 
 impl std::fmt::Debug for Credential {
@@ -41,10 +44,13 @@ impl std::fmt::Debug for Credential {
     }
 }
 
-/// What an entry holds, as stored: a sealed sign-in, or (from before milestone 3) something
-/// else, which is forgotten.
+/// What an entry holds, as stored: a sealed sign-in in the current format, or something older
+/// (unsealed from milestone 2, or sealed without the copy's key from milestone 3), which is
+/// forgotten.
 fn parse(value: &serde_json::Value) -> Option<SealedCredential> {
-    serde_json::from_value(value.clone()).ok()
+    serde_json::from_value::<SealedCredential>(value.clone())
+        .ok()
+        .filter(SealedCredential::is_current)
 }
 
 // ---------- The file (debug builds, or no keychain) ----------
@@ -85,7 +91,7 @@ pub fn load_from_file(data_folder: &Path, server: &str) -> Option<SealedCredenti
     let value = all.get(server)?;
     let sealed = parse(value);
     if sealed.is_none() {
-        tracing::info!(target: log_area::AUTH, "this device's sign-in is from before the app lock; it signs in once more");
+        tracing::info!(target: log_area::AUTH, "this device's sign-in is from an older version of the app; it signs in once more");
         let _ = forget_in_file(data_folder, server);
     }
     sealed
@@ -151,7 +157,7 @@ pub fn load(server: &str) -> Option<SealedCredential> {
                     .as_ref()
                     .and_then(parse);
                 if sealed.is_none() {
-                    tracing::info!(target: log_area::AUTH, "this device's sign-in is from before the app lock; it signs in once more");
+                    tracing::info!(target: log_area::AUTH, "this device's sign-in is from an older version of the app; it signs in once more");
                     let _ = entry.delete_credential();
                 }
                 sealed
@@ -226,6 +232,7 @@ mod tests {
         let credential = Credential {
             secret_key: [n; 32],
             token: Secret::new("ab".repeat(32)),
+            database_key: [n; 32],
         };
         SealedCredential::seal(
             &credential,
@@ -271,6 +278,18 @@ mod tests {
         );
     }
 
+    #[test]
+    fn a_seal_from_milestone_3_without_the_copys_key_is_forgotten() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut older = serde_json::to_value(sealed(1)).unwrap();
+        older["version"] = serde_json::json!(2);
+        let all = serde_json::json!({ SERVER: older });
+        std::fs::write(temp.path().join(CREDENTIALS_FILE_NAME), all.to_string()).unwrap();
+        assert_eq!(load_from_file(temp.path(), SERVER), None);
+        let left = std::fs::read_to_string(temp.path().join(CREDENTIALS_FILE_NAME)).unwrap();
+        assert_eq!(left, "{}", "it's removed");
+    }
+
     #[cfg(unix)]
     #[test]
     fn the_file_is_readable_only_by_its_owner() {
@@ -289,6 +308,7 @@ mod tests {
         let credential = Credential {
             secret_key: [1; 32],
             token: Secret::new("ab".repeat(32)),
+            database_key: [1; 32],
         };
         let printed = format!("{credential:?}");
         assert!(

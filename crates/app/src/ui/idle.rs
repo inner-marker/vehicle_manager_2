@@ -28,7 +28,7 @@ use super::account::{sign_out, switch};
 use super::auth::{AuthState, refresh, use_auth};
 use super::inbox::{InboxContext, refresh_inbox, use_inbox};
 use super::{tr, tr_with};
-use crate::api;
+use crate::data;
 
 /// Records the last real input and sends `[now, last input]` (Unix milliseconds) every 15
 /// seconds, until Rust sends anything back (the watcher is going away).
@@ -124,7 +124,7 @@ pub(crate) fn IdleWatcher() -> Element {
 
 /// Loads the person's sign-out setting; on failure the default (8 hours) stays.
 async fn load_setting(mut idle: IdleContext) {
-    match api::get_preferences().await {
+    match data::get_preferences().await {
         Ok(PreferencesOutcome::Preferences { view }) => {
             idle.sign_out.set(view.effective.idle_sign_out);
             crate::ui::set_squawk_word(view.effective.squawk_word);

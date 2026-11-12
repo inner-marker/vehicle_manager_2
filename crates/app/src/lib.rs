@@ -7,6 +7,7 @@
 pub mod api;
 pub mod build_info;
 pub mod client;
+pub mod data;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
 #[cfg(not(target_arch = "wasm32"))]
@@ -14,6 +15,8 @@ pub mod device_credential;
 #[cfg(feature = "server")]
 pub mod file_routes;
 pub mod files;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod local_copy;
 pub mod logging;
 pub mod pairing;
 #[cfg(not(target_arch = "wasm32"))]

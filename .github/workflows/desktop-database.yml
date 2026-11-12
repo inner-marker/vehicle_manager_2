@@ -1,0 +1,53 @@
+# The desktop's encrypted copy (phase-3.md 4a, decision #075): the storage crate's tests with
+# SQLCipher (`--features sqlcipher`), on macOS, Windows, and Linux, as the spike set it up
+# (phase-3.md 1e): the platform's crypto on macOS and Linux, OpenSSL built in on Windows (about
+# 10 minutes the first time; cached after). Every other workflow builds plain SQLite, as the
+# server does. Runs on PRs into `dev` and `main` that touch storage, the lock file, or this file;
+# also by hand.
+name: Desktop database
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "crates/storage/**"
+      - "crates/domain/**"
+      - "Cargo.lock"
+      - ".github/workflows/desktop-database.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-database-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  sqlcipher:
+    name: Storage with SQLCipher (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: sqlcipher
+
+      # Building OpenSSL from source needs the full Strawberry Perl, not the minimal one that
+      # comes first on Git bash's PATH (found by the spike, phase-3.md 1e).
+      - name: Use Strawberry Perl (Windows)
+        if: runner.os == 'Windows'
+        run: echo 'OPENSSL_SRC_PERL=C:\Strawberry\perl\bin\perl.exe' >> "$GITHUB_ENV"
+
+      - name: Storage tests with SQLCipher
+        run: cargo test -p storage --features sqlcipher --locked

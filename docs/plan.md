@@ -1869,6 +1869,9 @@ Each phase has open questions in section 10 that must be resolved before work on
   - **Reorganize Settings:** a column of tabs down the left side, or another way to keep it uncluttered as settings are added (open to ideas).
 - **After Phase 3 milestone 3's test** (the human, 2026-11-11):
   - **Lock now** in the account menu (under the person's name) on a desktop with a PIN, to lock the app at once without waiting for Lock after.
+- **After Phase 3 milestone 4's test** (the human, 2026-11-12):
+  - **Timeline paging:** a long timeline gets slow to draw, so show a page at a time (100 records, or a number the person picks) with **Previous** and **Next**, and a **Jump to date**.
+  - **Skip the wait when there's no network at all** (an idea to weigh): the desktop could ask the operating system whether it has any network (Wi-Fi or Ethernet) and, with none, open its copy straight away instead of waiting up to 8 s. It only helps with no network at all: with Tailscale off, or the server down, the network is still up, so the wait stays.
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.

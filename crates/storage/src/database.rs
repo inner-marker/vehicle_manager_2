@@ -132,6 +132,11 @@ impl Database {
         Ok((Self { pool }, report))
     }
 
+    /// A database around an open pool (the desktop's copy, `crate::local`).
+    pub(crate) const fn from_pool(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
     /// The connection pool, for queries in this crate and the server.
     #[must_use]
     pub const fn pool(&self) -> &SqlitePool {
@@ -146,7 +151,7 @@ impl Database {
 
 /// WAL (readers never block the writer), a busy timeout, foreign keys, and `NORMAL`
 /// syncing, which is safe in WAL mode and much faster than `FULL`.
-fn connect_options(path: &Path) -> SqliteConnectOptions {
+pub(crate) fn connect_options(path: &Path) -> SqliteConnectOptions {
     // Set from the path, not a `sqlite://` URL, which would break on spaces in paths.
     SqliteConnectOptions::new()
         .filename(path)
@@ -158,7 +163,7 @@ fn connect_options(path: &Path) -> SqliteConnectOptions {
 }
 
 /// The newest migration this build contains.
-fn latest_schema_version() -> i64 {
+pub(crate) fn latest_schema_version() -> i64 {
     MIGRATOR
         .iter()
         .map(|migration| migration.version)
@@ -167,7 +172,7 @@ fn latest_schema_version() -> i64 {
 }
 
 /// The newest migration applied to the database, or 0 if it has none yet.
-async fn applied_schema_version(pool: &SqlitePool) -> Result<i64, StorageError> {
+pub(crate) async fn applied_schema_version(pool: &SqlitePool) -> Result<i64, StorageError> {
     let has_table: bool = sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_sqlx_migrations')",
     )
@@ -205,7 +210,7 @@ async fn back_up_before_migrating(
 }
 
 /// Records the database's IDs on first open, and returns the stored ones.
-async fn ensure_meta(
+pub(crate) async fn ensure_meta(
     pool: &SqlitePool,
     now: UnixMillis,
     new_ids: NewDatabaseIds,

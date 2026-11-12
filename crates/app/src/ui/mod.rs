@@ -26,6 +26,7 @@ pub(crate) mod inbox;
 pub(crate) mod location;
 pub(crate) mod lock;
 pub(crate) mod nav;
+pub(crate) mod offline;
 pub(crate) mod pdfs;
 pub(crate) mod photos;
 pub(crate) mod recent_servers;
@@ -65,7 +66,9 @@ const ICON_180: Asset = asset!("/assets/app-icon/icon-180.png");
 #[component]
 pub fn App() -> Element {
     let theme = use_context_provider(|| Signal::new(ThemeChoice::default()));
-    use_context_provider(|| Signal::new(auth::AuthState::Loading));
+    // Owned by the root, not this component: the session check also runs in tasks that outlive
+    // the screen that started them (`spawn_forever`, which runs in the root scope).
+    use_context_provider(|| Signal::new_in_scope(auth::AuthState::Loading, ScopeId::ROOT));
     idle::provide_idle_context();
 
     rsx! {
@@ -75,7 +78,12 @@ pub fn App() -> Element {
         document::Link { rel: "icon", href: ICON_32.to_string(), r#type: "image/png", sizes: "32x32" }
         document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
         DesktopWindow {}
-        div { class: "app", "data-theme": theme().attribute(),
+        div {
+            class: "app",
+            "data-theme": theme().attribute(),
+            // Offline on the desktop: the stylesheet turns saving off (phase-3.md 4e).
+            "data-offline": if offline::is_offline_now() { "true" } else { "false" },
+            style: offline::saving_note(),
             lock::LockGate {
                 auth::AuthGate { Router::<Route> {} }
             }
@@ -99,14 +107,15 @@ fn page_title(instance: Option<String>) -> String {
     )
 }
 
-/// The desktop window's keeper (its place remembered; phase-3.md 1b) and its signature renewer
-/// (phase-3.md 2c).
+/// The desktop window's keeper (its place remembered; phase-3.md 1b), its signature renewer
+/// (phase-3.md 2c), and its copy's puller (phase-3.md 4c).
 #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
 #[component]
 fn DesktopWindow() -> Element {
     rsx! {
         desktop_window::WindowKeeper {}
         desktop_window::SignatureRenewer {}
+        crate::local_copy::CopyPuller {}
     }
 }
 

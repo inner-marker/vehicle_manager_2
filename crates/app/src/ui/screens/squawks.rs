@@ -35,8 +35,10 @@ use super::log_form::ZONE_SCRIPT;
 use super::problem_from_error;
 use super::vehicle::Tab;
 use crate::api;
+use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::auth::{AuthState, use_auth};
+use crate::ui::offline;
 use crate::ui::routes::Route;
 use crate::ui::units::use_units;
 use crate::ui::{tr, tr_with};
@@ -157,7 +159,7 @@ pub(crate) fn SquawkSheetDialog() -> Element {
 }
 
 /// The browser's time zone (UTC until it's known).
-pub(super) fn use_device_zone() -> Signal<TimeZone> {
+pub(crate) fn use_device_zone() -> Signal<TimeZone> {
     let mut zone = use_signal(TimeZone::utc);
     use_effect(move || {
         spawn(async move {
@@ -477,7 +479,7 @@ pub(super) fn use_vehicle_squawks(asset: AssetId) -> Signal<Option<VehicleSquawk
     use_effect(use_reactive!(|asset| {
         let _ = (sheet.changes)();
         spawn(async move {
-            match api::vehicle_squawks(asset).await {
+            match data::vehicle_squawks(asset).await {
                 Ok(SquawksOutcome::Squawks { squawks, may_open }) => {
                     tracing::debug!(target: log_area::UI, %asset, count = squawks.len(), "squawks loaded");
                     loaded.set(Some(VehicleSquawks { squawks, may_open }));
@@ -540,8 +542,10 @@ pub(super) fn SquawksCard(
                 h3 { class: "section-heading", {tr(messages::PANEL_SQUAWKS).to_uppercase()} }
                 if may_open {
                     button {
-                        class: "link-button",
+                        class: "link-button needs-server",
                         r#type: "button",
+                        disabled: offline::is_offline_now(),
+                        title: offline::needs_server_note(),
                         onclick: move |_| sheet.open_new(vehicle.id, &asset, None),
                         {tr(messages::SQUAWK_NEW)}
                     }
@@ -710,7 +714,7 @@ fn FoundOn(event: EventId, zone: TimeZone, units: Preferences) -> Element {
     let mut label = use_signal(|| None::<String>);
     use_effect(use_reactive!(|event, zone, units| {
         spawn(async move {
-            if let Ok(EventsOutcome::Event { view }) = api::event_view(event).await {
+            if let Ok(EventsOutcome::Event { view }) = data::event_view(event).await {
                 let event = &view.event;
                 label.set(Some(format!(
                     "{} · {}",
@@ -869,12 +873,21 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
                     }
                     if view.may_change {
                         button {
-                            class: "secondary-button",
+                            class: "secondary-button needs-server",
                             r#type: "button",
+                            disabled: offline::is_offline_now(),
+                            title: offline::needs_server_note(),
                             onclick: move |_| sheet.edit(view.id, squawk.clone(), &asset),
                             {tr(messages::ACTION_EDIT)}
                         }
-                        button { class: "secondary-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::SQUAWK_REMOVE)} }
+                        button {
+                            class: "secondary-button needs-server",
+                            r#type: "button",
+                            disabled: offline::is_offline_now(),
+                            title: offline::needs_server_note(),
+                            onclick: move |_| confirm.set(true),
+                            {tr(messages::SQUAWK_REMOVE)}
+                        }
                     }
                 }
             }
@@ -941,7 +954,7 @@ struct Loaded {
 
 async fn load(id: SquawkId) -> Result<Loaded, MessageId> {
     let failed = |error: &ServerFnError| problem_from_error(error).message();
-    let view = match api::squawk_view(id).await.map_err(|e| failed(&e))? {
+    let view = match data::squawk_view(id).await.map_err(|e| failed(&e))? {
         SquawksOutcome::Squawk { view } => *view,
         other @ (SquawksOutcome::Squawks { .. }
         | SquawksOutcome::Saved { .. }
@@ -951,7 +964,7 @@ async fn load(id: SquawkId) -> Result<Loaded, MessageId> {
         | SquawksOutcome::Invalid { .. }
         | SquawksOutcome::Unavailable) => return Err(refusal(&other)),
     };
-    let AssetsOutcome::Asset { view: vehicle } = api::vehicle_page(view.squawk.asset)
+    let AssetsOutcome::Asset { view: vehicle } = data::vehicle_page(view.squawk.asset)
         .await
         .map_err(|e| failed(&e))?
     else {

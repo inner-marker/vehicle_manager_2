@@ -8,6 +8,10 @@
 //! 4. a **forced password change** after an Admin set a temporary password;
 //! 5. otherwise, the app itself.
 //!
+//! **Offline** (a desktop that can't reach its server but has a complete copy; phase-3.md
+//! 4e), the app opens as the person the desktop is sealed for, in Driver mode, reading the
+//! copy; the copy's puller asks again once the server answers.
+//!
 //! [`refresh`] asks the server again; call it after anything that changes the session
 //! (sign-in, sign-out, mode switch, password change) and on navigation, so an Admin mode
 //! the server ended after 15 idle minutes stops showing.
@@ -93,13 +97,39 @@ fn state_from(answer: Result<domain::api::SessionState, ServerFnError>) -> AuthS
 
 /// Asks the server who is signed in, and updates `state` (see [`ask_session`]).
 pub(crate) async fn refresh(mut state: Signal<AuthState>) {
-    let answer = ask_session().await;
+    // A desktop with its copy open counts down on the waiting screen, and may skip the wait.
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    let answer = crate::local_copy::check_session(ask_session()).await;
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let answer = client::within(client::SESSION_WAIT, ask_session()).await;
     if let Ok(session) = &answer
         && *SERVER_INSTANCE.peek() != session.instance
     {
         SERVER_INSTANCE.write().clone_from(&session.instance);
     }
-    let next = state_from(answer);
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut next = state_from(answer);
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut offline = false;
+    // No connection: a desktop with a complete copy opens it, in Driver mode (phase-3.md 4e),
+    // with the server's instance (its TEST SERVER tag) as last remembered.
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if matches!(next, AuthState::Unreachable(_))
+        && let Some(session) = crate::local_copy::offline_session().await
+    {
+        next = AuthState::SignedIn(session);
+        offline = true;
+        let instance = crate::local_copy::known_instance();
+        if *SERVER_INSTANCE.peek() != instance {
+            *SERVER_INSTANCE.write() = instance;
+        }
+    }
     // A token the server no longer accepts is useless; forget it (and a desktop's pairing:
     // it was signed out, perhaps from Settings -> Devices).
     if matches!(next, AuthState::SignedOut) {
@@ -113,8 +143,9 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
         tracing::debug!(target: log_area::AUTH, signed_in, "session state changed");
         state.set(next);
     }
-    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run.
-    if signed_in {
+    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run;
+    // not offline, when the handshake can't say what it is.
+    if signed_in && !offline {
         crate::ui::recent_servers::remember_once(SERVER_INSTANCE.peek().clone()).await;
     }
 }
@@ -139,6 +170,58 @@ pub(crate) fn InstanceTag() -> Element {
     }
 }
 
+/// While the session check runs: "Loading…", or, on a desktop whose PIN opened its copy,
+/// "Connecting to the server…". After a second with no answer it adds how long until the copy
+/// opens offline, and **Start in Offline Mode Now** to stop waiting.
+#[cfg_attr(
+    all(feature = "desktop", not(target_arch = "wasm32")),
+    expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )
+)]
+#[component]
+fn Waiting() -> Element {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        use domain::i18n::{MessageArg, messages};
+
+        let mut now = use_signal(std::time::Instant::now);
+        use_future(move || async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                now.set(std::time::Instant::now());
+            }
+        });
+        if let Some(until) = crate::local_copy::CONNECTING() {
+            let left = until.saturating_duration_since(now());
+            let first_second = left + std::time::Duration::from_secs(1) > client::SESSION_WAIT;
+            let seconds = i64::try_from(left.as_millis().div_ceil(1000))
+                .unwrap_or(1)
+                .max(1);
+            return rsx! {
+                div { class: "auth-connecting", role: "status",
+                    p { class: "auth-loading", {tr(messages::CONNECTING_TITLE)} }
+                    if !first_second {
+                        p { class: "auth-connecting-note",
+                            {crate::ui::tr_with(messages::CONNECTING_OFFLINE_IN, &[("seconds", MessageArg::from(seconds))])}
+                        }
+                        button {
+                            class: "secondary-button",
+                            r#type: "button",
+                            onclick: move |_| crate::local_copy::open_offline_now(),
+                            {tr(messages::CONNECTING_OFFLINE_NOW)}
+                        }
+                    }
+                }
+            };
+        }
+    }
+    rsx! {
+        p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
+    }
+}
+
 /// Shows setup, sign-in, a forced password change, or `children` (the app), by [`AuthState`].
 #[component]
 pub(crate) fn AuthGate(children: Element) -> Element {
@@ -151,7 +234,7 @@ pub(crate) fn AuthGate(children: Element) -> Element {
     match state() {
         AuthState::Loading => rsx! {
             div { class: "auth-page",
-                p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
+                Waiting {}
             }
         },
         AuthState::NeedsSetup => rsx! { Setup {} },

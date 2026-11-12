@@ -19,6 +19,7 @@ use domain::preferences::{
 use domain::timers::Timers;
 
 use crate::api;
+use crate::data;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::idle::{IdleContext, use_idle};
 use crate::ui::screens::problem_from_error;
@@ -224,7 +225,7 @@ pub(crate) fn Settings() -> Element {
     // Loads after mounting, never during server rendering.
     use_effect(move || {
         spawn(async move {
-            apply(api::get_preferences().await, view, error, idle);
+            apply(data::get_preferences().await, view, error, idle);
         });
     });
 

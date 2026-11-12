@@ -364,6 +364,33 @@ pin-change-password = Your password
 pin-change-new = New PIN
 pin-change-new-again = New PIN again
 pin-changed = PIN changed. Use the new one from now on.
+offline-tag = OFFLINE · copy { $time }
+offline-tag-no-time = OFFLINE
+offline-tag-note = Can't reach the server. Showing this computer's copy from { $time }.
+offline-saving-note = Saving needs the server (offline).
+offline-needs-server = Can't reach the server (offline). Changes need it until offline saving arrives.
+connecting-title = Connecting to the server…
+# $seconds (number): seconds left before the copy opens offline.
+connecting-offline-in =
+    { $seconds ->
+        [one] No answer yet. Opening this computer's copy (offline) in { $seconds } second.
+       *[other] No answer yet. Opening this computer's copy (offline) in { $seconds } seconds.
+    }
+connecting-offline-now = Start in Offline Mode Now
+copy-heading = Offline copy
+copy-status = Status
+copy-last-pull = Last pull
+copy-records = Records
+copy-size = Size on disk
+copy-folder = Folder
+copy-sync-now = Sync now
+copy-closed = Not open (locked, or not signed in yet)
+copy-downloading = Downloading… { $done } of { $total }
+copy-up-to-date = Up to date
+copy-offline = Offline: can't reach the server
+copy-other-schema = Not updating: the server's database version is { $server } and this app's is { $app }. Update the app or the server.
+copy-failed = Not updating: something went wrong (see the log below)
+copy-never = Never
 setting-distance = Distance
 setting-volume = Fuel volume
 setting-economy = Fuel economy

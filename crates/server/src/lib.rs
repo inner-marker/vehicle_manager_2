@@ -32,4 +32,5 @@ pub mod sessions;
 pub mod setup;
 pub mod squawks;
 pub mod startup;
+pub mod sync;
 pub mod user_admin;

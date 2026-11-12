@@ -875,3 +875,17 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the human, 2026-11-11, choosing the recommended options except the keypad layouts (1B, 2B). A lost laptop must not open the household's records (sub-plan 04 §3), and milestone 4 keeps those records on the desktop.
 - **Limits, accepted:** the wrong-try count lives beside the encrypted sign-in, so someone who copies the file can try PINs without it, paying an Argon2 hash per try; the release build's keychain is the first barrier.
 
+
+### 075. The desktop's local copy: household records, encrypted, pulled by change number; screens read it through one data layer
+*Decided: 2026-11-11 · Phase plan: phase-3.md milestone 4 · Sub-plan: 04 §7.1 · Builds on #005, #043, #072, #074*
+
+- **Decision:**
+  - **What's copied:** the household's records (vehicles, groups, events, squawks, documents, references, schedules, users' names and roles), and the person's own preferences, saved places, garage order, and message marks. **Never** server-only tables (passwords, sessions, devices, jobs, applied commands) or other people's private rows. Screens hide what the person's role can't see with the same checks the server uses (#069).
+  - **Encrypted:** SQLCipher, with a random 32-byte database key sealed inside the sign-in (#074), so the PIN or the password opens it. Changing the PIN reseals the key; the database isn't rewritten.
+  - **Where:** one database per server, in `servers/<database ID>` in the data folder, with `-<instance>` added for a named instance (`-test`). Main and the test server can share a database ID (#062), and a moved server keeps its copy.
+  - **Pull:** pages of the rows changed since the desktop's cursor (the server's change number), with tombstones and per-field clocks; first a full download, then every minute, after each change, and at unlock. Only from a server whose database version matches the desktop's; otherwise the desktop reads from the server while online and says to update.
+  - **One data layer:** on the desktop, screens read the copy by running the server's own read code against it; the web calls the server as now. Messages, Users, Devices, place lookup, and files stay online-only until later milestones.
+  - **Offline:** with no connection the desktop unlocks into its copy in Driver mode, with an **OFFLINE · copy 10:42** tag in the top bar (sketch 1A); saving buttons turn off with "Saving needs the server (offline)" (3A) until milestone 5. The copy's status and **Sync now** are on Diagnostics (2B).
+  - **Signing out**, or the 10th wrong try, **deletes the copy** with its key (nothing unsent exists yet; milestone 5 revisits this).
+- **Why:** the human, 2026-11-11, choosing the recommended options except the status's place (Diagnostics) and the saving buttons (turned off). Copying household records keeps a role change or a vehicle moving groups from needing a re-download, and running the server's read code keeps one set of access rules.
+- **Limits, accepted:** the desktop build grows (it now includes the server and storage crates and SQLCipher); sign-ins sealed by milestone 3 (before the database key) are forgotten once, and the desktop signs in again.

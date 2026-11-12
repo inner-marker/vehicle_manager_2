@@ -24,7 +24,7 @@ use domain::squawk::{Disposition, SquawkDisposition};
 
 use super::attachments::{AttachmentStrip, photo_size_for};
 use super::squawks::{SeverityChip, use_vehicle_squawks};
-use crate::api;
+use crate::data;
 use crate::ui::routes::Route;
 use crate::ui::{tr, tr_with};
 
@@ -176,7 +176,7 @@ pub(super) fn JobSections(id: EventId, event: Event, vehicle: AssetView) -> Elem
     use_effect(use_reactive!(|asset| {
         spawn(async move {
             if let Ok(ScheduleOutcome::Schedule { requirements, .. }) =
-                api::vehicle_schedule(asset).await
+                data::vehicle_schedule(asset).await
             {
                 schedule.set(requirements);
             }

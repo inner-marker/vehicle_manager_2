@@ -63,6 +63,9 @@ pub(crate) fn lock_now() {
         tracing::info!(target: domain::log_area::AUTH, "locking this desktop");
         crate::client::set_device_key(None);
         crate::client::set_session_token(None);
+        // The copy's key goes with them (#075).
+        #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+        dioxus::core::spawn_forever(crate::local_copy::close());
         *LOCK.write() = LockState::Locked;
     }
 }
@@ -240,7 +243,7 @@ mod desktop {
                 }
                 Some(pin) => {
                     let person = if let auth::AuthState::SignedIn(session) = auth() {
-                        Some(session.display_name)
+                        Some((session.display_name, session.username.as_str().to_owned()))
                     } else {
                         None
                     };
@@ -278,7 +281,7 @@ mod desktop {
     }
 
     /// Seals the sign-in in memory with `pin` and the password typed at sign-in, and keeps it.
-    async fn seal_and_save(pin: Secret, person: Option<String>) -> Result<(), MessageId> {
+    async fn seal_and_save(pin: Secret, person: Option<(String, String)>) -> Result<(), MessageId> {
         let (Some(key), Some(token)) =
             (crate::client::device_key(), crate::client::session_token())
         else {
@@ -287,9 +290,12 @@ mod desktop {
         let Some(password) = take_password() else {
             return Err(messages::PIN_SAVE_FAILED);
         };
+        // The key of this computer's copy of the server's records (#075): new with each pairing.
+        let database_key = crate::local_copy::new_key().map_err(|_| messages::PIN_SAVE_FAILED)?;
         let credential = Credential {
             secret_key: key,
             token,
+            database_key,
         };
         let address = server().to_owned();
         let sealed =
@@ -299,12 +305,13 @@ mod desktop {
         let Some(mut sealed) = sealed else {
             return Err(messages::PIN_SAVE_FAILED);
         };
-        sealed.person = person;
+        (sealed.person, sealed.username) = person.unzip();
         device_credential::save(server(), &sealed).map_err(|error| {
             tracing::warn!(target: log_area::AUTH, %error, "couldn't keep the sealed sign-in");
             messages::PIN_SAVE_FAILED
         })?;
         tracing::info!(target: log_area::AUTH, "PIN chosen; this desktop's sign-in is sealed");
+        crate::local_copy::open(database_key).await;
         Ok(())
     }
 
@@ -679,6 +686,7 @@ mod desktop {
 
         let mut finish = move |result: Attempt| match result {
             Attempt::Opened(credential, before) => {
+                let database_key = credential.database_key;
                 crate::client::set_session_token(Some(credential.token));
                 crate::client::set_device_key(Some(credential.secret_key));
                 tracing::info!(target: log_area::AUTH, "unlocked");
@@ -686,6 +694,8 @@ mod desktop {
                 // Not `spawn`: opening the gate unmounts this screen, and its tasks with it, so
                 // the report was cancelled before it was sent.
                 dioxus::core::spawn_forever(async move {
+                    // The copy first: it needs no connection (#075).
+                    crate::local_copy::open(database_key).await;
                     auth::refresh(auth).await;
                     report(before).await;
                 });

@@ -45,6 +45,7 @@ pub mod requirement;
 pub mod secret;
 pub mod server_address;
 pub mod squawk;
+pub mod sync;
 pub mod time;
 pub mod time_utils;
 pub mod timers;
