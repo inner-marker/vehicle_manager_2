@@ -215,7 +215,12 @@ pub(crate) fn Shell() -> Element {
                     }
                     div { class: "topbar-theme", ThemeToggle {} }
                     if may_log {
-                        button { class: "log-button", r#type: "button", onclick: move |_| chooser.open(here),
+                        button {
+                            class: "log-button",
+                            r#type: "button",
+                            disabled: super::offline::is_offline_now(),
+                            title: super::offline::needs_server_note(),
+                            onclick: move |_| chooser.open(here),
                             IconView { icon: Icon::Add }
                             span { {tr(messages::ACTION_LOG)} }
                         }
@@ -255,7 +260,13 @@ pub(crate) fn Shell() -> Element {
                 }
             }
             if may_log {
-                button { class: "fab", r#type: "button", "aria-label": tr(messages::ACTION_LOG), onclick: move |_| chooser.open(here),
+                button {
+                    class: "fab",
+                    r#type: "button",
+                    "aria-label": tr(messages::ACTION_LOG),
+                    disabled: super::offline::is_offline_now(),
+                    title: super::offline::needs_server_note(),
+                    onclick: move |_| chooser.open(here),
                     IconView { icon: Icon::Add }
                 }
             }

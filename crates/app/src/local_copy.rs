@@ -381,6 +381,59 @@ pub fn is_offline() -> bool {
     matches!(*STATUS.peek(), CopyStatus::Offline { .. })
 }
 
+/// While a session check waits with the copy open (the PIN was accepted): when it gives up and
+/// the copy opens offline. The waiting screen counts down to it (`ui::auth`).
+pub static CONNECTING: GlobalSignal<Option<std::time::Instant>> = Signal::global(|| None);
+
+/// "Start in Offline Mode Now" on the waiting screen.
+static OFFLINE_NOW: tokio::sync::Notify = tokio::sync::Notify::const_new();
+
+/// Stops waiting for the server: the session check in progress counts it as unreachable, so the
+/// copy opens offline. Nothing if no check is waiting.
+pub fn open_offline_now() {
+    tracing::info!(target: log_area::SYNC, "opening this computer's copy without waiting for the server");
+    OFFLINE_NOW.notify_waiters();
+}
+
+/// Asks `request` (the session check) for up to `crate::client::SESSION_WAIT`. With the copy
+/// open, [`CONNECTING`] says when that ends, and [`open_offline_now`] ends it sooner.
+///
+/// # Errors
+///
+/// The request's error, or a timeout (which reads as "can't reach the server").
+pub async fn check_session<T>(
+    request: impl Future<Output = Result<T, ServerFnError>>,
+) -> Result<T, ServerFnError> {
+    let wait = crate::client::SESSION_WAIT;
+    if current().is_none() {
+        return crate::client::within(wait, request).await;
+    }
+    *CONNECTING.write() = Some(std::time::Instant::now() + wait);
+    let answer = unless_skipped(crate::client::within(wait, request), OFFLINE_NOW.notified()).await;
+    *CONNECTING.write() = None;
+    answer
+}
+
+/// `request`'s answer, or a timeout as soon as `skip` finishes first.
+async fn unless_skipped<T>(
+    request: impl Future<Output = Result<T, ServerFnError>>,
+    skip: impl Future<Output = ()>,
+) -> Result<T, ServerFnError> {
+    let mut request = std::pin::pin!(request);
+    let mut skip = std::pin::pin!(skip);
+    std::future::poll_fn(|context| {
+        if let std::task::Poll::Ready(answer) = request.as_mut().poll(context) {
+            return std::task::Poll::Ready(answer);
+        }
+        skip.as_mut().poll(context).map(|()| {
+            Err(ServerFnError::Request(
+                dioxus_fullstack::RequestError::Timeout("opened offline without waiting".into()),
+            ))
+        })
+    })
+    .await
+}
+
 /// The session to open the app with when the server can't be reached (phase-3.md 4e): the
 /// person this desktop is sealed for, in **Driver mode** (Admin mode needs the server), with no
 /// mode to switch to. `None` unless the copy is open and was complete at its last pull.
@@ -447,6 +500,24 @@ pub async fn details() -> Option<CopyDetails> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn starting_offline_now_stops_waiting_for_the_server() {
+        let skipped = unless_skipped(std::future::pending::<Result<(), ServerFnError>>(), async {
+        })
+        .await;
+        assert!(matches!(
+            skipped,
+            Err(ServerFnError::Request(
+                dioxus_fullstack::RequestError::Timeout(_)
+            ))
+        ));
+        let answered = unless_skipped(async { Ok::<_, ServerFnError>(7) }, async {}).await;
+        assert!(matches!(answered, Ok(7)), "an answer wins over a skip");
+        let waited =
+            unless_skipped(async { Ok::<_, ServerFnError>(7) }, std::future::pending()).await;
+        assert!(matches!(waited, Ok(7)));
+    }
 
     #[test]
     fn a_named_instance_gets_its_own_folder() {

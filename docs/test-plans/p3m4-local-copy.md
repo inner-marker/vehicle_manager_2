@@ -33,18 +33,18 @@
 | [x] | 6 | **Mac browser:** log a reading on that vehicle. **Desktop:** open the vehicle's timeline (or click away and back) | The reading is there (the desktop catches its copy up before reading). |
 | [x] | 7 | **Desktop:** log a fuel-up, then open it | Saved, and it shows straight away. |
 | [x] | 8 | **Desktop:** Admin mode (your password), open Users and a vehicle's settings | As before (Users still comes from the server; vehicle pages from the copy, as Admin). Back to Driver mode. |
-| [ ] | 9 | **Offline at unlock:** quit the desktop (⌘Q). Turn the Mac's **Wi-Fi off**. Start it, type the PIN | Locked, then the app, in **Driver mode**, with **OFFLINE · copy (time)** in the top bar (hover: "Can't reach the server…"). |
-| [ ] | 10 | Offline: the Garage, a timeline, an event, documents, the schedule | All there, as they were. A photo or PDF doesn't open (files are milestone 6). |
-| [ ] | 11 | Offline: open the log form (from a vehicle) and an event's Edit | **Save** (and Delete, Finish) are dimmed and can't be clicked; "Saving needs the server (offline)." beside the buttons. The top bar's **Log** is dimmed. |
-| [ ] | 12 | Offline: **Diagnostics → Offline copy** | Status **Offline: can't reach the server**; the last pull is still shown. |
-| [ ] | 13 | **Wi-Fi on.** Wait up to a minute (or Diagnostics → **Sync now**) | The OFFLINE tag goes; Status **Up to date**; saving works again. The mode chip shows your real session (Driver). |
-| [ ] | 14 | **The server goes away while open:** **NAS:** `sudo docker stop vehiclemanager-test`. **Desktop:** open another vehicle (or a timeline) | The OFFLINE tag appears; the screen still shows (from the copy); you're still signed in. |
-| [ ] | 15 | **NAS:** `sudo docker start vehiclemanager-test`. **Desktop:** Diagnostics → **Sync now** | The tag goes; Up to date. |
-| [ ] | 16 | **Locked, then unlocked online:** Settings → Lock after → 5 minutes, wait (or quit and start), unlock | Up to date again; anything logged on the web meanwhile shows. Set Lock after back. |
-| [ ] | 17 | **Signing out deletes the copy:** account menu → Sign out. Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` | The `-test` folder is gone. |
-| [ ] | 18 | Sign in again, choose a PIN | A new copy downloads (Diagnostics: Up to date), in a new `-test` folder. |
-| [ ] | 19 | **Mac browser:** the Garage, a timeline, Diagnostics | As before: no OFFLINE tag, no Offline copy section. |
-| [ ] | 20 | Afterwards: **leave the test server on `:milestone-p3-m4-local-copy`** until this milestone merges, then move it to `:dev` | Its database is now at schema 18; today's `:dev` (schema 17) would refuse to open it. |
+| [x] | 9 | **Offline at unlock:** quit the desktop (⌘Q). Turn the Mac's **Wi-Fi off**. Start it, type the PIN | Locked, then the app, in **Driver mode**, with **OFFLINE · copy (time)** in the top bar (hover: "Can't reach the server…"). |
+| [x] | 10 | Offline: the Garage, a timeline, an event, documents, the schedule | All there, as they were. A photo or PDF doesn't open (files are milestone 6). |
+| [x] | 11 | Offline: open the log form (from a vehicle) and an event's Edit | **Save** (and Delete, Finish) are dimmed and can't be clicked; "Saving needs the server (offline)." beside the buttons. The top bar's **Log** is dimmed. |
+| [x] | 12 | Offline: **Diagnostics → Offline copy** | Status **Offline: can't reach the server**; the last pull is still shown. |
+| [x] | 13 | **Wi-Fi on.** Wait up to a minute (or Diagnostics → **Sync now**) | The OFFLINE tag goes; Status **Up to date**; saving works again. The mode chip shows your real session (Driver). |
+| [x] | 14 | **The server goes away while open:** **NAS:** `sudo docker stop vehiclemanager-test`. **Desktop:** open another vehicle (or a timeline) | The OFFLINE tag appears; the screen still shows (from the copy); you're still signed in. |
+| [x] | 15 | **NAS:** `sudo docker start vehiclemanager-test`. **Desktop:** Diagnostics → **Sync now** | The tag goes; Up to date. |
+| [x] | 16 | **Locked, then unlocked online:** Settings → Lock after → 5 minutes, wait (or quit and start), unlock | Up to date again; anything logged on the web meanwhile shows. Set Lock after back. |
+| [x] | 17 | **Signing out deletes the copy:** account menu → Sign out. Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` | The `-test` folder is gone. |
+| [x] | 18 | Sign in again, choose a PIN | A new copy downloads (Diagnostics: Up to date), in a new `-test` folder. |
+| [x] | 19 | **Mac browser:** the Garage, a timeline, Diagnostics | As before: no OFFLINE tag, no Offline copy section. |
+| [x] | 20 | Afterwards: **leave the test server on `:milestone-p3-m4-local-copy`** until this milestone merges, then move it to `:dev` | Its database is now at schema 18; today's `:dev` (schema 17) would refuse to open it. |
 
 ## 4. If a step fails, capture
 
@@ -61,3 +61,31 @@
 - **Stuck on "Loading" after an offline unlock (step 9): a bug, fixed.** The session check had no time limit. With Wi-Fi off and Tailscale still running, the server's address still looks reachable, so its requests (the clock check, then the session) can wait minutes for an answer that never comes, and the app waits on "Loading" the whole time. The desktop now gives the session check **8 seconds** (each pull page 15), then counts the server as unreachable, and the offline copy opens. Expect "Loading" for up to about 8 seconds when offline.
   - **Found with it:** once offline, the app would have gone on to "remember" the server, from a handshake that can't answer, saving it without its database ID or instance. The next offline start then couldn't find the copy's folder (named by both). Offline, it no longer remembers; a failed handshake keeps the ID on file; and the TEST SERVER tag comes from what was remembered.
   - **Retest:** steps 9 onward with a new image.
+- **Improvement** When the loading screen is because the app is attempting to contact the server before it goes into offline mode, can we make the loading screen more explicit. Maybe "Loading...\nAttempting to connect to the server. Offline mode in [coundown] seconds". I am open to other wording ideas too. This should only be shown for users logged in and whose PIN is accepted. This should be completed in this phase, not necessarily this milestone.
+- Please confirm that it is intented behavior right now that we cannot add a squawk offline. Eventually I want that functionality.
+- **Possible Bug** In offline mode, the "+ Squawk" button in a vehicle's Squawks tab is not disabled/greyed out like the "+ Log" button in the top bar is.
+- **Idea** Is is possible to get information about the computer using OS-specific APIs to automatically rule out the ability to connect to the server? Like can we see if the computer is connected to wifi or ethernet at all before even trying to contact the server?
+- Here was a warning in the diagnostics queue:
+```
+2026-11-12T22:11:28.878Z	Warning	dioxus_signals::warnings::__copy_value_hoisted	A Copy Value created in ScopeId(3, "root") (at crates/app/src/ui/mod.rs:69:29). It will be dropped when that scope is dropped, but it was used in ScopeId(0, "app") (at crates/app/src/ui/auth.rs:138:15) which is not a descendant of the owning scope. This may cause reads or writes to fail because the value is dropped while it still held. Help: Copy values (like CopyValue, Signal, Memo, and Resource) are owned by the scope they are created in. If you use the value in a scope that may be dropped after the origin scope, it is very easy to use the value after it has been dropped. To fix this, you can move the value to the parent of all of the scopes that it is used in. Broken example ❌: ```rust #[component] fn Counters() -> Element { let counts = use_signal(Vec::new); let mut children = use_signal(|| 0); rsx! { button { onclick: move |_| children += 1, "Add child" } button { onclick: move |_| children -= 1, "Remove child" } // A signal from a child is read or written to in a parent scope "{counts:?}" for _ in 0..children() { Counter { counts } } } } #[component] fn Counter(mut counts: Signal<Vec<Signal<i32>>>) -> Element { let mut signal_owned_by_child = use_signal(|| 0); // Moving the signal up to the parent may cause issues if you read the signal after the child scope is dropped use_hook(|| counts.push(signal_owned_by_child)); rsx! { button { onclick: move |_| signal_owned_by_child += 1, "{signal_owned_by_child}" } } } ``` Fixed example ✅: ```rust #[component] fn Counters() -> Element { let mut counts = use_signal(Vec::new); rsx! { button { onclick: move |_| counts.write().push(0), "Add child" } button { onclick: move |_| { counts.write().pop(); }, "Remove child" } "{counts:?}" // Instead of passing up a signal, we can just write to the signal that lives in the parent for index in 0..counts.len() { Counter { index, counts } } } } #[component] fn Counter(index: usize, mut counts: Signal<Vec<i32>>) -> Element { rsx! { button { onclick: move |_| counts.write()[index] += 1, "{counts.read()[index]}" } } } 
+```
+
+- Note for the future, I can make the server inaccessible by simply disabling tailscale rather than disabling wifi. Feel free to include that step in test plans when it makes sense.
+## 6. Answers and retest (2026-11-12, after the checklist)
+
+- **The waiting screen (improvement):** done. After the PIN, offline: "Connecting to the server…"; after a second, "No answer yet. Opening this computer's copy (offline) in N seconds." and **Start in Offline Mode Now**. Only with the copy open, so only after an accepted PIN; signing in (and the web) still say "Loading…".
+- **Adding a squawk offline:** intended for now. Every change still goes to the server; offline changes (squawks included) are milestone 5.
+- **"+ Squawk" not dimmed (bug, fixed):** worse than it looked: the squawk sheet opens outside the screens, so its **Save** wasn't turned off either. Now Save is off in the sheet, and the buttons that only start a change (the top bar's Log, the phone's **+**, **+ Squawk**, a squawk's Edit and Remove) are disabled offline, with a tooltip: "Can't reach the server (offline). Changes need it until offline saving arrives."
+- **Asking the operating system about the network (idea):** possible (each system says whether there's any network), but it only helps with no network at all; with Tailscale off or the server down the network is up, so the wait stays. Noted in `docs/plan.md` §9 Phase 6 to weigh later.
+- **The Diagnostics warning (fixed):** the sign-in state belonged to the app's root component, but the unlock's session check runs in a task above it. Harmless (that component lives as long as the window), but it now belongs to the very top, so the warning goes.
+- **Timeline paging:** noted in `docs/plan.md` §9 Phase 6.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | R1 | Pull the new `:milestone-p3-m4-local-copy` image on the test server; rebuild the desktop (`dx serve --platform desktop`) | Starts as before. |
+| [ ] | R2 | Quit the desktop. **Turn Tailscale off.** Start it, type the PIN | "Connecting to the server…"; after a second, the countdown and **Start in Offline Mode Now**; at 0, the app opens offline (OFFLINE tag). |
+| [ ] | R3 | Quit, start again (Tailscale still off), type the PIN, click **Start in Offline Mode Now** | The app opens offline at once. |
+| [ ] | R4 | Offline: a vehicle's Squawks tab; hover **+ Squawk**, then open a squawk and hover Edit and Remove; hover the top bar's **Log** | All dimmed, with the not-allowed pointer and the tooltip; clicking does nothing. |
+| [ ] | R5 | Offline: Diagnostics → the log viewer | No "Copy Value … not a descendant" warning from this run. |
+| [ ] | R6 | **Tailscale on.** Wait up to a minute (or Sync now). Open **+ Squawk**, then cancel | Online again: the buttons work, and the sheet's Save is normal. |
+| [ ] | R7 | Quit, start with Tailscale on, type the PIN | The app opens straight away (at most a brief "Connecting to the server…"). |

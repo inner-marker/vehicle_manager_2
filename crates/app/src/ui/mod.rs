@@ -66,7 +66,9 @@ const ICON_180: Asset = asset!("/assets/app-icon/icon-180.png");
 #[component]
 pub fn App() -> Element {
     let theme = use_context_provider(|| Signal::new(ThemeChoice::default()));
-    use_context_provider(|| Signal::new(auth::AuthState::Loading));
+    // Owned by the root, not this component: the session check also runs in tasks that outlive
+    // the screen that started them (`spawn_forever`, which runs in the root scope).
+    use_context_provider(|| Signal::new_in_scope(auth::AuthState::Loading, ScopeId::ROOT));
     idle::provide_idle_context();
 
     rsx! {

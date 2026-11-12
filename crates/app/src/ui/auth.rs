@@ -97,6 +97,10 @@ fn state_from(answer: Result<domain::api::SessionState, ServerFnError>) -> AuthS
 
 /// Asks the server who is signed in, and updates `state` (see [`ask_session`]).
 pub(crate) async fn refresh(mut state: Signal<AuthState>) {
+    // A desktop with its copy open counts down on the waiting screen, and may skip the wait.
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    let answer = crate::local_copy::check_session(ask_session()).await;
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
     let answer = client::within(client::SESSION_WAIT, ask_session()).await;
     if let Ok(session) = &answer
         && *SERVER_INSTANCE.peek() != session.instance
@@ -166,6 +170,58 @@ pub(crate) fn InstanceTag() -> Element {
     }
 }
 
+/// While the session check runs: "Loading…", or, on a desktop whose PIN opened its copy,
+/// "Connecting to the server…". After a second with no answer it adds how long until the copy
+/// opens offline, and **Start in Offline Mode Now** to stop waiting.
+#[cfg_attr(
+    all(feature = "desktop", not(target_arch = "wasm32")),
+    expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )
+)]
+#[component]
+fn Waiting() -> Element {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        use domain::i18n::{MessageArg, messages};
+
+        let mut now = use_signal(std::time::Instant::now);
+        use_future(move || async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                now.set(std::time::Instant::now());
+            }
+        });
+        if let Some(until) = crate::local_copy::CONNECTING() {
+            let left = until.saturating_duration_since(now());
+            let first_second = left + std::time::Duration::from_secs(1) > client::SESSION_WAIT;
+            let seconds = i64::try_from(left.as_millis().div_ceil(1000))
+                .unwrap_or(1)
+                .max(1);
+            return rsx! {
+                div { class: "auth-connecting", role: "status",
+                    p { class: "auth-loading", {tr(messages::CONNECTING_TITLE)} }
+                    if !first_second {
+                        p { class: "auth-connecting-note",
+                            {crate::ui::tr_with(messages::CONNECTING_OFFLINE_IN, &[("seconds", MessageArg::from(seconds))])}
+                        }
+                        button {
+                            class: "secondary-button",
+                            r#type: "button",
+                            onclick: move |_| crate::local_copy::open_offline_now(),
+                            {tr(messages::CONNECTING_OFFLINE_NOW)}
+                        }
+                    }
+                }
+            };
+        }
+    }
+    rsx! {
+        p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
+    }
+}
+
 /// Shows setup, sign-in, a forced password change, or `children` (the app), by [`AuthState`].
 #[component]
 pub(crate) fn AuthGate(children: Element) -> Element {
@@ -178,7 +234,7 @@ pub(crate) fn AuthGate(children: Element) -> Element {
     match state() {
         AuthState::Loading => rsx! {
             div { class: "auth-page",
-                p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
+                Waiting {}
             }
         },
         AuthState::NeedsSetup => rsx! { Setup {} },

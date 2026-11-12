@@ -605,6 +605,14 @@ define_messages! {
     OFFLINE_TAG_NOTE => "offline-tag-note",
     /// Beside a form's buttons while offline (sketch 3A).
     OFFLINE_SAVING_NOTE => "offline-saving-note",
+    /// The tooltip on a dimmed button that would start a change while offline.
+    OFFLINE_NEEDS_SERVER => "offline-needs-server",
+    /// After the PIN, while the desktop tries the server before opening its copy.
+    CONNECTING_TITLE => "connecting-title",
+    /// Below it, with the seconds left before the copy opens offline.
+    CONNECTING_OFFLINE_IN => "connecting-offline-in",
+    /// Opens the copy offline without waiting.
+    CONNECTING_OFFLINE_NOW => "connecting-offline-now",
     /// Diagnostics: the copy's section (sketch 2B).
     COPY_HEADING => "copy-heading",
     /// Diagnostics: the copy's status.

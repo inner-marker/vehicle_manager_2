@@ -5,8 +5,11 @@
 //! - [`OfflineTag`] shows **OFFLINE · copy 10:42** in the top bar (1A), with what it means as
 //!   its tooltip;
 //! - the app's root carries `data-offline="true"`, so the stylesheet turns saving off (Save,
-//!   Delete, Finish, and the top bar's Log; 3A) and writes [`saving_note`] beside each form's
-//!   buttons. Saving needs the server until milestone 5.
+//!   Delete, Finish; 3A) and writes [`saving_note`] beside each form's buttons;
+//! - the buttons that only start a change (the Log buttons, **+ Squawk**, a squawk's Edit and
+//!   Remove) are disabled, with [`needs_server_note`] as their tooltip.
+//!
+//! Saving needs the server until milestone 5.
 //!
 //! Nothing on the web: it has no copy and is never offline this way.
 
@@ -25,6 +28,13 @@ pub(crate) fn is_offline_now() -> bool {
     }
     #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
     false
+}
+
+/// The tooltip for a button that starts a change, which is off while offline (the Log
+/// buttons, **+ Squawk**, a squawk's Edit and Remove): why it's off; nothing while online.
+#[must_use]
+pub(crate) fn needs_server_note() -> Option<String> {
+    is_offline_now().then(|| crate::ui::tr(domain::i18n::messages::OFFLINE_NEEDS_SERVER))
 }
 
 /// The root's `style`: the saving note, as a CSS string the stylesheet shows (so it's in the
