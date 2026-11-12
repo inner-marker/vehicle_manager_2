@@ -25,7 +25,7 @@ use super::squawks::{SquawksCard, SquawksTab, VehicleSquawks, use_vehicle_squawk
 use super::timeline::{OverviewPanels, Shown, Timeline};
 use super::vehicle_setup::Setup;
 use super::vehicles::{kind_name, status_label};
-use crate::api;
+use crate::data;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::icons::IconView;
 use crate::ui::routes::Route;
@@ -249,7 +249,7 @@ pub(crate) fn VehicleTab(asset_id: String, tab: String) -> Element {
 
 /// Loads the vehicle into `page`.
 async fn load(mut page: VehiclePage, id: AssetId) {
-    let problem = match api::vehicle_page(id).await {
+    let problem = match data::vehicle_page(id).await {
         Ok(AssetsOutcome::Asset { view }) => {
             tracing::debug!(target: log_area::UI, asset = %id, "vehicle loaded");
             page.view.set(Some(*view));

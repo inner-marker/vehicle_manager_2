@@ -141,12 +141,24 @@ fn placeholders(count: usize) -> String {
 /// Where a pull stands on a desktop's copy.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PullState {
+    /// The server's database ID (the copy's records are keyed by it, e.g. the household
+    /// preferences).
+    pub database_id: DatabaseId,
     /// The highest change number the copy has.
     pub cursor: u64,
     /// The server's newest change number at the last pull.
     pub server_sequence: u64,
     /// When the last pull finished, if one has.
     pub last_pull: Option<UnixMillis>,
+}
+
+impl PullState {
+    /// Whether the copy was complete at its last pull (the first download has finished, and
+    /// no page was left): only then do screens read it (phase-3.md 4d).
+    #[must_use]
+    pub const fn complete(&self) -> bool {
+        self.last_pull.is_some() && self.cursor >= self.server_sequence
+    }
 }
 
 /// A page read on the server, before the server adds its identity.
@@ -260,7 +272,8 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn pull_state(&self) -> Result<Option<PullState>, StorageError> {
         let Some(row) = sqlx::query(
-            "SELECT cursor, server_sequence, last_pull_ms FROM pull_state WHERE id = 1",
+            "SELECT server_database_id, cursor, server_sequence, last_pull_ms
+             FROM pull_state WHERE id = 1",
         )
         .fetch_optional(self.pool())
         .await?
@@ -268,6 +281,10 @@ impl Database {
             return Ok(None);
         };
         Ok(Some(PullState {
+            database_id: id_from_sql(
+                row.try_get::<&[u8], _>("server_database_id")?,
+                "server_database_id",
+            )?,
             cursor: to_u64(row.try_get("cursor")?, "cursor")?,
             server_sequence: to_u64(row.try_get("server_sequence")?, "server_sequence")?,
             last_pull: row

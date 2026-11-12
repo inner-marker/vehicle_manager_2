@@ -13,6 +13,7 @@ use domain::location::{CountryCode, DEFAULT_RADIUS_M, SavedPlace, SavedPlaceForm
 use domain::log_area;
 
 use crate::api;
+use crate::data;
 use crate::ui::location::{PlacePart, WherePart, place_text, use_picker};
 use crate::ui::screens::{Field, FormError, problem_from_error};
 use crate::ui::{tr, tr_with};
@@ -77,7 +78,7 @@ pub(crate) fn Places() -> Element {
     use_effect(move || {
         let _ = reloads();
         spawn(async move {
-            match api::get_places().await {
+            match data::get_places().await {
                 Ok(PlacesOutcome::Places { places: list }) => {
                     tracing::debug!(target: log_area::UI, count = list.len(), "places loaded");
                     places.set(Some(list));

@@ -77,9 +77,37 @@ static COPY: Mutex<Option<Database>> = Mutex::new(None);
 /// Wakes the puller early.
 static PULL_NOW: tokio::sync::Notify = tokio::sync::Notify::const_new();
 
+/// One pull at a time: the puller and a read's catching up never apply pages together.
+static PULL_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// The copy's key, kept while the server's database ID isn't known yet (a first pairing,
+/// before the session check has remembered the server); [`open_if_waiting`] uses it.
+static WAITING_KEY: Mutex<Option<[u8; 32]>> = Mutex::new(None);
+
+/// The signed-in person's session, as the auth state last said (for reading the copy as them).
+static SESSION: Mutex<Option<domain::api::SessionInfo>> = Mutex::new(None);
+
 fn copy_slot() -> std::sync::MutexGuard<'static, Option<Database>> {
     COPY.lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+fn waiting_key() -> std::sync::MutexGuard<'static, Option<[u8; 32]>> {
+    WAITING_KEY
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+fn session_slot() -> std::sync::MutexGuard<'static, Option<domain::api::SessionInfo>> {
+    SESSION
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// The signed-in person, as the auth state last said.
+#[must_use]
+pub fn session() -> Option<domain::api::SessionInfo> {
+    session_slot().clone()
 }
 
 /// The open copy, if there is one.
@@ -167,7 +195,8 @@ async fn open_or_restart(
 /// and the puller can fill it. Nothing if the server's database ID isn't known yet.
 pub async fn open(key: [u8; 32]) {
     let Some((folder, copy_of)) = place_of(server()) else {
-        tracing::info!(target: log_area::SYNC, "no copy yet: this server's database ID isn't known");
+        tracing::info!(target: log_area::SYNC, "the copy waits: this server's database ID isn't known yet");
+        *waiting_key() = Some(key);
         return;
     };
     match open_or_restart(&folder, &LocalKey::new(key), &copy_of).await {
@@ -182,8 +211,18 @@ pub async fn open(key: [u8; 32]) {
     }
 }
 
+/// Opens the copy if its key was waiting for the server's database ID (called once the
+/// session check has remembered the server).
+pub async fn open_if_waiting() {
+    let key = waiting_key().take();
+    if let Some(key) = key {
+        open(key).await;
+    }
+}
+
 /// Closes the copy (the desktop locked): nothing reads it until it's opened again.
 pub async fn close() {
+    *waiting_key() = None;
     let open = copy_slot().take();
     if let Some(database) = open {
         database.close().await;
@@ -237,6 +276,7 @@ fn page_of(
 
 /// Pulls pages into `copy` until it's up to date, the server can't be reached, or it refuses.
 async fn pull_until_current(copy: &Database) {
+    let _one_at_a_time = PULL_LOCK.lock().await;
     loop {
         let Ok(Some(state)) = copy.pull_state().await else {
             *STATUS.write() = CopyStatus::Failed;
@@ -267,10 +307,43 @@ async fn pull_until_current(copy: &Database) {
     }
 }
 
+/// The copy, caught up, for a screen to read (phase-3.md 4d): `None` if there's no open copy,
+/// it hasn't finished its first download, or the server's schema version differs (then the
+/// screen asks the server). Online, it pulls first, so a change just made on the server
+/// shows; offline, it reads what it has.
+pub async fn for_reading() -> Option<(Database, storage::sync::PullState)> {
+    let copy = current()?;
+    let status = STATUS.peek().clone();
+    if !matches!(
+        status,
+        CopyStatus::Offline { .. } | CopyStatus::OtherSchema { .. }
+    ) {
+        pull_until_current(&copy).await;
+    }
+    if matches!(
+        *STATUS.peek(),
+        CopyStatus::OtherSchema { .. } | CopyStatus::Failed
+    ) {
+        return None;
+    }
+    let state = copy.pull_state().await.ok()??;
+    state.complete().then_some((copy, state))
+}
+
 /// Keeps the open copy up to date: pulls when it opens, every minute, and after
-/// [`pull_soon`]. Renders nothing.
+/// [`pull_soon`]; and keeps the signed-in person for reading the copy. Renders nothing.
 #[component]
 pub fn CopyPuller() -> Element {
+    let auth = crate::ui::auth::use_auth();
+    use_effect(move || {
+        use crate::ui::auth::AuthState;
+        match auth() {
+            AuthState::SignedIn(session) => *session_slot() = Some(session),
+            AuthState::SignedOut | AuthState::NeedsSetup => *session_slot() = None,
+            // Unreachable: the copy is read as the person last signed in (offline, 4e).
+            AuthState::Loading | AuthState::Unreachable(_) => {}
+        }
+    });
     use_future(|| async {
         loop {
             if let Some(copy) = current() {

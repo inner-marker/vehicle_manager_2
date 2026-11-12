@@ -30,6 +30,7 @@ use super::squawks::ReportSquawk;
 use super::vehicle::Tab;
 use super::{FormError, problem_from_error};
 use crate::api;
+use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::location::place_text;
@@ -50,7 +51,7 @@ struct Loaded {
 
 async fn load(id: EventId) -> Result<Loaded, MessageId> {
     let failed = |error: &ServerFnError| problem_from_error(error).message();
-    let outcome = api::event_view(id).await.map_err(|e| failed(&e))?;
+    let outcome = data::event_view(id).await.map_err(|e| failed(&e))?;
     if outcome == EventsOutcome::NotFound {
         return Err(messages::EVENT_NOT_FOUND);
     }
@@ -58,19 +59,19 @@ async fn load(id: EventId) -> Result<Loaded, MessageId> {
         return Err(messages::SOMETHING_WENT_WRONG);
     };
     let view = *view;
-    let AssetsOutcome::Asset { view: vehicle } = api::vehicle_page(view.event.asset)
+    let AssetsOutcome::Asset { view: vehicle } = data::vehicle_page(view.event.asset)
         .await
         .map_err(|e| failed(&e))?
     else {
         return Err(messages::SOMETHING_WENT_WRONG);
     };
-    let units = match api::get_preferences().await {
+    let units = match data::get_preferences().await {
         Ok(PreferencesOutcome::Preferences { view }) => view.effective,
         _ => Preferences::default(),
     };
     let linked_id = view.corrected_by.or(view.event.corrects);
     let linked = match linked_id {
-        Some(other) => match api::event_view(other).await {
+        Some(other) => match data::event_view(other).await {
             Ok(EventsOutcome::Event { view }) => Some(*view),
             _ => None,
         },

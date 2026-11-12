@@ -21,7 +21,7 @@ use domain::quantity::{show_reading, show_volume, unit_price};
 use domain::time::UnixMillis;
 
 use super::problem_from_error;
-use crate::api;
+use crate::data;
 use crate::ui::routes::Route;
 use crate::ui::units::volume_abbr;
 use crate::ui::{tr, tr_with};
@@ -40,11 +40,11 @@ pub(super) fn use_vehicle_events(
     let mut loaded = use_signal(|| None);
     use_effect(use_reactive!(|asset| {
         spawn(async move {
-            let units = match api::get_preferences().await {
+            let units = match data::get_preferences().await {
                 Ok(PreferencesOutcome::Preferences { view }) => view.effective,
                 _ => Preferences::default(),
             };
-            let answer = match api::vehicle_events(asset).await {
+            let answer = match data::vehicle_events(asset).await {
                 Ok(EventsOutcome::Events { events }) => Ok(Loaded { events, units }),
                 Ok(EventsOutcome::NotFound) => Err(messages::VEHICLE_NOT_FOUND),
                 Ok(_) => Err(messages::SOMETHING_WENT_WRONG),

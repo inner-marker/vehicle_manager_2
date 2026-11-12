@@ -7,6 +7,7 @@
 pub mod api;
 pub mod build_info;
 pub mod client;
+pub mod data;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
 #[cfg(not(target_arch = "wasm32"))]

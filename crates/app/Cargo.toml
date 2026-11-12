@@ -67,7 +67,8 @@ default = ["web"]
 web = ["dioxus/web"]
 # The desktop also keeps an encrypted copy of its server's records (phase-3.md 4c, #075):
 # `storage` with SQLCipher. The server's build (`server`, built on its own) keeps plain SQLite.
-desktop = ["dioxus/desktop", "dep:keyring", "dep:gethostname", "dep:tokio", "dep:storage", "storage/sqlcipher"]
+# Its screens read the copy with the server crate's own read code (`app::data`, 4d).
+desktop = ["dioxus/desktop", "dep:keyring", "dep:gethostname", "dep:tokio", "dep:storage", "storage/sqlcipher", "dep:server"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dep:storage", "dep:server"]
 # Short timers for manual testing (#054): honoured only with this feature, which only the

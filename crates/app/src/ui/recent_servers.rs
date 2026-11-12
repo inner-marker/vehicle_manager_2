@@ -74,6 +74,8 @@ pub(crate) async fn remember(instance: Option<String>) {
     if let Err(error) = saved {
         tracing::warn!(target: domain::log_area::APP, %error, "couldn't remember this server");
     }
+    // A first pairing's copy waits for the database ID just remembered (phase-3.md 4c).
+    crate::local_copy::open_if_waiting().await;
 }
 
 /// The server cards above the sign-in form (desktop only).
