@@ -358,6 +358,15 @@ fn server_info(server: &Handshake) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    fn a_timeout_reads_as_unreachable() {
+        // The desktop's own time limit (`client::within`; phase-3.md 4e).
+        let timeout = ServerFnError::Request(dioxus_fullstack::RequestError::Timeout(
+            "no answer in 8 s".into(),
+        ));
+        assert_eq!(problem_from_error(&timeout), Problem::Unreachable);
+    }
+
     fn refused(reason: ApiError) -> ServerFnError {
         ServerFnError::ServerError {
             message: reason.description().to_owned(),

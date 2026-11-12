@@ -24,6 +24,44 @@ use domain::device_signature::{self, DeviceSignature, Scope};
 use domain::secret::Secret;
 use domain::time::{Clock, UnixMillis};
 
+/// The longest a desktop waits for its session check (phase-3.md 4e): offline, with Tailscale
+/// still running, a request can wait minutes for an answer that never comes, which left the app
+/// on its loading screen. After this, the server counts as unreachable.
+pub const SESSION_WAIT: std::time::Duration = std::time::Duration::from_secs(8);
+
+/// The longest a desktop waits for one page of a pull.
+pub const PULL_WAIT: std::time::Duration = std::time::Duration::from_secs(15);
+
+/// `request`'s answer, or (on a desktop) a timeout error, which counts as "can't reach the
+/// server", after `wait`. The web waits as the browser does.
+///
+/// # Errors
+///
+/// The request's own error, or [`RequestError::Timeout`](dioxus::prelude::dioxus_fullstack::RequestError::Timeout).
+pub async fn within<T>(
+    wait: std::time::Duration,
+    request: impl Future<Output = Result<T, dioxus::prelude::ServerFnError>>,
+) -> Result<T, dioxus::prelude::ServerFnError> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        tokio::time::timeout(wait, request)
+            .await
+            .unwrap_or_else(|_| {
+                Err(dioxus::prelude::ServerFnError::Request(
+                    dioxus::prelude::dioxus_fullstack::RequestError::Timeout(format!(
+                        "no answer in {} s",
+                        wait.as_secs()
+                    )),
+                ))
+            })
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    {
+        let _ = wait;
+        request.await
+    }
+}
+
 /// The desktop app's session token, while signed in.
 static SESSION_TOKEN: Mutex<Option<Secret>> = Mutex::new(None);
 
@@ -182,6 +220,28 @@ pub fn request_headers(session_token: Option<&str>) -> HeaderMap {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Offline, a request can hang: the desktop gives up after the wait, and that reads as
+    /// "can't reach the server" (phase-3.md 4e, the step 9 finding).
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    #[tokio::test]
+    async fn a_request_with_no_answer_times_out_as_unreachable() {
+        let never = std::future::pending::<Result<(), dioxus::prelude::ServerFnError>>();
+        let error = within(std::time::Duration::from_millis(20), never)
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                dioxus::prelude::ServerFnError::Request(
+                    dioxus::prelude::dioxus_fullstack::RequestError::Timeout(_)
+                )
+            ),
+            "{error:?}"
+        );
+        let answered = within(std::time::Duration::from_secs(5), async { Ok(7) }).await;
+        assert_eq!(answered.unwrap(), 7);
+    }
 
     #[test]
     fn requests_carry_the_api_version_and_a_session_token_when_there_is_one() {

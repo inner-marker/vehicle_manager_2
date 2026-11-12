@@ -97,7 +97,7 @@ fn state_from(answer: Result<domain::api::SessionState, ServerFnError>) -> AuthS
 
 /// Asks the server who is signed in, and updates `state` (see [`ask_session`]).
 pub(crate) async fn refresh(mut state: Signal<AuthState>) {
-    let answer = ask_session().await;
+    let answer = client::within(client::SESSION_WAIT, ask_session()).await;
     if let Ok(session) = &answer
         && *SERVER_INSTANCE.peek() != session.instance
     {
@@ -108,12 +108,23 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
         expect(unused_mut, reason = "only the desktop opens offline")
     )]
     let mut next = state_from(answer);
-    // No connection: a desktop with a complete copy opens it, in Driver mode (phase-3.md 4e).
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut offline = false;
+    // No connection: a desktop with a complete copy opens it, in Driver mode (phase-3.md 4e),
+    // with the server's instance (its TEST SERVER tag) as last remembered.
     #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
     if matches!(next, AuthState::Unreachable(_))
         && let Some(session) = crate::local_copy::offline_session().await
     {
         next = AuthState::SignedIn(session);
+        offline = true;
+        let instance = crate::local_copy::known_instance();
+        if *SERVER_INSTANCE.peek() != instance {
+            *SERVER_INSTANCE.write() = instance;
+        }
     }
     // A token the server no longer accepts is useless; forget it (and a desktop's pairing:
     // it was signed out, perhaps from Settings -> Devices).
@@ -128,8 +139,9 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
         tracing::debug!(target: log_area::AUTH, signed_in, "session state changed");
         state.set(next);
     }
-    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run.
-    if signed_in {
+    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run;
+    // not offline, when the handshake can't say what it is.
+    if signed_in && !offline {
         crate::ui::recent_servers::remember_once(SERVER_INSTANCE.peek().clone()).await;
     }
 }

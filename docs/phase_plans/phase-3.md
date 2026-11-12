@@ -310,3 +310,5 @@
 - **Not seen running:** the desktop window can't be driven or captured here, and Node is gone, so the web's (unchanged) look wasn't checked in a browser; the test plan covers both.
 - The top bar's old "sync status" placeholder (an icon and "unknown") is left as it was; a candidate for Phase 6 polish.
 
+**Step 4f finding (2026-11-12, test step 9):** an offline unlock stuck on "Loading": the session check had no time limit, and offline with Tailscale running a request can wait minutes. The desktop now gives the session check 8 s and a pull page 15 s (`client::within`, `SESSION_WAIT`, `PULL_WAIT`), after which the server counts as unreachable. Also: an offline session no longer remembers the server (its handshake can't answer, which would have saved it without its database ID and instance, the copy folder's name), a failed handshake keeps the ID on file, and the offline TEST SERVER tag comes from the remembered instance.
+

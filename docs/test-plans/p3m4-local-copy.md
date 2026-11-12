@@ -25,14 +25,14 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | **NAS:** `sudo docker logs --since 10m vehiclemanager-test 2>&1 \| grep -E "app starting\|database open"` | `build=milestone-p3-m4-local-copy · …`; `database open … schema_now=18` (`schema_before=17` on the first start). |
-| [ ] | 2 | **Desktop:** start it | The **sign-in card** (milestone 3's sealed sign-in is from an older format and is forgotten). The `dx serve` terminal says "…from an older version of the app; it signs in once more". |
-| [ ] | 3 | Sign in, choose a PIN | The app opens. Within a few seconds, **Diagnostics → Offline copy** says **Up to date**, with a last pull (UTC), some records, a size, and a folder ending in `-test`. |
-| [ ] | 4 | **Encrypted:** Mac Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` then `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/vehiclemanager.sqlite; echo` | One folder, `<database ID>-test`. The 15 bytes are gibberish, **not** `SQLite format 3`. |
-| [ ] | 5 | **Desktop:** the Garage, a vehicle's timeline, an event, its squawks, documents, and maintenance schedule | All as on the web. |
-| [ ] | 6 | **Mac browser:** log a reading on that vehicle. **Desktop:** open the vehicle's timeline (or click away and back) | The reading is there (the desktop catches its copy up before reading). |
-| [ ] | 7 | **Desktop:** log a fuel-up, then open it | Saved, and it shows straight away. |
-| [ ] | 8 | **Desktop:** Admin mode (your password), open Users and a vehicle's settings | As before (Users still comes from the server; vehicle pages from the copy, as Admin). Back to Driver mode. |
+| [x] | 1 | **NAS:** `sudo docker logs --since 10m vehiclemanager-test 2>&1 \| grep -E "app starting\|database open"` | `build=milestone-p3-m4-local-copy · …`; `database open … schema_now=18` (`schema_before=17` on the first start). |
+| [x] | 2 | **Desktop:** start it | The **sign-in card** (milestone 3's sealed sign-in is from an older format and is forgotten). The `dx serve` terminal says "…from an older version of the app; it signs in once more". |
+| [x] | 3 | Sign in, choose a PIN | The app opens. Within a few seconds, **Diagnostics → Offline copy** says **Up to date**, with a last pull (UTC), some records, a size, and a folder ending in `-test`. |
+| [x] | 4 | **Encrypted:** Mac Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/` then `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/vehiclemanager.sqlite; echo` | One folder, `<database ID>-test`. The 15 bytes are gibberish, **not** `SQLite format 3`. |
+| [x] | 5 | **Desktop:** the Garage, a vehicle's timeline, an event, its squawks, documents, and maintenance schedule | All as on the web. |
+| [x] | 6 | **Mac browser:** log a reading on that vehicle. **Desktop:** open the vehicle's timeline (or click away and back) | The reading is there (the desktop catches its copy up before reading). |
+| [x] | 7 | **Desktop:** log a fuel-up, then open it | Saved, and it shows straight away. |
+| [x] | 8 | **Desktop:** Admin mode (your password), open Users and a vehicle's settings | As before (Users still comes from the server; vehicle pages from the copy, as Admin). Back to Driver mode. |
 | [ ] | 9 | **Offline at unlock:** quit the desktop (⌘Q). Turn the Mac's **Wi-Fi off**. Start it, type the PIN | Locked, then the app, in **Driver mode**, with **OFFLINE · copy (time)** in the top bar (hover: "Can't reach the server…"). |
 | [ ] | 10 | Offline: the Garage, a timeline, an event, documents, the schedule | All there, as they were. A photo or PDF doesn't open (files are milestone 6). |
 | [ ] | 11 | Offline: open the log form (from a vehicle) and an event's Edit | **Save** (and Delete, Finish) are dimmed and can't be clicked; "Saving needs the server (offline)." beside the buttons. The top bar's **Log** is dimmed. |
@@ -51,3 +51,13 @@
 - **Desktop:** the terminal running `dx serve`, and Diagnostics → the log viewer with **Area: Sync** (Minimum level: Debug): "pulled a page", "no pull: can't reach the server", "this computer's copy is open", "the server can be reached again".
 - **Container log:** `sudo docker logs --since 30m vehiclemanager-test 2>&1 | grep -i pull`.
 - **Never share** a PIN, a password, a token, `.env`, a cookie, `device-credentials.json`, or the copy's file.
+
+# Human Notes
+- at some point, the timeline views will become too long to render cleanly and smoothly. Add to am appropriate place later in the plan that we should limit the number of records shown. Maybe pages of 100 (or selectable number) records with "next" and "previous" buttons. The timeline should also have a "jump to date" option.
+- Bug: after starting the desktop app offline and entering the correct PIN, the app is stuck on the "loading" screen.
+
+## 5. Findings and fixes (2026-11-12)
+
+- **Stuck on "Loading" after an offline unlock (step 9): a bug, fixed.** The session check had no time limit. With Wi-Fi off and Tailscale still running, the server's address still looks reachable, so its requests (the clock check, then the session) can wait minutes for an answer that never comes, and the app waits on "Loading" the whole time. The desktop now gives the session check **8 seconds** (each pull page 15), then counts the server as unreachable, and the offline copy opens. Expect "Loading" for up to about 8 seconds when offline.
+  - **Found with it:** once offline, the app would have gone on to "remember" the server, from a handshake that can't answer, saving it without its database ID or instance. The next offline start then couldn't find the copy's folder (named by both). Offline, it no longer remembers; a failed handshake keeps the ID on file; and the TEST SERVER tag comes from what was remembered.
+  - **Retest:** steps 9 onward with a new image.

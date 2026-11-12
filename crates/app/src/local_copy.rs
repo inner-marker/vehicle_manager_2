@@ -161,6 +161,15 @@ fn place_of(address: &str) -> Option<(PathBuf, CopyOf)> {
     ))
 }
 
+/// The current server's instance name as last remembered (`None` for a main server), for its
+/// TEST SERVER tag while offline.
+#[must_use]
+pub fn known_instance() -> Option<String> {
+    place_of(server())
+        .map(|(_, copy_of)| copy_of.instance)
+        .filter(|instance| !instance.is_empty())
+}
+
 /// A new key for a new copy: 32 random bytes from the operating system.
 ///
 /// # Errors
@@ -282,7 +291,11 @@ async fn pull_until_current(copy: &Database) {
             *STATUS.write() = CopyStatus::Failed;
             return;
         };
-        let outcome = crate::api::pull(state.cursor, schema_version()).await;
+        let outcome = crate::client::within(
+            crate::client::PULL_WAIT,
+            crate::api::pull(state.cursor, schema_version()),
+        )
+        .await;
         let Some(page) = page_of(outcome, state.last_pull) else {
             return;
         };
