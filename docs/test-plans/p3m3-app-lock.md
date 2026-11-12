@@ -2,6 +2,8 @@
 
 *Phase 3 milestone 3 · branch `milestone/p3-m3-app-lock` · `docs/phase_plans/phase-3.md` · decision #074 · sketch `docs/ui-sketches/p3m3-lock-options.svg` (1B, 2B, 3A)*
 
+**Result (2026-11-12): all 21 steps passed** on `:milestone-p3-m3-app-lock`, after one fix: the failed-unlock report wasn't sent (§5, fixed in `81c07e5` and retested). Two notes went elsewhere: Lock now (Phase 6) and changing names (issue #44).
+
 ## 1. Intended behavior
 
 - **The desktop's sign-in is sealed** with a PIN and with the password (Argon2id, then XChaCha20-Poly1305). The file (debug builds) or Keychain item (release) holds no readable key or token.
@@ -35,7 +37,7 @@
 | [x] | 9 | Type the PIN and ✓ | "Unlocking…" briefly, then the app, signed in (no password). |
 | [x] | 10 | Quit, start; type **3 wrong PINs** | "Wrong PIN." each time; after the third, "2 more wrong PINs and only your password will work." |
 | [x] | 11 | Quit and start again | Still "2 more wrong PINs…" (the count was kept). Unlock with the right PIN. |
-| [ ] | 12 | **Mac browser:** Admin mode → **Messages** | **Wrong PINs on a computer**: "Someone typed 3 wrong PINs or passwords on (your Mac's name) (your name) before it was unlocked. …" |
+| [x] | 12 | **Mac browser:** Admin mode → **Messages** | **Wrong PINs on a computer**: "Someone typed 3 wrong PINs or passwords on (your Mac's name) (your name) before it was unlocked. …" |
 | [x] | 13 | **Desktop:** Settings → **You** | Under **THIS DEVICE**: Theme, Keep window on top, **Lock after: 15 minutes**, **PIN: Change PIN**. **Mac browser:** Settings → You shows Theme only, no Lock after or PIN. |
 | [x] | 14 | **Desktop:** Lock after → **5 minutes**; leave the app alone for 5 minutes (don't move the mouse over it) | Within about 15 seconds after the 5 minutes, **Locked**. Unlock with the **password** ("Use your password instead"). Set Lock after back to 15 minutes; quit and start: it still says 15 minutes. |
 | [x] | 15 | **Change PIN:** click it; current PIN wrong, new PIN twice → Change PIN | "Wrong PIN. 4 more wrong PINs and only your password will work." Then: right current PIN, new `123456` → "Don't use a run…" (no try counted); new PIN and a different one → "The two PINs didn't match…"; then a good new PIN twice → "PIN changed. Use the new one from now on." |
@@ -60,6 +62,6 @@
 
 ## 5. Findings and fixes (2026-11-11)
 
-- **No message in Messages (steps 12 and 16): a bug, fixed.** After a good unlock, the lock screen opened the app and *then* started the task that refreshes the session and sends the report. Opening the app removes the lock screen, and Dioxus cancels a screen's tasks when it's removed, so the report was never sent. The task now outlives the screen (`spawn_forever`), and the desktop logs the outcome ("reported the wrong unlock tries", or why not). The same fix covers the refresh after signing out from the lock screen. **Retest:** steps 10–12 (and 16) with a new image.
+- **No message in Messages (steps 12 and 16): a bug, fixed.** After a good unlock, the lock screen opened the app and *then* started the task that refreshes the session and sends the report. Opening the app removes the lock screen, and Dioxus cancels a screen's tasks when it's removed, so the report was never sent. The task now outlives the screen (`spawn_forever`), and the desktop logs the outcome ("reported the wrong unlock tries", or why not). The same fix covers the refresh after signing out from the lock screen. **Retested** (2026-11-12): steps 10–12 and 16 pass; the message shows in Messages.
 - **Lock now** in the account menu: a Polish-phase note (plan.md §9 Phase 6).
-- **Changing a person's name and username:** a GitHub issue, planned later.
+- **Changing a person's name and username:** GitHub issue #44, planned later.
