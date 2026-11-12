@@ -322,13 +322,7 @@ async fn edit_place(
     let wanted = form
         .parse(context.user.user)
         .map_err(|problem| PlacesOutcome::Invalid { problem })?;
-    let patch = SavedPlacePatch {
-        owner: None,
-        name: (wanted.name != current.name).then_some(wanted.name),
-        coordinates: (wanted.coordinates != current.coordinates).then_some(wanted.coordinates),
-        radius_m: (wanted.radius_m != current.radius_m).then_some(wanted.radius_m),
-        place: (wanted.place != current.place).then_some(wanted.place),
-    };
+    let patch = current.changes_to(wanted);
     if !patch.changed_fields().is_empty() {
         context.save(Change::Update { id, patch }).await?;
     }

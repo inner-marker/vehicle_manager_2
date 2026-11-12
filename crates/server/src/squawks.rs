@@ -274,13 +274,7 @@ async fn edit_squawk(
 ) -> Result<SquawksOutcome, SquawksOutcome> {
     let (current, _) = context.changeable_squawk(id).await?;
     // Only what differs, so the fields' clocks show what really changed.
-    let patch = SquawkPatch {
-        description: (current.description != input.description).then_some(input.description),
-        notes: (current.notes != input.notes).then_some(input.notes),
-        severity: (current.severity != input.severity).then_some(input.severity),
-        opened_at: (current.opened_at != input.opened_at).then_some(input.opened_at),
-        ..SquawkPatch::default()
-    };
+    let patch = input.changes_from(&current);
     context.save_squawk(Change::Update { id, patch }).await?;
     tracing::debug!(target: log_area::APP, squawk = %id, "squawk changed");
     Ok(SquawksOutcome::Saved { id })

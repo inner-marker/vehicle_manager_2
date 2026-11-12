@@ -499,6 +499,18 @@ impl EventInput {
     }
 }
 
+impl EventInput {
+    /// The fields of `current` this input changes, and only those (an edit made offline,
+    /// #076): the form started from `current`, so a field left as it was isn't sent, and a
+    /// change made meanwhile on another device to that field stands (#043). When it was
+    /// edited is set when the change is applied.
+    #[must_use]
+    pub fn changes_from(self, current: &Event) -> EventPatch {
+        let edited = self.edit(current, current.last_edited_at);
+        event_changes(current, &edited)
+    }
+}
+
 /// The change from `before` to `after`: only the fields that differ.
 #[must_use]
 pub fn event_changes(before: &Event, after: &Event) -> EventPatch {
