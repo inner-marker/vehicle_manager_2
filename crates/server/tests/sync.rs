@@ -22,6 +22,7 @@ mod sync {
     use domain::event::{EventId, EventInput, EventLocation, EventSource, FuelDetails, Reading};
     use domain::event::{EventPatch, EventStatus};
     use domain::hlc::Hlc;
+    use domain::id::DatabaseId;
     use domain::inbox::MessageKind;
     use domain::location::{LocationSource, Place, SavedPlaceForm, TimeZone};
     use domain::meter::{EventKind, MeterId};
@@ -32,6 +33,7 @@ mod sync {
     use domain::sync::{PullOutcome, PullPage};
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
+    use domain::user::UserId;
     use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
     use server::events::{add, delete, edit, view};
     use server::groups::ensure_default_group;
@@ -916,14 +918,18 @@ mod sync {
     // --- Photos and documents (phase-3.md 6b, decision #077) ----------------------------------
 
     /// A PNG larger than a thumbnail (so it has its own), as a desktop would upload a photo the
-    /// person picked.
-    fn png() -> Vec<u8> {
+    /// person picked; `red` tells photos apart.
+    fn png_of(red: u8) -> Vec<u8> {
         let image = image::ImageBuffer::from_fn(640, 480, |x, _| {
-            image::Rgba([200_u8, 30, 30, if x < 320 { 255 } else { 0 }])
+            image::Rgba([red, 30, 30, if x < 320 { 255 } else { 0 }])
         });
         let mut bytes = std::io::Cursor::new(Vec::new());
         image.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
         bytes.into_inner()
+    }
+
+    fn png() -> Vec<u8> {
+        png_of(200)
     }
 
     /// The photo uploaded to the server by `user`, as a push does first.
@@ -931,6 +937,16 @@ mod sync {
         scene: &Scene,
         store: &storage::files::FileStore,
         user: &SignedIn,
+    ) -> domain::api::UploadedFile {
+        uploaded_photo_of(scene, store, user, png()).await
+    }
+
+    /// `bytes` uploaded to the server by `user` as a photo.
+    async fn uploaded_photo_of(
+        scene: &Scene,
+        store: &storage::files::FileStore,
+        user: &SignedIn,
+        bytes: Vec<u8>,
     ) -> domain::api::UploadedFile {
         let files = storage::files::Files::Folder(store.clone());
         let context = server::attachments::UploadContext {
@@ -945,7 +961,7 @@ mod sync {
             domain::api::UploadPurpose::Photo {
                 size: domain::attachment::PhotoSize::Small,
             },
-            png(),
+            bytes,
         )
         .await
         else {
@@ -1223,5 +1239,275 @@ mod sync {
                 server_sequence: cursor - 1,
             }
         );
+    }
+
+    // --- Rebuild (phase-3.md 7b, decision #078) -----------------------------------------------
+
+    /// Sends `copy`'s records to the rebuild with `token`, in pages, as a desktop does.
+    async fn send_pages(
+        copy: &Database,
+        rebuilt: &Database,
+        token: &str,
+        from: DatabaseId,
+        admin: UserId,
+    ) {
+        let scope = PullScope {
+            user: admin,
+            household: from,
+        };
+        let newest = copy.newest_sequence().await.unwrap();
+        let mut cursor = 0;
+        loop {
+            let read = copy
+                .read_page_upto(&scope, cursor, 50, newest)
+                .await
+                .unwrap();
+            let page = PullPage {
+                database_id: from,
+                schema: schema_version(),
+                cursor,
+                next_cursor: read.next_cursor,
+                server_sequence: read.server_sequence,
+                tables: read.tables,
+            };
+            assert_eq!(
+                server::rebuild::page(rebuilt, token, &page).await,
+                domain::sync::RebuildOutcome::PageTaken
+            );
+            if read.next_cursor >= newest {
+                return;
+            }
+            cursor = read.next_cursor;
+        }
+    }
+
+    /// Two photos on a fuel-up of Sam's, pushed to the server: (their files' store and its
+    /// folder, the fuel-up, the photos as uploaded).
+    async fn two_photos(
+        scene: &Scene,
+    ) -> (
+        tempfile::TempDir,
+        storage::files::FileStore,
+        EventId,
+        Vec<domain::api::UploadedFile>,
+    ) {
+        let event = sams_fuel_up(scene).await;
+        let files_temp = tempfile::tempdir().unwrap();
+        let store = storage::files::FileStore::open(files_temp.path()).unwrap();
+        let files = storage::files::Files::Folder(store.clone());
+        let pushing = PushContext {
+            files: Some(&files),
+            ..push_context(&scene.server, &scene.laptop, &scene.clock)
+        };
+        let mut photos = Vec::new();
+        for (n, red) in [(1_u32, 100_u8), (2, 200)] {
+            let photo = uploaded_photo_of(scene, &store, &scene.laptop, png_of(red)).await;
+            let mut input = photo_on(scene, event, &photo);
+            input.name =
+                domain::attachment::FileName::from_upload(&format!("photo-{n}.png")).unwrap();
+            let added = operation(n, 1, OperationChange::AddAttachment { input });
+            answers(push(&pushing, schema_version(), std::slice::from_ref(&added)).await);
+            photos.push(photo);
+        }
+        (files_temp, store, event, photos)
+    }
+
+    /// A fresh server (setup open, its default group made), and its setup code.
+    async fn fresh_server(scene: &Scene) -> (tempfile::TempDir, Database, String) {
+        let temp = tempfile::tempdir().unwrap();
+        let ids = NewDatabaseIds {
+            database_id: test_id(800),
+            server_device_id: test_id(801),
+        };
+        let (rebuilt, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
+        ensure_default_group(&rebuilt, test_id(801), Health::Healthy, &scene.clock)
+            .await
+            .unwrap();
+        let code = server::setup::open_if_needed(0).unwrap();
+        (temp, rebuilt, code)
+    }
+
+    /// Rebuilds `rebuilt` from `copy` (Stuart's): begin, pages, finish. Everyone else's new
+    /// temporary passwords.
+    async fn rebuild_from(
+        scene: &Scene,
+        copy: &Database,
+        rebuilt: &Database,
+        code: &str,
+        stuart: UserId,
+    ) -> Vec<domain::sync::TemporaryPassword> {
+        use domain::sync::RebuildOutcome;
+
+        let begin = async |code: &str| {
+            server::rebuild::begin(rebuilt, Health::Healthy, &scene.clock, code, test_id(900)).await
+        };
+        assert_eq!(begin("WRONG-CODE").await, RebuildOutcome::WrongCode);
+        let RebuildOutcome::Started { token } = begin(code).await else {
+            panic!("not started");
+        };
+        let stray = PullPage {
+            database_id: test_id(999),
+            schema: schema_version(),
+            cursor: 0,
+            next_cursor: 0,
+            server_sequence: 0,
+            tables: vec![],
+        };
+        assert_eq!(
+            server::rebuild::page(rebuilt, token.expose(), &stray).await,
+            RebuildOutcome::NotAllowed,
+            "a page from another server"
+        );
+        send_pages(copy, rebuilt, token.expose(), test_id(900), stuart).await;
+        let finish = async |admin: &str| {
+            server::rebuild::finish(
+                rebuilt,
+                test_id(801),
+                Health::Healthy,
+                &scene.clock,
+                token.expose(),
+                admin,
+                "a new long password".into(),
+            )
+            .await
+        };
+        assert_eq!(
+            finish("sam").await,
+            RebuildOutcome::NotAllowed,
+            "only the household's Admin"
+        );
+        let RebuildOutcome::Finished { passwords } = finish("stuart").await else {
+            panic!("not finished");
+        };
+        passwords
+    }
+
+    /// `stuart` (signed in to `rebuilt`) restores the first photo's files from `store`, but not
+    /// the second's, and settles: the second is left out.
+    async fn restore_first_and_settle(
+        scene: &Scene,
+        rebuilt: &Database,
+        stuart: &SignedIn,
+        store: &storage::files::FileStore,
+        photos: &[domain::api::UploadedFile],
+    ) {
+        use domain::sync::RebuildOutcome;
+
+        let restored_temp = tempfile::tempdir().unwrap();
+        let restored = storage::files::Files::Folder(
+            storage::files::FileStore::open(restored_temp.path()).unwrap(),
+        );
+        let restoring = server::attachments::UploadContext {
+            database: rebuilt,
+            files: &restored,
+            user: stuart,
+            health: Health::Healthy,
+            now: NOW,
+        };
+        let restore = async |bytes: Vec<u8>| {
+            server::attachments::upload(&restoring, domain::api::UploadPurpose::Restore, bytes)
+                .await
+        };
+        for file in [&photos[0].file, photos[0].thumbnail.as_ref().unwrap()] {
+            assert!(matches!(
+                restore(store.get(&file.hash).unwrap()).await,
+                domain::api::UploadOutcome::Uploaded { .. }
+            ));
+        }
+        assert_eq!(
+            restore(b"anything".to_vec()).await,
+            domain::api::UploadOutcome::NotAllowed,
+            "only a file the records name"
+        );
+        let settle = async || server::rebuild::settle(rebuilt, stuart, &scene.clock).await;
+        assert_eq!(
+            settle().await,
+            RebuildOutcome::Settled {
+                left_out: vec!["photo-2.png".to_owned()]
+            }
+        );
+        assert_eq!(count(rebuilt, "attachments").await, 1);
+        assert_eq!(settle().await, RebuildOutcome::NotAllowed, "once");
+    }
+
+    #[tokio::test]
+    async fn a_fresh_server_rebuilt_from_the_admins_copy_reads_the_same() {
+        use domain::sync::RebuildOutcome;
+
+        let scene = scene().await;
+        let (_files_temp, store, event, photos) = two_photos(&scene).await;
+        // Stuart's (the Admin's) desktop, its copy complete.
+        let stuarts = desktop(&scene.server, "stuart").await;
+        let (_stuart_temp, copy) = copy().await;
+        pull_all(&scene.server, &copy, &stuarts).await;
+        let (_fresh_temp, rebuilt, code) = fresh_server(&scene).await;
+        let passwords = rebuild_from(&scene, &copy, &rebuilt, &code, stuarts.user).await;
+        assert_eq!(passwords.len(), 1);
+        assert_eq!(passwords[0].username, "sam");
+
+        // The rebuilt server reads the same as the old one.
+        let old = context(&scene.server, &scene.stuart, &scene.clock);
+        let here = AssetsContext {
+            database: &rebuilt,
+            database_id: test_id(800),
+            user: &scene.stuart,
+            health: Health::Healthy,
+            clock: &scene.clock,
+            origin: server::origin::Origin::Online,
+        };
+        assert_eq!(
+            vehicle_page(&here, scene.truck).await,
+            vehicle_page(&old, scene.truck).await
+        );
+        assert_eq!(view(&here, event).await, view(&old, event).await);
+        // Sam signs in with the temporary password, to change it.
+        let sign_in = async |username: &str, password: domain::secret::Secret| {
+            sign_in_from(
+                &rebuilt,
+                &LoginLimiter::new(),
+                username,
+                password,
+                "laptop",
+                NOW,
+                SigningInDevice::Browser { name: None },
+            )
+            .await
+            .unwrap()
+            .1
+        };
+        assert!(
+            sign_in("sam", passwords[0].password.clone())
+                .await
+                .must_change_password
+        );
+        // Its next changes come after everything rebuilt; it isn't fresh any more.
+        let newest = rebuilt.newest_sequence().await.unwrap();
+        saved(&add(&here, fuel_up(scene.truck, scene.odometer, 50_100)).await);
+        assert!(rebuilt.newest_sequence().await.unwrap() > newest);
+        assert_eq!(
+            server::rebuild::begin(&rebuilt, Health::Healthy, &scene.clock, &code, test_id(900))
+                .await,
+            RebuildOutcome::WrongCode,
+            "setup (and its code) closed once rebuilt"
+        );
+
+        // Stuart, signed in, restores the first photo's files; the second's never come.
+        let stuart = sign_in("stuart", "a new long password".into()).await;
+        restore_first_and_settle(&scene, &rebuilt, &stuart, &store, &photos).await;
+    }
+
+    #[tokio::test]
+    async fn an_unhealthy_server_takes_no_changes() {
+        let scene = scene().await;
+        let unwell = PushContext {
+            health: Health::Unhealthy(server::health::HealthProblem::IntegrityCheckFailed),
+            ..push_context(&scene.server, &scene.laptop, &scene.clock)
+        };
+        let logged = operation(1, 1, OperationChange::SetGarageOrder { order: vec![] });
+        assert_eq!(
+            push(&unwell, schema_version(), std::slice::from_ref(&logged)).await,
+            PushOutcome::Unhealthy
+        );
+        assert_eq!(count(&scene.server, "applied_operations").await, 0);
     }
 }

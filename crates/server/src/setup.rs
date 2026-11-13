@@ -233,6 +233,11 @@ fn new_code() -> Result<String, getrandom::Error> {
     random_code(CODE_CHARS)
 }
 
+/// Closes setup (a rebuild brought the household's people in, 7b).
+pub fn close() {
+    set_code(None);
+}
+
 fn set_code(code: Option<String>) {
     *CODE
         .lock()

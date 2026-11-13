@@ -27,6 +27,7 @@ pub mod message_marks;
 pub mod outbox;
 pub mod places;
 pub mod preferences;
+pub mod rebuild;
 pub mod references;
 pub mod requirements;
 pub mod snapshot;

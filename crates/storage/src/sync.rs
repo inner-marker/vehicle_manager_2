@@ -194,11 +194,28 @@ impl Database {
         cursor: u64,
         window: u64,
     ) -> Result<ReadPage, StorageError> {
-        let mut transaction = self.pool().begin().await?;
         let newest: i64 = sqlx::query_scalar("SELECT last_sequence FROM database_meta")
-            .fetch_one(&mut *transaction)
+            .fetch_one(self.pool())
             .await?;
-        let server_sequence = to_u64(newest, "last_sequence")?;
+        self.read_page_upto(scope, cursor, window, to_u64(newest, "last_sequence")?)
+            .await
+    }
+
+    /// As [`Self::read_pull_page`], up to change number `server_sequence` (a desktop's copy
+    /// sending its records to rebuild a server, 7b: up to the newest its records hold,
+    /// [`Self::newest_sequence`]).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails.
+    pub async fn read_page_upto(
+        &self,
+        scope: &PullScope,
+        cursor: u64,
+        window: u64,
+        server_sequence: u64,
+    ) -> Result<ReadPage, StorageError> {
+        let mut transaction = self.pool().begin().await?;
         let end = cursor.saturating_add(window).min(server_sequence);
         let mut tables = Vec::new();
         if end <= cursor {
@@ -478,6 +495,103 @@ impl Database {
     }
 }
 
+impl Database {
+    /// Writes a page a desktop sent to rebuild this (fresh) server (7b): its rows, as a pull
+    /// writes them into a copy, in one transaction with foreign keys off (pages arrive in any
+    /// order). Who may and the page's server are checked by the caller (`server::rebuild`).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::InvalidValue`] for a table that isn't synced or a column this database
+    /// doesn't have; [`StorageError::Sqlx`] if a write fails (nothing is written).
+    pub async fn import_page(&self, page: &PullPage) -> Result<(), StorageError> {
+        let mut connection = self.pool().acquire().await?;
+        sqlx::query("PRAGMA foreign_keys = OFF")
+            .execute(&mut *connection)
+            .await?;
+        let written = async {
+            let mut transaction = sqlx::Connection::begin(&mut *connection).await?;
+            write_rows(&mut transaction, page).await?;
+            transaction.commit().await?;
+            Ok::<(), StorageError>(())
+        }
+        .await;
+        sqlx::query("PRAGMA foreign_keys = ON")
+            .execute(&mut *connection)
+            .await?;
+        written
+    }
+
+    /// After a rebuild's pages: the household's settings, kept under the old server's database
+    /// ID (#048), moved to this one's; this server's change numbers and clock moved past every
+    /// imported one, so its next changes come after them.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if a query fails (nothing is changed then).
+    pub async fn finish_import(&self, old: DatabaseId) -> Result<(), StorageError> {
+        let mut transaction = self.pool().begin().await?;
+        let new: Vec<u8> = sqlx::query_scalar("SELECT database_id FROM database_meta WHERE id = 1")
+            .fetch_one(&mut *transaction)
+            .await?;
+        sqlx::query("UPDATE preferences SET id = ? WHERE id = ?")
+            .bind(&new)
+            .bind(id_to_sql(old))
+            .execute(&mut *transaction)
+            .await?;
+        sqlx::query(
+            "UPDATE field_clocks SET record_id = ? WHERE entity = 'preferences' AND record_id = ?",
+        )
+        .bind(&new)
+        .bind(id_to_sql(old))
+        .execute(&mut *transaction)
+        .await?;
+        let newest = newest_sequence_on(&mut transaction).await?;
+        let newest_hlc: Option<i64> = sqlx::query_scalar("SELECT max(hlc) FROM field_clocks")
+            .fetch_one(&mut *transaction)
+            .await?;
+        sqlx::query(
+            "UPDATE database_meta SET last_sequence = max(last_sequence, ?),
+                                      last_hlc = max(last_hlc, ?) WHERE id = 1",
+        )
+        .bind(newest)
+        .bind(newest_hlc.unwrap_or(0))
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        tracing::info!(target: log_area::SYNC, last_sequence = newest, "rebuilt from a desktop's copy");
+        Ok(())
+    }
+}
+
+impl Database {
+    /// The newest change number any record or tombstone here holds (on a copy: the server's
+    /// numbers its rows came with).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if a query fails.
+    pub async fn newest_sequence(&self) -> Result<u64, StorageError> {
+        let mut connection = self.pool().acquire().await?;
+        let newest = newest_sequence_on(&mut connection).await?;
+        to_u64(newest, "sequence")
+    }
+}
+
+/// [`Database::newest_sequence`] on `connection`.
+async fn newest_sequence_on(connection: &mut SqliteConnection) -> Result<i64, StorageError> {
+    let mut newest = 0_i64;
+    for table in RECORD_TABLES.iter().chain([TOMBSTONES].iter()) {
+        // The names are this module's own constants.
+        let most: Option<i64> =
+            sqlx::query_scalar(AssertSqlSafe(format!("SELECT max(sequence) FROM {table}")))
+                .fetch_one(&mut *connection)
+                .await?;
+        newest = newest.max(most.unwrap_or(0));
+    }
+    Ok(newest)
+}
+
 /// The work of [`Database::forget_pulled`], on one connection with foreign keys off.
 async fn forget_on(connection: &mut SqliteConnection) -> Result<(), StorageError> {
     let mut transaction = sqlx::Connection::begin(connection).await?;
@@ -524,6 +638,25 @@ async fn apply_on(
         return Err(StorageError::OutOfStep);
     }
 
+    write_rows(&mut transaction, page).await?;
+    sqlx::query(
+        "UPDATE pull_state SET cursor = ?, server_sequence = ?, last_pull_ms = ? WHERE id = 1",
+    )
+    .bind(to_i64(page.next_cursor, "cursor")?)
+    .bind(to_i64(page.server_sequence, "server_sequence")?)
+    .bind(now.as_millis())
+    .execute(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(())
+}
+
+/// Writes `page`'s rows: an event's children rewritten whole, every row checked against this
+/// database's own schema and the synced tables (shared by a pull and a rebuild, 7b).
+async fn write_rows(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    page: &PullPage,
+) -> Result<(), StorageError> {
     // An event's children are rewritten whole: first remove the ones the copy has.
     if let Some(events) = page.tables.iter().find(|table| table.table == "events") {
         let id_index = column_index(events, "id")?;
@@ -537,7 +670,7 @@ async fn apply_on(
                     "DELETE FROM {child} WHERE event_id = ?"
                 )))
                 .bind(id.as_slice())
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
         }
@@ -551,7 +684,7 @@ async fn apply_on(
         {
             return Err(StorageError::InvalidValue { column: "table" });
         }
-        let known = local_columns(&mut transaction, name).await?;
+        let known = local_columns(&mut *transaction, name).await?;
         if table.columns.is_empty() || table.columns.iter().any(|column| !known.contains(column)) {
             return Err(StorageError::InvalidValue { column: "column" });
         }
@@ -571,19 +704,10 @@ async fn apply_on(
                 return Err(StorageError::InvalidValue { column: "row" });
             }
             bound(sqlx::query(AssertSqlSafe(sql.as_str())), row)?
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
         }
     }
-    sqlx::query(
-        "UPDATE pull_state SET cursor = ?, server_sequence = ?, last_pull_ms = ? WHERE id = 1",
-    )
-    .bind(to_i64(page.next_cursor, "cursor")?)
-    .bind(to_i64(page.server_sequence, "server_sequence")?)
-    .bind(now.as_millis())
-    .execute(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
     Ok(())
 }
 

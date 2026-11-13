@@ -269,7 +269,7 @@ const fn kept_once_sent(purpose: UploadPurpose, thumbnail: bool) -> Option<Local
         UploadPurpose::Photo { .. } => Some(LocalKind::Photo),
         UploadPurpose::Document => Some(LocalKind::Pdf),
         UploadPurpose::DocumentThumbnail => Some(LocalKind::Thumbnail),
-        UploadPurpose::Original | UploadPurpose::PhotoMetadata => None,
+        UploadPurpose::Original | UploadPurpose::PhotoMetadata | UploadPurpose::Restore => None,
     }
 }
 

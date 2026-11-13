@@ -326,6 +326,7 @@ async fn upload_checked(
                 pages: Some(pages),
             })
         }
+        UploadPurpose::Restore => restore(context, bytes, file_type).await,
         UploadPurpose::DocumentThumbnail => {
             check_upload(AttachmentKind::Photo, file_type, size).map_err(invalid)?;
             let thumbnail = blocking(move || process_thumbnail(&bytes))
@@ -341,6 +342,53 @@ async fn upload_checked(
             })
         }
     }
+}
+
+/// Stores a rebuilt server's file exactly as sent, once [`restorable`] says it may.
+async fn restore(
+    context: &UploadContext<'_>,
+    bytes: Vec<u8>,
+    file_type: Option<FileType>,
+) -> Result<UploadedFile, UploadOutcome> {
+    restorable(context, &bytes).await?;
+    Ok(UploadedFile {
+        file: store_bytes(context, bytes).await?,
+        file_type,
+        thumbnail: None,
+        pixels: None,
+        pages: None,
+    })
+}
+
+/// A file a rebuild may restore exactly as sent (7b, #078): from the household's Admin, right
+/// after a rebuild (records in, files not yet settled), named by the rebuilt records, and not
+/// already here.
+async fn restorable(context: &UploadContext<'_>, bytes: &[u8]) -> Result<(), UploadOutcome> {
+    let admin = context.user.grants.iter().any(|grant| {
+        grant.role == domain::access::Role::Admin
+            && grant.target == domain::access::GrantTarget::AllAssets
+    });
+    if !admin {
+        return Err(UploadOutcome::NotAllowed);
+    }
+    let state = context
+        .database
+        .rebuild_state()
+        .await
+        .map_err(|error| upload_failed("rebuild", &error))?;
+    if !state.is_some_and(|state| state.finished.is_some() && state.settled.is_none()) {
+        return Err(UploadOutcome::NotAllowed);
+    }
+    let hash = storage::files::hash_of(bytes);
+    let named = context
+        .database
+        .some_attachment_names(&hash)
+        .await
+        .map_err(|error| upload_failed("rebuild", &error))?;
+    if !named {
+        return Err(UploadOutcome::NotAllowed);
+    }
+    Ok(())
 }
 
 // --- Attachments -------------------------------------------------------------------------
