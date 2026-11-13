@@ -368,7 +368,7 @@ offline-tag = OFFLINE · copy { $time }
 offline-tag-no-time = OFFLINE
 offline-tag-note = Can't reach the server. Showing this computer's copy from { $time }.
 offline-saving-note = Saving needs the server (offline).
-offline-needs-server = Can't reach the server (offline). Changes need it until offline saving arrives.
+offline-needs-server = This needs the server, which can't be reached (offline).
 connecting-title = Connecting to the server…
 # $seconds (number): seconds left before the copy opens offline.
 connecting-offline-in =

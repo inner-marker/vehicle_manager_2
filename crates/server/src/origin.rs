@@ -101,6 +101,26 @@ impl<'a> Origin<'a> {
         }
     }
 
+    /// The time of the last command this operation has written, if it has written any: the
+    /// desktop moves its clock past it, so its next operation is later than all of them.
+    ///
+    /// # Errors
+    ///
+    /// [`OriginError::Derive`] if the operation can't count that far.
+    pub fn last_command_hlc(&self) -> Result<Option<Hlc>, OriginError> {
+        let Self::Pushed(pushed) = self else {
+            return Ok(None);
+        };
+        match pushed.commands.load(Ordering::Relaxed).checked_sub(1) {
+            None => Ok(None),
+            Some(last) => pushed
+                .operation
+                .derived_hlc(last)
+                .map(Some)
+                .map_err(OriginError::Derive),
+        }
+    }
+
     /// When the change was made: now online, the operation's time when pushed.
     #[must_use]
     pub fn made_at(&self, now: UnixMillis) -> UnixMillis {
@@ -162,6 +182,12 @@ mod tests {
             assert_ne!(command_a, a, "commands and records never share an ID");
         }
         assert_eq!(first.made_at(now), operation.hlc.physical());
+        assert_eq!(
+            first.last_command_hlc().unwrap(),
+            Some(operation.derived_hlc(2).unwrap()),
+            "the third command's time"
+        );
+        assert_eq!(Origin::pushed(&operation).last_command_hlc().unwrap(), None);
     }
 
     #[test]

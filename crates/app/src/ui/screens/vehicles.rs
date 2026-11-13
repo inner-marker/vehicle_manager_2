@@ -128,7 +128,7 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
         let shown_here = shown_group_of(context, asset, show_archived());
         spawn(async move {
             let order = move_within(&everything, &shown_here, asset, direction);
-            error.set(match api::set_garage_order(order).await {
+            error.set(match crate::data::set_garage_order(order).await {
                 Ok(AssetsOutcome::Done) => refresh_garage(context).await,
                 Ok(_) => Some(messages::SOMETHING_WENT_WRONG),
                 Err(failure) => Some(problem_from_error(&failure).message()),
@@ -247,7 +247,7 @@ fn SortMenu(sort: GarageSort, error: Signal<Option<MessageId>>) -> Element {
                         garage_sort: Some(Choice::Set(chosen)),
                         ..PreferencesPatch::default()
                     };
-                    error.set(match api::set_my_preferences(patch).await {
+                    error.set(match crate::data::set_my_preferences(patch).await {
                         Ok(_) => refresh_garage(context).await,
                         Err(failure) => Some(problem_from_error(&failure).message()),
                     });

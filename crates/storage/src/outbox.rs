@@ -283,6 +283,20 @@ impl Database {
         Ok(())
     }
 
+    /// The newest clock time on any field in this copy (pulled from the server, or written
+    /// here): the desktop's clock moves past it, so a change made after one it has seen is
+    /// always newer ([`Hlc::ZERO`] if there's none).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or the stored value is invalid.
+    pub async fn newest_field_hlc(&self) -> Result<Hlc, StorageError> {
+        let newest: Option<i64> = sqlx::query_scalar("SELECT max(hlc) FROM field_clocks")
+            .fetch_one(self.pool())
+            .await?;
+        newest.map_or(Ok(Hlc::ZERO), |value| hlc_from_sql(value, "hlc"))
+    }
+
     /// The answer already given to a pushed operation: `Some(None)` if it was applied,
     /// `Some(Some(refusal))` if it was refused, `None` if it's new.
     ///

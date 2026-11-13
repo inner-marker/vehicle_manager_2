@@ -218,8 +218,6 @@ pub(crate) fn Shell() -> Element {
                         button {
                             class: "log-button",
                             r#type: "button",
-                            disabled: super::offline::is_offline_now(),
-                            title: super::offline::needs_server_note(),
                             onclick: move |_| chooser.open(here),
                             IconView { icon: Icon::Add }
                             span { {tr(messages::ACTION_LOG)} }
@@ -264,8 +262,6 @@ pub(crate) fn Shell() -> Element {
                     class: "fab",
                     r#type: "button",
                     "aria-label": tr(messages::ACTION_LOG),
-                    disabled: super::offline::is_offline_now(),
-                    title: super::offline::needs_server_note(),
                     onclick: move |_| chooser.open(here),
                     IconView { icon: Icon::Add }
                 }

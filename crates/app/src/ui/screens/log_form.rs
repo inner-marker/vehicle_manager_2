@@ -522,7 +522,7 @@ async fn send(
     removed_tasks: Vec<u16>,
 ) -> Result<EventsOutcome, ServerFnError> {
     match mode {
-        Mode::New => api::add_event(input).await,
+        Mode::New => data::add_event(input).await,
         Mode::Edit(id) => {
             let asset = input.asset;
             // Where the photos are now, before the server sees the tasks' new order.
@@ -531,13 +531,13 @@ async fn send(
             } else {
                 attachments_on_event(asset, id).await
             };
-            let outcome = api::edit_event(id, input).await?;
+            let outcome = data::edit_event(id, input).await?;
             if matches!(outcome, EventsOutcome::Saved { .. }) {
                 follow_removed_tasks(&before, &removed_tasks).await;
             }
             Ok(outcome)
         }
-        Mode::Correct(original) => api::correct_event(original, input, reason).await,
+        Mode::Correct(original) => data::correct_event(original, input, reason).await,
     }
 }
 
@@ -710,12 +710,13 @@ fn FormBody(
         let removed_tasks = typed.work.removed_tasks.clone();
         busy.set(true);
         spawn(async move {
-            let result = send(mode, input, reason(), removed_tasks).await;
+            // Boxed: on the desktop a save runs the server's code on the copy (a large future).
+            let result = Box::pin(send(mode, input, reason(), removed_tasks)).await;
             busy.set(false);
             match result {
                 Ok(EventsOutcome::Saved { id, .. }) if finish => {
                     chooser.remember(asset);
-                    match api::finish_event(id).await {
+                    match data::finish_event(id).await {
                         Ok(EventsOutcome::Done) => {
                             tracing::debug!(target: log_area::UI, event = %id, "job finished");
                             navigator.replace(Route::EventDetail {

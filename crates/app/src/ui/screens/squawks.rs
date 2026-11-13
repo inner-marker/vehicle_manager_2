@@ -34,11 +34,9 @@ use super::attachments::AttachmentStrip;
 use super::log_form::ZONE_SCRIPT;
 use super::problem_from_error;
 use super::vehicle::Tab;
-use crate::api;
 use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::auth::{AuthState, use_auth};
-use crate::ui::offline;
 use crate::ui::routes::Route;
 use crate::ui::units::use_units;
 use crate::ui::{tr, tr_with};
@@ -283,8 +281,8 @@ fn SheetForm(target: SheetTarget) -> Element {
         busy.set(true);
         spawn(async move {
             let result = match editing {
-                Some(id) => api::edit_squawk(id, input).await,
-                None => api::open_squawk(input).await,
+                Some(id) => crate::data::edit_squawk(id, input).await,
+                None => crate::data::open_squawk(input).await,
             };
             busy.set(false);
             match result {
@@ -542,10 +540,8 @@ pub(super) fn SquawksCard(
                 h3 { class: "section-heading", {tr(messages::PANEL_SQUAWKS).to_uppercase()} }
                 if may_open {
                     button {
-                        class: "link-button needs-server",
+                        class: "link-button",
                         r#type: "button",
-                        disabled: offline::is_offline_now(),
-                        title: offline::needs_server_note(),
                         onclick: move |_| sheet.open_new(vehicle.id, &asset, None),
                         {tr(messages::SQUAWK_NEW)}
                     }
@@ -873,18 +869,14 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
                     }
                     if view.may_change {
                         button {
-                            class: "secondary-button needs-server",
+                            class: "secondary-button",
                             r#type: "button",
-                            disabled: offline::is_offline_now(),
-                            title: offline::needs_server_note(),
                             onclick: move |_| sheet.edit(view.id, squawk.clone(), &asset),
                             {tr(messages::ACTION_EDIT)}
                         }
                         button {
-                            class: "secondary-button needs-server",
+                            class: "secondary-button",
                             r#type: "button",
-                            disabled: offline::is_offline_now(),
-                            title: offline::needs_server_note(),
                             onclick: move |_| confirm.set(true),
                             {tr(messages::SQUAWK_REMOVE)}
                         }
@@ -917,7 +909,7 @@ fn RemoveDialog(id: SquawkId, on_close: EventHandler<bool>) -> Element {
     let mut problem = use_signal(|| None::<MessageId>);
     let remove = move |_| {
         spawn(async move {
-            match api::delete_squawk(id).await {
+            match crate::data::delete_squawk(id).await {
                 Ok(SquawksOutcome::Done) => {
                     tracing::debug!(target: log_area::UI, squawk = %id, "squawk removed");
                     sheet.changed();

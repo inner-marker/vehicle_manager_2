@@ -11,6 +11,10 @@
 //!   sooner after [`pull_soon`] (a change made on the server; 4d).
 //! - **Deleted** with the sign-in ([`delete()`]): signing out, or the 10th wrong try.
 //!
+//! - **Changes made on the desktop** (5d, decision #076) go into its **outbox** and onto the
+//!   copy (`crate::data`), and are sent ([`send_now`] after a save, and before every pull);
+//!   after the server refuses one, the copy's records are downloaded again.
+//!
 //! What the copy is doing is in [`STATUS`], for Diagnostics (4e).
 
 use std::path::PathBuf;
@@ -18,11 +22,14 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use dioxus::prelude::*;
+use domain::hlc::HlcClock;
 use domain::id::DatabaseId;
 use domain::log_area;
-use domain::sync::{PullOutcome, PullPage};
+use domain::operation::{Operation, OperationChange, OperationId, Refusal};
+use domain::sync::{OperationAnswer, PUSH_LIMIT, PullOutcome, PullPage, PushOutcome, PushStop};
 use domain::time::{Clock, UnixMillis};
 use storage::local::delete_local;
+use storage::outbox::OutboxState;
 use storage::sync::schema_version;
 use storage::{CopyOf, Database, LocalKey, StorageError};
 
@@ -283,9 +290,215 @@ fn page_of(
     None
 }
 
-/// Pulls pages into `copy` until it's up to date, the server can't be reached, or it refuses.
+/// Why the last push stopped before the end, if it did (an app or server to update, a clock
+/// ahead, the server busy): for the top bar and Diagnostics (5e).
+pub static PUSH_STOPPED: GlobalSignal<Option<PushStop>> = Signal::global(|| None);
+
+/// The copy shows a change the server refused: download its records again once nothing waits
+/// to be sent (5d).
+static DOWNLOAD_AGAIN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The most bytes of operations one push sends (the server takes 2 MB a request).
+const PUSH_BYTES: usize = 1024 * 1024;
+
+/// A new operation for `change`, made now on this desktop's clock (which moves past it).
+///
+/// # Errors
+///
+/// Why none could be made (no randomness, or a clock out of range).
+pub async fn new_operation(copy: &Database, change: OperationChange) -> Result<Operation, String> {
+    let now = SystemClock.now();
+    let id: OperationId = ::server::ids::new_id(now).map_err(|error| error.to_string())?;
+    let last = copy.device_hlc().await.map_err(|error| error.to_string())?;
+    let hlc = HlcClock::new(SystemClock, last)
+        .tick()
+        .map_err(|error| error.to_string())?;
+    copy.advance_device_hlc(hlc)
+        .await
+        .map_err(|error| error.to_string())?;
+    Ok(Operation::new(id, hlc, change))
+}
+
+/// What sending a change at once did.
+pub enum Sent {
+    /// The server applied it.
+    Applied,
+    /// The server refused it (taken out of the outbox: the form shows why).
+    Refused(Refusal),
+    /// Not sent yet (offline, or the server stopped before it): it waits in the outbox.
+    Waiting,
+}
+
+/// Sends the outbox now, for a change just saved (`id`), and says what became of it. Offline
+/// it waits.
+pub async fn send_now(copy: &Database, id: OperationId) -> Sent {
+    if is_offline() {
+        return Sent::Waiting;
+    }
+    {
+        let _one_at_a_time = PULL_LOCK.lock().await;
+        let last_pull = copy
+            .pull_state()
+            .await
+            .ok()
+            .flatten()
+            .and_then(|state| state.last_pull);
+        push_waiting(copy, last_pull).await;
+    }
+    let sent = match copy.outbox_entry(id).await {
+        Ok(None) => Sent::Applied,
+        Ok(Some(entry)) => match entry.state {
+            OutboxState::Refused { refusal, .. } => {
+                // Answered in the form, not in Messages.
+                if let Err(error) = copy.remove_from_outbox(id).await {
+                    tracing::warn!(target: log_area::SYNC, %error, "couldn't take a refused change out of the outbox");
+                }
+                Sent::Refused(refusal)
+            }
+            OutboxState::Waiting => Sent::Waiting,
+        },
+        Err(error) => {
+            tracing::warn!(target: log_area::SYNC, %error, "couldn't read the outbox");
+            Sent::Waiting
+        }
+    };
+    pull_soon();
+    sent
+}
+
+/// The oldest waiting operations, up to [`PUSH_LIMIT`] and [`PUSH_BYTES`] (at least one).
+fn first_batch(waiting: Vec<Operation>) -> Vec<Operation> {
+    let mut bytes = 0;
+    let mut batch = Vec::new();
+    for operation in waiting {
+        bytes += serde_json::to_vec(&operation).map_or(0, |json| json.len());
+        if !batch.is_empty() && bytes > PUSH_BYTES {
+            break;
+        }
+        batch.push(operation);
+    }
+    batch
+}
+
+/// What one batch of a push did.
+enum Batch {
+    /// All answered: send the next.
+    Next,
+    /// Stop pushing; whether the pull goes on (the server could be reached, same schema).
+    Stop(bool),
+}
+
+/// Sends the outbox, oldest first, until it's empty or the server stops (called with the pull
+/// lock held). Whether the server could be reached on the same schema (the pull goes on).
+async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
+    loop {
+        let waiting = match copy
+            .outbox_waiting(u32::try_from(PUSH_LIMIT).unwrap_or(100))
+            .await
+        {
+            Ok(waiting) => waiting,
+            Err(error) => {
+                tracing::error!(target: log_area::SYNC, %error, "couldn't read the outbox");
+                return true;
+            }
+        };
+        if waiting.is_empty() {
+            break;
+        }
+        match push_batch(copy, first_batch(waiting), last_pull).await {
+            Batch::Next => {}
+            Batch::Stop(go_on) => return go_on,
+        }
+    }
+    if DOWNLOAD_AGAIN.swap(false, std::sync::atomic::Ordering::Relaxed)
+        && let Err(error) = copy.forget_pulled().await
+    {
+        tracing::error!(target: log_area::SYNC, %error, "couldn't clear the copy to download it again");
+        DOWNLOAD_AGAIN.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    true
+}
+
+/// Sends one batch and takes in the answers.
+async fn push_batch(
+    copy: &Database,
+    batch: Vec<Operation>,
+    last_pull: Option<UnixMillis>,
+) -> Batch {
+    let sent = batch.len();
+    let outcome = crate::client::within(
+        crate::client::PULL_WAIT,
+        crate::api::push(schema_version(), batch),
+    )
+    .await;
+    match outcome {
+        Ok(PushOutcome::Answers { answers, stopped }) => {
+            take_answers(copy, &answers).await;
+            if *PUSH_STOPPED.peek() != stopped {
+                *PUSH_STOPPED.write() = stopped;
+            }
+            if let Some(stop) = stopped {
+                tracing::info!(target: log_area::SYNC, ?stop, "the server stopped the push");
+                return Batch::Stop(true);
+            }
+            if answers.len() < sent {
+                Batch::Stop(true)
+            } else {
+                Batch::Next
+            }
+        }
+        Ok(PushOutcome::OtherSchema { server }) => {
+            *STATUS.write() = CopyStatus::OtherSchema {
+                server,
+                app: schema_version(),
+            };
+            Batch::Stop(false)
+        }
+        Ok(other) => {
+            tracing::warn!(target: log_area::SYNC, ?other, "the server refused the push");
+            Batch::Stop(true)
+        }
+        Err(error) => {
+            tracing::debug!(target: log_area::SYNC, %error, "no push: can't reach the server");
+            *STATUS.write() = CopyStatus::Offline { since: last_pull };
+            Batch::Stop(false)
+        }
+    }
+}
+
+/// Takes the server's answers out of the outbox: applied ones leave it, refused ones stay,
+/// with why, and the copy is downloaded again.
+async fn take_answers(copy: &Database, answers: &[OperationAnswer]) {
+    for answer in answers {
+        let result = match answer {
+            OperationAnswer::Applied { id } => copy.remove_from_outbox(*id).await.map(|_| ()),
+            OperationAnswer::Refused { id, refusal } => {
+                tracing::info!(target: log_area::SYNC, operation = %id, ?refusal, "the server refused a change");
+                DOWNLOAD_AGAIN.store(true, std::sync::atomic::Ordering::Relaxed);
+                copy.refuse_in_outbox(*id, refusal, SystemClock.now())
+                    .await
+                    .map(|_| ())
+            }
+        };
+        if let Err(error) = result {
+            tracing::error!(target: log_area::SYNC, %error, "couldn't record the server's answer");
+        }
+    }
+}
+
+/// Pulls pages into `copy` until it's up to date, the server can't be reached, or it refuses;
+/// the outbox goes first, so a pull never covers a change that hasn't been sent.
 async fn pull_until_current(copy: &Database) {
     let _one_at_a_time = PULL_LOCK.lock().await;
+    let last_pull = copy
+        .pull_state()
+        .await
+        .ok()
+        .flatten()
+        .and_then(|state| state.last_pull);
+    if !push_waiting(copy, last_pull).await {
+        return;
+    }
     loop {
         let Ok(Some(state)) = copy.pull_state().await else {
             *STATUS.write() = CopyStatus::Failed;
@@ -303,6 +516,12 @@ async fn pull_until_current(copy: &Database) {
             tracing::error!(target: log_area::SYNC, %error, "couldn't apply a pulled page");
             *STATUS.write() = CopyStatus::Failed;
             return;
+        }
+        // The desktop's clock moves past every time it has seen (#043).
+        if let Ok(newest) = copy.newest_field_hlc().await
+            && let Err(error) = copy.advance_device_hlc(newest).await
+        {
+            tracing::warn!(target: log_area::SYNC, %error, "couldn't move the desktop's clock");
         }
         *STATUS.write() = if page.up_to_date() {
             CopyStatus::UpToDate {
@@ -500,6 +719,32 @@ pub async fn details() -> Option<CopyDetails> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_push_batch_stays_under_its_size_but_always_sends_one() {
+        use domain::hlc::Hlc;
+        use domain::test_support::test_id;
+        // A Garage order of `vehicles` IDs: about 40 bytes each as JSON.
+        let order = |n: u32, vehicles: u32| {
+            Operation::new(
+                test_id(n),
+                Hlc::new(UnixMillis::from_millis(1_700_000_000_000), 0).unwrap(),
+                OperationChange::SetGarageOrder {
+                    order: (0..vehicles).map(test_id).collect(),
+                },
+            )
+        };
+        assert_eq!(
+            first_batch((0..50).map(|n| order(n, 1)).collect()).len(),
+            50
+        );
+        // About 600 KB each: the second would pass 1 MB.
+        let big = vec![order(1, 15_000), order(2, 15_000), order(3, 1)];
+        assert_eq!(first_batch(big).len(), 1);
+        // One bigger than the limit still goes, alone.
+        assert_eq!(first_batch(vec![order(1, 40_000), order(2, 1)]).len(), 1);
+        assert!(first_batch(Vec::new()).is_empty());
+    }
 
     #[tokio::test]
     async fn starting_offline_now_stops_waiting_for_the_server() {

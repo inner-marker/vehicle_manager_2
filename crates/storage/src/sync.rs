@@ -349,6 +349,58 @@ impl Database {
     }
 }
 
+impl Database {
+    /// Empties this copy of everything pulled (every synced table, field clocks, tombstones)
+    /// and starts its pull again from the beginning, keeping its outbox and clock (phase-3.md
+    /// 5d, decision #076): after the server refuses a change the copy already shows, so it
+    /// downloads the server's records again. Until that finishes the copy isn't complete
+    /// ([`PullState::complete`]), so screens read from the server.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if a query fails (nothing is changed then).
+    pub async fn forget_pulled(&self) -> Result<(), StorageError> {
+        let mut connection = self.pool().acquire().await?;
+        let foreign_keys: i64 = sqlx::query_scalar("PRAGMA foreign_keys")
+            .fetch_one(&mut *connection)
+            .await?;
+        sqlx::query("PRAGMA foreign_keys = OFF")
+            .execute(&mut *connection)
+            .await?;
+        let forgotten = forget_on(&mut connection).await;
+        if foreign_keys != 0 {
+            sqlx::query("PRAGMA foreign_keys = ON")
+                .execute(&mut *connection)
+                .await?;
+        }
+        forgotten?;
+        tracing::info!(target: log_area::SYNC, "the copy's records were cleared to download again");
+        Ok(())
+    }
+}
+
+/// The work of [`Database::forget_pulled`], on one connection with foreign keys off.
+async fn forget_on(connection: &mut SqliteConnection) -> Result<(), StorageError> {
+    let mut transaction = sqlx::Connection::begin(connection).await?;
+    for table in EVENT_CHILD_TABLES
+        .iter()
+        .chain(RECORD_TABLES.iter())
+        .chain([FIELD_CLOCKS, TOMBSTONES].iter())
+    {
+        // The names are this module's own constants.
+        sqlx::query(AssertSqlSafe(format!("DELETE FROM {table}")))
+            .execute(&mut *transaction)
+            .await?;
+    }
+    sqlx::query(
+        "UPDATE pull_state SET cursor = 0, server_sequence = 0, last_pull_ms = NULL WHERE id = 1",
+    )
+    .execute(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(())
+}
+
 /// The work of [`Database::apply_pull_page`], on one connection with foreign keys off.
 async fn apply_on(
     connection: &mut SqliteConnection,

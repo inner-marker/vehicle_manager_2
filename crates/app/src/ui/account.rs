@@ -265,7 +265,8 @@ pub(crate) fn AccountChip() -> Element {
             }
             if password_dialog() {
                 div { class: "dialog-scrim",
-                    div { class: "dialog", role: "dialog", "aria-modal": "true",
+                    // A password is the server's: off while offline.
+                    div { class: "dialog needs-server-zone", role: "dialog", "aria-modal": "true",
                         h2 { class: "dialog-title", {tr(messages::PASSWORD_DIALOG_TITLE)} }
                         ChangePasswordForm {
                             on_done: move |()| {

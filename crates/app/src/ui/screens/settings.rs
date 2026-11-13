@@ -242,7 +242,7 @@ pub(crate) fn Settings() -> Element {
             let result = if household {
                 api::set_household_preferences(patch).await
             } else {
-                api::set_my_preferences(patch).await
+                crate::data::set_my_preferences(patch).await
             };
             apply(result, view, error, idle);
         });

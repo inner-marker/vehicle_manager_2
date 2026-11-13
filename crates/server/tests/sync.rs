@@ -877,4 +877,38 @@ mod sync {
         );
         assert_eq!(count(&scene.server, "applied_operations").await, 0);
     }
+
+    #[tokio::test]
+    async fn a_copy_cleared_after_a_refusal_keeps_its_outbox_and_downloads_again() {
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        saved(&add(&sam_online, fuel_up(scene.truck, scene.odometer, 50_000)).await);
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+        let waiting = operation(1, 1, OperationChange::SetGarageOrder { order: vec![] });
+        scene.copy.add_to_outbox(&waiting, NOW).await.unwrap();
+        assert_eq!(count(&scene.copy, "events").await, 1);
+
+        scene.copy.forget_pulled().await.unwrap();
+        for table in [
+            "events",
+            "assets",
+            "users",
+            "field_clocks",
+            "event_readings",
+        ] {
+            assert_eq!(count(&scene.copy, table).await, 0, "{table}");
+        }
+        let state = scene.copy.pull_state().await.unwrap().unwrap();
+        assert!(!state.complete(), "screens read from the server meanwhile");
+        assert_eq!(state.cursor, 0);
+        assert_eq!(
+            scene.copy.outbox_waiting(10).await.unwrap(),
+            vec![waiting],
+            "the outbox is kept"
+        );
+
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+        assert_eq!(count(&scene.copy, "events").await, 1);
+        assert!(scene.copy.pull_state().await.unwrap().unwrap().complete());
+    }
 }
