@@ -431,7 +431,7 @@
 | **6c** `feat(app):` downloads | ☑️ | `app::files` reads the files database first; the background fetcher; photos kept when opened; the limit and its setting; dropping the oldest. |
 | **6d** `feat(app):` adding, removing, moving offline | ☑️ | The photo and PDF processing on the desktop; uploads waiting; push uploads first; the buttons on offline (originals stay off). |
 | **6e** `feat(app):` what you see | ☑️ | 1A (the enlarged thumbnail offline), 2A (the ↑ badge), 3B (Diagnostics → Offline copy: files and their size, photos kept of the limit, and the limit's setting). |
-| **6f** `docs:` | ⬜ | The test plan: thumbnails and PDFs offline; a photo opened online then offline; adding a photo offline and seeing it on the web; removing one offline; the limit dropping old photos; sign-out deleting the files. |
+| **6f** `docs:` | ☑️ | The test plan ([`docs/test-plans/p3m6-files.md`](../test-plans/p3m6-files.md)), on the test server with the desktop (offline by turning Tailscale off; the web side on a phone): files encrypted beside the copy; thumbnails and PDFs offline; a photo opened online then offline (1A for one never opened); adding a photo and a PDF offline (2A) and seeing them on the web; removing and moving offline; the limit (3B); sign-out deleting the files; the erased-files audit (optional, with test timers). |
 
 **Risks:** large PDFs travel to the webview as Base64 (as now); the desktop's processing must match the server's version for the hashes to agree, and when they don't, the server's hashes win and the desktop downloads its version (nothing breaks, it's just a second download).
 
