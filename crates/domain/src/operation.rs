@@ -28,7 +28,9 @@ use core::ops::RangeInclusive;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::api::SquawkInput;
+use crate::api::{
+    AssetsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome, SquawkInput, SquawksOutcome,
+};
 use crate::asset::AssetId;
 use crate::event::{EventId, EventInput, EventPatch};
 use crate::hlc::{Hlc, HlcError};
@@ -158,6 +160,23 @@ pub enum OperationChange {
         /// The vehicles, in order.
         order: Vec<AssetId>,
     },
+}
+
+/// Why the server refused an operation: the answer its server function gave, the same one a
+/// form shows online (so the desktop explains it the same way, sketch 2A).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "refused-by", content = "answer", rename_all = "kebab-case")]
+pub enum Refusal {
+    /// An event's answer.
+    Events(EventsOutcome),
+    /// A squawk's answer.
+    Squawks(SquawksOutcome),
+    /// A saved place's answer.
+    Places(PlacesOutcome),
+    /// The preferences' answer.
+    Preferences(PreferencesOutcome),
+    /// The Garage order's answer.
+    Assets(AssetsOutcome),
 }
 
 /// Why a derived ID or time couldn't be made.
