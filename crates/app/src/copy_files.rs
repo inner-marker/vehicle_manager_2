@@ -122,6 +122,19 @@ pub async fn keep(id: AttachmentId, part: AttachmentPart, bytes: &[u8]) {
     }
 }
 
+/// Whether the file `hash` was added here and isn't uploaded yet (sketch 2A's badge).
+pub async fn waiting_to_upload(hash: &FileHash) -> bool {
+    let Some(files) = current() else {
+        return false;
+    };
+    files.kind_of(hash).await.ok().flatten() == Some(LocalKind::Upload)
+}
+
+/// How much this computer's files hold (Diagnostics, 3B).
+pub async fn summary() -> Option<storage::local_files::LocalFilesSummary> {
+    current()?.summary().await.ok()
+}
+
 /// The limit on downloaded photos, from this computer's settings.
 #[must_use]
 pub fn photo_limit() -> PhotoLimit {

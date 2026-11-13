@@ -725,6 +725,22 @@ define_messages! {
     PHOTO_LIMIT_10_GB => "photo-limit-10-gb",
     /// The photos limit: none.
     PHOTO_LIMIT_NONE => "photo-limit-none",
+    /// Offline, a photo whose full size isn't here: its thumbnail, enlarged (sketch 1A).
+    PHOTO_PREVIEW_NOTE => "photo-preview-note",
+    /// Offline, a file that isn't here at all.
+    FILE_NOT_HERE => "file-not-here",
+    /// A photo added on this computer, not yet uploaded (sketch 2A).
+    UPLOAD_WAITING => "upload-waiting",
+    /// Diagnostics: this computer's files (sketch 3B).
+    COPY_FILES => "copy-files",
+    /// Diagnostics: how many files, and their size.
+    COPY_FILES_VALUE => "copy-files-value",
+    /// Diagnostics: the photos kept.
+    COPY_PHOTOS_KEPT => "copy-photos-kept",
+    /// Diagnostics: the photos' size, of the limit.
+    COPY_PHOTOS_KEPT_VALUE => "copy-photos-kept-value",
+    /// Diagnostics: the limit's setting.
+    COPY_PHOTO_LIMIT => "copy-photo-limit",
     /// The copy's status: a failure.
     COPY_FAILED => "copy-failed",
     /// Diagnostics: never pulled.

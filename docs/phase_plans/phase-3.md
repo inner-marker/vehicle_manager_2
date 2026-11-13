@@ -430,7 +430,7 @@
 | **6b** `feat(server):` uploads ahead and the audit record | ☑️ | Removing records who and when; the file check writes `erased_files`; operations `AddAttachment`, `RemoveAttachment`, `MoveAttachment`, with an add's files named by upload so a push can substitute the server's hashes. Tests: an offline add pushed after its upload; the audit row after the 8 days; a resend. |
 | **6c** `feat(app):` downloads | ☑️ | `app::files` reads the files database first; the background fetcher; photos kept when opened; the limit and its setting; dropping the oldest. |
 | **6d** `feat(app):` adding, removing, moving offline | ☑️ | The photo and PDF processing on the desktop; uploads waiting; push uploads first; the buttons on offline (originals stay off). |
-| **6e** `feat(app):` what you see | ⬜ | 1A (the enlarged thumbnail offline), 2A (the ↑ badge), 3B (Diagnostics → Offline copy: files and their size, photos kept of the limit, and the limit's setting). |
+| **6e** `feat(app):` what you see | ☑️ | 1A (the enlarged thumbnail offline), 2A (the ↑ badge), 3B (Diagnostics → Offline copy: files and their size, photos kept of the limit, and the limit's setting). |
 | **6f** `docs:` | ⬜ | The test plan: thumbnails and PDFs offline; a photo opened online then offline; adding a photo offline and seeing it on the web; removing one offline; the limit dropping old photos; sign-out deleting the files. |
 
 **Risks:** large PDFs travel to the webview as Base64 (as now); the desktop's processing must match the server's version for the hashes to agree, and when they don't, the server's hashes win and the desktop downloads its version (nothing breaks, it's just a second download).
@@ -463,4 +463,10 @@
 - **Sending:** before each push batch (`local_copy::with_uploads_sent`), each waiting add's files still waiting are uploaded (`copy_files::send_uploads`: the bytes as picked, so the server processes them itself), the server's files are put into the operation, and the operation is saved back in its place in the outbox (`replace_in_outbox`). A file the server made the same as here is kept as what it is (photo, PDF, thumbnail); one that differs is dropped here and the server's is downloaded when needed; an original or metadata isn't kept. An upload that can't reach the server stops the push (offline); one the server refuses leaves the add as it is, so the server's refusal says why (Messages).
 - **Offline, the buttons are on again:** **+ Add** and a photo's **Remove**. **Keep the original** is off offline (with the tooltip): originals still need the server (#077).
 - **Tests:** the same photo processed in two places makes the same files (what lets the desktop's processing name the server's files); an add's files swapped for the server's, and what each is kept as once sent; uploads waiting with their bytes until sent (SQLCipher); a waiting change rewritten in its place in the outbox. Storage with SQLCipher: 84 passed.
+
+**Step 6e notes (2026-11-13):**
+- **1A:** offline, when the viewer can't get a photo's full size, it shows the photo's thumbnail (always here, 6c), enlarged up to 720 px wide, with "Full size downloads when this computer can reach the server (a small preview)."; a file with nothing here at all says "Not on this computer yet. It downloads when the server can be reached."
+- **2A:** a tile whose photo or PDF was added here and isn't uploaded yet has a small blue **↑** in its top corner (tooltip "Waiting to upload (offline)."); asked again whenever the outbox changes, so it goes once the photo is sent.
+- **3B:** Diagnostics → Offline copy adds **Files** ("1,204 · 410.0 MB"), **Photos kept** ("340.0 MB of 2 GB"), and **Keep photos up to** (1, 2, 5, 10 GB, No limit), which drops photos past a lower limit at once.
+- **Not seen running:** the desktop window can't be driven or captured here; the test plan (6f) covers the three.
 

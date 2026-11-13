@@ -262,6 +262,38 @@ pub(crate) fn alert_count() -> usize {
     0
 }
 
+/// Whether the file `hash` was added on this computer and isn't uploaded yet (sketch 2A).
+/// Always false on the web.
+#[cfg_attr(
+    not(all(feature = "desktop", not(target_arch = "wasm32"))),
+    expect(
+        clippy::unused_async,
+        reason = "only the desktop has files to ask about"
+    )
+)]
+pub(crate) async fn waiting_to_upload(hash: &domain::attachment::FileHash) -> bool {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        crate::copy_files::waiting_to_upload(hash).await
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    {
+        let _ = hash;
+        false
+    }
+}
+
+/// The outbox's count, read so a component re-renders when it changes (nothing on the web).
+pub(crate) fn outbox_changes() -> u64 {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        let summary = crate::local_copy::OUTBOX();
+        summary.waiting + summary.refused
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    0
+}
+
 /// How many changes are on this computer and not on the server (waiting, or refused): signing
 /// out would lose them. Always 0 on the web.
 pub(crate) fn unsent_count() -> u64 {

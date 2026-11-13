@@ -221,13 +221,32 @@ fn OfflineCopy() -> Element {
     use crate::local_copy::{CopyStatus, STATUS};
 
     let mut details = use_signal(|| None::<crate::local_copy::CopyDetails>);
-    // Again whenever the status changes (a pull finished, the copy opened or closed).
+    // This computer's files (6e, 3B), and the limit on photos.
+    let mut files = use_signal(|| None::<storage::local_files::LocalFilesSummary>);
+    let mut limit = use_signal(crate::copy_files::photo_limit);
+    // Again whenever the status changes (a pull finished, the copy opened or closed), or the
+    // outbox does (a photo added or sent).
     use_effect(move || {
-        let _changed = STATUS();
+        let _changed = (STATUS(), crate::local_copy::OUTBOX(), limit());
         spawn(async move {
             details.set(crate::local_copy::details().await);
+            files.set(crate::copy_files::summary().await);
         });
     });
+    let pick_limit = move |event: FormEvent| {
+        let Some(picked) = event
+            .value()
+            .parse::<usize>()
+            .ok()
+            .and_then(|index| domain::attachment::PhotoLimit::ALL.get(index).copied())
+        else {
+            return;
+        };
+        spawn(async move {
+            crate::copy_files::set_photo_limit(picked).await;
+            limit.set(picked);
+        });
+    };
     let status = match STATUS() {
         CopyStatus::Closed => tr(messages::COPY_CLOSED),
         CopyStatus::Downloading { cursor, of } => tr_with(
@@ -311,6 +330,32 @@ fn OfflineCopy() -> Element {
                 if let Some(stopped) = stopped {
                     dt { {tr(messages::COPY_SENDING)} }
                     dd { {stopped} }
+                }
+                // This computer's photos and PDFs (6e, 3B).
+                if let Some(files) = files() {
+                    dt { {tr(messages::COPY_FILES)} }
+                    dd {
+                        {tr_with(messages::COPY_FILES_VALUE, &[
+                            ("count", MessageArg::from(i64::try_from(files.files).unwrap_or(i64::MAX))),
+                            ("size", MessageArg::from(megabytes(files.bytes).as_str())),
+                        ])}
+                    }
+                    dt { {tr(messages::COPY_PHOTOS_KEPT)} }
+                    dd {
+                        {tr_with(messages::COPY_PHOTOS_KEPT_VALUE, &[
+                            ("used", MessageArg::from(megabytes(files.photo_bytes).as_str())),
+                            ("limit", MessageArg::from(tr(limit().label()).as_str())),
+                        ])}
+                    }
+                }
+                dt { {tr(messages::COPY_PHOTO_LIMIT)} }
+                dd {
+                    // The value is the choice's index in PhotoLimit::ALL.
+                    select { class: "photo-limit", "aria-label": tr(messages::COPY_PHOTO_LIMIT), onchange: pick_limit,
+                        for (index, choice) in domain::attachment::PhotoLimit::ALL.iter().enumerate() {
+                            option { key: "{index}", value: "{index}", selected: *choice == limit(), {tr(choice.label())} }
+                        }
+                    }
                 }
             }
             button {
