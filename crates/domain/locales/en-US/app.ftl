@@ -453,6 +453,7 @@ copy-files-value = { $count } · { $size }
 copy-photos-kept = Photos kept
 copy-photos-kept-value = { $used } of { $limit }
 copy-photo-limit = Keep photos up to
+copy-unwell = Waiting: the server isn't well (its database failed a check)
 copy-failed = Not updating: something went wrong (see the log below)
 copy-never = Never
 setting-distance = Distance

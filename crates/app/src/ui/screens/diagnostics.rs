@@ -272,6 +272,7 @@ fn OfflineCopy() -> Element {
             ],
         ),
         CopyStatus::Failed => tr(messages::COPY_FAILED),
+        CopyStatus::Unwell => tr(messages::COPY_UNWELL),
     };
     let shown = details();
     let last_pull = shown

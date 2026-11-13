@@ -21,6 +21,8 @@ pub mod files;
 pub mod local_copy;
 pub mod logging;
 pub mod pairing;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod protect;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sealed;
 #[cfg(not(target_arch = "wasm32"))]

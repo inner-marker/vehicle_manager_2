@@ -635,6 +635,8 @@ define_messages! {
     COPY_OFFLINE => "copy-offline",
     /// The copy's status: another schema version.
     COPY_OTHER_SCHEMA => "copy-other-schema",
+    /// The copy's status: the server isn't well (7c).
+    COPY_UNWELL => "copy-unwell",
     /// The top bar: changes waiting to be sent (sketch 1A).
     OUTBOX_CHIP => "outbox-chip",
     /// The chip's tooltip, with the oldest's time.
