@@ -283,6 +283,7 @@ mod user_admin {
             user: &admin,
             health: Health::Healthy,
             clock: &clock,
+            origin: server::origin::Origin::Online,
         };
         let form = domain::asset_form::AssetForm {
             name: "Truck".into(),

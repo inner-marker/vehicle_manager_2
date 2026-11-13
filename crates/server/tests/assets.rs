@@ -40,6 +40,7 @@ mod assets {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
         }
     }
 
@@ -117,6 +118,7 @@ mod assets {
             user: &stuart,
             health: Health::Healthy,
             clock: &clock,
+            origin: server::origin::Origin::Online,
         };
         let km = PreferencesPatch {
             distance: Some(Choice::Set(DistanceUnit::Kilometers)),

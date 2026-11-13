@@ -2522,6 +2522,10 @@ define_messages! {
     INBOX_FAILED_UNLOCKS => "inbox-failed-unlocks",
     /// Inbox: its text.
     INBOX_FAILED_UNLOCKS_BODY => "inbox-failed-unlocks-body",
+    /// Messages: a desktop's clock is far ahead (title).
+    INBOX_CLOCK_AHEAD => "inbox-clock-ahead",
+    /// Messages: a desktop's clock is far ahead (text).
+    INBOX_CLOCK_AHEAD_BODY => "inbox-clock-ahead-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
     /// Log: what an acquisition records.

@@ -196,6 +196,18 @@ pub enum MessageKind {
         /// How many wrong tries came before the unlock.
         count: u32,
     },
+    /// A desktop sent changes with its clock far ahead of the server's (phase-3.md 5c, #076):
+    /// for the household Admin. Its changes wait until its clock is right.
+    ClockAhead {
+        /// The device.
+        device: crate::id::DeviceId,
+        /// Its name, for the text.
+        device_name: String,
+        /// Whose it is.
+        person: String,
+        /// How far ahead, in whole minutes (at least 1).
+        minutes: i64,
+    },
 }
 
 impl MessageKind {
@@ -224,6 +236,7 @@ impl MessageKind {
             Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB,
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS,
+            Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD,
         }
     }
 
@@ -254,6 +267,7 @@ impl MessageKind {
             Self::ForgottenJob { .. } => messages::INBOX_FORGOTTEN_JOB_BODY,
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN_BODY,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS_BODY,
+            Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD_BODY,
         }
     }
 }
@@ -487,6 +501,32 @@ pub fn failed_unlocks_message(
         severity: Severity::Warning,
         audience: Audience::AdminMode,
         raised_at: last_at,
+        detail: String::new(),
+        action: None,
+    }
+}
+
+/// The Admin's message that `device`'s clock was found `ahead_millis` ahead of the server's at
+/// `at`, while it sent changes (one message per time it's flagged).
+#[must_use]
+pub fn clock_ahead_message(
+    device: crate::id::DeviceId,
+    device_name: &str,
+    person: &str,
+    ahead_millis: i64,
+    at: UnixMillis,
+) -> Message {
+    Message {
+        key: MessageKey(format!("clock-ahead:{device}:{}", at.as_millis())),
+        kind: MessageKind::ClockAhead {
+            device,
+            device_name: device_name.to_owned(),
+            person: person.to_owned(),
+            minutes: (ahead_millis / 60_000).max(1),
+        },
+        severity: Severity::Warning,
+        audience: Audience::AdminMode,
+        raised_at: at,
         detail: String::new(),
         action: None,
     }
@@ -834,7 +874,8 @@ mod tests {
                 | MessageKind::PlaceLookupUnavailable
                 | MessageKind::ForgottenJob { .. }
                 | MessageKind::OverdueReturn { .. }
-                | MessageKind::FailedUnlocks { .. } => "",
+                | MessageKind::FailedUnlocks { .. }
+                | MessageKind::ClockAhead { .. } => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);

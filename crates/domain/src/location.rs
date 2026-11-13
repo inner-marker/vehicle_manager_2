@@ -757,6 +757,22 @@ pub struct SavedPlacePatch {
 }
 
 impl SavedPlacePatch {
+    /// The patch as a person may send it: never the owner, and a radius within limits (the
+    /// other fields are checked by their types).
+    ///
+    /// # Errors
+    ///
+    /// [`LocationError`] for a radius out of range.
+    pub fn checked(mut self) -> Result<Self, LocationError> {
+        self.owner = None;
+        if let Some(radius) = self.radius_m {
+            check_radius(radius)?;
+        }
+        Ok(self)
+    }
+}
+
+impl SavedPlacePatch {
     /// Every field of `place`, for creating it.
     #[must_use]
     pub fn all(place: SavedPlace) -> Self {

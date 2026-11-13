@@ -865,6 +865,23 @@ record_patch! {
 }
 
 impl EventPatch {
+    /// The fields a person edits in a draft (the log form's): a pushed edit keeps only these
+    /// (`keep_only`), so it can never set what the server sets (status, who logged it, when it
+    /// was finalized, what it corrects).
+    pub const EDITABLE: [&'static str; 11] = [
+        "dates",
+        "location",
+        "readings",
+        "skipped",
+        "fields",
+        "notes",
+        "performed_by",
+        "fuel",
+        "work",
+        "lifecycle",
+        "reading_override",
+    ];
+
     /// Every field of `event`, for creating it.
     #[must_use]
     pub fn all(event: Event) -> Self {

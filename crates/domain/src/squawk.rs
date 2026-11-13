@@ -162,6 +162,9 @@ record_patch! {
 }
 
 impl SquawkPatch {
+    /// The fields a person edits (the squawk sheet's): a pushed edit keeps only these.
+    pub const EDITABLE: [&'static str; 4] = ["description", "notes", "severity", "opened_at"];
+
     /// Every field of `squawk`, for opening it.
     #[must_use]
     pub fn all(squawk: Squawk) -> Self {

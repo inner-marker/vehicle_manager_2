@@ -111,6 +111,7 @@ async fn download(Path((id, part)): Path<(String, String)>, request: Request) ->
         user: &user,
         health: server::health::current(),
         clock: &SystemClock,
+        origin: ::server::origin::Origin::Online,
     };
     match server::attachments::download(&context, store, id, part).await {
         Ok(file) => {

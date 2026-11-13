@@ -32,9 +32,9 @@ use storage::Database;
 use storage::assets::{AssetWriter, CustomFieldWriter, GarageOrderWriter, MeterWriter};
 use storage::commands::RecordWriter;
 
-use crate::commands::issue;
+use crate::commands::issue_from;
 use crate::health::Health;
-use crate::ids::new_id;
+use crate::origin::Origin;
 use crate::sessions::SignedIn;
 
 /// What vehicle requests need.
@@ -49,6 +49,8 @@ pub struct AssetsContext<'a> {
     pub health: Health,
     /// The real clock.
     pub clock: &'a (dyn Clock + Sync),
+    /// Where the change comes from: online, or a desktop's pushed operation (`crate::origin`).
+    pub origin: Origin<'a>,
 }
 
 /// Logs a failure and answers "unavailable".
@@ -68,7 +70,8 @@ impl AssetsContext<'_> {
             user: self.user.user,
             mode: self.user.mode,
         };
-        issue(
+        issue_from(
+            &self.origin,
             self.database,
             writer,
             change,
@@ -84,7 +87,9 @@ impl AssetsContext<'_> {
 
     /// A new record ID.
     pub(crate) fn new_id<T>(&self) -> Result<Id<T>, AssetsOutcome> {
-        new_id(self.clock.now()).map_err(|error| unavailable("new id", &error))
+        self.origin
+            .new_id(self.clock.now())
+            .map_err(|error| unavailable("new id", &error))
     }
 
     /// Whether the person may do a household-wide `action` now.

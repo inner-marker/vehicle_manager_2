@@ -17,8 +17,9 @@ use domain::time::Clock;
 use storage::Database;
 use storage::preferences::PreferencesWriter;
 
-use crate::commands::issue;
+use crate::commands::issue_from;
 use crate::health::Health;
+use crate::origin::Origin;
 use crate::sessions::SignedIn;
 
 /// What preference changes need.
@@ -33,6 +34,8 @@ pub struct PreferencesContext<'a> {
     pub health: Health,
     /// The real clock.
     pub clock: &'a (dyn Clock + Sync),
+    /// Where the change comes from: online, or a desktop's pushed operation (`crate::origin`).
+    pub origin: Origin<'a>,
 }
 
 impl PreferencesContext<'_> {
@@ -115,7 +118,8 @@ async fn change(
         user: context.user.user,
         mode: context.user.mode,
     };
-    if let Err(error) = issue(
+    if let Err(error) = issue_from(
+        &context.origin,
         context.database,
         &PreferencesWriter,
         change,

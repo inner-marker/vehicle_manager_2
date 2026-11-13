@@ -92,6 +92,7 @@ mod local {
                 // Reads don't depend on the server's health (only changes do).
                 health: Health::Healthy,
                 clock: &SystemClock,
+                origin: ::server::origin::Origin::Online,
             }
         }
 
@@ -102,6 +103,7 @@ mod local {
                 user: &self.user,
                 health: Health::Healthy,
                 clock: &SystemClock,
+                origin: ::server::origin::Origin::Online,
             }
         }
 
@@ -111,6 +113,7 @@ mod local {
                 user: &self.user,
                 health: Health::Healthy,
                 clock: &SystemClock,
+                origin: ::server::origin::Origin::Online,
                 // A saved place's list needs no place data.
                 geocoder: None,
             }

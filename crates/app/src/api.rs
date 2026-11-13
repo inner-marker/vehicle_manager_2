@@ -18,7 +18,7 @@ use domain::api::{
     SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
 use domain::secret::Secret;
-use domain::sync::PullOutcome;
+use domain::sync::{PullOutcome, PushOutcome};
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -1632,6 +1632,25 @@ pub(crate) async fn pull(cursor: u64, schema: i64) -> ServerFnResult<PullOutcome
     )
 }
 
+/// Sends this desktop's outbox, oldest first (phase-3.md 5c, decision #076): paired desktops
+/// only, and only if `schema` is the server's schema version. Each operation runs through the
+/// same server function as an online save; the answer says which were applied, which were
+/// refused and why, and why the server stopped early, if it did.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PushOutcome`] values.
+#[post("/api/v1/sync/push")]
+pub(crate) async fn push(
+    schema: i64,
+    operations: Vec<domain::operation::Operation>,
+) -> ServerFnResult<PushOutcome> {
+    Ok(server_side::with_push(async |context| {
+        ::server::sync::push(&context, schema, &operations).await
+    })
+    .await)
+}
+
 /// A person's signed-in devices: the household Admin, in Admin mode.
 ///
 /// # Errors
@@ -1798,6 +1817,29 @@ mod server_side {
         action(database, database_id, &signed_in).await
     }
 
+    /// Runs `action` with what a push needs, or answers why it can't (no database, or nobody
+    /// signed in).
+    pub(super) async fn with_push(
+        action: impl AsyncFnOnce(server::sync::PushContext<'_>) -> domain::sync::PushOutcome,
+    ) -> domain::sync::PushOutcome {
+        let (Some(database), Some(database_id)) =
+            (server::startup::database(), server::startup::database_id())
+        else {
+            return domain::sync::PushOutcome::Unavailable;
+        };
+        let Some(user) = signed_in() else {
+            return domain::sync::PushOutcome::NotSignedIn;
+        };
+        let context = server::sync::PushContext {
+            database,
+            database_id,
+            user: &user,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
     /// As [`with_admin`], for the Admin's view of a person's devices.
     pub(super) async fn with_admin_devices(
         action: impl AsyncFnOnce(server::user_admin::AdminContext<'_>) -> domain::api::DevicesOutcome,
@@ -1837,6 +1879,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1883,6 +1926,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1905,6 +1949,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1921,6 +1966,7 @@ mod server_side {
             user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         }
     }
 
@@ -2017,6 +2063,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
             geocoder: server::places::geocoder(),
         };
         action(context).await

@@ -1543,6 +1543,11 @@ inbox-failed-unlocks-body = { $count ->
     [one] Someone typed 1 wrong PIN or password on { $device } ({ $person }) before it was unlocked.
    *[other] Someone typed { $count } wrong PINs or passwords on { $device } ({ $person }) before it was unlocked.
 } If that wasn't { $person }, sign the computer out from their Devices on the Users screen.
+inbox-clock-ahead = A computer's clock is wrong
+inbox-clock-ahead-body = { $minutes ->
+    [one] { $device } ({ $person }) sent changes with its clock 1 minute ahead of the server's.
+   *[other] { $device } ({ $person }) sent changes with its clock { $minutes } minutes ahead of the server's.
+} Its changes wait on that computer until its date and time are set right.
 inbox-open-send-out = Open the send-out
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back

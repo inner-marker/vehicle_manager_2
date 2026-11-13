@@ -67,6 +67,7 @@ mod make_fixture {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
         }
     }
 
