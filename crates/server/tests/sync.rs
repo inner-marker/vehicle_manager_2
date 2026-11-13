@@ -1510,4 +1510,43 @@ mod sync {
         );
         assert_eq!(count(&scene.server, "applied_operations").await, 0);
     }
+
+    #[tokio::test]
+    async fn a_vehicle_deleted_counts_its_whole_history() {
+        use storage::sync::PageCheck;
+
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        for miles in [50_000, 50_100, 50_200] {
+            let mut logged = fuel_up(scene.truck, scene.odometer, miles);
+            logged.dates.start = UnixMillis::from_millis(NOW.as_millis() + miles);
+            saved(&add(&sam_online, logged).await);
+        }
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+
+        let admin = SignedIn {
+            mode: ActiveMode::Admin,
+            ..scene.stuart.clone()
+        };
+        assert_eq!(
+            server::assets::delete(
+                &context(&scene.server, &admin, &scene.clock),
+                scene.truck,
+                "Truck"
+            )
+            .await,
+            AssetsOutcome::Done
+        );
+        let PageCheck::Fine(deletions) = scene
+            .copy
+            .check_pull_page(&next_page(&scene).await)
+            .await
+            .unwrap()
+        else {
+            panic!("not this server's page");
+        };
+        // The truck itself, its three fuel-ups, and its meters (at least the odometer).
+        assert!(deletions.total >= 5, "{deletions:?}");
+        assert_eq!(deletions.by_vehicle, vec![(scene.truck, deletions.total)]);
+    }
 }

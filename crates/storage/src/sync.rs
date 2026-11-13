@@ -453,7 +453,14 @@ impl Database {
                     .and_then(|index| row.get(index))
                     .and_then(SqlValue::blob_bytes)
                 {
-                    *by_vehicle.entry(asset).or_default() += 1;
+                    *by_vehicle.entry(asset.clone()).or_default() += 1;
+                    // A vehicle deleted takes its whole history out of sight: its records count
+                    // too (they stay, hidden, but they're gone from every screen).
+                    if name == "assets" {
+                        let history = self.live_records_of(&asset).await?;
+                        deletions.total += history;
+                        *by_vehicle.entry(asset).or_default() += history;
+                    }
                 }
             }
         }
@@ -464,6 +471,30 @@ impl Database {
         by_vehicle.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
         deletions.by_vehicle = by_vehicle;
         Ok(PageCheck::Fine(deletions))
+    }
+
+    /// How many live records of the vehicle `asset` (by its ID's bytes) this copy has, in
+    /// every record table with an `asset_id` (its events, squawks, meters, documents, …).
+    async fn live_records_of(&self, asset: &[u8]) -> Result<u64, StorageError> {
+        let mut total = 0;
+        for table in RECORD_TABLES {
+            let columns: Vec<String> = sqlx::query_scalar("SELECT name FROM pragma_table_info(?)")
+                .bind(table)
+                .fetch_all(self.pool())
+                .await?;
+            if !columns.iter().any(|column| column == "asset_id") || table == "assets" {
+                continue;
+            }
+            // The names are this module's own constants.
+            let count: i64 = sqlx::query_scalar(AssertSqlSafe(format!(
+                "SELECT count(*) FROM {table} WHERE asset_id = ? AND deleted = 0"
+            )))
+            .bind(asset)
+            .fetch_one(self.pool())
+            .await?;
+            total += to_u64(count, "count")?;
+        }
+        Ok(total)
     }
 
     /// Empties this copy of everything pulled (every synced table, field clocks, tombstones)
