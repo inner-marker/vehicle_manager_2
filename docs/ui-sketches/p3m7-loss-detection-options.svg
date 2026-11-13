@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1240" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 3 · milestone 7 · Loss detection (desktop): layout options</text>
+<text x="24" y="64" font-size="13" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme shown. Each row: two options side by side. Wording is a draft.</text>
+<text x="24" y="100" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · Protective mode: the server looks reset, rolled back, or unhealthy</text>
+<text x="24" y="120" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Syncing stops; this computer&#x27;s copy and unsent changes are kept; the app still reads and saves here.</text>
+<rect x="24" y="140" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1A · A red strip under the top bar</text>
+<text x="44" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Always visible while protected; Details opens the choices</text>
+<rect x="44" y="206" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="58" y="231" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
+<text x="84" y="231" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<text x="450" y="231" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<rect x="150" y="215" width="110" height="22" rx="11" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="205.0" y="230" font-size="11" fill="#e5676b" font-weight="600" text-anchor="middle">PROTECTED</text>
+<rect x="44" y="252" width="420" height="56" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="58" y="274" font-size="12.5" fill="#ffd2d2" font-weight="700" text-anchor="start">Syncing stopped: the server&#x27;s database changed</text>
+<text x="58" y="294" font-size="11.5" fill="#f0b4b4" font-weight="400" text-anchor="start">(reset, or another server). Your copy is kept.</text>
+<rect x="374" y="265" width="80" height="30" rx="6" fill="#262b34" stroke="#4a525e"/>
+<text x="414.0" y="285" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="middle">Details</text>
+<rect x="44" y="316" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="338" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Outback · 84,210 mi</text>
+<rect x="44" y="358" width="420" height="34" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="380" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Tacoma · 132,904 mi</text>
+<text x="44" y="424" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Details: what changed, and Keep protected · Use this server</text>
+<text x="44" y="440" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">(downloads it; this copy kept as a snapshot) · Rebuild (Admin).</text>
+<rect x="516" y="140" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1B · A dialog at unlock, then a chip</text>
+<text x="536" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Asked once, plainly; the chip stays until it&#x27;s settled</text>
+<rect x="556" y="206" width="380" height="230" rx="10" fill="#1d2128" stroke="#4a525e"/>
+<text x="576" y="236" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">This server isn&#x27;t the one this computer knew</text>
+<text x="576" y="262" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Its database changed (it was reset, or it&#x27;s</text>
+<text x="576" y="280" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">another server). Nothing on this computer</text>
+<text x="576" y="298" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">was changed; syncing has stopped.</text>
+<rect x="576" y="324" width="340" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="746.0" y="344" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">Keep this computer&#x27;s copy (stay protected)</text>
+<rect x="576" y="360" width="340" height="30" rx="6" fill="#262b34" stroke="#4a525e"/>
+<text x="746.0" y="380" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="middle">Use this server (this copy kept as a snapshot)</text>
+<rect x="576" y="396" width="340" height="30" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="746.0" y="416" font-size="12" fill="#e5676b" font-weight="600" text-anchor="middle">Rebuild the server from this computer</text>
+<text x="24" y="490" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · A pull that would delete a lot</text>
+<text x="24" y="510" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">More than 25 records and more than 10% of this computer&#x27;s copy: it waits for you; nothing is applied.</text>
+<rect x="24" y="530" width="460" height="280" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="560" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · A dialog, when it happens</text>
+<text x="44" y="580" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Interrupts once; names what would go</text>
+<rect x="64" y="596" width="380" height="196" rx="10" fill="#1d2128" stroke="#4a525e"/>
+<text x="84" y="626" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">The server would delete 214 records</text>
+<text x="84" y="652" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">• Outback: its whole history (180)</text>
+<text x="84" y="672" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">• Tacoma: 34 events</text>
+<text x="84" y="698" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">If that&#x27;s not right, keep this computer&#x27;s copy.</text>
+<rect x="84" y="726" width="200" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="184.0" y="746" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">Keep this computer&#x27;s copy</text>
+<rect x="294" y="726" width="130" height="30" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="359.0" y="746" font-size="12" fill="#e5676b" font-weight="600" text-anchor="middle">Apply them</text>
+<text x="84" y="776" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Apply takes a snapshot first.</text>
+<rect x="516" y="530" width="460" height="280" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="560" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · A message, and the chip</text>
+<text x="536" y="580" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">No interruption; Messages has the choice</text>
+<rect x="536" y="596" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="550" y="621" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
+<text x="576" y="621" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
+<text x="942" y="621" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<rect x="642" y="605" width="160" height="22" rx="11" fill="#3a2f14" stroke="#f2b84b"/>
+<text x="722.0" y="620" font-size="11" fill="#f2b84b" font-weight="600" text-anchor="middle">SYNC WAITING · 214</text>
+<rect x="536" y="650" width="420" height="130" rx="6" fill="#1d2128" stroke="#f2b84b"/>
+<text x="552" y="674" font-size="13" fill="#f2b84b" font-weight="700" text-anchor="start">⚠ A sync would delete 214 records</text>
+<text x="552" y="696" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Outback&#x27;s whole history, and 34 Tacoma events.</text>
+<text x="552" y="714" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Nothing has been applied.</text>
+<rect x="552" y="734" width="200" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="652.0" y="754" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">Keep this computer&#x27;s copy</text>
+<rect x="762" y="734" width="130" height="30" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="827.0" y="754" font-size="12" fill="#e5676b" font-weight="600" text-anchor="middle">Apply them</text>
+<text x="24" y="840" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Rebuild the server from this computer (the household Admin)</text>
+<text x="24" y="860" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Only with a complete copy and nothing refused; typed confirmation; a new database ID; new temporary passwords.</text>
+<rect x="24" y="880" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="910" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · A section on Diagnostics</text>
+<text x="44" y="930" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Its checks, then the typed confirmation</text>
+<rect x="44" y="946" width="420" height="234" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="60" y="972" font-size="11.5" fill="#9aa1ab" font-weight="700" text-anchor="start">REBUILD THE SERVER</text>
+<text x="60" y="998" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">✓ This copy was complete at its last pull (2 hours ago)</text>
+<text x="60" y="1020" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">✓ Nothing refused or waiting</text>
+<text x="60" y="1042" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">✓ The server is empty (new) or reset</text>
+<text x="60" y="1070" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Everyone gets a new temporary password (shown</text>
+<text x="60" y="1086" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">once); other computers pair again.</text>
+<rect x="60" y="1102" width="250" height="30" rx="6" fill="#101318" stroke="#4a525e"/>
+<text x="70" y="1122" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Type REBUILD</text>
+<rect x="320" y="1102" width="128" height="30" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
+<text x="384.0" y="1122" font-size="12" fill="#e5676b" font-weight="600" text-anchor="middle">Rebuild</text>
+<text x="60" y="1162" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Then: the temporary passwords, to give out.</text>
+<rect x="516" y="880" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="910" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · A step-by-step dialog</text>
+<text x="536" y="930" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">From protective mode&#x27;s Rebuild; one step at a time</text>
+<rect x="556" y="946" width="380" height="234" rx="10" fill="#1d2128" stroke="#4a525e"/>
+<text x="576" y="974" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Rebuild the server · step 2 of 3</text>
+<text x="576" y="1000" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">1  Checks: complete copy, nothing refused  ✓</text>
+<text x="576" y="1024" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">2  What happens:</text>
+<text x="596" y="1044" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">• a new database, with this computer&#x27;s records</text>
+<text x="596" y="1062" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">• new temporary passwords for everyone</text>
+<text x="596" y="1080" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">• other computers pair again</text>
+<text x="576" y="1106" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">3  Type REBUILD to confirm</text>
+<rect x="576" y="1132" width="100" height="30" rx="6" fill="#262b34" stroke="#4a525e"/>
+<text x="626.0" y="1152" font-size="12" fill="#e8eaed" font-weight="500" text-anchor="middle">Back</text>
+<rect x="796" y="1132" width="120" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="856.0" y="1152" font-size="12" fill="#ffffff" font-weight="600" text-anchor="middle">Next</text>
+</svg>
