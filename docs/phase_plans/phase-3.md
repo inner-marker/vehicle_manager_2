@@ -400,3 +400,5 @@
 - **The outbox's count** (`local_copy::OUTBOX`) is kept current after every save, push, discard, and when the copy opens or closes.
 - **Tests:** the 24 hours / 100 rule; which saved change settles a reopened one. The screens can't be driven here; the test plan (5f) covers them.
 
+**Milestone 5 test (2026-11-12):** `docs/test-plans/p3m5-outbox.md` passed on the test server, every required step (1–18, 21, 22), with no fixes. The optional clock-ahead steps (19–20) weren't run; the server's push tests cover them.
+
