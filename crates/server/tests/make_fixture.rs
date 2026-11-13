@@ -319,9 +319,10 @@ mod make_fixture {
         else {
             panic!("the document wasn't added");
         };
+        let files = storage::files::Files::Folder(store.clone());
         let upload_context = UploadContext {
             database,
-            store,
+            files: &files,
             user: maintainer,
             health: Health::Healthy,
             now: NOW,

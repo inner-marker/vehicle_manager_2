@@ -932,9 +932,10 @@ mod sync {
         store: &storage::files::FileStore,
         user: &SignedIn,
     ) -> domain::api::UploadedFile {
+        let files = storage::files::Files::Folder(store.clone());
         let context = server::attachments::UploadContext {
             database: &scene.server,
-            store,
+            files: &files,
             user,
             health: Health::Healthy,
             now: NOW,
@@ -1135,5 +1136,19 @@ mod sync {
         assert_eq!(file.name, "IMG_0412.png");
         assert_eq!(file.removed_by, Some(scene.laptop.user));
         assert_eq!(file.erased_at, later);
+    }
+
+    #[tokio::test]
+    async fn the_same_photo_processed_in_two_places_makes_the_same_files() {
+        // What lets a desktop's processing (the server's own code) name the files the server
+        // will make; if it ever didn't, the server's would win (copy_files::send_uploads).
+        let scene = scene().await;
+        let mut made = Vec::new();
+        for _ in 0..2 {
+            let temp = tempfile::tempdir().unwrap();
+            let store = storage::files::FileStore::open(temp.path()).unwrap();
+            made.push(uploaded_photo(&scene, &store, &scene.laptop).await);
+        }
+        assert_eq!(made[0], made[1]);
     }
 }

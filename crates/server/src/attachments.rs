@@ -198,8 +198,9 @@ async fn blocking<T: Send + 'static>(
 pub struct UploadContext<'a> {
     /// The database (to list the stored files).
     pub database: &'a Database,
-    /// The file store.
-    pub store: &'a FileStore,
+    /// Where the files go: the server's folder, or, for one added on a desktop, its files
+    /// database (as uploads waiting to be sent, phase-3.md 6d).
+    pub files: &'a Files,
     /// Who is uploading.
     pub user: &'a SignedIn,
     /// The server's health.
@@ -208,22 +209,31 @@ pub struct UploadContext<'a> {
     pub now: UnixMillis,
 }
 
-/// Stores `bytes` (and lists them), returning what was stored.
+/// Stores `bytes` (on the server, and lists them; on a desktop, as an upload waiting), returning
+/// what was stored.
 async fn store_bytes(
     context: &UploadContext<'_>,
     bytes: Vec<u8>,
 ) -> Result<StoredFile, UploadOutcome> {
-    let store = context.store.clone();
-    let stored = blocking(move || store.put(&bytes))
-        .await
-        .map_err(|error| upload_failed("store", &error))?
-        .map_err(|error| upload_failed("store", &error))?;
-    context
-        .database
-        .record_stored_file(&stored, context.now)
-        .await
-        .map_err(|error| upload_failed("list", &error))?;
-    Ok(stored)
+    match context.files {
+        Files::Folder(store) => {
+            let store = store.clone();
+            let stored = blocking(move || store.put(&bytes))
+                .await
+                .map_err(|error| upload_failed("store", &error))?
+                .map_err(|error| upload_failed("store", &error))?;
+            context
+                .database
+                .record_stored_file(&stored, context.now)
+                .await
+                .map_err(|error| upload_failed("list", &error))?;
+            Ok(stored)
+        }
+        Files::Local(local) => local
+            .put(&bytes, storage::local_files::LocalKind::Upload, context.now)
+            .await
+            .map_err(|error| upload_failed("store", &error)),
+    }
 }
 
 /// Logs a failure and answers "unavailable".

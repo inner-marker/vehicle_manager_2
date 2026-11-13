@@ -4628,8 +4628,8 @@ body:has(.photo-viewer) {
 }
 
 /* Offline (milestone 5, decision #076): the changes Driver mode allows are saved on this
-   computer and sent later, so their buttons stay on. What still needs the server is off: a
-   button marked `needs-server` (photos and documents, milestone 6) is disabled by the app, with
+   computer and sent later, so their buttons stay on, photos and documents too (milestone 6). What
+   still needs the server is off: a button marked `needs-server` is disabled by the app, with
    why as its tooltip; in an area marked `needs-server-zone` (changing the password), the save
    buttons are off, with the saving note beside them. */
 .app[data-offline="true"] .needs-server:disabled {

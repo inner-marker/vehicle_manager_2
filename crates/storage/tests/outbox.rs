@@ -164,6 +164,25 @@ mod outbox {
     }
 
     #[tokio::test]
+    async fn a_waiting_change_can_be_rewritten_in_its_place() {
+        let (_temp, database) = database().await;
+        for n in [10, 11] {
+            database.add_to_outbox(&operation(n), at(1)).await.unwrap();
+        }
+        let mut changed = operation(10);
+        changed.change = OperationChange::SetGarageOrder {
+            order: vec![test_id(5)],
+        };
+        assert!(database.replace_in_outbox(&changed).await.unwrap());
+        assert_eq!(
+            database.outbox_waiting(10).await.unwrap(),
+            vec![changed, operation(11)],
+            "in the same place"
+        );
+        assert!(!database.replace_in_outbox(&operation(99)).await.unwrap());
+    }
+
+    #[tokio::test]
     async fn the_desktops_clock_only_moves_forward() {
         let (_temp, database) = database().await;
         assert_eq!(database.device_hlc().await.unwrap(), Hlc::ZERO);

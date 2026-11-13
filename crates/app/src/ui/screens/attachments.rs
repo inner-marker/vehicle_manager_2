@@ -145,11 +145,8 @@ pub(crate) fn AttachmentStrip(
                 }
                 if may_add {
                     button {
-                        class: "attachment-add needs-server",
+                        class: "attachment-add",
                         r#type: "button",
-                        // Files need the server until milestone 6.
-                        disabled: crate::ui::offline::is_offline_now(),
-                        title: crate::ui::offline::needs_server_note(),
                         onclick: move |_| adding.set(true),
                         {tr(messages::ATTACHMENT_ADD)}
                     }
@@ -253,7 +250,7 @@ fn upload_problem(outcome: &UploadOutcome) -> MessageId {
 
 /// Uploads `bytes` for `purpose`.
 async fn send(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadedFile, MessageId> {
-    match files::upload(purpose, bytes).await {
+    match data::upload(purpose, bytes).await {
         Ok(UploadOutcome::Uploaded { uploaded }) => Ok(uploaded),
         Ok(other) => Err(upload_problem(&other)),
         Err(error) => {
@@ -322,7 +319,7 @@ async fn add_photo(
             original,
         },
     };
-    match api::add_attachment(input).await {
+    match data::add_attachment(input).await {
         Ok(AttachmentsOutcome::Saved { id }) => {
             tracing::debug!(target: log_area::UI, attachment = %id, "photo added");
             Ok(())
@@ -370,7 +367,7 @@ async fn add_pdf(
             pages: uploaded.pages.unwrap_or(1),
         },
     };
-    match api::add_attachment(input).await {
+    match data::add_attachment(input).await {
         Ok(AttachmentsOutcome::Saved { id }) => {
             tracing::debug!(target: log_area::UI, attachment = %id, "PDF added");
             Ok(())
@@ -433,7 +430,14 @@ fn AddSheet(
                 let added = if pdf {
                     add_pdf(asset, owner, file.clone()).await
                 } else {
-                    add_photo(asset, owner, file.clone(), size(), keep_original()).await
+                    add_photo(
+                        asset,
+                        owner,
+                        file.clone(),
+                        size(),
+                        keep_original() && !crate::ui::offline::is_offline_now(),
+                    )
+                    .await
                 };
                 match added {
                     Ok(()) => added_any.set(true),
@@ -523,11 +527,12 @@ fn AddSheet(
                     }
                 }
                 if may_keep_originals {
-                    label { class: "check",
+                    // An original needs the server (they're large; #077): off while offline.
+                    label { class: "check", title: crate::ui::offline::needs_server_note(),
                         input {
                             r#type: "checkbox",
-                            checked: keep_original(),
-                            disabled: busy,
+                            checked: keep_original() && !crate::ui::offline::is_offline_now(),
+                            disabled: busy || crate::ui::offline::is_offline_now(),
                             onchange: move |event| keep_original.set(event.checked()),
                         }
                         span { {tr(messages::ATTACHMENT_KEEP_ORIGINAL)} }
@@ -852,10 +857,8 @@ fn Viewer(
                         }
                         if view.may_change {
                             button {
-                                class: "danger-button needs-server",
+                                class: "danger-button",
                                 r#type: "button",
-                                disabled: crate::ui::offline::is_offline_now(),
-                                title: crate::ui::offline::needs_server_note(),
                                 onclick: move |_| confirm.set(true),
                                 {tr(messages::ACTION_REMOVE)}
                             }
@@ -888,7 +891,7 @@ fn RemoveDialog(id: AttachmentId, on_close: EventHandler<bool>) -> Element {
     let mut problem = use_signal(|| None::<MessageId>);
     let remove = move |_| {
         spawn(async move {
-            match api::remove_attachment(id).await {
+            match data::remove_attachment(id).await {
                 Ok(AttachmentsOutcome::Done) => on_close.call(true),
                 Ok(other) => problem.set(Some(refusal(&other))),
                 Err(error) => problem.set(Some(problem_from_error(&error).message())),

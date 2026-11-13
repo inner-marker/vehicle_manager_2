@@ -145,6 +145,25 @@ mod local {
         }
     }
 
+    impl Answer for domain::api::AttachmentsOutcome {
+        fn saved(&self) -> bool {
+            matches!(self, Self::Saved { .. } | Self::Done)
+        }
+        fn refused(refusal: Refusal) -> Option<Self> {
+            match refusal {
+                Refusal::Attachments(answer) => Some(answer),
+                Refusal::Events(_)
+                | Refusal::Squawks(_)
+                | Refusal::Places(_)
+                | Refusal::Preferences(_)
+                | Refusal::Assets(_) => None,
+            }
+        }
+        fn unavailable() -> Self {
+            Self::Unavailable
+        }
+    }
+
     impl Answer for AssetsOutcome {
         fn saved(&self) -> bool {
             matches!(self, Self::Done | Self::Added { .. })
@@ -169,6 +188,8 @@ mod local {
         database: Database,
         database_id: DatabaseId,
         user: SignedIn,
+        /// This computer's files (6c), if they're open.
+        files: Option<storage::local_files::LocalFiles>,
     }
 
     impl Reader {
@@ -193,6 +214,7 @@ mod local {
                 .map(|(_, grant)| grant)
                 .collect();
             Some(Self {
+                files: crate::copy_files::current(),
                 database,
                 database_id: state.database_id,
                 user: SignedIn {
@@ -322,6 +344,44 @@ mod local {
             {
                 tracing::warn!(target: log_area::SYNC, %error, "couldn't move the desktop's clock");
             }
+        }
+
+        /// This computer's files as the server code reads them, if they're open.
+        pub(super) fn files_here(&self) -> Option<storage::files::Files> {
+            self.files.clone().map(storage::files::Files::Local)
+        }
+
+        /// Uploads `bytes` for `purpose` on this computer (6d): the server's own processing,
+        /// its files kept as uploads waiting, and the bytes as picked kept to send later.
+        /// `None` without this computer's files (then the server is asked).
+        pub(super) async fn upload(
+            &self,
+            purpose: domain::api::UploadPurpose,
+            bytes: Vec<u8>,
+        ) -> Option<domain::api::UploadOutcome> {
+            let files = self.files.clone()?;
+            let here = storage::files::Files::Local(files.clone());
+            let now = SystemClock.now();
+            let context = ::server::attachments::UploadContext {
+                database: &self.database,
+                files: &here,
+                user: &self.user,
+                health: Health::Healthy,
+                now,
+            };
+            let outcome = Box::pin(::server::attachments::upload(
+                &context,
+                purpose,
+                bytes.clone(),
+            ))
+            .await;
+            if let domain::api::UploadOutcome::Uploaded { uploaded } = &outcome
+                && let Err(error) = files.add_upload(&purpose, &bytes, uploaded, now).await
+            {
+                tracing::error!(target: log_area::SYNC, %error, "couldn't keep an upload to send");
+                return Some(domain::api::UploadOutcome::Unavailable);
+            }
+            Some(outcome)
         }
 
         /// What an event's edit changes, against the copy's event (nothing if it's not there:
@@ -650,6 +710,86 @@ pub(crate) async fn set_garage_order(order: Vec<AssetId>) -> ServerFnResult<Asse
         context => assets_from,
         ::server::assets::set_order(&context, order.clone()),
         api::set_garage_order(order)
+    )
+}
+
+/// Uploads a photo, PDF, original, or metadata for `purpose` (`files::upload`): on a desktop
+/// with a complete copy, processed here by the server's own code and sent later (6d).
+///
+/// # Errors
+///
+/// What went wrong reaching the server (online only).
+pub(crate) async fn upload(
+    purpose: domain::api::UploadPurpose,
+    bytes: Vec<u8>,
+) -> Result<domain::api::UploadOutcome, String> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if let Some(reader) = Box::pin(local::Reader::new()).await
+        && let Some(outcome) = reader.upload(purpose, bytes.clone()).await
+    {
+        return Ok(outcome);
+    }
+    crate::files::upload(purpose, bytes).await
+}
+
+/// Adds a photo or document from files already uploaded (`api::add_attachment`).
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn add_attachment(
+    input: domain::api::AttachmentInput,
+) -> ServerFnResult<AttachmentsOutcome> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if let Some(reader) = Box::pin(local::Reader::new()).await
+        && let Some(files) = reader.files_here()
+    {
+        let change = domain::operation::OperationChange::AddAttachment {
+            input: input.clone(),
+        };
+        return Ok(reader
+            .save(change, async |origin| {
+                let context = reader.assets_from(origin);
+                let answer = ::server::attachments::add(&context, &files, input).await;
+                (answer, context.origin.last_command_hlc().ok().flatten())
+            })
+            .await);
+    }
+    api::add_attachment(input).await
+}
+
+/// Moves a photo or document to another task of its event (`api::move_attachment`).
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn move_attachment(
+    id: domain::attachment::AttachmentId,
+    task: Option<u16>,
+) -> ServerFnResult<AttachmentsOutcome> {
+    write!(
+        reader,
+        domain::operation::OperationChange::MoveAttachment { id, task },
+        context => assets_from,
+        ::server::attachments::move_to(&context, id, task),
+        api::move_attachment(id, task)
+    )
+}
+
+/// Removes a photo or document (`api::remove_attachment`).
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn remove_attachment(
+    id: domain::attachment::AttachmentId,
+) -> ServerFnResult<AttachmentsOutcome> {
+    write!(
+        reader,
+        domain::operation::OperationChange::RemoveAttachment { id },
+        context => assets_from,
+        ::server::attachments::remove(&context, id),
+        api::remove_attachment(id)
     )
 }
 

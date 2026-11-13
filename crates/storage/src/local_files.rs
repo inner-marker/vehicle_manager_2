@@ -95,6 +95,29 @@ pub struct LocalFilesSummary {
     pub uploads: u64,
 }
 
+/// A photo or PDF added on this desktop and not yet sent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PendingUpload {
+    /// Its row.
+    pub id: i64,
+    /// What it's for.
+    pub purpose: domain::api::UploadPurpose,
+    /// The bytes as picked: what the server is sent.
+    pub raw: Vec<u8>,
+    /// What processing them here made (the files the copy's attachment names).
+    pub made: domain::api::UploadedFile,
+}
+
+impl PendingUpload {
+    /// Every file processing it here made (the file, and its thumbnail if any).
+    #[must_use]
+    pub fn made_files(&self) -> Vec<&StoredFile> {
+        let mut files = vec![&self.made.file];
+        files.extend(&self.made.thumbnail);
+        files
+    }
+}
+
 /// The desktop's files database.
 #[derive(Debug, Clone)]
 pub struct LocalFiles {
@@ -288,6 +311,74 @@ impl LocalFiles {
             .await?
             .rows_affected()
             > 0)
+    }
+
+    /// Keeps an upload waiting to be sent: what it's for, the bytes as picked, and what
+    /// processing them here made.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a value can't be stored.
+    pub async fn add_upload(
+        &self,
+        purpose: &domain::api::UploadPurpose,
+        raw: &[u8],
+        made: &domain::api::UploadedFile,
+        now: UnixMillis,
+    ) -> Result<(), StorageError> {
+        sqlx::query("INSERT INTO uploads (purpose, raw, made, added_ms) VALUES (?, ?, ?, ?)")
+            .bind(crate::convert::json_to_sql(purpose, "purpose")?)
+            .bind(raw)
+            .bind(crate::convert::json_to_sql(made, "made")?)
+            .bind(now.as_millis())
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// The upload waiting whose processing made the file `hash`, if there is one.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn upload_making(
+        &self,
+        hash: &FileHash,
+    ) -> Result<Option<PendingUpload>, StorageError> {
+        // `made` is JSON naming its files' hashes (64 hex digits): found there, then checked.
+        let rows = sqlx::query(
+            "SELECT id, purpose, raw, made FROM uploads WHERE instr(made, ?) > 0 ORDER BY id",
+        )
+        .bind(hash.as_str())
+        .fetch_all(&self.pool)
+        .await?;
+        for row in rows {
+            let purpose: String = row.try_get("purpose")?;
+            let made: String = row.try_get("made")?;
+            let upload = PendingUpload {
+                id: row.try_get("id")?,
+                purpose: crate::convert::json_from_sql(&purpose, "purpose")?,
+                raw: row.try_get("raw")?,
+                made: crate::convert::json_from_sql(&made, "made")?,
+            };
+            if upload.made_files().iter().any(|file| file.hash == *hash) {
+                return Ok(Some(upload));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Forgets an upload once the server has it.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if the query fails.
+    pub async fn remove_upload(&self, id: i64) -> Result<(), StorageError> {
+        sqlx::query("DELETE FROM uploads WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     /// How much it holds.

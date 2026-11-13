@@ -68,9 +68,10 @@ async fn upload(request: Request) -> Response {
             problem: domain::attachment::AttachmentProblem::PdfTooLarge,
         });
     };
+    let files = storage::files::Files::Folder(store.clone());
     let context = server::attachments::UploadContext {
         database,
-        store,
+        files: &files,
         user: &user,
         health: server::health::current(),
         now: SystemClock.now(),

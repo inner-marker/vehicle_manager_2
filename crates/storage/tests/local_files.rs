@@ -141,4 +141,54 @@ mod local_files {
             Err(StorageError::InvalidValue { .. })
         ));
     }
+
+    #[cfg(feature = "sqlcipher")]
+    #[tokio::test]
+    async fn an_upload_made_here_waits_with_its_bytes_until_sent() {
+        use domain::api::{UploadPurpose, UploadedFile};
+        use domain::attachment::{FileType, PhotoSize};
+
+        let temp = tempfile::tempdir().unwrap();
+        let files = LocalFiles::open(&temp.path().join("copy"), &LocalKey::new(KEY))
+            .await
+            .unwrap();
+        let jpeg = files
+            .put(&[1; 300], LocalKind::Upload, at(0))
+            .await
+            .unwrap();
+        let thumbnail = files
+            .put(&[2; 100], LocalKind::Upload, at(0))
+            .await
+            .unwrap();
+        let made = UploadedFile {
+            file: jpeg.clone(),
+            file_type: Some(FileType::Jpeg),
+            thumbnail: Some(thumbnail.clone()),
+            pixels: Some((10, 10)),
+            pages: None,
+        };
+        let purpose = UploadPurpose::Photo {
+            size: PhotoSize::Small,
+        };
+        files
+            .add_upload(&purpose, b"as picked", &made, at(1))
+            .await
+            .unwrap();
+        for hash in [&jpeg.hash, &thumbnail.hash] {
+            let upload = files.upload_making(hash).await.unwrap().unwrap();
+            assert_eq!(upload.purpose, purpose);
+            assert_eq!(upload.raw, b"as picked");
+            assert_eq!(upload.made, made);
+        }
+        let other = files.put(&[3; 50], LocalKind::Photo, at(0)).await.unwrap();
+        assert_eq!(files.upload_making(&other.hash).await.unwrap(), None);
+        let id = files.upload_making(&jpeg.hash).await.unwrap().unwrap().id;
+        files.remove_upload(id).await.unwrap();
+        assert_eq!(files.upload_making(&jpeg.hash).await.unwrap(), None);
+        assert_eq!(
+            files.summary().await.unwrap().uploads,
+            2,
+            "the files stay until settled"
+        );
+    }
 }

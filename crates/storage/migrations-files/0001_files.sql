@@ -19,3 +19,16 @@ CREATE TABLE files (
 ) STRICT;
 
 CREATE INDEX files_by_kind_and_opened ON files (kind, opened_ms);
+
+-- A photo or PDF added on this desktop and not yet sent (6d): what it was for (the upload's
+-- purpose, as JSON), the bytes as picked (what the server is sent, to process itself), and
+-- what processing them here made (the files the copy's attachment names, as JSON). Removed
+-- once the server has it.
+CREATE TABLE uploads (
+    id       INTEGER PRIMARY KEY,
+    purpose  TEXT    NOT NULL CHECK (json_valid(purpose)),
+    raw      BLOB    NOT NULL,
+    made     TEXT    NOT NULL CHECK (json_valid(made)),
+    added_ms INTEGER NOT NULL
+) STRICT;
+

@@ -471,7 +471,11 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
         if waiting.is_empty() {
             break;
         }
-        match push_batch(copy, first_batch(waiting), last_pull).await {
+        let Some(batch) = with_uploads_sent(copy, first_batch(waiting), last_pull).await else {
+            count_outbox().await;
+            return false;
+        };
+        match push_batch(copy, batch, last_pull).await {
             Batch::Next => {}
             Batch::Stop(go_on) => {
                 count_outbox().await;
@@ -487,6 +491,34 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
     }
     count_outbox().await;
     true
+}
+
+/// `batch`, with each add's files uploaded first and the server's files put in it (and in the
+/// outbox: 6d); `None` if the server couldn't be reached (offline).
+async fn with_uploads_sent(
+    copy: &Database,
+    mut batch: Vec<Operation>,
+    last_pull: Option<UnixMillis>,
+) -> Option<Vec<Operation>> {
+    for operation in &mut batch {
+        let OperationChange::AddAttachment { input } = &mut operation.change else {
+            continue;
+        };
+        match crate::copy_files::send_uploads(input).await {
+            Ok(false) => {}
+            Ok(true) => {
+                if let Err(error) = copy.replace_in_outbox(operation).await {
+                    tracing::error!(target: log_area::SYNC, %error, "couldn't keep an add's uploaded files");
+                }
+            }
+            Err(error) => {
+                tracing::debug!(target: log_area::SYNC, %error, "no upload: can't reach the server");
+                *STATUS.write() = CopyStatus::Offline { since: last_pull };
+                return None;
+            }
+        }
+    }
+    Some(batch)
 }
 
 /// Sends one batch and takes in the answers.

@@ -230,9 +230,10 @@ mod attachments {
         purpose: UploadPurpose,
         bytes: Vec<u8>,
     ) -> UploadedFile {
+        let files = Files::Folder(store.clone());
         let upload_context = UploadContext {
             database,
-            store,
+            files: &files,
             user,
             health: Health::Healthy,
             now: NOW,
@@ -402,9 +403,10 @@ mod attachments {
         assert_eq!(pdf_upload.pages, Some(2));
 
         let refuse = async |user: &SignedIn, purpose, bytes| {
+            let files = Files::Folder(store.clone());
             let upload_context = UploadContext {
                 database: &database,
-                store: &store,
+                files: &files,
                 user,
                 health: Health::Healthy,
                 now: NOW,
