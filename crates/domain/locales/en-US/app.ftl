@@ -39,7 +39,6 @@ action-log = Log
 action-refresh = Refresh
 menu-open = Open menu
 menu-close = Close menu
-sync-status-unknown = Sync not set up
 
 ## Theme
 
@@ -389,6 +388,55 @@ copy-downloading = Downloading… { $done } of { $total }
 copy-up-to-date = Up to date
 copy-offline = Offline: can't reach the server
 copy-other-schema = Not updating: the server's database version is { $server } and this app's is { $app }. Update the app or the server.
+outbox-chip = ↑ { $count } to send
+outbox-chip-note =
+    { $count ->
+        [one] 1 change waiting to be sent, from { $when }. It goes when the server answers.
+       *[other] { $count } changes waiting to be sent; the oldest from { $when }. They go when the server answers.
+    }
+outbox-long-title = Changes waiting to be sent
+outbox-long-body =
+    { $count ->
+        [one] 1 change on this computer hasn't reached the server since { $when }. Connect to the server to send it.
+       *[other] { $count } changes on this computer haven't reached the server; the oldest is from { $when }. Connect to the server to send them.
+    }
+outbox-stopped-title = Changes can't be sent
+outbox-stopped-app = This app is too old for the server: update it to send your changes. They're kept on this computer.
+outbox-stopped-server = The server is older than this app: update the server to send your changes. They're kept on this computer.
+outbox-stopped-clock = This computer's clock is { $minutes } minutes ahead of the server's: set its date and time right to send your changes.
+outbox-stopped-busy = The server can't take changes right now; they'll be sent later.
+refused-title = Not saved: { $what }
+refused-made = Made on this computer, { $when }.
+refused-open = Open
+refused-discard = Discard
+change-event = { $kind } on { $vehicle }
+change-event-edit = A change to an event
+change-event-finalize = Finalizing an event
+change-event-finish = Finishing a job
+change-event-delete = Deleting a draft
+change-event-correct = A correction ({ $kind }) on { $vehicle }
+change-squawk = “{ $text }” on { $vehicle }
+change-squawk-edit = A change to a reported problem
+change-squawk-delete = Removing a reported problem
+change-preferences = Your settings
+change-place = Saved place “{ $name }”
+change-place-edit = A change to a saved place
+change-place-delete = Removing a saved place
+change-garage-order = The Garage order
+sign-out-waiting-title =
+    { $count ->
+        [one] 1 change hasn't been sent
+       *[other] { $count } changes haven't been sent
+    }
+sign-out-waiting-body = Signing out deletes this computer's copy, and these changes with it.
+sign-out-not-saved = { $what } (not saved)
+sign-out-and-more = and { $count } more
+sign-out-send-now = Send now
+sign-out-anyway = Sign out anyway
+copy-waiting = Waiting to send
+copy-refused = Not saved
+copy-oldest = Oldest waiting
+copy-sending = Sending
 copy-failed = Not updating: something went wrong (see the log below)
 copy-never = Never
 setting-distance = Distance

@@ -230,12 +230,21 @@ html {
     font-size: 1.25rem;
 }
 
-.sync-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 0.875rem;
+/* "↑ 3 to send" (phase-3.md 5e, sketch 1A): changes on this computer waiting to be sent; it
+   opens Diagnostics. The OFFLINE tag's shape, in blue. */
+.send-chip {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
 .log-button {
@@ -2438,8 +2447,7 @@ textarea.field-input {
     }
 
     .topbar-theme,
-    .log-button,
-    .sync-status-label {
+    .log-button {
         display: none;
     }
 
@@ -4646,4 +4654,47 @@ body:has(.photo-viewer) {
     color: var(--text-muted);
     font-size: 0.8rem;
     text-align: right;
+}
+
+/* ---------- Changes not yet on the server (phase-3.md 5e; sketch options 1A, 2A, 3B) ---------- */
+
+/* 2A: this computer's own messages at the top of Messages: amber, like a warning. */
+.not-sent-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.not-sent-card p {
+    margin: 0;
+}
+
+.not-sent-title {
+    color: var(--warn);
+    font-weight: 700;
+}
+
+.not-sent-reason {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.not-sent-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* 3B: the changes signing out would lose. */
+.unsent-list {
+    margin: 0 0 8px;
+    padding-left: 20px;
+}
+
+.unsent-list li {
+    margin: 2px 0;
 }

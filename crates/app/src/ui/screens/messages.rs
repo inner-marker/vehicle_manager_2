@@ -93,6 +93,8 @@ pub(crate) fn Messages() -> Element {
     rsx! {
         div { class: layout,
             div { class: "messages-list",
+                // This computer's own (refused changes, waiting too long): phase-3.md 5e, 2A.
+                super::not_sent::NotSent {}
                 div { class: "filter-chips", role: "group",
                     for (severity, label) in FILTERS {
                         button {

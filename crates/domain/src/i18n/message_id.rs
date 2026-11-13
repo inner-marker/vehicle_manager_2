@@ -78,8 +78,6 @@ define_messages! {
     MENU_OPEN => "menu-open",
     /// Button label for screen readers: close the navigation menu.
     MENU_CLOSE => "menu-close",
-    /// Top bar: sync status before sync exists.
-    SYNC_STATUS_UNKNOWN => "sync-status-unknown",
 
     /// Theme switcher label.
     THEME_LABEL => "theme-label",
@@ -637,6 +635,80 @@ define_messages! {
     COPY_OFFLINE => "copy-offline",
     /// The copy's status: another schema version.
     COPY_OTHER_SCHEMA => "copy-other-schema",
+    /// The top bar: changes waiting to be sent (sketch 1A).
+    OUTBOX_CHIP => "outbox-chip",
+    /// The chip's tooltip, with the oldest's time.
+    OUTBOX_CHIP_NOTE => "outbox-chip-note",
+    /// Messages: changes waiting too long (24 hours, or 100).
+    OUTBOX_LONG_TITLE => "outbox-long-title",
+    /// Its text.
+    OUTBOX_LONG_BODY => "outbox-long-body",
+    /// Messages: the server stopped taking this desktop's changes.
+    OUTBOX_STOPPED_TITLE => "outbox-stopped-title",
+    /// Why: the app is too old.
+    OUTBOX_STOPPED_APP => "outbox-stopped-app",
+    /// Why: the server is too old.
+    OUTBOX_STOPPED_SERVER => "outbox-stopped-server",
+    /// Why: the clock is ahead.
+    OUTBOX_STOPPED_CLOCK => "outbox-stopped-clock",
+    /// Why: the server can't take changes now.
+    OUTBOX_STOPPED_BUSY => "outbox-stopped-busy",
+    /// Messages: a change the server refused (sketch 2A).
+    REFUSED_TITLE => "refused-title",
+    /// When it was made.
+    REFUSED_MADE => "refused-made",
+    /// Opens it again in its form.
+    REFUSED_OPEN => "refused-open",
+    /// Drops it.
+    REFUSED_DISCARD => "refused-discard",
+    /// A change: an event logged.
+    CHANGE_EVENT => "change-event",
+    /// A change: an event edited.
+    CHANGE_EVENT_EDIT => "change-event-edit",
+    /// A change: an event finalized.
+    CHANGE_EVENT_FINALIZE => "change-event-finalize",
+    /// A change: a job finished.
+    CHANGE_EVENT_FINISH => "change-event-finish",
+    /// A change: a draft deleted.
+    CHANGE_EVENT_DELETE => "change-event-delete",
+    /// A change: a correction.
+    CHANGE_EVENT_CORRECT => "change-event-correct",
+    /// A change: a squawk opened.
+    CHANGE_SQUAWK => "change-squawk",
+    /// A change: a squawk edited.
+    CHANGE_SQUAWK_EDIT => "change-squawk-edit",
+    /// A change: a squawk removed.
+    CHANGE_SQUAWK_DELETE => "change-squawk-delete",
+    /// A change: the person's settings.
+    CHANGE_PREFERENCES => "change-preferences",
+    /// A change: a saved place added.
+    CHANGE_PLACE => "change-place",
+    /// A change: a saved place edited.
+    CHANGE_PLACE_EDIT => "change-place-edit",
+    /// A change: a saved place removed.
+    CHANGE_PLACE_DELETE => "change-place-delete",
+    /// A change: the Garage order.
+    CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// Signing out with changes not sent (sketch 3B).
+    SIGN_OUT_WAITING_TITLE => "sign-out-waiting-title",
+    /// Why it matters.
+    SIGN_OUT_WAITING_BODY => "sign-out-waiting-body",
+    /// A refused change in the list.
+    SIGN_OUT_NOT_SAVED => "sign-out-not-saved",
+    /// The rest of a long list.
+    SIGN_OUT_AND_MORE => "sign-out-and-more",
+    /// Sends them, then signs out.
+    SIGN_OUT_SEND_NOW => "sign-out-send-now",
+    /// Signs out, losing them.
+    SIGN_OUT_ANYWAY => "sign-out-anyway",
+    /// Diagnostics: changes waiting.
+    COPY_WAITING => "copy-waiting",
+    /// Diagnostics: refused changes.
+    COPY_REFUSED => "copy-refused",
+    /// Diagnostics: the oldest waiting.
+    COPY_OLDEST => "copy-oldest",
+    /// Diagnostics: why sending stopped.
+    COPY_SENDING => "copy-sending",
     /// The copy's status: a failure.
     COPY_FAILED => "copy-failed",
     /// Diagnostics: never pulled.

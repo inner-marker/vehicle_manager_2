@@ -56,6 +56,8 @@ struct SheetTarget {
     found_on: Option<EventId>,
     /// The squawk being changed, if it isn't a new one.
     editing: Option<(SquawkId, Squawk)>,
+    /// A new squawk's values to start from (a refused one opened again, phase-3.md 5e).
+    prefill: Option<Squawk>,
 }
 
 /// The squawk sheet's state, in context (provided by the shell).
@@ -77,6 +79,7 @@ impl SquawkSheet {
             high_word: high_severity_name(&asset.kind, Translator::english()),
             found_on,
             editing: None,
+            prefill: None,
         }));
     }
 
@@ -90,6 +93,23 @@ impl SquawkSheet {
             high_word: high_severity_name(&asset.kind, Translator::english()),
             found_on: squawk.found_on,
             editing: Some((id, squawk)),
+            prefill: None,
+        }));
+    }
+
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    /// Opens the sheet with a refused squawk's values (Messages' **Open**, phase-3.md 5e):
+    /// changing `squawk` (`editing`), or a new one.
+    pub(crate) fn reopen(mut self, editing: Option<SquawkId>, squawk: Squawk, asset: &Asset) {
+        let serial = self.next_serial();
+        self.target.set(Some(SheetTarget {
+            serial,
+            asset: squawk.asset,
+            vehicle: asset.name.as_str().to_owned(),
+            high_word: high_severity_name(&asset.kind, Translator::english()),
+            found_on: squawk.found_on,
+            editing: editing.map(|id| (id, squawk.clone())),
+            prefill: editing.is_none().then_some(squawk),
         }));
     }
 
@@ -233,7 +253,11 @@ fn refusal(outcome: &SquawksOutcome) -> MessageId {
 fn SheetForm(target: SheetTarget) -> Element {
     let sheet = use_squawk_sheet();
     let zone = use_device_zone();
-    let start = target.editing.as_ref().map(|(_, squawk)| squawk.clone());
+    let start = target
+        .editing
+        .as_ref()
+        .map(|(_, squawk)| squawk.clone())
+        .or_else(|| target.prefill.clone());
     let mut typed = use_signal(|| Typed {
         description: start
             .as_ref()
@@ -1140,6 +1164,7 @@ mod tests {
             high_word: "Not drivable".into(),
             found_on: Some(test_id(100)),
             editing: None,
+            prefill: None,
         };
         let utc = TimeZone::parse("UTC").unwrap();
         let now = UnixMillis::from_millis(1_700_000_000_000);

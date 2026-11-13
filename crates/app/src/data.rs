@@ -272,6 +272,12 @@ mod local {
                 return answer;
             }
             self.move_clock(last).await;
+            // A refused change opened again (Messages, 2A) and now saved anew: the old one goes.
+            if let Some(reopened) = crate::ui::outbox::settle_reopened(&operation.change)
+                && let Err(error) = self.database.remove_from_outbox(reopened).await
+            {
+                tracing::warn!(target: log_area::SYNC, %error, "couldn't take a reopened change out of the outbox");
+            }
             tracing::debug!(target: log_area::SYNC, operation = %operation.id, "saved on this computer");
             match crate::local_copy::send_now(&self.database, operation.id).await {
                 Sent::Applied | Sent::Waiting => answer,

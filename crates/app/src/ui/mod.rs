@@ -27,6 +27,7 @@ pub(crate) mod location;
 pub(crate) mod lock;
 pub(crate) mod nav;
 pub(crate) mod offline;
+pub(crate) mod outbox;
 pub(crate) mod pdfs;
 pub(crate) mod photos;
 pub(crate) mod recent_servers;

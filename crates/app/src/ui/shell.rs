@@ -66,7 +66,8 @@ pub(crate) fn Shell() -> Element {
             let _ = refresh_garage(vehicles).await;
         });
     }));
-    let unread = unread_count(inbox);
+    // The server's unread messages, and this computer's own (refused changes, waiting too long).
+    let unread = unread_count(inbox) + super::outbox::alert_count();
     // A group's page is titled with the group's name (#056).
     let title = match &route {
         Route::GroupVehicles { group_id } => {
@@ -209,10 +210,8 @@ pub(crate) fn Shell() -> Element {
                         IconView { icon: Icon::Menu }
                     }
                     h1 { class: "page-title", {title} }
-                    span { class: "sync-status",
-                        IconView { icon: Icon::SyncOff }
-                        span { class: "sync-status-label", {tr(messages::SYNC_STATUS_UNKNOWN)} }
-                    }
+                    // Changes waiting to be sent (the desktop; phase-3.md 5e, sketch 1A).
+                    super::outbox::SendChip {}
                     div { class: "topbar-theme", ThemeToggle {} }
                     if may_log {
                         button {

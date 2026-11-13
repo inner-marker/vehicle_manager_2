@@ -29,7 +29,7 @@ use domain::operation::{Operation, OperationChange, OperationId, Refusal};
 use domain::sync::{OperationAnswer, PUSH_LIMIT, PullOutcome, PullPage, PushOutcome, PushStop};
 use domain::time::{Clock, UnixMillis};
 use storage::local::delete_local;
-use storage::outbox::OutboxState;
+use storage::outbox::{OutboxEntry, OutboxState, OutboxSummary};
 use storage::sync::schema_version;
 use storage::{CopyOf, Database, LocalKey, StorageError};
 
@@ -219,6 +219,7 @@ pub async fn open(key: [u8; 32]) {
         Ok(database) => {
             *copy_slot() = Some(database);
             PULL_NOW.notify_one();
+            count_outbox().await;
         }
         Err(error) => {
             tracing::error!(target: log_area::SYNC, %error, "couldn't open this computer's copy");
@@ -245,6 +246,9 @@ pub async fn close() {
         tracing::debug!(target: log_area::SYNC, "this computer's copy is closed");
     }
     *STATUS.write() = CopyStatus::Closed;
+    if *OUTBOX.peek() != OutboxSummary::default() {
+        *OUTBOX.write() = OutboxSummary::default();
+    }
 }
 
 /// Closes and deletes this server's copy (signing out, or too many wrong tries; #075).
@@ -362,8 +366,63 @@ pub async fn send_now(copy: &Database, id: OperationId) -> Sent {
             Sent::Waiting
         }
     };
+    count_outbox().await;
     pull_soon();
     sent
+}
+
+/// The outbox as last counted: changes waiting, refused, and the oldest waiting (5e: the top
+/// bar's chip, Messages, Diagnostics, the sign-out warning).
+pub static OUTBOX: GlobalSignal<OutboxSummary> = Signal::global(OutboxSummary::default);
+
+/// Counts the open copy's outbox again (nothing open: nothing waits).
+pub async fn count_outbox() {
+    let summary = match current() {
+        Some(copy) => copy.outbox_summary().await.unwrap_or_else(|error| {
+            tracing::warn!(target: log_area::SYNC, %error, "couldn't count the outbox");
+            *OUTBOX.peek()
+        }),
+        None => OutboxSummary::default(),
+    };
+    if *OUTBOX.peek() != summary {
+        *OUTBOX.write() = summary;
+    }
+}
+
+/// Every change in the outbox, waiting or refused, oldest first (none without an open copy).
+pub async fn outbox_entries() -> Vec<OutboxEntry> {
+    let Some(copy) = current() else {
+        return Vec::new();
+    };
+    copy.outbox_entries().await.unwrap_or_else(|error| {
+        tracing::warn!(target: log_area::SYNC, %error, "couldn't read the outbox");
+        Vec::new()
+    })
+}
+
+/// Drops a change from the outbox (Discard on a refused change, sketch 2A).
+pub async fn discard(id: OperationId) {
+    if let Some(copy) = current() {
+        match copy.remove_from_outbox(id).await {
+            Ok(_) => {
+                tracing::info!(target: log_area::SYNC, operation = %id, "a change was discarded");
+            }
+            Err(error) => {
+                tracing::warn!(target: log_area::SYNC, %error, "couldn't discard a change");
+            }
+        }
+    }
+    count_outbox().await;
+}
+
+/// Sends everything waiting now, and catches the copy up (Send now when signing out, 3B).
+/// Whether nothing is left waiting.
+pub async fn send_all() -> bool {
+    if let Some(copy) = current() {
+        pull_until_current(&copy).await;
+    }
+    count_outbox().await;
+    OUTBOX.peek().waiting == 0
 }
 
 /// The oldest waiting operations, up to [`PUSH_LIMIT`] and [`PUSH_BYTES`] (at least one).
@@ -407,7 +466,10 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
         }
         match push_batch(copy, first_batch(waiting), last_pull).await {
             Batch::Next => {}
-            Batch::Stop(go_on) => return go_on,
+            Batch::Stop(go_on) => {
+                count_outbox().await;
+                return go_on;
+            }
         }
     }
     if DOWNLOAD_AGAIN.swap(false, std::sync::atomic::Ordering::Relaxed)
@@ -416,6 +478,7 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
         tracing::error!(target: log_area::SYNC, %error, "couldn't clear the copy to download it again");
         DOWNLOAD_AGAIN.store(true, std::sync::atomic::Ordering::Relaxed);
     }
+    count_outbox().await;
     true
 }
 

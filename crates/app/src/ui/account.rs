@@ -221,6 +221,8 @@ pub(crate) fn AccountChip() -> Element {
     let state = use_auth();
     let mut menu_open = use_signal(|| false);
     let mut password_dialog = use_signal(|| false);
+    // Changes on this computer not yet sent: signing out asks first (phase-3.md 5e, 3B).
+    let mut unsent_check = use_signal(|| false);
     let AuthState::SignedIn(session) = state() else {
         return rsx! {};
     };
@@ -229,6 +231,10 @@ pub(crate) fn AccountChip() -> Element {
 
     let sign_out_now = move |_| {
         menu_open.set(false);
+        if crate::ui::outbox::unsent_count() > 0 {
+            unsent_check.set(true);
+            return;
+        }
         spawn(sign_out(state));
     };
 
@@ -276,6 +282,15 @@ pub(crate) fn AccountChip() -> Element {
                             on_cancel: move |()| password_dialog.set(false),
                         }
                     }
+                }
+            }
+            if unsent_check() {
+                crate::ui::outbox::SignOutCheck {
+                    on_cancel: move |()| unsent_check.set(false),
+                    on_sign_out: move |()| {
+                        unsent_check.set(false);
+                        spawn(sign_out(state));
+                    },
                 }
             }
         }
