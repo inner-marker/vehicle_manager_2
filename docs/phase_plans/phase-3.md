@@ -502,7 +502,7 @@
 | **7b** `feat(server):` unhealthy refuses, and rebuild | ☑️ | Pull and push refuse while unhealthy; `POST /api/v1/rebuild` (setup code; pages in; default group replaced; the household's settings re-keyed; temporary passwords; this desktop paired; files). Tests: a rebuild from a copy reads the same as the server it came from. |
 | **7c** `feat(app):` protective mode | ☑️ | Detecting (pull, handshake, signed out keeps the copy and its key carries over); holding a suspicious pull; snapshots daily and before risky steps; the choices; the rebuild flow; sync alerts. |
 | **7d** `feat(app):` what you see | ☑️ | 1A (the PROTECTED tag and red strip), 2A (the suspicious-pull dialog), 3B (the rebuild dialog); Diagnostics → snapshots and restore. |
-| **7e** `docs:` | ⬜ | The test plan: restore the test server from an old snapshot (went back in time); a fresh test server (the server changed); a big delete on the web (a suspicious pull); the test server stopped then unhealthy; rebuild a fresh test server from the Mac; restore a desktop snapshot. |
+| **7e** `docs:` | ☑️ | The test plan ([`docs/test-plans/p3m7-loss-detection.md`](../test-plans/p3m7-loss-detection.md)), on the test server with the desktop (test timers, for snapshots every 2 minutes): snapshots encrypted; a big delete (a vehicle and its history) held, kept, then applied; the test server restored from an older snapshot (gone back in time), saving while protected, then Use this server; the Mac signed out by the server, its copy kept, signing in again; a fresh test server rebuilt from the Mac; a desktop snapshot restored. An unhealthy server is left to the automated tests. |
 
 **Risks:** rebuild is the largest piece (a new import path, and every person's password resets); the SQLCipher snapshot method is untested (7a's spike first); a desktop that never pulled since a reset can't tell "reset" from "another server" (both are "the server changed", and both offer the same choices).
 
@@ -544,4 +544,7 @@
 - **Messages:** sync alerts on the desktop beside the refused changes: protecting the copy (why), and "The server isn't well"; the badge counts them.
 - **Restoring a snapshot keeps the outbox as it is now** (the snapshot's own outbox would lose changes made since), as using a changed server does (`protect::carry_over`).
 - **Not seen running:** the desktop window can't be driven here; the test plan (7e) covers each piece. After a rebuild, the PIN step of signing in again follows the rebuild's result.
+
+**Step 7e notes (2026-11-13):**
+- **Found while writing the test plan:** deleting a vehicle marks only the vehicle deleted (its records stay, hidden), so the page check counted a whole vehicle's history as one record and never held it. Now a vehicle deleted in a page counts with every live record the copy has on it (each record table with an `asset_id`), so "Outback: its whole history" waits as 2A intended. Test: `a_vehicle_deleted_counts_its_whole_history` (`server/tests/sync.rs`).
 
