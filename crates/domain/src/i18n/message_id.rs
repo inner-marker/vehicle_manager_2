@@ -715,6 +715,16 @@ define_messages! {
     COPY_OLDEST => "copy-oldest",
     /// Diagnostics: why sending stopped.
     COPY_SENDING => "copy-sending",
+    /// The photos limit: 1 GB.
+    PHOTO_LIMIT_1_GB => "photo-limit-1-gb",
+    /// The photos limit: 2 GB.
+    PHOTO_LIMIT_2_GB => "photo-limit-2-gb",
+    /// The photos limit: 5 GB.
+    PHOTO_LIMIT_5_GB => "photo-limit-5-gb",
+    /// The photos limit: 10 GB.
+    PHOTO_LIMIT_10_GB => "photo-limit-10-gb",
+    /// The photos limit: none.
+    PHOTO_LIMIT_NONE => "photo-limit-none",
     /// The copy's status: a failure.
     COPY_FAILED => "copy-failed",
     /// Diagnostics: never pulled.

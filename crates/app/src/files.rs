@@ -79,6 +79,31 @@ pub async fn download(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>,
         .map_err(|error| error.to_string())
 }
 
+/// One part of an attachment's file, for showing: on a desktop, from this computer if it has
+/// it (phase-3.md 6c), otherwise from the server (and then kept); offline, only what's here.
+///
+/// # Errors
+///
+/// What went wrong, including a refusal, or "not on this computer" offline.
+pub async fn fetch(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>, String> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        if let Some(bytes) = crate::copy_files::local(id, part).await {
+            return Ok(bytes);
+        }
+        if crate::local_copy::is_offline() {
+            return Err(NOT_HERE.to_owned());
+        }
+    }
+    let bytes = download(id, part).await?;
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    crate::copy_files::keep(id, part, &bytes).await;
+    Ok(bytes)
+}
+
+/// [`fetch`]'s answer offline for a file this computer doesn't have.
+pub const NOT_HERE: &str = "not on this computer (offline)";
+
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /// `bytes` in standard Base64 (with padding).

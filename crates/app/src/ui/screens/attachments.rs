@@ -47,7 +47,7 @@ async fn fetched(id: AttachmentId, part: AttachmentPart, mime: &str) -> Option<S
     if let Some(url) = FETCHED.read().get(&(id, part)) {
         return Some(url.clone());
     }
-    match files::download(id, part).await {
+    match files::fetch(id, part).await {
         Ok(bytes) => {
             let url = files::data_url(mime, &bytes);
             FETCHED.write().insert((id, part), url.clone());
@@ -744,7 +744,7 @@ fn Viewer(
             } else {
                 mime
             };
-            match files::download(id, part).await {
+            match files::fetch(id, part).await {
                 Ok(bytes) => {
                     if let Some(path) = save_download(&file_name, part_mime, &bytes).await {
                         note.set(Some(tr_with(

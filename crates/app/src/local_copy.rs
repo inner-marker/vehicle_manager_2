@@ -215,9 +215,12 @@ pub async fn open(key: [u8; 32]) {
         *waiting_key() = Some(key);
         return;
     };
-    match open_or_restart(&folder, &LocalKey::new(key), &copy_of).await {
+    let key = LocalKey::new(key);
+    match open_or_restart(&folder, &key, &copy_of).await {
         Ok(database) => {
             *copy_slot() = Some(database);
+            // Its photos and PDFs, beside it under the same key (6c).
+            crate::copy_files::open(&folder, &key).await;
             PULL_NOW.notify_one();
             count_outbox().await;
         }
@@ -245,6 +248,7 @@ pub async fn close() {
         database.close().await;
         tracing::debug!(target: log_area::SYNC, "this computer's copy is closed");
     }
+    crate::copy_files::close().await;
     *STATUS.write() = CopyStatus::Closed;
     if *OUTBOX.peek() != OutboxSummary::default() {
         *OUTBOX.write() = OutboxSummary::default();
@@ -260,6 +264,9 @@ pub async fn delete() {
         tracing::warn!(target: log_area::SYNC, %error, "couldn't delete this computer's copy");
     }
 }
+
+/// Wakes the download of missing thumbnails and PDFs (after a pull brought the copy up to date).
+static FETCH_NOW: tokio::sync::Notify = tokio::sync::Notify::const_new();
 
 /// Asks the puller to pull now (after a change on the server).
 pub fn pull_soon() {
@@ -586,6 +593,9 @@ async fn pull_until_current(copy: &Database) {
         {
             tracing::warn!(target: log_area::SYNC, %error, "couldn't move the desktop's clock");
         }
+        if page.up_to_date() {
+            FETCH_NOW.notify_one();
+        }
         *STATUS.write() = if page.up_to_date() {
             CopyStatus::UpToDate {
                 at: SystemClock.now(),
@@ -651,6 +661,16 @@ pub fn CopyPuller() -> Element {
                 }
             }
             let _ = tokio::time::timeout(PULL_EVERY, PULL_NOW.notified()).await;
+        }
+    });
+    // Thumbnails and PDFs, downloaded by themselves after each pull (6c), apart from the pulls
+    // so a first download of many files never holds them up.
+    use_future(move || async move {
+        loop {
+            let _ = tokio::time::timeout(PULL_EVERY, FETCH_NOW.notified()).await;
+            if !is_offline() {
+                crate::copy_files::fetch_missing().await;
+            }
         }
     });
     rsx! {}
