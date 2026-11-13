@@ -425,7 +425,7 @@
 | Step | Status | What |
 |---|---|---|
 | **6.0** `docs:` | ☑️ | This plan, decision #077, the sketch. |
-| **6a** `feat(storage):` files | ⬜ | `storage::local_files` (the files database: open with the copy's key, put, get, mark opened, drop the oldest photos past a limit, sizes); migration 0020 (`attachments.removed_by`, `removed_ms`; `erased_files`); a file store both sides share (the server's folder, the desktop's database). Tests, with SQLCipher too. |
+| **6a** `feat(storage):` files | ☑️ | `storage::local_files` (the files database: open with the copy's key, put, get, mark opened, drop the oldest photos past a limit, sizes); migration 0020 (`attachments.removed_by`, `removed_ms`; `erased_files`); a file store both sides share (the server's folder, the desktop's database). Tests, with SQLCipher too. |
 | **6b** `feat(server):` uploads ahead and the audit record | ⬜ | Removing records who and when; the file check writes `erased_files`; operations `AddAttachment`, `RemoveAttachment`, `MoveAttachment`, with an add's files named by upload so a push can substitute the server's hashes. Tests: an offline add pushed after its upload; the audit row after the 8 days; a resend. |
 | **6c** `feat(app):` downloads | ⬜ | `app::files` reads the files database first; the background fetcher; photos kept when opened; the limit and its setting; dropping the oldest. |
 | **6d** `feat(app):` adding, removing, moving offline | ⬜ | The photo and PDF processing on the desktop; uploads waiting; push uploads first; the buttons on offline (originals stay off). |
@@ -433,3 +433,11 @@
 | **6f** `docs:` | ⬜ | The test plan: thumbnails and PDFs offline; a photo opened online then offline; adding a photo offline and seeing it on the web; removing one offline; the limit dropping old photos; sign-out deleting the files. |
 
 **Risks:** large PDFs travel to the webview as Base64 (as now); the desktop's processing must match the server's version for the hashes to agree, and when they don't, the server's hashes win and the desktop downloads its version (nothing breaks, it's just a second download).
+
+**Step 6a notes (2026-11-12):**
+- **`storage::local_files::LocalFiles`:** `files.sqlite` in the copy's folder, opened with the copy's `LocalKey` (SQLCipher; a build without it refuses, as the copy does), with its own schema (`crates/storage/migrations-files/0001_files.sql`: one `files` table, each file by SHA-256 with its bytes, size, kind, when added, and when last opened). `put` (a file stored again keeps the firmer kind: an upload over a thumbnail or PDF over an original over a photo), `get`, `kind_of`, `missing`, `mark_opened`, `set_kind`, `remove`, `summary` (files, bytes, photos' bytes, uploads waiting), `drop_photos_over(limit)` (photos opened longest ago first; never anything else). It goes with the copy's folder (`delete_local`).
+- **Migration 0020** (server): `attachments.removed_by` and `removed_ms` (they travel with the attachment like its other columns), and `erased_files` (server-only).
+- **`storage::file_audit`:** `record_attachment_removal`, `removed_attachments_using(hash)` (a removed attachment's file, thumbnail, original, or raw metadata), `ErasedFile::of(removed, hash, erased_at)` (which part, its type, the attachment's kind and name, what it was on and that record's ID, who removed it and when), `record_erased_file`, `erased_files`. 6b writes them from the removal and the file check.
+- **`storage::files::Files`:** the server's folder (`FileStore`) or a desktop's `LocalFiles`, with `put` and `get`, so 6b's server code can read and write files the same way on either side.
+- **Tests:** the files database encrypted on disk and opened with its key only; only photos dropped, oldest opened first; the firmer kind kept; a plain build refusing (`crates/storage/tests/local_files.rs`); an erased file's audit record (`attachments.rs`). Storage with SQLCipher: 82 passed.
+

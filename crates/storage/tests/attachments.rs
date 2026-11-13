@@ -298,6 +298,59 @@ mod attachments {
     }
 
     #[tokio::test]
+    async fn an_erased_file_leaves_an_audit_record_of_what_it_was_and_who_removed_it() {
+        use storage::file_audit::{ErasedFile, FilePart};
+
+        let (temp, database) = database().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let mut connection = database.pool().acquire().await.unwrap();
+        let attachment = stored_photo(&database, &store, &mut connection).await;
+        assert!(
+            database
+                .removed_attachments_using(&attachment.file.hash)
+                .await
+                .unwrap()
+                .is_empty(),
+            "in use: not removed"
+        );
+        AttachmentWriter
+            .delete(&mut connection, test_id(PHOTO), 11)
+            .await
+            .unwrap();
+        let removed_at = UnixMillis::from_millis(NOW.as_millis() + 10);
+        database
+            .record_attachment_removal(test_id(PHOTO), test_id(STUART), removed_at)
+            .await
+            .unwrap();
+
+        let thumbnail = attachment.thumbnail.clone().unwrap();
+        for (hash, part) in [
+            (&attachment.file.hash, FilePart::File),
+            (&thumbnail.hash, FilePart::Thumbnail),
+        ] {
+            let removed = database.removed_attachments_using(hash).await.unwrap();
+            assert_eq!(removed.len(), 1);
+            assert_eq!(removed[0].removed_by, Some(test_id(STUART)));
+            assert_eq!(removed[0].removed_at, Some(removed_at));
+            let erased_at = UnixMillis::from_millis(NOW.as_millis() + 99);
+            let record = ErasedFile::of(&removed[0], hash, erased_at).unwrap();
+            assert_eq!(record.part, part);
+            assert_eq!(record.kind, "photo");
+            assert_eq!(record.file_type.as_deref(), Some("image/jpeg"));
+            assert_eq!(record.owner, "vehicle");
+            assert_eq!(record.owner_id, Some(test_id(TRUCK)));
+            database.record_erased_file(&record).await.unwrap();
+        }
+        let records = database.erased_files().await.unwrap();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].hash, attachment.file.hash);
+        assert_eq!(records[0].bytes, attachment.file.bytes);
+        assert_eq!(records[0].name, attachment.name.as_str());
+        assert_eq!(records[0].attachment, test_id(PHOTO));
+        assert_eq!(records[1].part, FilePart::Thumbnail);
+    }
+
+    #[tokio::test]
     async fn an_attachment_moves_between_tasks_of_an_event() {
         let (temp, database) = database().await;
         let store = FileStore::open(temp.path()).unwrap();

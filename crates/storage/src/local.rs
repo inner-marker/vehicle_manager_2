@@ -45,7 +45,7 @@ impl LocalKey {
     }
 
     /// The `PRAGMA key` value: the raw key in SQLCipher's `"x'…'"` form.
-    fn pragma_value(&self) -> String {
+    pub(crate) fn pragma_value(&self) -> String {
         use std::fmt::Write;
         let hex = self.0.iter().fold(String::new(), |mut text, byte| {
             let _ = write!(text, "{byte:02X}");
@@ -82,7 +82,7 @@ pub struct LocalOpenReport {
 }
 
 /// Whether this build's SQLite has SQLCipher (asked of a database in memory).
-async fn has_sqlcipher() -> Result<bool, StorageError> {
+pub(crate) async fn has_sqlcipher() -> Result<bool, StorageError> {
     let options = SqliteConnectOptions::new()
         .in_memory(true)
         .disable_statement_logging();
@@ -196,7 +196,7 @@ impl Database {
 }
 
 /// SQLite's "file is not a database" (code 26): what a wrong key looks like.
-fn is_not_a_database(error: &sqlx::Error) -> bool {
+pub(crate) fn is_not_a_database(error: &sqlx::Error) -> bool {
     error
         .as_database_error()
         .and_then(sqlx::error::DatabaseError::code)
