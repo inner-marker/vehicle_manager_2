@@ -498,10 +498,18 @@
 | Step | Status | What |
 |---|---|---|
 | **7.0** `docs:` | ☑️ | This plan, decision #078, the sketch. |
-| **7a** `feat(storage):` checks and snapshots | ⬜ | A page checked against the copy (another server, went back in time, how many it deletes); encrypted snapshots of the copy (the spike, then make, list, restore, rotate to 7). Tests, with SQLCipher. |
+| **7a** `feat(storage):` checks and snapshots | ☑️ | A page checked against the copy (another server, went back in time, how many it deletes); encrypted snapshots of the copy (the spike, then make, list, restore, rotate to 7). Tests, with SQLCipher. |
 | **7b** `feat(server):` unhealthy refuses, and rebuild | ⬜ | Pull and push refuse while unhealthy; `POST /api/v1/rebuild` (setup code; pages in; default group replaced; the household's settings re-keyed; temporary passwords; this desktop paired; files). Tests: a rebuild from a copy reads the same as the server it came from. |
 | **7c** `feat(app):` protective mode | ⬜ | Detecting (pull, handshake, signed out keeps the copy and its key carries over); holding a suspicious pull; snapshots daily and before risky steps; the choices; the rebuild flow; sync alerts. |
 | **7d** `feat(app):` what you see | ⬜ | 1A (the PROTECTED tag and red strip), 2A (the suspicious-pull dialog), 3B (the rebuild dialog); Diagnostics → snapshots and restore. |
 | **7e** `docs:` | ⬜ | The test plan: restore the test server from an old snapshot (went back in time); a fresh test server (the server changed); a big delete on the web (a suspicious pull); the test server stopped then unhealthy; rebuild a fresh test server from the Mac; restore a desktop snapshot. |
 
 **Risks:** rebuild is the largest piece (a new import path, and every person's password resets); the SQLCipher snapshot method is untested (7a's spike first); a desktop that never pulled since a reset can't tell "reset" from "another server" (both are "the server changed", and both offer the same choices).
+
+**Step 7a notes (2026-11-13):**
+- **The spike:** SQLCipher's `VACUUM INTO` on the encrypted copy writes the snapshot **encrypted under the copy's own key** (no plain SQLite header; it opens with that key, reads back the same rows, and refuses any other key). So the server's `snapshot_into` serves the copy too; `sqlcipher_export` isn't needed.
+- **`storage::local_snapshots`:** `Database::snapshot_local(folder, key, now)` (into `<copy folder>/snapshots/`, checked with the key by `verify_local_snapshot`, a failed one removed, rotated to `LOCAL_SNAPSHOTS_KEPT` = 7), `local_snapshots(folder)` (newest first), `restore_local_snapshot(folder, snapshot)` (the copy closed: written beside it, its journal files removed, renamed into place; the snapshot stays). The files database isn't snapshotted.
+- **`Database::check_pull_page(page)` → `PageCheck`:** `OtherServer` (another database ID, or not a copy), `WentBack { cursor, server_sequence }` (the server's newest change number below the copy's cursor), or `Fine(Deletions)`: how many records the page marks deleted that the copy has live, with how many are each vehicle's (a vehicle itself, or a record with its `asset_id`), most first. Read-only: the page is applied (or held) by 7c.
+- `storage::local`'s note that the copy needs no backup ("it can always be downloaded again") is gone: the copy is the household's backup (plan §6).
+- **Tests:** a snapshot encrypted, opened with its key only, kept seven deep (newest first), and restored to what it held (SQLCipher); a page checked as fine, deleting one of the truck's records (none once applied), another server's, and a server gone back in time (`server/tests/sync.rs`). Storage with SQLCipher: 85 passed.
+

@@ -22,6 +22,7 @@ mod integrity;
 pub mod jobs;
 pub mod local;
 pub mod local_files;
+pub mod local_snapshots;
 pub mod message_marks;
 pub mod outbox;
 pub mod places;

@@ -15,6 +15,7 @@
 //! **SQL built at run time** (`AssertSqlSafe`) names only tables from the fixed lists here, and
 //! columns checked against the copy's own schema; every value is bound.
 
+use domain::asset::AssetId;
 use domain::id::DatabaseId;
 use domain::log_area;
 use domain::sync::{PullPage, SqlValue, TableRows};
@@ -349,7 +350,105 @@ impl Database {
     }
 }
 
+/// What a pulled page would do to this copy, checked before it's applied (phase-3.md 7a,
+/// decision #078).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PageCheck {
+    /// The page is this copy's server, not gone back in time; what it would delete.
+    Fine(Deletions),
+    /// Another server's page, or this isn't a copy: the server changed (reset, or another).
+    OtherServer,
+    /// The server's newest change number is below this copy's cursor: it went back in time
+    /// (restored from an older snapshot).
+    WentBack {
+        /// This copy's cursor.
+        cursor: u64,
+        /// The server's newest change number.
+        server_sequence: u64,
+    },
+}
+
+/// The records a page would delete that this copy has (not yet deleted here).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Deletions {
+    /// How many.
+    pub total: u64,
+    /// How many of them are each vehicle's (a vehicle itself, or a record on it), most first.
+    pub by_vehicle: Vec<(AssetId, u64)>,
+}
+
 impl Database {
+    /// Checks `page` against this copy before applying it: is it this copy's server, has the
+    /// server gone back in time, and what would it delete (phase-3.md 7a).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails or a value is invalid.
+    pub async fn check_pull_page(&self, page: &PullPage) -> Result<PageCheck, StorageError> {
+        let Some(state) = self.pull_state().await? else {
+            return Ok(PageCheck::OtherServer);
+        };
+        if state.database_id != page.database_id {
+            return Ok(PageCheck::OtherServer);
+        }
+        if page.server_sequence < state.cursor {
+            return Ok(PageCheck::WentBack {
+                cursor: state.cursor,
+                server_sequence: page.server_sequence,
+            });
+        }
+        let mut deletions = Deletions::default();
+        let mut by_vehicle: std::collections::BTreeMap<Vec<u8>, u64> =
+            std::collections::BTreeMap::new();
+        for table in &page.tables {
+            let name = table.table.as_str();
+            if !RECORD_TABLES.contains(&name) {
+                continue;
+            }
+            let column = |wanted: &str| table.columns.iter().position(|column| column == wanted);
+            let (Some(id), Some(deleted)) = (column("id"), column("deleted")) else {
+                continue;
+            };
+            let asset = if name == "assets" {
+                Some(id)
+            } else {
+                column("asset_id")
+            };
+            for row in &table.rows {
+                if row.get(deleted) != Some(&SqlValue::Integer(1)) {
+                    continue;
+                }
+                let Some(record) = row.get(id).and_then(SqlValue::blob_bytes) else {
+                    continue;
+                };
+                // The names are checked against RECORD_TABLES above.
+                let live: Option<i64> = sqlx::query_scalar(AssertSqlSafe(format!(
+                    "SELECT 1 FROM {name} WHERE id = ? AND deleted = 0"
+                )))
+                .bind(record)
+                .fetch_optional(self.pool())
+                .await?;
+                if live.is_none() {
+                    continue;
+                }
+                deletions.total += 1;
+                if let Some(asset) = asset
+                    .and_then(|index| row.get(index))
+                    .and_then(SqlValue::blob_bytes)
+                {
+                    *by_vehicle.entry(asset).or_default() += 1;
+                }
+            }
+        }
+        let mut by_vehicle: Vec<(AssetId, u64)> = by_vehicle
+            .into_iter()
+            .filter_map(|(bytes, count)| Some((id_from_sql(&bytes, "asset_id").ok()?, count)))
+            .collect();
+        by_vehicle.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        deletions.by_vehicle = by_vehicle;
+        Ok(PageCheck::Fine(deletions))
+    }
+
     /// Empties this copy of everything pulled (every synced table, field clocks, tombstones)
     /// and starts its pull again from the beginning, keeping its outbox and clock (phase-3.md
     /// 5d, decision #076): after the server refuses a change the copy already shows, so it

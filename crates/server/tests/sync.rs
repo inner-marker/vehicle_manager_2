@@ -1151,4 +1151,77 @@ mod sync {
         }
         assert_eq!(made[0], made[1]);
     }
+
+    // --- Loss detection (phase-3.md 7a, decision #078) ----------------------------------------
+
+    /// The next page for `scene`'s copy, unapplied.
+    async fn next_page(scene: &Scene) -> PullPage {
+        let cursor = scene.copy.pull_state().await.unwrap().unwrap().cursor;
+        let PullOutcome::Page { page } = pull(
+            &scene.server,
+            test_id(900),
+            &scene.laptop,
+            cursor,
+            schema_version(),
+        )
+        .await
+        else {
+            panic!("no page");
+        };
+        *page
+    }
+
+    #[tokio::test]
+    async fn a_page_is_checked_for_another_server_going_back_and_what_it_deletes() {
+        use storage::sync::{Deletions, PageCheck};
+
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        let id = saved(&add(&sam_online, fuel_up(scene.truck, scene.odometer, 50_000)).await);
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+        assert_eq!(
+            scene
+                .copy
+                .check_pull_page(&next_page(&scene).await)
+                .await
+                .unwrap(),
+            PageCheck::Fine(Deletions::default()),
+            "nothing new"
+        );
+
+        // A draft deleted on the server: one record of the truck's.
+        assert_eq!(delete(&sam_online, id).await, EventsOutcome::Done);
+        let page = next_page(&scene).await;
+        assert_eq!(
+            scene.copy.check_pull_page(&page).await.unwrap(),
+            PageCheck::Fine(Deletions {
+                total: 1,
+                by_vehicle: vec![(scene.truck, 1)],
+            })
+        );
+        // Applied, it's no longer the copy's to lose.
+        scene.copy.apply_pull_page(&page, NOW).await.unwrap();
+        assert_eq!(
+            scene.copy.check_pull_page(&page).await.unwrap(),
+            PageCheck::Fine(Deletions::default())
+        );
+
+        // Another server's page; a server gone back in time.
+        let mut other = next_page(&scene).await;
+        other.database_id = test_id(999);
+        assert_eq!(
+            scene.copy.check_pull_page(&other).await.unwrap(),
+            PageCheck::OtherServer
+        );
+        let cursor = scene.copy.pull_state().await.unwrap().unwrap().cursor;
+        let mut older = next_page(&scene).await;
+        older.server_sequence = cursor - 1;
+        assert_eq!(
+            scene.copy.check_pull_page(&older).await.unwrap(),
+            PageCheck::WentBack {
+                cursor,
+                server_sequence: cursor - 1,
+            }
+        );
+    }
 }
