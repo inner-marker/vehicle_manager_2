@@ -145,8 +145,11 @@ pub(crate) fn AttachmentStrip(
                 }
                 if may_add {
                     button {
-                        class: "attachment-add",
+                        class: "attachment-add needs-server",
                         r#type: "button",
+                        // Files need the server until milestone 6.
+                        disabled: crate::ui::offline::is_offline_now(),
+                        title: crate::ui::offline::needs_server_note(),
                         onclick: move |_| adding.set(true),
                         {tr(messages::ATTACHMENT_ADD)}
                     }
@@ -848,7 +851,14 @@ fn Viewer(
                             button { class: "secondary-button", r#type: "button", onclick: move |_| download(AttachmentPart::Original, original_name.clone()), {tr(messages::ATTACHMENT_ORIGINAL)} }
                         }
                         if view.may_change {
-                            button { class: "danger-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::ACTION_REMOVE)} }
+                            button {
+                                class: "danger-button needs-server",
+                                r#type: "button",
+                                disabled: crate::ui::offline::is_offline_now(),
+                                title: crate::ui::offline::needs_server_note(),
+                                onclick: move |_| confirm.set(true),
+                                {tr(messages::ACTION_REMOVE)}
+                            }
                         }
                     }
                     if let Some(note) = note() {

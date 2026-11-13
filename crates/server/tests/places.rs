@@ -26,6 +26,7 @@ mod places {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
             geocoder,
         }
     }

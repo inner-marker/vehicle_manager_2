@@ -58,6 +58,7 @@ mod attachments {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
         }
     }
 
@@ -559,6 +560,7 @@ mod attachments {
             user: &admin,
             health: Health::Healthy,
             clock: &clock,
+            origin: server::origin::Origin::Online,
         };
         let off = PreferencesPatch {
             originals: Some(Choice::Set(Originals::Off)),

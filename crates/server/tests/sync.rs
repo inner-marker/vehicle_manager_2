@@ -18,13 +18,20 @@ mod sync {
     use domain::dates::EventDates;
     use domain::device::DeviceName;
     use domain::device_signature::public_key_of;
+    use domain::event::EventProblem;
     use domain::event::{EventId, EventInput, EventLocation, EventSource, FuelDetails, Reading};
+    use domain::event::{EventPatch, EventStatus};
+    use domain::hlc::Hlc;
+    use domain::inbox::MessageKind;
     use domain::location::{LocationSource, Place, SavedPlaceForm, TimeZone};
     use domain::meter::{EventKind, MeterId};
     use domain::notes::Notes;
+    use domain::operation::{Operation, OperationChange, Refusal};
     use domain::preferences::CurrencyCode;
+    use domain::sync::{OperationAnswer, PushOutcome, PushStop};
     use domain::sync::{PullOutcome, PullPage};
     use domain::test_support::{ManualClock, test_id};
+    use domain::time::UnixMillis;
     use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
     use server::events::{add, delete, edit, view};
     use server::groups::ensure_default_group;
@@ -32,7 +39,7 @@ mod sync {
     use server::login_limiter::LoginLimiter;
     use server::places::PlacesContext;
     use server::sessions::{SignedIn, SigningInDevice, sign_in_from};
-    use server::sync::pull;
+    use server::sync::{PushContext, Ran, pull, push, run_operation};
     use storage::sync::{PullScope, schema_version};
     use storage::{Database, NewDatabaseIds, StorageError};
 
@@ -49,6 +56,7 @@ mod sync {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
         }
     }
 
@@ -62,6 +70,7 @@ mod sync {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
             geocoder: None,
         }
     }
@@ -444,5 +453,462 @@ mod sync {
         ));
         assert_eq!(count(&copy, "users").await, 0, "nothing applied");
         assert_eq!(copy.pull_state().await.unwrap().unwrap().cursor, 0);
+    }
+
+    // --- Push (phase-3.md 5c, decision #076) ------------------------------------------------
+
+    const MINUTE: i64 = 60_000;
+
+    fn push_context<'a>(
+        database: &'a Database,
+        user: &'a SignedIn,
+        clock: &'a ManualClock,
+    ) -> PushContext<'a> {
+        PushContext {
+            database,
+            database_id: test_id(900),
+            user,
+            health: Health::Healthy,
+            clock,
+        }
+    }
+
+    /// An operation made `minutes` after `NOW` on the desktop's clock.
+    fn operation(n: u32, minutes: i64, change: OperationChange) -> Operation {
+        Operation::new(
+            test_id(5_000 + n),
+            Hlc::new(
+                UnixMillis::from_millis(NOW.as_millis() + minutes * MINUTE),
+                0,
+            )
+            .unwrap(),
+            change,
+        )
+    }
+
+    /// The answers to a push that went to the end.
+    fn answers(outcome: PushOutcome) -> Vec<OperationAnswer> {
+        let PushOutcome::Answers {
+            answers,
+            stopped: None,
+        } = outcome
+        else {
+            panic!("the push stopped: {outcome:?}");
+        };
+        answers
+    }
+
+    /// Sam's paired laptop with a pulled copy, and the server's truck.
+    struct Scene {
+        _temp: tempfile::TempDir,
+        server: Database,
+        stuart: SignedIn,
+        sam: SignedIn,
+        laptop: SignedIn,
+        _copy_temp: tempfile::TempDir,
+        copy: Database,
+        truck: AssetId,
+        odometer: MeterId,
+        clock: ManualClock,
+    }
+
+    async fn scene() -> Scene {
+        let (temp, server, stuart, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let (truck, odometer) = truck(&server, &stuart, &clock).await;
+        let laptop = desktop(&server, "sam").await;
+        let (copy_temp, copy) = copy().await;
+        pull_all(&server, &copy, &laptop).await;
+        Scene {
+            _temp: temp,
+            server,
+            stuart,
+            sam,
+            laptop,
+            _copy_temp: copy_temp,
+            copy,
+            truck,
+            odometer,
+            clock,
+        }
+    }
+
+    #[tokio::test]
+    async fn a_change_made_on_the_copy_reaches_the_server_as_the_same_records_once() {
+        let scene = scene().await;
+        let logged = operation(
+            1,
+            1,
+            OperationChange::AddEvent {
+                input: fuel_up(scene.truck, scene.odometer, 50_000),
+            },
+        );
+        // On the desktop first, with the same server code.
+        assert_eq!(
+            run_operation(
+                &push_context(&scene.copy, &scene.laptop, &scene.clock),
+                &logged
+            )
+            .await,
+            Ran::Applied
+        );
+        let id: EventId = logged.derived_id(0).unwrap();
+        assert!(matches!(
+            view(&context(&scene.copy, &scene.sam, &scene.clock), id).await,
+            EventsOutcome::Event { .. }
+        ));
+
+        let pushed = push(
+            &push_context(&scene.server, &scene.laptop, &scene.clock),
+            schema_version(),
+            std::slice::from_ref(&logged),
+        )
+        .await;
+        assert_eq!(
+            answers(pushed),
+            vec![OperationAnswer::Applied { id: logged.id }]
+        );
+        // The same event, by the same ID, on the server: the copy and the server agree.
+        let on_server = view(&context(&scene.server, &scene.sam, &scene.clock), id).await;
+        let EventsOutcome::Event { view: event_view } = &on_server else {
+            panic!("not on the server: {on_server:?}");
+        };
+        assert_eq!(
+            event_view.event.last_edited_at,
+            logged.hlc.physical(),
+            "made when the desktop made it"
+        );
+
+        // Sent again (the answer was lost): the same answer, nothing applied twice.
+        let again = push(
+            &push_context(&scene.server, &scene.laptop, &scene.clock),
+            schema_version(),
+            std::slice::from_ref(&logged),
+        )
+        .await;
+        assert_eq!(
+            answers(again),
+            vec![OperationAnswer::Applied { id: logged.id }]
+        );
+        assert_eq!(count(&scene.server, "events").await, 1);
+        assert_eq!(count(&scene.server, "applied_operations").await, 1);
+    }
+
+    #[tokio::test]
+    async fn a_lower_reading_than_one_logged_meanwhile_is_refused_with_why() {
+        let scene = scene().await;
+        // On the web, meanwhile: 50,100 miles, a day later than the desktop's.
+        let mut later = fuel_up(scene.truck, scene.odometer, 50_100);
+        later.dates.start = UnixMillis::from_millis(NOW.as_millis() - 24 * 60 * MINUTE);
+        saved(&add(&context(&scene.server, &scene.sam, &scene.clock), later).await);
+        let mut earlier_but_higher = fuel_up(scene.truck, scene.odometer, 50_200);
+        earlier_but_higher.dates.start =
+            UnixMillis::from_millis(NOW.as_millis() - 48 * 60 * MINUTE);
+        let logged = operation(
+            1,
+            1,
+            OperationChange::AddEvent {
+                input: earlier_but_higher,
+            },
+        );
+        let pushed = answers(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&logged),
+            )
+            .await,
+        );
+        let [OperationAnswer::Refused { id, refusal }] = pushed.as_slice() else {
+            panic!("expected a refusal: {pushed:?}");
+        };
+        assert_eq!(*id, logged.id);
+        assert!(
+            matches!(
+                refusal,
+                Refusal::Events(EventsOutcome::Invalid {
+                    problem: EventProblem::ReadingOutOfOrder(_),
+                    ..
+                })
+            ),
+            "{refusal:?}"
+        );
+        assert_eq!(count(&scene.server, "events").await, 1, "nothing saved");
+        // Sent again: refused the same way, from the record.
+        let again = answers(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&logged),
+            )
+            .await,
+        );
+        assert_eq!(again, pushed);
+    }
+
+    #[tokio::test]
+    async fn a_change_is_checked_as_the_person_is_now() {
+        let scene = scene().await;
+        // Sam's role was removed while the change waited.
+        let no_role = SignedIn {
+            grants: vec![],
+            ..scene.laptop.clone()
+        };
+        let logged = operation(
+            1,
+            1,
+            OperationChange::AddEvent {
+                input: fuel_up(scene.truck, scene.odometer, 50_000),
+            },
+        );
+        let pushed = answers(
+            push(
+                &push_context(&scene.server, &no_role, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&logged),
+            )
+            .await,
+        );
+        assert!(
+            matches!(
+                pushed.as_slice(),
+                [OperationAnswer::Refused {
+                    refusal: Refusal::Events(EventsOutcome::NotFound | EventsOutcome::NotAllowed),
+                    ..
+                }]
+            ),
+            "{pushed:?}"
+        );
+        assert_eq!(count(&scene.server, "events").await, 0);
+    }
+
+    #[tokio::test]
+    async fn two_devices_changing_different_fields_of_one_event_both_stand() {
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        let id = saved(&add(&sam_online, fuel_up(scene.truck, scene.odometer, 50_000)).await);
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+
+        // Offline on the desktop: only the notes, against its copy.
+        let EventsOutcome::Event { view: on_copy } =
+            view(&context(&scene.copy, &scene.sam, &scene.clock), id).await
+        else {
+            panic!("not on the copy");
+        };
+        let mut typed = fuel_up(scene.truck, scene.odometer, 50_000);
+        typed.notes = Notes::parse("Checked the tires").unwrap();
+        let changes = typed.changes_from(&on_copy.event);
+        let edited = operation(1, 2, OperationChange::EditEvent { id, changes });
+
+        // Meanwhile on the web: the reading.
+        scene
+            .clock
+            .set(UnixMillis::from_millis(NOW.as_millis() + MINUTE));
+        saved(
+            &edit(
+                &sam_online,
+                id,
+                fuel_up(scene.truck, scene.odometer, 50_050),
+            )
+            .await,
+        );
+        scene
+            .clock
+            .set(UnixMillis::from_millis(NOW.as_millis() + 3 * MINUTE));
+
+        let pushed = answers(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&edited),
+            )
+            .await,
+        );
+        assert_eq!(pushed, vec![OperationAnswer::Applied { id: edited.id }]);
+        let EventsOutcome::Event { view: now } = view(&sam_online, id).await else {
+            panic!("no event");
+        };
+        assert_eq!(
+            now.event.notes.as_str(),
+            "Checked the tires",
+            "the desktop's"
+        );
+        assert_eq!(
+            now.event.readings[0].value,
+            50_050 * MILE,
+            "the web's, untouched by the desktop"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_pushed_edit_never_sets_what_the_server_sets() {
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        let id = saved(&add(&sam_online, fuel_up(scene.truck, scene.odometer, 50_000)).await);
+        let changes = EventPatch {
+            notes: Some(Notes::parse("Hello").unwrap()),
+            status: Some(EventStatus::Finalized),
+            logged_by: Some(scene.stuart.user),
+            ..EventPatch::default()
+        };
+        let edited = operation(1, 1, OperationChange::EditEvent { id, changes });
+        answers(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&edited),
+            )
+            .await,
+        );
+        let EventsOutcome::Event { view: now } = view(&sam_online, id).await else {
+            panic!("no event");
+        };
+        assert_eq!(now.event.notes.as_str(), "Hello");
+        assert_eq!(
+            now.event.status,
+            EventStatus::Draft,
+            "not finalized by a patch"
+        );
+        assert_eq!(now.event.logged_by, scene.sam.user);
+    }
+
+    #[tokio::test]
+    async fn a_format_the_server_cant_take_stops_the_push_and_keeps_the_rest() {
+        let scene = scene().await;
+        let log = |n, format| {
+            let mut logged = operation(
+                n,
+                1,
+                OperationChange::AddEvent {
+                    input: fuel_up(scene.truck, scene.odometer, 50_000 + i64::from(n)),
+                },
+            );
+            logged.format_version = format;
+            logged
+        };
+        let context = push_context(&scene.server, &scene.laptop, &scene.clock);
+        assert_eq!(
+            push(&context, schema_version(), &[log(1, 0), log(2, 1)]).await,
+            PushOutcome::Answers {
+                answers: vec![],
+                stopped: Some(PushStop::AppTooOld {
+                    format: 0,
+                    oldest: 1
+                }),
+            }
+        );
+        assert_eq!(
+            push(&context, schema_version(), &[log(3, 1), log(4, 99)]).await,
+            PushOutcome::Answers {
+                answers: vec![OperationAnswer::Applied { id: log(3, 1).id }],
+                stopped: Some(PushStop::ServerTooOld { format: 99 }),
+            }
+        );
+        assert_eq!(count(&scene.server, "events").await, 1);
+    }
+
+    #[tokio::test]
+    async fn a_clock_far_ahead_stops_the_push_and_tells_the_admin_until_its_right() {
+        let scene = scene().await;
+        let context = push_context(&scene.server, &scene.laptop, &scene.clock);
+        let ahead = operation(
+            1,
+            60,
+            OperationChange::AddEvent {
+                input: fuel_up(scene.truck, scene.odometer, 50_000),
+            },
+        );
+        assert_eq!(
+            push(&context, schema_version(), std::slice::from_ref(&ahead)).await,
+            PushOutcome::Answers {
+                answers: vec![],
+                stopped: Some(PushStop::ClockAhead {
+                    ahead_millis: 60 * MINUTE
+                }),
+            }
+        );
+        let messages = server::devices::clock_ahead_messages(&scene.server)
+            .await
+            .unwrap();
+        assert_eq!(messages.len(), 1);
+        assert!(matches!(
+            &messages[0].kind,
+            MessageKind::ClockAhead { minutes: 60, device_name, .. } if device_name == "Garage Mac"
+        ));
+        assert_eq!(count(&scene.server, "events").await, 0);
+
+        // Its clock set right: the change goes, and the message with it.
+        scene
+            .clock
+            .set(UnixMillis::from_millis(NOW.as_millis() + 60 * MINUTE));
+        answers(push(&context, schema_version(), std::slice::from_ref(&ahead)).await);
+        assert!(
+            server::devices::clock_ahead_messages(&scene.server)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn only_a_paired_desktop_on_the_same_schema_pushes() {
+        let scene = scene().await;
+        let logged = operation(1, 1, OperationChange::SetGarageOrder { order: vec![] });
+        // Sam's browser session (not paired).
+        assert_eq!(
+            push(
+                &push_context(&scene.server, &scene.sam, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&logged),
+            )
+            .await,
+            PushOutcome::NotAllowed
+        );
+        assert_eq!(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version() - 1,
+                std::slice::from_ref(&logged),
+            )
+            .await,
+            PushOutcome::OtherSchema {
+                server: schema_version()
+            }
+        );
+        assert_eq!(count(&scene.server, "applied_operations").await, 0);
+    }
+
+    #[tokio::test]
+    async fn a_copy_cleared_after_a_refusal_keeps_its_outbox_and_downloads_again() {
+        let scene = scene().await;
+        let sam_online = context(&scene.server, &scene.sam, &scene.clock);
+        saved(&add(&sam_online, fuel_up(scene.truck, scene.odometer, 50_000)).await);
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+        let waiting = operation(1, 1, OperationChange::SetGarageOrder { order: vec![] });
+        scene.copy.add_to_outbox(&waiting, NOW).await.unwrap();
+        assert_eq!(count(&scene.copy, "events").await, 1);
+
+        scene.copy.forget_pulled().await.unwrap();
+        for table in [
+            "events",
+            "assets",
+            "users",
+            "field_clocks",
+            "event_readings",
+        ] {
+            assert_eq!(count(&scene.copy, table).await, 0, "{table}");
+        }
+        let state = scene.copy.pull_state().await.unwrap().unwrap();
+        assert!(!state.complete(), "screens read from the server meanwhile");
+        assert_eq!(state.cursor, 0);
+        assert_eq!(
+            scene.copy.outbox_waiting(10).await.unwrap(),
+            vec![waiting],
+            "the outbox is kept"
+        );
+
+        pull_all(&scene.server, &scene.copy, &scene.laptop).await;
+        assert_eq!(count(&scene.copy, "events").await, 1);
+        assert!(scene.copy.pull_state().await.unwrap().unwrap().complete());
     }
 }

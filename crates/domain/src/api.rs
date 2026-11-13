@@ -749,6 +749,22 @@ pub struct SquawkInput {
     pub found_on: Option<crate::event::EventId>,
 }
 
+impl SquawkInput {
+    /// The fields of `current` this input changes, and only those (#043): its description,
+    /// notes, severity, and when it was noticed. Its vehicle and the event it was found on
+    /// stay as they were.
+    #[must_use]
+    pub fn changes_from(self, current: &crate::squawk::Squawk) -> crate::squawk::SquawkPatch {
+        crate::squawk::SquawkPatch {
+            description: (current.description != self.description).then_some(self.description),
+            notes: (current.notes != self.notes).then_some(self.notes),
+            severity: (current.severity != self.severity).then_some(self.severity),
+            opened_at: (current.opened_at != self.opened_at).then_some(self.opened_at),
+            ..crate::squawk::SquawkPatch::default()
+        }
+    }
+}
+
 /// One squawk as the app shows it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SquawkView {

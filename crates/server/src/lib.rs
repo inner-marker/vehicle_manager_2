@@ -22,6 +22,7 @@ pub mod lifecycle;
 pub mod limits;
 pub mod login_limiter;
 pub mod messages;
+pub mod origin;
 pub mod passwords;
 pub mod places;
 pub mod preferences;

@@ -35,6 +35,7 @@ pub mod location;
 pub mod log_area;
 pub mod meter;
 pub mod notes;
+pub mod operation;
 pub mod pin;
 pub mod plate;
 pub mod preferences;

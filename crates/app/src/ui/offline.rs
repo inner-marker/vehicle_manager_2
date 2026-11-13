@@ -4,12 +4,12 @@
 //! While the copy's last pull couldn't reach the server (`crate::local_copy::is_offline`):
 //! - [`OfflineTag`] shows **OFFLINE · copy 10:42** in the top bar (1A), with what it means as
 //!   its tooltip;
-//! - the app's root carries `data-offline="true"`, so the stylesheet turns saving off (Save,
-//!   Delete, Finish; 3A) and writes [`saving_note`] beside each form's buttons;
-//! - the buttons that only start a change (the Log buttons, **+ Squawk**, a squawk's Edit and
-//!   Remove) are disabled, with [`needs_server_note`] as their tooltip.
-//!
-//! Saving needs the server until milestone 5.
+//! - changes Driver mode allows still work: they're saved on this computer and sent later
+//!   (milestone 5, decision #076; `crate::data`);
+//! - what still needs the server is off: buttons marked `needs-server` (photos and documents,
+//!   milestone 6) are disabled with [`needs_server_note`] as their tooltip, and in an area
+//!   marked `needs-server-zone` (changing the password) the stylesheet turns the save buttons
+//!   off, with [`saving_note`] beside them (the root carries `data-offline="true"`).
 //!
 //! Nothing on the web: it has no copy and is never offline this way.
 
@@ -30,8 +30,8 @@ pub(crate) fn is_offline_now() -> bool {
     false
 }
 
-/// The tooltip for a button that starts a change, which is off while offline (the Log
-/// buttons, **+ Squawk**, a squawk's Edit and Remove): why it's off; nothing while online.
+/// The tooltip for a button that needs the server, which is off while offline (adding or
+/// removing a photo or document): why it's off; nothing while online.
 #[must_use]
 pub(crate) fn needs_server_note() -> Option<String> {
     is_offline_now().then(|| crate::ui::tr(domain::i18n::messages::OFFLINE_NEEDS_SERVER))

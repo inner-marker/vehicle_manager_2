@@ -96,6 +96,38 @@ mod encrypted {
     }
 
     #[tokio::test]
+    async fn the_outbox_and_clock_are_kept_in_the_encrypted_copy() {
+        use domain::hlc::Hlc;
+        use domain::operation::{Operation, OperationChange};
+
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("copy");
+        let (database, _) =
+            Database::open_local(&folder, &LocalKey::new(KEY), &server(1, ""), now())
+                .await
+                .unwrap();
+        let operation = Operation::new(
+            test_id(10),
+            Hlc::new(now(), 0).unwrap(),
+            OperationChange::DeleteEvent { id: test_id(11) },
+        );
+        database.add_to_outbox(&operation, now()).await.unwrap();
+        database.advance_device_hlc(operation.hlc).await.unwrap();
+        database.close().await;
+
+        let (database, _) =
+            Database::open_local(&folder, &LocalKey::new(KEY), &server(1, ""), now())
+                .await
+                .unwrap();
+        assert_eq!(
+            database.outbox_waiting(10).await.unwrap(),
+            vec![operation.clone()]
+        );
+        assert_eq!(database.device_hlc().await.unwrap(), operation.hlc);
+        database.close().await;
+    }
+
+    #[tokio::test]
     async fn a_copy_belongs_to_one_server_and_instance() {
         let temp = tempfile::tempdir().unwrap();
         let folder = temp.path().join("copy");

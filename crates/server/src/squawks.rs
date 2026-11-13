@@ -13,7 +13,7 @@
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
 use domain::api::{AssetsOutcome, SquawkInput, SquawkView, SquawksOutcome};
 use domain::asset::AssetId;
-use domain::command::Change;
+use domain::command::{Change, Patch};
 use domain::event::{Event, EventId};
 use domain::log_area;
 use domain::squawk::{Squawk, SquawkId, SquawkPatch, SquawkProblem, SquawkStatus};
@@ -264,23 +264,28 @@ async fn open_squawk(
 /// Changes a squawk's description, notes, severity, or when it was noticed (until a job
 /// dispositions it). Its vehicle and the event it was found on stay as they were.
 pub async fn edit(context: &AssetsContext<'_>, id: SquawkId, input: SquawkInput) -> SquawksOutcome {
-    either(edit_squawk(context, id, input).await)
+    // Only what differs, so the fields' clocks show what really changed.
+    either(edit_squawk(context, id, |current| input.changes_from(current)).await)
+}
+
+/// Changes a squawk by only the fields a desktop's operation changed (#076); only the fields a
+/// person edits are kept ([`SquawkPatch::EDITABLE`]).
+pub async fn edit_changes(
+    context: &AssetsContext<'_>,
+    id: SquawkId,
+    mut changes: SquawkPatch,
+) -> SquawksOutcome {
+    changes.keep_only(&SquawkPatch::EDITABLE);
+    either(edit_squawk(context, id, |_| changes).await)
 }
 
 async fn edit_squawk(
     context: &AssetsContext<'_>,
     id: SquawkId,
-    input: SquawkInput,
+    changes: impl FnOnce(&Squawk) -> SquawkPatch,
 ) -> Result<SquawksOutcome, SquawksOutcome> {
     let (current, _) = context.changeable_squawk(id).await?;
-    // Only what differs, so the fields' clocks show what really changed.
-    let patch = SquawkPatch {
-        description: (current.description != input.description).then_some(input.description),
-        notes: (current.notes != input.notes).then_some(input.notes),
-        severity: (current.severity != input.severity).then_some(input.severity),
-        opened_at: (current.opened_at != input.opened_at).then_some(input.opened_at),
-        ..SquawkPatch::default()
-    };
+    let patch = changes(&current);
     context.save_squawk(Change::Update { id, patch }).await?;
     tracing::debug!(target: log_area::APP, squawk = %id, "squawk changed");
     Ok(SquawksOutcome::Saved { id })

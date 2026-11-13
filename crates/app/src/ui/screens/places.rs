@@ -219,8 +219,8 @@ fn PlaceDialog(
         busy.set(true);
         spawn(async move {
             let result = match editing {
-                Some(id) => api::edit_place(id, form).await,
-                None => api::add_place(form).await,
+                Some(id) => crate::data::edit_place(id, form).await,
+                None => crate::data::add_place(form).await,
             };
             busy.set(false);
             error.set(failure(&result));
@@ -281,7 +281,7 @@ fn ConfirmRemove(
     let mut error = use_signal(|| None::<String>);
     let remove = move |_| {
         spawn(async move {
-            let result = api::delete_place(id).await;
+            let result = crate::data::delete_place(id).await;
             error.set(failure(&result));
             if error().is_none() {
                 on_removed.call(());

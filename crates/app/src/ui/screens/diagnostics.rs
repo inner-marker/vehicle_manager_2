@@ -270,6 +270,19 @@ fn OfflineCopy() -> Element {
                 )
             },
         );
+    let outbox = crate::local_copy::OUTBOX();
+    let oldest = outbox.oldest_waiting.map(|at| {
+        tr_with(
+            messages::MESSAGES_TIME_UTC,
+            &[(
+                "time",
+                MessageArg::from(domain::time_utils::format_utc_minute(at)),
+            )],
+        )
+    });
+    let stopped = crate::local_copy::PUSH_STOPPED()
+        .filter(|_| outbox.waiting > 0)
+        .map(crate::ui::outbox::stop_text);
     rsx! {
         section { class: "about",
             h3 { class: "section-heading", {tr(messages::COPY_HEADING).to_uppercase()} }
@@ -285,6 +298,19 @@ fn OfflineCopy() -> Element {
                     dd { {megabytes(shown.bytes)} }
                     dt { {tr(messages::COPY_FOLDER)} }
                     dd { class: "mono", {shown.folder.display().to_string()} }
+                }
+                // Changes made here (5e): waiting, refused, the oldest, why sending stopped.
+                dt { {tr(messages::COPY_WAITING)} }
+                dd { "{outbox.waiting}" }
+                dt { {tr(messages::COPY_REFUSED)} }
+                dd { "{outbox.refused}" }
+                if let Some(oldest) = oldest {
+                    dt { {tr(messages::COPY_OLDEST)} }
+                    dd { {oldest} }
+                }
+                if let Some(stopped) = stopped {
+                    dt { {tr(messages::COPY_SENDING)} }
+                    dd { {stopped} }
                 }
             }
             button {

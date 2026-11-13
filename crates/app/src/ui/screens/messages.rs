@@ -93,6 +93,8 @@ pub(crate) fn Messages() -> Element {
     rsx! {
         div { class: layout,
             div { class: "messages-list",
+                // This computer's own (refused changes, waiting too long): phase-3.md 5e, 2A.
+                super::not_sent::NotSent {}
                 div { class: "filter-chips", role: "group",
                     for (severity, label) in FILTERS {
                         button {
@@ -182,22 +184,33 @@ fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> St
             person,
             count,
             ..
-        } => {
-            // An unnamed desktop is "Desktop app".
-            let device = if device_name.is_empty() {
-                tr(messages::DEVICES_DESKTOP)
-            } else {
-                device_name.clone()
-            };
-            tr_with(
-                kind.body(),
-                &[
-                    ("device", MessageArg::from(device.as_str())),
-                    ("person", MessageArg::from(person.as_str())),
-                    ("count", MessageArg::from(i64::from(*count))),
-                ],
-            )
-        }
+        } => tr_with(
+            kind.body(),
+            &[
+                (
+                    "device",
+                    MessageArg::from(desktop_name(device_name).as_str()),
+                ),
+                ("person", MessageArg::from(person.as_str())),
+                ("count", MessageArg::from(i64::from(*count))),
+            ],
+        ),
+        MessageKind::ClockAhead {
+            device_name,
+            person,
+            minutes,
+            ..
+        } => tr_with(
+            kind.body(),
+            &[
+                (
+                    "device",
+                    MessageArg::from(desktop_name(device_name).as_str()),
+                ),
+                ("person", MessageArg::from(person.as_str())),
+                ("minutes", MessageArg::from(*minutes)),
+            ],
+        ),
         MessageKind::JobFailed { .. }
         | MessageKind::JobSkipped { .. }
         | MessageKind::ServerUnhealthy { .. }
@@ -248,6 +261,15 @@ fn MessageDetail(
                 {tr(messages::MESSAGES_DISMISS)}
             }
         }
+    }
+}
+
+/// A desktop's name for a message; an unnamed one is "Desktop app".
+fn desktop_name(name: &str) -> String {
+    if name.is_empty() {
+        tr(messages::DEVICES_DESKTOP)
+    } else {
+        name.to_owned()
     }
 }
 

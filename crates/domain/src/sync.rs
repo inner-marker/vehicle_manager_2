@@ -6,10 +6,16 @@
 //! made them), with their field clocks and the tombstones in that window. Rows travel as
 //! plain column values ([`SqlValue`]), because the desktop's copy has the same schema (the
 //! same migrations) and only a server with the desktop's schema version is pulled from.
+//!
+//! **Pushing** (phase-3.md 5c, decision #076) goes the other way: a desktop sends the
+//! operations in its outbox, oldest first ([`PUSH_LIMIT`] at a time), and the server answers
+//! each ([`OperationAnswer`]) until it has to stop ([`PushStop`]); the rest wait for the next
+//! push.
 
 use serde::{Deserialize, Serialize};
 
 use crate::id::DatabaseId;
+use crate::operation::{OperationId, Refusal};
 
 /// How many change numbers one page covers. A page never splits a change number.
 pub const PULL_WINDOW: u64 = 500;
@@ -102,6 +108,88 @@ impl PullPage {
     pub fn row_count(&self) -> usize {
         self.tables.iter().map(|table| table.rows.len()).sum()
     }
+}
+
+/// The most operations one push carries.
+pub const PUSH_LIMIT: usize = 100;
+
+/// The server's answer to one pushed operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "answer", rename_all = "kebab-case")]
+pub enum OperationAnswer {
+    /// Applied (now, or when it was first sent): it leaves the outbox.
+    Applied {
+        /// Which operation.
+        id: OperationId,
+    },
+    /// Refused, and why: it stays on the desktop for Messages (sketch 2A).
+    Refused {
+        /// Which operation.
+        id: OperationId,
+        /// The server function's answer.
+        refusal: Refusal,
+    },
+}
+
+impl OperationAnswer {
+    /// The operation it answers.
+    #[must_use]
+    pub const fn id(&self) -> OperationId {
+        match self {
+            Self::Applied { id } | Self::Refused { id, .. } => *id,
+        }
+    }
+}
+
+/// Why the server stopped before the end of a push. The operation it stopped at, and the rest,
+/// stay in the outbox.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "stopped", rename_all = "kebab-case")]
+pub enum PushStop {
+    /// Written by a newer app than the server knows: the server needs updating.
+    ServerTooOld {
+        /// The operation's format.
+        format: u32,
+    },
+    /// Written by an app older than the server accepts (#072): the app needs updating. Its
+    /// outbox is kept.
+    AppTooOld {
+        /// The operation's format.
+        format: u32,
+        /// The oldest the server accepts.
+        oldest: u32,
+    },
+    /// The desktop's clock is far ahead of the server's: set it right (the Admin is told).
+    ClockAhead {
+        /// How far, in milliseconds.
+        ahead_millis: i64,
+    },
+    /// The server can't apply changes now (unhealthy, or a failure): try again later.
+    Unavailable,
+}
+
+/// The answer to a push.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum PushOutcome {
+    /// An answer for each operation, in order, until the server stopped (if it did).
+    Answers {
+        /// One per operation answered.
+        answers: Vec<OperationAnswer>,
+        /// Why it stopped early, if it did.
+        stopped: Option<PushStop>,
+    },
+    /// The server's schema version differs from the desktop's (as for a pull).
+    OtherSchema {
+        /// The server's schema version.
+        server: i64,
+    },
+    /// Only a paired desktop pushes.
+    NotAllowed,
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't answer.
+    Unavailable,
 }
 
 /// The answer to a pull.

@@ -161,7 +161,29 @@ record_patch! {
     }
 }
 
+impl Squawk {
+    /// Applies `patch`'s editable fields ([`SquawkPatch::EDITABLE`]); its vehicle, who opened
+    /// it, the event it was found on, and when it was received stay.
+    pub fn apply(&mut self, patch: SquawkPatch) {
+        if let Some(description) = patch.description {
+            self.description = description;
+        }
+        if let Some(notes) = patch.notes {
+            self.notes = notes;
+        }
+        if let Some(severity) = patch.severity {
+            self.severity = severity;
+        }
+        if let Some(opened_at) = patch.opened_at {
+            self.opened_at = opened_at;
+        }
+    }
+}
+
 impl SquawkPatch {
+    /// The fields a person edits (the squawk sheet's): a pushed edit keeps only these.
+    pub const EDITABLE: [&'static str; 4] = ["description", "notes", "severity", "opened_at"];
+
     /// Every field of `squawk`, for opening it.
     #[must_use]
     pub fn all(squawk: Squawk) -> Self {

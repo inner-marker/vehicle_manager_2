@@ -75,6 +75,7 @@ async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>,
         user: context.user,
         health: context.health,
         clock: context.clock,
+        origin: crate::origin::Origin::Online,
     };
     let forgotten = crate::events::forgotten_jobs_for(&assets, context.timers)
         .await
@@ -85,10 +86,14 @@ async fn current_messages(context: &MessagesContext<'_>) -> Result<Vec<Message>,
     let failed_unlocks = crate::devices::failed_unlock_messages(context.database)
         .await
         .map_err(|error| unavailable(&error))?;
+    let clock_ahead = crate::devices::clock_ahead_messages(context.database)
+        .await
+        .map_err(|error| unavailable(&error))?;
     let mut messages = server_messages(&state);
     messages.extend(forgotten);
     messages.extend(overdue);
     messages.extend(failed_unlocks);
+    messages.extend(clock_ahead);
     Ok(messages)
 }
 

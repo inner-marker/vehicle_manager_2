@@ -21,6 +21,7 @@ mod integrity;
 pub mod jobs;
 pub mod local;
 pub mod message_marks;
+pub mod outbox;
 pub mod places;
 pub mod preferences;
 pub mod references;

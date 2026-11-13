@@ -21,7 +21,7 @@
 
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
 use domain::api::{AssetsOutcome, EventView, EventsOutcome, LatestReading};
-use domain::command::Change;
+use domain::command::{Change, Patch};
 use domain::event::{
     Event, EventId, EventInput, EventPatch, EventProblem, EventStatus, Finalizer, Performer,
     Reason, event_changes,
@@ -40,7 +40,7 @@ use storage::events::EventWriter;
 use storage::{Database, StorageError};
 
 use crate::assets::{AssetsContext, unavailable};
-use crate::commands::{ApplyError, issue};
+use crate::commands::{ApplyError, issue, issue_from};
 use crate::health::Health;
 
 /// A vehicle request's refusal as an events answer.
@@ -114,7 +114,8 @@ impl AssetsContext<'_> {
             user: self.user.user,
             mode: self.user.mode,
         };
-        issue(
+        issue_from(
+            &self.origin,
             self.database,
             &EventWriter,
             change,
@@ -130,7 +131,8 @@ impl AssetsContext<'_> {
             other @ (ApplyError::Rejected(_)
             | ApplyError::Storage(_)
             | ApplyError::Clock(_)
-            | ApplyError::NewId(_)) => failed("save event", &other),
+            | ApplyError::NewId(_)
+            | ApplyError::Origin(_)) => failed("save event", &other),
         })
     }
 
@@ -437,7 +439,10 @@ async fn add_event(
         return Err(EventsOutcome::NotAllowed);
     }
     let kind = input.kind;
-    let mut event = input.into_draft(context.user.user, context.clock.now());
+    let now = context.clock.now();
+    let mut event = input.into_draft(context.user.user, now);
+    // A desktop's operation was made earlier than the server receives it.
+    event.last_edited_at = context.origin.made_at(now);
     let warnings = context.checked(&mut event, scope, &[], false).await?;
     let id: EventId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
     context
@@ -450,21 +455,49 @@ async fn add_event(
     Ok(EventsOutcome::Saved { id, warnings })
 }
 
+/// What an edit sends: the whole form (online), or only the fields changed (a desktop's
+/// operation, #076).
+enum Edited {
+    Form(EventInput),
+    Changes(EventPatch),
+}
+
 /// Changes a draft.
 pub async fn edit(context: &AssetsContext<'_>, id: EventId, input: EventInput) -> EventsOutcome {
-    either(edit_event(context, id, input).await)
+    either(edit_event(context, id, Edited::Form(input)).await)
+}
+
+/// Changes a draft by only the fields a desktop's operation changed (#076): applied to the
+/// event as it is now, so a field changed meanwhile elsewhere stands, then checked like any
+/// edit. Only the fields a person edits are kept ([`EventPatch::EDITABLE`]).
+pub async fn edit_changes(
+    context: &AssetsContext<'_>,
+    id: EventId,
+    mut changes: EventPatch,
+) -> EventsOutcome {
+    changes.keep_only(&EventPatch::EDITABLE);
+    either(edit_event(context, id, Edited::Changes(changes)).await)
 }
 
 async fn edit_event(
     context: &AssetsContext<'_>,
     id: EventId,
-    input: EventInput,
+    edited: Edited,
 ) -> Result<EventsOutcome, EventsOutcome> {
     let (current, scope) = context.managed_event(id).await?;
     if current.status == EventStatus::Finalized {
         return Err(invalid(EventProblem::Finalized));
     }
-    let mut event = input.edit(&current, context.clock.now());
+    let made_at = context.origin.made_at(context.clock.now());
+    let mut event = match edited {
+        Edited::Form(input) => input.edit(&current, made_at),
+        Edited::Changes(changes) => {
+            let mut event = current.clone();
+            event.apply(changes);
+            event.last_edited_at = made_at;
+            event
+        }
+    };
     let warnings = context.checked(&mut event, scope, &[id], false).await?;
     let tasks = event.work.as_ref().map_or(0, |work| work.tasks.len());
     context
@@ -499,7 +532,10 @@ async fn finalize_event(
     context
         .save_event(Change::Update {
             id,
-            patch: finalize(Finalizer::User(context.user.user), context.clock.now()),
+            patch: finalize(
+                Finalizer::User(context.user.user),
+                context.origin.made_at(context.clock.now()),
+            ),
         })
         .await?;
     tracing::debug!(target: log_area::APP, event = %id, "event finalized");
@@ -529,7 +565,10 @@ async fn finish_event(
     context
         .save_event(Change::Update {
             id,
-            patch: finalize(Finalizer::User(context.user.user), context.clock.now()),
+            patch: finalize(
+                Finalizer::User(context.user.user),
+                context.origin.made_at(context.clock.now()),
+            ),
         })
         .await?;
     tracing::debug!(target: log_area::APP, event = %id, "job finished");
@@ -572,7 +611,9 @@ async fn correct_event(
 ) -> Result<EventsOutcome, EventsOutcome> {
     let (original, scope) = context.managed_event(original_id).await?;
     let reason = Reason::parse(reason).map_err(invalid)?;
-    let mut event = input.into_draft(context.user.user, context.clock.now());
+    let now = context.clock.now();
+    let mut event = input.into_draft(context.user.user, now);
+    event.last_edited_at = context.origin.made_at(now);
     event.corrects = Some(original_id);
     event.correction_reason = Some(reason);
     check_correction(&original, original_id, &event).map_err(invalid)?;

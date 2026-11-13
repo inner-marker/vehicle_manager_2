@@ -29,7 +29,6 @@ use super::job_page::{JobSections, JobTiles};
 use super::squawks::ReportSquawk;
 use super::vehicle::Tab;
 use super::{FormError, problem_from_error};
-use crate::api;
 use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::auth::{AuthState, use_auth};
@@ -619,8 +618,8 @@ fn ConfirmDialog(
         busy.set(true);
         spawn(async move {
             let result = match what {
-                Confirm::Finalize => api::finalize_event(id).await,
-                Confirm::Delete => api::delete_event(id).await,
+                Confirm::Finalize => crate::data::finalize_event(id).await,
+                Confirm::Delete => crate::data::delete_event(id).await,
             };
             busy.set(false);
             match result {

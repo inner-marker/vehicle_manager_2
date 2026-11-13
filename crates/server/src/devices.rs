@@ -256,3 +256,36 @@ pub async fn failed_unlock_messages(
     }
     Ok(messages)
 }
+
+/// A message for each desktop whose clock was found far ahead while it sent changes, for the
+/// household Admin (phase-3.md 5c, #076); it goes once that desktop's changes are accepted.
+///
+/// # Errors
+///
+/// [`storage::StorageError`] if the database fails.
+pub async fn clock_ahead_messages(
+    database: &Database,
+) -> Result<Vec<domain::inbox::Message>, storage::StorageError> {
+    let mut messages = Vec::new();
+    for flagged in database.devices_with_clock_ahead().await? {
+        let person = database
+            .user(flagged.user)
+            .await?
+            .map(|stored| stored.user.display_name)
+            .unwrap_or_default();
+        let name = database
+            .device(flagged.device)
+            .await?
+            .and_then(|device| device.name)
+            .map(|name| name.as_str().to_owned())
+            .unwrap_or_default();
+        messages.push(domain::inbox::clock_ahead_message(
+            flagged.device,
+            &name,
+            &person,
+            flagged.ahead_millis,
+            flagged.at,
+        ));
+    }
+    Ok(messages)
+}

@@ -127,7 +127,7 @@ impl Hlc {
 
     /// The next stamp after `self` in the same or a later millisecond: counter + 1,
     /// or the next millisecond with counter 0 when the counter is full.
-    fn successor(self) -> Result<Self, HlcError> {
+    pub(crate) fn successor(self) -> Result<Self, HlcError> {
         match self.counter().checked_add(1) {
             Some(counter) => Self::new(self.physical(), counter),
             None => Self::new(

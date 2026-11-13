@@ -31,6 +31,7 @@ use storage::{Database, StorageError};
 
 use crate::health::Health;
 use crate::ids::{NewIdError, new_id};
+use crate::origin::{Origin, OriginError};
 
 /// What applying a command did.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,6 +86,8 @@ pub enum ApplyError {
     Clock(HlcError),
     /// A new command ID couldn't be made (no OS randomness).
     NewId(NewIdError),
+    /// A pushed operation couldn't derive its command's ID or time (`crate::origin`).
+    Origin(OriginError),
 }
 
 impl core::fmt::Display for ApplyError {
@@ -94,6 +97,7 @@ impl core::fmt::Display for ApplyError {
             Self::Storage(error) => error.fmt(formatter),
             Self::Clock(error) => error.fmt(formatter),
             Self::NewId(error) => error.fmt(formatter),
+            Self::Origin(error) => error.fmt(formatter),
         }
     }
 }
@@ -175,6 +179,43 @@ pub async fn issue<R: Record, W: RecordWriter<R> + Sync>(
         change,
     };
     apply(database, writer, &command, actor, health, clock).await
+}
+
+/// Makes a command for a change from `origin` and applies it: online, as [`issue`] (the
+/// server's next HLC and a random ID); for a desktop's pushed operation, with the ID and time
+/// the operation derives (`crate::origin`), so the desktop's copy and the server agree and a
+/// resent operation's commands are recognized. Either way it's stamped with `device` (the
+/// session's) and goes through [`apply`]'s checks.
+///
+/// # Errors
+///
+/// As [`issue`], plus [`ApplyError::Origin`] if the operation can't derive another command.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "issue's arguments and where the change comes from"
+)]
+pub async fn issue_from<R: Record, W: RecordWriter<R> + Sync>(
+    origin: &Origin<'_>,
+    database: &Database,
+    writer: &W,
+    change: Change<R>,
+    device: DeviceId,
+    actor: Option<Actor>,
+    health: Health,
+    clock: &(dyn Clock + Sync),
+) -> Result<Outcome, ApplyError> {
+    match origin.next_command().map_err(ApplyError::Origin)? {
+        None => issue(database, writer, change, device, actor, health, clock).await,
+        Some((id, hlc)) => {
+            let command = Command {
+                id,
+                stamp: Stamp { hlc, device },
+                format_version: COMMAND_FORMAT_VERSION,
+                change,
+            };
+            apply(database, writer, &command, actor, health, clock).await
+        }
+    }
 }
 
 /// The checks that refuse a command before any database work.

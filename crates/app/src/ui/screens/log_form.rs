@@ -25,6 +25,7 @@ use domain::api::{
 };
 use domain::asset::AssetId;
 use domain::attachment::AttachmentOwner;
+use domain::command::Patch;
 use domain::custom_field::{CustomField, CustomFieldId, FieldKind, RangeCheck};
 use domain::dates::{format_date, utc_to_local};
 use domain::event::{
@@ -82,7 +83,12 @@ pub(super) enum Mode {
 pub(crate) fn LogForm(asset_id: String, kind: String) -> Element {
     match (asset_id.parse::<AssetId>(), event_from_value(&kind)) {
         (Ok(asset), Some(kind)) => {
-            rsx! { LogScreen { asset, kind, mode: Mode::New, original: None, prefill: None } }
+            // A refused new event opened again from Messages starts from what was typed
+            // (phase-3.md 5e); who logged it and when aren't shown.
+            let original = crate::ui::outbox::reopened_new_event(asset, kind).map(|input| {
+                input.into_draft(asset.cast(), domain::time::UnixMillis::from_millis(0))
+            });
+            rsx! { LogScreen { asset, kind, mode: Mode::New, original, prefill: None } }
         }
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
@@ -159,12 +165,22 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
     match loaded() {
         None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
         Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
-        Some(Ok((id, event))) => {
+        Some(Ok((id, mut event))) => {
             let mode = if correct {
                 Mode::Correct(id)
             } else {
                 Mode::Edit(id)
             };
+            // A refused edit or correction opened again from Messages starts from it, on the
+            // event as it is now (phase-3.md 5e).
+            if correct {
+                if let Some(input) = crate::ui::outbox::reopened_correction(id) {
+                    event = input.edit(&event, event.last_edited_at);
+                }
+            } else if let Some(mut changes) = crate::ui::outbox::reopened_edit(id) {
+                changes.keep_only(&domain::event::EventPatch::EDITABLE);
+                event.apply(changes);
+            }
             rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None } }
         }
     }
@@ -522,7 +538,7 @@ async fn send(
     removed_tasks: Vec<u16>,
 ) -> Result<EventsOutcome, ServerFnError> {
     match mode {
-        Mode::New => api::add_event(input).await,
+        Mode::New => data::add_event(input).await,
         Mode::Edit(id) => {
             let asset = input.asset;
             // Where the photos are now, before the server sees the tasks' new order.
@@ -531,13 +547,13 @@ async fn send(
             } else {
                 attachments_on_event(asset, id).await
             };
-            let outcome = api::edit_event(id, input).await?;
+            let outcome = data::edit_event(id, input).await?;
             if matches!(outcome, EventsOutcome::Saved { .. }) {
                 follow_removed_tasks(&before, &removed_tasks).await;
             }
             Ok(outcome)
         }
-        Mode::Correct(original) => api::correct_event(original, input, reason).await,
+        Mode::Correct(original) => data::correct_event(original, input, reason).await,
     }
 }
 
@@ -710,12 +726,13 @@ fn FormBody(
         let removed_tasks = typed.work.removed_tasks.clone();
         busy.set(true);
         spawn(async move {
-            let result = send(mode, input, reason(), removed_tasks).await;
+            // Boxed: on the desktop a save runs the server's code on the copy (a large future).
+            let result = Box::pin(send(mode, input, reason(), removed_tasks)).await;
             busy.set(false);
             match result {
                 Ok(EventsOutcome::Saved { id, .. }) if finish => {
                     chooser.remember(asset);
-                    match api::finish_event(id).await {
+                    match data::finish_event(id).await {
                         Ok(EventsOutcome::Done) => {
                             tracing::debug!(target: log_area::UI, event = %id, "job finished");
                             navigator.replace(Route::EventDetail {

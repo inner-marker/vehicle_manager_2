@@ -230,12 +230,21 @@ html {
     font-size: 1.25rem;
 }
 
-.sync-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 0.875rem;
+/* "↑ 3 to send" (phase-3.md 5e, sketch 1A): changes on this computer waiting to be sent; it
+   opens Diagnostics. The OFFLINE tag's shape, in blue. */
+.send-chip {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
 .log-button {
@@ -2438,8 +2447,7 @@ textarea.field-input {
     }
 
     .topbar-theme,
-    .log-button,
-    .sync-status-label {
+    .log-button {
         display: none;
     }
 
@@ -4619,32 +4627,74 @@ body:has(.photo-viewer) {
     white-space: nowrap;
 }
 
-/* Saving needs the server until milestone 5: Save, Delete, and Finish turn off, in the screens
-   and in the squawk sheet (which opens outside them). */
-.app[data-offline="true"] :is(main.content, .squawk-sheet) .primary-button,
-.app[data-offline="true"] :is(main.content, .squawk-sheet) .danger-button,
-.app[data-offline="true"] :is(main.content, .squawk-sheet) button[type="submit"] {
-    opacity: 0.45;
-    pointer-events: none;
-}
-
-/* Buttons that only start a change (Log, +, + Squawk, a squawk's Edit and Remove) are disabled
-   by the app, with why as their tooltip, so they keep the pointer. */
-.app[data-offline="true"] :is(.log-button, .fab, .needs-server):disabled {
+/* Offline (milestone 5, decision #076): the changes Driver mode allows are saved on this
+   computer and sent later, so their buttons stay on. What still needs the server is off: a
+   button marked `needs-server` (photos and documents, milestone 6) is disabled by the app, with
+   why as its tooltip; in an area marked `needs-server-zone` (changing the password), the save
+   buttons are off, with the saving note beside them. */
+.app[data-offline="true"] .needs-server:disabled {
     opacity: 0.45;
     cursor: not-allowed;
 }
 
-.app[data-offline="true"] :is(main.content, .squawk-sheet) .form-buttons {
+.app[data-offline="true"] .needs-server-zone :is(.primary-button, .danger-button, button[type="submit"]) {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.app[data-offline="true"] .needs-server-zone .form-buttons {
     flex-wrap: wrap;
 }
 
-/* The note beside each form's buttons; its words come from the app's root (`--offline-note`),
-   so they're in the person's language. */
-.app[data-offline="true"] :is(main.content, .squawk-sheet) .form-buttons::before {
+/* The note beside the buttons; its words come from the app's root (`--offline-note`), so
+   they're in the person's language. */
+.app[data-offline="true"] .needs-server-zone .form-buttons::before {
     content: var(--offline-note);
     flex-basis: 100%;
     color: var(--text-muted);
     font-size: 0.8rem;
     text-align: right;
+}
+
+/* ---------- Changes not yet on the server (phase-3.md 5e; sketch options 1A, 2A, 3B) ---------- */
+
+/* 2A: this computer's own messages at the top of Messages: amber, like a warning. */
+.not-sent-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.not-sent-card p {
+    margin: 0;
+}
+
+.not-sent-title {
+    color: var(--warn);
+    font-weight: 700;
+}
+
+.not-sent-reason {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.not-sent-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* 3B: the changes signing out would lose. */
+.unsent-list {
+    margin: 0 0 8px;
+    padding-left: 20px;
+}
+
+.unsent-list li {
+    margin: 2px 0;
 }
