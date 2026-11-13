@@ -350,7 +350,8 @@ mod documents {
             },
         };
         let AttachmentsOutcome::Saved { id: scan } =
-            server::attachments::add(&shop, &store, scan).await
+            server::attachments::add(&shop, &storage::files::Files::Folder(store.clone()), scan)
+                .await
         else {
             panic!("the scan wasn't added");
         };

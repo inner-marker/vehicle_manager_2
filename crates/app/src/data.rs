@@ -79,7 +79,8 @@ mod local {
                 Refusal::Squawks(_)
                 | Refusal::Places(_)
                 | Refusal::Preferences(_)
-                | Refusal::Assets(_) => None,
+                | Refusal::Assets(_)
+                | Refusal::Attachments(_) => None,
             }
         }
         fn unavailable() -> Self {
@@ -97,7 +98,8 @@ mod local {
                 Refusal::Events(_)
                 | Refusal::Places(_)
                 | Refusal::Preferences(_)
-                | Refusal::Assets(_) => None,
+                | Refusal::Assets(_)
+                | Refusal::Attachments(_) => None,
             }
         }
         fn unavailable() -> Self {
@@ -115,7 +117,8 @@ mod local {
                 Refusal::Events(_)
                 | Refusal::Squawks(_)
                 | Refusal::Preferences(_)
-                | Refusal::Assets(_) => None,
+                | Refusal::Assets(_)
+                | Refusal::Attachments(_) => None,
             }
         }
         fn unavailable() -> Self {
@@ -133,7 +136,8 @@ mod local {
                 Refusal::Events(_)
                 | Refusal::Squawks(_)
                 | Refusal::Places(_)
-                | Refusal::Assets(_) => None,
+                | Refusal::Assets(_)
+                | Refusal::Attachments(_) => None,
             }
         }
         fn unavailable() -> Self {
@@ -151,7 +155,8 @@ mod local {
                 Refusal::Events(_)
                 | Refusal::Squawks(_)
                 | Refusal::Places(_)
-                | Refusal::Preferences(_) => None,
+                | Refusal::Preferences(_)
+                | Refusal::Attachments(_) => None,
             }
         }
         fn unavailable() -> Self {

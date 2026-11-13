@@ -340,7 +340,7 @@ mod make_fixture {
             content: Content::Document { pages: 1 },
         };
         assert!(matches!(
-            add_attachment(shop, store, input).await,
+            add_attachment(shop, &storage::files::Files::Folder(store.clone()), input).await,
             domain::api::AttachmentsOutcome::Saved { .. }
         ));
     }

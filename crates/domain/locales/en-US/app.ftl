@@ -423,6 +423,9 @@ change-place = Saved place “{ $name }”
 change-place-edit = A change to a saved place
 change-place-delete = Removing a saved place
 change-garage-order = The Garage order
+change-attachment-add = A photo or document on { $vehicle }
+change-attachment-move = Moving a photo or document
+change-attachment-remove = Removing a photo or document
 sign-out-waiting-title =
     { $count ->
         [one] 1 change hasn't been sent

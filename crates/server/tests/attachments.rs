@@ -34,7 +34,7 @@ mod attachments {
     use lopdf::{Document, Object, dictionary};
     use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
     use server::attachments::{
-        UploadContext, add, count_pages, download, list, move_to, process_photo, remove, upload,
+        UploadContext, count_pages, download, list, move_to, process_photo, remove, upload,
     };
     use server::events::{add as add_event, correct, edit, finish};
     use server::groups::ensure_default_group;
@@ -43,9 +43,18 @@ mod attachments {
     use server::sessions::SignedIn;
     use server::squawks;
     use storage::Database;
-    use storage::files::FileStore;
+    use storage::files::{FileStore, Files};
 
     const MILE: i64 = 1_609;
+
+    /// Adds an attachment with the server's own files (its folder).
+    async fn add(
+        context: &AssetsContext<'_>,
+        store: &FileStore,
+        input: AttachmentInput,
+    ) -> AttachmentsOutcome {
+        server::attachments::add(context, &Files::Folder(store.clone()), input).await
+    }
 
     fn context<'a>(
         database: &'a Database,

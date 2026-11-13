@@ -689,6 +689,12 @@ define_messages! {
     CHANGE_PLACE_DELETE => "change-place-delete",
     /// A change: the Garage order.
     CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// A change: a photo or document added.
+    CHANGE_ATTACHMENT_ADD => "change-attachment-add",
+    /// A change: a photo or document moved between tasks.
+    CHANGE_ATTACHMENT_MOVE => "change-attachment-move",
+    /// A change: a photo or document removed.
+    CHANGE_ATTACHMENT_REMOVE => "change-attachment-remove",
     /// Signing out with changes not sent (sketch 3B).
     SIGN_OUT_WAITING_TITLE => "sign-out-waiting-title",
     /// Why it matters.

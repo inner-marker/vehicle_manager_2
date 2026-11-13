@@ -213,6 +213,21 @@ impl LocalFiles {
         .transpose()
     }
 
+    /// The size of the file with `hash`, if it's here.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or the stored size is invalid.
+    pub async fn bytes_of(&self, hash: &FileHash) -> Result<Option<u64>, StorageError> {
+        let bytes: Option<i64> = sqlx::query_scalar("SELECT bytes FROM files WHERE sha256 = ?")
+            .bind(hash.as_str())
+            .fetch_optional(&self.pool)
+            .await?;
+        bytes
+            .map(|bytes| u64::try_from(bytes).map_err(invalid("bytes")))
+            .transpose()
+    }
+
     /// Of `hashes`, the ones not here (to download).
     ///
     /// # Errors
