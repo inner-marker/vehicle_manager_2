@@ -60,6 +60,7 @@ pub(crate) fn Diagnostics() -> Element {
         ConnectionPanel {}
         About {}
         OfflineCopy {}
+        crate::ui::protective::ProtectionDiagnostics {}
         div { class: "log-controls",
             label {
                 {tr(messages::LOG_VIEWER_MIN_LEVEL)}

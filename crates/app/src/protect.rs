@@ -213,18 +213,52 @@ pub fn snapshots() -> Vec<PathBuf> {
 }
 
 /// Puts `snapshot` back as the copy: the copy closes, the snapshot takes its place, and it
-/// opens again; the next pull catches up from its cursor. Whether it worked.
+/// opens again; the next pull catches up from its cursor. The outbox as it is now is kept
+/// (changes made since the snapshot and not yet sent aren't lost). Whether it worked.
 pub async fn restore(snapshot: PathBuf) -> bool {
     let Some((folder, key)) = crate::local_copy::open_place() else {
         return false;
     };
+    let entries = crate::local_copy::outbox_entries().await;
     crate::local_copy::close().await;
     let restored = storage::local_snapshots::restore_local_snapshot(&folder, &snapshot);
     if let Err(error) = &restored {
         tracing::error!(target: log_area::SYNC, %error, "couldn't restore a snapshot");
     }
     crate::local_copy::open(key).await;
+    if restored.is_ok() {
+        carry_over(entries).await;
+    }
     restored.is_ok()
+}
+
+/// Puts `entries` (an outbox from before) into the open copy's outbox, where they aren't
+/// already: refused ones still refused.
+async fn carry_over(entries: Vec<storage::outbox::OutboxEntry>) {
+    let Some(copy) = crate::local_copy::current() else {
+        return;
+    };
+    for entry in entries {
+        if copy
+            .outbox_entry(entry.operation.id)
+            .await
+            .ok()
+            .flatten()
+            .is_some()
+        {
+            continue;
+        }
+        if let Err(error) = copy.add_to_outbox(&entry.operation, entry.made_at).await {
+            tracing::warn!(target: log_area::SYNC, %error, "couldn't keep a change");
+            continue;
+        }
+        if let OutboxState::Refused { refusal, at } = entry.state {
+            let _ = copy
+                .refuse_in_outbox(entry.operation.id, &refusal, at)
+                .await;
+        }
+    }
+    crate::local_copy::count_outbox().await;
 }
 
 // --- The choices ------------------------------------------------------------------------
@@ -297,20 +331,7 @@ async fn switch_to(now: DatabaseId) {
     crate::local_copy::close().await;
     settled();
     crate::local_copy::open(key).await;
-    if let Some(copy) = crate::local_copy::current() {
-        for entry in entries {
-            if let Err(error) = copy.add_to_outbox(&entry.operation, entry.made_at).await {
-                tracing::warn!(target: log_area::SYNC, %error, "couldn't move a change to the new copy");
-                continue;
-            }
-            if let OutboxState::Refused { refusal, at } = entry.state {
-                let _ = copy
-                    .refuse_in_outbox(entry.operation.id, &refusal, at)
-                    .await;
-            }
-        }
-    }
-    crate::local_copy::count_outbox().await;
+    carry_over(entries).await;
     tracing::info!(target: log_area::SYNC, database = %now, "using this server: a new copy of it");
 }
 

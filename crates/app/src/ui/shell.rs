@@ -224,6 +224,7 @@ pub(crate) fn Shell() -> Element {
                     }
                     super::auth::InstanceTag {}
                     super::offline::OfflineTag {}
+                    super::protective::ProtectedTag {}
                     if let AuthState::SignedIn(session) = auth() {
                         if let Some(minutes) = session.timers.test_minutes() {
                             span { class: "test-timers-tag", title: tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))]),
@@ -234,6 +235,8 @@ pub(crate) fn Shell() -> Element {
                     ModeChip {}
                     AccountChip {}
                 }
+                // Protecting this computer's copy (phase-3.md 7d, sketch 1A).
+                super::protective::ProtectedStrip {}
                 AdminBanner {}
                 AdminEndedNotice {}
                 UrgentBanner {}

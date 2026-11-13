@@ -637,6 +637,108 @@ define_messages! {
     COPY_OTHER_SCHEMA => "copy-other-schema",
     /// The copy's status: the server isn't well (7c).
     COPY_UNWELL => "copy-unwell",
+    /// The top bar while protecting the copy (sketch 1A).
+    PROTECTED_TAG => "protected-tag",
+    /// Why: another database.
+    PROTECTED_SERVER_CHANGED => "protected-server-changed",
+    /// Why: gone back in time.
+    PROTECTED_WENT_BACK => "protected-went-back",
+    /// Why: forgotten.
+    PROTECTED_FORGOTTEN => "protected-forgotten",
+    /// Why: a big delete.
+    PROTECTED_PULL_HELD => "protected-pull-held",
+    /// Opens the choices.
+    PROTECTED_DETAILS => "protected-details",
+    /// The choices' title.
+    PROTECTED_TITLE => "protected-title",
+    /// Stays protected.
+    PROTECTED_KEEP => "protected-keep",
+    /// Follows the server as it is now.
+    PROTECTED_USE_SERVER => "protected-use-server",
+    /// What using it does.
+    PROTECTED_USE_SERVER_NOTE => "protected-use-server-note",
+    /// Opens the rebuild (3B).
+    PROTECTED_REBUILD => "protected-rebuild",
+    /// The sign-in card, forgotten.
+    PROTECTED_SIGN_IN_NOTE => "protected-sign-in-note",
+    /// Deletes it.
+    PROTECTED_DELETE_COPY => "protected-delete-copy",
+    /// Confirms the delete.
+    PROTECTED_DELETE_CONFIRM => "protected-delete-confirm",
+    /// 2A's title.
+    HELD_TITLE => "held-title",
+    /// 2A: one vehicle's share.
+    HELD_VEHICLE => "held-vehicle",
+    /// 2A's advice.
+    HELD_NOTE => "held-note",
+    /// 2A: stays protected.
+    HELD_KEEP => "held-keep",
+    /// 2A: applies the deletes.
+    HELD_APPLY => "held-apply",
+    /// 2A's note.
+    HELD_APPLY_NOTE => "held-apply-note",
+    /// 3B's title.
+    REBUILD_TITLE => "rebuild-title",
+    /// 3B check.
+    REBUILD_CHECK_COMPLETE => "rebuild-check-complete",
+    /// 3B check.
+    REBUILD_CHECK_NOTHING_WAITING => "rebuild-check-nothing-waiting",
+    /// 3B check.
+    REBUILD_CHECK_FRESH => "rebuild-check-fresh",
+    /// 3B: what happens.
+    REBUILD_WHAT_RECORDS => "rebuild-what-records",
+    /// 3B: what happens.
+    REBUILD_WHAT_PASSWORDS => "rebuild-what-passwords",
+    /// 3B: what happens.
+    REBUILD_WHAT_DEVICES => "rebuild-what-devices",
+    /// 3B: what happens.
+    REBUILD_WHAT_PHOTOS => "rebuild-what-photos",
+    /// 3B field.
+    REBUILD_CODE => "rebuild-code",
+    /// 3B field.
+    REBUILD_PASSWORD => "rebuild-password",
+    /// 3B field.
+    REBUILD_TYPE => "rebuild-type",
+    /// 3B's button.
+    REBUILD_BUTTON => "rebuild-button",
+    /// 3B busy.
+    REBUILD_BUSY => "rebuild-busy",
+    /// 3B step.
+    REBUILD_NEXT => "rebuild-next",
+    /// 3B step.
+    REBUILD_BACK => "rebuild-back",
+    /// 3B done.
+    REBUILD_DONE => "rebuild-done",
+    /// 3B done: passwords.
+    REBUILD_PASSWORDS => "rebuild-passwords",
+    /// 3B done: left out.
+    REBUILD_LEFT_OUT => "rebuild-left-out",
+    /// 3B problem.
+    REBUILD_WRONG_CODE => "rebuild-wrong-code",
+    /// 3B problem.
+    REBUILD_NOT_FRESH => "rebuild-not-fresh",
+    /// 3B problem.
+    REBUILD_NOT_ALLOWED => "rebuild-not-allowed",
+    /// 3B problem.
+    REBUILD_NOT_READY => "rebuild-not-ready",
+    /// 3B problem.
+    REBUILD_FAILED => "rebuild-failed",
+    /// The setup card.
+    REBUILD_OFFER => "rebuild-offer",
+    /// Diagnostics.
+    SNAPSHOTS_HEADING => "snapshots-heading",
+    /// Diagnostics.
+    SNAPSHOT_RESTORE => "snapshot-restore",
+    /// Diagnostics.
+    SNAPSHOT_RESTORE_CONFIRM => "snapshot-restore-confirm",
+    /// Diagnostics.
+    SNAPSHOT_NONE => "snapshot-none",
+    /// Diagnostics.
+    SNAPSHOT_TAKE => "snapshot-take",
+    /// Messages, this computer's.
+    SYNC_UNWELL_TITLE => "sync-unwell-title",
+    /// Messages, this computer's.
+    SYNC_UNWELL_BODY => "sync-unwell-body",
     /// The top bar: changes waiting to be sent (sketch 1A).
     OUTBOX_CHIP => "outbox-chip",
     /// The chip's tooltip, with the oldest's time.

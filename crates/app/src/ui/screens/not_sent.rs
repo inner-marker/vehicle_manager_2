@@ -65,7 +65,22 @@ mod desktop {
             .oldest_waiting
             .map(|at| when_text(at, &zone()))
             .unwrap_or_default();
+        let protected = crate::ui::protective::protected_reason();
+        let unwell = crate::local_copy::STATUS() == crate::local_copy::CopyStatus::Unwell;
         rsx! {
+            // Sync alerts (7d): protecting the copy, and the server not well.
+            if let Some(why) = protected {
+                div { class: "not-sent-card protected-card", role: "alert",
+                    p { class: "not-sent-title", {format!("⚠ {}", tr(messages::PROTECTED_TITLE))} }
+                    p { class: "not-sent-reason", {why} }
+                }
+            }
+            if unwell {
+                div { class: "not-sent-card", role: "status",
+                    p { class: "not-sent-title", {format!("⚠ {}", tr(messages::SYNC_UNWELL_TITLE))} }
+                    p { class: "not-sent-reason", {tr(messages::SYNC_UNWELL_BODY)} }
+                }
+            }
             if let Some(stop) = stopped {
                 div { class: "not-sent-card", role: "status",
                     p { class: "not-sent-title", {format!("⚠ {}", tr(messages::OUTBOX_STOPPED_TITLE))} }

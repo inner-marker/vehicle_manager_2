@@ -32,6 +32,8 @@ mod vehicles;
 mod work_input;
 mod work_log;
 
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) use account::too_many_attempts;
 pub(crate) use account::{
     ChangePasswordForm, Field, ForcedPasswordChange, FormError, Setup, SignIn,
 };
