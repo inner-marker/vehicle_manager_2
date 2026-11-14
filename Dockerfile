@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # The server image: the Dioxus fullstack server plus its web UI (plan §7 Building the
-# app image). linux/amd64 for the DS1019+ NAS (decisions.md #025).
+# app image). linux/amd64 for the Synology NAS (decisions.md #025).
 #
 #   docker build -t vehicle_manager_2 .
 #
@@ -9,7 +9,7 @@
 # toolchain and the Dioxus CLI, and a slim runtime stage that ships only the bundle, the
 # geocoder data, and CA certificates (no compiler, no GDAL, no source).
 #
-# Never add `-C target-cpu=native` or similar: the NAS CPU (Intel J3455) has no AVX,
+# Never add `-C target-cpu=native` or similar: the NAS CPU has no AVX,
 # so a binary tuned for the build machine could crash there (#025).
 
 # ---------- Geocoder data stage (decision #059) ----------

@@ -679,11 +679,11 @@ mod tests {
 
     #[test]
     fn a_move_lists_who_gains_loses_and_changes_access() {
-        let (sam, alex, pat, stuart) = (test_id(2), test_id(3), test_id(4), test_id(1));
+        let (sam, alex, pat, jordan) = (test_id(2), test_id(3), test_id(4), test_id(1));
         let grants = [
-            // Stuart: Admin everywhere, unchanged by any move.
+            // Jordan: Admin everywhere, unchanged by any move.
             RoleGrant {
-                user: stuart,
+                user: jordan,
                 target: GrantTarget::AllAssets,
                 role: Role::Admin,
             },

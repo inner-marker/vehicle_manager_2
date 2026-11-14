@@ -135,7 +135,7 @@ mod desktop {
         dioxus_fullstack::get_server_url()
     }
 
-    /// The server's host, for "Stuart · nas.example.ts.net".
+    /// The server's host, for "Jordan · nas.example.ts.net".
     fn server_label() -> String {
         let address = server();
         address

@@ -404,12 +404,12 @@ mod make_fixture {
             "{} exists already: a fixture is never edited",
             target.display()
         );
-        let (temp, database, stuart, sam) = setup().await;
+        let (temp, database, jordan, sam) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let admin = in_mode(&stuart, ActiveMode::Admin);
+        let admin = in_mode(&jordan, ActiveMode::Admin);
         let (truck, odometer) = truck(&database, &admin, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let driver = context(&database, &sam, &clock);
         everyday(&shop, &driver, truck, odometer).await;

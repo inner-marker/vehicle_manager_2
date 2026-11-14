@@ -1385,7 +1385,7 @@ For the MVP there is no separate backup of the master database. Device copies ac
 **Known gap until offsite backups exist:** device copies are only as fresh as each device's last sync. Data entered only through the web UI, or photos not yet pulled by any device, could exist only on the server.
 
 **MVP mitigation: nightly local snapshot**
-- The server makes a **nightly `VACUUM INTO` copy** of the master database in `data/snapshots/`. The DS1019+ has one storage pool, so for now that's the **same pool** as the live database (`docs/decisions.md` #035).
+- The server makes a **nightly `VACUUM INTO` copy** of the master database in `data/snapshots/`. The NAS has one storage pool, so for now that's the **same pool** as the live database (`docs/decisions.md` #035).
 - The snapshot folder is **configurable** (`VEHICLEMANAGER_SNAPSHOT_DIR`), so it can later point at a USB disk or another volume mounted into the container. If it's unavailable, the server skips the snapshot and reports it.
 - Keeps the last 7 nightly copies; older ones are rotated out.
 - Each snapshot is **integrity-checked** after it's written.
@@ -1539,11 +1539,11 @@ The NAS runs two servers side by side (`docs/decisions.md` #062), each its own C
 
 ### Target NAS & image architectures
 
-- **Primary NAS:** Synology **DS1019+** (Intel Celeron J3455, 4 cores, 8 GB RAM, x86_64) on **DSM 7.4.1**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
+- **Primary NAS:** a Synology with an Intel (x86_64) processor on **DSM 7.4**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
 - **Architectures:** images will support both **x86_64 (amd64)** and **arm64**.
   - **First images: amd64 only,** matching the NAS. GitHub's standard Linux runners are amd64, so CI builds them natively, with no cross-compiling or emulation.
   - **arm64 later**, for other always-on hosts such as a Raspberry Pi (see Hosting options), as a multi-arch image under one tag.
-- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the J3455 has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
+- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the NAS CPU has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
 - **Building arm64 efficiently (later):** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
 
 ### Getting the image onto the NAS
@@ -1872,6 +1872,8 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **After Phase 3 milestone 4's test** (the human, 2026-11-12):
   - **Timeline paging:** a long timeline gets slow to draw, so show a page at a time (100 records, or a number the person picks) with **Previous** and **Next**, and a **Jump to date**.
   - **Skip the wait when there's no network at all** (an idea to weigh): the desktop could ask the operating system whether it has any network (Wi-Fi or Ethernet) and, with none, open its copy straight away instead of waiting up to 8 s. It only helps with no network at all: with Tailscale off, or the server down, the network is still up, so the wait stays.
+- **After Phase 3 milestone 7's test** (the human, 2026-11-14):
+  - **Make the text to type stand out** in "type to confirm" dialogs (e.g. "Type Van Test to confirm." when deleting a vehicle): show it in a monospace font, highlighted, or both, so it's clear exactly what to type. Apply it everywhere the app asks for typed confirmation (deleting a vehicle, REBUILD, and others).
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.

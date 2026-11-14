@@ -73,6 +73,9 @@ pub enum CopyStatus {
     },
     /// Something went wrong (in the log).
     Failed,
+    /// The server isn't well (its database failed a check): it takes and serves nothing until
+    /// it is; the copy waits (7c).
+    Unwell,
 }
 
 /// What the copy is doing, for Diagnostics.
@@ -128,6 +131,27 @@ fn server() -> &'static str {
     dioxus_fullstack::get_server_url()
 }
 
+/// The server this desktop uses now (its sealed sign-in is filed under it).
+#[must_use]
+pub fn server_address() -> &'static str {
+    server()
+}
+
+/// The open copy's folder and key (for snapshots, and for a new sign-in to keep the copy: 7c).
+static OPEN_PLACE: Mutex<Option<(PathBuf, [u8; 32])>> = Mutex::new(None);
+
+fn open_place_slot() -> std::sync::MutexGuard<'static, Option<(PathBuf, [u8; 32])>> {
+    OPEN_PLACE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// The open copy's folder and key, if a copy is open.
+#[must_use]
+pub fn open_place() -> Option<(PathBuf, [u8; 32])> {
+    open_place_slot().clone()
+}
+
 /// The folder name for a server's copy: its database ID, and `-<instance>` for a named one;
 /// `None` for an instance name that isn't lowercase letters and digits (the server's own rule,
 /// #062), which would otherwise reach outside the folder (`../`).
@@ -177,12 +201,17 @@ pub fn known_instance() -> Option<String> {
         .filter(|instance| !instance.is_empty())
 }
 
-/// A new key for a new copy: 32 random bytes from the operating system.
+/// The key for the copy a new sign-in seals: the open copy's own (signing in again after the
+/// server forgot this desktop keeps its copy and outbox, 7c), otherwise 32 new random bytes
+/// from the operating system.
 ///
 /// # Errors
 ///
 /// What went wrong, if the OS has no randomness.
 pub fn new_key() -> Result<[u8; 32], String> {
+    if let Some((_, key)) = open_place() {
+        return Ok(key);
+    }
     let mut key = [0; 32];
     getrandom::fill(&mut key).map_err(|error| error.to_string())?;
     Ok(key)
@@ -219,6 +248,7 @@ pub async fn open(key: [u8; 32]) {
     match open_or_restart(&folder, &key, &copy_of).await {
         Ok(database) => {
             *copy_slot() = Some(database);
+            *open_place_slot() = Some((folder.clone(), *key.bytes()));
             // Its photos and PDFs, beside it under the same key (6c).
             crate::copy_files::open(&folder, &key).await;
             PULL_NOW.notify_one();
@@ -244,6 +274,7 @@ pub async fn open_if_waiting() {
 pub async fn close() {
     *waiting_key() = None;
     let open = copy_slot().take();
+    *open_place_slot() = None;
     if let Some(database) = open {
         database.close().await;
         tracing::debug!(target: log_area::SYNC, "this computer's copy is closed");
@@ -258,6 +289,8 @@ pub async fn close() {
 /// Closes and deletes this server's copy (signing out, or too many wrong tries; #075).
 pub async fn delete() {
     close().await;
+    // Nothing left to protect.
+    crate::protect::clear();
     if let Some((folder, _)) = place_of(server())
         && let Err(error) = delete_local(&folder)
     {
@@ -281,6 +314,10 @@ fn page_of(
 ) -> Option<Box<PullPage>> {
     let status = match outcome {
         Ok(PullOutcome::Page { page }) => return Some(page),
+        Ok(PullOutcome::Unhealthy) => {
+            tracing::info!(target: log_area::SYNC, "no pull: the server isn't well");
+            CopyStatus::Unwell
+        }
         Ok(PullOutcome::OtherSchema { server }) => {
             tracing::info!(target: log_area::SYNC, server, app = schema_version(), "no pull: the server's schema version differs");
             CopyStatus::OtherSchema {
@@ -457,6 +494,10 @@ enum Batch {
 /// Sends the outbox, oldest first, until it's empty or the server stops (called with the pull
 /// lock held). Whether the server could be reached on the same schema (the pull goes on).
 async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
+    // Protecting the copy: nothing is sent to a server that may be damaged (7c).
+    if crate::protect::is_protected() {
+        return false;
+    }
     loop {
         let waiting = match copy
             .outbox_waiting(u32::try_from(PUSH_LIMIT).unwrap_or(100))
@@ -484,6 +525,7 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
         }
     }
     if DOWNLOAD_AGAIN.swap(false, std::sync::atomic::Ordering::Relaxed)
+        && crate::protect::snapshot("before downloading the copy again").await
         && let Err(error) = copy.forget_pulled().await
     {
         tracing::error!(target: log_area::SYNC, %error, "couldn't clear the copy to download it again");
@@ -535,19 +577,12 @@ async fn push_batch(
     .await;
     match outcome {
         Ok(PushOutcome::Answers { answers, stopped }) => {
-            take_answers(copy, &answers).await;
-            if *PUSH_STOPPED.peek() != stopped {
-                *PUSH_STOPPED.write() = stopped;
-            }
-            if let Some(stop) = stopped {
-                tracing::info!(target: log_area::SYNC, ?stop, "the server stopped the push");
-                return Batch::Stop(true);
-            }
-            if answers.len() < sent {
-                Batch::Stop(true)
-            } else {
-                Batch::Next
-            }
+            answered(copy, &answers, stopped, sent).await
+        }
+        Ok(PushOutcome::Unhealthy) => {
+            tracing::info!(target: log_area::SYNC, "no push: the server isn't well");
+            *STATUS.write() = CopyStatus::Unwell;
+            Batch::Stop(false)
         }
         Ok(PushOutcome::OtherSchema { server }) => {
             *STATUS.write() = CopyStatus::OtherSchema {
@@ -565,6 +600,28 @@ async fn push_batch(
             *STATUS.write() = CopyStatus::Offline { since: last_pull };
             Batch::Stop(false)
         }
+    }
+}
+
+/// Takes in a batch's answers (`sent` operations): the next batch, or why the push stops.
+async fn answered(
+    copy: &Database,
+    answers: &[OperationAnswer],
+    stopped: Option<PushStop>,
+    sent: usize,
+) -> Batch {
+    take_answers(copy, answers).await;
+    if *PUSH_STOPPED.peek() != stopped {
+        *PUSH_STOPPED.write() = stopped;
+    }
+    if let Some(stop) = stopped {
+        tracing::info!(target: log_area::SYNC, ?stop, "the server stopped the push");
+        return Batch::Stop(true);
+    }
+    if answers.len() < sent {
+        Batch::Stop(true)
+    } else {
+        Batch::Next
     }
 }
 
@@ -592,6 +649,11 @@ async fn take_answers(copy: &Database, answers: &[OperationAnswer]) {
 /// the outbox goes first, so a pull never covers a change that hasn't been sent.
 async fn pull_until_current(copy: &Database) {
     let _one_at_a_time = PULL_LOCK.lock().await;
+    // Protecting the copy: nothing pulled is applied until a person decides (7c).
+    if crate::protect::is_protected() {
+        return;
+    }
+    crate::protect::daily_snapshot().await;
     let last_pull = copy
         .pull_state()
         .await
@@ -614,6 +676,10 @@ async fn pull_until_current(copy: &Database) {
         let Some(page) = page_of(outcome, state.last_pull) else {
             return;
         };
+        // Another server, one gone back in time, or a big delete: held (7c).
+        if !crate::protect::page_may_apply(copy, &page).await {
+            return;
+        }
         if let Err(error) = copy.apply_pull_page(&page, SystemClock.now()).await {
             tracing::error!(target: log_area::SYNC, %error, "couldn't apply a pulled page");
             *STATUS.write() = CopyStatus::Failed;

@@ -4731,3 +4731,87 @@ body:has(.photo-viewer) {
 .unsent-list li {
     margin: 2px 0;
 }
+
+/* ---------- Protecting this computer's copy (phase-3.md 7d; sketch options 1A, 2A, 3B) ---------- */
+
+/* 1A: "PROTECTED" in the top bar, the OFFLINE tag's shape in red. */
+.protected-tag {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--error);
+    border-radius: 12px;
+    color: var(--error);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* 1A: the red strip under the top bar, on every screen until it's settled. */
+.protected-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--error);
+    background: color-mix(in srgb, var(--error) 18%, var(--surface));
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.protected-strip-text {
+    flex: 1;
+}
+
+.protected-choices {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+/* The sign-in and setup cards' notes, and Messages' alert. */
+.protected-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+}
+
+.protected-notice p {
+    margin: 0;
+}
+
+.not-sent-card.protected-card {
+    border-color: var(--error);
+}
+
+.not-sent-card.protected-card .not-sent-title {
+    color: var(--error);
+}
+
+/* 3B: the checks, one to a line. */
+.rebuild-checks {
+    margin: 0 0 8px;
+    padding-left: 4px;
+    list-style: none;
+}
+
+/* Diagnostics: the copy's snapshots. */
+.snapshot-list {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.snapshot-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}

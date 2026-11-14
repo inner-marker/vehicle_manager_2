@@ -20,7 +20,7 @@ use crate::ui::screens::problem_from_error;
 use crate::ui::{tr, tr_with};
 
 /// "Too many attempts. Try again in N minutes.", rounding up so it never says 0.
-fn too_many_attempts(retry_after_seconds: i64) -> String {
+pub(crate) fn too_many_attempts(retry_after_seconds: i64) -> String {
     let minutes = (retry_after_seconds + 59) / 60;
     tr_with(
         messages::TOO_MANY_ATTEMPTS,
@@ -318,6 +318,8 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
                 p { class: "auth-subtitle", {tr(messages::SIGN_IN_SUBTITLE)} }
                 SignedOutNotice {}
                 crate::ui::lock::LockSignedOutNotice {}
+                // The server no longer knows this computer: its copy is kept (7d).
+                crate::ui::protective::ForgottenNotice {}
                 crate::ui::recent_servers::ServerList {}
                 Field { label: messages::FIELD_USERNAME, value: username, autocomplete: "username", autofocus: true }
                 Field { label: messages::FIELD_PASSWORD, value: password, kind: "password", autocomplete: "current-password" }
@@ -343,6 +345,8 @@ pub(crate) fn Setup() -> Element {
     let error = use_signal(|| None::<String>);
     rsx! {
         AuthCard {
+            // A fresh server, and this computer has a copy: rebuild from it (7d, 3B).
+            crate::ui::protective::RebuildOffer {}
             if step_two() {
                 SetupAccount { code, step_two, error }
             } else {

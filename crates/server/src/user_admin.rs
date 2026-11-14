@@ -185,7 +185,7 @@ fn is_enabled(users: &[StoredUser], user: UserId) -> bool {
 }
 
 /// A new temporary password, and its hash.
-async fn temporary_password() -> Result<(Secret, String), String> {
+pub(crate) async fn temporary_password() -> Result<(Secret, String), String> {
     let password = Secret::new(group_by_four(
         &random_code(TEMPORARY_PASSWORD_CHARS).map_err(|error| error.to_string())?,
     ));

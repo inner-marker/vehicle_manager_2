@@ -45,7 +45,7 @@ mod sessions {
         UnixMillis::from_millis(NOW.as_millis() + offset_millis)
     }
 
-    /// A database with user `stuart` (Admin on all assets, password [`PASSWORD`]).
+    /// A database with user `jordan` (Admin on all assets, password [`PASSWORD`]).
     async fn database() -> (tempfile::TempDir, Database) {
         let temp = tempfile::tempdir().unwrap();
         let ids = NewDatabaseIds {
@@ -53,7 +53,7 @@ mod sessions {
             server_device_id: test_id(901),
         };
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
-        add_user(&database, 1, "stuart", Role::Admin).await;
+        add_user(&database, 1, "jordan", Role::Admin).await;
         (temp, database)
     }
 
@@ -132,7 +132,7 @@ mod sessions {
         let (token, signed_in) = sign_in(
             database,
             &LoginLimiter::new(),
-            "Stuart",
+            "Jordan",
             PASSWORD.into(),
             "phone",
             NOW,
@@ -148,7 +148,7 @@ mod sessions {
 
         let (token, signed_in) = signed_in(&database).await;
 
-        assert_eq!(signed_in.username.as_str(), "stuart");
+        assert_eq!(signed_in.username.as_str(), "jordan");
         assert_eq!(
             signed_in.mode,
             ActiveMode::Driver,
@@ -179,7 +179,7 @@ mod sessions {
         let wrong = sign_in(
             &database,
             &limiter,
-            "stuart",
+            "jordan",
             "wrong password!".into(),
             "a",
             NOW,
@@ -195,7 +195,7 @@ mod sessions {
             },
         )
         .await;
-        let disabled = sign_in(&database, &limiter, "stuart", PASSWORD.into(), "c", NOW).await;
+        let disabled = sign_in(&database, &limiter, "jordan", PASSWORD.into(), "c", NOW).await;
 
         for result in [wrong, unknown, disabled] {
             assert!(
@@ -213,7 +213,7 @@ mod sessions {
             let result = sign_in(
                 &database,
                 &limiter,
-                "stuart",
+                "jordan",
                 "wrong password!".into(),
                 "phone",
                 at(attempt),
@@ -225,7 +225,7 @@ mod sessions {
         let sixth = sign_in(
             &database,
             &limiter,
-            "stuart",
+            "jordan",
             PASSWORD.into(),
             "laptop",
             at(10),
@@ -478,7 +478,7 @@ mod sessions {
         let old = sign_in(
             &database,
             &LoginLimiter::new(),
-            "stuart",
+            "jordan",
             PASSWORD.into(),
             "z",
             NOW,
@@ -489,7 +489,7 @@ mod sessions {
             sign_in(
                 &database,
                 &LoginLimiter::new(),
-                "stuart",
+                "jordan",
                 "a brand new password".into(),
                 "z",
                 NOW
@@ -606,8 +606,8 @@ mod sessions {
         )
         .await;
 
-        assert_eq!(by_cookie, (StatusCode::OK, "stuart".to_owned()));
-        assert_eq!(by_bearer, (StatusCode::OK, "stuart".to_owned()));
+        assert_eq!(by_cookie, (StatusCode::OK, "jordan".to_owned()));
+        assert_eq!(by_bearer, (StatusCode::OK, "jordan".to_owned()));
     }
 
     #[tokio::test]

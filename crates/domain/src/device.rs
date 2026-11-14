@@ -41,7 +41,7 @@ impl DeviceKind {
 /// The most characters in a device's name.
 pub const DEVICE_NAME_MAX_CHARS: usize = 64;
 
-/// A device's name, as shown in Settings → Devices: a computer's name ("Stuarts-MacBook-Pro"),
+/// A device's name, as shown in Settings → Devices: a computer's name ("Jordans-MacBook-Pro"),
 /// a browser's description ("Safari on iPhone"), or what someone renamed it to.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -180,10 +180,10 @@ mod tests {
     #[test]
     fn names_are_trimmed_and_checked() {
         assert_eq!(
-            DeviceName::parse("  Stuarts-MacBook-Pro ")
+            DeviceName::parse("  Jordans-MacBook-Pro ")
                 .unwrap()
                 .as_str(),
-            "Stuarts-MacBook-Pro"
+            "Jordans-MacBook-Pro"
         );
         assert_eq!(DeviceName::parse("   "), Err(DeviceNameError::Empty));
         assert_eq!(

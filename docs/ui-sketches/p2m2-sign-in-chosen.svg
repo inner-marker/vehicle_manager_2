@@ -10,7 +10,7 @@
 <text x="214" y="274" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="214" y="306" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="214" y="314" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="226" y="339" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="226" y="339" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="214" y="376" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="214" y="384" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="226" y="409" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -25,7 +25,7 @@
 <text x="708" y="264" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="708" y="296" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="708" y="304" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="720" y="329" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="720" y="329" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="708" y="366" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="708" y="374" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="720" y="399" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -78,10 +78,10 @@
 <text x="988" y="898" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">✓ Code accepted.</text>
 <text x="988" y="928" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="988" y="936" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="1000" y="961" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="1000" y="961" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="988" y="994" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Your name</text>
 <rect x="988" y="1002" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="1000" y="1027" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Stuart</text>
+<text x="1000" y="1027" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Jordan</text>
 <text x="988" y="1060" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password (12+ characters)</text>
 <rect x="988" y="1068" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="1000" y="1093" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>

@@ -90,7 +90,7 @@ mod assets {
 
     #[tokio::test]
     async fn the_default_group_is_made_once() {
-        let (_temp, database, _stuart, _sam) = setup().await;
+        let (_temp, database, _jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         default_group(&database, &clock).await;
         default_group(&database, &clock).await;
@@ -102,20 +102,20 @@ mod assets {
 
     #[tokio::test]
     async fn only_the_admin_in_admin_mode_adds_vehicles_with_their_profiles_setup() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
 
-        for person in [&stuart, &sam] {
+        for person in [&jordan, &sam] {
             let outcome = add(&context(&database, person, &clock), &truck(garage_id)).await;
             assert_eq!(outcome, AssetsOutcome::NotAllowed, "Driver mode");
         }
 
-        // Stuart prefers kilometers: the new odometer follows.
+        // Jordan prefers kilometers: the new odometer follows.
         let prefs = PreferencesContext {
             database: &database,
             database_id: test_id(900),
-            user: &stuart,
+            user: &jordan,
             health: Health::Healthy,
             clock: &clock,
             origin: server::origin::Origin::Online,
@@ -126,7 +126,7 @@ mod assets {
         };
         set_mine(&prefs, km).await;
 
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
         let page = the_asset(view(&context(&database, &admin, &clock), id).await);
         assert_eq!(page.asset.name.as_str(), "Truck");
@@ -140,10 +140,10 @@ mod assets {
 
     #[tokio::test]
     async fn a_bad_form_unknown_kind_or_group_is_refused() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
 
         let unnamed = AssetForm {
@@ -176,10 +176,10 @@ mod assets {
 
     #[tokio::test]
     async fn the_garage_shows_what_each_person_can_see() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         added(&add(&ctx, &truck(garage_id)).await);
         add_group(
@@ -213,10 +213,10 @@ mod assets {
 
     #[tokio::test]
     async fn editing_changes_details_but_never_kind_or_group() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         let id = added(&add(&ctx, &truck(garage_id)).await);
 
@@ -238,10 +238,10 @@ mod assets {
 
     #[tokio::test]
     async fn each_person_keeps_their_own_custom_order() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         let truck_id = added(&add(&ctx, &truck(garage_id)).await);
         let car = AssetForm {
@@ -265,16 +265,16 @@ mod assets {
         );
         assert!(
             the_garage(garage(&ctx).await).order.is_empty(),
-            "Stuart's own: none yet"
+            "Jordan's own: none yet"
         );
     }
 
     #[tokio::test]
     async fn deleting_needs_the_name_typed() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         let id = added(&add(&ctx, &truck(garage_id)).await);
         assert_eq!(
@@ -289,10 +289,10 @@ mod assets {
 
     #[tokio::test]
     async fn a_move_previews_and_changes_who_can_see_the_vehicle() {
-        let (_temp, database, stuart, mut sam) = setup().await;
+        let (_temp, database, jordan, mut sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         let id = added(&add(&ctx, &truck(garage_id)).await);
         add_group(
@@ -367,10 +367,10 @@ mod assets {
 
     #[tokio::test]
     async fn groups_with_vehicles_and_the_last_group_stay() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let ctx = context(&database, &admin, &clock);
         assert_eq!(
             delete_group(&ctx, garage_id).await,
@@ -397,10 +397,10 @@ mod assets {
 
     #[tokio::test]
     async fn meters_need_maintainer_work_and_keep_their_dimension() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
         let hours = MeterForm {
             name: "Engine hours".into(),
@@ -411,14 +411,14 @@ mod assets {
             required_for: vec![EventKind::Maintenance],
         };
         // Driver mode can't; Maintainer mode can.
-        let driver = context(&database, &stuart, &clock);
+        let driver = context(&database, &jordan, &clock);
         assert_eq!(
             add_meter(&driver, id, &hours).await,
             AssetsOutcome::NotAllowed
         );
         let maintainer = SignedIn {
             mode: ActiveMode::Maintainer,
-            ..stuart.clone()
+            ..jordan.clone()
         };
         let ctx = context(&database, &maintainer, &clock);
         assert_eq!(add_meter(&ctx, id, &hours).await, AssetsOutcome::Done);
@@ -448,10 +448,10 @@ mod assets {
 
     #[tokio::test]
     async fn field_keys_come_from_labels_and_stay_put() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let garage_id = default_group(&database, &clock).await;
-        let admin = in_admin(&stuart);
+        let admin = in_admin(&jordan);
         let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
         let ctx = context(&database, &admin, &clock);
         let keys = |fields: &[(

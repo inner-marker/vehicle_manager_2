@@ -208,9 +208,9 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
 
 - **Decision:**
-  - The NAS is a Synology **DS1019+**: Intel Celeron J3455 (x86_64), 8 GB RAM, DSM 7.4.1, with Container Manager and Tailscale installed.
+  - The NAS is a Synology with an Intel (x86_64) processor, on DSM 7.4, with Container Manager and Tailscale installed.
   - Server images start **amd64-only**. **arm64 is kept for later**, for hosts such as a Raspberry Pi, as a multi-arch image under one tag.
-  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the J3455 has no AVX.
+  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the NAS CPU has no AVX.
   - `rust-toolchain.toml` pins `x86_64-unknown-linux-gnu` instead of `aarch64-unknown-linux-gnu`.
 - **Why:**
   - The plan assumed an ARM Synology. The real CPU, checked in DSM's Info Center before milestone 3 as the plan required, is x86_64, so an arm64-only image wouldn't run.
@@ -361,7 +361,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Groundwork for a USB disk:** the snapshot folder is configurable (`VEHICLEMANAGER_SNAPSHOT_DIR`, built from `APP_ID`), so it can later point at a second mount in `compose.yaml`, such as a USB disk. If that folder is missing or not writable, the server keeps running, skips the snapshot, and reports it (log and Admin message).
   - **Not a focus now:** no USB setup, Hyper Backup task, or docs for it in Phase 2. They come later, or with offsite backups (post-MVP).
 - **Why:**
-  - The DS1019+ has one storage pool (4 data disks + 1 parity), so there's no "different NAS disk". Its parity already survives one failed disk.
+  - The NAS has one storage pool (with parity), so there's no "different NAS disk". Its parity already survives one failed disk.
   - Same-pool snapshots still cover what they're mainly for: corruption, a bad migration, a bad sync, and accidental deletion.
   - A configurable folder makes a USB disk (or any second volume) a deployment change later, not a code change.
 - **Not covered until offsite backups:** losing the whole pool or the NAS.
@@ -913,4 +913,17 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **The audit record (#072):** the server records who removed an attachment and when, and the nightly file check writes an `erased_files` row for each file it erases (#065's 8 days): its SHA-256, size, kind, type, name, the attachment and record it belonged to, who removed it and when, and when it was erased. No content.
 - **Why:** the human, 2026-11-12, choosing the recommended options except where the limit is set (Diagnostics, with the copy's numbers). SQLCipher is already built and tested on every platform, so files are encrypted at rest without a new dependency (sub-plan 04 §7.2).
 - **Limits, accepted:** a large PDF still reaches the webview as Base64; if the desktop's processing ever differs from the server's (another version), the server's file wins and the desktop downloads it once more.
+
+### 078. Loss detection: protective mode on every pull, suspicious pulls wait, encrypted snapshots of the copy, and rebuilding a fresh server from the Admin's desktop
+*Decided: 2026-11-13 · Phase plan: phase-3.md milestone 7 · Sketch: `docs/ui-sketches/p3m7-loss-detection-options.svg` (1A, 2A, 3B) · Plan §6 "Data integrity & loss detection" · Builds on #035, #065, #072, #075, #076, #077*
+
+- **Decision:**
+  - **Detecting, on every pull:** a database ID other than the copy's means "the server changed" (reset, or another server); a newest change number below the copy's cursor means "the server went back in time" (restored from an older snapshot); both put the desktop in **protective mode**. The handshake never overwrites a remembered database ID. An **unhealthy server refuses pulls and pushes**, and the desktop waits, resuming by itself.
+  - **Protective mode:** nothing pulled is applied and nothing is pushed; the copy, its files, and its outbox are untouched; the app reads and saves here as usual. A red **PROTECTED** tag and strip on every screen (1A), and a sync alert in Messages (shown offline). The choices: keep protected; use this server (a snapshot first, then the copy downloads it again, keeping the outbox); rebuild the server (the Admin).
+  - **If the server no longer knows this desktop** (it signed it out, or forgot the pairing in a reset or restore), the copy and its unsent changes are **kept until the person decides**: sign in again (the copy's key carries over, so the copy and outbox stay), rebuild (Admin), or delete it. Signing out from the account menu still deletes it.
+  - **A suspicious pull** would delete more than 25 records and more than 10% of the copy: it waits, in a dialog naming what would go (2A), with Keep this computer's copy (protective until settled) and Apply them (a snapshot first).
+  - **Snapshots of the copy**, encrypted under its key: one a day before the first pull, and before every risky step (applying a suspicious pull, using a changed server, downloading again after a refusal, a rebuild); the 7 newest kept; restored from Diagnostics. The files database isn't snapshotted.
+  - **Rebuild the server from this device:** onto a fresh server (no users yet) only, proved by its setup code (as setting up is); the household Admin's desktop only, with a copy complete at its last pull and nothing waiting or refused; a step-by-step dialog ending in a typed REBUILD (3B). The server takes the copy's records with their field clocks and tombstones, re-keys the household's settings to its new database ID, gives every person a new temporary password (shown once to the Admin), and pairs this desktop; the files this desktop has are uploaded, and attachments whose file it doesn't have (photos never opened) are left out and listed. Other people's own settings, places, and Garage order start empty; other desktops see "the server changed" and choose to use it.
+- **Why:** the human, 2026-11-13, choosing the recommended options throughout. The survey found that a reset or restored server could delete the desktop's copy and unsent changes, or make it skip changes for good; the desktop's copy is the household's backup (plan §6), so it must never be damaged by a damaged server.
+- **Limits, accepted:** rebuilt passwords are new; photos never downloaded are lost with the server; a desktop can't tell a reset from another server (both are "the server changed", with the same choices); the SQLCipher snapshot method is settled by a spike in 7a.
 

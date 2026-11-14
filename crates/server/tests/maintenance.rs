@@ -76,7 +76,7 @@ mod maintenance {
     /// A truck named `name` and its odometer's ID.
     async fn new_truck(
         database: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         clock: &ManualClock,
         name: &str,
     ) -> (AssetId, MeterId) {
@@ -84,7 +84,7 @@ mod maintenance {
             .await
             .unwrap();
         let group = database.groups().await.unwrap()[0].0;
-        let admin = in_mode(stuart, ActiveMode::Admin);
+        let admin = in_mode(jordan, ActiveMode::Admin);
         let form = AssetForm {
             name: name.into(),
             ..AssetForm::new("truck", group)
@@ -262,9 +262,9 @@ mod maintenance {
 
     #[tokio::test]
     async fn a_driver_opens_squawks_and_may_change_them_until_a_job_deals_with_them() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock, "Truck").await;
+        let (truck, odometer) = new_truck(&database, &jordan, &clock, "Truck").await;
         let driver = context(&database, &sam, &clock);
         let brake = open_squawk(&driver, truck, "Brake light out").await;
 
@@ -296,9 +296,9 @@ mod maintenance {
         // event.
         let job = oil_change(truck, odometer, 1, 80_000, None, vec![deferred(brake)]);
         assert_eq!(add(&driver, job.clone()).await, EventsOutcome::NotAllowed);
-        let (other, _) = new_truck(&database, &stuart, &clock, "Van").await;
+        let (other, _) = new_truck(&database, &jordan, &clock, "Van").await;
         let mut elsewhere = squawk_input(other, "Rattle");
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let job_id = saved(&add(&shop, job).await);
         elsewhere.found_on = Some(job_id);
@@ -323,11 +323,11 @@ mod maintenance {
 
     #[tokio::test]
     async fn finish_needs_every_outstanding_squawk_and_deferrals_dont_carry_over() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock, "Truck").await;
+        let (truck, odometer) = new_truck(&database, &jordan, &clock, "Truck").await;
         let driver = context(&database, &sam, &clock);
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let brake = open_squawk(&driver, truck, "Brake light out").await;
         let oil = add_requirement(&shop, oil_requirement(truck, odometer)).await;
@@ -435,11 +435,11 @@ mod maintenance {
 
     #[tokio::test]
     async fn a_maintainer_sets_up_a_schedule() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock, "Truck").await;
+        let (truck, odometer) = new_truck(&database, &jordan, &clock, "Truck").await;
         let driver = context(&database, &sam, &clock);
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
 
         assert_eq!(
@@ -496,11 +496,11 @@ mod maintenance {
 
     #[tokio::test]
     async fn a_schedule_is_copied_onto_a_vehicle_without_one() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock, "Truck").await;
-        let (van, _) = new_truck(&database, &stuart, &clock, "Van").await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, odometer) = new_truck(&database, &jordan, &clock, "Truck").await;
+        let (van, _) = new_truck(&database, &jordan, &clock, "Van").await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let (oil, _, _) = oil_tires_and_service(&shop, truck, odometer).await;
 
@@ -569,10 +569,10 @@ mod maintenance {
 
     #[tokio::test]
     async fn a_forgotten_job_reminds_its_logger_and_the_maintainers() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock, "Truck").await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, odometer) = new_truck(&database, &jordan, &clock, "Truck").await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let job = saved(
             &add(
                 &context(&database, &maintainer, &clock),

@@ -66,27 +66,27 @@ mod messages {
 
     #[tokio::test]
     async fn a_new_server_has_no_messages() {
-        let (_temp, database, mut stuart, _sam) = setup().await;
-        stuart.mode = ActiveMode::Admin;
+        let (_temp, database, mut jordan, _sam) = setup().await;
+        jordan.mode = ActiveMode::Admin;
         let clock = ManualClock::new(NOW);
-        let inbox = unwrap_inbox(view(&context(&database, &stuart, &clock)).await);
+        let inbox = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
         assert!(inbox.items.is_empty());
         assert_eq!(inbox.unread, 0);
     }
 
     #[tokio::test]
     async fn a_failed_snapshot_shows_to_the_admin_in_admin_mode_only() {
-        let (_temp, database, mut stuart, sam) = setup().await;
+        let (_temp, database, mut jordan, sam) = setup().await;
         failed_snapshot(&database, 5_000).await;
         let clock = ManualClock::new(NOW);
 
-        let driver = unwrap_inbox(view(&context(&database, &stuart, &clock)).await);
+        let driver = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
         assert!(driver.items.is_empty(), "Driver mode");
         let others = unwrap_inbox(view(&context(&database, &sam, &clock)).await);
         assert!(others.items.is_empty(), "not an Admin");
 
-        stuart.mode = ActiveMode::Admin;
-        let admin = unwrap_inbox(view(&context(&database, &stuart, &clock)).await);
+        jordan.mode = ActiveMode::Admin;
+        let admin = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
         assert_eq!(admin.unread, 1);
         assert_eq!(admin.items[0].message.key, snapshot_key(5_000));
         assert_eq!(
@@ -97,11 +97,11 @@ mod messages {
 
     #[tokio::test]
     async fn marks_are_saved_per_person_and_dismissed_messages_stay_hidden() {
-        let (_temp, database, mut stuart, _sam) = setup().await;
-        stuart.mode = ActiveMode::Admin;
+        let (_temp, database, mut jordan, _sam) = setup().await;
+        jordan.mode = ActiveMode::Admin;
         failed_snapshot(&database, 5_000).await;
         let clock = ManualClock::new(NOW);
-        let ctx = context(&database, &stuart, &clock);
+        let ctx = context(&database, &jordan, &clock);
 
         let read = unwrap_inbox(mark(&ctx, snapshot_key(5_000), MarkMessage::Read).await);
         assert_eq!(read.unread, 0);
@@ -110,7 +110,7 @@ mod messages {
         let dismissed = unwrap_inbox(mark(&ctx, snapshot_key(5_000), MarkMessage::Dismiss).await);
         assert!(dismissed.items.is_empty());
         assert_eq!(
-            database.message_marks_of(stuart.user).await.unwrap().len(),
+            database.message_marks_of(jordan.user).await.unwrap().len(),
             1
         );
 
@@ -123,10 +123,10 @@ mod messages {
 
     #[tokio::test]
     async fn nobody_can_mark_a_message_they_cant_see() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         failed_snapshot(&database, 5_000).await;
         let clock = ManualClock::new(NOW);
-        for person in [&stuart, &sam] {
+        for person in [&jordan, &sam] {
             let outcome = mark(
                 &context(&database, person, &clock),
                 snapshot_key(5_000),
@@ -136,7 +136,7 @@ mod messages {
             assert_eq!(outcome, InboxOutcome::NotFound, "Admin-mode message");
         }
         let made_up = MessageKey::parse("job-failed:nightly-snapshot:1").unwrap();
-        let mut admin = stuart.clone();
+        let mut admin = jordan.clone();
         admin.mode = ActiveMode::Admin;
         let outcome = mark(
             &context(&database, &admin, &clock),
@@ -147,7 +147,7 @@ mod messages {
         assert_eq!(outcome, InboxOutcome::NotFound, "no such message");
         assert!(
             database
-                .message_marks_of(stuart.user)
+                .message_marks_of(jordan.user)
                 .await
                 .unwrap()
                 .is_empty()
@@ -156,7 +156,7 @@ mod messages {
 
     #[tokio::test]
     async fn an_unhealthy_server_tells_everyone_and_refuses_marks() {
-        let (_temp, database, _stuart, sam) = setup().await;
+        let (_temp, database, _jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let ctx = MessagesContext {
             health: Health::Unhealthy(HealthProblem::IntegrityCheckFailed),

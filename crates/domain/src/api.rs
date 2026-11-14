@@ -844,6 +844,9 @@ pub enum UploadPurpose {
     Document,
     /// A PDF's first page as a JPEG, which the app draws.
     DocumentThumbnail,
+    /// A file a rebuilt server's records name, stored exactly as sent (phase-3.md 7b, #078):
+    /// only the household Admin, only right after a rebuild.
+    Restore,
 }
 
 impl UploadPurpose {
@@ -863,6 +866,7 @@ impl UploadPurpose {
             Self::PhotoMetadata => "for=photo-metadata".to_owned(),
             Self::Document => "for=document".to_owned(),
             Self::DocumentThumbnail => "for=document-thumbnail".to_owned(),
+            Self::Restore => "for=restore".to_owned(),
         }
     }
 
@@ -889,6 +893,7 @@ impl UploadPurpose {
             "photo-metadata" => Some(Self::PhotoMetadata),
             "document" => Some(Self::Document),
             "document-thumbnail" => Some(Self::DocumentThumbnail),
+            "restore" => Some(Self::Restore),
             _ => None,
         }
     }

@@ -24,7 +24,7 @@
 <rect x="762" y="196" width="80" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <text x="802" y="215" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
 <rect x="850" y="196" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="215" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="215" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="240" y="252" width="140" height="40" rx="10" fill="#5aa9ff"/>
 <text x="310" y="278" font-size="13.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add place</text>
 <text x="396" y="277" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Your places: only you see them. Inside one, a new event uses it.</text>
@@ -106,7 +106,7 @@
 <rect x="762" y="692" width="80" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <text x="802" y="711" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
 <rect x="850" y="692" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="711" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="711" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="240" y="748" width="240" height="40" rx="10" fill="#5aa9ff"/>
 <text x="360" y="774" font-size="13.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Add place</text>
 <rect x="240" y="800" width="240" height="54" rx="10" fill="#262b34" stroke="#5aa9ff" stroke-width="1.5"/>

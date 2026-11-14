@@ -60,6 +60,7 @@ pub(crate) fn Diagnostics() -> Element {
         ConnectionPanel {}
         About {}
         OfflineCopy {}
+        crate::ui::protective::ProtectionDiagnostics {}
         div { class: "log-controls",
             label {
                 {tr(messages::LOG_VIEWER_MIN_LEVEL)}
@@ -272,6 +273,7 @@ fn OfflineCopy() -> Element {
             ],
         ),
         CopyStatus::Failed => tr(messages::COPY_FAILED),
+        CopyStatus::Unwell => tr(messages::COPY_UNWELL),
     };
     let shown = details();
     let last_pull = shown

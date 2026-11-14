@@ -59,12 +59,12 @@ mod documents {
         CalendarDate::parse(text).unwrap()
     }
 
-    async fn new_truck(database: &Database, stuart: &SignedIn, clock: &ManualClock) -> AssetId {
+    async fn new_truck(database: &Database, jordan: &SignedIn, clock: &ManualClock) -> AssetId {
         ensure_default_group(database, test_id(901), Health::Healthy, clock)
             .await
             .unwrap();
         let group = database.groups().await.unwrap()[0].0;
-        let admin = in_mode(stuart, ActiveMode::Admin);
+        let admin = in_mode(jordan, ActiveMode::Admin);
         let form = AssetForm {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
@@ -137,10 +137,10 @@ mod documents {
 
     #[tokio::test]
     async fn a_maintainer_adds_papers_and_a_driver_only_sees_them() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let driver = context(&database, &sam, &clock);
 
@@ -188,10 +188,10 @@ mod documents {
 
     #[tokio::test]
     async fn renewals_supersede_once_and_the_latest_goes_first() {
-        let (_temp, database, stuart, _) = setup().await;
+        let (_temp, database, jordan, _) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let plate = saved_plate(
             &add_plate(
@@ -240,10 +240,10 @@ mod documents {
 
     #[tokio::test]
     async fn a_new_plate_retires_the_old_one_and_keeps_an_authority() {
-        let (_temp, database, stuart, _) = setup().await;
+        let (_temp, database, jordan, _) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let today = date("2026-11-04");
         let nc = saved_plate(
@@ -301,11 +301,11 @@ mod documents {
 
     #[tokio::test]
     async fn removing_a_document_removes_its_scans() {
-        let (temp, database, stuart, _) = setup().await;
+        let (temp, database, jordan, _) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let truck = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let mut title = registration(truck, test_id(1), "2099-01-01");
         title.doc_type = DocumentType::listed("document-title").unwrap();

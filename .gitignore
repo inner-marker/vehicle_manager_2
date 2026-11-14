@@ -18,6 +18,9 @@
 # The server's local development data folder (dx serve without VEHICLEMANAGER_DATA_DIR)
 dev-data/
 
+# The human's own setup (equipment, hosts), for agents to read; never committed (AGENTS.md §7)
+/local/
+
 # Personal Claude Code settings (shared settings live in .claude/settings.json)
 .claude/settings.local.json
 

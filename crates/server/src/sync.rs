@@ -152,15 +152,8 @@ pub enum Ran {
 /// Answers `operations` (oldest first, at most [`PUSH_LIMIT`]) from `context`'s desktop, whose
 /// schema version is `schema`.
 pub async fn push(context: &PushContext<'_>, schema: i64, operations: &[Operation]) -> PushOutcome {
-    match is_paired_desktop(context.database, context.user).await {
-        Some(true) => {}
-        Some(false) => return PushOutcome::NotAllowed,
-        None => return PushOutcome::Unavailable,
-    }
-    let server = schema_version();
-    if schema != server {
-        tracing::info!(target: log_area::SYNC, desktop = schema, server, "push refused: another schema version");
-        return PushOutcome::OtherSchema { server };
+    if let Err(refused) = may_push(context, schema).await {
+        return refused;
     }
     let mut answers = Vec::new();
     let mut stopped = None;
@@ -184,6 +177,26 @@ pub async fn push(context: &PushContext<'_>, schema: i64, operations: &[Operatio
     }
     tracing::info!(target: log_area::SYNC, device = %context.user.device, sent = operations.len(), answered = answers.len(), ?stopped, "push");
     PushOutcome::Answers { answers, stopped }
+}
+
+/// `Ok` if `context`'s desktop may push now: the server is well (an unhealthy one takes no
+/// changes, 7b, #078), it's a paired desktop, and its schema is the server's.
+async fn may_push(context: &PushContext<'_>, schema: i64) -> Result<(), PushOutcome> {
+    if !context.health.is_healthy() {
+        tracing::info!(target: log_area::SYNC, "push refused: the server isn't well");
+        return Err(PushOutcome::Unhealthy);
+    }
+    match is_paired_desktop(context.database, context.user).await {
+        Some(true) => {}
+        Some(false) => return Err(PushOutcome::NotAllowed),
+        None => return Err(PushOutcome::Unavailable),
+    }
+    let server = schema_version();
+    if schema != server {
+        tracing::info!(target: log_area::SYNC, desktop = schema, server, "push refused: another schema version");
+        return Err(PushOutcome::OtherSchema { server });
+    }
+    Ok(())
 }
 
 /// The answer to one operation, or why the push stops here.

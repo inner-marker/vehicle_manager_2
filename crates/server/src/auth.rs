@@ -56,6 +56,10 @@ pub const PUBLIC_API_PATHS: &[&str] = &[
     "/api/v1/setup/code",
     "/api/v1/recovery/request",
     "/api/v1/recovery/complete",
+    // Rebuilding a fresh server (7b, #078): proved by its setup code, as setup is.
+    "/api/v1/rebuild/begin",
+    "/api/v1/rebuild/page",
+    "/api/v1/rebuild/finish",
 ];
 
 /// The session cookie's name, from the app ID and this server's instance name:

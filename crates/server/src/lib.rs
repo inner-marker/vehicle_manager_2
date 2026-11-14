@@ -26,6 +26,7 @@ pub mod origin;
 pub mod passwords;
 pub mod places;
 pub mod preferences;
+pub mod rebuild;
 pub mod recovery;
 pub mod references;
 pub mod schedule;

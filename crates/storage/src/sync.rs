@@ -15,6 +15,7 @@
 //! **SQL built at run time** (`AssertSqlSafe`) names only tables from the fixed lists here, and
 //! columns checked against the copy's own schema; every value is bound.
 
+use domain::asset::AssetId;
 use domain::id::DatabaseId;
 use domain::log_area;
 use domain::sync::{PullPage, SqlValue, TableRows};
@@ -193,11 +194,28 @@ impl Database {
         cursor: u64,
         window: u64,
     ) -> Result<ReadPage, StorageError> {
-        let mut transaction = self.pool().begin().await?;
         let newest: i64 = sqlx::query_scalar("SELECT last_sequence FROM database_meta")
-            .fetch_one(&mut *transaction)
+            .fetch_one(self.pool())
             .await?;
-        let server_sequence = to_u64(newest, "last_sequence")?;
+        self.read_page_upto(scope, cursor, window, to_u64(newest, "last_sequence")?)
+            .await
+    }
+
+    /// As [`Self::read_pull_page`], up to change number `server_sequence` (a desktop's copy
+    /// sending its records to rebuild a server, 7b: up to the newest its records hold,
+    /// [`Self::newest_sequence`]).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails.
+    pub async fn read_page_upto(
+        &self,
+        scope: &PullScope,
+        cursor: u64,
+        window: u64,
+        server_sequence: u64,
+    ) -> Result<ReadPage, StorageError> {
+        let mut transaction = self.pool().begin().await?;
         let end = cursor.saturating_add(window).min(server_sequence);
         let mut tables = Vec::new();
         if end <= cursor {
@@ -349,7 +367,136 @@ impl Database {
     }
 }
 
+/// What a pulled page would do to this copy, checked before it's applied (phase-3.md 7a,
+/// decision #078).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PageCheck {
+    /// The page is this copy's server, not gone back in time; what it would delete.
+    Fine(Deletions),
+    /// Another server's page, or this isn't a copy: the server changed (reset, or another).
+    OtherServer,
+    /// The server's newest change number is below this copy's cursor: it went back in time
+    /// (restored from an older snapshot).
+    WentBack {
+        /// This copy's cursor.
+        cursor: u64,
+        /// The server's newest change number.
+        server_sequence: u64,
+    },
+}
+
+/// The records a page would delete that this copy has (not yet deleted here).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Deletions {
+    /// How many.
+    pub total: u64,
+    /// How many of them are each vehicle's (a vehicle itself, or a record on it), most first.
+    pub by_vehicle: Vec<(AssetId, u64)>,
+}
+
 impl Database {
+    /// Checks `page` against this copy before applying it: is it this copy's server, has the
+    /// server gone back in time, and what would it delete (phase-3.md 7a).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if a query fails or a value is invalid.
+    pub async fn check_pull_page(&self, page: &PullPage) -> Result<PageCheck, StorageError> {
+        let Some(state) = self.pull_state().await? else {
+            return Ok(PageCheck::OtherServer);
+        };
+        if state.database_id != page.database_id {
+            return Ok(PageCheck::OtherServer);
+        }
+        if page.server_sequence < state.cursor {
+            return Ok(PageCheck::WentBack {
+                cursor: state.cursor,
+                server_sequence: page.server_sequence,
+            });
+        }
+        let mut deletions = Deletions::default();
+        let mut by_vehicle: std::collections::BTreeMap<Vec<u8>, u64> =
+            std::collections::BTreeMap::new();
+        for table in &page.tables {
+            let name = table.table.as_str();
+            if !RECORD_TABLES.contains(&name) {
+                continue;
+            }
+            let column = |wanted: &str| table.columns.iter().position(|column| column == wanted);
+            let (Some(id), Some(deleted)) = (column("id"), column("deleted")) else {
+                continue;
+            };
+            let asset = if name == "assets" {
+                Some(id)
+            } else {
+                column("asset_id")
+            };
+            for row in &table.rows {
+                if row.get(deleted) != Some(&SqlValue::Integer(1)) {
+                    continue;
+                }
+                let Some(record) = row.get(id).and_then(SqlValue::blob_bytes) else {
+                    continue;
+                };
+                // The names are checked against RECORD_TABLES above.
+                let live: Option<i64> = sqlx::query_scalar(AssertSqlSafe(format!(
+                    "SELECT 1 FROM {name} WHERE id = ? AND deleted = 0"
+                )))
+                .bind(record)
+                .fetch_optional(self.pool())
+                .await?;
+                if live.is_none() {
+                    continue;
+                }
+                deletions.total += 1;
+                if let Some(asset) = asset
+                    .and_then(|index| row.get(index))
+                    .and_then(SqlValue::blob_bytes)
+                {
+                    *by_vehicle.entry(asset.clone()).or_default() += 1;
+                    // A vehicle deleted takes its whole history out of sight: its records count
+                    // too (they stay, hidden, but they're gone from every screen).
+                    if name == "assets" {
+                        let history = self.live_records_of(&asset).await?;
+                        deletions.total += history;
+                        *by_vehicle.entry(asset).or_default() += history;
+                    }
+                }
+            }
+        }
+        let mut by_vehicle: Vec<(AssetId, u64)> = by_vehicle
+            .into_iter()
+            .filter_map(|(bytes, count)| Some((id_from_sql(&bytes, "asset_id").ok()?, count)))
+            .collect();
+        by_vehicle.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        deletions.by_vehicle = by_vehicle;
+        Ok(PageCheck::Fine(deletions))
+    }
+
+    /// How many live records of the vehicle `asset` (by its ID's bytes) this copy has, in
+    /// every record table with an `asset_id` (its events, squawks, meters, documents, …).
+    async fn live_records_of(&self, asset: &[u8]) -> Result<u64, StorageError> {
+        let mut total = 0;
+        for table in RECORD_TABLES {
+            let columns: Vec<String> = sqlx::query_scalar("SELECT name FROM pragma_table_info(?)")
+                .bind(table)
+                .fetch_all(self.pool())
+                .await?;
+            if !columns.iter().any(|column| column == "asset_id") || table == "assets" {
+                continue;
+            }
+            // The names are this module's own constants.
+            let count: i64 = sqlx::query_scalar(AssertSqlSafe(format!(
+                "SELECT count(*) FROM {table} WHERE asset_id = ? AND deleted = 0"
+            )))
+            .bind(asset)
+            .fetch_one(self.pool())
+            .await?;
+            total += to_u64(count, "count")?;
+        }
+        Ok(total)
+    }
+
     /// Empties this copy of everything pulled (every synced table, field clocks, tombstones)
     /// and starts its pull again from the beginning, keeping its outbox and clock (phase-3.md
     /// 5d, decision #076): after the server refuses a change the copy already shows, so it
@@ -377,6 +524,103 @@ impl Database {
         tracing::info!(target: log_area::SYNC, "the copy's records were cleared to download again");
         Ok(())
     }
+}
+
+impl Database {
+    /// Writes a page a desktop sent to rebuild this (fresh) server (7b): its rows, as a pull
+    /// writes them into a copy, in one transaction with foreign keys off (pages arrive in any
+    /// order). Who may and the page's server are checked by the caller (`server::rebuild`).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::InvalidValue`] for a table that isn't synced or a column this database
+    /// doesn't have; [`StorageError::Sqlx`] if a write fails (nothing is written).
+    pub async fn import_page(&self, page: &PullPage) -> Result<(), StorageError> {
+        let mut connection = self.pool().acquire().await?;
+        sqlx::query("PRAGMA foreign_keys = OFF")
+            .execute(&mut *connection)
+            .await?;
+        let written = async {
+            let mut transaction = sqlx::Connection::begin(&mut *connection).await?;
+            write_rows(&mut transaction, page).await?;
+            transaction.commit().await?;
+            Ok::<(), StorageError>(())
+        }
+        .await;
+        sqlx::query("PRAGMA foreign_keys = ON")
+            .execute(&mut *connection)
+            .await?;
+        written
+    }
+
+    /// After a rebuild's pages: the household's settings, kept under the old server's database
+    /// ID (#048), moved to this one's; this server's change numbers and clock moved past every
+    /// imported one, so its next changes come after them.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if a query fails (nothing is changed then).
+    pub async fn finish_import(&self, old: DatabaseId) -> Result<(), StorageError> {
+        let mut transaction = self.pool().begin().await?;
+        let new: Vec<u8> = sqlx::query_scalar("SELECT database_id FROM database_meta WHERE id = 1")
+            .fetch_one(&mut *transaction)
+            .await?;
+        sqlx::query("UPDATE preferences SET id = ? WHERE id = ?")
+            .bind(&new)
+            .bind(id_to_sql(old))
+            .execute(&mut *transaction)
+            .await?;
+        sqlx::query(
+            "UPDATE field_clocks SET record_id = ? WHERE entity = 'preferences' AND record_id = ?",
+        )
+        .bind(&new)
+        .bind(id_to_sql(old))
+        .execute(&mut *transaction)
+        .await?;
+        let newest = newest_sequence_on(&mut transaction).await?;
+        let newest_hlc: Option<i64> = sqlx::query_scalar("SELECT max(hlc) FROM field_clocks")
+            .fetch_one(&mut *transaction)
+            .await?;
+        sqlx::query(
+            "UPDATE database_meta SET last_sequence = max(last_sequence, ?),
+                                      last_hlc = max(last_hlc, ?) WHERE id = 1",
+        )
+        .bind(newest)
+        .bind(newest_hlc.unwrap_or(0))
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        tracing::info!(target: log_area::SYNC, last_sequence = newest, "rebuilt from a desktop's copy");
+        Ok(())
+    }
+}
+
+impl Database {
+    /// The newest change number any record or tombstone here holds (on a copy: the server's
+    /// numbers its rows came with).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Sqlx`] if a query fails.
+    pub async fn newest_sequence(&self) -> Result<u64, StorageError> {
+        let mut connection = self.pool().acquire().await?;
+        let newest = newest_sequence_on(&mut connection).await?;
+        to_u64(newest, "sequence")
+    }
+}
+
+/// [`Database::newest_sequence`] on `connection`.
+async fn newest_sequence_on(connection: &mut SqliteConnection) -> Result<i64, StorageError> {
+    let mut newest = 0_i64;
+    for table in RECORD_TABLES.iter().chain([TOMBSTONES].iter()) {
+        // The names are this module's own constants.
+        let most: Option<i64> =
+            sqlx::query_scalar(AssertSqlSafe(format!("SELECT max(sequence) FROM {table}")))
+                .fetch_one(&mut *connection)
+                .await?;
+        newest = newest.max(most.unwrap_or(0));
+    }
+    Ok(newest)
 }
 
 /// The work of [`Database::forget_pulled`], on one connection with foreign keys off.
@@ -425,6 +669,25 @@ async fn apply_on(
         return Err(StorageError::OutOfStep);
     }
 
+    write_rows(&mut transaction, page).await?;
+    sqlx::query(
+        "UPDATE pull_state SET cursor = ?, server_sequence = ?, last_pull_ms = ? WHERE id = 1",
+    )
+    .bind(to_i64(page.next_cursor, "cursor")?)
+    .bind(to_i64(page.server_sequence, "server_sequence")?)
+    .bind(now.as_millis())
+    .execute(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(())
+}
+
+/// Writes `page`'s rows: an event's children rewritten whole, every row checked against this
+/// database's own schema and the synced tables (shared by a pull and a rebuild, 7b).
+async fn write_rows(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    page: &PullPage,
+) -> Result<(), StorageError> {
     // An event's children are rewritten whole: first remove the ones the copy has.
     if let Some(events) = page.tables.iter().find(|table| table.table == "events") {
         let id_index = column_index(events, "id")?;
@@ -438,7 +701,7 @@ async fn apply_on(
                     "DELETE FROM {child} WHERE event_id = ?"
                 )))
                 .bind(id.as_slice())
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
         }
@@ -452,7 +715,7 @@ async fn apply_on(
         {
             return Err(StorageError::InvalidValue { column: "table" });
         }
-        let known = local_columns(&mut transaction, name).await?;
+        let known = local_columns(&mut *transaction, name).await?;
         if table.columns.is_empty() || table.columns.iter().any(|column| !known.contains(column)) {
             return Err(StorageError::InvalidValue { column: "column" });
         }
@@ -472,19 +735,10 @@ async fn apply_on(
                 return Err(StorageError::InvalidValue { column: "row" });
             }
             bound(sqlx::query(AssertSqlSafe(sql.as_str())), row)?
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
         }
     }
-    sqlx::query(
-        "UPDATE pull_state SET cursor = ?, server_sequence = ?, last_pull_ms = ? WHERE id = 1",
-    )
-    .bind(to_i64(page.next_cursor, "cursor")?)
-    .bind(to_i64(page.server_sequence, "server_sequence")?)
-    .bind(now.as_millis())
-    .execute(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
     Ok(())
 }
 

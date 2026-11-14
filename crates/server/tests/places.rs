@@ -73,28 +73,28 @@ mod places {
 
     #[tokio::test]
     async fn each_person_has_their_own_saved_places() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         // No role or mode is needed: Driver mode adds its own places.
-        let as_stuart = context(&database, &stuart, &clock, None);
+        let as_jordan = context(&database, &jordan, &clock, None);
         let as_sam = context(&database, &sam, &clock, None);
-        let home = added(&add(&as_stuart, &form("Home garage", "2.0", "2.0")).await);
+        let home = added(&add(&as_jordan, &form("Home garage", "2.0", "2.0")).await);
         added(&add(&as_sam, &form("Sam's work", "8.0", "8.0")).await);
 
-        assert_eq!(names(list(&as_stuart).await), ["Home garage"]);
+        assert_eq!(names(list(&as_jordan).await), ["Home garage"]);
         assert_eq!(names(list(&as_sam).await), ["Sam's work"]);
         // Someone else's place is "not found", whatever is asked.
         let rename = form("Mine now", "2.0", "2.0");
         assert_eq!(edit(&as_sam, home, &rename).await, PlacesOutcome::NotFound);
         assert_eq!(delete(&as_sam, home).await, PlacesOutcome::NotFound);
-        assert_eq!(names(list(&as_stuart).await), ["Home garage"]);
+        assert_eq!(names(list(&as_jordan).await), ["Home garage"]);
     }
 
     #[tokio::test]
     async fn a_saved_place_is_checked_changed_and_removed() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let ctx = context(&database, &stuart, &clock, None);
+        let ctx = context(&database, &jordan, &clock, None);
         let too_big = SavedPlaceForm {
             radius_m: 5_000,
             ..form("Home", "2.0", "2.0")
@@ -121,11 +121,11 @@ mod places {
 
     #[tokio::test]
     async fn changes_are_refused_while_the_server_is_unhealthy() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let unhealthy = PlacesContext {
             health: Health::Unhealthy(HealthProblem::IntegrityCheckFailed),
-            ..context(&database, &stuart, &clock, None)
+            ..context(&database, &jordan, &clock, None)
         };
         assert_eq!(
             add(&unhealthy, &form("Home", "2.0", "2.0")).await,
@@ -142,15 +142,15 @@ mod places {
 
     #[tokio::test]
     async fn locating_finds_your_saved_place_and_the_suggested_place() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let (_map, geocoder) = test_map().await;
-        let as_stuart = context(&database, &stuart, &clock, Some(&geocoder));
-        let home = added(&add(&as_stuart, &form("Home garage", "2.0", "2.0")).await);
+        let as_jordan = context(&database, &jordan, &clock, Some(&geocoder));
+        let home = added(&add(&as_jordan, &form("Home garage", "2.0", "2.0")).await);
 
         // 50 m north of home: inside its 150 m radius.
         let here = Coordinates::from_degrees(2.000_45, 2.0).unwrap();
-        let found = located(locate(&as_stuart, here).await);
+        let found = located(locate(&as_jordan, here).await);
         assert_eq!(found.saved.map(|(id, _)| id), Some(home));
         let suggestion = found.suggestion.unwrap();
         assert_eq!(suggestion.place.city.as_str(), "Alpha");
@@ -159,12 +159,12 @@ mod places {
         assert_eq!(suggestion.data_version, "test-1");
         assert!(suggestion.inside_country);
 
-        // Sam's lookup never matches Stuart's place.
+        // Sam's lookup never matches Jordan's place.
         let as_sam = context(&database, &sam, &clock, Some(&geocoder));
         assert_eq!(located(locate(&as_sam, here).await).saved, None);
 
         // Without place data, the saved place still matches; there's just no suggestion.
-        let no_data = context(&database, &stuart, &clock, None);
+        let no_data = context(&database, &jordan, &clock, None);
         let found = located(locate(&no_data, here).await);
         assert_eq!(found.saved.map(|(id, _)| id), Some(home));
         assert_eq!(found.suggestion, None);
@@ -172,17 +172,17 @@ mod places {
 
     #[tokio::test]
     async fn countries_and_data_info_come_from_the_place_data() {
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let (_map, geocoder) = test_map().await;
         let PlacesOutcome::Countries { countries: list } =
-            countries(&context(&database, &stuart, &clock, Some(&geocoder))).await
+            countries(&context(&database, &jordan, &clock, Some(&geocoder))).await
         else {
             panic!("expected countries");
         };
         assert_eq!(list.len(), 4);
         assert_eq!(
-            countries(&context(&database, &stuart, &clock, None)).await,
+            countries(&context(&database, &jordan, &clock, None)).await,
             PlacesOutcome::Countries { countries: vec![] }
         );
         let PlacesOutcome::DataInfo { info: Some(info) } = data_info(Some(&geocoder)) else {

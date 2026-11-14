@@ -8,7 +8,8 @@
 //!   ([`StorageError::NotEncrypted`]) rather than write the household's records in the clear.
 //! - **The key is the raw key** (`x'…'`), so SQLCipher skips its own key derivation: the key is
 //!   already random. It's never logged: statement logging is off for the copy.
-//! - **No backup before migrating:** the copy can always be downloaded again.
+//! - **No backup before migrating** (sqlx runs each migration in a transaction); the desktop
+//!   snapshots its copy daily and before risky steps instead ([`crate::local_snapshots`], 7a).
 //! - **One server per folder:** the copy records the server's database ID and instance
 //!   (`pull_state`), and refuses to open as another server's ([`StorageError::OtherServer`]).
 

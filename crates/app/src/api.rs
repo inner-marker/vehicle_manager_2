@@ -246,6 +246,107 @@ pub(crate) async fn setup(
     })
 }
 
+/// Starts rebuilding this fresh server from the copy of the server `from` (phase-3.md 7b,
+/// decision #078), proved by the setup code (from the server's log). A public path; wrong
+/// codes count toward the same limit as in [`setup`].
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/begin")]
+pub(crate) async fn rebuild_begin(
+    code: Secret,
+    from: domain::id::DatabaseId,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    use domain::sync::RebuildOutcome;
+    let Some(database) = ::server::startup::database() else {
+        return Ok(RebuildOutcome::Unavailable);
+    };
+    let now = server_side::now();
+    let client_key = format!("setup:{}", server_side::client_key());
+    if let Err(retry_after_millis) = server_side::LOGIN_LIMITER.check(&[&client_key], now) {
+        return Ok(RebuildOutcome::TooManyAttempts {
+            retry_after_seconds: (retry_after_millis + 999) / 1000,
+        });
+    }
+    let outcome = ::server::rebuild::begin(
+        database,
+        ::server::health::current(),
+        &crate::logging::SystemClock,
+        code.expose(),
+        from,
+    )
+    .await;
+    if outcome == RebuildOutcome::WrongCode {
+        server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
+    }
+    Ok(outcome)
+}
+
+/// One page of the copy's records for the rebuild with `token`. A public path (the token,
+/// from the setup code, is the proof).
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/page")]
+pub(crate) async fn rebuild_page(
+    token: Secret,
+    page: domain::sync::PullPage,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let Some(database) = ::server::startup::database() else {
+        return Ok(domain::sync::RebuildOutcome::Unavailable);
+    };
+    Ok(::server::rebuild::page(database, token.expose(), &page).await)
+}
+
+/// Finishes the rebuild with `token`: the household Admin `admin`'s password set, and
+/// everyone else's new temporary passwords returned once. A public path (the token is the
+/// proof).
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/finish")]
+pub(crate) async fn rebuild_finish(
+    token: Secret,
+    admin: String,
+    password: Secret,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let (Some(database), Some(device)) = (
+        ::server::startup::database(),
+        ::server::startup::server_device(),
+    ) else {
+        return Ok(domain::sync::RebuildOutcome::Unavailable);
+    };
+    Ok(::server::rebuild::finish(
+        database,
+        device,
+        ::server::health::current(),
+        &crate::logging::SystemClock,
+        token.expose(),
+        &admin,
+        password,
+    )
+    .await)
+}
+
+/// After a rebuild, once the files are uploaded: leaves out the attachments whose files never
+/// came (the household Admin, signed in).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `RebuildOutcome` values.
+#[post("/api/v1/rebuild/settle")]
+pub(crate) async fn rebuild_settle() -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let (Some(database), Some(signed_in)) =
+        (::server::startup::database(), server_side::signed_in())
+    else {
+        return Ok(domain::sync::RebuildOutcome::NotAllowed);
+    };
+    Ok(::server::rebuild::settle(database, &signed_in, &crate::logging::SystemClock).await)
+}
+
 /// Setup step 1: checks the setup code before the person types their account details.
 /// A public path; wrong codes count toward the same limit as in [`setup`].
 ///
@@ -1819,6 +1920,10 @@ mod server_side {
         let Some(signed_in) = signed_in() else {
             return domain::sync::PullOutcome::NotSignedIn;
         };
+        // An unhealthy server serves no pages (7b, #078): what it has may be damaged.
+        if !server::health::current().is_healthy() {
+            return domain::sync::PullOutcome::Unhealthy;
+        }
         action(database, database_id, &signed_in).await
     }
 

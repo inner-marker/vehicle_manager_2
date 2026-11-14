@@ -32,7 +32,7 @@
 | [x] | 3 | Sign out, sign in again; Settings → Devices | The row now says **Chrome on Mac** (or Safari on Mac). |
 | [x] | 4 | **iPhone:** sign in; Settings → Devices | **Safari on iPhone · This device** first, then the Mac's browser with **Sign out**. |
 | [x] | 5 | **Desktop:** start it | The sign-in card shows **SERVER** with the test server's card checked, "+ Another server…", then username and password. |
-| [x] | 6 | **Desktop:** sign in | Signed in. **Mac browser:** Settings → Devices (refresh the page) lists your Mac's name (e.g. Stuarts-MacBook-Pro), **Desktop app**. |
+| [x] | 6 | **Desktop:** sign in | Signed in. **Mac browser:** Settings → Devices (refresh the page) lists your Mac's name (e.g. Jordans-MacBook-Pro), **Desktop app**. |
 | [x] | 7 | **Desktop:** quit (⌘Q) and start again | Signed in straight away, no password. The sign-in card isn't shown. |
 | [x] | 8 | **Desktop:** open a vehicle, add a photo, then open it | Upload and viewing work (these requests are signed one by one). |
 | [x] | 9 | **A copied token is refused.** Mac Terminal (prints only the server's answer, never the token): `TOKEN=$(python3 -c 'import json,os; d=json.load(open(os.path.expanduser("~/Library/Application Support/vehiclemanager/device-credentials.json"))); print(next(iter(d.values()))["token"])'); curl -s https://<nas-name>.<tailnet>.ts.net:8443/api/v1/devices -H 'x-api-version: 2' -H "authorization: Bearer $TOKEN"; unset TOKEN` | `{"code":401,"data":"device-signature",…}`. |

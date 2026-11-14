@@ -22,7 +22,7 @@
 <text x="400" y="228" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Enter your username.</text>
 <text x="400" y="260" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="400" y="268" width="260" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="412" y="293" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="412" y="293" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <rect x="400" y="336" width="260" height="44" rx="10" fill="#5aa9ff"/>
 <text x="530.0" y="363.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Continue</text>
 <text x="400" y="416" font-size="13.5" fill="#5aa9ff" font-weight="600" text-anchor="start">← Back to sign in</text>

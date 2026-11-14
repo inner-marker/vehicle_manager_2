@@ -254,9 +254,13 @@ pub(crate) fn alert_count() -> usize {
             crate::logging::SystemClock.now(),
         );
         let stopped = crate::local_copy::PUSH_STOPPED().is_some() && summary.waiting > 0;
+        let protected = crate::protect::PROTECTED().is_some();
+        let unwell = crate::local_copy::STATUS() == crate::local_copy::CopyStatus::Unwell;
         usize::try_from(summary.refused).unwrap_or(usize::MAX)
             + usize::from(long)
             + usize::from(stopped)
+            + usize::from(protected)
+            + usize::from(unwell)
     }
     #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
     0

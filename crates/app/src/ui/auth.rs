@@ -131,13 +131,13 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
         }
     }
     // A token the server no longer accepts is useless; forget it (and a desktop's pairing:
-    // it was signed out, perhaps from Settings -> Devices).
+    // it was signed out, perhaps from Settings -> Devices). But a desktop with its copy open
+    // keeps everything (the copy, its unsent changes, its sealed sign-in) until the person
+    // decides: the server may have been reset or restored (7c, #078).
     if matches!(next, AuthState::SignedOut) {
-        if client::has_device_key() {
-            tracing::info!(target: log_area::AUTH, "the server no longer accepts this device's sign-in; forgetting it");
-        }
-        crate::pairing::forget();
+        signed_out_by_server();
     }
+    protect_by_session(&next);
     let signed_in = matches!(next, AuthState::SignedIn(_));
     if *state.peek() != next {
         tracing::debug!(target: log_area::AUTH, signed_in, "session state changed");
@@ -148,6 +148,55 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
     if signed_in && !offline {
         crate::ui::recent_servers::remember_once(SERVER_INSTANCE.peek().clone()).await;
     }
+}
+
+/// The server no longer accepts this desktop's sign-in: forgotten, unless it keeps its copy.
+fn signed_out_by_server() {
+    if keeps_its_copy() {
+        tracing::warn!(target: log_area::AUTH, "the server no longer knows this computer; keeping its copy");
+        client::set_session_token(None);
+        return;
+    }
+    if client::has_device_key() {
+        tracing::info!(target: log_area::AUTH, "the server no longer accepts this device's sign-in; forgetting it");
+    }
+    crate::pairing::forget();
+}
+
+/// Whether a sign-out by the server should keep this computer's copy (a paired desktop with
+/// its copy open: 7c). Never on the web.
+fn keeps_its_copy() -> bool {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        client::has_device_key() && crate::local_copy::current().is_some()
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    false
+}
+
+/// Protective mode from the session check (7c): signed out with the copy kept ("forgotten"),
+/// a fresh server asking for setup while a copy is open ("the server changed"), and back to
+/// normal once signed in again after being forgotten. Nothing on the web.
+fn protect_by_session(state: &AuthState) {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        use crate::protect::{PROTECTED, Protection, protect};
+        let copy_open = crate::local_copy::current().is_some();
+        match state {
+            AuthState::SignedOut if copy_open => protect(Protection::Forgotten),
+            AuthState::NeedsSetup if copy_open => protect(Protection::ServerChanged { now: None }),
+            AuthState::SignedIn(_) if *PROTECTED.peek() == Some(Protection::Forgotten) => {
+                crate::protect::clear();
+            }
+            AuthState::Loading
+            | AuthState::SignedOut
+            | AuthState::NeedsSetup
+            | AuthState::SignedIn(_)
+            | AuthState::Unreachable(_) => {}
+        }
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let _ = state;
 }
 
 /// The **TEST SERVER** tag on a server that isn't the household's main one (the tab's title

@@ -32,7 +32,7 @@
 <rect x="762" y="196" width="80" height="28" rx="14" fill="#f0883e"/>
 <text x="802" y="215" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
 <rect x="850" y="196" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="215" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="215" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="222" y="234" width="716" height="30" rx="0" fill="#3a2615"/>
 <line x1="222" y1="264" x2="938" y2="264" stroke="#f0883e" stroke-width="2"/>
 <text x="236" y="254" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
@@ -137,7 +137,7 @@
 <rect x="762" y="1182" width="80" height="28" rx="14" fill="#f0883e"/>
 <text x="802" y="1201" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
 <rect x="850" y="1182" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="1201" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="1201" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="222" y="1220" width="716" height="30" rx="0" fill="#3a2615"/>
 <line x1="222" y1="1250" x2="938" y2="1250" stroke="#f0883e" stroke-width="2"/>
 <text x="236" y="1240" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
@@ -189,7 +189,7 @@
 <text x="936" y="1500" font-size="12" fill="#5aa9ff" font-weight="600" text-anchor="end">Open ›</text>
 <text x="506" y="1540" font-size="11" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO SEES IT</text>
 <line x1="506" y1="1548" x2="936" y2="1548" stroke="#333a45" stroke-width="1"/>
-<text x="506" y="1570" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">Stuart</text>
+<text x="506" y="1570" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">Jordan</text>
 <text x="936" y="1570" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">Admin · all vehicles</text>
 <text x="506" y="1594" font-size="13.5" fill="#e8eaed" font-weight="600" text-anchor="start">Alex</text>
 <text x="936" y="1594" font-size="12" fill="#9aa1ab" font-weight="500" text-anchor="end">Maintainer · this group</text>

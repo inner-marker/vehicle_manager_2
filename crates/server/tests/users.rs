@@ -47,8 +47,8 @@ mod pipeline {
         let (_temp, database) = database().await;
         let clock = ManualClock::new(NOW);
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: true,
         };

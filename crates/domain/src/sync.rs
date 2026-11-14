@@ -186,6 +186,9 @@ pub enum PushOutcome {
     },
     /// Only a paired desktop pushes.
     NotAllowed,
+    /// The server isn't well (its database failed a check): it takes no changes until it is
+    /// (7b); the desktop waits.
+    Unhealthy,
     /// Not signed in.
     NotSignedIn,
     /// The server couldn't answer.
@@ -209,9 +212,64 @@ pub enum PullOutcome {
     },
     /// Only a paired desktop pulls (a browser never keeps a copy, #071).
     NotAllowed,
+    /// The server isn't well (its database failed a check): it serves no pages until it is
+    /// (7b); the desktop waits.
+    Unhealthy,
     /// Not signed in.
     NotSignedIn,
     /// The server couldn't answer.
+    Unavailable,
+}
+
+// --- Rebuild (phase-3.md 7b, decision #078) -------------------------------------------------
+
+/// A person's new temporary password after a rebuild, for the Admin to give them (shown once).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemporaryPassword {
+    /// Their username.
+    pub username: String,
+    /// Their name.
+    pub display_name: String,
+    /// The password, typed exactly as shown.
+    pub password: crate::secret::Secret,
+}
+
+/// The answer to a step of rebuilding a fresh server from a desktop's copy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum RebuildOutcome {
+    /// Started: send the pages with this token.
+    Started {
+        /// The rebuild's token (until it finishes, or the server restarts).
+        token: crate::secret::Secret,
+    },
+    /// The page is in.
+    PageTaken,
+    /// The records are in: everyone's new temporary password (the Admin keeps their own).
+    Finished {
+        /// One for each other person.
+        passwords: Vec<TemporaryPassword>,
+    },
+    /// The files are settled: the attachments whose files never came, by name, left out.
+    Settled {
+        /// Their names.
+        left_out: Vec<String>,
+    },
+    /// The server isn't fresh (it has people or vehicles): only a fresh one is rebuilt.
+    NotFresh,
+    /// The setup code is wrong.
+    WrongCode,
+    /// Too many wrong codes; try again in this many seconds.
+    TooManyAttempts {
+        /// Seconds to wait.
+        retry_after_seconds: i64,
+    },
+    /// No rebuild is going on with this token, the page is from another server than the
+    /// first, or the person isn't the household's Admin.
+    NotAllowed,
+    /// A page doesn't fit this server's schema, or the Admin's password breaks a rule.
+    Invalid,
+    /// The server couldn't (unhealthy, or a failure).
     Unavailable,
 }
 

@@ -128,6 +128,68 @@ mod encrypted {
     }
 
     #[tokio::test]
+    async fn a_snapshot_is_encrypted_kept_seven_deep_and_restores_the_copy() {
+        use storage::local_snapshots::{
+            LOCAL_SNAPSHOTS_KEPT, local_snapshots, restore_local_snapshot, verify_local_snapshot,
+        };
+
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("copy");
+        let key = LocalKey::new(KEY);
+        let (database, _) = Database::open_local(&folder, &key, &server(1, ""), now())
+            .await
+            .unwrap();
+        sqlx::query("UPDATE pull_state SET cursor = 42")
+            .execute(database.pool())
+            .await
+            .unwrap();
+        let first = database.snapshot_local(&folder, &key, now()).await.unwrap();
+        let bytes = std::fs::read(&first).unwrap();
+        assert!(!bytes.starts_with(b"SQLite format 3"), "encrypted");
+        assert!(
+            verify_local_snapshot(&first, &key)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        assert!(matches!(
+            verify_local_snapshot(&first, &LocalKey::new([8; 32])).await,
+            Err(StorageError::WrongKey)
+        ));
+
+        // Nine more, a second apart: only the newest seven stay, newest first.
+        for n in 1..=9 {
+            let at = UnixMillis::from_millis(now().as_millis() + n * 1_000);
+            database.snapshot_local(&folder, &key, at).await.unwrap();
+        }
+        let kept = local_snapshots(&folder).unwrap();
+        assert_eq!(kept.len(), LOCAL_SNAPSHOTS_KEPT);
+        assert!(
+            kept.windows(2).all(|pair| pair[0] > pair[1]),
+            "newest first"
+        );
+        assert!(!first.exists(), "the oldest went");
+
+        // A change after the newest snapshot, then the snapshot put back.
+        sqlx::query("UPDATE pull_state SET cursor = 99")
+            .execute(database.pool())
+            .await
+            .unwrap();
+        database.close().await;
+        restore_local_snapshot(&folder, &kept[0]).unwrap();
+        let (database, _) = Database::open_local(&folder, &key, &server(1, ""), now())
+            .await
+            .unwrap();
+        let cursor: i64 = sqlx::query_scalar("SELECT cursor FROM pull_state")
+            .fetch_one(database.pool())
+            .await
+            .unwrap();
+        assert_eq!(cursor, 42, "as it was when snapshotted");
+        assert!(kept[0].exists(), "the snapshot stays");
+        database.close().await;
+    }
+
+    #[tokio::test]
     async fn a_copy_belongs_to_one_server_and_instance() {
         let temp = tempfile::tempdir().unwrap();
         let folder = temp.path().join("copy");

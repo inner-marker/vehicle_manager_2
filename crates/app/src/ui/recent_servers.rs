@@ -61,17 +61,23 @@ pub(crate) async fn remember(instance: Option<String>) {
     let Some(data_folder) = crate::data_folder::platform_data_folder() else {
         return;
     };
-    // No handshake: keep the database ID on file, which names this server's copy's folder
-    // (phase-3.md 4e).
-    let database_id = handshake
-        .and_then(|handshake| handshake.database_id)
-        .or_else(|| {
-            settings::load(&data_folder)
-                .servers
-                .into_iter()
-                .find(|known| known.address == address)
-                .and_then(|known| known.database_id)
+    // The database ID on file names this server's copy's folder (phase-3.md 4e): kept when
+    // there's no handshake, and never replaced by another one: a server whose database ID
+    // changed (reset, or another server) puts the desktop in protective mode instead (7c).
+    let on_file = settings::load(&data_folder)
+        .servers
+        .into_iter()
+        .find(|known| known.address == address)
+        .and_then(|known| known.database_id);
+    let told = handshake.and_then(|handshake| handshake.database_id);
+    if let (Some(on_file), Some(told)) = (&on_file, &told)
+        && on_file != told
+    {
+        crate::protect::protect(crate::protect::Protection::ServerChanged {
+            now: told.parse().ok(),
         });
+    }
+    let database_id = on_file.or(told);
     let server = KnownServer {
         address,
         instance,
@@ -86,6 +92,26 @@ pub(crate) async fn remember(instance: Option<String>) {
     }
     // A first pairing's copy waits for the database ID just remembered (phase-3.md 4c).
     crate::local_copy::open_if_waiting().await;
+}
+
+/// Makes `database_id` this server's from now on (protective mode's **Use this server**, 7c):
+/// its copy is then the one in that ID's folder.
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) fn accept_database_id(database_id: domain::id::DatabaseId) {
+    let address = dioxus_fullstack::get_server_url().to_owned();
+    let Some(data_folder) = crate::data_folder::platform_data_folder() else {
+        return;
+    };
+    let saved = settings::update(&data_folder, |saved| {
+        for known in &mut saved.servers {
+            if known.address == address {
+                known.database_id = Some(database_id.to_string());
+            }
+        }
+    });
+    if let Err(error) = saved {
+        tracing::warn!(target: domain::log_area::APP, %error, "couldn't keep this server's new database ID");
+    }
 }
 
 /// The server cards above the sign-in form (desktop only).

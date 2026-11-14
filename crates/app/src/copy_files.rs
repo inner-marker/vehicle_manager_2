@@ -130,6 +130,11 @@ pub async fn waiting_to_upload(hash: &FileHash) -> bool {
     files.kind_of(hash).await.ok().flatten() == Some(LocalKind::Upload)
 }
 
+/// The file `hash`, if this computer has it (a rebuild restores it, 7c).
+pub async fn bytes_of(hash: &FileHash) -> Option<Vec<u8>> {
+    current()?.get(hash).await.ok().flatten()
+}
+
 /// How much this computer's files hold (Diagnostics, 3B).
 pub async fn summary() -> Option<storage::local_files::LocalFilesSummary> {
     current()?.summary().await.ok()
@@ -269,7 +274,7 @@ const fn kept_once_sent(purpose: UploadPurpose, thumbnail: bool) -> Option<Local
         UploadPurpose::Photo { .. } => Some(LocalKind::Photo),
         UploadPurpose::Document => Some(LocalKind::Pdf),
         UploadPurpose::DocumentThumbnail => Some(LocalKind::Thumbnail),
-        UploadPurpose::Original | UploadPurpose::PhotoMetadata => None,
+        UploadPurpose::Original | UploadPurpose::PhotoMetadata | UploadPurpose::Restore => None,
     }
 }
 
