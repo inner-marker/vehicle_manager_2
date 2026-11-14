@@ -903,3 +903,14 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the human, 2026-11-12, choosing the recommended options. Re-running the same server function keeps one set of rules for online and offline saves, and lets the server check everything again as #005 requires; applying to the copy first shows mistakes in the form, offline too.
 - **Limits, accepted:** a refused change is only on the desktop that made it; its other operations still go (each stands alone); the server functions for Driver-mode writes change shape to take their IDs and stamp from either an online request or a pushed operation.
 
+### 077. Files on the desktop: a second encrypted database, downloaded as needed, added offline and uploaded first
+*Decided: 2026-11-12 · Phase plan: phase-3.md milestone 6 · Sketch: `docs/ui-sketches/p3m6-files-options.svg` (1A, 2A, 3B) · Sub-plan: 04 §7.2 · Builds on #036, #037, #065, #072, #075, #076*
+
+- **Decision:**
+  - **Where:** the desktop keeps photos and PDFs in a second SQLCipher database, `files.sqlite`, beside its copy and under the same key, by SHA-256. Separate from the records, so downloading them again (#076) keeps the files; deleted with the copy (signing out, the 10th wrong PIN).
+  - **What's downloaded:** thumbnails and PDFs by themselves, after each pull; a photo when opened, then kept, up to a limit set per computer on Diagnostics (default 2 GB; 1, 2, 5, 10 GB, or none), past which the photos opened longest ago are dropped. Thumbnails, PDFs, and anything not yet sent are never dropped. Originals only on request (#036).
+  - **Offline:** adding (photos and PDFs), removing, and moving attachments between a job's tasks are operations (#076). An added file is processed on the desktop with the server's own code and kept as an upload waiting; a push uploads it right before the operation that uses it, and the operation goes with the server's hashes. Originals still need the server. Offline, a photo whose full size isn't here opens as its thumbnail, enlarged, with a note (1A); one waiting to upload has a small ↑ on its tile (2A).
+  - **The audit record (#072):** the server records who removed an attachment and when, and the nightly file check writes an `erased_files` row for each file it erases (#065's 8 days): its SHA-256, size, kind, type, name, the attachment and record it belonged to, who removed it and when, and when it was erased. No content.
+- **Why:** the human, 2026-11-12, choosing the recommended options except where the limit is set (Diagnostics, with the copy's numbers). SQLCipher is already built and tested on every platform, so files are encrypted at rest without a new dependency (sub-plan 04 §7.2).
+- **Limits, accepted:** a large PDF still reaches the webview as Base64; if the desktop's processing ever differs from the server's (another version), the server's file wins and the desktop downloads it once more.
+

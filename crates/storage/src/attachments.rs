@@ -20,8 +20,8 @@ use crate::{Database, StorageError};
 
 /// An owner as its columns.
 #[derive(Debug, Default)]
-struct OwnerColumns {
-    owner: &'static str,
+pub(crate) struct OwnerColumns {
+    pub(crate) owner: &'static str,
     event: Option<Vec<u8>>,
     task: Option<i64>,
     squawk: Option<Vec<u8>>,
@@ -29,7 +29,7 @@ struct OwnerColumns {
     reference: Option<Vec<u8>>,
 }
 
-fn owner_to_sql(owner: AttachmentOwner) -> OwnerColumns {
+pub(crate) fn owner_to_sql(owner: AttachmentOwner) -> OwnerColumns {
     match owner {
         AttachmentOwner::Vehicle => OwnerColumns {
             owner: "vehicle",
@@ -225,7 +225,9 @@ fn file_from_row(
     }))
 }
 
-fn attachment_from_row(row: &SqliteRow) -> Result<(AttachmentId, Attachment), StorageError> {
+pub(crate) fn attachment_from_row(
+    row: &SqliteRow,
+) -> Result<(AttachmentId, Attachment), StorageError> {
     let name: String = row.try_get("name")?;
     let content: String = row.try_get("content")?;
     Ok((

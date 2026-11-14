@@ -145,6 +145,52 @@ impl FileStore {
     }
 }
 
+/// Where one side keeps its files (phase-3.md 6a, #077): the server's folder, or a desktop's
+/// files database. The server's code reads and writes through it, so the same code runs on
+/// the server and, for a change made on a desktop, on its copy.
+#[derive(Debug, Clone)]
+pub enum Files {
+    /// The server's folder ([`FileStore`]).
+    Folder(FileStore),
+    /// A desktop's files database ([`crate::local_files::LocalFiles`]).
+    Local(crate::local_files::LocalFiles),
+}
+
+impl Files {
+    /// Stores `bytes` (on a desktop, as `kind`).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Io`] or [`StorageError::Sqlx`] if it can't be written.
+    pub async fn put(
+        &self,
+        bytes: &[u8],
+        kind: crate::local_files::LocalKind,
+        now: UnixMillis,
+    ) -> Result<StoredFile, StorageError> {
+        match self {
+            Self::Folder(store) => Ok(store.put(bytes)?),
+            Self::Local(local) => local.put(bytes, kind, now).await,
+        }
+    }
+
+    /// The file with `hash`, if it's here.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError::Io`] or [`StorageError::Sqlx`] if it's here but can't be read.
+    pub async fn get(&self, hash: &FileHash) -> Result<Option<Vec<u8>>, StorageError> {
+        match self {
+            Self::Folder(store) => match store.get(hash) {
+                Ok(bytes) => Ok(Some(bytes)),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+                Err(error) => Err(error.into()),
+            },
+            Self::Local(local) => local.get(hash).await,
+        }
+    }
+}
+
 impl Database {
     /// Lists a file just put in the store (again listing one already there does nothing).
     ///

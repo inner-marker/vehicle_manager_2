@@ -18,7 +18,8 @@ use domain::operation::{OperationChange, OperationId};
 use {
     crate::ui::{tr, tr_with},
     domain::api::{
-        AssetsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome, SquawksOutcome,
+        AssetsOutcome, AttachmentsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome,
+        SquawksOutcome,
     },
     domain::i18n::{MessageArg, Translator, messages},
     domain::location::TimeZone,
@@ -148,6 +149,12 @@ pub(crate) fn describe(change: &OperationChange, vehicle: &dyn Fn(AssetId) -> St
         C::EditPlace { .. } => tr(messages::CHANGE_PLACE_EDIT),
         C::DeletePlace { .. } => tr(messages::CHANGE_PLACE_DELETE),
         C::SetGarageOrder { .. } => tr(messages::CHANGE_GARAGE_ORDER),
+        C::AddAttachment { input } => tr_with(
+            messages::CHANGE_ATTACHMENT_ADD,
+            &[("vehicle", MessageArg::from(vehicle(input.asset).as_str()))],
+        ),
+        C::MoveAttachment { .. } => tr(messages::CHANGE_ATTACHMENT_MOVE),
+        C::RemoveAttachment { .. } => tr(messages::CHANGE_ATTACHMENT_REMOVE),
     }
 }
 
@@ -159,6 +166,7 @@ pub(crate) fn vehicle_of(change: &OperationChange) -> Option<AssetId> {
             Some(input.asset)
         }
         OperationChange::OpenSquawk { input } => Some(input.asset),
+        OperationChange::AddAttachment { input } => Some(input.asset),
         OperationChange::EditEvent { .. }
         | OperationChange::FinalizeEvent { .. }
         | OperationChange::FinishEvent { .. }
@@ -169,7 +177,9 @@ pub(crate) fn vehicle_of(change: &OperationChange) -> Option<AssetId> {
         | OperationChange::AddPlace { .. }
         | OperationChange::EditPlace { .. }
         | OperationChange::DeletePlace { .. }
-        | OperationChange::SetGarageOrder { .. } => None,
+        | OperationChange::SetGarageOrder { .. }
+        | OperationChange::MoveAttachment { .. }
+        | OperationChange::RemoveAttachment { .. } => None,
     }
 }
 
@@ -182,15 +192,18 @@ pub(crate) fn refusal_text(refusal: &Refusal) -> String {
         Refusal::Squawks(SquawksOutcome::Invalid { problem }) => problem.message(),
         Refusal::Squawks(SquawksOutcome::NotFound) => messages::SQUAWK_NOT_FOUND,
         Refusal::Places(PlacesOutcome::Invalid { problem }) => problem.message(),
+        Refusal::Attachments(AttachmentsOutcome::Invalid { problem }) => problem.message(),
         Refusal::Events(EventsOutcome::NotAllowed)
         | Refusal::Squawks(SquawksOutcome::NotAllowed)
         | Refusal::Preferences(PreferencesOutcome::NotAllowed)
-        | Refusal::Assets(AssetsOutcome::NotAllowed) => messages::VEHICLES_NOT_ALLOWED,
+        | Refusal::Assets(AssetsOutcome::NotAllowed)
+        | Refusal::Attachments(AttachmentsOutcome::NotAllowed) => messages::VEHICLES_NOT_ALLOWED,
         Refusal::Events(_)
         | Refusal::Squawks(_)
         | Refusal::Places(_)
         | Refusal::Preferences(_)
-        | Refusal::Assets(_) => messages::SOMETHING_WENT_WRONG,
+        | Refusal::Assets(_)
+        | Refusal::Attachments(_) => messages::SOMETHING_WENT_WRONG,
     };
     tr(id)
 }
@@ -244,6 +257,38 @@ pub(crate) fn alert_count() -> usize {
         usize::try_from(summary.refused).unwrap_or(usize::MAX)
             + usize::from(long)
             + usize::from(stopped)
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    0
+}
+
+/// Whether the file `hash` was added on this computer and isn't uploaded yet (sketch 2A).
+/// Always false on the web.
+#[cfg_attr(
+    not(all(feature = "desktop", not(target_arch = "wasm32"))),
+    expect(
+        clippy::unused_async,
+        reason = "only the desktop has files to ask about"
+    )
+)]
+pub(crate) async fn waiting_to_upload(hash: &domain::attachment::FileHash) -> bool {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        crate::copy_files::waiting_to_upload(hash).await
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    {
+        let _ = hash;
+        false
+    }
+}
+
+/// The outbox's count, read so a component re-renders when it changes (nothing on the web).
+pub(crate) fn outbox_changes() -> u64 {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        let summary = crate::local_copy::OUTBOX();
+        summary.waiting + summary.refused
     }
     #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
     0

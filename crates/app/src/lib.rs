@@ -7,6 +7,8 @@
 pub mod api;
 pub mod build_info;
 pub mod client;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod copy_files;
 pub mod data;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;

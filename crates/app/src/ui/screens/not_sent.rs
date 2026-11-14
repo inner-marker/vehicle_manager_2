@@ -212,8 +212,15 @@ mod desktop {
             | OperationChange::DeletePlace { .. } => {
                 navigator.push(Route::Places {});
             }
-            OperationChange::SetGarageOrder { .. } => {
+            OperationChange::SetGarageOrder { .. }
+            | OperationChange::MoveAttachment { .. }
+            | OperationChange::RemoveAttachment { .. } => {
                 navigator.push(Route::AllVehicles {});
+            }
+            OperationChange::AddAttachment { input } => {
+                navigator.push(Route::VehicleDetail {
+                    asset_id: input.asset.to_string(),
+                });
             }
         }
     }
@@ -268,7 +275,10 @@ mod desktop {
             | OperationChange::AddPlace { .. }
             | OperationChange::EditPlace { .. }
             | OperationChange::DeletePlace { .. }
-            | OperationChange::SetGarageOrder { .. } => return false,
+            | OperationChange::SetGarageOrder { .. }
+            | OperationChange::AddAttachment { .. }
+            | OperationChange::MoveAttachment { .. }
+            | OperationChange::RemoveAttachment { .. } => return false,
         };
         let Some(asset) = vehicle(squawk.asset).await else {
             return false;

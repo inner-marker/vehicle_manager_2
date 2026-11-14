@@ -191,6 +191,24 @@ impl Database {
         .transpose()
     }
 
+    /// Puts `operation` back in its place in the outbox, changed (an add's files, once
+    /// uploaded, become the server's, 6d). Whether it was there.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or it can't be stored.
+    pub async fn replace_in_outbox(&self, operation: &Operation) -> Result<bool, StorageError> {
+        Ok(
+            sqlx::query("UPDATE outbox SET operation = ? WHERE operation_id = ?")
+                .bind(json_to_sql(operation, "operation")?)
+                .bind(id_to_sql(operation.id))
+                .execute(self.pool())
+                .await?
+                .rows_affected()
+                > 0,
+        )
+    }
+
     /// Marks a waiting change refused, with the server's answer. Whether it was waiting.
     ///
     /// # Errors

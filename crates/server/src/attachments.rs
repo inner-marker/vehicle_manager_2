@@ -46,7 +46,7 @@ use domain::time::UnixMillis;
 use image::{DynamicImage, ImageDecoder, ImageReader, Limits, RgbImage};
 use storage::Database;
 use storage::attachments::AttachmentWriter;
-use storage::files::FileStore;
+use storage::files::{FileStore, Files};
 
 use crate::assets::{AssetsContext, unavailable};
 use crate::sessions::SignedIn;
@@ -198,8 +198,9 @@ async fn blocking<T: Send + 'static>(
 pub struct UploadContext<'a> {
     /// The database (to list the stored files).
     pub database: &'a Database,
-    /// The file store.
-    pub store: &'a FileStore,
+    /// Where the files go: the server's folder, or, for one added on a desktop, its files
+    /// database (as uploads waiting to be sent, phase-3.md 6d).
+    pub files: &'a Files,
     /// Who is uploading.
     pub user: &'a SignedIn,
     /// The server's health.
@@ -208,22 +209,31 @@ pub struct UploadContext<'a> {
     pub now: UnixMillis,
 }
 
-/// Stores `bytes` (and lists them), returning what was stored.
+/// Stores `bytes` (on the server, and lists them; on a desktop, as an upload waiting), returning
+/// what was stored.
 async fn store_bytes(
     context: &UploadContext<'_>,
     bytes: Vec<u8>,
 ) -> Result<StoredFile, UploadOutcome> {
-    let store = context.store.clone();
-    let stored = blocking(move || store.put(&bytes))
-        .await
-        .map_err(|error| upload_failed("store", &error))?
-        .map_err(|error| upload_failed("store", &error))?;
-    context
-        .database
-        .record_stored_file(&stored, context.now)
-        .await
-        .map_err(|error| upload_failed("list", &error))?;
-    Ok(stored)
+    match context.files {
+        Files::Folder(store) => {
+            let store = store.clone();
+            let stored = blocking(move || store.put(&bytes))
+                .await
+                .map_err(|error| upload_failed("store", &error))?
+                .map_err(|error| upload_failed("store", &error))?;
+            context
+                .database
+                .record_stored_file(&stored, context.now)
+                .await
+                .map_err(|error| upload_failed("list", &error))?;
+            Ok(stored)
+        }
+        Files::Local(local) => local
+            .put(&bytes, storage::local_files::LocalKind::Upload, context.now)
+            .await
+            .map_err(|error| upload_failed("store", &error)),
+    }
 }
 
 /// Logs a failure and answers "unavailable".
@@ -541,14 +551,27 @@ impl AssetsContext<'_> {
         Ok(attachment)
     }
 
-    /// `file` as the store lists it, if it was uploaded with that size.
-    async fn uploaded(&self, file: &StoredFile) -> Result<(), AttachmentsOutcome> {
-        let listed = self
-            .database
-            .stored_file(&file.hash)
-            .await
-            .map_err(|error| failed("stored file", &error))?;
-        if listed.as_ref() == Some(file) {
+    /// `file`, if it was uploaded with that size: listed by the server's store, or, on a
+    /// desktop's copy, in its files database (phase-3.md 6b).
+    async fn uploaded(&self, files: &Files, file: &StoredFile) -> Result<(), AttachmentsOutcome> {
+        let here = match files {
+            Files::Folder(_) => {
+                self.database
+                    .stored_file(&file.hash)
+                    .await
+                    .map_err(|error| failed("stored file", &error))?
+                    .as_ref()
+                    == Some(file)
+            }
+            Files::Local(local) => {
+                local
+                    .bytes_of(&file.hash)
+                    .await
+                    .map_err(|error| failed("stored file", &error))?
+                    == Some(file.bytes)
+            }
+        };
+        if here {
             Ok(())
         } else {
             Err(invalid(AttachmentProblem::NotUploaded))
@@ -625,22 +648,34 @@ async fn list_attachments(
 }
 
 /// Adds an attachment from files already uploaded.
+///
+/// `files` is where the files are: the server's folder, or, for a change applied to a
+/// desktop's copy, its files database (phase-3.md 6b).
 pub async fn add(
     context: &AssetsContext<'_>,
-    store: &FileStore,
+    files: &Files,
     input: AttachmentInput,
 ) -> AttachmentsOutcome {
-    either(add_attachment(context, store, input).await)
+    either(add_attachment(context, files, input).await)
 }
 
 /// The stored file's contents.
-async fn read_stored(store: &FileStore, file: &StoredFile) -> Result<Vec<u8>, AttachmentsOutcome> {
-    let store = store.clone();
-    let hash = file.hash.clone();
-    blocking(move || store.get(&hash))
-        .await
-        .map_err(|error| failed("file", &error))?
-        .map_err(|error| failed("file", &error))
+async fn read_stored(files: &Files, file: &StoredFile) -> Result<Vec<u8>, AttachmentsOutcome> {
+    match files {
+        Files::Folder(store) => {
+            let store = store.clone();
+            let hash = file.hash.clone();
+            blocking(move || store.get(&hash))
+                .await
+                .map_err(|error| failed("file", &error))?
+                .map_err(|error| failed("file", &error))
+        }
+        Files::Local(local) => local
+            .get(&file.hash)
+            .await
+            .map_err(|error| failed("file", &error))?
+            .ok_or_else(|| invalid(AttachmentProblem::NotUploaded)),
+    }
 }
 
 /// A photo's or PDF's details as the stored `file` says (its pixels or pages), whatever the app
@@ -648,12 +683,12 @@ async fn read_stored(store: &FileStore, file: &StoredFile) -> Result<Vec<u8>, At
 /// needs the person and the household to allow it.
 async fn verified_content(
     context: &AssetsContext<'_>,
-    store: &FileStore,
+    files: &Files,
     scope: Option<AssetScope>,
     file: &StoredFile,
     claimed: Content,
 ) -> Result<Content, AttachmentsOutcome> {
-    let bytes = read_stored(store, file).await?;
+    let bytes = read_stored(files, file).await?;
     Ok(match claimed {
         Content::Photo {
             size,
@@ -673,10 +708,10 @@ async fn verified_content(
                 if !context.originals_allowed().await? {
                     return Err(invalid(AttachmentProblem::OriginalsOff));
                 }
-                context.uploaded(&original.file).await?;
+                context.uploaded(files, &original.file).await?;
             }
             if let Some(raw) = &metadata.raw {
-                context.uploaded(raw).await?;
+                context.uploaded(files, raw).await?;
             }
             let (width, height) = blocking(move || pixels_of(&bytes))
                 .await
@@ -705,7 +740,7 @@ async fn verified_content(
 
 async fn add_attachment(
     context: &AssetsContext<'_>,
-    store: &FileStore,
+    files: &Files,
     input: AttachmentInput,
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
     // A reference document's attachment goes on no vehicle, whatever `input.asset` says.
@@ -714,11 +749,11 @@ async fn add_attachment(
         return Err(AttachmentsOutcome::NotAllowed);
     }
     let scope = place.map(|(_, scope)| scope);
-    context.uploaded(&input.file).await?;
+    context.uploaded(files, &input.file).await?;
     if let Some(thumbnail) = &input.thumbnail {
-        context.uploaded(thumbnail).await?;
+        context.uploaded(files, thumbnail).await?;
     }
-    let found = verified_content(context, store, scope, &input.file, input.content).await?;
+    let found = verified_content(context, files, scope, &input.file, input.content).await?;
     let now = context.clock.now();
     let attachment = Attachment {
         asset: place.map(|(asset, _)| asset),
@@ -727,7 +762,8 @@ async fn add_attachment(
         thumbnail: input.thumbnail,
         name: input.name,
         content: found,
-        added_at: now,
+        // A desktop's operation was made earlier than the server receives it.
+        added_at: context.origin.made_at(now),
         added_by: context.user.user,
         received_at: now,
     };
@@ -795,8 +831,29 @@ async fn remove_attachment(
 ) -> Result<AttachmentsOutcome, AttachmentsOutcome> {
     context.changeable_attachment(id).await?;
     context.save_attachment(Change::Delete { id }).await?;
+    note_removal(context, id)
+        .await
+        .map_err(|outcome| from_assets(&outcome))?;
     tracing::debug!(target: log_area::APP, attachment = %id, "attachment removed");
     Ok(AttachmentsOutcome::Done)
+}
+
+/// Records who removed attachment `id`, and when, for the audit record of its erased files
+/// (phase-3.md 6b, #072).
+///
+/// # Errors
+///
+/// Unavailable if the database fails.
+pub(crate) async fn note_removal(
+    context: &AssetsContext<'_>,
+    id: AttachmentId,
+) -> Result<(), AssetsOutcome> {
+    let at = context.origin.made_at(context.clock.now());
+    context
+        .database
+        .record_attachment_removal(id, context.user.user, at)
+        .await
+        .map_err(|error| unavailable("removal", &error))
 }
 
 /// A file to send: its contents, MIME type, and name.
@@ -854,7 +911,7 @@ pub async fn download(
             (original.file.clone(), original.file_type.mime())
         }
     };
-    let bytes = read_stored(store, &file).await?;
+    let bytes = read_stored(&Files::Folder(store.clone()), &file).await?;
     Ok(Download {
         bytes,
         mime,

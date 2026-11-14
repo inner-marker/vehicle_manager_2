@@ -470,6 +470,7 @@ mod sync {
             user,
             health: Health::Healthy,
             clock,
+            files: None,
         }
     }
 
@@ -910,5 +911,244 @@ mod sync {
         pull_all(&scene.server, &scene.copy, &scene.laptop).await;
         assert_eq!(count(&scene.copy, "events").await, 1);
         assert!(scene.copy.pull_state().await.unwrap().unwrap().complete());
+    }
+
+    // --- Photos and documents (phase-3.md 6b, decision #077) ----------------------------------
+
+    /// A PNG larger than a thumbnail (so it has its own), as a desktop would upload a photo the
+    /// person picked.
+    fn png() -> Vec<u8> {
+        let image = image::ImageBuffer::from_fn(640, 480, |x, _| {
+            image::Rgba([200_u8, 30, 30, if x < 320 { 255 } else { 0 }])
+        });
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
+        bytes.into_inner()
+    }
+
+    /// The photo uploaded to the server by `user`, as a push does first.
+    async fn uploaded_photo(
+        scene: &Scene,
+        store: &storage::files::FileStore,
+        user: &SignedIn,
+    ) -> domain::api::UploadedFile {
+        let files = storage::files::Files::Folder(store.clone());
+        let context = server::attachments::UploadContext {
+            database: &scene.server,
+            files: &files,
+            user,
+            health: Health::Healthy,
+            now: NOW,
+        };
+        let domain::api::UploadOutcome::Uploaded { uploaded } = server::attachments::upload(
+            &context,
+            domain::api::UploadPurpose::Photo {
+                size: domain::attachment::PhotoSize::Small,
+            },
+            png(),
+        )
+        .await
+        else {
+            panic!("no upload");
+        };
+        uploaded
+    }
+
+    /// A fuel-up Sam logged online, to put photos on (a Driver may, on their own events).
+    async fn sams_fuel_up(scene: &Scene) -> EventId {
+        saved(
+            &add(
+                &context(&scene.server, &scene.sam, &scene.clock),
+                fuel_up(scene.truck, scene.odometer, 50_000),
+            )
+            .await,
+        )
+    }
+
+    fn photo_on(
+        scene: &Scene,
+        event: EventId,
+        photo: &domain::api::UploadedFile,
+    ) -> domain::api::AttachmentInput {
+        domain::api::AttachmentInput {
+            asset: scene.truck,
+            owner: domain::attachment::AttachmentOwner::Event { event, task: None },
+            name: domain::attachment::FileName::from_upload("IMG_0412.png").unwrap(),
+            file: photo.file.clone(),
+            thumbnail: photo.thumbnail.clone(),
+            content: domain::attachment::Content::Photo {
+                size: domain::attachment::PhotoSize::Small,
+                width: 1,
+                height: 1,
+                metadata: domain::attachment::PhotoMetadata::default(),
+                original: None,
+            },
+        }
+    }
+
+    #[tokio::test]
+    async fn a_photo_added_on_a_desktop_is_pushed_after_its_upload_and_saved_once() {
+        let scene = scene().await;
+        let event = sams_fuel_up(&scene).await;
+        let files_temp = tempfile::tempdir().unwrap();
+        let store = storage::files::FileStore::open(files_temp.path()).unwrap();
+        let files = storage::files::Files::Folder(store.clone());
+        let pushing = PushContext {
+            files: Some(&files),
+            ..push_context(&scene.server, &scene.laptop, &scene.clock)
+        };
+
+        // A file never uploaded: refused.
+        let mut never = uploaded_photo(&scene, &store, &scene.laptop).await;
+        never.file.hash = domain::attachment::FileHash::from_bytes([7; 32]);
+        let refused = operation(
+            1,
+            1,
+            OperationChange::AddAttachment {
+                input: photo_on(&scene, event, &never),
+            },
+        );
+        assert!(matches!(
+            answers(push(&pushing, schema_version(), std::slice::from_ref(&refused)).await)
+                .as_slice(),
+            [OperationAnswer::Refused {
+                refusal: Refusal::Attachments(domain::api::AttachmentsOutcome::Invalid { .. }),
+                ..
+            }]
+        ));
+
+        // Uploaded first, then the operation with the server's files.
+        let photo = uploaded_photo(&scene, &store, &scene.laptop).await;
+        let added = operation(
+            2,
+            2,
+            OperationChange::AddAttachment {
+                input: photo_on(&scene, event, &photo),
+            },
+        );
+        for _ in 0..2 {
+            let pushed =
+                answers(push(&pushing, schema_version(), std::slice::from_ref(&added)).await);
+            assert_eq!(pushed, vec![OperationAnswer::Applied { id: added.id }]);
+        }
+        let id: domain::attachment::AttachmentId = added.derived_id(0).unwrap();
+        let attachment = scene.server.attachment(id).await.unwrap().unwrap();
+        assert_eq!(attachment.file, photo.file);
+        assert_eq!(
+            attachment.added_at,
+            added.hlc.physical(),
+            "made when the desktop made it"
+        );
+        assert_eq!(count(&scene.server, "attachments").await, 1, "saved once");
+
+        // Without a file store, adding waits (nothing is refused).
+        let elsewhere = operation(
+            3,
+            3,
+            OperationChange::AddAttachment {
+                input: photo_on(&scene, event, &photo),
+            },
+        );
+        assert!(matches!(
+            push(
+                &push_context(&scene.server, &scene.laptop, &scene.clock),
+                schema_version(),
+                std::slice::from_ref(&elsewhere),
+            )
+            .await,
+            PushOutcome::Answers {
+                stopped: Some(PushStop::Unavailable),
+                ..
+            }
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_photo_removed_on_a_desktop_leaves_an_audit_record_once_its_files_are_erased() {
+        let scene = scene().await;
+        let event = sams_fuel_up(&scene).await;
+        let files_temp = tempfile::tempdir().unwrap();
+        let store = storage::files::FileStore::open(files_temp.path()).unwrap();
+        let files = storage::files::Files::Folder(store.clone());
+        let pushing = PushContext {
+            files: Some(&files),
+            ..push_context(&scene.server, &scene.laptop, &scene.clock)
+        };
+        let photo = uploaded_photo(&scene, &store, &scene.laptop).await;
+        let added = operation(
+            1,
+            1,
+            OperationChange::AddAttachment {
+                input: photo_on(&scene, event, &photo),
+            },
+        );
+        let id: domain::attachment::AttachmentId = added.derived_id(0).unwrap();
+        let removed = operation(2, 2, OperationChange::RemoveAttachment { id });
+        let pushed = answers(push(&pushing, schema_version(), &[added, removed.clone()]).await);
+        assert_eq!(pushed.len(), 2);
+        assert_eq!(pushed[1], OperationAnswer::Applied { id: removed.id });
+        let using = scene
+            .server
+            .removed_attachments_using(&photo.file.hash)
+            .await
+            .unwrap();
+        assert_eq!(using.len(), 1);
+        assert_eq!(using[0].removed_by, Some(scene.laptop.user));
+        assert_eq!(using[0].removed_at, Some(removed.hlc.physical()));
+
+        // The nightly file check, past #065's 8 days: the files go, their record stays.
+        let clock = std::sync::Arc::new(ManualClock::new(NOW));
+        let jobs = server::jobs::JobContext {
+            database: scene.server.clone(),
+            clock: std::sync::Arc::clone(&clock)
+                as std::sync::Arc<dyn domain::time::Clock + Send + Sync>,
+            snapshot_dir: server::jobs::SnapshotDir {
+                path: files_temp.path().join("snapshots"),
+                create_if_missing: true,
+            },
+            timers: domain::timers::Timers::NORMAL,
+            server_device: test_id(901),
+            file_store: Some(store.clone()),
+        };
+        server::jobs::run_due_jobs(&jobs, NOW).await;
+        let later = UnixMillis::from_millis(
+            NOW.as_millis()
+                + server::jobs::keep_unused_files_for(domain::timers::Timers::NORMAL)
+                + 24 * 60 * MINUTE,
+        );
+        clock.set(later);
+        scene
+            .server
+            .bring_job_forward(server::jobs::Job::FileCheck.name(), later)
+            .await
+            .unwrap();
+        server::jobs::run_due_jobs(&jobs, later).await;
+        assert!(!store.path(&photo.file.hash).exists(), "erased");
+        let records = scene.server.erased_files().await.unwrap();
+        assert_eq!(records.len(), 2, "the photo and its thumbnail: {records:?}");
+        let file = records
+            .iter()
+            .find(|record| record.hash == photo.file.hash)
+            .unwrap();
+        assert_eq!(file.attachment, id);
+        assert_eq!(file.owner, "event");
+        assert_eq!(file.owner_id, Some(event.cast()));
+        assert_eq!(file.name, "IMG_0412.png");
+        assert_eq!(file.removed_by, Some(scene.laptop.user));
+        assert_eq!(file.erased_at, later);
+    }
+
+    #[tokio::test]
+    async fn the_same_photo_processed_in_two_places_makes_the_same_files() {
+        // What lets a desktop's processing (the server's own code) name the files the server
+        // will make; if it ever didn't, the server's would win (copy_files::send_uploads).
+        let scene = scene().await;
+        let mut made = Vec::new();
+        for _ in 0..2 {
+            let temp = tempfile::tempdir().unwrap();
+            let store = storage::files::FileStore::open(temp.path()).unwrap();
+            made.push(uploaded_photo(&scene, &store, &scene.laptop).await);
+        }
+        assert_eq!(made[0], made[1]);
     }
 }

@@ -87,3 +87,11 @@ The first release proves the pipeline. After it, confirm:
 - [ ] The GitHub Release `v0.1.0` exists, with notes matching the `## [0.1.0]` section of `CHANGELOG.md`.
 - [ ] The server image was published as `:0.1.0` and `:latest` (GitHub → Packages → `vehicle_manager_2`).
 - [ ] **Weekly checks** can be started from Actions → "Run workflow". (Since decision #026 made `dev` the default branch, scheduled and manual workflows run from `dev` and no longer wait for `main`.)
+
+## Third-party notices (before the first desktop packages; at the latest `v0.3.0`)
+
+The app embeds other people's work whose licenses ask for their notice to travel with every copy. The source repo already keeps each notice beside its files; **packages and the server image** must ship them too (the human, 2026-11-12):
+- [ ] **Lucide icons** (`crates/app/assets/icons/`, embedded in the app): ISC, with six icons (`chevron-down`, `chevron-up`, `monitor`, `moon`, `plus`, `x`) under Feather's MIT license; both in `LICENSE-lucide`.
+- [ ] **pdf.js** and its WebAssembly decoders (`crates/app/assets/pdfjs/`): Apache-2.0 and the licenses in `pdfjs/LICENSE`, `pdfjs/iccs/LICENSE`, and `pdfjs/wasm/LICENSE_*`.
+- [ ] **Rust crates** compiled in (including SQLCipher on the desktop): their licenses are already checked by `cargo deny`; generate the notices list from the same data (e.g. `cargo about`, a new tool to approve then).
+- [ ] **Where they go:** one `THIRD-PARTY-NOTICES` file in each desktop package and in the server image, and a **Licenses** link on Diagnostics (or an About screen) that shows it.

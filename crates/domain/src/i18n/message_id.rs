@@ -689,6 +689,12 @@ define_messages! {
     CHANGE_PLACE_DELETE => "change-place-delete",
     /// A change: the Garage order.
     CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// A change: a photo or document added.
+    CHANGE_ATTACHMENT_ADD => "change-attachment-add",
+    /// A change: a photo or document moved between tasks.
+    CHANGE_ATTACHMENT_MOVE => "change-attachment-move",
+    /// A change: a photo or document removed.
+    CHANGE_ATTACHMENT_REMOVE => "change-attachment-remove",
     /// Signing out with changes not sent (sketch 3B).
     SIGN_OUT_WAITING_TITLE => "sign-out-waiting-title",
     /// Why it matters.
@@ -709,6 +715,32 @@ define_messages! {
     COPY_OLDEST => "copy-oldest",
     /// Diagnostics: why sending stopped.
     COPY_SENDING => "copy-sending",
+    /// The photos limit: 1 GB.
+    PHOTO_LIMIT_1_GB => "photo-limit-1-gb",
+    /// The photos limit: 2 GB.
+    PHOTO_LIMIT_2_GB => "photo-limit-2-gb",
+    /// The photos limit: 5 GB.
+    PHOTO_LIMIT_5_GB => "photo-limit-5-gb",
+    /// The photos limit: 10 GB.
+    PHOTO_LIMIT_10_GB => "photo-limit-10-gb",
+    /// The photos limit: none.
+    PHOTO_LIMIT_NONE => "photo-limit-none",
+    /// Offline, a photo whose full size isn't here: its thumbnail, enlarged (sketch 1A).
+    PHOTO_PREVIEW_NOTE => "photo-preview-note",
+    /// Offline, a file that isn't here at all.
+    FILE_NOT_HERE => "file-not-here",
+    /// A photo added on this computer, not yet uploaded (sketch 2A).
+    UPLOAD_WAITING => "upload-waiting",
+    /// Diagnostics: this computer's files (sketch 3B).
+    COPY_FILES => "copy-files",
+    /// Diagnostics: how many files, and their size.
+    COPY_FILES_VALUE => "copy-files-value",
+    /// Diagnostics: the photos kept.
+    COPY_PHOTOS_KEPT => "copy-photos-kept",
+    /// Diagnostics: the photos' size, of the limit.
+    COPY_PHOTOS_KEPT_VALUE => "copy-photos-kept-value",
+    /// Diagnostics: the limit's setting.
+    COPY_PHOTO_LIMIT => "copy-photo-limit",
     /// The copy's status: a failure.
     COPY_FAILED => "copy-failed",
     /// Diagnostics: never pulled.

@@ -20,8 +20,9 @@
 //! pushes it; the server runs it through the same code again, so every check runs twice
 //! (#076). The device it came from is the pushing session's, never a value in the operation.
 //!
-//! Only the changes Driver mode allows are operations (#076): events, squawks, and the
-//! person's own preferences, saved places, and garage order. Admin work needs the server.
+//! Only the changes Driver mode allows are operations (#076): events, squawks, the person's
+//! own preferences, saved places, and garage order, and (milestone 6, #077) adding, moving,
+//! and removing photos and documents. Admin work needs the server.
 
 use core::ops::RangeInclusive;
 
@@ -29,9 +30,11 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::api::{
-    AssetsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome, SquawkInput, SquawksOutcome,
+    AssetsOutcome, AttachmentInput, AttachmentsOutcome, EventsOutcome, PlacesOutcome,
+    PreferencesOutcome, SquawkInput, SquawksOutcome,
 };
 use crate::asset::AssetId;
+use crate::attachment::AttachmentId;
 use crate::event::{EventId, EventInput, EventPatch};
 use crate::hlc::{Hlc, HlcError};
 use crate::id::{Id, IdError, RANDOM_BYTES};
@@ -160,6 +163,24 @@ pub enum OperationChange {
         /// The vehicles, in order.
         order: Vec<AssetId>,
     },
+    /// Adds a photo or document (milestone 6, #077). Its files are the server's: a desktop
+    /// uploads any added offline just before it sends this, and puts the server's files here.
+    AddAttachment {
+        /// The attachment, as the app sends it.
+        input: AttachmentInput,
+    },
+    /// Moves an attachment to another task of its event, or to the event itself.
+    MoveAttachment {
+        /// Which attachment.
+        id: AttachmentId,
+        /// The task, if any.
+        task: Option<u16>,
+    },
+    /// Removes an attachment.
+    RemoveAttachment {
+        /// Which attachment.
+        id: AttachmentId,
+    },
 }
 
 /// Why the server refused an operation: the answer its server function gave, the same one a
@@ -177,6 +198,8 @@ pub enum Refusal {
     Preferences(PreferencesOutcome),
     /// The Garage order's answer.
     Assets(AssetsOutcome),
+    /// A photo's or document's answer.
+    Attachments(AttachmentsOutcome),
 }
 
 /// Why a derived ID or time couldn't be made.

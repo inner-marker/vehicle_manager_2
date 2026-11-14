@@ -14,7 +14,8 @@
 //! one and is never applied twice.
 
 use domain::api::{
-    AssetsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome, SquawksOutcome,
+    AssetsOutcome, AttachmentsOutcome, EventsOutcome, PlacesOutcome, PreferencesOutcome,
+    SquawksOutcome,
 };
 use domain::device::DeviceKind;
 use domain::hlc_utils::{MAX_AHEAD_MILLIS, check_not_too_far_ahead};
@@ -28,6 +29,7 @@ use domain::sync::{
 };
 use domain::time::Clock;
 use storage::Database;
+use storage::files::Files;
 use storage::outbox::AppliedOperation;
 use storage::sync::{PullScope, ReadPage, schema_version};
 
@@ -37,7 +39,7 @@ use crate::origin::Origin;
 use crate::places::PlacesContext;
 use crate::preferences::PreferencesContext;
 use crate::sessions::SignedIn;
-use crate::{assets, events, places, preferences, squawks};
+use crate::{assets, attachments, events, places, preferences, squawks};
 
 /// Whether `signed_in` is on a paired desktop (`None` if the device can't be read).
 async fn is_paired_desktop(database: &Database, signed_in: &SignedIn) -> Option<bool> {
@@ -131,6 +133,9 @@ pub struct PushContext<'a> {
     pub health: Health,
     /// The real clock.
     pub clock: &'a (dyn Clock + Sync),
+    /// Where the files are (the server's folder, or a desktop's files database), for adding a
+    /// photo or document; `None` if there's no file store (adding is then unavailable).
+    pub files: Option<&'a Files>,
 }
 
 /// What running one operation did ([`run_operation`]).
@@ -347,6 +352,29 @@ pub async fn run_operation(context: &PushContext<'_>, operation: &Operation) -> 
         OperationChange::AddPlace { .. }
         | OperationChange::EditPlace { .. }
         | OperationChange::DeletePlace { .. } => run_place(context, operation).await,
+        OperationChange::AddAttachment { input } => {
+            let Some(files) = context.files else {
+                return Ran::Unavailable;
+            };
+            ran_attachment(attachments::add(&assets(), files, input.clone()).await)
+        }
+        OperationChange::MoveAttachment { id, task } => {
+            ran_attachment(attachments::move_to(&assets(), *id, *task).await)
+        }
+        OperationChange::RemoveAttachment { id } => {
+            ran_attachment(attachments::remove(&assets(), *id).await)
+        }
+    }
+}
+
+fn ran_attachment(outcome: AttachmentsOutcome) -> Ran {
+    match outcome {
+        AttachmentsOutcome::Saved { .. } | AttachmentsOutcome::Done => Ran::Applied,
+        AttachmentsOutcome::Unavailable => Ran::Unavailable,
+        other @ (AttachmentsOutcome::Attachments { .. }
+        | AttachmentsOutcome::NotFound
+        | AttachmentsOutcome::NotAllowed
+        | AttachmentsOutcome::Invalid { .. }) => Ran::Refused(Refusal::Attachments(other)),
     }
 }
 
@@ -376,7 +404,10 @@ async fn run_place(context: &PushContext<'_>, operation: &Operation) -> Ran {
         | OperationChange::EditSquawk { .. }
         | OperationChange::DeleteSquawk { .. }
         | OperationChange::SetMyPreferences { .. }
-        | OperationChange::SetGarageOrder { .. } => return Ran::Unavailable,
+        | OperationChange::SetGarageOrder { .. }
+        | OperationChange::AddAttachment { .. }
+        | OperationChange::MoveAttachment { .. }
+        | OperationChange::RemoveAttachment { .. } => return Ran::Unavailable,
     };
     match outcome {
         PlacesOutcome::Added { .. } | PlacesOutcome::Done => Ran::Applied,

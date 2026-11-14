@@ -36,6 +36,8 @@ pub struct Settings {
     pub servers: Vec<KnownServer>,
     /// How long the desktop may sit idle before it locks (phase-3.md milestone 3, #074).
     pub lock_after: domain::pin::LockAfter,
+    /// How much disk downloaded photos may use (phase-3.md 6c, #077).
+    pub photo_limit: domain::attachment::PhotoLimit,
 }
 
 /// A server this desktop has signed in to, shown on the sign-in screen (phase-3.md 2d, #073).
@@ -204,6 +206,7 @@ mod tests {
             }),
             keep_on_top: true,
             lock_after: domain::pin::LockAfter::ThirtyMinutes,
+            photo_limit: domain::attachment::PhotoLimit::FiveGb,
             servers: vec![KnownServer {
                 address: "https://nas.example.ts.net".into(),
                 instance: None,

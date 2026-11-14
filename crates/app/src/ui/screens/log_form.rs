@@ -582,7 +582,7 @@ async fn follow_removed_tasks(
             .iter()
             .fold(*owner, |owner, task| owner.after_task_removed(*task));
         if let (AttachmentOwner::Event { task, .. }, true) = (after, after != *owner)
-            && let Err(error) = api::move_attachment(*id, task).await
+            && let Err(error) = data::move_attachment(*id, task).await
         {
             tracing::debug!(target: log_area::UI, attachment = %id, %error, "couldn't move a photo with its task");
         }

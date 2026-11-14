@@ -215,9 +215,12 @@ pub async fn open(key: [u8; 32]) {
         *waiting_key() = Some(key);
         return;
     };
-    match open_or_restart(&folder, &LocalKey::new(key), &copy_of).await {
+    let key = LocalKey::new(key);
+    match open_or_restart(&folder, &key, &copy_of).await {
         Ok(database) => {
             *copy_slot() = Some(database);
+            // Its photos and PDFs, beside it under the same key (6c).
+            crate::copy_files::open(&folder, &key).await;
             PULL_NOW.notify_one();
             count_outbox().await;
         }
@@ -245,6 +248,7 @@ pub async fn close() {
         database.close().await;
         tracing::debug!(target: log_area::SYNC, "this computer's copy is closed");
     }
+    crate::copy_files::close().await;
     *STATUS.write() = CopyStatus::Closed;
     if *OUTBOX.peek() != OutboxSummary::default() {
         *OUTBOX.write() = OutboxSummary::default();
@@ -260,6 +264,9 @@ pub async fn delete() {
         tracing::warn!(target: log_area::SYNC, %error, "couldn't delete this computer's copy");
     }
 }
+
+/// Wakes the download of missing thumbnails and PDFs (after a pull brought the copy up to date).
+static FETCH_NOW: tokio::sync::Notify = tokio::sync::Notify::const_new();
 
 /// Asks the puller to pull now (after a change on the server).
 pub fn pull_soon() {
@@ -464,7 +471,11 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
         if waiting.is_empty() {
             break;
         }
-        match push_batch(copy, first_batch(waiting), last_pull).await {
+        let Some(batch) = with_uploads_sent(copy, first_batch(waiting), last_pull).await else {
+            count_outbox().await;
+            return false;
+        };
+        match push_batch(copy, batch, last_pull).await {
             Batch::Next => {}
             Batch::Stop(go_on) => {
                 count_outbox().await;
@@ -480,6 +491,34 @@ async fn push_waiting(copy: &Database, last_pull: Option<UnixMillis>) -> bool {
     }
     count_outbox().await;
     true
+}
+
+/// `batch`, with each add's files uploaded first and the server's files put in it (and in the
+/// outbox: 6d); `None` if the server couldn't be reached (offline).
+async fn with_uploads_sent(
+    copy: &Database,
+    mut batch: Vec<Operation>,
+    last_pull: Option<UnixMillis>,
+) -> Option<Vec<Operation>> {
+    for operation in &mut batch {
+        let OperationChange::AddAttachment { input } = &mut operation.change else {
+            continue;
+        };
+        match crate::copy_files::send_uploads(input).await {
+            Ok(false) => {}
+            Ok(true) => {
+                if let Err(error) = copy.replace_in_outbox(operation).await {
+                    tracing::error!(target: log_area::SYNC, %error, "couldn't keep an add's uploaded files");
+                }
+            }
+            Err(error) => {
+                tracing::debug!(target: log_area::SYNC, %error, "no upload: can't reach the server");
+                *STATUS.write() = CopyStatus::Offline { since: last_pull };
+                return None;
+            }
+        }
+    }
+    Some(batch)
 }
 
 /// Sends one batch and takes in the answers.
@@ -586,6 +625,9 @@ async fn pull_until_current(copy: &Database) {
         {
             tracing::warn!(target: log_area::SYNC, %error, "couldn't move the desktop's clock");
         }
+        if page.up_to_date() {
+            FETCH_NOW.notify_one();
+        }
         *STATUS.write() = if page.up_to_date() {
             CopyStatus::UpToDate {
                 at: SystemClock.now(),
@@ -651,6 +693,16 @@ pub fn CopyPuller() -> Element {
                 }
             }
             let _ = tokio::time::timeout(PULL_EVERY, PULL_NOW.notified()).await;
+        }
+    });
+    // Thumbnails and PDFs, downloaded by themselves after each pull (6c), apart from the pulls
+    // so a first download of many files never holds them up.
+    use_future(move || async move {
+        loop {
+            let _ = tokio::time::timeout(PULL_EVERY, FETCH_NOW.notified()).await;
+            if !is_offline() {
+                crate::copy_files::fetch_missing().await;
+            }
         }
     });
     rsx! {}

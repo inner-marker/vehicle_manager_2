@@ -3997,6 +3997,25 @@ a.squawk-history-job {
     font-weight: 800;
 }
 
+/* 2A (phase-3.md 6e): a photo added on this computer, not yet uploaded: a small blue ↑ in the
+   tile's corner, the tooltip says why. */
+.attachment-tile-upload {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+}
+
 .attachment-add {
     border: 1.5px dashed var(--accent);
     background: transparent;
@@ -4121,6 +4140,20 @@ body:has(.photo-viewer) {
     max-height: calc(100dvh - 120px);
     object-fit: contain;
     border-radius: 6px;
+}
+
+/* 1A (phase-3.md 6e): offline, a photo whose full size isn't here: its thumbnail, enlarged,
+   with a note under it. */
+.photo-viewer-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.photo-viewer-preview img {
+    width: min(100%, 720px);
+    height: auto;
 }
 
 .photo-viewer-step {
@@ -4628,8 +4661,8 @@ body:has(.photo-viewer) {
 }
 
 /* Offline (milestone 5, decision #076): the changes Driver mode allows are saved on this
-   computer and sent later, so their buttons stay on. What still needs the server is off: a
-   button marked `needs-server` (photos and documents, milestone 6) is disabled by the app, with
+   computer and sent later, so their buttons stay on, photos and documents too (milestone 6). What
+   still needs the server is off: a button marked `needs-server` is disabled by the app, with
    why as its tooltip; in an area marked `needs-server-zone` (changing the password), the save
    buttons are off, with the saving note beside them. */
 .app[data-offline="true"] .needs-server:disabled {

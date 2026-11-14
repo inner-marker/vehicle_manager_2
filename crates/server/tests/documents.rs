@@ -316,9 +316,10 @@ mod documents {
         let image = image::ImageBuffer::from_fn(800, 600, |_, _| image::Rgb([240_u8, 240, 240]));
         let mut png = std::io::Cursor::new(Vec::new());
         image.write_to(&mut png, image::ImageFormat::Png).unwrap();
+        let files = storage::files::Files::Folder(store.clone());
         let upload_context = UploadContext {
             database: &database,
-            store: &store,
+            files: &files,
             user: &maintainer,
             health: Health::Healthy,
             now: NOW,
@@ -350,7 +351,8 @@ mod documents {
             },
         };
         let AttachmentsOutcome::Saved { id: scan } =
-            server::attachments::add(&shop, &store, scan).await
+            server::attachments::add(&shop, &storage::files::Files::Folder(store.clone()), scan)
+                .await
         else {
             panic!("the scan wasn't added");
         };

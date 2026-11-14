@@ -1088,7 +1088,12 @@ pub(crate) async fn add_attachment(
     input: domain::api::AttachmentInput,
 ) -> ServerFnResult<AttachmentsOutcome> {
     Ok(server_side::with_attachments(async |context, store| {
-        ::server::attachments::add(&context, store, input).await
+        ::server::attachments::add(
+            &context,
+            &storage::files::Files::Folder(store.clone()),
+            input,
+        )
+        .await
     })
     .await)
 }
@@ -1830,12 +1835,17 @@ mod server_side {
         let Some(user) = signed_in() else {
             return domain::sync::PushOutcome::NotSignedIn;
         };
+        // Adding a photo or document needs the server's files.
+        let files = server::startup::file_store()
+            .cloned()
+            .map(storage::files::Files::Folder);
         let context = server::sync::PushContext {
             database,
             database_id,
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            files: files.as_ref(),
         };
         action(context).await
     }
