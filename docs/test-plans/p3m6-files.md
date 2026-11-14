@@ -24,17 +24,17 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1 | **NAS:** `sudo docker logs --since 10m vehiclemanager-test 2>&1 \| grep -E "app starting\|database open"` | `build=milestone-p3-m6-files · …`; `database open … schema_now=20` (`schema_before=19` on the first start). |
-| [ ] | 2 | **Desktop:** start it, unlock, wait a minute. Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/*-test/` | `files.sqlite` beside `vehiclemanager.sqlite`. Diagnostics → Offline copy: **Files** (a count and a size), **Photos kept** "0.0 MB of 2 GB" (or a little), **Keep photos up to** 2 GB. |
-| [ ] | 3 | **Encrypted:** `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/files.sqlite; echo` | Gibberish, **not** `SQLite format 3`. |
-| [ ] | 4 | **Desktop:** open a vehicle's photos, then **open one photo** (not P) full size, and open the **PDF** | They show as before. |
-| [ ] | 5 | **Offline:** **Tailscale off**; wait for the OFFLINE tag | The OFFLINE tag. |
-| [ ] | 6 | Offline: the same vehicle's photos and documents; the photo from step 4; the PDF | Every thumbnail shows. The photo from step 4 opens full size. The PDF opens (it downloaded by itself). |
-| [ ] | 7 | Offline: open **P** | Its thumbnail, enlarged, with "Full size downloads when this computer can reach the server (a small preview)." (1A). |
-| [ ] | 8 | Offline: on an event of yours, **+ Add** a photo (Choose photos) | **Keep the original** is dimmed (tooltip: "This needs the server, which can't be reached (offline).") if you may keep originals. The photo shows at once, with a small blue **↑** on its tile (hover: "Waiting to upload (offline)."). The top bar: **↑ 1 to send**. |
-| [ ] | 9 | Offline: open that photo | It opens full size (it's here). |
-| [ ] | 10 | Offline: add a **PDF** to the same event | It shows, with its first page as the thumbnail and the ↑. **↑ 2 to send**. |
-| [ ] | 11 | Offline: **Remove** an older photo (one that was on the server) | Gone here. **↑ 3 to send**. |
+| [x] | 1 | **NAS:** `sudo docker logs --since 10m vehiclemanager-test 2>&1 \| grep -E "app starting\|database open"` | `build=milestone-p3-m6-files · …`; `database open … schema_now=20` (`schema_before=19` on the first start). |
+| [x] | 2 | **Desktop:** start it, unlock, wait a minute. Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/*-test/` | `files.sqlite` beside `vehiclemanager.sqlite`. Diagnostics → Offline copy: **Files** (a count and a size), **Photos kept** "0.0 MB of 2 GB" (or a little), **Keep photos up to** 2 GB. |
+| [x] | 3 | **Encrypted:** `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/files.sqlite; echo` | Gibberish, **not** `SQLite format 3`. |
+| [x] | 4 | **Desktop:** open a vehicle's photos, then **open one photo** (not P) full size, and open the **PDF** | They show as before. |
+| [x] | 5 | **Offline:** **Tailscale off**; wait for the OFFLINE tag | The OFFLINE tag. |
+| [x] | 6 | Offline: the same vehicle's photos and documents; the photo from step 4; the PDF | Every thumbnail shows. The photo from step 4 opens full size. The PDF opens (it downloaded by itself). |
+| [x] | 7 | Offline: open **P** | Its thumbnail, enlarged, with "Full size downloads when this computer can reach the server (a small preview)." (1A). |
+| [x] | 8 | Offline: on an event of yours, **+ Add** a photo (Choose photos) | **Keep the original** is dimmed (tooltip: "This needs the server, which can't be reached (offline).") if you may keep originals. The photo shows at once, with a small blue **↑** on its tile (hover: "Waiting to upload (offline)."). The top bar: **↑ 1 to send**. |
+| [x] | 9 | Offline: open that photo | It opens full size (it's here). |
+| [x] | 10 | Offline: add a **PDF** to the same event | It shows, with its first page as the thumbnail and the ↑. **↑ 2 to send**. |
+| [x] | 11 | Offline: **Remove** an older photo (one that was on the server) | Gone here. **↑ 3 to send**. |
 | [ ] | 12 | **Tailscale on**; wait (or Diagnostics → Sync now) | The chip goes; the **↑** badges go. **Phone** (reload): the new photo and PDF are on the event; the removed photo is gone. Open the new photo on the phone: full size. |
 | [ ] | 13 | **Desktop:** open the new photo again | It still opens (kept here). |
 | [ ] | 14 | **Moving with a task:** on a maintenance draft with two tasks and a photo on the second task, remove the **first** task and save (online) | The photo moves with its task (now the first). **Phone:** the same. |
@@ -56,3 +56,5 @@
 - **Never share** a PIN, a password, a token, `.env`, a cookie, `device-credentials.json`, the copy's file, or `files.sqlite`.
 
 # Human Notes
+
+- After turning tailscale back on, the "offline" tag goes away, but the "2 to send" never does even after clicking "Sync now"
