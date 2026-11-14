@@ -591,7 +591,7 @@
 | R.b | ☑️ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES.txt`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
 | R.c | ☑️ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
 | R.d | ☑️ | `docs: v0.3.0 regression checklist` | Question 3 | none |
-| R.e | ⬜ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.e | ☑️ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
 | R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main server moved to `0.3.0`; the issues | — |
 
 **Written so far**
@@ -617,4 +617,5 @@
 - **R.d:** `docs/test-plans/v0.3.0-regression.md`, 32 steps on the test server with `:dev` after the release PR merges into `dev`, the desktop app **bundled from `dev`** (as the household will run it).
   - **Part A, the web (14 steps):** `v0.2.0`'s pass, shortened: the startup log at schema 21, the version, the **Licenses** dialog, sign-in and modes, Sam's fuel-up with a photo and an issue, a repair signing it off and its correction, a recall with a PDF, a document renewal, a send-out and return, Messages, and the sweep as Sam and the Viewer.
   - **Part B, the desktop (18 steps):** Phase 3's exit criteria. These are an offline fuel-up with a photo sent on reconnecting, edits to one draft merging (different fields both kept; the same field, the later wins), a refused reading kept in Messages, the lock and a wrong PIN, a lost laptop signed out from the web (its copy kept and encrypted), and a server restored from a snapshot (PROTECTED, then Use this server). Then the Licenses dialog on the desktop, and the nightly jobs. "Old and new apps" is left to the server's tests.
+- **R.e:** the version is `0.3.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` has its `## [0.3.0]` section from `git cliff --tag v0.3.0`: 33 features, 6 fixes, and the docs, tests, build, CI, and chores since `v0.2.0`. The 16 commits git-cliff skips are all merges (decision #021). Accepted as they are: "V0.2.0 released" and "V0.3.0 regression checklist", capitalized by the changelog's formatting (as in `v0.2.0`), and the `v0.2.0` release's own closing commit, listed here because it came after that tag. The third-party notices were already current (`scripts/notices.sh --check`).
 
