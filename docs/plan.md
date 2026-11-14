@@ -1843,7 +1843,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Pairing** (moved from Phase 6, #072): signing in on a desktop pairs it (device key, token tied to it, PIN); **Settings → Devices** signs devices out; a list of recent servers.
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
-- Milestones: `docs/phase_plans/phase-3.md`.
+- Milestones: `docs/phase_plans/phase-3.md` · **All seven merged into `dev` (2026-11-14);** the `v0.3.0` release (its regression pass and the exit criteria) completes the phase.
 
 ### Phase 4: Mobile (Moved to post-MVP)
 *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*

@@ -2,7 +2,7 @@
 
 *Phase 3 milestone 7 · branch `milestone/p3-m7-loss-detection` · `docs/phase_plans/phase-3.md` · decision #078 · sketch `docs/ui-sketches/p3m7-loss-detection-options.svg` (1A, 2A, 3B)*
 
-Milestone 6's plan (`docs/test-plans/p3m6-files.md`) got through its step 11 with this milestone's desktop build against milestone 6's server, which refused the push ("another schema version": the desktop is at 21, that server at 20). This build includes milestone 6, so **part A finishes milestone 6's plan here** (its steps 12–23), carrying on with the same copy and the changes it still has waiting. **Part B** is milestone 7.
+Milestone 6's plan (`docs/test-plans/archive/p3m6-files.md`) got through its step 11 with this milestone's desktop build against milestone 6's server, which refused the push ("another schema version": the desktop is at 21, that server at 20). This build includes milestone 6, so **part A finishes milestone 6's plan here** (its steps 12–23), carrying on with the same copy and the changes it still has waiting. **Part B** is milestone 7.
 
 ## 1. Intended behavior
 
