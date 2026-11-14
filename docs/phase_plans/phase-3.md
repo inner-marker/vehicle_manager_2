@@ -589,7 +589,7 @@
 | R.0 | ☑️ | `docs: the v0.3.0 release plan` | This plan, decision #079 | none |
 | R.a | ☑️ | `test(storage): the v0.3.0 migration fixture` | The fixture and its writer; `migration_fixtures.rs` checks it | none |
 | R.b | ☑️ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES.txt`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
-| R.c | ⬜ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
+| R.c | ☑️ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
 | R.d | ⬜ | `docs: v0.3.0 regression checklist` | Question 3 | none |
 | R.e | ⬜ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
 | R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main server moved to `0.3.0`; the issues | — |
@@ -608,4 +608,10 @@
   - **Changed from the plan:** the file sits with the app's assets rather than at the repository's root, so the app can bundle it; decision #079 says so.
   - **`cargo-about` must be installed with `--features cli`:** without it, `cargo install` succeeds but installs nothing (as happened first here). `docs/releasing.md` says so.
   - **Not seen running:** the dialog (desktop and web) is a step in the regression checklist (R.d).
+- **R.c:** `README.md` for `v0.3.0`:
+  - the status (Phase 3; the desktop app built from source, with packages in Phase 6);
+  - **The desktop app**, under Getting started: pairing and Settings → Devices, the PIN and the lock (the numbers from `domain::pin`), the copy and its files, offline and waiting changes, refused changes in Messages, PROTECTED and the rebuild runbook, and snapshots;
+  - building it with `dioxus-cli` 0.7.10 (`dx bundle`, unsigned) or running it with `dx serve`;
+  - the Desktop database workflow, and the Main gate's notices check;
+  - the third-party notices under License.
 
