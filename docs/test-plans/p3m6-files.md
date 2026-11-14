@@ -58,3 +58,4 @@
 # Human Notes
 
 - After turning tailscale back on, the "offline" tag goes away, but the "2 to send" never does even after clicking "Sync now"
+- **Steps 12–23** ran on 2026-11-14 as part A of `p3m7-loss-detection.md` (milestone 7's desktop and server), and all passed. The "2 to send" above was milestone 6's server refusing changes from milestone 7's desktop (another schema version), as intended, not a bug.
