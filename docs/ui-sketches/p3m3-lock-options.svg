@@ -66,7 +66,7 @@
 <circle cx="254" cy="792" r="22" fill="#262b34" stroke="#333a45"/>
 <text x="254" y="799" font-size="18" fill="#e8eaed" font-weight="400" text-anchor="middle">🔒</text>
 <text x="254" y="838" font-size="17" fill="#e8eaed" font-weight="700" text-anchor="middle">Locked</text>
-<text x="254" y="858" font-size="11.5" fill="#9aa1ab" font-weight="middle" text-anchor="start">Stuart · test server</text>
+<text x="254" y="858" font-size="11.5" fill="#9aa1ab" font-weight="middle" text-anchor="start">Jordan · test server</text>
 <text x="104" y="876" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">PIN</text>
 <rect x="104" y="882" width="300" height="34" rx="6" fill="#262b34" stroke="#333a45"/>
 <text x="114" y="903.5" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start">••••</text>
@@ -80,7 +80,7 @@
 <text x="536" y="730" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Bigger targets; the same choices below</text>
 <rect x="536" y="744" width="420" height="390" rx="10" fill="#101318" stroke="#333a45"/>
 <text x="746" y="784" font-size="18" fill="#e8eaed" font-weight="700" text-anchor="middle">Locked</text>
-<text x="746" y="804" font-size="11.5" fill="#9aa1ab" font-weight="middle" text-anchor="start">Stuart · test server</text>
+<text x="746" y="804" font-size="11.5" fill="#9aa1ab" font-weight="middle" text-anchor="start">Jordan · test server</text>
 <circle cx="691" cy="832" r="7" fill="#5aa9ff" stroke="#5aa9ff" stroke-width="2"/>
 <circle cx="713" cy="832" r="7" fill="#5aa9ff" stroke="#5aa9ff" stroke-width="2"/>
 <circle cx="735" cy="832" r="7" fill="none" stroke="#9aa1ab" stroke-width="2"/>
@@ -135,7 +135,7 @@
 <text x="536" y="1250" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · On the Devices tab, under This device</text>
 <text x="536" y="1270" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">With the device's other settings (rename, sign out)</text>
 <rect x="536" y="1290" width="420" height="60" rx="8" fill="#1d2128" stroke="#333a45"/>
-<text x="552" y="1316" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Stuarts-MacBook-Pro</text>
+<text x="552" y="1316" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Jordans-MacBook-Pro</text>
 <text x="552" y="1334" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · Active now</text>
 <rect x="856" y="1304" width="88" height="32" rx="6" fill="#262b34" stroke="#333a45"/>
 <text x="900.0" y="1324.5" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Rename</text>

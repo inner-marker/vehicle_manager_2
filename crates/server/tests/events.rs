@@ -61,14 +61,14 @@ mod events {
     /// A truck (its profile's odometer, required on fuel-ups) and the odometer's ID.
     async fn truck(
         database: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         clock: &ManualClock,
     ) -> (AssetId, MeterId) {
         ensure_default_group(database, test_id(901), Health::Healthy, clock)
             .await
             .unwrap();
         let group = database.groups().await.unwrap()[0].0;
-        let admin = in_mode(stuart, ActiveMode::Admin);
+        let admin = in_mode(jordan, ActiveMode::Admin);
         let form = AssetForm {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
@@ -158,9 +158,9 @@ mod events {
 
     #[tokio::test]
     async fn a_driver_logs_a_draft_and_its_tidied() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&database, &stuart, &clock).await;
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
         let sam_context = context(&database, &sam, &clock);
 
         // An override reason with nothing to override, and a skip of something given, are
@@ -231,9 +231,9 @@ mod events {
 
     #[tokio::test]
     async fn only_the_admin_in_admin_mode_keeps_a_reading_that_doesnt_fit() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&database, &stuart, &clock).await;
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
         let sam_context = context(&database, &sam, &clock);
         saved(&add(&sam_context, fuel_up(truck, odometer, 0, 50_000)).await);
         saved(&add(&sam_context, fuel_up(truck, odometer, 10, 51_000)).await);
@@ -250,9 +250,9 @@ mod events {
             value: 51_000 * MILE,
         }));
         assert_eq!(add(&sam_context, wrong.clone()).await, out_of_order);
-        let stuart_driver = context(&database, &stuart, &clock);
-        assert_eq!(add(&stuart_driver, wrong.clone()).await, out_of_order);
-        let admin = in_mode(&stuart, ActiveMode::Admin);
+        let jordan_driver = context(&database, &jordan, &clock);
+        assert_eq!(add(&jordan_driver, wrong.clone()).await, out_of_order);
+        let admin = in_mode(&jordan, ActiveMode::Admin);
         let admin_context = context(&database, &admin, &clock);
         let mut no_reason = wrong.clone();
         no_reason.reading_override = None;
@@ -276,13 +276,13 @@ mod events {
 
     #[tokio::test]
     async fn drafts_change_until_finalized_then_only_a_correction_does() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&database, &stuart, &clock).await;
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
         let sam_context = context(&database, &sam, &clock);
         let (id, _) = saved(&add(&sam_context, fuel_up(truck, odometer, 0, 50_000)).await);
 
-        // Sam edits his own draft; Stuart can't in Driver mode, but can as a Maintainer.
+        // Sam edits his own draft; Jordan can't in Driver mode, but can as a Maintainer.
         clock.advance(60_000);
         let mut changed = fuel_up(truck, odometer, 0, 50_010);
         changed.notes = Notes::parse("Pump 4").unwrap();
@@ -291,13 +291,13 @@ mod events {
         assert_eq!(seen.reading(odometer), Some(50_010 * MILE));
         assert_eq!(seen.last_edited_at.as_millis(), NOW.as_millis() + 60_000);
         assert_eq!(seen.received_at, NOW, "unchanged by an edit");
-        let stuart_driver = context(&database, &stuart, &clock);
+        let jordan_driver = context(&database, &jordan, &clock);
         assert_eq!(
-            edit(&stuart_driver, id, changed.clone()).await,
+            edit(&jordan_driver, id, changed.clone()).await,
             EventsOutcome::NotAllowed
         );
-        assert!(!the_event(&stuart_driver, id).await.may_change);
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        assert!(!the_event(&jordan_driver, id).await.may_change);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let maintainer_context = context(&database, &maintainer, &clock);
         assert!(the_event(&maintainer_context, id).await.may_change);
 
@@ -359,9 +359,9 @@ mod events {
 
     #[tokio::test]
     async fn the_server_finalizes_drafts_after_24_hours_or_the_test_minutes() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&database, &stuart, &clock).await;
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
         let sam_context = context(&database, &sam, &clock);
         let (first, _) = saved(&add(&sam_context, fuel_up(truck, odometer, 0, 50_000)).await);
         clock.advance(2 * 60_000);

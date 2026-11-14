@@ -47,7 +47,7 @@ mod lifecycle {
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const DAY: i64 = 24 * 60 * 60 * 1000;
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const TRUCK: u32 = 10;
     const ODOMETER: u32 = 20;
     const OIL: u32 = 40;
@@ -69,13 +69,13 @@ mod lifecycle {
     /// A person, a group, a truck with an odometer, and a squawk, written on `connection`.
     async fn add_household(connection: &mut SqliteConnection) {
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
         UserWriter
-            .create(connection, test_id(STUART), &UserPatch::all(user), 1)
+            .create(connection, test_id(JORDAN), &UserPatch::all(user), 1)
             .await
             .unwrap();
         let group = Group {
@@ -122,7 +122,7 @@ mod lifecycle {
             notes: Notes::default(),
             severity: Severity::Low,
             opened_at: NOW,
-            opened_by: test_id(STUART),
+            opened_by: test_id(JORDAN),
             found_on: None,
             received_at: NOW,
         };
@@ -178,7 +178,7 @@ mod lifecycle {
             fields: vec![],
             notes: Notes::parse("Some **notes**").unwrap(),
             source: EventSource::Typed,
-            logged_by: test_id(STUART),
+            logged_by: test_id(JORDAN),
             performed_by: None,
             fuel: None,
             work: None,
@@ -345,7 +345,7 @@ mod lifecycle {
             .bind(owner)
             .bind(event.map(|n| test_id::<Event>(n).to_bytes().to_vec()))
             .bind("a".repeat(64))
-            .bind(test_id::<User>(STUART).to_bytes().to_vec())
+            .bind(test_id::<User>(JORDAN).to_bytes().to_vec())
             .bind(deleted)
             .execute(&mut *connection)
             .await
@@ -570,7 +570,7 @@ mod lifecycle {
             applicability: Notes::parse("2022–2024 Tacoma").unwrap(),
             url: Some("https://www.nhtsa.gov/recalls".into()),
             added_at: NOW,
-            added_by: test_id(STUART),
+            added_by: test_id(JORDAN),
             received_at: NOW,
         }
     }
@@ -720,7 +720,7 @@ mod lifecycle {
             name: FileName::from_upload("24V123.pdf").unwrap(),
             content: Content::Document { pages: 3 },
             added_at: NOW,
-            added_by: test_id(STUART),
+            added_by: test_id(JORDAN),
             received_at: NOW,
         };
         AttachmentWriter

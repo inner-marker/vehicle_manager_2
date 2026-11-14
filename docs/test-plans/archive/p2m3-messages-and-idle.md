@@ -34,7 +34,7 @@
   ```sh
   curl -fsSLo compose.yaml https://raw.githubusercontent.com/inner-marker/vehicle_manager_2/milestone/p2-m3-messages/deploy/compose.yaml
   ```
-- **People:** your Admin account ("stuart" below) and Sam from milestone 2 (any role but Admin). If Sam is disabled, enable them in Users.
+- **People:** your Admin account ("jordan" below) and Sam from milestone 2 (any role but Admin). If Sam is disabled, enable them in Users.
 - **Devices:** the browser on the Mac (or another computer), a phone browser, and the desktop app on the Mac (`dx serve --platform desktop` from `crates/app`, with the NAS address saved).
 - **Timing:**
   - Steps 5–7 need about 20 minutes each, and step 8 about an hour (do other things on another device meanwhile).
@@ -59,7 +59,7 @@
 |---|---|---|---|
 | [x] | 1 | `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --tail 40 vehiclemanager` | `backed up before migrating` with `schema_before=3`; `database open` with `created=false`, `schema_before=3 schema_now=5`, and the **same database ID** as before; `database integrity check passed`. No `ERROR` lines and no setup code. |
 | [x] | 2 | `ls -ln data/backups/` | A new `pre-migration-<UTC time>-v3.sqlite`, owned by `1030 100`. |
-| [x] | 3 | Sign in as stuart in the browser. Open **Messages** | Driver mode: "No messages. You're all caught up." No badge on Messages, no red banner. (If a real snapshot failed recently, you'd see it only in Admin mode; see step 15.) |
+| [x] | 3 | Sign in as jordan in the browser. Open **Messages** | Driver mode: "No messages. You're all caught up." No badge on Messages, no red banner. (If a real snapshot failed recently, you'd see it only in Admin mode; see step 15.) |
 | [x] | 4 | **Settings → You**, scroll to **SIGN-IN** | **Sign out when idle**: "After 8 hours", with **Use household default** ticked. |
 | [x] | 5 | **Admin idle:** enter Admin mode, then don't touch the computer for **16 minutes** | Without any click, Admin mode ends: the orange banner goes, the chip says **Driver**, and "Admin mode ended after 15 idle minutes." shows under the top bar. **Dismiss** hides it. |
 | [x] | 6 | **Working keeps Admin mode:** enter Admin mode; about every 5 minutes, scroll or click somewhere harmless (e.g. a Settings tab), for **20 minutes** | Still in Admin mode at 20 minutes. Then open **Users**: it lists the users (the server still agrees you're in Admin mode). |
@@ -70,11 +70,11 @@
 | [x] | 11 | **Desktop app:** sign in, enter Admin mode, wait **16 minutes** without touching it | The same as step 5. Then open **Messages**: the screen shows, with its list, divider, and detail panel. |
 | [x] | 12 | **Evening: make tomorrow's snapshot skip.** In `.env` set `VEHICLEMANAGER_SNAPSHOT_DIR=/snapshots` (nothing is mounted there), then `sudo docker compose up -d` | The server restarts normally. |
 | [x] | 13 | **Morning (after 07:00 UTC):** `sudo docker logs vehiclemanager 2>&1 \| grep nightly-snapshot` | A `job skipped job="nightly-snapshot"` line: "snapshot folder /snapshots is missing (not mounted?)". |
-| [x] | 14 | As stuart in **Driver** mode, and as Sam: look at **Messages** | No badge, no messages for either (it's an Admin message, Admin mode only). |
-| [x] | 15 | As stuart, enter **Admin mode** | Badge **1** on Messages in the sidebar. No red banner (it's a warning, not urgent). |
+| [x] | 14 | As jordan in **Driver** mode, and as Sam: look at **Messages** | No badge, no messages for either (it's an Admin message, Admin mode only). |
+| [x] | 15 | As jordan, enter **Admin mode** | Badge **1** on Messages in the sidebar. No red banner (it's a warning, not urgent). |
 | [x] | 16 | Open **Messages** | One row, with an unread dot and an amber stripe: "The nightly snapshot was skipped", "WARNING · <date> 07:00 UTC". "Choose a message to read it." on the right. |
 | [x] | 17 | Open it | The right side shows the text about backups, **DETAILS**: "snapshot folder /snapshots is missing (not mounted?)", **Open Diagnostics** and **Dismiss**. The dot and the badge are gone, and the list says "All read". **Open Diagnostics** goes to Diagnostics. |
-| [x] | 18 | On the phone (stuart, Admin mode): **Messages** tab | The list; tapping the message opens its page with **← Messages**, which goes back. Its badge was already gone (read on the Mac). |
+| [x] | 18 | On the phone (jordan, Admin mode): **Messages** tab | The list; tapping the message opens its page with **← Messages**, which goes back. Its badge was already gone (read on the Mac). |
 | [x] | 19 | Back on the Mac: **Dismiss**. Then `sudo docker compose restart`, reload the page (sign in again if asked), Admin mode, Messages | "No messages. You're all caught up." It stays dismissed after the restart. |
 | [ ] | 20 | **Fix it:** empty `VEHICLEMANAGER_SNAPSHOT_DIR=` in `.env`, `sudo docker compose up -d` | The server restarts normally. *(Optional, the next morning: a new snapshot in `data/snapshots/`, and still no message.)* |
 | [x] | 21 | **Secrets check:** `sudo docker logs vehiclemanager 2>&1 \| grep -ic "password="` | `0`. |

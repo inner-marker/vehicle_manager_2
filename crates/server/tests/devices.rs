@@ -77,7 +77,7 @@ async fn your_list_marks_this_device_and_a_browser_is_named_from_its_user_agent(
 
 #[tokio::test]
 async fn you_rename_your_own_devices_only() {
-    let (_temp, database, stuart, sam) = common::setup().await;
+    let (_temp, database, jordan, sam) = common::setup().await;
     assert_eq!(
         rename(&database, &sam, sam.device, "Sam's phone", NOW).await,
         DevicesOutcome::Done
@@ -94,7 +94,7 @@ async fn you_rename_your_own_devices_only() {
         "Sam's phone"
     );
     assert_eq!(
-        rename(&database, &sam, stuart.device, "mine now", NOW).await,
+        rename(&database, &sam, jordan.device, "mine now", NOW).await,
         DevicesOutcome::NotFound,
         "someone else's"
     );
@@ -154,18 +154,18 @@ async fn you_sign_out_another_device_or_all_others_but_not_this_one_here() {
     );
 }
 
-/// Stuart (the household Admin) switched to Admin mode.
-async fn admin_mode(database: &Database, stuart: &SignedIn) -> SignedIn {
+/// Jordan (the household Admin) switched to Admin mode.
+async fn admin_mode(database: &Database, jordan: &SignedIn) -> SignedIn {
     switch_mode(
         database,
-        stuart,
+        jordan,
         ActiveMode::Admin,
         Some("a long password".into()),
         NOW,
     )
     .await
     .unwrap();
-    resolve(database, stuart.token_hash, NOW, Timers::NORMAL)
+    resolve(database, jordan.token_hash, NOW, Timers::NORMAL)
         .await
         .unwrap()
         .unwrap()
@@ -173,14 +173,14 @@ async fn admin_mode(database: &Database, stuart: &SignedIn) -> SignedIn {
 
 #[tokio::test]
 async fn only_the_household_admin_in_admin_mode_sees_and_signs_out_anyones_devices() {
-    let (_temp, database, stuart, sam) = common::setup().await;
+    let (_temp, database, jordan, sam) = common::setup().await;
     let clock = ManualClock::new(NOW);
     let phone = browser(&database, "sam", "Safari on iPhone").await;
 
-    // Stuart is the Admin, but in Driver mode: refused.
+    // Jordan is the Admin, but in Driver mode: refused.
     let driver = AdminContext {
         database: &database,
-        admin: &stuart,
+        admin: &jordan,
         health: Health::Healthy,
         clock: &clock,
     };
@@ -198,21 +198,21 @@ async fn only_the_household_admin_in_admin_mode_sees_and_signs_out_anyones_devic
         ..driver
     };
     assert_eq!(
-        devices_of(&not_admin, stuart.user).await,
+        devices_of(&not_admin, jordan.user).await,
         DevicesOutcome::NotAllowed
     );
 
     // In Admin mode: Sam's two devices, then one, then none.
     switch_mode(
         &database,
-        &stuart,
+        &jordan,
         ActiveMode::Admin,
         Some("a long password".into()),
         NOW,
     )
     .await
     .unwrap();
-    let admin = resolve(&database, stuart.token_hash, NOW, Timers::NORMAL)
+    let admin = resolve(&database, jordan.token_hash, NOW, Timers::NORMAL)
         .await
         .unwrap()
         .unwrap();
@@ -252,32 +252,32 @@ async fn only_the_household_admin_in_admin_mode_sees_and_signs_out_anyones_devic
     };
     let sams = users.iter().find(|user| user.id == sam.user).unwrap();
     assert_eq!(sams.devices, 0);
-    let stuarts = users.iter().find(|user| user.id == stuart.user).unwrap();
-    assert_eq!(stuarts.devices, 1);
+    let jordans = users.iter().find(|user| user.id == jordan.user).unwrap();
+    assert_eq!(jordans.devices, 1);
 }
 
 #[tokio::test]
 async fn all_of_the_admins_own_devices_leaves_the_one_in_use() {
-    let (_temp, database, stuart, _) = common::setup().await;
+    let (_temp, database, jordan, _) = common::setup().await;
     let clock = ManualClock::new(NOW);
-    let admin = admin_mode(&database, &stuart).await;
+    let admin = admin_mode(&database, &jordan).await;
     let context = AdminContext {
         database: &database,
         admin: &admin,
         health: Health::Healthy,
         clock: &clock,
     };
-    let _ = browser(&database, "stuart", "Safari on iPhone").await;
-    assert_eq!(ids(&devices_of(&context, stuart.user).await).len(), 2);
+    let _ = browser(&database, "jordan", "Safari on iPhone").await;
+    assert_eq!(ids(&devices_of(&context, jordan.user).await).len(), 2);
     assert_eq!(
-        admin_sign_out(&context, stuart.user, None).await,
+        admin_sign_out(&context, jordan.user, None).await,
         DevicesOutcome::Done
     );
-    let left = ids(&devices_of(&context, stuart.user).await);
+    let left = ids(&devices_of(&context, jordan.user).await);
     assert_eq!(left.len(), 1);
     assert!(left[0].1, "the Admin's own device stays: {left:?}");
     assert_eq!(
-        admin_sign_out(&context, stuart.user, Some(stuart.device)).await,
+        admin_sign_out(&context, jordan.user, Some(jordan.device)).await,
         DevicesOutcome::NotFound,
         "not the device in use"
     );

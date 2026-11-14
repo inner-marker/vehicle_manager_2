@@ -1,6 +1,6 @@
 # Deploying the server on the NAS
 
-*Synology DS1019+, DSM 7.4.1, Container Manager and Tailscale installed (decisions.md #025). Phase 1 milestone 3.*
+*A Synology NAS (x86_64), DSM 7.4, Container Manager and Tailscale installed (decisions.md #025). Phase 1 milestone 3.*
 
 The server runs as a Docker container from the image `ghcr.io/inner-marker/vehicle_manager_2`. Container Manager runs it as a **Project** defined by `deploy/compose.yaml`.
 

@@ -44,7 +44,7 @@ fn at(offset: i64) -> UnixMillis {
     UnixMillis::from_millis(NOW.as_millis() + offset)
 }
 
-/// Stuart's paired desktop, with a session, added to `database`.
+/// Jordan's paired desktop, with a session, added to `database`.
 async fn pair_desktop(database: &Database) {
     let device = StoredDevice {
         id: test_id(500),
@@ -153,12 +153,12 @@ async fn a_signed_request_passes_and_a_copied_token_alone_does_not() {
     let signed = signature(&SECRET, Scope::Request, "/api/v1/who", NOW, 1);
     assert_eq!(
         send(&router, "/api/v1/who", &token(), Some(signed)).await,
-        (StatusCode::OK, "stuart".into())
+        (StatusCode::OK, "jordan".into())
     );
     let session = signature(&SECRET, Scope::Session, "", NOW, 2);
     assert_eq!(
         send(&router, "/api/v1/who", &token(), Some(session)).await,
-        (StatusCode::OK, "stuart".into())
+        (StatusCode::OK, "jordan".into())
     );
     assert!(refused_for_signature(
         &send(&router, "/api/v1/who", &token(), None).await
@@ -261,10 +261,10 @@ async fn a_refused_signature_writes_nothing_and_resolve_never_lets_a_paired_devi
 
 #[tokio::test]
 async fn a_browser_session_needs_no_signature() {
-    let (_temp, database, stuart, _) = common::setup().await;
+    let (_temp, database, jordan, _) = common::setup().await;
     let router = router(database.clone(), NOW);
     // The browser's own token isn't known here, so check through resolve, as the gate does.
-    let signed_in = server::sessions::resolve(&database, stuart.token_hash, NOW, Timers::NORMAL)
+    let signed_in = server::sessions::resolve(&database, jordan.token_hash, NOW, Timers::NORMAL)
         .await
         .unwrap();
     assert!(signed_in.is_some(), "a browser session needs no key");
@@ -280,11 +280,11 @@ async fn pairing_at_sign_in_stores_the_key_and_the_token_then_needs_signatures()
     use server::sessions::{SigningInDevice, sign_in_from};
 
     let (_temp, database, _, _) = common::setup().await;
-    let name = domain::device::DeviceName::parse("Stuarts-MacBook-Pro").unwrap();
+    let name = domain::device::DeviceName::parse("Jordans-MacBook-Pro").unwrap();
     let (paired_token, signed_in) = sign_in_from(
         &database,
         &LoginLimiter::new(),
-        "stuart",
+        "jordan",
         "a long password".into(),
         "laptop",
         NOW,
@@ -307,7 +307,7 @@ async fn pairing_at_sign_in_stores_the_key_and_the_token_then_needs_signatures()
         DeviceSignature::sign(&SECRET, Scope::Session, "", "", NOW, [9; 16], &hash).to_header();
     assert_eq!(
         send(&router, "/api/v1/who", paired, Some(signed)).await,
-        (StatusCode::OK, "stuart".into())
+        (StatusCode::OK, "jordan".into())
     );
     assert!(refused_for_signature(
         &send(&router, "/api/v1/who", paired, None).await
@@ -317,7 +317,7 @@ async fn pairing_at_sign_in_stores_the_key_and_the_token_then_needs_signatures()
     let (older_token, older) = sign_in_from(
         &database,
         &LoginLimiter::new(),
-        "stuart",
+        "jordan",
         "a long password".into(),
         "old-laptop",
         NOW,
@@ -332,6 +332,6 @@ async fn pairing_at_sign_in_stores_the_key_and_the_token_then_needs_signatures()
     );
     assert_eq!(
         send(&router, "/api/v1/who", older_token.as_str(), None).await,
-        (StatusCode::OK, "stuart".into())
+        (StatusCode::OK, "jordan".into())
     );
 }

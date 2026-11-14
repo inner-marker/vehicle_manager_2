@@ -25,10 +25,10 @@ mod users {
         (temp, database)
     }
 
-    fn stuart() -> User {
+    fn jordan() -> User {
         User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         }
@@ -59,15 +59,15 @@ mod users {
     #[tokio::test]
     async fn a_user_is_created_found_updated_and_soft_deleted() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
 
         let found = database
-            .user_by_username(&Username::parse("STUART").unwrap())
+            .user_by_username(&Username::parse("JORDAN").unwrap())
             .await
             .unwrap()
             .unwrap();
         assert_eq!(found.id, test_id(1));
-        assert_eq!(found.user, stuart());
+        assert_eq!(found.user, jordan());
         assert_eq!(database.user_count().await.unwrap(), 1);
 
         let mut connection = database.pool().acquire().await.unwrap();
@@ -98,7 +98,7 @@ mod users {
                 .user
                 .username
                 .as_str(),
-            "stuart",
+            "jordan",
             "unset fields stay"
         );
 
@@ -114,11 +114,11 @@ mod users {
     #[tokio::test]
     async fn usernames_are_unique_but_a_deleted_users_name_can_be_reused() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let mut connection = database.pool().acquire().await.unwrap();
 
         let duplicate = UserWriter
-            .create(&mut connection, test_id(2), &UserPatch::all(stuart()), 2)
+            .create(&mut connection, test_id(2), &UserPatch::all(jordan()), 2)
             .await;
         assert!(duplicate.is_err(), "two users can't share a username");
 
@@ -127,7 +127,7 @@ mod users {
             .await
             .unwrap();
         UserWriter
-            .create(&mut connection, test_id(2), &UserPatch::all(stuart()), 4)
+            .create(&mut connection, test_id(2), &UserPatch::all(jordan()), 4)
             .await
             .unwrap();
     }
@@ -135,7 +135,7 @@ mod users {
     #[tokio::test]
     async fn password_hashes_are_stored_apart_and_replaced() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         assert_eq!(database.password_hash(test_id(1)).await.unwrap(), None);
 
         database
@@ -195,7 +195,7 @@ mod users {
     #[tokio::test]
     async fn grants_on_all_assets_and_one_asset_round_trip() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         create_truck(&database, 50).await;
         let everywhere = RoleGrant {
             user: test_id(1),
@@ -264,7 +264,7 @@ mod users {
     #[tokio::test]
     async fn sessions_are_found_extended_switched_and_ended() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let session = Session {
             token_hash: [7; 32],
             user: test_id(1),
@@ -307,7 +307,7 @@ mod users {
     #[tokio::test]
     async fn signing_a_user_out_everywhere_ends_all_their_sessions() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         for n in 0..3 {
             let device = test_id(300 + u32::from(n));
             database
@@ -347,10 +347,10 @@ mod users {
     #[tokio::test]
     async fn a_desktop_device_and_its_first_session_are_stored_together() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let desktop = StoredDevice {
             kind: DeviceKind::Desktop,
-            name: Some(domain::device::DeviceName::parse("Stuarts-MacBook-Pro").unwrap()),
+            name: Some(domain::device::DeviceName::parse("Jordans-MacBook-Pro").unwrap()),
             public_key: Some([9; 32]),
             ..browser(test_id(310), test_id(1))
         };
@@ -373,7 +373,7 @@ mod users {
     #[tokio::test]
     async fn a_session_needs_its_device_and_a_failed_sign_in_stores_neither() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let ends = UnixMillis::from_millis(NOW.as_millis() + 1_000);
         assert!(
             database
@@ -399,7 +399,7 @@ mod users {
     #[tokio::test]
     async fn signed_in_devices_are_those_with_a_live_session_newest_first() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let soon = UnixMillis::from_millis(NOW.as_millis() + 1_000);
         let later = UnixMillis::from_millis(NOW.as_millis() + 9_000);
         for (token, n, ends) in [(1, 330, soon), (2, 331, later), (3, 332, later)] {
@@ -444,7 +444,7 @@ mod users {
     #[tokio::test]
     async fn a_device_is_renamed_and_signed_out_once() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let ends = UnixMillis::from_millis(NOW.as_millis() + 9_000);
         let device = browser(test_id(340), test_id(1));
         database
@@ -480,7 +480,7 @@ mod users {
     #[tokio::test]
     async fn a_failed_unlock_report_replaces_the_last_one() {
         let (_temp, database) = database().await;
-        create_user(&database, 1, stuart()).await;
+        create_user(&database, 1, jordan()).await;
         let ends = UnixMillis::from_millis(NOW.as_millis() + 9_000);
         let device = browser(test_id(350), test_id(1));
         database

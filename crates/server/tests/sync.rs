@@ -133,7 +133,7 @@ mod sync {
     /// A truck, added by the Admin; and its odometer.
     async fn truck(
         database: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         clock: &ManualClock,
     ) -> (AssetId, MeterId) {
         ensure_default_group(database, test_id(901), Health::Healthy, clock)
@@ -142,7 +142,7 @@ mod sync {
         let group = database.groups().await.unwrap()[0].0;
         let admin = SignedIn {
             mode: ActiveMode::Admin,
-            ..stuart.clone()
+            ..jordan.clone()
         };
         let form = AssetForm {
             name: "Truck".into(),
@@ -236,9 +236,9 @@ mod sync {
 
     #[tokio::test]
     async fn a_desktop_copy_gets_the_households_records_and_reads_the_same() {
-        let (_temp, server, stuart, sam) = setup().await;
+        let (_temp, server, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&server, &stuart, &clock).await;
+        let (truck, odometer) = truck(&server, &jordan, &clock).await;
         let id = saved(
             &add(
                 &context(&server, &sam, &clock),
@@ -247,7 +247,7 @@ mod sync {
             .await,
         );
         // Each has a saved place: only Sam's own reaches Sam's copy.
-        for (person, name) in [(&stuart, "Stuart's shop"), (&sam, "Sam's house")] {
+        for (person, name) in [(&jordan, "Jordan's shop"), (&sam, "Sam's house")] {
             let added = server::places::add(&places(&server, person, &clock), &place(name)).await;
             assert!(matches!(added, PlacesOutcome::Added { .. }), "{added:?}");
         }
@@ -275,7 +275,7 @@ mod sync {
         };
         assert_eq!(mine.len(), 1);
         assert_eq!(mine[0].1.name.as_str(), "Sam's house");
-        assert_eq!(count(&copy, "saved_places").await, 1, "not Stuart's");
+        assert_eq!(count(&copy, "saved_places").await, 1, "not Jordan's");
 
         // Nothing server-only came.
         for table in [
@@ -295,9 +295,9 @@ mod sync {
 
     #[tokio::test]
     async fn an_edit_and_a_delete_reach_the_copy_on_the_next_pull() {
-        let (_temp, server, stuart, sam) = setup().await;
+        let (_temp, server, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&server, &stuart, &clock).await;
+        let (truck, odometer) = truck(&server, &jordan, &clock).await;
         let sam_context = context(&server, &sam, &clock);
         let id = saved(&add(&sam_context, fuel_up(truck, odometer, 50_000)).await);
         let laptop = desktop(&server, "sam").await;
@@ -337,9 +337,9 @@ mod sync {
 
     #[tokio::test]
     async fn small_pages_end_the_same_as_one_big_one() {
-        let (_temp, server, stuart, sam) = setup().await;
+        let (_temp, server, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&server, &stuart, &clock).await;
+        let (truck, odometer) = truck(&server, &jordan, &clock).await;
         let sam_context = context(&server, &sam, &clock);
         for miles in [50_000, 50_300, 50_600] {
             saved(&add(&sam_context, fuel_up(truck, odometer, miles)).await);
@@ -402,13 +402,13 @@ mod sync {
 
     #[tokio::test]
     async fn only_a_paired_desktop_on_the_same_schema_pulls() {
-        let (_temp, server, stuart, _) = setup().await;
+        let (_temp, server, jordan, _) = setup().await;
         // The common setup signs in without pairing.
         assert_eq!(
-            pull(&server, test_id(900), &stuart, 0, schema_version()).await,
+            pull(&server, test_id(900), &jordan, 0, schema_version()).await,
             PullOutcome::NotAllowed
         );
-        let laptop = desktop(&server, "stuart").await;
+        let laptop = desktop(&server, "jordan").await;
         assert_eq!(
             pull(&server, test_id(900), &laptop, 0, schema_version() - 1).await,
             PullOutcome::OtherSchema {
@@ -424,7 +424,7 @@ mod sync {
     #[tokio::test]
     async fn a_page_from_elsewhere_or_out_of_step_is_refused_and_changes_nothing() {
         let (_temp, server, _, _) = setup().await;
-        let laptop = desktop(&server, "stuart").await;
+        let laptop = desktop(&server, "jordan").await;
         let PullOutcome::Page { page } =
             pull(&server, test_id(900), &laptop, 0, schema_version()).await
         else {
@@ -505,7 +505,7 @@ mod sync {
     struct Scene {
         _temp: tempfile::TempDir,
         server: Database,
-        stuart: SignedIn,
+        jordan: SignedIn,
         sam: SignedIn,
         laptop: SignedIn,
         _copy_temp: tempfile::TempDir,
@@ -516,16 +516,16 @@ mod sync {
     }
 
     async fn scene() -> Scene {
-        let (temp, server, stuart, sam) = setup().await;
+        let (temp, server, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = truck(&server, &stuart, &clock).await;
+        let (truck, odometer) = truck(&server, &jordan, &clock).await;
         let laptop = desktop(&server, "sam").await;
         let (copy_temp, copy) = copy().await;
         pull_all(&server, &copy, &laptop).await;
         Scene {
             _temp: temp,
             server,
-            stuart,
+            jordan,
             sam,
             laptop,
             _copy_temp: copy_temp,
@@ -751,7 +751,7 @@ mod sync {
         let changes = EventPatch {
             notes: Some(Notes::parse("Hello").unwrap()),
             status: Some(EventStatus::Finalized),
-            logged_by: Some(scene.stuart.user),
+            logged_by: Some(scene.jordan.user),
             ..EventPatch::default()
         };
         let edited = operation(1, 1, OperationChange::EditEvent { id, changes });
@@ -1327,14 +1327,14 @@ mod sync {
         (temp, rebuilt, code)
     }
 
-    /// Rebuilds `rebuilt` from `copy` (Stuart's): begin, pages, finish. Everyone else's new
+    /// Rebuilds `rebuilt` from `copy` (Jordan's): begin, pages, finish. Everyone else's new
     /// temporary passwords.
     async fn rebuild_from(
         scene: &Scene,
         copy: &Database,
         rebuilt: &Database,
         code: &str,
-        stuart: UserId,
+        jordan: UserId,
     ) -> Vec<domain::sync::TemporaryPassword> {
         use domain::sync::RebuildOutcome;
 
@@ -1358,7 +1358,7 @@ mod sync {
             RebuildOutcome::NotAllowed,
             "a page from another server"
         );
-        send_pages(copy, rebuilt, token.expose(), test_id(900), stuart).await;
+        send_pages(copy, rebuilt, token.expose(), test_id(900), jordan).await;
         let finish = async |admin: &str| {
             server::rebuild::finish(
                 rebuilt,
@@ -1376,18 +1376,18 @@ mod sync {
             RebuildOutcome::NotAllowed,
             "only the household's Admin"
         );
-        let RebuildOutcome::Finished { passwords } = finish("stuart").await else {
+        let RebuildOutcome::Finished { passwords } = finish("jordan").await else {
             panic!("not finished");
         };
         passwords
     }
 
-    /// `stuart` (signed in to `rebuilt`) restores the first photo's files from `store`, but not
+    /// `jordan` (signed in to `rebuilt`) restores the first photo's files from `store`, but not
     /// the second's, and settles: the second is left out.
     async fn restore_first_and_settle(
         scene: &Scene,
         rebuilt: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         store: &storage::files::FileStore,
         photos: &[domain::api::UploadedFile],
     ) {
@@ -1400,7 +1400,7 @@ mod sync {
         let restoring = server::attachments::UploadContext {
             database: rebuilt,
             files: &restored,
-            user: stuart,
+            user: jordan,
             health: Health::Healthy,
             now: NOW,
         };
@@ -1419,7 +1419,7 @@ mod sync {
             domain::api::UploadOutcome::NotAllowed,
             "only a file the records name"
         );
-        let settle = async || server::rebuild::settle(rebuilt, stuart, &scene.clock).await;
+        let settle = async || server::rebuild::settle(rebuilt, jordan, &scene.clock).await;
         assert_eq!(
             settle().await,
             RebuildOutcome::Settled {
@@ -1436,21 +1436,21 @@ mod sync {
 
         let scene = scene().await;
         let (_files_temp, store, event, photos) = two_photos(&scene).await;
-        // Stuart's (the Admin's) desktop, its copy complete.
-        let stuarts = desktop(&scene.server, "stuart").await;
-        let (_stuart_temp, copy) = copy().await;
-        pull_all(&scene.server, &copy, &stuarts).await;
+        // Jordan's (the Admin's) desktop, its copy complete.
+        let jordans = desktop(&scene.server, "jordan").await;
+        let (_jordan_temp, copy) = copy().await;
+        pull_all(&scene.server, &copy, &jordans).await;
         let (_fresh_temp, rebuilt, code) = fresh_server(&scene).await;
-        let passwords = rebuild_from(&scene, &copy, &rebuilt, &code, stuarts.user).await;
+        let passwords = rebuild_from(&scene, &copy, &rebuilt, &code, jordans.user).await;
         assert_eq!(passwords.len(), 1);
         assert_eq!(passwords[0].username, "sam");
 
         // The rebuilt server reads the same as the old one.
-        let old = context(&scene.server, &scene.stuart, &scene.clock);
+        let old = context(&scene.server, &scene.jordan, &scene.clock);
         let here = AssetsContext {
             database: &rebuilt,
             database_id: test_id(800),
-            user: &scene.stuart,
+            user: &scene.jordan,
             health: Health::Healthy,
             clock: &scene.clock,
             origin: server::origin::Origin::Online,
@@ -1491,9 +1491,9 @@ mod sync {
             "setup (and its code) closed once rebuilt"
         );
 
-        // Stuart, signed in, restores the first photo's files; the second's never come.
-        let stuart = sign_in("stuart", "a new long password".into()).await;
-        restore_first_and_settle(&scene, &rebuilt, &stuart, &store, &photos).await;
+        // Jordan, signed in, restores the first photo's files; the second's never come.
+        let jordan = sign_in("jordan", "a new long password".into()).await;
+        restore_first_and_settle(&scene, &rebuilt, &jordan, &store, &photos).await;
     }
 
     #[tokio::test]
@@ -1526,7 +1526,7 @@ mod sync {
 
         let admin = SignedIn {
             mode: ActiveMode::Admin,
-            ..scene.stuart.clone()
+            ..scene.jordan.clone()
         };
         assert_eq!(
             server::assets::delete(

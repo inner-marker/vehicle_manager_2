@@ -16,7 +16,7 @@ mod outbox {
     use storage::{Database, NewDatabaseIds};
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const MAC: u32 = 300;
 
     /// A database with one person and their desktop.
@@ -29,13 +29,13 @@ mod outbox {
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
         let mut connection = database.pool().acquire().await.unwrap();
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
         UserWriter
-            .create(&mut connection, test_id(STUART), &UserPatch::all(user), 1)
+            .create(&mut connection, test_id(JORDAN), &UserPatch::all(user), 1)
             .await
             .unwrap();
         sqlx::query(
@@ -43,7 +43,7 @@ mod outbox {
              VALUES (?, ?, 'desktop', 0, 0)",
         )
         .bind(test_id::<()>(MAC).to_bytes().to_vec())
-        .bind(test_id::<()>(STUART).to_bytes().to_vec())
+        .bind(test_id::<()>(JORDAN).to_bytes().to_vec())
         .execute(&mut *connection)
         .await
         .unwrap();
@@ -199,7 +199,7 @@ mod outbox {
         let applied = AppliedOperation {
             id: operation(10).id,
             device: test_id(MAC),
-            user: test_id(STUART),
+            user: test_id(JORDAN),
             hlc: operation(10).hlc,
             format_version: 1,
             refusal: None,
@@ -251,7 +251,7 @@ mod outbox {
         let flagged = database.devices_with_clock_ahead().await.unwrap();
         assert_eq!(flagged.len(), 1);
         assert_eq!(flagged[0].device, test_id(MAC));
-        assert_eq!(flagged[0].user, test_id(STUART));
+        assert_eq!(flagged[0].user, test_id(JORDAN));
         assert_eq!(flagged[0].ahead_millis, 3_600_000);
         assert_eq!(flagged[0].at, at(7));
         database.clear_clock_ahead(test_id(MAC)).await.unwrap();

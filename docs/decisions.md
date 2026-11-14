@@ -208,9 +208,9 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
 
 - **Decision:**
-  - The NAS is a Synology **DS1019+**: Intel Celeron J3455 (x86_64), 8 GB RAM, DSM 7.4.1, with Container Manager and Tailscale installed.
+  - The NAS is a Synology with an Intel (x86_64) processor, on DSM 7.4, with Container Manager and Tailscale installed.
   - Server images start **amd64-only**. **arm64 is kept for later**, for hosts such as a Raspberry Pi, as a multi-arch image under one tag.
-  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the J3455 has no AVX.
+  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the NAS CPU has no AVX.
   - `rust-toolchain.toml` pins `x86_64-unknown-linux-gnu` instead of `aarch64-unknown-linux-gnu`.
 - **Why:**
   - The plan assumed an ARM Synology. The real CPU, checked in DSM's Info Center before milestone 3 as the plan required, is x86_64, so an arm64-only image wouldn't run.
@@ -361,7 +361,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Groundwork for a USB disk:** the snapshot folder is configurable (`VEHICLEMANAGER_SNAPSHOT_DIR`, built from `APP_ID`), so it can later point at a second mount in `compose.yaml`, such as a USB disk. If that folder is missing or not writable, the server keeps running, skips the snapshot, and reports it (log and Admin message).
   - **Not a focus now:** no USB setup, Hyper Backup task, or docs for it in Phase 2. They come later, or with offsite backups (post-MVP).
 - **Why:**
-  - The DS1019+ has one storage pool (4 data disks + 1 parity), so there's no "different NAS disk". Its parity already survives one failed disk.
+  - The NAS has one storage pool (with parity), so there's no "different NAS disk". Its parity already survives one failed disk.
   - Same-pool snapshots still cover what they're mainly for: corruption, a bad migration, a bad sync, and accidental deletion.
   - A configurable folder makes a USB disk (or any second volume) a deployment change later, not a code change.
 - **Not covered until offsite backups:** losing the whole pool or the NAS.

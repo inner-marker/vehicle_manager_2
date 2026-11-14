@@ -62,10 +62,10 @@ mod lifecycle {
         }
     }
 
-    /// A vehicle named `name`, added by Stuart.
+    /// A vehicle named `name`, added by Jordan.
     async fn vehicle(
         database: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         clock: &ManualClock,
         name: &str,
     ) -> AssetId {
@@ -73,7 +73,7 @@ mod lifecycle {
             .await
             .unwrap();
         let group = database.groups().await.unwrap()[0].0;
-        let admin = in_mode(stuart, ActiveMode::Admin);
+        let admin = in_mode(jordan, ActiveMode::Admin);
         let form = AssetForm {
             name: name.into(),
             ..AssetForm::new("truck", group)
@@ -160,10 +160,10 @@ mod lifecycle {
 
     #[tokio::test]
     async fn a_send_out_and_its_return_set_the_status_for_maintainers_only() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = vehicle(&database, &jordan, &clock, "Truck").await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let maintain = context(&database, &maintainer, &clock);
         let driver = context(&database, &sam, &clock);
 
@@ -235,17 +235,17 @@ mod lifecycle {
 
     #[tokio::test]
     async fn an_overdue_return_is_a_message_from_the_day_after_until_it_is_back() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = vehicle(&database, &jordan, &clock, "Truck").await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let maintain = context(&database, &maintainer, &clock);
         let sent = saved(&add(&maintain, input(truck, 0, send_out("2023-11-20"))).await);
 
         // 20 November, noon in Asheville: due today, not overdue yet.
         clock.set(UnixMillis::from_millis(1_700_499_600_000));
         assert_eq!(overdue(&database, &maintainer, &clock).await, 0);
-        // 21 November: overdue, for Stuart (he sent it), not for Sam (a Driver).
+        // 21 November: overdue, for Jordan (he sent it), not for Sam (a Driver).
         clock.set(UnixMillis::from_millis(1_700_586_000_000));
         assert_eq!(overdue(&database, &maintainer, &clock).await, 1);
         assert_eq!(overdue(&database, &sam, &clock).await, 0);
@@ -260,12 +260,12 @@ mod lifecycle {
 
     #[tokio::test]
     async fn a_finalized_disposal_takes_corrections_but_nothing_new() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
-        let admin = in_mode(&stuart, ActiveMode::Admin);
+        let truck = vehicle(&database, &jordan, &clock, "Truck").await;
+        let admin = in_mode(&jordan, ActiveMode::Admin);
         let own = context(&database, &admin, &clock);
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         assert_eq!(
             add(
                 &context(&database, &maintainer, &clock),
@@ -395,10 +395,10 @@ mod lifecycle {
 
     #[tokio::test]
     async fn a_recall_is_shared_and_changed_only_by_a_maintainer_of_every_vehicle_linking_it() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
-        let van = vehicle(&database, &stuart, &clock, "Van").await;
+        let truck = vehicle(&database, &jordan, &clock, "Truck").await;
+        let van = vehicle(&database, &jordan, &clock, "Van").await;
         // Pat maintains the truck and only views the van.
         let grant = |asset, role| RoleGrant {
             user: sam.user,
@@ -429,8 +429,8 @@ mod lifecycle {
         };
         assert!(view.may_change, "only the truck links it");
 
-        // Stuart links the van too, through its schedule.
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        // Jordan links the van too, through its schedule.
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let maintain = context(&database, &maintainer, &clock);
         link_through_schedule(&maintain, van, id).await;
         let ReferencesOutcome::Reference { view } = server::references::view(&as_pat, id).await
@@ -478,10 +478,10 @@ mod lifecycle {
         use domain::event::{ReadingSet, Task, WorkDetails};
         use domain::requirement::RequirementStatus;
 
-        let (_temp, database, stuart, _sam) = setup().await;
+        let (_temp, database, jordan, _sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        let truck = vehicle(&database, &stuart, &clock, "Truck").await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let truck = vehicle(&database, &jordan, &clock, "Truck").await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let ReferencesOutcome::Saved {
             requirement: Some(recall),

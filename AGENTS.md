@@ -145,6 +145,7 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 - Use **property-based tests** for invariants (HLC monotonic, unit conversion round-trips, command idempotency) and **snapshot tests** for generated output (reports, user-facing messages).
 - Sync changes need **sync scenario tests**; schema changes need a **migration fixture test**.
 - No network access and no shared state between tests.
+- **No personal information in the repository** (the human, 2026-11-14): not the human's name, any real person's name, email, address, places, vehicles (VINs, plates), or equipment (the NAS's model, host names, tailnet names). Tests, examples, sketches, fixtures, and docs use made-up people (`jordan`, `sam`, `alex`, `pat`) and example hosts (`nas.example.ts.net`). The human's real setup, where you need it, is in **`local/equipment.md`**, which git ignores: read it, never copy from it into tracked files.
 - **Name tests after the behavior** (e.g. `oil_interval_resets_from_start_reading`).
 - **Bug fixes start with a failing test** that reproduces the bug.
 - Don't write filler tests to raise coverage; coverage is informational only.
@@ -217,5 +218,6 @@ Then confirm:
 - [ ] Tests cover the change
 - [ ] If the human must verify anything, a manual test plan is written in `docs/test-plans/`
 - [ ] New code paths have debug-level `tracing` messages useful for troubleshooting
+- [ ] No personal information (names, places, equipment) in tracked files
 - [ ] No unrelated changes
 - [ ] No new dependencies without approval

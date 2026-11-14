@@ -553,7 +553,7 @@ mod tests {
             corrected_by: None,
             may_change: false,
             may_correct: false,
-            logged_by_name: "Stuart".into(),
+            logged_by_name: "Jordan".into(),
             finalized_by_name: None,
         }
     }

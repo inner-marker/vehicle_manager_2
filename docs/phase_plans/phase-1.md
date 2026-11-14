@@ -49,7 +49,7 @@
 
 | Step | Status | Commit title | Contents | New dependencies (need approval) |
 |---|---|---|---|---|
-| 9a | ✅ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the DS1019+; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
+| 9a | ✅ | `docs: target linux/amd64 for the first server image` | Decision #025; plan §7 rewritten for the NAS; `rust-toolchain.toml` → `x86_64-unknown-linux-gnu`; Phase 2 open question on the snapshot disk; this milestone plan | none |
 | 9b | ✅ | `feat(app): write server logs to the data directory` | `VEHICLEMANAGER_DATA_DIR` → `<dir>/logs` with the server file policy; "last crash" file | none |
 | 9c | ✅ | `build: server Docker image and compose file` | Multi-stage `Dockerfile`, `.dockerignore`, `deploy/compose.yaml`, `deploy/.env.example`, `docs/deploying-nas.md`; Dependabot watches the base images | Base images `rust:1.95-trixie`, `debian:trixie-slim`; `dioxus-cli` 0.7.10 inside the build stage only |
 | 9d | ✅ | `ci: publish server images to GHCR` | `image.yml`: build on push to `dev` and on "Run workflow" → `:dev` + `:sha-<commit>`; release workflow adds `:<version>` + `:latest` | Docker's official actions (`setup-buildx`, `login`, `metadata`, `build-push`), pinned to SHAs |
@@ -501,7 +501,7 @@ No app display name anywhere; it isn't decided.
 ### Milestone 3 plan (steps 9a–9e): web UI on the NAS
 *Planned 2026-10-29 · Branch: `milestone/p1-m3-nas-web` · Choices agreed in chat*
 
-**Target:** Synology DS1019+ (Intel J3455, x86_64), DSM 7.4.1, Container Manager and Tailscale installed, MagicDNS and HTTPS certificates enabled (decision #025).
+**Target:** a Synology NAS (Intel, x86_64), DSM 7.4, Container Manager and Tailscale installed, MagicDNS and HTTPS certificates enabled (decision #025).
 
 **On the NAS** (human-made; the docs describe it, nothing here creates it):
 

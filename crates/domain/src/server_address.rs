@@ -232,16 +232,16 @@ mod tests {
     #[test]
     fn https_addresses_are_accepted_and_normalized() {
         assert_eq!(
-            parsed("https://fenec.tail1.ts.net"),
-            Ok("https://fenec.tail1.ts.net".into())
+            parsed("https://nas.tail1.ts.net"),
+            Ok("https://nas.tail1.ts.net".into())
         );
         assert_eq!(
-            parsed("  HTTPS://Fenec.Tail1.TS.net/  "),
-            Ok("https://fenec.tail1.ts.net".into())
+            parsed("  HTTPS://Nas.Tail1.TS.net/  "),
+            Ok("https://nas.tail1.ts.net".into())
         );
         assert_eq!(
-            parsed("https://fenec.tail1.ts.net:8443"),
-            Ok("https://fenec.tail1.ts.net:8443".into())
+            parsed("https://nas.tail1.ts.net:8443"),
+            Ok("https://nas.tail1.ts.net:8443".into())
         );
         assert_eq!(
             parsed("https://100.64.0.1"),
@@ -267,7 +267,7 @@ mod tests {
         assert_eq!(parsed("http://[::1]:8080"), Ok("http://[::1]:8080".into()));
 
         for remote in [
-            "http://fenec.tail1.ts.net",
+            "http://nas.tail1.ts.net",
             "http://100.64.0.1:8410",
             "http://192.168.1.10:8410",
             "http://[fd7a::1]",
@@ -285,29 +285,26 @@ mod tests {
         let cases = [
             ("", ServerAddressError::Empty),
             ("   ", ServerAddressError::Empty),
-            ("fenec.tail1.ts.net", ServerAddressError::UnsupportedScheme),
+            ("nas.tail1.ts.net", ServerAddressError::UnsupportedScheme),
             (
-                "ftp://fenec.tail1.ts.net",
+                "ftp://nas.tail1.ts.net",
                 ServerAddressError::UnsupportedScheme,
             ),
             ("https://", ServerAddressError::MissingHost),
             ("https://:8443", ServerAddressError::MissingHost),
-            ("https://fenec..ts.net", ServerAddressError::InvalidHost),
-            ("https://fenec_nas.ts.net", ServerAddressError::InvalidHost),
-            ("https://-fenec.ts.net", ServerAddressError::InvalidHost),
+            ("https://nas..ts.net", ServerAddressError::InvalidHost),
+            ("https://nas_nas.ts.net", ServerAddressError::InvalidHost),
+            ("https://-nas.ts.net", ServerAddressError::InvalidHost),
             ("https://[not-ipv6]", ServerAddressError::InvalidHost),
             ("https://[::1", ServerAddressError::InvalidHost),
-            ("https://fenec.ts.net:", ServerAddressError::InvalidPort),
-            ("https://fenec.ts.net:0", ServerAddressError::InvalidPort),
-            (
-                "https://fenec.ts.net:65536",
-                ServerAddressError::InvalidPort,
-            ),
-            ("https://fenec.ts.net:+443", ServerAddressError::InvalidPort),
-            ("https://fenec.ts.net/app", ServerAddressError::ExtraParts),
-            ("https://fenec.ts.net?x=1", ServerAddressError::ExtraParts),
-            ("https://fenec.ts.net#top", ServerAddressError::ExtraParts),
-            ("https://me@fenec.ts.net", ServerAddressError::ExtraParts),
+            ("https://nas.ts.net:", ServerAddressError::InvalidPort),
+            ("https://nas.ts.net:0", ServerAddressError::InvalidPort),
+            ("https://nas.ts.net:65536", ServerAddressError::InvalidPort),
+            ("https://nas.ts.net:+443", ServerAddressError::InvalidPort),
+            ("https://nas.ts.net/app", ServerAddressError::ExtraParts),
+            ("https://nas.ts.net?x=1", ServerAddressError::ExtraParts),
+            ("https://nas.ts.net#top", ServerAddressError::ExtraParts),
+            ("https://me@nas.ts.net", ServerAddressError::ExtraParts),
         ];
         for (input, expected) in cases {
             assert_eq!(parsed(input), Err(expected), "{input:?}");

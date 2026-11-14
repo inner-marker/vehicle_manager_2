@@ -44,16 +44,16 @@ mod preferences {
 
     #[tokio::test]
     async fn mine_beats_the_household_which_beats_the_built_in_default() {
-        let (_temp, database, mut stuart, sam) = setup().await;
+        let (_temp, database, mut jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
-        stuart.mode = ActiveMode::Admin;
+        jordan.mode = ActiveMode::Admin;
 
         let household = PreferencesPatch {
             volume: Some(Choice::Set(VolumeUnit::Liters)),
             distance: Some(Choice::Set(DistanceUnit::Kilometers)),
             ..PreferencesPatch::default()
         };
-        unwrap_view(set_household(&context(&database, &stuart, &clock), household).await);
+        unwrap_view(set_household(&context(&database, &jordan, &clock), household).await);
         let mine = PreferencesPatch {
             distance: Some(Choice::Set(DistanceUnit::Miles)),
             ..PreferencesPatch::default()
@@ -68,7 +68,7 @@ mod preferences {
 
     #[tokio::test]
     async fn using_the_household_default_again_clears_my_choice() {
-        let (_temp, database, _stuart, sam) = setup().await;
+        let (_temp, database, _jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let ctx = context(&database, &sam, &clock);
 
@@ -99,7 +99,7 @@ mod preferences {
 
     #[tokio::test]
     async fn household_defaults_need_the_admin_in_admin_mode() {
-        let (_temp, database, stuart, sam) = setup().await;
+        let (_temp, database, jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let patch = PreferencesPatch {
             distance: Some(Choice::Set(DistanceUnit::Kilometers)),
@@ -111,7 +111,7 @@ mod preferences {
             PreferencesOutcome::NotAllowed
         );
         assert_eq!(
-            set_household(&context(&database, &stuart, &clock), patch).await,
+            set_household(&context(&database, &jordan, &clock), patch).await,
             PreferencesOutcome::NotAllowed,
             "Driver mode"
         );
@@ -119,7 +119,7 @@ mod preferences {
 
     #[tokio::test]
     async fn every_choice_of_every_setting_is_stored_and_read_back() {
-        let (_temp, database, _stuart, sam) = setup().await;
+        let (_temp, database, _jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let ctx = context(&database, &sam, &clock);
         // Each row sets one value of every setting; together they cover every choice.
@@ -190,7 +190,7 @@ mod preferences {
 
     #[tokio::test]
     async fn every_sign_out_and_garage_choice_is_stored_and_read_back() {
-        let (_temp, database, _stuart, sam) = setup().await;
+        let (_temp, database, _jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let ctx = context(&database, &sam, &clock);
         for idle_sign_out in [
@@ -224,7 +224,7 @@ mod preferences {
 
     #[tokio::test]
     async fn what_squawks_are_called_is_the_admins_choice_for_everyone() {
-        let (_temp, database, mut stuart, sam) = setup().await;
+        let (_temp, database, mut jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let word = |word| PreferencesPatch {
             squawk_word: Some(Choice::Set(word)),
@@ -238,9 +238,9 @@ mod preferences {
         let view = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
         assert_eq!(view.effective.squawk_word, SquawkWord::Issue, "the default");
 
-        stuart.mode = ActiveMode::Admin;
+        jordan.mode = ActiveMode::Admin;
         for chosen in SquawkWord::ALL {
-            unwrap_view(set_household(&context(&database, &stuart, &clock), word(chosen)).await);
+            unwrap_view(set_household(&context(&database, &jordan, &clock), word(chosen)).await);
             let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
             assert_eq!(sams.effective.squawk_word, chosen);
         }
@@ -248,7 +248,7 @@ mod preferences {
 
     #[tokio::test]
     async fn keeping_originals_is_the_households_switch() {
-        let (_temp, database, mut stuart, sam) = setup().await;
+        let (_temp, database, mut jordan, sam) = setup().await;
         let clock = ManualClock::new(NOW);
         let originals = |choice| PreferencesPatch {
             originals: Some(Choice::Set(choice)),
@@ -262,10 +262,10 @@ mod preferences {
         let view = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
         assert_eq!(view.effective.originals, Originals::Allowed, "the default");
 
-        stuart.mode = ActiveMode::Admin;
+        jordan.mode = ActiveMode::Admin;
         unwrap_view(
             set_household(
-                &context(&database, &stuart, &clock),
+                &context(&database, &jordan, &clock),
                 originals(Originals::Off),
             )
             .await,

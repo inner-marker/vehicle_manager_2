@@ -102,17 +102,17 @@ struct SessionSecrets {
     changed: &'static str,
 }
 
-/// Signing in, a wrong password, Admin mode, and a password change; returns Stuart's Admin
+/// Signing in, a wrong password, Admin mode, and a password change; returns Jordan's Admin
 /// session too.
 async fn sessions(
     database: &Database,
     limiter: &LoginLimiter,
     clock: &ManualClock,
 ) -> (SessionSecrets, server::sessions::SignedIn) {
-    let (token, stuart) = sign_in(
+    let (token, jordan) = sign_in(
         database,
         limiter,
-        "stuart",
+        "jordan",
         "a long password".into(),
         "client-1",
         NOW,
@@ -127,14 +127,14 @@ async fn sessions(
     );
     switch_mode(
         database,
-        &stuart,
+        &jordan,
         ActiveMode::Admin,
         Some("a long password".into()),
         NOW,
     )
     .await
     .unwrap();
-    let admin = server::sessions::resolve(database, stuart.token_hash, NOW, Timers::NORMAL)
+    let admin = server::sessions::resolve(database, jordan.token_hash, NOW, Timers::NORMAL)
         .await
         .unwrap()
         .expect("still signed in");
@@ -199,7 +199,7 @@ async fn recovery(
     clock: &ManualClock,
     captured: &Captured,
 ) -> (String, &'static str) {
-    server::recovery::request_code(database, limiter, "stuart", "c4", NOW, Timers::NORMAL)
+    server::recovery::request_code(database, limiter, "jordan", "c4", NOW, Timers::NORMAL)
         .await
         .unwrap();
     let code = field_value(&captured.text(), "recovery_code")
@@ -208,7 +208,7 @@ async fn recovery(
     server::recovery::complete(
         database,
         limiter,
-        "stuart",
+        "jordan",
         &Secret::new(code.as_str()),
         recovered.into(),
         "c4",

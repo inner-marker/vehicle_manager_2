@@ -14,7 +14,7 @@ mod places {
     use storage::{Database, NewDatabaseIds};
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const SAM: u32 = 2;
 
     /// A database with two people.
@@ -26,7 +26,7 @@ mod places {
         };
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
         let mut connection = database.pool().acquire().await.unwrap();
-        for (n, username) in [(STUART, "stuart"), (SAM, "sam")] {
+        for (n, username) in [(JORDAN, "jordan"), (SAM, "sam")] {
             let user = User {
                 username: Username::parse(username).unwrap(),
                 display_name: username.into(),
@@ -68,16 +68,16 @@ mod places {
     #[tokio::test]
     async fn saved_places_round_trip_and_belong_to_their_owner() {
         let (_temp, database) = database().await;
-        let home = place(STUART, "home garage", 35.5951, -82.5515);
-        let shop = place(STUART, "Joe's Auto", 35.6, -82.56);
+        let home = place(JORDAN, "home garage", 35.5951, -82.5515);
+        let shop = place(JORDAN, "Joe's Auto", 35.6, -82.56);
         let sams = place(SAM, "Sam's work", 35.7, -82.6);
         create(&database, 10, &home).await;
         create(&database, 11, &shop).await;
         create(&database, 12, &sams).await;
 
-        // Stuart's, by name ignoring case ("home" before "Joe's"; byte order would put the
+        // Jordan's, by name ignoring case ("home" before "Joe's"; byte order would put the
         // capital J first); never Sam's.
-        let mine = database.saved_places_of(test_id(STUART)).await.unwrap();
+        let mine = database.saved_places_of(test_id(JORDAN)).await.unwrap();
         assert_eq!(mine, vec![(test_id(10), home.clone()), (test_id(11), shop)]);
         assert_eq!(
             database.saved_places_of(test_id(SAM)).await.unwrap().len(),
@@ -90,7 +90,7 @@ mod places {
     #[tokio::test]
     async fn an_update_changes_only_what_it_names_and_never_the_owner() {
         let (_temp, database) = database().await;
-        let home = place(STUART, "Home", 35.5951, -82.5515);
+        let home = place(JORDAN, "Home", 35.5951, -82.5515);
         create(&database, 10, &home).await;
         let mut connection = database.pool().acquire().await.unwrap();
 
@@ -105,7 +105,7 @@ mod places {
             .unwrap();
         let after = database.saved_place(test_id(10)).await.unwrap().unwrap();
         assert_eq!(after.name.as_str(), "Home garage");
-        assert_eq!(after.owner, test_id(STUART), "the owner is fixed");
+        assert_eq!(after.owner, test_id(JORDAN), "the owner is fixed");
         assert_eq!(after.coordinates, home.coordinates, "unchanged");
 
         // Moving it: the coordinates and the place each change as a whole.
@@ -129,7 +129,7 @@ mod places {
     #[tokio::test]
     async fn a_removed_place_is_gone() {
         let (_temp, database) = database().await;
-        create(&database, 10, &place(STUART, "Home", 35.0, -82.0)).await;
+        create(&database, 10, &place(JORDAN, "Home", 35.0, -82.0)).await;
         let mut connection = database.pool().acquire().await.unwrap();
         SavedPlaceWriter
             .delete(&mut connection, test_id(10), 3)
@@ -138,7 +138,7 @@ mod places {
         assert_eq!(database.saved_place(test_id(10)).await.unwrap(), None);
         assert!(
             database
-                .saved_places_of(test_id(STUART))
+                .saved_places_of(test_id(JORDAN))
                 .await
                 .unwrap()
                 .is_empty()
@@ -174,7 +174,7 @@ mod places {
                      VALUES (?, ?, 'Home', ?, 0, ?, 'A', 'B', ?, 1)",
                 )
                 .bind(test_id::<SavedPlace>(n).to_bytes().to_vec())
-                .bind(test_id::<User>(STUART).to_bytes().to_vec())
+                .bind(test_id::<User>(JORDAN).to_bytes().to_vec())
                 .bind(lat)
                 .bind(radius)
                 .bind(country)

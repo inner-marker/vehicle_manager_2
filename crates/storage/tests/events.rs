@@ -30,7 +30,7 @@ mod events {
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const DAY: i64 = 24 * 60 * 60 * 1000;
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const GARAGE: u32 = 50;
     const TRUCK: u32 = 10;
     const TRAILER: u32 = 11;
@@ -49,13 +49,13 @@ mod events {
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
         let mut connection = database.pool().acquire().await.unwrap();
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
         UserWriter
-            .create(&mut connection, test_id(STUART), &UserPatch::all(user), 1)
+            .create(&mut connection, test_id(JORDAN), &UserPatch::all(user), 1)
             .await
             .unwrap();
         let group = Group {
@@ -182,7 +182,7 @@ mod events {
             }],
             notes: Notes::parse("Pump 4 was **slow**").unwrap(),
             source: EventSource::Typed,
-            logged_by: test_id(STUART),
+            logged_by: test_id(JORDAN),
             performed_by: Some(Performer::Named {
                 name: "Joe's Auto".into(),
                 contact: Some("555-0100".into()),
@@ -260,7 +260,7 @@ mod events {
         create(&mut connection, 101, &bare).await;
         let mut by_user = fuel_up(2, 80_200_000);
         by_user.performed_by = Some(Performer::User {
-            user: test_id(STUART),
+            user: test_id(JORDAN),
         });
         create(&mut connection, 102, &by_user).await;
         assert_eq!(
@@ -296,7 +296,7 @@ mod events {
             notes: Some(Notes::parse("Pump 6").unwrap()),
             fuel: Some(Clearable::Clear),
             performed_by: Some(Clearable::Set(Performer::User {
-                user: test_id(STUART),
+                user: test_id(JORDAN),
             })),
             last_edited_at: Some(later),
             // Fixed once made: ignored.
@@ -311,7 +311,7 @@ mod events {
         expected.notes = Notes::parse("Pump 6").unwrap();
         expected.fuel = None;
         expected.performed_by = Some(Performer::User {
-            user: test_id(STUART),
+            user: test_id(JORDAN),
         });
         expected.last_edited_at = later;
         assert_eq!(
@@ -319,7 +319,7 @@ mod events {
             Some(expected.clone())
         );
 
-        let finalizing = finalize(Finalizer::User(test_id(STUART)), later);
+        let finalizing = finalize(Finalizer::User(test_id(JORDAN)), later);
         assert_eq!(finalizing.changed_fields(), vec!["status", "finalized"]);
         EventWriter
             .update(&mut connection, test_id(100), &finalizing, 12)
@@ -328,7 +328,7 @@ mod events {
         expected.status = EventStatus::Finalized;
         expected.finalized = Some(Finalized {
             at: later,
-            by: Finalizer::User(test_id(STUART)),
+            by: Finalizer::User(test_id(JORDAN)),
         });
         assert_eq!(
             database.event(test_id(100)).await.unwrap(),

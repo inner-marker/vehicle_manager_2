@@ -32,7 +32,7 @@ mod first_admin {
             device,
             Health::Healthy,
             clock,
-            request("AAAA-AAAA-AAAA-AAAA", "stuart", "Stuart", PASSWORD.into()),
+            request("AAAA-AAAA-AAAA-AAAA", "jordan", "Jordan", PASSWORD.into()),
         )
         .await;
         assert!(matches!(wrong, Err(SetupError::WrongCode)), "{wrong:?}");
@@ -41,7 +41,7 @@ mod first_admin {
             device,
             Health::Healthy,
             clock,
-            request(code, "st", "Stuart", PASSWORD.into()),
+            request(code, "st", "Jordan", PASSWORD.into()),
         )
         .await;
         assert!(matches!(
@@ -53,7 +53,7 @@ mod first_admin {
             device,
             Health::Healthy,
             clock,
-            request(code, "stuart", "Stuart", "short".into()),
+            request(code, "jordan", "Jordan", "short".into()),
         )
         .await;
         assert!(matches!(
@@ -66,7 +66,7 @@ mod first_admin {
             device,
             unhealthy,
             clock,
-            request(code, "stuart", "Stuart", PASSWORD.into()),
+            request(code, "jordan", "Jordan", PASSWORD.into()),
         )
         .await;
         assert!(
@@ -79,8 +79,8 @@ mod first_admin {
     /// The Admin exists with Admin on all assets and a password, made by the server itself.
     async fn assert_admin_created(database: &Database, admin: domain::user::UserId) {
         let stored = database.user(admin).await.unwrap().unwrap();
-        assert_eq!(stored.user.username.as_str(), "stuart");
-        assert_eq!(stored.user.display_name, "Stuart R");
+        assert_eq!(stored.user.username.as_str(), "jordan");
+        assert_eq!(stored.user.display_name, "Jordan R");
         let grants = database.grants_for(admin).await.unwrap();
         assert_eq!(grants.len(), 1);
         assert_eq!(
@@ -123,7 +123,7 @@ mod first_admin {
             test_id(901),
             Health::Healthy,
             &clock,
-            request(&loose, "Stuart", " Stuart R ", PASSWORD.into()),
+            request(&loose, "Jordan", " Jordan R ", PASSWORD.into()),
         )
         .await
         .unwrap();

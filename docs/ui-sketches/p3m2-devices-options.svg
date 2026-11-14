@@ -23,7 +23,7 @@
 <text x="104" y="398" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">+ Another server…</text>
 <text x="104" y="424" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Username</text>
 <rect x="104" y="430" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
-<text x="114" y="450" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">stuart</text>
+<text x="114" y="450" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">jordan</text>
 <text x="104" y="474" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Password</text>
 <rect x="104" y="480" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
 <text x="114" y="500" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">••••••••••••</text>
@@ -40,7 +40,7 @@
 <text x="880" y="284" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">▾</text>
 <text x="596" y="308" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Username</text>
 <rect x="596" y="314" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
-<text x="606" y="334" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">stuart</text>
+<text x="606" y="334" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">jordan</text>
 <text x="596" y="358" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Password</text>
 <rect x="596" y="364" width="300" height="30" rx="6" fill="#262b34" stroke="#333a45" />
 <text x="606" y="384" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">••••••••••••</text>
@@ -67,7 +67,7 @@
 <text x="44" y="828" font-size="10.5" fill="#9aa1ab" font-weight="700" text-anchor="start">DEVICES</text>
 <rect x="44" y="838" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
 <text x="60" y="868" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
-<text x="86" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Stuarts-MacBook-Pro</text>
+<text x="86" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Jordans-MacBook-Pro</text>
 <rect x="230.7" y="847" width="91.2" height="16" rx="8" fill="#5aa9ff" stroke="#5aa9ff" />
 <text x="276.3" y="859" font-size="10" fill="#0b1420" font-weight="700" text-anchor="middle">This device</text>
 <text x="86" y="876" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · paired Nov 9 · Active now</text>
@@ -107,7 +107,7 @@
 <text x="536" y="818" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">signing in on it again (it pairs again).</text>
 <rect x="536" y="838" width="420" height="48" rx="8" fill="#262b34" stroke="#333a45" />
 <text x="552" y="868" font-size="18" fill="#9aa1ab" font-weight="400" text-anchor="start">▭</text>
-<text x="578" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Stuarts-MacBook-Pro</text>
+<text x="578" y="859" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Jordans-MacBook-Pro</text>
 <rect x="722.7" y="847" width="91.2" height="16" rx="8" fill="#5aa9ff" stroke="#5aa9ff" />
 <text x="768.3000000000001" y="859" font-size="10" fill="#0b1420" font-weight="700" text-anchor="middle">This device</text>
 <text x="578" y="876" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Desktop app · paired Nov 9 · Active now</text>

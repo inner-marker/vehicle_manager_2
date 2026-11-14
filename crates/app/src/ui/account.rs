@@ -3,7 +3,7 @@
 //!
 //! - the **mode chip** (`Driver ▾`): switch between the modes the user's roles allow;
 //!   Admin asks for the password in a dialog first;
-//! - the **account chip** (`Stuart ▾`): change password, sign out;
+//! - the **account chip** (`Jordan ▾`): change password, sign out;
 //! - the **Admin banner**: an orange strip with **Leave** while in Admin mode (with the
 //!   orange chip, the only Admin-mode signal; no sidebar edge, decision #046).
 //!

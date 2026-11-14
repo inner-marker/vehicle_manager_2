@@ -36,7 +36,7 @@ mod attachments {
     use storage::{Database, NewDatabaseIds};
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const GARAGE: u32 = 50;
     const TRUCK: u32 = 10;
     const EVENT: u32 = 30;
@@ -67,13 +67,13 @@ mod attachments {
     /// A person, a group, and a truck, written on `connection`.
     async fn add_household(connection: &mut SqliteConnection, identifiers: Vec<Identifier>) {
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
         UserWriter
-            .create(connection, test_id(STUART), &UserPatch::all(user), 1)
+            .create(connection, test_id(JORDAN), &UserPatch::all(user), 1)
             .await
             .unwrap();
         let group = Group {
@@ -126,7 +126,7 @@ mod attachments {
                 original: None,
             },
             added_at: NOW,
-            added_by: test_id(STUART),
+            added_by: test_id(JORDAN),
             received_at: NOW,
         }
     }
@@ -141,7 +141,7 @@ mod attachments {
             retired_on: None,
             notes: Notes::default(),
             added_at: NOW,
-            added_by: test_id(STUART),
+            added_by: test_id(JORDAN),
             received_at: NOW,
         }
     }
@@ -159,7 +159,7 @@ mod attachments {
             plate: Some(test_id(PLATE)),
             notes: Notes::default(),
             added_at: NOW,
-            added_by: test_id(STUART),
+            added_by: test_id(JORDAN),
             received_at: NOW,
         }
     }
@@ -319,7 +319,7 @@ mod attachments {
             .unwrap();
         let removed_at = UnixMillis::from_millis(NOW.as_millis() + 10);
         database
-            .record_attachment_removal(test_id(PHOTO), test_id(STUART), removed_at)
+            .record_attachment_removal(test_id(PHOTO), test_id(JORDAN), removed_at)
             .await
             .unwrap();
 
@@ -330,7 +330,7 @@ mod attachments {
         ] {
             let removed = database.removed_attachments_using(hash).await.unwrap();
             assert_eq!(removed.len(), 1);
-            assert_eq!(removed[0].removed_by, Some(test_id(STUART)));
+            assert_eq!(removed[0].removed_by, Some(test_id(JORDAN)));
             assert_eq!(removed[0].removed_at, Some(removed_at));
             let erased_at = UnixMillis::from_millis(NOW.as_millis() + 99);
             let record = ErasedFile::of(&removed[0], hash, erased_at).unwrap();
@@ -527,7 +527,7 @@ mod attachments {
         id_from_sql::<LicensePlate>(&id, "id").expect("a UUIDv7");
         assert_eq!(
             plate.get::<Vec<u8>, _>("added_by"),
-            test_id::<User>(STUART).to_bytes()
+            test_id::<User>(JORDAN).to_bytes()
         );
 
         let asset = sqlx::query("SELECT identifiers, sequence FROM assets")

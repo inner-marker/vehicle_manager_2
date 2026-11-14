@@ -10,7 +10,7 @@
 <rect x="44" y="206" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
 <text x="58" y="231" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
 <text x="84" y="231" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
-<text x="450" y="231" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<text x="450" y="231" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Jordan ▾</text>
 <rect x="150" y="215" width="110" height="22" rx="11" fill="#3a1d1f" stroke="#e5676b"/>
 <text x="205.0" y="230" font-size="11" fill="#e5676b" font-weight="600" text-anchor="middle">PROTECTED</text>
 <rect x="44" y="252" width="420" height="56" rx="6" fill="#3a1d1f" stroke="#e5676b"/>
@@ -59,7 +59,7 @@
 <rect x="536" y="596" width="420" height="40" rx="6" fill="#101318" stroke="#333a45"/>
 <text x="550" y="621" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">☰</text>
 <text x="576" y="621" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Garage</text>
-<text x="942" y="621" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Stuart ▾</text>
+<text x="942" y="621" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">Jordan ▾</text>
 <rect x="642" y="605" width="160" height="22" rx="11" fill="#3a2f14" stroke="#f2b84b"/>
 <text x="722.0" y="620" font-size="11" fill="#f2b84b" font-weight="600" text-anchor="middle">SYNC WAITING · 214</text>
 <rect x="536" y="650" width="420" height="130" rx="6" fill="#1d2128" stroke="#f2b84b"/>
