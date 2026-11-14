@@ -194,7 +194,7 @@ Restoring replaces the database with an older copy: **everything saved after tha
 1. Stop the server, and list the snapshots:
 
    ```sh
-   cd /volume1/docker/vehicle_manager
+   cd /volume1/docker/vehicle_manager # or local path
    sudo docker compose stop
    ls data/snapshots/
    ```
@@ -222,9 +222,51 @@ Restoring replaces the database with an older copy: **everything saved after tha
 
    It should show `database open` with `created=false` and `database integrity check passed`.
 
-The database ID is the same as before (it's inside the snapshot), so devices treat it as the same database. Once everything looks right, delete `data/replaced/`.
+The database ID is the same as before (it's inside the snapshot), so devices treat it as the same database. A **desktop** that pulled after the snapshot notices the server **went back in time** and protects its copy (a red PROTECTED tag). The desktop's own copy may have records the server lost; its choices are to keep its copy protected, **Use this server** (its copy downloads again, losing those records, but its unsent changes are kept and sent), or rebuild (below). Once everything looks right, delete `data/replaced/`.
 
 **Leave `data/files/` as it is:** the restored database finds its photos and PDFs there. Files added after the snapshot stay too, unused, and are erased later.
+
+### Rebuilding the server from a desktop
+
+When the server's database is lost and no snapshot or backup will do, the household's records can be rebuilt from a **desktop app's copy** (decision #078). Every desktop keeps a full copy of what its person may see. Only the **household Admin's** copy has everything, so the rebuild runs from that desktop.
+
+**Prefer restoring a snapshot** (above) when one is recent enough: it brings back everything, including the files and every photo's original. A rebuild brings back only what the desktop has:
+
+- **All records**: vehicles, events, readings, schedules, people, and settings, as of the desktop's last pull, plus its unsent changes once they're sent (it must have none waiting to start).
+- **Photos and PDFs the desktop has:** every thumbnail and PDF (they download by themselves), but only the photos opened on that desktop. **Any other photo is left out** (its record removed), and the rebuild lists them by name.
+- **No originals and no photo metadata files:** desktops never keep them, so they're taken out of each photo.
+- **Passwords:** the Admin keeps theirs. **Everyone else gets a temporary password**, shown once, at the end of the rebuild. Note them down, and give each person theirs. Each must choose a new password at their next sign-in.
+- **Devices:** every device signs in again. The rebuilt server has a **new database ID**, so other desktops see "the server's database changed".
+
+**What the desktop checks before it starts:** you're the household Admin, its copy was complete at its last pull, nothing is waiting to send or refused, and the server is **fresh** (no people yet: it shows setup).
+
+1. **Give the server a fresh, empty database.** If the old one is still there (damaged), move it aside rather than deleting it. Over SSH:
+
+   ```sh
+   cd /volume1/docker/vehicle_manager
+   sudo docker compose stop
+   sudo mkdir -p data/before-rebuild
+   sudo mv data/vehiclemanager.sqlite data/vehiclemanager.sqlite-wal data/vehiclemanager.sqlite-shm data/before-rebuild/
+   sudo docker compose start
+   ```
+
+   A missing `-wal` or `-shm` file is fine. Leave `data/files/` as it is: files the rebuild uploads that are already there are kept once.
+
+2. **Get the setup code** from the log (as for the first Admin):
+
+   ```sh
+   sudo docker logs --since 5m vehiclemanager 2>&1 | grep -i "setup code"
+   ```
+
+3. **On the Admin's desktop:** start the app and unlock it. It shows the setup card, with **Rebuild the server from this computer**, and the red PROTECTED tag ("the server's database changed"). The same button is in the PROTECTED strip's **Details** and in Diagnostics.
+4. **Rebuild the server from this computer:** step 1 shows the checks (each ✓), and step 2 explains what happens. In step 3, enter the **setup code**, **your password**, and type **REBUILD**, then **Rebuild**.
+5. **When it says "The server is rebuilt":** copy down each person's **temporary password** and the list of **photos left out**, then choose your PIN. Nothing more is needed on the desktop: it signs in, uploads its files, and settles the rebuild by itself.
+6. **Everyone else:** each person signs in on the web or phone with their temporary password and chooses a new one. Each **other desktop** shows PROTECTED ("the server's database changed"). Choose **Use this server** in its **Details**: it takes a snapshot of its own copy, then downloads the rebuilt one, keeping its unsent changes. Then it signs in again.
+7. **Check:** the container log shows the rebuild (`sudo docker logs --since 15m vehiclemanager 2>&1 | grep -i rebuild`). Then sign in on the web and look over the Garage, a timeline, and some photos. Once you're happy, delete `data/before-rebuild/`.
+
+**If it says the files aren't sent yet** ("The server is rebuilt, but this computer's photos and documents aren't sent yet"), the rebuild itself is done: **note the temporary passwords first**. Then press **Send the files** once the server can be reached. The same button stays in Diagnostics (under Snapshots of this copy) until it works, even after the app restarts. Until then, the desktop stays PROTECTED, and photos it doesn't have aren't left out yet.
+
+**If the rebuild stops partway** (the network drops, the app quits) before "The server is rebuilt", **start over**. The desktop's copy is untouched (it took a snapshot first, too). Move the partial database aside as in step 1, start the server for a new setup code, and run the rebuild again. A rebuild isn't picked up where it stopped: once the server has accepted the records, the temporary passwords exist only in that one answer, so a fresh start is the way to get them.
 
 ## Splitting into a main server and a test server
 
