@@ -53,7 +53,7 @@ Milestone 6's plan (`docs/test-plans/p3m6-files.md`) got through its step 11 wit
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 12 | **Desktop:** Diagnostics → **Snapshots of this copy**; **Take one now** | Take one now adds a snapshot at the top (today's date, UTC). |
+| [ ] | 12 | **Desktop:** Diagnostics → **Snapshots of this copy**; **Take one now** | Take one now adds a snapshot at the top: today's date and time in UTC, **with seconds** (e.g. `2026-11-14 01:44:31 UTC`), so two taken in the same minute differ. |
 | [ ] | 13 | Terminal: `ls ~/Library/Application\ Support/vehiclemanager/servers/*-test/snapshots/` then `head -c 15 ~/Library/Application\ Support/vehiclemanager/servers/*-test/snapshots/$(ls ~/Library/Application\ Support/vehiclemanager/servers/*-test/snapshots/ \| tail -1); echo` | Files named `snapshot-…Z.sqlite`; the 15 bytes are gibberish, **not** `SQLite format 3`. |
 | [ ] | 14 | **A big delete:** Mac browser, Admin mode: delete the spare vehicle (typing its name). **Desktop:** wait a minute (or Diagnostics → Sync now) | A dialog: **"The server would delete N records"** with the vehicle and its count (2A), **Keep this computer's copy** and **Apply them**. The red **PROTECTED** tag and strip. The desktop's Garage still has the vehicle. |
 | [ ] | 15 | **Keep this computer's copy** | The dialog closes; the strip stays. **Messages:** a red "Protecting this computer's copy" card. |

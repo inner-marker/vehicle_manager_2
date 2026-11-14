@@ -547,4 +547,4 @@
 
 **Step 7e notes (2026-11-13):**
 - **Found while writing the test plan:** deleting a vehicle marks only the vehicle deleted (its records stay, hidden), so the page check counted a whole vehicle's history as one record and never held it. Now a vehicle deleted in a page counts with every live record the copy has on it (each record table with an `asset_id`), so "Outback: its whole history" waits as 2A intended. Test: `a_vehicle_deleted_counts_its_whole_history` (`server/tests/sync.rs`).
-
+- **From the test (2026-11-14):** two snapshots taken in the same minute (the daily one after signing in, then Take one now) read the same in Diagnostics. The time now shows seconds (`2026-11-14 01:44:31 UTC`); the human chose that over showing why each was taken.

@@ -485,8 +485,8 @@ mod desktop {
         }
     }
 
-    /// A snapshot's file name as a time: `snapshot-20261113T080000Z.sqlite` → "2026-11-13 08:00
-    /// UTC".
+    /// A snapshot's file name as a time: `snapshot-20261113T080000Z.sqlite` → "2026-11-13
+    /// 08:00:00 UTC" (with seconds: two taken in the same minute differ).
     pub(super) fn snapshot_when(path: &std::path::Path) -> String {
         let name = path
             .file_name()
@@ -502,8 +502,11 @@ mod desktop {
             stamp.get(6..8),
             stamp.get(9..11),
             stamp.get(11..13),
+            stamp.get(13..15),
         ) {
-            (Some(y), Some(m), Some(d), Some(h), Some(min)) => format!("{y}-{m}-{d} {h}:{min} UTC"),
+            (Some(y), Some(m), Some(d), Some(h), Some(min), Some(sec)) => {
+                format!("{y}-{m}-{d} {h}:{min}:{sec} UTC")
+            }
             _ => name,
         }
     }
@@ -585,7 +588,7 @@ mod desktop {
         fn a_snapshots_name_reads_as_its_time() {
             assert_eq!(
                 snapshot_when(std::path::Path::new("/x/snapshot-20261113T080512Z.sqlite")),
-                "2026-11-13 08:05 UTC"
+                "2026-11-13 08:05:12 UTC"
             );
             assert_eq!(snapshot_when(std::path::Path::new("odd")), "odd");
         }
