@@ -361,6 +361,9 @@ pub struct Rebuilt {
     pub passwords: Vec<TemporaryPassword>,
     /// The attachments left out (their files weren't on this computer).
     pub left_out: Vec<String>,
+    /// Whether the files were sent and settled. If not, the server is rebuilt (the passwords
+    /// stand) but [`settle_rebuild`] is still to do.
+    pub settled: bool,
 }
 
 /// Whether this computer may rebuild a server: its copy complete at its last pull, nothing
@@ -416,24 +419,84 @@ pub async fn rebuild(code: Secret, password: Secret) -> Result<Rebuilt, RebuildP
     let token = begin(code, from).await?;
     send_records(&copy, &token, from, admin.id).await?;
     let passwords = finish(&token, &username, password.clone()).await?;
-    sign_in_again(&username, &password).await?;
-    restore_files(&copy).await;
+    // From here the server is rebuilt and the passwords are only in this answer: whatever
+    // fails next, they're shown, and the files are settled later (`settle_rebuild`).
+    if let Some((folder, _)) = crate::local_copy::open_place() {
+        mark_unsettled(&folder);
+    }
+    let settled = match sign_in_again(&username, &password).await {
+        Ok(()) => settle_files(&copy).await,
+        Err(_) => None,
+    };
+    tracing::info!(target: log_area::SYNC, people = passwords.len() + 1, settled = settled.is_some(), "rebuilt the server from this computer");
+    Ok(Rebuilt {
+        passwords,
+        settled: settled.is_some(),
+        left_out: settled.unwrap_or_default(),
+    })
+}
+
+/// The file, in the copy's folder, that marks a rebuild whose files aren't settled yet.
+const UNSETTLED_MARKER: &str = "rebuild-unsettled";
+
+fn mark_unsettled(folder: &std::path::Path) {
+    if let Err(error) = std::fs::write(folder.join(UNSETTLED_MARKER), b"") {
+        tracing::warn!(target: log_area::SYNC, %error, "couldn't mark the rebuild unsettled");
+    }
+}
+
+fn is_unsettled(folder: &std::path::Path) -> bool {
+    folder.join(UNSETTLED_MARKER).exists()
+}
+
+fn clear_unsettled(folder: &std::path::Path) {
+    match std::fs::remove_file(folder.join(UNSETTLED_MARKER)) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => {
+            tracing::warn!(target: log_area::SYNC, %error, "couldn't clear the rebuild's mark");
+        }
+        Ok(()) | Err(_) => {}
+    }
+}
+
+/// Whether this computer rebuilt the server but its files aren't settled yet (the upload or
+/// the settle failed, or the app quit): [`settle_rebuild`] then.
+#[must_use]
+pub fn rebuild_unsettled() -> bool {
+    crate::local_copy::open_place().is_some_and(|(folder, _)| is_unsettled(&folder))
+}
+
+/// Finishes a rebuild whose files weren't settled: sends them and settles, then uses the
+/// rebuilt server. The attachments left out.
+///
+/// # Errors
+///
+/// [`RebuildProblem::Failed`] if the server can't be reached or won't settle (signed in as
+/// the household's Admin is needed; the log says why).
+pub async fn settle_rebuild() -> Result<Vec<String>, RebuildProblem> {
+    let copy = crate::local_copy::current().ok_or(RebuildProblem::NotReady)?;
+    settle_files(&copy).await.ok_or(RebuildProblem::Failed)
+}
+
+/// Uploads the files this computer has, settles the rebuild, and switches to the rebuilt
+/// server. The attachments left out, or `None` if it didn't settle (the mark stays).
+async fn settle_files(copy: &Database) -> Option<Vec<String>> {
+    restore_files(copy).await;
     let left_out = match crate::api::rebuild_settle().await {
         Ok(RebuildOutcome::Settled { left_out }) => left_out,
         other => {
             tracing::warn!(target: log_area::SYNC, ?other, "couldn't settle the rebuild's files");
-            Vec::new()
+            return None;
         }
     };
+    if let Some((folder, _)) = crate::local_copy::open_place() {
+        clear_unsettled(&folder);
+    }
     if let Some(now) = handshake_database_id().await {
         protect(Protection::ServerChanged { now: Some(now) });
         switch_to(now).await;
     }
-    tracing::info!(target: log_area::SYNC, people = passwords.len() + 1, left_out = left_out.len(), "rebuilt the server from this computer");
-    Ok(Rebuilt {
-        passwords,
-        left_out,
-    })
+    tracing::info!(target: log_area::SYNC, left_out = left_out.len(), "settled the rebuild's files");
+    Some(left_out)
 }
 
 async fn begin(code: Secret, from: DatabaseId) -> Result<Secret, RebuildProblem> {
@@ -549,6 +612,19 @@ async fn restore_files(copy: &Database) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_unsettled_rebuild_is_marked_until_settled() {
+        let folder = std::env::temp_dir().join(format!("vm-unsettled-{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        assert!(!is_unsettled(&folder));
+        mark_unsettled(&folder);
+        assert!(is_unsettled(&folder), "kept across a restart: it's a file");
+        clear_unsettled(&folder);
+        assert!(!is_unsettled(&folder));
+        clear_unsettled(&folder);
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
 
     #[test]
     fn a_pull_is_suspicious_past_25_records_and_10_percent() {

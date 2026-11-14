@@ -713,6 +713,12 @@ define_messages! {
     REBUILD_PASSWORDS => "rebuild-passwords",
     /// 3B done: left out.
     REBUILD_LEFT_OUT => "rebuild-left-out",
+    /// 3B done, but the files aren't settled yet.
+    REBUILD_UNSETTLED => "rebuild-unsettled",
+    /// Settling a rebuild's files.
+    REBUILD_SETTLE => "rebuild-settle",
+    /// Settling failed again.
+    REBUILD_SETTLE_FAILED => "rebuild-settle-failed",
     /// 3B problem.
     REBUILD_WRONG_CODE => "rebuild-wrong-code",
     /// 3B problem.

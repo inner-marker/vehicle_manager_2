@@ -302,6 +302,25 @@ mod desktop {
         let mut busy = use_signal(|| false);
         let mut problem = use_signal(|| None::<String>);
         let mut done = use_signal(|| None::<Rebuilt>);
+        let mut settling = use_signal(|| false);
+        let mut settle_problem = use_signal(|| false);
+        let settle = move |_| {
+            settling.set(true);
+            settle_problem.set(false);
+            spawn(async move {
+                let result = crate::protect::settle_rebuild().await;
+                settling.set(false);
+                match result {
+                    Ok(left_out) => {
+                        if let Some(rebuilt) = done.write().as_mut() {
+                            rebuilt.left_out = left_out;
+                            rebuilt.settled = true;
+                        }
+                    }
+                    Err(_) => settle_problem.set(true),
+                }
+            });
+        };
         use_effect(move || {
             spawn(async move {
                 if let Some(copy) = crate::local_copy::current() {
@@ -353,7 +372,16 @@ mod desktop {
                                 {tr_with(messages::REBUILD_LEFT_OUT, &[("names", MessageArg::from(rebuilt.left_out.join(", ").as_str()))])}
                             }
                         }
+                        if !rebuilt.settled {
+                            p { class: "form-error", {tr(messages::REBUILD_UNSETTLED)} }
+                            if settle_problem() {
+                                p { class: "form-error", {tr(messages::REBUILD_SETTLE_FAILED)} }
+                            }
+                        }
                         div { class: "form-buttons",
+                            if !rebuilt.settled {
+                                button { class: "secondary-button", r#type: "button", disabled: settling(), onclick: settle, {tr(messages::REBUILD_SETTLE)} }
+                            }
                             button { class: "primary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CLOSE)} }
                         }
                     } else {
@@ -544,7 +572,20 @@ mod desktop {
                 busy.set(false);
             });
         };
-        let may_rebuild = matches!(PROTECTED(), Some(Protection::ServerChanged { .. }));
+        let unsettled = crate::protect::rebuild_unsettled();
+        let may_rebuild =
+            !unsettled && matches!(PROTECTED(), Some(Protection::ServerChanged { .. }));
+        let mut settle_problem = use_signal(|| false);
+        let settle = move |_| {
+            busy.set(true);
+            settle_problem.set(false);
+            spawn(async move {
+                let settled = crate::protect::settle_rebuild().await.is_ok();
+                settle_problem.set(!settled);
+                snapshots.set(crate::protect::snapshots());
+                busy.set(false);
+            });
+        };
         rsx! {
             section { class: "about",
                 h3 { class: "section-heading", {tr(messages::SNAPSHOTS_HEADING).to_uppercase()} }
@@ -572,6 +613,13 @@ mod desktop {
                 button { class: "secondary-button", r#type: "button", disabled: busy(), onclick: take, {tr(messages::SNAPSHOT_TAKE)} }
                 if may_rebuild {
                     button { class: "danger-button", r#type: "button", onclick: move |_| rebuilding.set(true), {tr(messages::PROTECTED_REBUILD)} }
+                }
+                if unsettled {
+                    p { class: "form-error", {tr(messages::REBUILD_UNSETTLED)} }
+                    if settle_problem() {
+                        p { class: "form-error", {tr(messages::REBUILD_SETTLE_FAILED)} }
+                    }
+                    button { class: "primary-button", r#type: "button", disabled: busy(), onclick: settle, {tr(messages::REBUILD_SETTLE)} }
                 }
             }
             if rebuilding() {
