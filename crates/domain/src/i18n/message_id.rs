@@ -1535,6 +1535,12 @@ define_messages! {
     ABOUT_CREDITS => "about-credits",
     /// About: the data credits when the server doesn't give them.
     ABOUT_CREDITS_DEFAULT => "about-credits-default",
+    /// Diagnostics → About: the third-party notices' row (decision #079).
+    ABOUT_LICENSES => "about-licenses",
+    /// Its link.
+    ABOUT_LICENSES_OPEN => "about-licenses-open",
+    /// The notices' dialog: what they are.
+    LICENSES_INTRO => "licenses-intro",
     /// Picker: the nearby places list's heading (#061).
     PLACE_NEARBY => "place-nearby",
     /// Picker: typing is still possible.

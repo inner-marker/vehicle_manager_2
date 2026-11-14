@@ -12,6 +12,7 @@ spikes/
 .DS_Store
 
 # Local data that must never end up in an image
+local/
 *.db
 *.db-shm
 *.db-wal

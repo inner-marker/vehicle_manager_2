@@ -206,6 +206,16 @@ fn image_and_container_never_run_as_root() {
     );
 }
 
+#[test]
+fn image_carries_the_third_party_notices() {
+    assert!(
+        DOCKERFILE.contains(
+            "\nCOPY crates/app/assets/THIRD-PARTY-NOTICES.txt /app/THIRD-PARTY-NOTICES.txt\n"
+        ),
+        "Dockerfile must copy the notices into the image (decision #079)"
+    );
+}
+
 /// The value of `NAME=value` (a Dockerfile `ARG` or a shell variable) in `text`.
 fn assigned<'a>(text: &'a str, prefix: &str, name: &str) -> Option<&'a str> {
     let start = format!("{prefix}{name}=");

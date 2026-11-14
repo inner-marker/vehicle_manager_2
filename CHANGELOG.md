@@ -6,7 +6,106 @@ from Conventional Commit messages by [git-cliff](https://git-cliff.org); don't e
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2026-11-07
+## [0.3.0] - 2026-11-14
+
+### Features
+
+- **app:** App icon (the gauge): favicon, window icon, and bundle icon ([563a952](https://github.com/inner-marker/vehicle_manager_2/commit/563a9520e78ee38816c4fca7bb1c909aa60c4a04))
+- **app:** The title is always Vehicle Manager; the desktop window remembers its place and can stay on top ([594d176](https://github.com/inner-marker/vehicle_manager_2/commit/594d1768ec991c32c94ff16e9db179379e118367))
+- Diagnostics shows the exact build (commit, image tag, date) ([e411f5e](https://github.com/inner-marker/vehicle_manager_2/commit/e411f5e2aaccb2d4296d72b0dcb5398537c86f32))
+- Passwords, codes, and tokens are held in a redacted Secret type; a test keeps them out of logs ([3c2a903](https://github.com/inner-marker/vehicle_manager_2/commit/3c2a9038b8eb2f482512f63bacc7fb6e494c5ba8))
+- **storage:** Devices: every session belongs to one (migration 0016) ([0b4db1d](https://github.com/inner-marker/vehicle_manager_2/commit/0b4db1dd7c0fe128aa2c45cd1bc7ac8694919dd8))
+- Device keys and signed requests: a paired device's token needs its signature ([c345bd6](https://github.com/inner-marker/vehicle_manager_2/commit/c345bd67db6f55cf10cefc7180e9d581223fda57))
+- **app:** Pairing: a desktop pairs at sign-in, keeps its key and token, and signs every request ([7a04366](https://github.com/inner-marker/vehicle_manager_2/commit/7a0436602492bb98c95504a1bcf2ad76af8694a8))
+- **app:** Recent servers on the desktop sign-in screen ([78d9eaf](https://github.com/inner-marker/vehicle_manager_2/commit/78d9eafdcbeb858c008931c393cb1738b6f83d16))
+- Settings -> Devices and the Admin's Devices dialog ([a4749cd](https://github.com/inner-marker/vehicle_manager_2/commit/a4749cd9b79b2f1b98225813167538627f194cf9))
+- **app:** The desktop app lock: Choose a PIN after pairing, and Locked at launch and when idle ([a1f0f2c](https://github.com/inner-marker/vehicle_manager_2/commit/a1f0f2cccf045521732cd1308527e0ece3f21c1d))
+- Failed unlocks are reported to the household Admin ([bd1dd97](https://github.com/inner-marker/vehicle_manager_2/commit/bd1dd9799e29d728384397753f475bc2300524e5))
+- **app:** Lock settings: Lock after and Change PIN under Settings, This device ([a42b63e](https://github.com/inner-marker/vehicle_manager_2/commit/a42b63e234c03640c5202d56aec57a54e2c95d5c))
+- **storage:** The encrypted local database (SQLCipher) and migration 0018 ([9408028](https://github.com/inner-marker/vehicle_manager_2/commit/940802857f5df4d24002e13fea4036503c162c79))
+- **server:** Pull: pages of changes since a desktop cursor ([243bcac](https://github.com/inner-marker/vehicle_manager_2/commit/243bcac46865639742b7956194d921963d6fb415))
+- **app:** The desktop keeps an encrypted copy of its server records ([a003026](https://github.com/inner-marker/vehicle_manager_2/commit/a0030269d39474addec4f95cf5a34a539ff2fa76))
+- **app:** One data layer: the desktop reads its copy with the server read code ([06573c9](https://github.com/inner-marker/vehicle_manager_2/commit/06573c977948b53622af1a228e3103277e03f35f))
+- **app:** Offline: the desktop opens its copy without the server ([fe092d3](https://github.com/inner-marker/vehicle_manager_2/commit/fe092d3c7b1611391c5d7315c8277c59dfd6d722))
+- **app:** A countdown while connecting, and squawks turned off offline ([0a1f538](https://github.com/inner-marker/vehicle_manager_2/commit/0a1f5384ade0d1c7a51af1de5d06c4cf31590808))
+- **domain:** Operations, the offline changes a desktop sends ([ba87c59](https://github.com/inner-marker/vehicle_manager_2/commit/ba87c5915afdb262e299d1be29c8d552084a3fb7))
+- **storage:** The outbox, the desktop clock, and applied operations ([6874030](https://github.com/inner-marker/vehicle_manager_2/commit/6874030ed557a857fa4338405969f74ed346472b))
+- **server:** Push, the server side of offline changes ([7706cbe](https://github.com/inner-marker/vehicle_manager_2/commit/7706cbe68a565864f7080684615d53cdc4b01f8a))
+- **app:** The desktop saves changes through its copy and outbox ([af3912d](https://github.com/inner-marker/vehicle_manager_2/commit/af3912d756aab7a8ba04cd054a4f12ef6a6f6caf))
+- **app:** What the desktop shows about changes not yet sent ([d1e58f9](https://github.com/inner-marker/vehicle_manager_2/commit/d1e58f9cc6bc44314bbd7744b2e8913d09b920c8))
+- **storage:** The desktop files database and the erased-files audit record ([dd8441e](https://github.com/inner-marker/vehicle_manager_2/commit/dd8441e6472ed273ae9108e2967ffa849c4515cb))
+- **server:** Photo and document operations, and the erased-files audit record ([3d59f68](https://github.com/inner-marker/vehicle_manager_2/commit/3d59f6894cd68c526b60193ce8e7f0890effdc87))
+- **app:** The desktop keeps photos and PDFs and shows them from its own disk ([74ea576](https://github.com/inner-marker/vehicle_manager_2/commit/74ea576be25073aaa4ed816249eed0937b94db6d))
+- **app:** Add, remove, and move photos and documents offline ([b30ab0c](https://github.com/inner-marker/vehicle_manager_2/commit/b30ab0ce15adc39fd169399c4ed4090b6e694152))
+- **app:** What the desktop shows about its photos and PDFs ([80781c7](https://github.com/inner-marker/vehicle_manager_2/commit/80781c7c752753932ad8699f484f7874f44680d2))
+- **storage:** Page checks and encrypted snapshots of the desktop copy ([51c27f3](https://github.com/inner-marker/vehicle_manager_2/commit/51c27f3ec1ca4d2f95b5417196b01897f52fd512))
+- **server:** An unhealthy server refuses sync, and rebuilding a fresh server ([ce5d36c](https://github.com/inner-marker/vehicle_manager_2/commit/ce5d36c4d06d22d65a5bc2636d400974f45f9c20))
+- **app:** Protective mode keeps the desktop copy safe from a damaged server ([851f062](https://github.com/inner-marker/vehicle_manager_2/commit/851f062164aa37e19ed090345e870658c56829c6))
+- **app:** What the desktop shows while protecting its copy ([1651454](https://github.com/inner-marker/vehicle_manager_2/commit/16514543cf1674372b76524a82e09cf965f930e6))
+- Third-party notices ([ae6eeb7](https://github.com/inner-marker/vehicle_manager_2/commit/ae6eeb79b8973cbde24ea0e35e2241addaa37f51))
+
+### Fixes
+
+- **server:** Trust only the proxy's X-Forwarded-For entry; cap password hashing; limit request size and time ([6d43405](https://github.com/inner-marker/vehicle_manager_2/commit/6d4340591143d90bf2b9e9a3c7cb998120f09fe3))
+- **app:** The failed-unlock report is sent after unlocking ([81c07e5](https://github.com/inner-marker/vehicle_manager_2/commit/81c07e53f4e2d8c04ddd3057af1876dda1bb2664))
+- **app:** An offline unlock no longer hangs on Loading ([36f5aaf](https://github.com/inner-marker/vehicle_manager_2/commit/36f5aaffe9c3ff48d847dddd19a35ff97465fb31))
+- **storage:** A deleted vehicle counts with its whole history in a page check ([873698e](https://github.com/inner-marker/vehicle_manager_2/commit/873698e424468e5d38c29fe970a82648f3a778bf))
+- **app:** Snapshot times show seconds, so two in one minute differ ([c72b9c5](https://github.com/inner-marker/vehicle_manager_2/commit/c72b9c555f56b5bc997bee472dc86f95511f5f86))
+- **app:** A rebuild always shows its passwords, and unsent files can be sent later ([5716544](https://github.com/inner-marker/vehicle_manager_2/commit/571654436650cf9a0330e6253da80c066ffc030b))
+
+### Documentation
+
+- V0.2.0 released; Phase 2 complete ([4deb321](https://github.com/inner-marker/vehicle_manager_2/commit/4deb321cbb5ace4e96d206a6568b60a0ac675aef))
+- Sign-in hardening test plan ([a885ac6](https://github.com/inner-marker/vehicle_manager_2/commit/a885ac64833b7b9d9577a9feb9934521f8f37d00))
+- Security sub-plan confirmed (decision 071) ([7242517](https://github.com/inner-marker/vehicle_manager_2/commit/72425179e65b586bee121357a5da8975d0dda3f0))
+- Sign-in hardening done; decision 071 amended (proxies counted) ([59b7879](https://github.com/inner-marker/vehicle_manager_2/commit/59b7879e1b497a8671700b3bdb840b4e35ffca01))
+- Phase 3 plan; Phase 3 questions settled (decision 072) ([8761cc6](https://github.com/inner-marker/vehicle_manager_2/commit/8761cc642476b2f96d2b32fc3d58038c9ab8386b))
+- Phase 3 milestone 1 plan (groundwork); icon sketches ([c5fa4fe](https://github.com/inner-marker/vehicle_manager_2/commit/c5fa4fe1715b228588c21c3f0f78e5a17c0c05d0))
+- Phase 3 milestone 1 test plan passed; SQLCipher spike results; Polish notes ([0df4da9](https://github.com/inner-marker/vehicle_manager_2/commit/0df4da9bacb98de21d07e154b97760061dfbecdd))
+- Phase 3 milestone 2 plan (devices and pairing); decision 073 ([283f2fd](https://github.com/inner-marker/vehicle_manager_2/commit/283f2fd2b2e2c54e3cb5210037225926d8d69076))
+- Finished test plans move to docs/test-plans/archive; links updated ([b3fe4ac](https://github.com/inner-marker/vehicle_manager_2/commit/b3fe4acc80911ce87b48db06230d6bfb949b6df5))
+- Phase 3 milestone 2 test plan (devices and pairing) ([da0b94e](https://github.com/inner-marker/vehicle_manager_2/commit/da0b94e2fe9d56d2ba7ab2c38009aa147c99aff3))
+- Phase 3 milestone 3 plan (app lock and PIN); decision 074; milestone 2 test plan archived ([e821c81](https://github.com/inner-marker/vehicle_manager_2/commit/e821c81c0848a084db2e2d8bcc88c4b157c5fe50))
+- Phase 3 milestone 3 test plan (app lock and PIN) ([90e8b55](https://github.com/inner-marker/vehicle_manager_2/commit/90e8b552deb1d23a25ac78fa5bada93601d803df))
+- Phase 3 milestone 4 plan (local database and pull); decision 075 ([4105c88](https://github.com/inner-marker/vehicle_manager_2/commit/4105c88587e391ec918d078917110ef9ac4fe342))
+- Phase 3 milestone 3 test plan passed ([e97d871](https://github.com/inner-marker/vehicle_manager_2/commit/e97d871d6b05c518546b9583f9ea4914250c97f0))
+- Phase 3 milestone 4 test plan (local database and pull) ([49e972a](https://github.com/inner-marker/vehicle_manager_2/commit/49e972ad06bb4a957102f8238b2cdbc7ccb0a22b))
+- Phase 3 milestone 5 plan (outbox and push), decision #076 ([46cc867](https://github.com/inner-marker/vehicle_manager_2/commit/46cc8677533b40b9a066fb7d562ee6efeb53e6e4))
+- Phase 3 milestone 5 test plan (outbox and push) ([fc0580c](https://github.com/inner-marker/vehicle_manager_2/commit/fc0580c06e95f0ef84d63edc34851f5e2477083b))
+- Phase 3 milestone 6 plan (files), decision #077; third-party notices ([e480326](https://github.com/inner-marker/vehicle_manager_2/commit/e48032650663d56e2a3340e2f7d2bb48afdfc3a0))
+- Phase 3 milestone 5 test passed ([2d907e7](https://github.com/inner-marker/vehicle_manager_2/commit/2d907e73689957c4ceded2927a5209830e939221))
+- Phase 3 milestone 6 test plan (files) ([e6f5f59](https://github.com/inner-marker/vehicle_manager_2/commit/e6f5f5983f67dc2c9c7d3c7ff3dbe58592839449))
+- Phase 3 milestone 7 plan (loss detection), decision #078 ([cf9ca71](https://github.com/inner-marker/vehicle_manager_2/commit/cf9ca71df7f7807dd4356c57a7cb7d9960749a5b))
+- Phase 3 milestone 7 test plan ([4e9f501](https://github.com/inner-marker/vehicle_manager_2/commit/4e9f501e77480d54ead5ecf142089b9b869a13e5))
+- The milestone 7 test plan finishes milestone 6 first ([88d508c](https://github.com/inner-marker/vehicle_manager_2/commit/88d508c6cec809426cececcbba5ce584386ec347))
+- Phase 6 polish, make the text to type stand out ([2668013](https://github.com/inner-marker/vehicle_manager_2/commit/26680139a74b26ca8bda55cd8c33275176458b4e))
+- Rebuilding the server from a desktop ([6f390b2](https://github.com/inner-marker/vehicle_manager_2/commit/6f390b2bf600d389a3ad3a6c99b33a5a7d7862bd))
+- Phase 3 milestones 6 and 7 tests passed ([d9cf4dd](https://github.com/inner-marker/vehicle_manager_2/commit/d9cf4dd981752be94cc1829cb9666265c53095b5))
+- Phase 3 milestones complete; milestones 6 and 7 test plans archived ([c3c4620](https://github.com/inner-marker/vehicle_manager_2/commit/c3c4620a5198618193f09fa8fcd5d413d4b3884c))
+- The v0.3.0 release plan ([345d67a](https://github.com/inner-marker/vehicle_manager_2/commit/345d67aa236daf8361cbcfb31f410486ac05bf0d))
+- README for v0.3.0 ([3bc4481](https://github.com/inner-marker/vehicle_manager_2/commit/3bc4481d503ab0d1e52f7852ac0bd5d58dcc9ff5))
+- V0.3.0 regression checklist ([fb9de0e](https://github.com/inner-marker/vehicle_manager_2/commit/fb9de0e52a58b6d0a3124c2c141d200142a77d99))
+
+### Tests
+
+- **storage:** The v0.3.0 migration fixture ([83ffe4f](https://github.com/inner-marker/vehicle_manager_2/commit/83ffe4fb253d3fdf1a03b1f1ebf670c4cfed65cc))
+
+### Build
+
+- **app:** Name the macOS bundle Vehicle Manager ([ff8d6bc](https://github.com/inner-marker/vehicle_manager_2/commit/ff8d6bc32258e6cb75337d8677a216171f4ffe60))
+
+### CI
+
+- SQLCipher spike: an encrypted database through sqlx on macOS, Windows, and Linux ([2423703](https://github.com/inner-marker/vehicle_manager_2/commit/242370324804d0ca86fcfdee4481899cd9185cc8))
+- SQLCipher spike: point Windows at its OpenSSL libraries and Strawberry Perl ([600c86c](https://github.com/inner-marker/vehicle_manager_2/commit/600c86c286526ee187f67ca5333575393c1ad6b3))
+- Keep migration line endings on Windows ([17bae17](https://github.com/inner-marker/vehicle_manager_2/commit/17bae170b56a063308adeb1cc8f10a2f9bcb4442))
+
+### Chores
+
+- Ignore RUSTSEC-2026-0459 until sqlx allows the fixed libsqlite3-sys (issue 41) ([7808f9c](https://github.com/inner-marker/vehicle_manager_2/commit/7808f9cfc124752333a636e151ad0291d63c9002))
+- Remove personal information from tests, docs, and the fixture ([1145d53](https://github.com/inner-marker/vehicle_manager_2/commit/1145d53abeb4cd209016875c0bfb79b2510e6bc8))
+
+## [0.2.0] - 2026-11-08
 
 ### Features
 
@@ -176,6 +275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chores
 
 - Record storage's serde dependencies in Cargo.lock ([ee6e493](https://github.com/inner-marker/vehicle_manager_2/commit/ee6e4935b51699c8526c2b149ef1bdfebc840ca8))
+- Release v0.2.0 ([857d602](https://github.com/inner-marker/vehicle_manager_2/commit/857d60274611615d4061de4401849838aa752155))
 
 ## [0.1.0] - 2026-10-29
 
@@ -223,6 +323,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow read-only gh pr commands for agents (decision 4) ([4588c56](https://github.com/inner-marker/vehicle_manager_2/commit/4588c56594e6553150ee11f623ccdadf7e5bd2ce))
 - Release v0.1.0 ([358dced](https://github.com/inner-marker/vehicle_manager_2/commit/358dced0b3e927cb77f7a44b02b57988d92bee3e))
 
+[0.3.0]: https://github.com/inner-marker/vehicle_manager_2/compare/v0.2.0..v0.3.0
 [0.2.0]: https://github.com/inner-marker/vehicle_manager_2/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/inner-marker/vehicle_manager_2/tree/v0.1.0
 

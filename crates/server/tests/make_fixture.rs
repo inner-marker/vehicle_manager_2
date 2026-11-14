@@ -1,8 +1,14 @@
-//! Writes the `v0.2.0` migration fixture (`crates/storage/tests/fixtures/v0.2.0.sqlite`), a
-//! small database made by this release through the server's own pipeline, with a few made-up
-//! records and no personal data (the fixtures README; the `v0.2.0` release plan).
+//! Writes each release's migration fixture (`crates/storage/tests/fixtures/v<version>.sqlite`),
+//! a small database made by that release through the server's own pipeline, with a few made-up
+//! records and no personal data (the fixtures README; the release plans in `phase-2.md` and
+//! `phase-3.md`).
 //!
-//! Run once, at the release: `cargo test -p server --test make_fixture -- --ignored`. It
+//! - **`v0.2.0`:** a truck and every kind of record Phase 2 brought.
+//! - **`v0.3.0`:** the same, plus what Phase 3 brought: a paired desktop, changes it pushed
+//!   (a fuel-up with two photos), one photo removed from it, and that photo's files erased by
+//!   the nightly file check, leaving their audit record.
+//!
+//! Run once, at the release: `cargo test -p server --test make_fixture -- --ignored`. Each
 //! refuses to overwrite a fixture that's already there: once committed, a fixture is never
 //! edited.
 
@@ -24,16 +30,20 @@ mod make_fixture {
     use domain::asset_form::AssetForm;
     use domain::attachment::{AttachmentOwner, Content, FileName};
     use domain::dates::{CalendarDate, EventDates};
+    use domain::device::DeviceName;
+    use domain::device_signature::public_key_of;
     use domain::document::{DocumentType, REGISTRATION};
     use domain::event::{
         EventId, EventInput, EventLocation, EventSource, FuelDetails, Part, Reading, ReadingSet,
         Task, WorkDetails,
     };
+    use domain::hlc::Hlc;
     use domain::label::Label;
     use domain::lifecycle::{LifecycleDetails, Money, Party, SendOut};
     use domain::location::{LocationSource, Place, TimeZone};
     use domain::meter::{EventKind, MeterId};
     use domain::notes::Notes;
+    use domain::operation::{Operation, OperationChange};
     use domain::plate::{Authority, PlateNumber};
     use domain::preferences::CurrencyCode;
     use domain::reference::{RECALL, ReferenceNumber, ReferenceType};
@@ -41,6 +51,7 @@ mod make_fixture {
         Applicability, CalendarUnit, ComplianceMode, IntervalRule, Requirement,
     };
     use domain::squawk::{Severity, SquawkText};
+    use domain::sync::{OperationAnswer, PushOutcome};
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
     use lopdf::{Document, Object, dictionary};
@@ -49,9 +60,12 @@ mod make_fixture {
     use server::events::{add, finish};
     use server::groups::ensure_default_group;
     use server::health::Health;
-    use server::sessions::SignedIn;
+    use server::login_limiter::LoginLimiter;
+    use server::sessions::{SignedIn, SigningInDevice, sign_in_from};
+    use server::sync::{PushContext, push};
     use storage::Database;
     use storage::files::FileStore;
+    use storage::sync::schema_version;
 
     const DAY: i64 = 24 * 60 * 60 * 1000;
     const MILE: i64 = 1_609;
@@ -394,16 +408,234 @@ mod make_fixture {
         saved(&add(shop, sent).await);
     }
 
-    #[tokio::test]
-    #[ignore = "writes the v0.2.0 migration fixture; run once at the release"]
-    async fn write_the_v0_2_0_fixture() {
-        let target =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../storage/tests/fixtures/v0.2.0.sqlite");
+    /// A 640×480 PNG, `red` making each one different.
+    fn png_of(red: u8) -> Vec<u8> {
+        let image = image::ImageBuffer::from_fn(640, 480, |x, _| {
+            image::Rgba([red, 30, 30, if x < 320 { 255 } else { 0 }])
+        });
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
+        bytes.into_inner()
+    }
+
+    /// An operation made `minutes` after `NOW` on the desktop's clock.
+    fn operation(n: u32, minutes: i64, change: OperationChange) -> Operation {
+        Operation::new(
+            test_id(7_000 + n),
+            Hlc::new(
+                UnixMillis::from_millis(NOW.as_millis() + minutes * 60_000),
+                0,
+            )
+            .unwrap(),
+            change,
+        )
+    }
+
+    /// Sam's desktop, paired (a device key), as signing in on the desktop app does.
+    async fn paired_desktop(database: &Database) -> SignedIn {
+        let (_, signed_in) = sign_in_from(
+            database,
+            &LoginLimiter::new(),
+            "sam",
+            "a long password".into(),
+            "laptop",
+            NOW,
+            SigningInDevice::Desktop {
+                public_key: public_key_of(&[5; 32]),
+                name: Some(DeviceName::parse("Garage Mac").unwrap()),
+            },
+        )
+        .await
+        .unwrap();
+        signed_in
+    }
+
+    /// `bytes` uploaded by `user` as a small photo, as the desktop does before a push.
+    async fn uploaded_photo(
+        database: &Database,
+        files: &storage::files::Files,
+        user: &SignedIn,
+        bytes: Vec<u8>,
+    ) -> domain::api::UploadedFile {
+        let context = UploadContext {
+            database,
+            files,
+            user,
+            health: Health::Healthy,
+            now: NOW,
+        };
+        let UploadOutcome::Uploaded { uploaded } = upload(
+            &context,
+            UploadPurpose::Photo {
+                size: domain::attachment::PhotoSize::Small,
+            },
+            bytes,
+        )
+        .await
+        else {
+            panic!("the photo upload was refused");
+        };
+        uploaded
+    }
+
+    fn photo_on(
+        truck: AssetId,
+        event: EventId,
+        name: &str,
+        photo: &domain::api::UploadedFile,
+    ) -> AttachmentInput {
+        AttachmentInput {
+            asset: truck,
+            owner: AttachmentOwner::Event { event, task: None },
+            name: FileName::from_upload(name).unwrap(),
+            file: photo.file.clone(),
+            thumbnail: photo.thumbnail.clone(),
+            content: Content::Photo {
+                size: domain::attachment::PhotoSize::Small,
+                width: 640,
+                height: 480,
+                metadata: domain::attachment::PhotoMetadata::default(),
+                original: None,
+            },
+        }
+    }
+
+    /// Phase 3: Sam's paired desktop pushes a fuel-up with two photos, then removes one; past
+    /// #065's 8 days, the nightly file check erases its files and keeps their audit record.
+    async fn desktop_changes(
+        database: &Database,
+        store: &FileStore,
+        snapshots: &Path,
+        truck: AssetId,
+        odometer: MeterId,
+    ) {
+        let laptop = paired_desktop(database).await;
+        let files = storage::files::Files::Folder(store.clone());
+        let clock = ManualClock::new(NOW);
+        let pushing = PushContext {
+            database,
+            database_id: test_id(900),
+            user: &laptop,
+            health: Health::Healthy,
+            clock: &clock,
+            files: Some(&files),
+        };
+        let mut fuel_up = event(truck, odometer, EventKind::Fuel, 5, 52_300);
+        fuel_up.fuel = Some(FuelDetails {
+            volume_ml: 64_000,
+            cost_minor: Some(22_900),
+            currency: CurrencyCode::USD,
+            filled_full: true,
+            missed_previous: false,
+            highway_pct: 80,
+            towing_pct: 0,
+            hauling_pct: 0,
+            towed: vec![],
+            reported_economy: None,
+        });
+        let logged = operation(1, 1, OperationChange::AddEvent { input: fuel_up });
+        let event: EventId = logged.derived_id(0).unwrap();
+        let kept = uploaded_photo(database, &files, &laptop, png_of(200)).await;
+        let gone = uploaded_photo(database, &files, &laptop, png_of(100)).await;
+        let kept = operation(
+            2,
+            2,
+            OperationChange::AddAttachment {
+                input: photo_on(truck, event, "Pump.png", &kept),
+            },
+        );
+        let added = operation(
+            3,
+            3,
+            OperationChange::AddAttachment {
+                input: photo_on(truck, event, "Receipt.png", &gone),
+            },
+        );
+        let removed = operation(
+            4,
+            4,
+            OperationChange::RemoveAttachment {
+                id: added.derived_id(0).unwrap(),
+            },
+        );
+        let outcome = push(&pushing, schema_version(), &[logged, kept, added, removed]).await;
+        let PushOutcome::Answers {
+            answers,
+            stopped: None,
+        } = outcome
+        else {
+            panic!("the push stopped: {outcome:?}");
+        };
+        assert!(
+            answers
+                .iter()
+                .all(|answer| matches!(answer, OperationAnswer::Applied { .. })),
+            "{answers:?}"
+        );
+        erase_unused_files(database, store, snapshots).await;
+        assert_eq!(
+            database.erased_files().await.unwrap().len(),
+            2,
+            "the removed photo and its thumbnail"
+        );
+    }
+
+    /// Runs the nightly file check past #065's 8 days, so removed files are erased.
+    async fn erase_unused_files(database: &Database, store: &FileStore, snapshots: &Path) {
+        let clock = std::sync::Arc::new(ManualClock::new(NOW));
+        let jobs = server::jobs::JobContext {
+            database: database.clone(),
+            clock: std::sync::Arc::clone(&clock)
+                as std::sync::Arc<dyn domain::time::Clock + Send + Sync>,
+            snapshot_dir: server::jobs::SnapshotDir {
+                path: snapshots.to_path_buf(),
+                create_if_missing: true,
+            },
+            timers: domain::timers::Timers::NORMAL,
+            server_device: test_id(901),
+            file_store: Some(store.clone()),
+        };
+        server::jobs::run_due_jobs(&jobs, NOW).await;
+        let later = UnixMillis::from_millis(
+            NOW.as_millis()
+                + server::jobs::keep_unused_files_for(domain::timers::Timers::NORMAL)
+                + DAY,
+        );
+        clock.set(later);
+        database
+            .bring_job_forward(server::jobs::Job::FileCheck.name(), later)
+            .await
+            .unwrap();
+        server::jobs::run_due_jobs(&jobs, later).await;
+    }
+
+    /// The fixture for `version` at `crates/storage/tests/fixtures/`, refusing one already there.
+    fn fixture_path(version: &str) -> std::path::PathBuf {
+        let target = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("../storage/tests/fixtures/v{version}.sqlite"));
         assert!(
             !target.exists(),
             "{} exists already: a fixture is never edited",
             target.display()
         );
+        target
+    }
+
+    /// Writes the database to `target`, compacted, and closes it.
+    async fn write_to(database: Database, target: &Path) {
+        sqlx::query("VACUUM INTO ?")
+            .bind(target.display().to_string())
+            .execute(database.pool())
+            .await
+            .unwrap();
+        database.close().await;
+        println!("wrote {}", target.display());
+    }
+
+    #[tokio::test]
+    #[ignore = "writes the v0.2.0 migration fixture; run once at the release"]
+    async fn write_the_v0_2_0_fixture() {
+        let target = fixture_path("0.2.0");
         let (temp, database, jordan, sam) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
@@ -415,13 +647,32 @@ mod make_fixture {
         everyday(&shop, &driver, truck, odometer).await;
         papers(&shop, &database, &store, &maintainer, truck).await;
         recall_and_send_out(&shop, truck, odometer).await;
+        write_to(database, &target).await;
+    }
 
-        sqlx::query("VACUUM INTO ?")
-            .bind(target.display().to_string())
-            .execute(database.pool())
-            .await
-            .unwrap();
-        database.close().await;
-        println!("wrote {}", target.display());
+    #[tokio::test]
+    #[ignore = "writes the v0.3.0 migration fixture; run once at the release"]
+    async fn write_the_v0_3_0_fixture() {
+        let target = fixture_path("0.3.0");
+        let (temp, database, jordan, sam) = setup().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let clock = ManualClock::new(NOW);
+        let admin = in_mode(&jordan, ActiveMode::Admin);
+        let (truck, odometer) = truck(&database, &admin, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        let driver = context(&database, &sam, &clock);
+        everyday(&shop, &driver, truck, odometer).await;
+        papers(&shop, &database, &store, &maintainer, truck).await;
+        recall_and_send_out(&shop, truck, odometer).await;
+        Box::pin(desktop_changes(
+            &database,
+            &store,
+            &temp.path().join("snapshots"),
+            truck,
+            odometer,
+        ))
+        .await;
+        write_to(database, &target).await;
     }
 }

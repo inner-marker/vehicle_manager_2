@@ -8,6 +8,7 @@ A release is a **version tag `vX.Y.Z` on `main`**. Pushing the tag starts `.gith
 
 - Install git-cliff (MIT/Apache): `cargo binstall git-cliff` (or `cargo install git-cliff --locked`). Check with `git cliff --version` (2.14 or later).
 - The changelog format lives in `cliff.toml` at the repo root.
+- Install cargo-about (MIT/Apache) for the third-party notices: `cargo install cargo-about --locked --features cli --version 0.9.3`. The `cli` feature is needed; without it, nothing is installed. The version is pinned so the notices come out the same everywhere (decision #079).
 
 ## Choosing the version
 
@@ -37,10 +38,18 @@ Semantic versioning: `MAJOR.MINOR.PATCH`.
    - **Read the new section.** It becomes the GitHub Release notes word for word.
    - **If an entry reads badly,** don't edit `CHANGELOG.md`. Fix it at the source next time (commit messages); for now accept it, or regenerate after rewording an unpushed commit.
 
+   **Bring the third-party notices up to date** (decision #079). The Main gate fails if they're stale:
+
+   ```sh
+   scripts/notices.sh
+   ```
+
+   If `crates/app/assets/THIRD-PARTY-NOTICES.txt` changed, commit it with the release.
+
 4. **Commit and open the PR into `dev`** (it's outside a milestone, so it gets its own small PR):
 
    ```sh
-   git add Cargo.toml Cargo.lock CHANGELOG.md
+   git add Cargo.toml Cargo.lock CHANGELOG.md crates/app/assets/THIRD-PARTY-NOTICES.txt
    git commit -m "chore: release vX.Y.Z"
    git push -u origin release/vX.Y.Z
    gh pr create --base dev --title "chore: release vX.Y.Z"
@@ -88,10 +97,10 @@ The first release proves the pipeline. After it, confirm:
 - [ ] The server image was published as `:0.1.0` and `:latest` (GitHub → Packages → `vehicle_manager_2`).
 - [ ] **Weekly checks** can be started from Actions → "Run workflow". (Since decision #026 made `dev` the default branch, scheduled and manual workflows run from `dev` and no longer wait for `main`.)
 
-## Third-party notices (before the first desktop packages; at the latest `v0.3.0`)
+## Third-party notices (done in `v0.3.0`, decision #079)
 
 The app embeds other people's work whose licenses ask for their notice to travel with every copy. The source repo already keeps each notice beside its files; **packages and the server image** must ship them too (the human, 2026-11-12):
-- [ ] **Lucide icons** (`crates/app/assets/icons/`, embedded in the app): ISC, with six icons (`chevron-down`, `chevron-up`, `monitor`, `moon`, `plus`, `x`) under Feather's MIT license; both in `LICENSE-lucide`.
-- [ ] **pdf.js** and its WebAssembly decoders (`crates/app/assets/pdfjs/`): Apache-2.0 and the licenses in `pdfjs/LICENSE`, `pdfjs/iccs/LICENSE`, and `pdfjs/wasm/LICENSE_*`.
-- [ ] **Rust crates** compiled in (including SQLCipher on the desktop): their licenses are already checked by `cargo deny`; generate the notices list from the same data (e.g. `cargo about`, a new tool to approve then).
-- [ ] **Where they go:** one `THIRD-PARTY-NOTICES` file in each desktop package and in the server image, and a **Licenses** link on Diagnostics (or an About screen) that shows it.
+- [x] **Lucide icons** (`crates/app/assets/icons/`, embedded in the app): ISC, with six icons (`chevron-down`, `chevron-up`, `monitor`, `moon`, `plus`, `x`) under Feather's MIT license; both in `LICENSE-lucide`.
+- [x] **pdf.js** and its WebAssembly decoders (`crates/app/assets/pdfjs/`): Apache-2.0 and the licenses in `pdfjs/LICENSE`, `pdfjs/iccs/LICENSE`, and `pdfjs/wasm/LICENSE_*`.
+- [x] **Rust crates** compiled in (including SQLCipher on the desktop): their licenses are already checked by `cargo deny`; `scripts/notices.sh` lists them with `cargo-about`, from the same data. It also adds two that `cargo-about` can't see: **SQLCipher's** own license (inside `libsqlite3-sys`) and **OpenSSL's** (built into the Windows desktop app by a build-time crate).
+- [x] **Where they go:** one file, `crates/app/assets/THIRD-PARTY-NOTICES.txt`, made by `scripts/notices.sh` and committed. It's bundled with the app (web and desktop), and Diagnostics → About → **Licenses** shows it. The server image also has it at `/app/THIRD-PARTY-NOTICES.txt`. Desktop packages will carry it inside the app when they come (Phase 6).

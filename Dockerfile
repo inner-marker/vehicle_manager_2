@@ -83,6 +83,8 @@ COPY --from=build /out/server /app/server
 COPY --from=build /out/public /app/public
 # The geocoder's data, read-only (decision #059).
 COPY --from=geodata /out/ /app/geodata/
+# The third-party notices (decision #079); public/ has them too, for the app's Licenses link.
+COPY crates/app/assets/THIRD-PARTY-NOTICES.txt /app/THIRD-PARTY-NOTICES.txt
 
 # Listen on all interfaces inside the container; exposure is decided on the host
 # (compose.yaml publishes to NAS loopback only, plan §7 Networking).
