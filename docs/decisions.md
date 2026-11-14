@@ -927,3 +927,12 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the human, 2026-11-13, choosing the recommended options throughout. The survey found that a reset or restored server could delete the desktop's copy and unsent changes, or make it skip changes for good; the desktop's copy is the household's backup (plan §6), so it must never be damaged by a damaged server.
 - **Limits, accepted:** rebuilt passwords are new; photos never downloaded are lost with the server; a desktop can't tell a reset from another server (both are "the server changed", with the same choices); the SQLCipher snapshot method is settled by a spike in 7a.
 
+
+### 079. `v0.3.0`: the server image only (desktop packages later), and third-party notices made by `cargo-about` and committed
+*Decided: 2026-11-14 · Phase plan: phase-3.md "The `v0.3.0` release plan" · `docs/releasing.md` · Builds on #041, #070*
+
+- **Decision:**
+  - **No desktop packages in `v0.3.0`.** The release publishes the server image, as `v0.2.0` did (#070: the main server runs release tags). The desktop app is built locally with `dx bundle`. Published packages, and whether to sign them (#041), are decided in Phase 6.
+  - **Third-party notices:** `cargo-about` (a tool, MIT or Apache-2.0) writes `THIRD-PARTY-NOTICES` at the repository's root from the Rust crates' license data (the same data `cargo deny` checks), with Lucide's and pdf.js's notices added from their own license files. The file is **committed**, remade at each release (like `CHANGELOG.md`), and the Main gate fails if it's out of date. The server image carries it, and Diagnostics has a **Licenses** link that shows it.
+- **Why:** the human, 2026-11-14, choosing the recommended options. The desktop app is used by the household's Admin for now, who builds it locally; packages bring signing and per-system testing that can wait. The embedded icons, pdf.js, and the crates ask for their notices to go with every copy, which the image and the web app already are; a committed file is reviewed like any change, and the check keeps it current.
+- **Limits, accepted:** a new dependency in the notices needs `cargo about generate` run again before the Main gate passes; the desktop's local bundles carry the notices only through the app's Licenses link until packages exist.

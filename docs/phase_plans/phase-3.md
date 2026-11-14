@@ -555,3 +555,41 @@
 - **Found while writing the rebuild runbook (2026-11-14):** once the server accepted a rebuild, a failure in signing in, uploading the files, or settling them either lost the temporary passwords (sign-in failed: an error, with no passwords shown) or was hidden (settle failed: "rebuilt", with nothing left out, while the server still listed attachments whose files never came). Now, after the server finishes, the passwords are always shown. If the files didn't settle, the result says so, with **Send the files**. A mark in the copy's folder (`rebuild-unsettled`) keeps the same button in Diagnostics across restarts until it works, and the desktop uses the rebuilt server only after settling. Test: `an_unsettled_rebuild_is_marked_until_settled`. Also, `docs/deploying-nas.md` now has "Rebuilding the server from a desktop", and "Restoring a snapshot" now says what desktops do when the server goes back in time.
 
 **Milestone 7 test (2026-11-14):** `docs/test-plans/archive/p3m7-loss-detection.md` passed on the test server, all 32 steps (part A finishing milestone 6, part B loss detection), after the fixes above: snapshot times with seconds (`c72b9c5`), and a rebuild always showing its passwords, with files that can be sent later (`5716544`). The unhealthy server is covered by the automated tests only. A note for Phase 6: make the text to type stand out in type-to-confirm dialogs (`docs/plan.md` §9). Merged in PR #49, after #48.
+
+---
+
+### The `v0.3.0` release plan
+*Approved 2026-11-14 · Branch: `release/v0.3.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #062, #070, #079*
+
+**Goal:** Phase 3 ends with **`v0.3.0`** tagged on `main`, and the main server on it. It's the household's first release with the desktop app's offline copy, sync, and loss detection. Along the way: the release's **migration fixture**, the **third-party notices**, an updated **README**, and a **regression pass** on the test server.
+
+**Phase 3's exit criteria** (above): milestones 1–7 are all ✅, each with its test plan run and recorded. The regression pass checks the exit criteria again on `:dev`, except "old and new apps", which the push and pull tests cover (an API version behind syncs; two behind is told to update and keeps its outbox).
+
+**Reviewed against** the open GitHub issues and the ideas list, 2026-11-14:
+- **#28 Login and PIN** and **#30 Device-bound session tokens:** done by milestones 2 and 3 (PRs #42 and #43: pairing, signed requests, the PIN and its lock rules). **To close**, with a comment each (the human runs it).
+- **#31 Encryption at rest:** half done (the desktop's copy, its files, and its snapshots are encrypted with SQLCipher); the server's side is Phase 7 (#071). **A comment**, left open.
+- **#41 sqlx and RUSTSEC-2026-0459:** still waiting on sqlx; `cargo deny` keeps its reasoned ignore. No effect.
+- **#44, #24, #26, #27, #29, #15:** later phases; no effect.
+
+**Questions for the human, and the answers** (2026-11-14: all four as recommended):
+1. **Desktop packages:** **not in `v0.3.0`.** The release is the server image, as `v0.2.0` was; the desktop app is built locally (`dx bundle`). Published packages, and signing them (#041), wait for Phase 6. Decision #079.
+2. **Third-party notices:** **`cargo-about`** (a new tool, MIT or Apache-2.0, by the makers of `cargo-deny`) writes `THIRD-PARTY-NOTICES` from the same license data `cargo deny` checks, with Lucide's and pdf.js's notices added from their files. It's **committed**, remade at each release like the changelog, and the Main gate checks it's current. Decision #079.
+3. **The regression pass:** `v0.2.0`'s web steps, plus Phase 3's exit criteria on the desktop, about 35 steps on the test server with `:dev`.
+4. **Issues:** close #28 and #30, and comment on #31 (above).
+
+**Choices from the plan** (no question needed):
+- **The fixture** `crates/storage/tests/fixtures/v0.3.0.sqlite` is made by this release's code (schema 21), through the server's pipeline, with made-up records adding what Phase 3 brought: a paired desktop device, an operation pushed by it, an attachment removed (who and when), an erased file's audit row, and a finished rebuild's state. `make_fixture.rs` gets a `v0.3.0` test beside `v0.2.0`'s. The desktop's `files.sqlite` has no fixture: it's encrypted, holds only files by hash, and can always be downloaded again.
+- **The version** goes to `0.3.0`. The API version stays at 2. The changelog comes from `git cliff --tag v0.3.0`.
+- **The notices in the app:** a **Licenses** link on Diagnostics opens them (the file embedded in the app). The server image carries the file too (`/app/THIRD-PARTY-NOTICES`).
+
+**Steps:**
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| R.0 | ☑️ | `docs: the v0.3.0 release plan` | This plan, decision #079 | none |
+| R.a | ⬜ | `test(storage): the v0.3.0 migration fixture` | The fixture and its writer; `migration_fixtures.rs` checks it | none |
+| R.b | ⬜ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
+| R.c | ⬜ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
+| R.d | ⬜ | `docs: v0.3.0 regression checklist` | Question 3 | none |
+| R.e | ⬜ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main server moved to `0.3.0`; the issues | — |
