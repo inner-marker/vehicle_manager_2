@@ -149,6 +149,10 @@ pub(crate) fn Diagnostics() -> Element {
 /// The web app and its server come from one image, so they share a build; the **Server** row
 /// shows on the web only when the server has moved on since the page loaded. The desktop app
 /// is built on its own, so it always shows it.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
 #[component]
 fn About() -> Element {
     let mut info = use_signal(|| None::<Option<domain::api::PlaceDataInfo>>);
@@ -184,6 +188,7 @@ fn About() -> Element {
         )
     };
     let own_build = label(&own);
+    let mut notices = use_signal(|| false);
     let server_row = server().and_then(|handshake| {
         let differs = handshake.build != own || handshake.app_version != env!("CARGO_PKG_VERSION");
         (cfg!(feature = "desktop") || differs)
@@ -205,6 +210,41 @@ fn About() -> Element {
                 dd { if info().is_some() { {version} } else { {tr(messages::LOADING)} } }
                 dt { {tr(messages::ABOUT_CREDITS)} }
                 dd { {credits} }
+                dt { {tr(messages::ABOUT_LICENSES)} }
+                dd {
+                    button { class: "link-button", r#type: "button", onclick: move |_| notices.set(true),
+                        {tr(messages::ABOUT_LICENSES_OPEN)}
+                    }
+                }
+            }
+        }
+        if notices() {
+            Notices { on_close: move |()| notices.set(false) }
+        }
+    }
+}
+
+/// The third-party notices (decision #079), bundled with the app and made by
+/// `scripts/notices.sh`.
+const NOTICES: Asset = asset!("/assets/THIRD-PARTY-NOTICES.txt");
+
+/// The third-party notices, in a dialog: the bundled file in a frame, so its half a megabyte is
+/// loaded only when asked for.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn Notices(on_close: EventHandler<()>) -> Element {
+    rsx! {
+        div { class: "dialog-scrim",
+            div { class: "dialog wide-dialog", role: "dialog", "aria-modal": "true",
+                h2 { class: "dialog-title", {tr(messages::ABOUT_LICENSES_OPEN)} }
+                p { class: "dialog-text", {tr(messages::LICENSES_INTRO)} }
+                iframe { class: "notices-frame", src: "{NOTICES}", title: tr(messages::ABOUT_LICENSES_OPEN) }
+                div { class: "form-buttons",
+                    button { class: "primary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CLOSE)} }
+                }
             }
         }
     }

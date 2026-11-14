@@ -588,7 +588,7 @@
 |---|---|---|---|---|
 | R.0 | ☑️ | `docs: the v0.3.0 release plan` | This plan, decision #079 | none |
 | R.a | ☑️ | `test(storage): the v0.3.0 migration fixture` | The fixture and its writer; `migration_fixtures.rs` checks it | none |
-| R.b | ⬜ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
+| R.b | ☑️ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES.txt`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
 | R.c | ⬜ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
 | R.d | ⬜ | `docs: v0.3.0 regression checklist` | Question 3 | none |
 | R.e | ⬜ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
@@ -597,4 +597,15 @@
 **Written so far**
 - **R.0:** this plan, and decision #079.
 - **R.a:** `make_fixture.rs` gains `write_the_v0_3_0_fixture` (ignored, like `v0.2.0`'s), sharing `v0.2.0`'s records and adding Sam's **paired desktop** (a device key), which **pushes** a fuel-up with two photos (uploaded first, as the desktop does) and then removes one. The **nightly file check**, run past #065's 8 days, erases that photo's two files and writes their **audit rows**. The result is `crates/storage/tests/fixtures/v0.3.0.sqlite`: schema 21, 3 devices (1 paired), 4 applied operations, 3 attachments (1 removed), 2 erased files, the users `jordan` and `sam`, `integrity_check` ok, and no personal data. `migration_fixtures.rs` now also checks each erased file's record says who removed its attachment, and that the attachment stays removed. A rebuild's state isn't in the fixture (see above).
+- **R.b:** `scripts/notices.sh` writes **`crates/app/assets/THIRD-PARTY-NOTICES.txt`** (about 530 KB), committed. Its sections, in order:
+  - Lucide (`LICENSE-lucide`);
+  - pdf.js and its decoders (`pdfjs/LICENSE`, `iccs/LICENSE`, `wasm/LICENSE_*`);
+  - **SQLCipher** (its own BSD license, inside `libsqlite3-sys`);
+  - **OpenSSL** (built into the Windows desktop app by `openssl-src`, a build-time crate `cargo-about` doesn't list);
+  - the **Rust crates**, by license. `cargo-about` 0.9.3 makes these from `about.toml` (the licenses `deny.toml` allows; the five targets shipped; no build or dev dependencies; not the workspace's own crates) and `about.hbs`, about 636 crates.
+
+  The output is the same on every run. `scripts/notices.sh --check` fails if the committed file differs, and the **Main gate** runs it (a new job that installs `cargo-about` 0.9.3). The **server image** copies the file to `/app/THIRD-PARTY-NOTICES.txt` (a `deploy_config` test checks the line). The app bundles it (`asset!`), and **Diagnostics → About → Licenses** opens it in a dialog, in a frame, loaded only when asked for. `docs/releasing.md`: the tool in the one-time setup, the notices brought up to date with the changelog, and the checklist ticked.
+  - **Changed from the plan:** the file sits with the app's assets rather than at the repository's root, so the app can bundle it; decision #079 says so.
+  - **`cargo-about` must be installed with `--features cli`:** without it, `cargo install` succeeds but installs nothing (as happened first here). `docs/releasing.md` says so.
+  - **Not seen running:** the dialog (desktop and web) is a step in the regression checklist (R.d).
 

@@ -1154,6 +1154,9 @@ about-place-data = Place data
 about-place-data-unavailable = Not available
 about-credits = Credits
 about-credits-default = Contains GeoNames data (CC BY 4.0, geonames.org). Boundaries: Natural Earth (public domain, naturalearthdata.com).
+about-licenses = Licenses
+about-licenses-open = Third-party notices
+licenses-intro = Vehicle Manager is built with the work of others. These are their licenses and notices.
 
 ## Nearby places in the picker (decision #061)
 

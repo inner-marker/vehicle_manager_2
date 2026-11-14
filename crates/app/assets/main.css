@@ -4815,3 +4815,14 @@ body:has(.photo-viewer) {
     gap: 8px;
     padding: 4px 0;
 }
+
+/* The third-party notices (Diagnostics → About → Licenses; decision #079): the plain-text
+   file in a frame, light like a page so its default text colors read. */
+.notices-frame {
+    width: 100%;
+    height: 60vh;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color-scheme: light;
+}
