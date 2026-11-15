@@ -6,7 +6,7 @@ from Conventional Commit messages by [git-cliff](https://git-cliff.org); don't e
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-11-14
+## [0.3.0] - 2026-11-15
 
 ### Features
 
@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ignore RUSTSEC-2026-0459 until sqlx allows the fixed libsqlite3-sys (issue 41) ([7808f9c](https://github.com/inner-marker/vehicle_manager_2/commit/7808f9cfc124752333a636e151ad0291d63c9002))
 - Remove personal information from tests, docs, and the fixture ([1145d53](https://github.com/inner-marker/vehicle_manager_2/commit/1145d53abeb4cd209016875c0bfb79b2510e6bc8))
+- Release v0.3.0 ([9cbd847](https://github.com/inner-marker/vehicle_manager_2/commit/9cbd847fc4d4a9e9336b527dfad5cdcac609f902))
 
 ## [0.2.0] - 2026-11-08
 
