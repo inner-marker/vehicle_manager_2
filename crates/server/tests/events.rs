@@ -10,7 +10,7 @@ mod events {
     use domain::access::ActiveMode;
     use domain::api::{AssetsOutcome, EventView, EventsOutcome, LatestReading};
     use domain::asset::AssetId;
-    use domain::asset_form::AssetForm;
+    use domain::asset_form::{AssetForm, MeterForm, Problem};
     use domain::dates::EventDates;
     use domain::event::{
         ClashSide, EventId, EventInput, EventLocation, EventProblem, EventSource, EventStatus,
@@ -18,13 +18,17 @@ mod events {
     };
     use domain::event_check::Warning;
     use domain::location::{LocationSource, Place, TimeZone};
-    use domain::meter::{EventKind, MeterId};
+    use domain::meter::{
+        EventKind, MeterDimension, MeterDirection, MeterError, MeterId, MeterUnit,
+    };
     use domain::notes::Notes;
     use domain::preferences::CurrencyCode;
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
     use domain::timers::Timers;
-    use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
+    use server::assets::{
+        AssetsContext, add as add_vehicle, add_meter, edit_meter, view as vehicle_page,
+    };
     use server::events::{
         add, correct, delete, edit, finalize_due, finalize_now, list, log_context, view,
     };
@@ -227,6 +231,148 @@ mod events {
         assert_eq!(
             list(&sam_context, test_id(777)).await,
             EventsOutcome::NotFound
+        );
+    }
+
+    /// A percentage meter's form: `name`, counting `direction`, resettable to `reset_to`.
+    fn percentage_form(name: &str, direction: MeterDirection, reset_to: Option<i64>) -> MeterForm {
+        MeterForm {
+            name: name.into(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: String::new(),
+            required_for: vec![],
+            direction,
+            reset_to,
+        }
+    }
+
+    /// Adds `form`'s meter to `truck` as a Maintainer; its ID.
+    async fn added_meter(context: &AssetsContext<'_>, truck: AssetId, form: &MeterForm) -> MeterId {
+        assert_eq!(add_meter(context, truck, form).await, AssetsOutcome::Done);
+        let AssetsOutcome::Asset { view } = vehicle_page(context, truck).await else {
+            panic!("no truck page");
+        };
+        view.meters
+            .iter()
+            .find(|(_, meter)| meter.name.as_str() == form.name)
+            .unwrap()
+            .0
+    }
+
+    /// Oil life, counting down from 100%.
+    fn oil_life(direction: MeterDirection, reset_to: Option<i64>) -> MeterForm {
+        percentage_form("Oil life", direction, reset_to)
+    }
+
+    #[tokio::test]
+    async fn oil_life_counts_down_and_is_reset() {
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let setup = context(&database, &maintainer, &clock);
+        let oil = added_meter(&setup, truck, &oil_life(MeterDirection::Down, Some(10_000))).await;
+
+        // Sam: 18% with a fuel-up; 62% five days later only as a reset.
+        let sam_context = context(&database, &sam, &clock);
+        let with_oil = |days: i64, miles: i64, percent: i64, reset: bool| {
+            let mut input = fuel_up(truck, odometer, days, miles);
+            input.readings.push(Reading {
+                meter: oil,
+                value: percent * 100,
+                reset,
+            });
+            input
+        };
+        saved(&add(&sam_context, with_oil(0, 50_000, 18, false)).await);
+        assert_eq!(
+            add(&sam_context, with_oil(5, 50_300, 62, false)).await,
+            refused(EventProblem::ReadingOutOfOrder(ReadingClash {
+                meter: oil,
+                side: ClashSide::AboveEarlier,
+                at: NOW,
+                value: 1_800,
+            }))
+        );
+        let (id, _) = saved(&add(&sam_context, with_oil(5, 50_300, 62, true)).await);
+        let seen = the_event(&sam_context, id).await;
+        assert!(
+            seen.event
+                .readings
+                .iter()
+                .any(|r| r.meter == oil && r.reset)
+        );
+        // A day later it may stay at 62%; an odometer, though, can't be reset.
+        saved(&add(&sam_context, with_oil(6, 50_400, 62, false)).await);
+        let mut odometer_reset = fuel_up(truck, odometer, 7, 50_500);
+        odometer_reset.readings[0].reset = true;
+        assert_eq!(
+            add(&sam_context, odometer_reset).await,
+            refused(EventProblem::NotResettable(odometer))
+        );
+    }
+
+    #[tokio::test]
+    async fn a_meter_keeps_its_direction_once_read_and_a_fuel_odometer_never_resets() {
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let setup = context(&database, &maintainer, &clock);
+        let oil = added_meter(&setup, truck, &oil_life(MeterDirection::Down, Some(10_000))).await;
+        let resettable_odometer = MeterForm {
+            name: "Odometer".into(),
+            dimension: MeterDimension::Distance,
+            unit: MeterUnit::Miles,
+            required_for: vec![EventKind::Fuel],
+            ..oil_life(MeterDirection::Up, Some(0))
+        };
+        assert_eq!(
+            edit_meter(&setup, odometer, &resettable_odometer).await,
+            AssetsOutcome::Invalid {
+                problem: Problem::Meter(MeterError::ResettableFuelMeter)
+            }
+        );
+
+        // Once Oil life has a reading, which way it counts is fixed; its reset value isn't.
+        let mut input = fuel_up(truck, odometer, 0, 50_000);
+        input.readings.push(Reading {
+            meter: oil,
+            value: 1_800,
+            reset: false,
+        });
+        saved(&add(&context(&database, &sam, &clock), input).await);
+        assert_eq!(
+            edit_meter(&setup, oil, &oil_life(MeterDirection::Up, Some(10_000))).await,
+            AssetsOutcome::Invalid {
+                problem: Problem::Meter(MeterError::DirectionFixed)
+            }
+        );
+        assert_eq!(
+            edit_meter(&setup, oil, &oil_life(MeterDirection::Down, Some(9_500))).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            database.meter(oil).await.unwrap().unwrap().reset_to,
+            Some(9_500)
+        );
+        // A meter with no readings yet may still turn round.
+        let tread = added_meter(
+            &setup,
+            truck,
+            &percentage_form("Tread", MeterDirection::Up, None),
+        )
+        .await;
+        assert_eq!(
+            edit_meter(
+                &setup,
+                tread,
+                &percentage_form("Tread", MeterDirection::Down, None)
+            )
+            .await,
+            AssetsOutcome::Done
         );
     }
 

@@ -310,21 +310,25 @@ pub fn check_meter(
     optional_text(description).map_err(|_| MeterError::DescriptionTooLong)
 }
 
-/// Checks a meter's reset value against the rest of it: never negative, and never on a
-/// distance meter that fuel-ups require (fuel economy needs its running total, #080).
+/// Checks a meter's reset value (`None`: not resettable) against what it measures and which
+/// events require it: never negative, and never on a distance meter that fuel-ups require
+/// (fuel economy needs its running total, #080).
 ///
 /// # Errors
 ///
 /// [`MeterError::NegativeReset`] or [`MeterError::ResettableFuelMeter`].
-pub fn check_reset(meter: &Meter) -> Result<(), MeterError> {
-    let Some(value) = meter.reset_to else {
+pub fn check_reset(
+    dimension: MeterDimension,
+    required_for: &[EventKind],
+    reset_to: Option<i64>,
+) -> Result<(), MeterError> {
+    let Some(value) = reset_to else {
         return Ok(());
     };
     if value < 0 {
         return Err(MeterError::NegativeReset);
     }
-    if meter.dimension == MeterDimension::Distance && meter.required_for.contains(&EventKind::Fuel)
-    {
+    if dimension == MeterDimension::Distance && required_for.contains(&EventKind::Fuel) {
         return Err(MeterError::ResettableFuelMeter);
     }
     Ok(())
@@ -541,17 +545,19 @@ mod tests {
 
     #[test]
     fn resets_are_checked() {
-        assert_eq!(check_reset(&oil_life()), Ok(()));
+        let check =
+            |meter: &Meter| check_reset(meter.dimension, &meter.required_for, meter.reset_to);
+        assert_eq!(check(&oil_life()), Ok(()));
         let mut negative = oil_life();
         negative.reset_to = Some(-1);
-        assert_eq!(check_reset(&negative), Err(MeterError::NegativeReset));
+        assert_eq!(check(&negative), Err(MeterError::NegativeReset));
         let mut odometer = oil_life();
         odometer.dimension = MeterDimension::Distance;
         odometer.unit = MeterUnit::Miles;
         odometer.required_for = vec![EventKind::Fuel];
-        assert_eq!(check_reset(&odometer), Err(MeterError::ResettableFuelMeter));
+        assert_eq!(check(&odometer), Err(MeterError::ResettableFuelMeter));
         odometer.reset_to = None;
-        assert_eq!(check_reset(&odometer), Ok(()), "not resettable: fine");
+        assert_eq!(check(&odometer), Ok(()), "not resettable: fine");
         assert_eq!(
             default_reset(MeterDimension::Percentage, MeterDirection::Down),
             10_000

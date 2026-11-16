@@ -561,6 +561,11 @@ fn MeterDialog(
             .map(|meter| meter.required_for.clone())
             .unwrap_or_default()
     });
+    // Kept as they are until the dialog offers them (phase-5.md step 1d).
+    let (direction, reset_to) = existing
+        .as_ref()
+        .map(|meter| (meter.direction, meter.reset_to))
+        .unwrap_or_default();
     let submit = move |event: FormEvent| {
         event.prevent_default();
         let form = MeterForm {
@@ -570,6 +575,8 @@ fn MeterDialog(
             precision: precision(),
             description: description(),
             required_for: required_for(),
+            direction,
+            reset_to,
         };
         busy.set(true);
         spawn(async move {
