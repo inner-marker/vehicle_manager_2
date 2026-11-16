@@ -1,6 +1,6 @@
 # Phase 3: Local-first & sync (plan)
 
-*Agreed 2026-11-08 · Roadmap: `docs/plan.md` §9 Phase 3 · Open questions: settled (decisions #071, #072) · Security: `docs/sub-plans/04-security.md`*
+*Agreed 2026-11-08 · ✅ **Complete:** exit criteria met; released as `v0.3.0` on 2026-11-15 · Roadmap: `docs/plan.md` §9 Phase 3 · Open questions: settled (decisions #071, #072) · Security: `docs/sub-plans/04-security.md`*
 
 **Goal:** the **desktop app works offline.** It keeps an encrypted copy of the household's data on the computer, logs fuel-ups, readings, jobs, and photos with no connection, and syncs when it's back on the tailnet. A lost laptop can be locked and signed out, and a damaged or reset server can never damage the desktop's copy.
 
@@ -38,7 +38,7 @@
 | 6 | **Files** | ✅ | **Downloads:** thumbnails and PDFs automatically; photos when opened, then kept; originals only on request (#072). **Uploads:** photos and PDFs added offline are queued and uploaded before the change that uses them. **Erased files keep an audit record** on the server: the file's and thumbnail's SHA-256, size, type, name, the record it belonged to, who removed it and when, and when the file was erased (#072) | Open a registration PDF offline; add a photo offline and see it on the web after reconnecting | none expected |
 | 7 | **Loss detection** | ✅ | **Protective mode** when the server looks reset, rolled back, or unhealthy (database ID changed, sequence lower than the device's cursor, or an unhealthy handshake); **suspicious-pull confirmation** (a pull that would delete much more than usual waits for a person); **snapshots before each sync** on the desktop; **"Rebuild the server from this device"**; sync alerts (rejections, protective mode, server unhealthy) in Messages (plan §6, Data integrity & loss detection) | Restore the test server from an old snapshot; the Mac goes into protective mode and keeps everything; rebuild the server from the Mac | none expected |
 
-**Milestones complete (2026-11-14):** all seven are in `dev` (the last, #48 and #49). Their test plans are in `docs/test-plans/archive/`. Next is the `v0.3.0` release, below; Phase 3 is complete once it ships.
+**Milestones complete (2026-11-14):** all seven are in `dev` (the last, #48 and #49). Their test plans are in `docs/test-plans/archive/`. **Phase 3 complete (2026-11-15):** `v0.3.0` is tagged on `main` and the main server runs it; its regression pass (`docs/test-plans/archive/v0.3.0-regression.md`) passed all 32 steps, including the exit criteria.
 
 **Releases:** **`v0.3.0` at the end of Phase 3** (`docs/releasing.md`), with the same regression pass as `v0.2.0` plus the exit criteria above. The first **desktop packages** may come with it, which raises the Phase 6 question of signing them (#041); asked when the release is planned. Packages and the server image must also ship the **third-party notices** (Lucide icons, pdf.js, the Rust crates; `docs/releasing.md`).
 
@@ -586,13 +586,13 @@
 
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
-| R.0 | ☑️ | `docs: the v0.3.0 release plan` | This plan, decision #079 | none |
-| R.a | ☑️ | `test(storage): the v0.3.0 migration fixture` | The fixture and its writer; `migration_fixtures.rs` checks it | none |
-| R.b | ☑️ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES.txt`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
-| R.c | ☑️ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
-| R.d | ☑️ | `docs: v0.3.0 regression checklist` | Question 3 | none |
-| R.e | ☑️ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
-| R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main server moved to `0.3.0`; the issues | — |
+| R.0 | ✅ | `docs: the v0.3.0 release plan` | This plan, decision #079 | none |
+| R.a | ✅ | `test(storage): the v0.3.0 migration fixture` | The fixture and its writer; `migration_fixtures.rs` checks it | none |
+| R.b | ✅ | `feat: third-party notices` | `about.toml` and its template, `THIRD-PARTY-NOTICES.txt`, the Main gate's check, the image's copy, Diagnostics' **Licenses**; `docs/releasing.md`'s checklist ticked | `cargo-about` (a tool, not a crate) |
+| R.c | ✅ | `docs: README for v0.3.0` | The desktop app (offline copy, sync, PIN, protective mode), how to build it locally, and Getting started for it | none |
+| R.d | ✅ | `docs: v0.3.0 regression checklist` | Question 3 | none |
+| R.e | ✅ | `chore: release v0.3.0` | The version, `Cargo.lock`, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.f | ✅ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main server moved to `0.3.0`; the issues | — |
 
 **Written so far**
 - **R.0:** this plan, and decision #079.
@@ -614,8 +614,16 @@
   - building it with `dioxus-cli` 0.7.10 (`dx bundle`, unsigned) or running it with `dx serve`;
   - the Desktop database workflow, and the Main gate's notices check;
   - the third-party notices under License.
-- **R.d:** `docs/test-plans/v0.3.0-regression.md`, 32 steps on the test server with `:dev` after the release PR merges into `dev`, the desktop app **bundled from `dev`** (as the household will run it).
+- **R.d:** `docs/test-plans/archive/v0.3.0-regression.md`, 32 steps on the test server with `:dev` after the release PR merges into `dev`, the desktop app **bundled from `dev`** (as the household will run it).
   - **Part A, the web (14 steps):** `v0.2.0`'s pass, shortened: the startup log at schema 21, the version, the **Licenses** dialog, sign-in and modes, Sam's fuel-up with a photo and an issue, a repair signing it off and its correction, a recall with a PDF, a document renewal, a send-out and return, Messages, and the sweep as Sam and the Viewer.
   - **Part B, the desktop (18 steps):** Phase 3's exit criteria. These are an offline fuel-up with a photo sent on reconnecting, edits to one draft merging (different fields both kept; the same field, the later wins), a refused reading kept in Messages, the lock and a wrong PIN, a lost laptop signed out from the web (its copy kept and encrypted), and a server restored from a snapshot (PROTECTED, then Use this server). Then the Licenses dialog on the desktop, and the nightly jobs. "Old and new apps" is left to the server's tests.
 - **R.e:** the version is `0.3.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` has its `## [0.3.0]` section from `git cliff --tag v0.3.0`: 33 features, 6 fixes, and the docs, tests, build, CI, and chores since `v0.2.0`. The 16 commits git-cliff skips are all merges (decision #021). Accepted as they are: "V0.2.0 released" and "V0.3.0 regression checklist", capitalized by the changelog's formatting (as in `v0.2.0`), and the `v0.2.0` release's own closing commit, listed here because it came after that tag. The third-party notices were already current (`scripts/notices.sh --check`).
+- **R.f** (the human, 2026-11-15):
+  - the release PR into `dev` (#51, then #52);
+  - the **regression pass**, all 32 steps on the test server with `:dev`;
+  - the PR from `dev` into `main` (#53), with a merge commit;
+  - the tag `v0.3.0` and the GitHub Release;
+  - the main and test servers on `0.3.0`;
+  - closing #28 and #30, and commenting on #31.
+  - **Found on the way:** CodeQL flagged 18 hard-coded passwords and nonces once `dev`'s code met `main`. 17 were in tests and 1 was a false positive (`from_hex`'s zero buffer); all were dismissed. The macOS SQLCipher job crashed once (SIGSEGV) as the `local_files` tests exited, after all of them had passed. A re-run passed. Three of those tests now close their database before they end, as the fourth already did. That fix ships in the Phase 3 close-out PR.
 

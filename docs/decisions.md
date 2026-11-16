@@ -936,3 +936,22 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Third-party notices:** `cargo-about` (a tool, MIT or Apache-2.0) writes the Rust crates' notices from their license data (the same data `cargo deny` checks), and `scripts/notices.sh` puts them in `crates/app/assets/THIRD-PARTY-NOTICES.txt` after Lucide's, pdf.js's, SQLCipher's, and OpenSSL's notices from their own license files. (The file sits with the app's assets so the app can bundle it.) The file is **committed**, remade at each release (like `CHANGELOG.md`), and the Main gate fails if it's out of date. The server image carries it, and Diagnostics has a **Licenses** link that shows it.
 - **Why:** the human, 2026-11-14, choosing the recommended options. The desktop app is used by the household's Admin for now, who builds it locally; packages bring signing and per-system testing that can wait. The embedded icons, pdf.js, and the crates ask for their notices to go with every copy, which the image and the web app already are; a committed file is reviewed like any change, and the check keeps it current.
 - **Limits, accepted:** a new dependency in the notices needs `cargo about generate` run again before the Main gate passes; the desktop's local bundles carry the notices only through the app's Licenses link until packages exist.
+
+### 080. Phase 5: new meter kinds, three due steps, snooze by time or distance, specs that pre-fill parts, honest fuel stretches, and strict readiness
+*Decided: 2026-11-15 · Phase plan: phase-5.md · Plan §3 Meters, Fuel-ups & fuel economy, Recurring maintenance, Readiness; §10 Phase 5 open questions · Builds on #031, #051, #057, #063*
+
+- **Decision:**
+  - **Meters:** any meter can be a **percentage**. A meter **counts up or down**, and can be **resettable** in either direction, with a reset value (e.g. **Oil life remaining**, back to 100%). It can't be resettable if it's a distance meter used for fuel economy. A counting-down meter's readings must go down; a reset explains a jump either way. An interval rule can be **"when a meter reaches X"**, beside the others (whichever comes first), and the job that does the work offers **"Reset … to 100%"**. **Derived meters** (worked out from other meters) come in Phase 5 too.
+  - **Due soon:** three steps, as fractions of each rule's interval: **yellow at 20% left, orange at 10%, red at 5%**. **Overdue** is a darker red with an **Overdue** chip, so colour is never the only sign. These are household defaults; Maintainers and Admins can change them per requirement.
+  - **Snooze:** by time and by distance or hours, **whichever comes first** ("1 week or 500 mi").
+  - **Specs:** a simple list per vehicle (no inventory). Requirements link to specs; a logged task's parts are **pre-filled** from them and stay editable, so the job records what was actually used, and changing one asks whether to update the spec.
+  - **Fuel economy:** a **stretch** runs from one full fill to the next. Partial fills in between add their fuel to it and have no figure of their own. **"Missed previous fill-up"** drops its stretch from averages, and charts show a gap. **Filled full** and **Missed previous fill-up** each have an **ⓘ** that explains them.
+  - **Readiness:** one **Normal use** operation type per ground profile (the truck adds **Towing**). Needed for use: registration and insurance current, **no open High issue (a deferred one still blocks)**, and nothing safety-related overdue. Items in their due-soon steps are warnings.
+- **Why:** the human, 2026-11-15. The recommended options, with these changes:
+  - due soon in three steps, with a darker red for overdue;
+  - derived meters in this phase;
+  - resettable meters in either direction;
+  - **ⓘ** explanations on the fuel-up's two choices;
+  - parts pre-filled from specs;
+  - counting-down and percentage meters added ("many modern cars have Oil life remaining as a percentage").
+- **Limits, accepted:** fractions of the interval warn very early on long intervals and very late on short ones; per-requirement changes are the answer. A partial fill has no figure until the next full fill. Formulas are worked out when shown, so a calculated field can't be searched or sorted on the server.

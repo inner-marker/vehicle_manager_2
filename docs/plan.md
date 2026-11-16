@@ -261,7 +261,9 @@ Assets track usage on **any number of user-defined meters**, not just an odomete
 
 Each meter has:
 - **Name:** user-defined, e.g. "Odometer," "Key-on hours," "Engine hours," "Idle hours."
-- **Dimension:** `Distance` or `Duration`. This maps to `uom` `Length` / `Time` and to the integer storage unit (meters / seconds).
+- **Dimension:** `Distance`, `Duration`, or `Percentage` (Phase 5). The first two map to `uom` `Length` / `Time` and to an integer storage unit (meters / seconds); a percentage is stored in hundredths of a percent.
+- **Direction** (Phase 5): **counts up** (an odometer, an hour meter) or **counts down** (e.g. a car's **Oil life remaining**, from 100% toward 0%).
+- **Resettable** (Phase 5): a meter can be **reset** to its starting value, e.g. Oil life back to 100% after an oil change, or a counting-up "hours since service" back to 0. The job that does it can reset it as part of signing off. Never a distance meter used for fuel economy.
 - **Display unit and precision:** e.g. whole miles, whole km, tenths of hours.
 - **Optional description** of what drives it, to tell similar hour meters apart.
 
@@ -272,7 +274,7 @@ The app doesn't need to know *how* a meter accumulates (key-on, oil pressure, re
 - An event records readings for **any subset** of the vehicle's meters.
 - An event can hold **more than one set of readings,** each with a time and a label (e.g. **start** and **end** of a maintenance session, before and after a test drive).
 - Readings are stored **raw**, exactly as shown on the gauge.
-- **Monotonic per meter:** a reading lower than the previous one is rejected unless a meter adjustment explains it.
+- **Monotonic per meter:** a reading lower than the previous one is rejected unless a meter adjustment explains it. A counting-down meter is the mirror image: a reading higher than the previous one is rejected. A **reset** in between explains either (Phase 5).
 
 ### Meter replacement & rollover
 
@@ -1843,12 +1845,16 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Pairing** (moved from Phase 6, #072): signing in on a desktop pairs it (device key, token tied to it, PIN); **Settings → Devices** signs devices out; a list of recent servers.
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
-- Milestones: `docs/phase_plans/phase-3.md` · **All seven merged into `dev` (2026-11-14);** the `v0.3.0` release (its regression pass and the exit criteria) completes the phase.
+- *Phase plan: [`phase_plans/phase-3.md`](phase_plans/phase-3.md) · **Complete:** exit criteria met 2026-11-15; released as `v0.3.0`.*
 
 ### Phase 4: Mobile (Moved to post-MVP)
 *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
 
 ### Phase 5: Maintenance intelligence.
+- *Phase plan: [`phase_plans/phase-5.md`](phase_plans/phase-5.md) (agreed 2026-11-15; seven milestones, then `v0.5.0`).*
+- **Counting-down, resettable, and percentage meters** (the human, 2026-11-15): any meter can be a percentage, a meter can count down, and a meter can be reset (in either direction), e.g. **Oil life remaining**. An interval rule can say "when Oil life reaches 15%", beside mileage and months (whichever comes first), and the oil change job can reset it to 100%.
+- **Derived meters** (answered 2026-11-15): meters worked out from others, e.g. idle hours as equivalent miles, usable in interval rules.
+- **Parts and fluid specs** (answered 2026-11-15): a **Specs** list per vehicle; requirements link to it, and a logged job's parts are pre-filled from it.
 - **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). 
 - The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. 
 - What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
@@ -1956,12 +1962,14 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 
 ### Phase 5: Maintenance intelligence
 
-- **Fuel economy:** exact segment rules for partial and missed fill-ups, and how gaps appear in charts.
-- **"Due soon" thresholds:** how early to warn (per task, per meter, or global), and how usage-rate projection works.
-- **Snooze semantics:** snooze by time, by meter distance, or both.
-- **Parts and fluid specs:** part numbers and fluid types/capacities per vehicle: in scope for the MVP?
-- **Derived meters:** e.g. idle hours converted to equivalent miles: in scope, or later?
-- **Readiness (#051):** the operation types and "needed for use" defaults for each Phase 2 profile; how far ahead a "needed for use" item becomes a warning; whether a deferred squawk can still block use.
+*Answered by the human, 2026-11-15 (`docs/decisions.md` #080; `phase_plans/phase-5.md`).*
+
+- ~~**Fuel economy:** exact segment rules for partial and missed fill-ups, and how gaps appear in charts.~~ *Settled: a stretch runs from one full fill to the next, and partial fills in between add their fuel to it. A partial has no figure of its own. "Missed previous fill-up" drops its stretch from averages, and charts show a gap there. **Filled full** and **Missed previous fill-up** each get an ⓘ that explains them.*
+- ~~**"Due soon" thresholds:** how early to warn (per task, per meter, or global), and how usage-rate projection works.~~ *Settled: three steps, as fractions of each rule's interval: yellow at 20% left, orange at 10%, red at 5%. Overdue is a darker red with an **Overdue** chip. These are household defaults that Maintainers and Admins can change per requirement. (The usage-rate projection is settled in the phase plan.)*
+- ~~**Snooze semantics:** snooze by time, by meter distance, or both.~~ *Settled: both, whichever comes first ("1 week or 500 mi").*
+- ~~**Parts and fluid specs:** part numbers and fluid types/capacities per vehicle: in scope for the MVP?~~ *Settled: yes, a simple **Specs** list per vehicle that requirements link to. Logging the task pre-fills its parts, which stay editable, and the job records what was actually used.*
+- ~~**Derived meters:** e.g. idle hours converted to equivalent miles: in scope, or later?~~ *Settled: in Phase 5.*
+- ~~**Readiness (#051):** the operation types and "needed for use" defaults for each Phase 2 profile; how far ahead a "needed for use" item becomes a warning; whether a deferred squawk can still block use.~~ *Settled: one **Normal use** per ground profile (trucks add **Towing**). Needed for use: registration and insurance current, no open High squawk (deferred ones still block), and nothing safety-related overdue. Items in their due-soon steps are warnings.*
 
 ### Phase 6: Polish
 

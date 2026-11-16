@@ -109,6 +109,7 @@ mod local_files {
         let summary = files.summary().await.unwrap();
         assert_eq!(summary.photo_bytes, 0);
         assert_eq!(summary.files, 2, "the thumbnail and the upload stay");
+        files.close().await;
     }
 
     #[cfg(feature = "sqlcipher")]
@@ -140,6 +141,7 @@ mod local_files {
             files.put(&[], LocalKind::Photo, at(2)).await,
             Err(StorageError::InvalidValue { .. })
         ));
+        files.close().await;
     }
 
     #[cfg(feature = "sqlcipher")]
@@ -190,5 +192,6 @@ mod local_files {
             2,
             "the files stay until settled"
         );
+        files.close().await;
     }
 }
