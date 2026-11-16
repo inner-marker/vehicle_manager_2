@@ -68,3 +68,41 @@
 ## Step details
 
 *Detailed plans are added here as each milestone is planned and approved. Steps are numbered per milestone (1.0, 1a, …).*
+
+### Milestone 1 plan: meters
+
+*📝 Draft 2026-11-16 · branch `milestone/p5-m1-meters` · sketch: `docs/ui-sketches/p5m1-meters-options.svg` · Decision #080*
+
+**Choices (the human, 2026-11-16):**
+- **A reset is a reading marked "reset"**, on any event with readings (a Reading, a fuel-up, a job). Its value is the new start, it syncs with its event, it shows ↺ on the timeline, and the neighbour check starts afresh from it. Milestone 2's "Reset Oil life to 100%" on a job adds such a reading.
+- **Odometer rollover and replacement: later** (Phase 6). They need corrected totals everywhere, and no household vehicle needs them yet.
+- **A meter's direction is fixed once it has a reading**, like its dimension. "Resettable" and the reset value can change at any time.
+- **Percentages:** any value (some gauges read over 100%), with 0–2 decimal places, stored in hundredths of a percent. **Repeated values are fine** (Oil life can sit at 0%); a counting-down meter just never rises, except at a reset.
+- **The sketch: 1A, 2A, 3A.**
+  - **1A:** the meter dialog keeps every setting in view, adding "Counts: Up / Down" and "Can be reset to [100] %".
+  - **2A:** a resettable meter's reading has a **↺ Reset** tick; ticking it fills the reset value (still editable), and a line confirms "18% → 100%".
+  - **3A:** a reading that goes the wrong way is refused with why. On a resettable meter, the refusal has an **↺ It was a reset** button.
+- **Older apps: leave out what they can't read.** The API version goes to 3. A version-2 desktop is sent everything except percentage and counting-down meters and their readings, and when it edits an event, the server keeps the readings it never saw. It keeps syncing (#072); it just doesn't show those meters until it's updated.
+
+**The rules, in `domain`:**
+- **A meter** gains a **direction** (up, the default for every existing meter, or down) and an optional **reset value** (none: not resettable). The default reset value is 100% for counting down and 0 for counting up.
+- **A distance meter required for fuel-ups can't be resettable**, since fuel economy (milestone 5) needs its running total.
+- **A reading** gains **reset** (false by default). Only a resettable meter's reading can be a reset.
+- **The neighbour check** follows the direction. Counting up, a reading may not be lower than the one before it or higher than the one after; counting down, the mirror image. Equal is always fine. A reset in between breaks the chain: a reset reading has no "before", and a reading before a reset has no "after" beyond it.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **1.0** `docs:` | ⬜ | This plan; the sketch. |
+| **1a** `feat(domain):` meter kinds | ⬜ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
+| **1b** `feat(storage):` migration 0022 | ⬜ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
+| **1c** `feat(server):` saving and syncing | ⬜ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. **API version 3:** a version-2 app's pull leaves out the meters it can't read and their readings (and the reset flag, which it ignores anyway), and its event edits keep those readings on the server. Tests for both. |
+| **1d** `feat(app):` the screens | ⬜ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
+| **1e** `docs:` | ⬜ | The test plan, `docs/test-plans/p5m1-meters.md`, on the test server with the web and desktop apps. |
+
+**New dependencies:** none expected.
+
+**Open issues** (reviewed 2026-11-16): none touch meters. #41 (sqlx) still waits upstream; the migration in 1b doesn't change that. #44, #31, #29, #27, #26, #24, and #15 belong to later phases.
+
+**Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).
