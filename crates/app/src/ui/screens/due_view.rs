@@ -62,14 +62,19 @@ fn rule_text(rule: &RuleDue, meters: &[(MeterId, Meter)], units: &Preferences) -
                 show_reading(left.abs(), meter.unit, meter.precision),
                 tr(meter.unit.abbr())
             );
-            Some(if *left < 0 {
-                tr_with(
-                    messages::DUE_OVER_BY,
-                    &[("amount", MessageArg::from(amount))],
-                )
-            } else {
-                tr_with(messages::DUE_IN, &[("amount", MessageArg::from(amount))])
-            })
+            // A distance reads "in 310 mi"; another meter names itself ("Oil life: 80 % to go").
+            let named = meter.dimension != domain::meter::MeterDimension::Distance;
+            let args = [
+                ("amount", MessageArg::from(amount)),
+                ("meter", MessageArg::from(meter.name.as_str().to_owned())),
+            ];
+            let id = match (*left < 0, named) {
+                (false, false) => messages::DUE_IN,
+                (true, false) => messages::DUE_OVER_BY,
+                (false, true) => messages::DUE_TO_GO,
+                (true, true) => messages::DUE_METER_OVER,
+            };
+            Some(tr_with(id, &args))
         }
         Left::Date { due } => {
             let date = MessageArg::from(civil(due, units));
@@ -571,5 +576,23 @@ mod tests {
             left_text(&over, &meters(), &units),
             "Not done yet · 1 mi over"
         );
+        // Another meter names itself.
+        let mut oil = meters();
+        oil[0].1.name = Label::parse("Oil life").unwrap();
+        oil[0].1.dimension = MeterDimension::Percentage;
+        oil[0].1.unit = MeterUnit::Percent;
+        let falling = Due {
+            rules: vec![RuleDue {
+                step: DueStep::ComingUp,
+                left: Left::Meter {
+                    meter: test_id(10),
+                    left: 1_500,
+                    projected: None,
+                },
+            }],
+            not_done_yet: false,
+            ..over
+        };
+        assert_eq!(left_text(&falling, &oil, &units), "Oil life: 15 % to go");
     }
 }

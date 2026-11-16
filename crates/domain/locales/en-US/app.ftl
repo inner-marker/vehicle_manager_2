@@ -880,6 +880,9 @@ sort-most-urgent = Most urgent
 # $amount (text): e.g. "310 mi".
 due-in = in { $amount }
 due-over-by = { $amount } over
+# $meter (text): e.g. "Oil life"; $amount (text): e.g. "80 %".
+due-to-go = { $meter }: { $amount } to go
+due-meter-over = { $meter }: { $amount } over
 # $date (text): a date as the person writes dates.
 due-by = by { $date }
 due-was = was due { $date }

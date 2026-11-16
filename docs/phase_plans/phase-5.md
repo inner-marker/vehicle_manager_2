@@ -201,7 +201,7 @@
 | **2b** `feat(storage):` migration 0023 | ☑️ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
 | **2c** `feat(server):` due on the server | ☑️ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
 | **2d** `feat(app):` the screens | ☑️ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
-| **2e** `docs:` | ⬜ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+| **2e** `docs:` | ☑️ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **New dependencies:** none expected.
 
@@ -307,5 +307,16 @@
   - a ticked reset becomes a reset end reading at the reset value (and a non-resettable meter's tick does nothing), and comes back ticked.
 - **Tidying:** clippy asked for the day steps by value (`DaySteps` is 6 bytes), and `typed_work` grew past 80 lines, so a task's part moved into `typed_task`.
 - **Not seen running yet:** all of these screens. They're in the phase's test plan (2e).
+
+**Step 2e notes (2026-11-16):**
+- **The test plan:** milestone 2's section of `docs/test-plans/p5-phase.md`, 17 steps, run at the end of the phase (#081). They cover:
+  - the migration;
+  - the Garage's sort and chips, and the Household tab's warnings;
+  - an oil change counted from before the records, with three rules, going **Due soon** then **⚠ Overdue**;
+  - a requirement's own warnings, and backwards ones refused;
+  - insurance by days, and its own days;
+  - a job resetting Oil life and setting the oil change back to OK;
+  - the desktop offline, and a Driver's view.
+- **A wording fix found while writing it:** a meter other than distance now names itself in "what's left": "Oil life: 80 % to go", "Engine hours: 12 h over". A distance still reads "in 300 mi". Tested.
 
 **Not in this milestone:** due and overdue messages and snooze, and the fleet strip (milestone 3); service bundles' sign-off and household templates (milestone 4); readiness (milestone 6); the airworthiness modes and supersession (the aircraft phase).

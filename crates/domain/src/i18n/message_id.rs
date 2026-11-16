@@ -1037,6 +1037,10 @@ define_messages! {
     DUE_IN => "due-in",
     /// How far past a meter rule; takes `amount`.
     DUE_OVER_BY => "due-over-by",
+    /// What's left on another meter; takes `meter` and `amount`.
+    DUE_TO_GO => "due-to-go",
+    /// How far past on another meter; takes `meter` and `amount`.
+    DUE_METER_OVER => "due-meter-over",
     /// A date still to come; takes `date`.
     DUE_BY => "due-by",
     /// A date gone by; takes `date`.
