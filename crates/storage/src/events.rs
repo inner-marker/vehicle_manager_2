@@ -529,6 +529,7 @@ async fn with_parts(
                     "event_readings.meter_id",
                 )?,
                 value: row.try_get("value")?,
+                reset: false,
             };
             let set = required_name(row.try_get("reading_set")?, "event_readings.reading_set")?;
             work::add_reading(&mut events, position, set, reading)?;

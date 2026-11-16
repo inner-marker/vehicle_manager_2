@@ -27,7 +27,8 @@ use domain::event::{
     Reason, event_changes,
 };
 use domain::event_check::{
-    CheckContext, LocationRule, Warning, check, check_correction, check_finish, finalize, tidy,
+    CheckContext, LocationRule, PastReading, Warning, check, check_correction, check_finish,
+    finalize, tidy,
 };
 use domain::id::DeviceId;
 use domain::inbox::{Message, forgotten_job_message};
@@ -200,7 +201,12 @@ impl AssetsContext<'_> {
             .map_err(|error| failed("readings", &error))?
             .into_iter()
             .filter(|reading| !leave_out.contains(&reading.event))
-            .map(|reading| (reading.meter, reading.at, reading.value))
+            .map(|reading| PastReading {
+                meter: reading.meter,
+                at: reading.at,
+                value: reading.value,
+                reset: false,
+            })
             .collect();
         let kinds = event_kinds(&asset.kind);
         // Only a job uses the schedule and squawks.

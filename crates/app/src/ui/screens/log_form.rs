@@ -604,6 +604,8 @@ fn clash_text(
     let id = match clash.side {
         ClashSide::BelowEarlier => messages::LOG_CLASH_BELOW,
         ClashSide::AboveLater => messages::LOG_CLASH_ABOVE,
+        ClashSide::AboveEarlier => messages::LOG_CLASH_ABOVE_EARLIER,
+        ClashSide::BelowLater => messages::LOG_CLASH_BELOW_LATER,
     };
     tr_with(
         id,
@@ -1069,11 +1071,7 @@ fn SavedNotice(event: EventId, warnings: Vec<String>) -> Element {
 
 /// A meter's unit, short: "mi", "km", "h".
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// "last 52,310 · 1 Mar 2026".

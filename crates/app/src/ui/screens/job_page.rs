@@ -30,11 +30,7 @@ use crate::ui::{tr, tr_with};
 
 /// A meter's unit, short.
 fn unit_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// "52,644 → 52,700 mi" (or just the start, without an end reading): one meter's readings.

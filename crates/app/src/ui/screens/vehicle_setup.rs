@@ -128,6 +128,7 @@ const fn unit_value(unit: MeterUnit) -> &'static str {
         MeterUnit::Miles => "miles",
         MeterUnit::Kilometers => "kilometers",
         MeterUnit::Hours => "hours",
+        MeterUnit::Percent => "percent",
     }
 }
 

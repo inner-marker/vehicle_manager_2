@@ -570,6 +570,8 @@ async fn add_meter_to(
         precision: parsed.precision,
         description: parsed.description,
         required_for: parsed.required_for,
+        direction: domain::meter::MeterDirection::Up,
+        reset_to: None,
     };
     let id: MeterId = context.new_id()?;
     context

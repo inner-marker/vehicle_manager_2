@@ -32,7 +32,7 @@
 
 | # | Milestone | Status | What it delivers | You can check |
 |---|---|---|---|---|
-| 1 | **Meters** | ⬜ | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
+| 1 | **Meters** | 🔨 | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
 | 2 | **What's due** | ⬜ | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
 | 3 | **Due messages and snooze** | ⬜ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected | Snooze "1 week or 500 mi"; it returns at whichever comes first |
 | 4 | **Specs and service bundles** | ⬜ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
@@ -71,7 +71,7 @@
 
 ### Milestone 1 plan: meters
 
-*📝 Draft 2026-11-16 · branch `milestone/p5-m1-meters` · sketch: `docs/ui-sketches/p5m1-meters-options.svg` · Decision #080*
+*Agreed 2026-11-16 · branch `milestone/p5-m1-meters` · sketch: `docs/ui-sketches/p5m1-meters-options.svg` · Decision #080*
 
 **Choices (the human, 2026-11-16):**
 - **A reset is a reading marked "reset"**, on any event with readings (a Reading, a fuel-up, a job). Its value is the new start, it syncs with its event, it shows ↺ on the timeline, and the neighbour check starts afresh from it. Milestone 2's "Reset Oil life to 100%" on a job adds such a reading.
@@ -94,8 +94,8 @@
 
 | Step | Status | What |
 |---|---|---|
-| **1.0** `docs:` | ⬜ | This plan; the sketch. |
-| **1a** `feat(domain):` meter kinds | ⬜ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
+| **1.0** `docs:` | ☑️ | This plan; the sketch. |
+| **1a** `feat(domain):` meter kinds | ☑️ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
 | **1b** `feat(storage):` migration 0022 | ⬜ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
 | **1c** `feat(server):` saving and syncing | ⬜ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. **API version 3:** a version-2 app's pull leaves out the meters it can't read and their readings (and the reset flag, which it ignores anyway), and its event edits keep those readings on the server. Tests for both. |
 | **1d** `feat(app):` the screens | ⬜ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
@@ -104,5 +104,21 @@
 **New dependencies:** none expected.
 
 **Open issues** (reviewed 2026-11-16): none touch meters. #41 (sqlx) still waits upstream; the migration in 1b doesn't change that. #44, #31, #29, #27, #26, #24, and #15 belong to later phases.
+
+**Step 1a notes (2026-11-16):**
+- **`domain::meter`:**
+  - `MeterDimension::Percentage` and `MeterUnit::Percent`, stored in hundredths of a percent (62% is 6,200).
+  - `MeterDirection` (`Up`, `Down`), with `allows(earlier, next)`: equal is always allowed.
+  - `Meter::direction` and `Meter::reset_to` (and the same in `MeterPatch`). Both have serde defaults, and `reset_to` is left out when empty, so a meter stored before Phase 5 reads as counting up and not resettable.
+  - `check_reset` refuses a negative reset value and a resettable distance meter that fuel-ups require. `MeterError::DirectionFixed` is ready for the server's check in 1c. `default_reset` gives 100% for a percentage counting down, otherwise 0.
+  - `MeterUnit::abbr()` gives the short unit name ("mi", "km", "h", "%"). It replaces six copies of the same `match` in the app's screens.
+- **`domain::event`:** `Reading::reset` (false by default, left out of the JSON when false, as older apps expect). `ClashSide` gains `AboveEarlier` and `BelowLater` for meters counting down, each with its own text. `EventProblem::NotResettable` refuses a reset on a meter that can't be reset; not even the Admin can keep one. `EndBelowStart` now means "the wrong way from the start reading", and an end reading that's a reset is exempt.
+- **`domain::event_check`:** the history is a list of `PastReading`s (meter, when, value, reset) instead of tuples.
+  - `neighbours` treats a reset as coming after other readings at the same moment, and a reset after the new reading doesn't bind it.
+  - A new reset reading has no "before".
+  - `clash` and `reading_fits` take the meter's direction.
+  - The server passes `reset: false` until 1b stores the flag.
+- **Tests:** Oil life falling, sitting at 0%, and refused when it rises. Readings either side of a reset, including back-dated ones and one at the reset's own moment. A reset on a meter that can't be reset. A job's end reading counting down, or reset. Percent parsing and showing (also in the round-trip property test). A property test that counting down is counting up mirrored. A meter stored before Phase 5 still reads.
+- **Not yet:** the meter dialog doesn't offer Percentage yet (1d), and nothing stores the new fields (1b).
 
 **Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).

@@ -403,6 +403,8 @@ fn meter_from_row(row: &SqliteRow) -> Result<(MeterId, Meter), StorageError> {
             precision: u8::try_from(precision).map_err(invalid("meters.precision"))?,
             description: row.try_get("description")?,
             required_for: json_from_sql::<Vec<EventKind>>(&required_for, "meters.required_for")?,
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         },
     ))
 }

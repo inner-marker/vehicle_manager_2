@@ -138,11 +138,7 @@ pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Ro
 
 /// A meter's short unit name.
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// "52,644 mi · 18.004 gal · 62.27 USD": the readings, then a fuel-up's volume and cost.
@@ -532,6 +528,7 @@ mod tests {
                 readings: vec![Reading {
                     meter: test_id(20),
                     value: odometer,
+                    reset: false,
                 }],
                 skipped: vec![],
                 fields: vec![],
@@ -634,6 +631,8 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         let meters = vec![(test_id(20), meter)];
         assert_eq!(

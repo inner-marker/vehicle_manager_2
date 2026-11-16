@@ -190,6 +190,7 @@ pub(super) fn meter_summary(meter: &Meter) -> String {
     let dimension = match meter.dimension {
         MeterDimension::Distance => messages::DIMENSION_DISTANCE,
         MeterDimension::Duration => messages::DIMENSION_DURATION,
+        MeterDimension::Percentage => messages::DIMENSION_PERCENTAGE,
     };
     format!(
         "{} · {} · {}",
@@ -522,6 +523,8 @@ mod tests {
             precision: 1,
             description: None,
             required_for: vec![EventKind::Maintenance, EventKind::Repair],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         assert_eq!(meter_summary(&meter), "Duration · hours · tenths");
         assert_eq!(required_text(&meter), "Required for: Maintenance, Repair");

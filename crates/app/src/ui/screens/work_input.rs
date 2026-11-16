@@ -249,6 +249,7 @@ pub(super) fn work_from(
                     meter: *id,
                     value: parse_reading(text, meter.unit, meter.precision)
                         .map_err(|error| (Target::EndReading(*id), error.message()))?,
+                    reset: false,
                 })
             })
             .collect::<Result<Vec<_>, Problem>>()?
@@ -440,6 +441,8 @@ mod tests {
                 precision: 0,
                 description: None,
                 required_for: vec![EventKind::Maintenance],
+                direction: domain::meter::MeterDirection::Up,
+                reset_to: None,
             },
         )]
     }

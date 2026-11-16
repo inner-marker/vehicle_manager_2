@@ -115,6 +115,8 @@ mod events {
                 precision: 0,
                 description: None,
                 required_for: vec![EventKind::Fuel],
+                direction: domain::meter::MeterDirection::Up,
+                reset_to: None,
             };
             MeterWriter
                 .create(connection, test_id(n), &MeterPatch::all(meter), 4)
@@ -171,6 +173,7 @@ mod events {
             readings: vec![Reading {
                 meter: test_id(ODOMETER),
                 value: odometer,
+                reset: false,
             }],
             skipped: vec![Skipped {
                 item: Requirement::Meter(test_id(HOURS)),
@@ -292,6 +295,7 @@ mod events {
             readings: Some(vec![Reading {
                 meter: test_id(ODOMETER),
                 value: 80_000_500,
+                reset: false,
             }]),
             notes: Some(Notes::parse("Pump 6").unwrap()),
             fuel: Some(Clearable::Clear),

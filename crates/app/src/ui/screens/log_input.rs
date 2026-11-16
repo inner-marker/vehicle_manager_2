@@ -69,7 +69,9 @@ impl Target {
         match problem {
             EventProblem::Required(item) => Self::of(item),
             EventProblem::ReadingOutOfOrder(clash) => Self::Meter(clash.meter),
-            EventProblem::UnknownMeter(meter) => Self::Meter(meter),
+            EventProblem::UnknownMeter(meter) | EventProblem::NotResettable(meter) => {
+                Self::Meter(meter)
+            }
             EventProblem::EndBelowStart(meter) => Self::EndReading(meter),
             EventProblem::UnknownField(field) | EventProblem::WrongValue(field) => {
                 Self::Field(field)
@@ -285,7 +287,11 @@ fn readings(typed: &Typed, context: &Context<'_>) -> Result<Vec<Reading>, Proble
         }
         let value = parse_reading(text, meter.unit, meter.precision)
             .map_err(quantity(Target::Meter(*id)))?;
-        readings.push(Reading { meter: *id, value });
+        readings.push(Reading {
+            meter: *id,
+            value,
+            reset: false,
+        });
     }
     Ok(readings)
 }
@@ -579,6 +585,8 @@ mod tests {
                 precision: 0,
                 description: None,
                 required_for: vec![EventKind::Fuel],
+                direction: domain::meter::MeterDirection::Up,
+                reset_to: None,
             },
         )]
     }

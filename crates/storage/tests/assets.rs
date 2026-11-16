@@ -194,6 +194,8 @@ mod assets {
             precision: 1,
             description: Some("Oil pressure switch".into()),
             required_for: vec![EventKind::Maintenance, EventKind::Fuel],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         let mut connection = database.pool().acquire().await.unwrap();
         MeterWriter
