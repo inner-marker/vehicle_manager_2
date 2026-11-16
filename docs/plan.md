@@ -693,7 +693,7 @@ Everything that must be done to an asset, whether your own schedule or an extern
 
 **Phasing**
 - **Phase 2:** requirements (replacing the earlier "task definition"), reference documents entered by hand with attachments, one-time and recurring modes, applicability with not-applicable reasons.
-- **Phase 5:** initial-deadline-then-recurring and terminating-action modes in the "what's due" logic; supersession handling.
+- **The aircraft phase** (moved from Phase 5, 2026-11-16, #082): initial-deadline-then-recurring and terminating-action modes in the "what's due" logic; supersession handling. Ground vehicles' recalls are one-time, which Phase 2 built.
 - **Post-MVP:** importing reference data (e.g. recall lookups by VIN from NHTSA data to suggest recalls automatically); automatic applicability matching by model and serial range. Aviation directive data comes with the aircraft phase.
 
 ### Readiness ("Ready to use?")
@@ -1133,7 +1133,7 @@ Aircraft maintenance is a long-term aspiration, not planned yet. These choices k
 | **Finalized records and amendments** (immutable once finalized) | Event | Phase 2 |
 | **Performed by vs. logged by**, with performer credential captured at that time | Event | Phase 2 |
 | **Typed identifiers** instead of a single VIN | Asset | Phase 2 |
-| **Requirements & reference documents:** one-time and recurring compliance, applicability, method of compliance, terminating actions (recalls and bulletins now; airworthiness directives later) | Requirement, ReferenceDocument | Phase 2 (basic); Phase 5 (initial-deadline and terminating modes) |
+| **Requirements & reference documents:** one-time and recurring compliance, applicability, method of compliance, terminating actions (recalls and bulletins now; airworthiness directives later) | Requirement, ReferenceDocument | Phase 2 (basic); the aircraft phase (initial-deadline and terminating modes, #082) |
 | **"Due by end of month"** calendar interval option | IntervalRule | Phase 2 |
 | **Readiness ("Ready to use?")** with operation types; squawks that block use | Requirement, OfficialDocument, Squawk, profiles | Phase 2 (squawk flag); Phase 5 (summary) |
 | **Multi-page document attachments** | Attachment | Phase 2 (upload), Phase 6 (web scan), post-MVP (native scan in the mobile apps) |
@@ -1857,7 +1857,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Parts and fluid specs** (answered 2026-11-15): a **Specs** list per vehicle; requirements link to it, and a logged job's parts are pre-filled from it.
 - **Calculated fields** (formulas over built-in and custom fields, by their stable keys, unit-aware; #057) and perhaps a catalogue of ready-made fields (idea 16). 
 - The **readiness summary** ("Ready to use?", with operation types, #051) and time and distance to each major service on the vehicle's Overview. 
-- What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
+- What's due (including **official document expirations** with lead times and a renew flow; the initial-deadline and terminating-action modes and supersession moved to the aircraft phase, #082), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 
 ### Phase 6: Polish.
 - **Phase 6: Polish.** Import/export, reports (pairing moved to Phase 3, #072)
