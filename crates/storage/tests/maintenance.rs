@@ -116,6 +116,8 @@ mod maintenance {
             precision: 0,
             description: None,
             required_for: vec![EventKind::Maintenance],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         MeterWriter
             .create(connection, test_id(ODOMETER), &MeterPatch::all(meter), 4)
@@ -189,6 +191,7 @@ mod maintenance {
         Reading {
             meter: test_id(ODOMETER),
             value,
+            reset: false,
         }
     }
 
@@ -409,6 +412,7 @@ mod maintenance {
             event: test_id(event),
             at: at(days),
             value,
+            reset: false,
         };
         assert_eq!(
             database.readings_of(test_id(TRUCK)).await.unwrap(),

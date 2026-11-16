@@ -54,10 +54,16 @@ pub(super) fn check_work(
     for task in &work.tasks {
         check_task(task, work, context)?;
     }
-    for end in &work.end_readings {
+    for end in work.end_readings.iter().filter(|end| !end.reset) {
+        let direction = context
+            .meters
+            .iter()
+            .find(|(id, _)| *id == end.meter)
+            .map(|(_, meter)| meter.direction)
+            .unwrap_or_default();
         if event
             .reading(end.meter)
-            .is_some_and(|start| end.value < start)
+            .is_some_and(|start| !direction.allows(start, end.value))
         {
             return Err(EventProblem::EndBelowStart(end.meter));
         }
@@ -162,19 +168,37 @@ mod tests {
     const REGISTRATION: u32 = 41;
     const BRAKES: u32 = 30;
 
+    const OIL_LIFE: u32 = 12;
+
     fn meters() -> Vec<(MeterId, Meter)> {
-        vec![(
-            test_id(ODOMETER),
-            Meter {
-                asset: test_id(1),
-                name: Label::parse("Odometer").unwrap(),
-                dimension: MeterDimension::Distance,
-                unit: MeterUnit::Miles,
-                precision: 0,
-                description: None,
-                required_for: vec![EventKind::Fuel, EventKind::Maintenance],
-            },
-        )]
+        let oil_life = Meter {
+            asset: test_id(1),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: crate::meter::MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        vec![
+            (test_id(OIL_LIFE), oil_life),
+            (
+                test_id(ODOMETER),
+                Meter {
+                    asset: test_id(1),
+                    name: Label::parse("Odometer").unwrap(),
+                    dimension: MeterDimension::Distance,
+                    unit: MeterUnit::Miles,
+                    precision: 0,
+                    description: None,
+                    required_for: vec![EventKind::Fuel, EventKind::Maintenance],
+                    direction: crate::meter::MeterDirection::Up,
+                    reset_to: None,
+                },
+            ),
+        ]
     }
 
     fn requirements() -> Vec<(RequirementId, Requirement)> {
@@ -264,6 +288,7 @@ mod tests {
             readings: vec![Reading {
                 meter: test_id(ODOMETER),
                 value: 1_000,
+                reset: false,
             }],
             skipped: vec![],
             fields: vec![],
@@ -277,6 +302,7 @@ mod tests {
                 end_readings: vec![Reading {
                     meter: test_id(ODOMETER),
                     value: 1_010,
+                    reset: false,
                 }],
                 dispositions: vec![],
                 currency: CurrencyCode::USD,
@@ -319,6 +345,31 @@ mod tests {
 
     fn work(event: &mut Event) -> &mut WorkDetails {
         event.work.as_mut().unwrap()
+    }
+
+    #[test]
+    fn an_end_reading_follows_its_meters_direction_or_is_a_reset() {
+        // Oil life 18% at the start of the job.
+        let with_oil = |end: i64, reset: bool| {
+            let mut event = oil_change();
+            event.readings.push(Reading {
+                meter: test_id(OIL_LIFE),
+                value: 1_800,
+                reset: false,
+            });
+            work(&mut event).end_readings.push(Reading {
+                meter: test_id(OIL_LIFE),
+                value: end,
+                reset,
+            });
+            checked(&event, &[], false)
+        };
+        assert_eq!(with_oil(1_500, false), Ok(()), "down, as it counts");
+        assert_eq!(
+            with_oil(10_000, false),
+            Err(EventProblem::EndBelowStart(test_id(OIL_LIFE)))
+        );
+        assert_eq!(with_oil(10_000, true), Ok(()), "reset by the oil change");
     }
 
     #[test]

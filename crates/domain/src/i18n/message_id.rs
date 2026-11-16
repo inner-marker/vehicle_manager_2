@@ -1017,6 +1017,8 @@ define_messages! {
     EVENT_KIND_REPAIR => "event-kind-repair",
     /// Meter unit: hours.
     UNIT_HOURS => "unit-hours",
+    /// Meter unit: percent.
+    UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.
     LABEL_EMPTY => "label-empty",
     /// A label longer than the limit.
@@ -1025,6 +1027,30 @@ define_messages! {
     METER_WRONG_UNIT => "meter-wrong-unit",
     /// Too many decimal places on a meter.
     METER_TOO_PRECISE => "meter-too-precise",
+    /// A meter's reset value below zero.
+    METER_NEGATIVE_RESET => "meter-negative-reset",
+    /// A resettable distance meter that fuel-ups require.
+    METER_RESETTABLE_FUEL => "meter-resettable-fuel",
+    /// A meter's direction changed after it has readings.
+    METER_DIRECTION_FIXED => "meter-direction-fixed",
+    /// A meter's direction: counts up.
+    METER_COUNTS_UP => "meter-counts-up",
+    /// A meter's direction: counts down.
+    METER_COUNTS_DOWN => "meter-counts-down",
+    /// Meter dialog: which way it counts.
+    METER_COUNTS => "meter-counts",
+    /// Meter dialog: a note on counting down.
+    METER_COUNTS_NOTE => "meter-counts-note",
+    /// Meter dialog: the meter can be reset.
+    METER_RESETTABLE => "meter-resettable",
+    /// Meter dialog: before the reset value ("to 100 %").
+    METER_RESET_TO => "meter-reset-to",
+    /// Meter dialog: a note on resetting.
+    METER_RESET_NOTE => "meter-reset-note",
+    /// A meter's summary: it counts down.
+    METER_SUMMARY_DOWN => "meter-summary-down",
+    /// A meter's summary: what a reset sets it to; takes `value` ("100 %").
+    METER_SUMMARY_RESETS => "meter-summary-resets",
     /// Too many decimal places on a number field.
     FIELD_TOO_MANY_DECIMALS => "field-too-many-decimals",
     /// A choice list with no choices or too many.
@@ -1193,6 +1219,8 @@ define_messages! {
     DIMENSION_DISTANCE => "dimension-distance",
     /// What a meter measures: duration.
     DIMENSION_DURATION => "dimension-duration",
+    /// What a meter measures: a percentage.
+    DIMENSION_PERCENTAGE => "dimension-percentage",
     /// Setup section: the vehicle's details.
     SETUP_DETAILS => "setup-details",
     /// Setup: open the details form.
@@ -1651,6 +1679,8 @@ define_messages! {
     UNIT_ABBR_L_PER_100_KM => "unit-abbr-l-per-100-km",
     /// Unit abbreviation: hours.
     UNIT_ABBR_H => "unit-abbr-h",
+    /// Short unit: percent.
+    UNIT_ABBR_PERCENT => "unit-abbr-percent",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.
@@ -1833,6 +1863,18 @@ define_messages! {
     LOG_CLASH_BELOW => "log-clash-below",
     /// Log form: a reading above the one after.
     LOG_CLASH_ABOVE => "log-clash-above",
+    /// Log form: the tick marking a reading as a reset.
+    LOG_RESET => "log-reset",
+    /// Log form: under a reset reading; takes `name`, `from`, `to`, and `unit`.
+    LOG_RESET_DONE => "log-reset-done",
+    /// Log form: the button on a refused reading of a resettable meter.
+    LOG_IT_WAS_A_RESET => "log-it-was-a-reset",
+    /// A reading higher than an earlier one on a meter counting down; takes `value`, `unit`,
+    /// and `date`.
+    LOG_CLASH_ABOVE_EARLIER => "log-clash-above-earlier",
+    /// A reading lower than a later one on a meter counting down; takes `value`, `unit`, and
+    /// `date`.
+    LOG_CLASH_BELOW_LATER => "log-clash-below-later",
     /// Correct form: what correcting does.
     LOG_CORRECT_NOTE => "log-correct-note",
     /// Correct form: the reason.
@@ -2027,6 +2069,8 @@ define_messages! {
     EVENT_NO_END_READINGS => "event-no-end-readings",
     /// Maintenance: an end reading below the start.
     EVENT_END_BELOW_START => "event-end-below-start",
+    /// A reading marked as a reset on a meter that can't be reset.
+    EVENT_NOT_RESETTABLE => "event-not-resettable",
     /// Maintenance: Finish on a fuel-up or reading, or Finalize now on a job.
     EVENT_FINISH_JOBS_ONLY => "event-finish-jobs-only",
     /// Squawk: changing or removing one that a job has already dealt with.

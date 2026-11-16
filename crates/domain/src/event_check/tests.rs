@@ -12,7 +12,7 @@ use crate::event::{
 };
 use crate::label::Label;
 use crate::location::{LocationSource, Place, TimeZone};
-use crate::meter::{MeterDimension, MeterUnit};
+use crate::meter::{MeterDimension, MeterDirection, MeterUnit};
 use crate::notes::Notes;
 use crate::preferences::CurrencyCode;
 use crate::test_support::test_id;
@@ -21,6 +21,7 @@ const TRUCK: u32 = 1;
 const TRAILER: u32 = 2;
 const ODOMETER: u32 = 10;
 const HOURS: u32 = 11;
+const OIL_LIFE: u32 = 12;
 const TRIP_TIME: u32 = 20;
 const BRAND: u32 = 21;
 const OFF_FIELD: u32 = 22;
@@ -42,8 +43,19 @@ fn meters() -> Vec<(MeterId, Meter)> {
         precision: 0,
         description: None,
         required_for,
+        direction: MeterDirection::Up,
+        reset_to: None,
     };
+    let mut oil_life = meter(
+        "Oil life",
+        MeterDimension::Percentage,
+        MeterUnit::Percent,
+        vec![],
+    );
+    oil_life.direction = MeterDirection::Down;
+    oil_life.reset_to = Some(10_000);
     vec![
+        (test_id(OIL_LIFE), oil_life),
         (
             test_id(ODOMETER),
             meter(
@@ -113,11 +125,21 @@ fn fields() -> Vec<(CustomFieldId, CustomField)> {
     ]
 }
 
+/// A reading already logged, not a reset.
+fn past(meter: MeterId, at: UnixMillis, value: i64) -> PastReading {
+    PastReading {
+        meter,
+        at,
+        value,
+        reset: false,
+    }
+}
+
 /// Odometer readings already logged: 50,000 m on 1 January, 52,000 m on 1 March.
-fn history() -> Vec<(MeterId, UnixMillis, i64)> {
+fn history() -> Vec<PastReading> {
     vec![
-        (test_id(ODOMETER), on("2026-01-01"), 50_000),
-        (test_id(ODOMETER), on("2026-03-01"), 52_000),
+        past(test_id(ODOMETER), on("2026-01-01"), 50_000),
+        past(test_id(ODOMETER), on("2026-03-01"), 52_000),
     ]
 }
 
@@ -141,6 +163,7 @@ fn fuel_up() -> Event {
         readings: vec![Reading {
             meter: test_id(ODOMETER),
             value: 51_000,
+            reset: false,
         }],
         skipped: vec![],
         fields: vec![FieldValue {
@@ -317,6 +340,7 @@ fn readings_need_a_known_meter_once() {
     event.readings.push(Reading {
         meter: test_id(99),
         value: 1,
+        reset: false,
     });
     assert_eq!(
         checked(&event, false),
@@ -597,7 +621,7 @@ proptest! {
         let history: Vec<_> = values
             .iter()
             .zip(0..)
-            .map(|(v, month)| (test_id::<Meter>(ODOMETER), UnixMillis::from_millis(start + month * 30 * day_ms), *v))
+            .map(|(v, month)| past(test_id(ODOMETER), UnixMillis::from_millis(start + month * 30 * day_ms), *v))
             .collect();
         let at = UnixMillis::from_millis(start + day * day_ms + 1);
         let (before, after) = neighbours(&history, test_id(ODOMETER), at);
@@ -617,11 +641,134 @@ proptest! {
             location_rule: LocationRule::Required,
             may_override_readings: false,
         });
-        prop_assert_eq!(result.is_ok(), reading_fits(value, before, after));
+        prop_assert_eq!(result.is_ok(), reading_fits(MeterDirection::Up, value, before, after));
         // And "fits" means between the neighbours, inclusive.
         prop_assert_eq!(
-            reading_fits(value, before, after),
+            reading_fits(MeterDirection::Up, value, before, after),
             before.is_none_or(|b| value >= b) && after.is_none_or(|a| value <= a)
+        );
+    }
+}
+
+/// Oil life (hundredths of a percent): 80% on 1 January, 18% on 1 March, reset to 100% on
+/// 1 April, then 90% on 1 May.
+fn oil_history() -> Vec<PastReading> {
+    let oil = test_id(OIL_LIFE);
+    let mut reset = past(oil, on("2026-04-01"), 10_000);
+    reset.reset = true;
+    vec![
+        past(oil, on("2026-01-01"), 8_000),
+        past(oil, on("2026-03-01"), 1_800),
+        reset,
+        past(oil, on("2026-05-01"), 9_000),
+    ]
+}
+
+/// A reading of Oil life alone on `date`, checked against [`oil_history`].
+fn oil_reading(date: &str, value: i64, reset: bool) -> Result<Vec<Warning>, EventProblem> {
+    let mut event = fuel_up();
+    event.kind = EventKind::Reading;
+    event.fuel = None;
+    event.fields.clear();
+    event.dates = EventDates::new(on(date), None, utc()).unwrap();
+    event.readings = vec![Reading {
+        meter: test_id(OIL_LIFE),
+        value,
+        reset,
+    }];
+    let (meters, fields, history) = (meters(), fields(), oil_history());
+    check(
+        &event,
+        &CheckContext {
+            kinds: &EventKind::ALL,
+            requirements: &[],
+            outstanding_squawks: &[],
+            lifecycle: &[],
+            meters: &meters,
+            fields: &fields,
+            history: &history,
+            location_rule: LocationRule::Required,
+            may_override_readings: false,
+        },
+    )
+}
+
+fn oil_clash(side: ClashSide, date: &str, value: i64) -> Result<Vec<Warning>, EventProblem> {
+    Err(EventProblem::ReadingOutOfOrder(ReadingClash {
+        meter: test_id(OIL_LIFE),
+        side,
+        at: on(date),
+        value,
+    }))
+}
+
+#[test]
+fn a_meter_counting_down_may_fall_or_stay_but_never_rise() {
+    // Between 80% (Jan) and 18% (Mar).
+    assert_eq!(oil_reading("2026-02-01", 5_000, false), Ok(vec![]));
+    assert_eq!(oil_reading("2026-02-01", 8_000, false), Ok(vec![]), "equal");
+    assert_eq!(
+        oil_reading("2026-02-01", 8_500, false),
+        oil_clash(ClashSide::AboveEarlier, "2026-01-01", 8_000)
+    );
+    assert_eq!(
+        oil_reading("2026-02-01", 1_000, false),
+        oil_clash(ClashSide::BelowLater, "2026-03-01", 1_800)
+    );
+    // After 90% (May): sitting at 0% again and again is fine.
+    assert_eq!(oil_reading("2026-06-01", 0, false), Ok(vec![]));
+}
+
+#[test]
+fn a_reset_starts_afresh_either_side() {
+    // 62% after 18%: refused, unless it's a reset.
+    assert_eq!(
+        oil_reading("2026-03-15", 6_200, false),
+        oil_clash(ClashSide::AboveEarlier, "2026-03-01", 1_800)
+    );
+    assert_eq!(oil_reading("2026-03-15", 6_200, true), Ok(vec![]));
+    // Back-dated before April's reset: only 18% binds it, not the 100% after.
+    assert_eq!(oil_reading("2026-03-15", 1_500, false), Ok(vec![]));
+    // After the reset: between 100% and May's 90%.
+    assert_eq!(oil_reading("2026-04-15", 9_500, false), Ok(vec![]));
+    assert_eq!(
+        oil_reading("2026-04-15", 8_500, false),
+        oil_clash(ClashSide::BelowLater, "2026-05-01", 9_000)
+    );
+    // At the reset's own moment, the reset comes last: 100% is fine, 101% isn't.
+    assert_eq!(oil_reading("2026-04-01", 10_000, false), Ok(vec![]));
+    assert_eq!(
+        oil_reading("2026-04-01", 10_100, false),
+        oil_clash(ClashSide::AboveEarlier, "2026-04-01", 10_000)
+    );
+}
+
+#[test]
+fn only_a_resettable_meter_can_be_reset() {
+    let mut event = fuel_up();
+    event.readings[0].reset = true;
+    assert_eq!(
+        checked(&event, false),
+        Err(EventProblem::NotResettable(test_id(ODOMETER)))
+    );
+    assert_eq!(
+        checked(&event, true),
+        Err(EventProblem::NotResettable(test_id(ODOMETER))),
+        "not even the Admin"
+    );
+}
+
+proptest! {
+    #[test]
+    fn counting_down_is_counting_up_mirrored(
+        before in proptest::option::of(0i64..10_000),
+        after in proptest::option::of(0i64..10_000),
+        value in 0i64..10_000,
+    ) {
+        let mirror = |v: i64| 10_000 - v;
+        prop_assert_eq!(
+            reading_fits(MeterDirection::Down, value, before, after),
+            reading_fits(MeterDirection::Up, mirror(value), before.map(mirror), after.map(mirror))
         );
     }
 }

@@ -647,6 +647,8 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![EventKind::Fuel],
+            direction: crate::meter::MeterDirection::Up,
+            reset_to: None,
         }
     }
 

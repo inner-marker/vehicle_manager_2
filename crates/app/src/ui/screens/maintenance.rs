@@ -191,11 +191,7 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
 
 /// A meter's short unit name.
 fn unit_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// A date (`2026-11-30`) in the person's format.
@@ -1473,6 +1469,8 @@ mod tests {
                     precision,
                     description: None,
                     required_for: vec![EventKind::Maintenance],
+                    direction: domain::meter::MeterDirection::Up,
+                    reset_to: None,
                 },
             )
         })
@@ -1562,10 +1560,12 @@ mod tests {
                 domain::event::Reading {
                     meter: test_id(20),
                     value: 52_644 * MILE / 1000,
+                    reset: false,
                 },
                 domain::event::Reading {
                     meter: test_id(21),
                     value: 4_446_000,
+                    reset: false,
                 },
             ],
             next_due: None,

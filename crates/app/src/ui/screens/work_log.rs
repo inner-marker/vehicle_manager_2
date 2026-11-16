@@ -34,11 +34,7 @@ use crate::ui::{tr, tr_with};
 
 /// A meter's unit, short.
 fn unit_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// The tasks for `bundle`'s requirements, in its order (those already in the list are left

@@ -138,11 +138,12 @@ pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Ro
 
 /// A meter's short unit name.
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
+}
+
+/// " ↺" after a reading that was a reset (phase-5.md milestone 1), otherwise nothing.
+pub(super) const fn reset_mark(reset: bool) -> &'static str {
+    if reset { " ↺" } else { "" }
 }
 
 /// "52,644 mi · 18.004 gal · 62.27 USD": the readings, then a fuel-up's volume and cost.
@@ -160,9 +161,10 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
             .filter_map(|reading| {
                 let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
                 Some(format!(
-                    "{} {}",
+                    "{} {}{}",
                     show_reading(reading.value, meter.unit, meter.precision),
-                    meter_abbr(meter.unit)
+                    meter_abbr(meter.unit),
+                    reset_mark(reading.reset)
                 ))
             })
             .collect::<Vec<_>>(),
@@ -532,6 +534,7 @@ mod tests {
                 readings: vec![Reading {
                     meter: test_id(20),
                     value: odometer,
+                    reset: false,
                 }],
                 skipped: vec![],
                 fields: vec![],
@@ -634,6 +637,8 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         let meters = vec![(test_id(20), meter)];
         assert_eq!(

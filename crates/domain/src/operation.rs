@@ -348,6 +348,7 @@ mod tests {
             readings: vec![Reading {
                 meter: test_id(11),
                 value: miles * 1_609_344 / 1_000,
+                reset: false,
             }],
             skipped: vec![],
             fields: vec![],

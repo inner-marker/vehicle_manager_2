@@ -497,6 +497,7 @@ mod lifecycle {
         job.readings = vec![domain::event::Reading {
             meter: odometer,
             value: 80_000_000,
+            reset: false,
         }];
         job.work = Some(WorkDetails {
             tasks: vec![Task {

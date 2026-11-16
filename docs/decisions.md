@@ -955,3 +955,13 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - parts pre-filled from specs;
   - counting-down and percentage meters added ("many modern cars have Oil life remaining as a percentage").
 - **Limits, accepted:** fractions of the interval warn very early on long intervals and very late on short ones; per-requirement changes are the answer. A partial fill has no figure until the next full fill. Formulas are worked out when shown, so a calculated field can't be searched or sorted on the server.
+
+### 081. Manual test plans: one cumulative plan per phase, run at its end; a milestone's own plan is optional
+*Decided: 2026-11-16 · Plan §9 Manual testing by the human · AGENTS.md "Manual test plans" · Phase plan: phase-5.md (from milestone 1) · Changes the practice of Phases 1–3*
+
+- **Decision:**
+  - **One test plan per phase,** `docs/test-plans/p<phase>-phase.md`, built up as the phase goes: each milestone's last step adds its section (what it changed, and the steps that check it). Nothing is run then.
+  - **Required at the end of the phase:** the human runs the whole plan on the test server before the release, as its regression pass, with the phase's exit criteria and the earlier releases' main paths.
+  - **A milestone's own plan is optional:** when the human asks, or when the agent thinks something risky needs a person before it merges (and says why).
+- **Why:** the human, 2026-11-16: "test plans will be optional for milestones, required for end of phase only. Cumulative test plan for end of phase." Through Phase 3, every milestone had a plan run before it merged, which took much of each milestone's time. The automated tests now cover most of what those plans checked.
+- **Limits, accepted:** a problem only a person can see (a screen's layout, the desktop offline, the NAS) may sit on `dev` until the end of the phase, and several may surface together. The household isn't affected: the main server runs only release tags (#070), and a release comes after the phase's plan has been run.

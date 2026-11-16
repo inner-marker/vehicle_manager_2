@@ -14,8 +14,9 @@ use domain::api::{AssetView, AssetsOutcome};
 use domain::asset::{Asset, AssetId, Identifier, LifecycleStatus};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
-use domain::meter::{EventKind, Meter, MeterDimension};
+use domain::meter::{EventKind, Meter, MeterDimension, MeterDirection};
 use domain::profile::profile;
+use domain::quantity::show_reading;
 
 use super::attachments::AttachmentStrip;
 use super::documents::DocumentsTab;
@@ -185,18 +186,34 @@ pub(super) fn identifier_name(asset: &Asset, kind: &str) -> String {
         )
 }
 
-/// "Distance · miles · whole": what a meter measures, its unit, and its decimals.
+/// "Distance · miles · whole": what a meter measures, its unit, and its decimals; then, for
+/// the Phase 5 kinds, "counts down" and "resets to 100 %".
 pub(super) fn meter_summary(meter: &Meter) -> String {
     let dimension = match meter.dimension {
         MeterDimension::Distance => messages::DIMENSION_DISTANCE,
         MeterDimension::Duration => messages::DIMENSION_DURATION,
+        MeterDimension::Percentage => messages::DIMENSION_PERCENTAGE,
     };
-    format!(
-        "{} · {} · {}",
+    let mut parts = vec![
         tr(dimension),
         tr(meter.unit.label()).to_lowercase(),
-        tr(precision_label(meter.precision))
-    )
+        tr(precision_label(meter.precision)),
+    ];
+    if meter.direction == MeterDirection::Down {
+        parts.push(tr(messages::METER_SUMMARY_DOWN));
+    }
+    if let Some(value) = meter.reset_to {
+        let shown = format!(
+            "{} {}",
+            show_reading(value, meter.unit, meter.precision),
+            tr(meter.unit.abbr())
+        );
+        parts.push(tr_with(
+            messages::METER_SUMMARY_RESETS,
+            &[("value", MessageArg::from(shown))],
+        ));
+    }
+    parts.join(" · ")
 }
 
 /// A number of decimal places, in words.
@@ -522,8 +539,24 @@ mod tests {
             precision: 1,
             description: None,
             required_for: vec![EventKind::Maintenance, EventKind::Repair],
+            direction: MeterDirection::Up,
+            reset_to: None,
         };
         assert_eq!(meter_summary(&meter), "Duration · hours · tenths");
         assert_eq!(required_text(&meter), "Required for: Maintenance, Repair");
+        let oil_life = Meter {
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+            ..meter
+        };
+        assert_eq!(
+            meter_summary(&oil_life),
+            "Percentage · % · whole · counts down · resets to 100 %"
+        );
     }
 }

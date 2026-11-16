@@ -15,7 +15,7 @@ mod events {
     use domain::group::{Group, GroupIcon, GroupName, GroupPatch};
     use domain::label::Label;
     use domain::location::{Coordinates, LocationSource, Place, TimeZone};
-    use domain::meter::{EventKind, Meter, MeterDimension, MeterPatch, MeterUnit};
+    use domain::meter::{EventKind, Meter, MeterDimension, MeterDirection, MeterPatch, MeterUnit};
     use domain::notes::Notes;
     use domain::preferences::CurrencyCode;
     use domain::test_support::test_id;
@@ -36,6 +36,7 @@ mod events {
     const TRAILER: u32 = 11;
     const ODOMETER: u32 = 20;
     const HOURS: u32 = 21;
+    const OIL: u32 = 22;
     const TRIP_TIME: u32 = 30;
 
     /// A database with a person, a truck (odometer and engine hours, a trip time field), and a
@@ -115,6 +116,8 @@ mod events {
                 precision: 0,
                 description: None,
                 required_for: vec![EventKind::Fuel],
+                direction: MeterDirection::Up,
+                reset_to: None,
             };
             MeterWriter
                 .create(connection, test_id(n), &MeterPatch::all(meter), 4)
@@ -171,6 +174,7 @@ mod events {
             readings: vec![Reading {
                 meter: test_id(ODOMETER),
                 value: odometer,
+                reset: false,
             }],
             skipped: vec![Skipped {
                 item: Requirement::Meter(test_id(HOURS)),
@@ -292,6 +296,7 @@ mod events {
             readings: Some(vec![Reading {
                 meter: test_id(ODOMETER),
                 value: 80_000_500,
+                reset: false,
             }]),
             notes: Some(Notes::parse("Pump 6").unwrap()),
             fuel: Some(Clearable::Clear),
@@ -406,6 +411,7 @@ mod events {
             event: test_id(n),
             at: UnixMillis::from_millis(NOW.as_millis() + days * DAY),
             value,
+            reset: false,
         };
         assert_eq!(
             database.latest_readings(test_id(TRUCK)).await.unwrap(),
@@ -451,6 +457,68 @@ mod events {
                 .await
                 .unwrap()
                 .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_reset_is_kept_and_comes_last_at_its_moment() {
+        let (_temp, database) = database().await;
+        let mut connection = connection(&database).await;
+        // Oil life (hundredths of a percent), counting down and resettable to 100%.
+        let oil_life = Meter {
+            asset: test_id(TRUCK),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        MeterWriter
+            .create(&mut connection, test_id(OIL), &MeterPatch::all(oil_life), 5)
+            .await
+            .unwrap();
+        let with_oil = |value: i64, reset: bool| {
+            let mut event = fuel_up(3, 80_000_000);
+            event.readings.push(Reading {
+                meter: test_id(OIL),
+                value,
+                reset,
+            });
+            event
+        };
+        // At one moment: the reset (saved first), and two readings without one.
+        create(&mut connection, 100, &with_oil(10_000, true)).await;
+        create(&mut connection, 101, &with_oil(1_500, false)).await;
+        create(&mut connection, 102, &with_oil(1_800, false)).await;
+
+        let event = database.event(test_id(100)).await.unwrap().unwrap();
+        assert!(
+            event
+                .readings
+                .iter()
+                .any(|r| r.meter == test_id(OIL) && r.reset)
+        );
+        let oil: Vec<(i64, bool)> = database
+            .readings_of(test_id(TRUCK))
+            .await
+            .unwrap()
+            .into_iter()
+            .filter(|reading| reading.meter == test_id(OIL))
+            .map(|reading| (reading.value, reading.reset))
+            .collect();
+        assert_eq!(
+            oil,
+            vec![(1_800, false), (1_500, false), (10_000, true)],
+            "counting down, then the reset last"
+        );
+        let latest = database.latest_readings(test_id(TRUCK)).await.unwrap();
+        assert!(
+            latest
+                .iter()
+                .any(|r| r.meter == test_id(OIL) && r.value == 10_000)
         );
     }
 

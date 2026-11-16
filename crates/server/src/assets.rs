@@ -24,7 +24,7 @@ use domain::group::GroupId;
 use domain::i18n::Translator;
 use domain::id::{DatabaseId, Id};
 use domain::log_area;
-use domain::meter::{Meter, MeterId, MeterPatch};
+use domain::meter::{Meter, MeterError, MeterId, MeterPatch};
 use domain::preferences::{Preferences, PreferencesId};
 use domain::profile::profile;
 use domain::time::Clock;
@@ -570,6 +570,8 @@ async fn add_meter_to(
         precision: parsed.precision,
         description: parsed.description,
         required_for: parsed.required_for,
+        direction: parsed.direction,
+        reset_to: parsed.reset_to,
     };
     let id: MeterId = context.new_id()?;
     context
@@ -585,7 +587,8 @@ async fn add_meter_to(
     Ok(AssetsOutcome::Done)
 }
 
-/// Changes a meter's settings (not what it measures).
+/// Changes a meter's settings (not what it measures, nor, once it has a reading, which way it
+/// counts).
 pub async fn edit_meter(
     context: &AssetsContext<'_>,
     id: MeterId,
@@ -614,8 +617,15 @@ async fn edit_meter_settings(
         description: (parsed.description != current.description)
             .then(|| Clearable::from_option(parsed.description)),
         required_for: (parsed.required_for != current.required_for).then_some(parsed.required_for),
+        direction: (parsed.direction != current.direction).then_some(parsed.direction),
+        reset_to: (parsed.reset_to != current.reset_to)
+            .then(|| Clearable::from_option(parsed.reset_to)),
         ..MeterPatch::default()
     };
+    // Which way it counts is fixed once it has a reading: they'd no longer fit (#080).
+    if patch.direction.is_some() && has_readings(context, &current, id).await? {
+        return Err(invalid(Problem::Meter(MeterError::DirectionFixed)));
+    }
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
         context
             .save(&MeterWriter, Change::Update { id, patch })
@@ -638,6 +648,20 @@ async fn remove_meter(
         .save(&MeterWriter, Change::<Meter>::Delete { id })
         .await?;
     Ok(AssetsOutcome::Done)
+}
+
+/// Whether meter `id` has a reading that counts.
+async fn has_readings(
+    context: &AssetsContext<'_>,
+    meter: &Meter,
+    id: MeterId,
+) -> Result<bool, AssetsOutcome> {
+    let readings = context
+        .database
+        .readings_of(meter.asset)
+        .await
+        .map_err(|error| unavailable("readings", &error))?;
+    Ok(readings.iter().any(|reading| reading.meter == id))
 }
 
 /// A meter, if the person may configure its vehicle now.

@@ -234,6 +234,8 @@ impl Profile {
                     precision: meter.precision,
                     description: None,
                     required_for: meter.required_for.clone(),
+                    direction: crate::meter::MeterDirection::Up,
+                    reset_to: None,
                 })
             })
             .collect()
