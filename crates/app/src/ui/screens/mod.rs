@@ -7,6 +7,7 @@ mod connection;
 mod devices;
 mod diagnostics;
 mod documents;
+mod due_view;
 mod event_page;
 mod groups;
 mod job_page;

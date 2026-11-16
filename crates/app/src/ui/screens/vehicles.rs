@@ -399,8 +399,10 @@ fn VehicleCard(
                     span { class: "badge", {tr(status_label(status))} }
                 } else if status == LifecycleStatus::OutForService {
                     span { class: "badge warn", {tr(status_label(status))} }
-                } else {
-                    span { class: "vehicle-card-coming", {tr(messages::VEHICLES_CARD_COMING)} }
+                }
+                // Its most urgent step (3A, #082); nothing when all is OK.
+                if let Some(step) = item.due.filter(|step| *step > domain::due::DueStep::Ok) {
+                    super::due_view::DueChip { step }
                 }
             }
             if arranging {

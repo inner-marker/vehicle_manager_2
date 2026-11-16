@@ -200,7 +200,7 @@
 | **2a** `feat(domain):` what's due | ☑️ | `domain::due`: the steps and their defaults; each rule's next due; `IntervalRule::Reaches`; "last done before these records"; the 90-day projection; a requirement's and a document's step; a vehicle's items in urgency order. Unit and property tests first (whichever comes first; end of month; never done; a reset meter; too few readings). |
 | **2b** `feat(storage):` migration 0023 | ☑️ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
 | **2c** `feat(server):` due on the server | ☑️ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
-| **2d** `feat(app):` the screens | ⬜ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
+| **2d** `feat(app):` the screens | ☑️ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
 | **2e** `docs:` | ⬜ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **New dependencies:** none expected.
@@ -284,5 +284,28 @@
   - server (`tests/due.rs`): a truck's oil change counted from before the records, and its insurance, both **Due soon**, on the list, the schedule, and the Garage; a vehicle Sam can't see; refusals for backwards warnings, an unknown meter, a bad date, and backwards document days;
   - the household's backwards warnings refused;
   - domain: `check_due_settings`, and the Most urgent order.
+
+**Step 2d notes (2026-11-16):**
+- **`ui::screens::due_view`:**
+  - `DueChip`, the step's word in its colour, so colour is never the only sign;
+  - `step_class`;
+  - `left_text`: "in 310 mi or by 12 Dec · ~19 Nov", "1 mi over", "was due 2 Nov", with "Not done yet" first when it applies. A date reads "was due" when its own rule is overdue.
+- **Colours:** set on the app's theme selectors (light, dark, and the system's choice). Yellow, orange, red, and a darker red on a tinted background for Overdue.
+- **1A, the schedule cards:** a coloured left edge, the chip beside the name, and what's left in the step's colour above the rules.
+- **2A, the Overview:** the placeholder "Coming due" panel is now **Coming up**, the 5 most urgent items (requirements by name, documents by type) with what's left and the chip, then **See all on Maintenance →**. With nothing set up, it says so.
+- **3A, the Garage card:** the chip replaces "Readings and due items arrive later", and shows nothing when everything is OK. The lifecycle badges stay.
+- **4A, the requirement dialog** (`DueSettings`), below the rules of a recurring one:
+  - **"Last done before these records"**: a date, and a reading for each meter its rules count on.
+  - **"Warn me"**, folded to "Household default: 20 / 10 / 5% left · 60 / 30 / 14 days before a date · Change". Change opens the steps, pre-filled with the household's (percent of the interval, and days before a date). **Use the household's warnings** folds them again.
+- **The document dialog:** "Warn me", once it has an expiry, folded the same way in days. A renewal keeps the old document's choice.
+- **A job's task:** **↺ Reset Oil life to 100 % at the end of the job**, for each resettable meter its requirement counts on. It's ticked when the task is added, from the menu or a bundle. `TypedWork.resets` turns it into a reset end reading at the meter's reset value, and editing the job ticks it again rather than showing it as a typed end reading.
+- **Settings:** **Due soon warnings** on the Household tab (the steps, **Save**, and **Use the built-in warnings**). The You tab shows them in words, set by the Admin.
+- **Shared pieces:** `TypedWarnings`, `StepInputs`, `days_typed`, and `parse_days` are used by the requirement, the document, and the Household tab alike.
+- **Tests:**
+  - every step has its word and colour;
+  - what's left reads as one line, including overdue and not done yet;
+  - a ticked reset becomes a reset end reading at the reset value (and a non-resettable meter's tick does nothing), and comes back ticked.
+- **Tidying:** clippy asked for the day steps by value (`DaySteps` is 6 bytes), and `typed_work` grew past 80 lines, so a task's part moved into `typed_task`.
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (2e).
 
 **Not in this milestone:** due and overdue messages and snooze, and the fleet strip (milestone 3); service bundles' sign-off and household templates (milestone 4); readiness (milestone 6); the airworthiness modes and supersession (the aircraft phase).

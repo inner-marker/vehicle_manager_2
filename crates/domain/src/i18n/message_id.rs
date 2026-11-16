@@ -1033,6 +1033,52 @@ define_messages! {
     REQUIREMENT_BAD_BEFORE_RECORDS => "requirement-bad-before-records",
     /// Garage sort: the most urgent first.
     SORT_MOST_URGENT => "sort-most-urgent",
+    /// What's left on a meter rule; takes `amount` ("310 mi").
+    DUE_IN => "due-in",
+    /// How far past a meter rule; takes `amount`.
+    DUE_OVER_BY => "due-over-by",
+    /// A date still to come; takes `date`.
+    DUE_BY => "due-by",
+    /// A date gone by; takes `date`.
+    DUE_WAS => "due-was",
+    /// A projected date, an estimate; takes `date`.
+    DUE_ABOUT => "due-about",
+    /// Between two rules' "what's left".
+    DUE_OR => "due-or",
+    /// Never done, and no "last done before these records".
+    DUE_NOT_DONE_YET => "due-not-done-yet",
+    /// Warnings in words; takes `interval` ("20 / 10 / 5") and `days` ("60 / 30 / 14").
+    DUE_WARNINGS_TEXT => "due-warnings-text",
+    /// Requirement dialog: "Last done before these records".
+    DUE_BEFORE_RECORDS => "due-before-records",
+    /// Requirement dialog: that date.
+    DUE_BEFORE_DATE => "due-before-date",
+    /// The warnings' label.
+    DUE_WARN_ME => "due-warn-me",
+    /// The household's warnings, folded; takes `warnings`.
+    DUE_HOUSEHOLD_DEFAULT => "due-household-default",
+    /// The household's day warnings, folded; takes `days` ("60 / 30 / 14").
+    DUE_HOUSEHOLD_DAYS => "due-household-days",
+    /// Open the warnings to change them.
+    DUE_CHANGE => "due-change",
+    /// Back to the household's warnings.
+    DUE_USE_HOUSEHOLD => "due-use-household",
+    /// The interval steps' label.
+    DUE_PERCENT_LEFT => "due-percent-left",
+    /// The day steps' label.
+    DUE_DAYS_BEFORE => "due-days-before",
+    /// After a percentage step.
+    DUE_PERCENT => "due-percent",
+    /// After a day step.
+    DUE_DAYS => "due-days",
+    /// A job's task: reset a meter at the end; takes `meter` and `value` ("100 %").
+    WORK_RESET_METER => "work-reset-meter",
+    /// Settings: when things come due.
+    SETTING_DUE_WARNINGS => "setting-due-warnings",
+    /// Settings, You tab: the household's Admin sets them.
+    SETTING_DUE_WARNINGS_HOUSEHOLD => "setting-due-warnings-household",
+    /// Settings: back to the built-in warnings.
+    DUE_BUILT_IN => "due-built-in",
     /// Meter unit: percent.
     UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.
@@ -1111,8 +1157,6 @@ define_messages! {
     VEHICLES_EMPTY_GROUP => "vehicles-empty-group",
     /// The phone's group menu label.
     VEHICLES_GROUP_MENU => "vehicles-group-menu",
-    /// A card's note until readings arrive.
-    VEHICLES_CARD_COMING => "vehicles-card-coming",
     /// Arranging: move a vehicle up.
     VEHICLES_MOVE_UP => "vehicles-move-up",
     /// Arranging: move a vehicle down.
@@ -1209,10 +1253,12 @@ define_messages! {
     PANEL_READY => "panel-ready",
     /// Overview panel: readiness, not built yet.
     PANEL_READY_COMING => "panel-ready-coming",
-    /// Overview panel: coming due.
+    /// Overview panel: coming up (what's due, #082).
     PANEL_DUE => "panel-due",
-    /// Overview panel: coming due, not built yet.
-    PANEL_DUE_COMING => "panel-due-coming",
+    /// Overview: nothing comes due.
+    PANEL_DUE_NONE => "panel-due-none",
+    /// Overview: to the Maintenance tab.
+    PANEL_DUE_SEE_ALL => "panel-due-see-all",
     /// Overview panel: open squawks.
     PANEL_SQUAWKS => "panel-squawks",
     /// Overview panel: latest fuel-ups.

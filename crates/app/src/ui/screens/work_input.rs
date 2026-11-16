@@ -99,6 +99,9 @@ pub(super) struct TypedWork {
     /// The places of tasks removed since the draft was last saved, in the order they went: the
     /// tasks' photos move to match once it's saved (8e).
     pub removed_tasks: Vec<u16>,
+    /// The resettable meters this job resets (a task's "↺ Reset Oil life to 100%", #082): each
+    /// gets a reset reading, at its reset value, among the end readings.
+    pub resets: Vec<MeterId>,
 }
 
 impl TypedWork {
@@ -224,6 +227,27 @@ fn repair_note(text: &str) -> Result<Option<Notes>, Problem> {
         .map_err(|error| (Target::Work, error.message()))
 }
 
+/// `end_readings` with a reset reading, at its reset value, for each of `resets` that can be
+/// reset (in place of any typed for it).
+fn with_resets(
+    mut end_readings: Vec<Reading>,
+    resets: &[MeterId],
+    meters: &[(MeterId, Meter)],
+) -> Vec<Reading> {
+    for (id, meter) in meters.iter().filter(|(id, _)| resets.contains(id)) {
+        let Some(value) = meter.reset_to else {
+            continue;
+        };
+        end_readings.retain(|reading| reading.meter != *id);
+        end_readings.push(Reading {
+            meter: *id,
+            value,
+            reset: true,
+        });
+    }
+    end_readings
+}
+
 /// The work of a job of `kind`, from what was typed.
 ///
 /// # Errors
@@ -256,6 +280,7 @@ pub(super) fn work_from(
     } else {
         Vec::new()
     };
+    let end_readings = with_resets(end_readings, &typed.resets, meters);
     let repair = kind == EventKind::Repair;
     Ok(WorkDetails {
         tasks: typed
@@ -286,41 +311,48 @@ pub(super) fn work_from(
     })
 }
 
-/// A job's work as typed again (to edit or correct it; the reverse of [`work_from`]).
-pub(super) fn typed_work(work: &WorkDetails, meters: &[(MeterId, Meter)]) -> TypedWork {
-    let currency = work.currency;
+/// One task as typed again, its amounts in `currency`.
+fn typed_task(task: &Task, currency: CurrencyCode) -> TypedTask {
     let money_text = |minor: Option<i64>| {
         minor
             .map(|minor| money_value(minor, currency))
             .unwrap_or_default()
     };
+    TypedTask {
+        title: task.title.as_str().to_owned(),
+        requirement: task.requirement,
+        notes: task.notes.as_str().to_owned(),
+        parts: task
+            .parts
+            .iter()
+            .map(|part| TypedPart {
+                description: part.description.clone(),
+                part_number: part.part_number.clone().unwrap_or_default(),
+                quantity: quantity_value(part.quantity_milli),
+                unit_price: money_text(part.unit_price_minor),
+            })
+            .collect(),
+        labor_time: task.labor_seconds.map(show_duration).unwrap_or_default(),
+        labor_cost: money_text(task.labor_cost_minor),
+        from_end: task.resets_from == ReadingSet::End,
+        next_due: task.next_due.clone().unwrap_or_default(),
+    }
+}
+
+/// A job's work as typed again (to edit or correct it; the reverse of [`work_from`]).
+pub(super) fn typed_work(work: &WorkDetails, meters: &[(MeterId, Meter)]) -> TypedWork {
+    let currency = work.currency;
     TypedWork {
         tasks: work
             .tasks
             .iter()
-            .map(|task| TypedTask {
-                title: task.title.as_str().to_owned(),
-                requirement: task.requirement,
-                notes: task.notes.as_str().to_owned(),
-                parts: task
-                    .parts
-                    .iter()
-                    .map(|part| TypedPart {
-                        description: part.description.clone(),
-                        part_number: part.part_number.clone().unwrap_or_default(),
-                        quantity: quantity_value(part.quantity_milli),
-                        unit_price: money_text(part.unit_price_minor),
-                    })
-                    .collect(),
-                labor_time: task.labor_seconds.map(show_duration).unwrap_or_default(),
-                labor_cost: money_text(task.labor_cost_minor),
-                from_end: task.resets_from == ReadingSet::End,
-                next_due: task.next_due.clone().unwrap_or_default(),
-            })
+            .map(|task| typed_task(task, currency))
             .collect(),
+        // A reset is shown as its task's tick, not typed as an end reading.
         end_readings: work
             .end_readings
             .iter()
+            .filter(|reading| !reading.reset)
             .filter_map(|reading| {
                 let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
                 Some((
@@ -329,7 +361,13 @@ pub(super) fn typed_work(work: &WorkDetails, meters: &[(MeterId, Meter)]) -> Typ
                 ))
             })
             .collect(),
-        show_end: !work.end_readings.is_empty(),
+        show_end: work.end_readings.iter().any(|reading| !reading.reset),
+        resets: work
+            .end_readings
+            .iter()
+            .filter(|reading| reading.reset)
+            .map(|reading| reading.meter)
+            .collect(),
         dispositions: work
             .dispositions
             .iter()
@@ -447,8 +485,37 @@ mod tests {
         )]
     }
 
+    #[test]
+    fn a_ticked_reset_is_a_reset_end_reading_and_comes_back_ticked() {
+        let mut meters = meters();
+        let oil_life = Meter {
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            required_for: vec![],
+            direction: domain::meter::MeterDirection::Down,
+            reset_to: Some(10_000),
+            ..meters[0].1.clone()
+        };
+        meters.push((test_id(21), oil_life));
+        // The odometer isn't resettable: ticking it does nothing.
+        let typed = TypedWork {
+            resets: vec![test_id(21), test_id(20)],
+            ..oil_change()
+        };
+        let work = work_from(&typed, EventKind::Maintenance, &meters, CurrencyCode::USD).unwrap();
+        let resets: Vec<_> = work.end_readings.iter().filter(|r| r.reset).collect();
+        assert_eq!(resets.len(), 1);
+        assert_eq!((resets[0].meter, resets[0].value), (test_id(21), 10_000));
+        // Typed back: ticked, and not among the typed end readings.
+        let again = typed_work(&work, &meters);
+        assert_eq!(again.resets, vec![test_id(21)]);
+        assert!(again.end_readings.iter().all(|(id, _)| *id != test_id(21)));
+    }
+
     fn oil_change() -> TypedWork {
         TypedWork {
+            resets: Vec::new(),
             tasks: vec![TypedTask {
                 title: "Engine oil & filter".into(),
                 requirement: Some(test_id(40)),

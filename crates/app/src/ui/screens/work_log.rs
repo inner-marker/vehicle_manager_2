@@ -53,6 +53,53 @@ pub(super) fn bundle_tasks(
         .collect()
 }
 
+/// The resettable meters `view`'s rules count on: a task for it offers to reset each (#082).
+pub(super) fn reset_meters(
+    view: &RequirementView,
+    meters: &[(MeterId, Meter)],
+) -> Vec<(MeterId, Meter)> {
+    meters
+        .iter()
+        .filter(|(id, meter)| {
+            meter.resettable()
+                && view.requirement.rules.iter().any(|rule| match rule {
+                    IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => {
+                        meter == id
+                    }
+                    IntervalRule::Calendar { .. } | IntervalRule::FixedDate { .. } => false,
+                })
+        })
+        .cloned()
+        .collect()
+}
+
+/// "↺ Reset Oil life to 100 %".
+fn reset_label(meter: &Meter) -> String {
+    let value = meter.reset_to.map_or_else(String::new, |value| {
+        format!(
+            "{} {}",
+            domain::quantity::show_reading(value, meter.unit, meter.precision),
+            tr(meter.unit.abbr())
+        )
+    });
+    tr_with(
+        messages::WORK_RESET_METER,
+        &[
+            ("meter", MessageArg::from(meter.name.as_str().to_owned())),
+            ("value", MessageArg::from(value)),
+        ],
+    )
+}
+
+/// Ticks the resets a task for `view` offers (ticked by default, #082).
+fn tick_resets(work: &mut TypedWork, view: &RequirementView, meters: &[(MeterId, Meter)]) {
+    for (id, _) in reset_meters(view, meters) {
+        if !work.resets.contains(&id) {
+            work.resets.push(id);
+        }
+    }
+}
+
 /// A new task doing `view`'s requirement, titled with its name.
 pub(super) fn requirement_task(view: &RequirementView) -> TypedTask {
     TypedTask {
@@ -165,6 +212,8 @@ pub(super) fn WorkLog(
     let asset = vehicle.asset.clone();
     let asset_id = vehicle.id;
     let meters = vehicle.meters;
+    let (menu_meters, bundle_meters, card_meters) =
+        (meters.clone(), meters.clone(), meters.clone());
     // Each menu's closure keeps its own copy.
     let for_menu = requirements.clone();
     let for_bundles = requirements.clone();
@@ -204,6 +253,7 @@ pub(super) fn WorkLog(
                         index,
                         task,
                         requirements: requirements.clone(),
+                        meters: card_meters.clone(),
                         currency,
                         on_collapse: move |()| open.set(None),
                         photos: task_photos(editing, &typed, saved_tasks, index),
@@ -236,11 +286,13 @@ pub(super) fn WorkLog(
                             class: "field-input work-add",
                             onchange: {
                                 let for_menu = for_menu.clone();
+                                let menu_meters = menu_meters.clone();
                                 move |event: FormEvent| {
                                     let picked = for_menu.iter().find(|view| view.id.to_string() == event.value()).cloned();
                                     if let Some(view) = picked {
                                         let mut typed = work.write();
                                         typed.tasks.push(requirement_task(&view));
+                                        tick_resets(&mut typed, &view, &menu_meters);
                                         open.set(Some(typed.tasks.len() - 1));
                                     }
                                 }
@@ -260,6 +312,9 @@ pub(super) fn WorkLog(
                             if let Some(bundle) = picked {
                                 let mut typed = work.write();
                                 let added = bundle_tasks(&bundle, &for_bundles, &typed.tasks);
+                                for view in for_bundles.iter().filter(|view| added.iter().any(|task| task.requirement == Some(view.id))) {
+                                    tick_resets(&mut typed, view, &bundle_meters);
+                                }
                                 typed.tasks.extend(added);
                                 open.set(None);
                             }
@@ -424,6 +479,8 @@ fn TaskCard(
     index: usize,
     task: TypedTask,
     requirements: Vec<RequirementView>,
+    /// The vehicle's meters, for the resets a task offers.
+    meters: Vec<(MeterId, Meter)>,
     currency: CurrencyCode,
     on_collapse: EventHandler<()>,
     photos: Option<AttachmentOwner>,
@@ -440,6 +497,17 @@ fn TaskCard(
         .requirement
         .and_then(|id| requirements.iter().find(|view| view.id == id))
         .cloned();
+    // The resettable meters its requirement counts on, e.g. Oil life (#082).
+    let resets: Vec<(MeterId, Meter, bool)> = requirement
+        .as_ref()
+        .map(|view| reset_meters(view, &meters))
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(id, meter)| {
+            let ticked = work().resets.contains(&id);
+            (id, meter, ticked)
+        })
+        .collect();
     let fixed_date = requirement.as_ref().is_some_and(|view| {
         view.requirement
             .rules
@@ -538,6 +606,22 @@ fn TaskCard(
                             {tr(messages::WORK_RESETS_END)}
                         }
                     }
+                }
+            }
+            for (id, meter, ticked) in resets {
+                label { key: "{id}", class: "switch task-reset",
+                    input {
+                        r#type: "checkbox",
+                        checked: ticked,
+                        onchange: move |event| {
+                            let mut typed = work.write();
+                            typed.resets.retain(|have| *have != id);
+                            if event.checked() {
+                                typed.resets.push(id);
+                            }
+                        },
+                    }
+                    span { {reset_label(&meter)} }
                 }
             }
             if fixed_date {

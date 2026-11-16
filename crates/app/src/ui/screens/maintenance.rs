@@ -31,6 +31,7 @@ use domain::requirement::{
 };
 
 use super::compliance::{ComplianceChoices, TypedCompliance, chip_date, is_settled, status_chip};
+use super::due_view::{DueChip, DueSettings, TypedDueSettings, left_text, step_class};
 use super::problem_from_error;
 use super::references::{
     ReferenceDialog, ReferenceLine, ReferencePicker, ReferenceSheet, short_name,
@@ -532,14 +533,31 @@ fn ScheduleCard(view: RequirementView, vehicle: AssetView, refs: Vec<ReferenceVi
         Some((tr(messages::SCHEDULE_OFF), "status-chip muted"))
     };
     let reference = view.requirement.reference;
+    // What's due (1A, #082): the step's colour on the card's edge, its chip, what's left.
+    let step = view.due.as_ref().map(|due| due.step);
+    let card_class = step.map_or("schedule-card".to_owned(), |step| {
+        format!("schedule-card {}", step_class(step))
+    });
+    let left = view.due.as_ref().map(|due| {
+        (
+            step_class(due.step),
+            left_text(due, &vehicle.meters, &units()),
+        )
+    });
     rsx! {
-        section { class: "schedule-card",
+        section { class: card_class,
             div { class: "schedule-card-text",
                 span { class: "schedule-card-name",
                     {view.requirement.name.as_str().to_owned()}
                     if let Some((text, class)) = chip {
                         span { class, {text} }
                     }
+                    if let Some(step) = step {
+                        DueChip { step }
+                    }
+                }
+                if let Some((class, text)) = left {
+                    span { class: "due-left {class}", {text} }
                 }
                 span { class: "schedule-card-rules", {detail_line(&view, &vehicle.meters, &refs, &units())} }
                 if reference.is_some() {
@@ -833,6 +851,24 @@ struct TypedRequirement {
     rules: Vec<TypedRule>,
 }
 
+/// `requirement` with what's typed for "last done before these records" and its warnings
+/// (#082); a one-time one keeps neither, having no intervals.
+fn with_due_settings(
+    requirement: Requirement,
+    settings: &TypedDueSettings,
+    meters: &[(MeterId, Meter)],
+) -> Result<Requirement, MessageId> {
+    if requirement.mode == ComplianceMode::OneTime {
+        return Ok(requirement);
+    }
+    let (before_records, warnings) = settings.parse(meters)?;
+    Ok(Requirement {
+        before_records,
+        warnings,
+        ..requirement
+    })
+}
+
 /// The requirement to save, or the problem with what's typed: a one-time one keeps no
 /// intervals (#068), and `reference` is the recall or bulletin it's for.
 fn requirement_from(
@@ -947,6 +983,26 @@ fn RequirementDialog(
         })
         .max_by_key(|(_, meter)| meter.resettable())
         .map(|(id, _)| *id);
+    // "Last done before these records" and the warnings (4A, #082), for the meters the rules
+    // count on.
+    let due_settings = use_signal(|| {
+        TypedDueSettings::of(
+            existing.as_ref().map(|(_, requirement)| requirement),
+            &vehicle.meters,
+        )
+    });
+    let ruled: Vec<(MeterId, Meter)> = vehicle
+        .meters
+        .iter()
+        .filter(|(id, _)| {
+            rules.iter().any(|rule| match rule {
+                TypedRule::Meter { meter, .. } | TypedRule::Reaches { meter, .. } => meter == id,
+                TypedRule::Calendar { .. } | TypedRule::FixedDate { .. } => false,
+            })
+        })
+        .cloned()
+        .collect();
+    let household = use_units()().due_warnings;
     let save_meters = vehicle.meters.clone();
     let asset = vehicle.id;
     let editing_id = existing.as_ref().map(|(id, _)| *id);
@@ -955,14 +1011,15 @@ fn RequirementDialog(
         if busy() {
             return;
         }
-        let requirement =
-            match requirement_from(&typed(), &compliance(), reference, asset, &save_meters) {
-                Ok(requirement) => requirement,
-                Err(message) => {
-                    problem.set(Some(message));
-                    return;
-                }
-            };
+        let requirement = requirement_from(&typed(), &compliance(), reference, asset, &save_meters)
+            .and_then(|requirement| with_due_settings(requirement, &due_settings(), &save_meters));
+        let requirement = match requirement {
+            Ok(requirement) => requirement,
+            Err(message) => {
+                problem.set(Some(message));
+                return;
+            }
+        };
         busy.set(true);
         spawn(async move {
             let result = match editing_id {
@@ -1051,6 +1108,7 @@ fn RequirementDialog(
                     }
                 }
                 p { class: "muted-note", {tr(messages::SCHEDULE_RULES_HINT)} }
+                DueSettings { settings: due_settings, meters: ruled, household }
                 }
                 if let Some(message) = problem() {
                     p { class: "form-error", role: "alert", {tr(message)} }

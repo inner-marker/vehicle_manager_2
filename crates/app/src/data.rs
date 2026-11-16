@@ -826,7 +826,6 @@ pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
 /// # Errors
 ///
 /// As the server function.
-#[expect(dead_code, reason = "the Overview's Coming up calls it from step 2d")]
 pub(crate) async fn vehicle_due(asset: AssetId) -> ServerFnResult<DueOutcome> {
     let zone = crate::ui::device_zone().await;
     read!(reader => ::server::due::list(&reader.assets(), asset, &zone).await, api::vehicle_due(asset, zone.clone()))

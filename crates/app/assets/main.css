@@ -1508,14 +1508,8 @@ body:has(.dialog-scrim) {
     font-size: 0.8rem;
 }
 
-.vehicle-card-coming {
-    margin-top: auto;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-style: italic;
-}
-
-.vehicle-card .badge {
+.vehicle-card .badge,
+.vehicle-card .due-chip {
     align-self: flex-start;
     margin-top: auto;
 }
@@ -4848,4 +4842,127 @@ body:has(.photo-viewer) {
     border-radius: 8px;
     background: #fff;
     color-scheme: light;
+}
+
+/* What's due (phase-5.md milestone 2, #082): each step's colour, always beside its word. */
+.app[data-theme="light"],
+.app[data-theme="system"] {
+    --due-coming-up: #9a6700;
+    --due-soon: #bc4c00;
+    --due-very-soon: #cf222e;
+    --due-overdue: #82071e;
+    --due-overdue-bg: #ffebe9;
+}
+
+.app[data-theme="dark"] {
+    --due-coming-up: #e3b341;
+    --due-soon: #f0883e;
+    --due-very-soon: #e5534b;
+    --due-overdue: #ff6b6b;
+    --due-overdue-bg: #4a1014;
+}
+
+@media (prefers-color-scheme: dark) {
+    .app[data-theme="system"] {
+        --due-coming-up: #e3b341;
+        --due-soon: #f0883e;
+        --due-very-soon: #e5534b;
+        --due-overdue: #ff6b6b;
+        --due-overdue-bg: #4a1014;
+    }
+}
+
+.status-chip.due-ok {
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.status-chip.due-coming-up {
+    border-color: var(--due-coming-up);
+    color: var(--due-coming-up);
+}
+
+.status-chip.due-soon {
+    border-color: var(--due-soon);
+    color: var(--due-soon);
+}
+
+.status-chip.due-very-soon {
+    border-color: var(--due-very-soon);
+    color: var(--due-very-soon);
+}
+
+.status-chip.due-overdue {
+    border-color: var(--due-overdue);
+    background: var(--due-overdue-bg);
+    color: var(--due-overdue);
+}
+
+/* 1A: a schedule card's left edge in its step's colour, and what's left in that colour. */
+.schedule-card.due-coming-up { border-left: 5px solid var(--due-coming-up); }
+.schedule-card.due-soon { border-left: 5px solid var(--due-soon); }
+.schedule-card.due-very-soon { border-left: 5px solid var(--due-very-soon); }
+.schedule-card.due-overdue { border-left: 5px solid var(--due-overdue); }
+.schedule-card.due-ok { border-left: 5px solid #3fb950; }
+
+.due-left { font-size: 0.9rem; }
+.due-left.due-coming-up { color: var(--due-coming-up); }
+.due-left.due-soon { color: var(--due-soon); }
+.due-left.due-very-soon { color: var(--due-very-soon); }
+.due-left.due-overdue { color: var(--due-overdue); }
+.due-left.due-ok { color: var(--text-muted); }
+
+/* 2A: the Overview's "Coming up" list. */
+.coming-up {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.coming-up li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.coming-up .coming-up-name { flex: 1; }
+.coming-up .due-left { color: var(--text-muted); }
+
+/* 4A: a requirement's (or the household's) warning steps, and a document's days. */
+.step-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.step-input {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.step-input .step-number {
+    width: 4.5em;
+}
+
+.due-settings {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.due-warn .check-row {
+    align-items: center;
+}
+
+.due-warnings-row {
+    flex-wrap: wrap;
+}
+
+/* A job's task: "↺ Reset Oil life to 100 % at the end of the job". */
+.task-reset {
+    margin: 4px 0 8px;
+    margin-left: 0;
 }
