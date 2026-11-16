@@ -461,9 +461,12 @@ mod attachments {
         assert_eq!(document.plate, None);
         assert_eq!(document.issuer, registration.issuer);
         assert!(matches!(document.doc_type, DocumentType::Custom { .. }));
+        assert_eq!(document.warn_days, None, "the household's days");
+
+        warn_days_set_and_clear(&database, &mut connection).await;
 
         AssetDocumentWriter
-            .delete(&mut connection, test_id(REGISTERED), 14)
+            .delete(&mut connection, test_id(REGISTERED), 16)
             .await
             .unwrap();
         assert!(
@@ -473,6 +476,36 @@ mod attachments {
                 .unwrap()
                 .is_empty()
         );
+    }
+
+    /// A document's own warning days (#082) are kept, then cleared back to the household's.
+    async fn warn_days_set_and_clear(database: &Database, connection: &mut SqliteConnection) {
+        // Its own warning days (#082), then back to the household's.
+        let days = domain::due::DaySteps {
+            coming_up: 90,
+            due_soon: 45,
+            very_soon: 21,
+        };
+        for (sequence, change, expected) in [
+            (14, Clearable::Set(days), Some(days)),
+            (15, Clearable::Clear, None),
+        ] {
+            let patch = AssetDocumentPatch {
+                warn_days: Some(change),
+                ..AssetDocumentPatch::default()
+            };
+            AssetDocumentWriter
+                .update(&mut *connection, test_id(REGISTERED), &patch, sequence)
+                .await
+                .unwrap();
+            let warn = database
+                .document(test_id(REGISTERED))
+                .await
+                .unwrap()
+                .unwrap()
+                .warn_days;
+            assert_eq!(warn, expected);
+        }
     }
 
     #[tokio::test]

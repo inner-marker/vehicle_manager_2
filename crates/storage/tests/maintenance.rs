@@ -7,6 +7,7 @@ mod maintenance {
     use domain::asset::{Asset, AssetKind, AssetName, AssetPatch, LifecycleStatus};
     use domain::command::{Clearable, Patch};
     use domain::dates::EventDates;
+    use domain::due::{DaySteps, DueDefaults, IntervalSteps, LastDoneBefore};
     use domain::event::{
         Event, EventLocation, EventPatch, EventSource, EventStatus, Finalizer, Part, Reading,
         ReadingSet, Reason, Task, WorkDetails,
@@ -553,6 +554,54 @@ mod maintenance {
             .unwrap();
         assert_eq!(database.squawk(test_id(62)).await.unwrap(), None);
         assert_eq!(database.squawks_of(test_id(TRUCK)).await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_requirement_keeps_when_it_was_last_done_before_and_its_own_warnings() {
+        let (_temp, database) = database().await;
+        let mut connection = database.pool().acquire().await.unwrap();
+        let before = LastDoneBefore {
+            on: "2026-08-02".into(),
+            readings: vec![Reading {
+                meter: test_id(ODOMETER),
+                value: 78_695_000,
+                reset: false,
+            }],
+        };
+        let warnings = DueDefaults {
+            interval: IntervalSteps {
+                coming_up: 30,
+                due_soon: 15,
+                very_soon: 5,
+            },
+            days: DaySteps::default(),
+        };
+        let patch = RequirementPatch {
+            before_records: Some(Clearable::Set(before.clone())),
+            warnings: Some(Clearable::Set(warnings)),
+            ..RequirementPatch::default()
+        };
+        RequirementWriter
+            .update(&mut connection, test_id(OIL), &patch, 7)
+            .await
+            .unwrap();
+        let oil = database.requirement(test_id(OIL)).await.unwrap().unwrap();
+        assert_eq!(oil.before_records, Some(before));
+        assert_eq!(oil.warnings, Some(warnings));
+        assert_eq!(oil.name.as_str(), "Engine oil & filter", "unchanged");
+
+        // Back to the household's warnings, and no date before the records.
+        let cleared = RequirementPatch {
+            before_records: Some(Clearable::Clear),
+            warnings: Some(Clearable::Clear),
+            ..RequirementPatch::default()
+        };
+        RequirementWriter
+            .update(&mut connection, test_id(OIL), &cleared, 8)
+            .await
+            .unwrap();
+        let oil = database.requirement(test_id(OIL)).await.unwrap().unwrap();
+        assert_eq!((oil.before_records, oil.warnings), (None, None));
     }
 
     #[tokio::test]

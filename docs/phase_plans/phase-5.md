@@ -198,7 +198,7 @@
 |---|---|---|
 | **2.0** `docs:` | ☑️ | This plan; the sketch; decision #082; the airworthiness modes moved to the aircraft phase in `plan.md`. |
 | **2a** `feat(domain):` what's due | ☑️ | `domain::due`: the steps and their defaults; each rule's next due; `IntervalRule::Reaches`; "last done before these records"; the 90-day projection; a requirement's and a document's step; a vehicle's items in urgency order. Unit and property tests first (whichever comes first; end of month; never done; a reset meter; too few readings). |
-| **2b** `feat(storage):` migration 0023 | ⬜ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
+| **2b** `feat(storage):` migration 0023 | ☑️ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
 | **2c** `feat(server):` due on the server | ⬜ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
 | **2d** `feat(app):` the screens | ⬜ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
 | **2e** `docs:` | ⬜ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
@@ -244,5 +244,20 @@
   - the urgency order;
   - the reaches rule's checks and `on_meter`; a copy leaving "last done before" behind.
 - **Tidying:** adding the two fields pushed `server::references::add_reference` over the 80-line limit, so its permission checks moved into `may_add_reference`.
+
+**Step 2b notes (2026-11-16):**
+- **`0023_due.sql`** only adds nullable columns, so every existing row reads as before:
+  - `requirements.before_records` and `requirements.warnings`;
+  - `asset_documents.warn_days`;
+  - `preferences.due_warnings` (the household's record only).
+
+  Each is JSON text. "When a meter reaches X" lives inside the existing `requirements.rules` JSON, so it needs no change.
+- **Storage:** the requirement and document writers store the new fields, and a patch can set or clear each. New helpers in `storage::convert`: `optional_json`, `optional_from_json`, and `clearable_json`. The household's due warnings are the one structured preference: `ColumnChange::json` writes them, and a value this build can't read counts as "not chosen", like an unknown name.
+- **`domain::preferences`:** `due_warnings` is household-only, like what issues are called. `Preferences::resolve` takes it from the household alone. The server refuses it in a person's own preferences, ahead of 2c, so the gap never existed.
+- **Tests:**
+  - a requirement keeps its date before the records and its own warnings, and both clear;
+  - a document's warning days set and clear;
+  - only the Admin sets the household's due warnings, everyone sees them, and they go back to the defaults;
+  - the release fixtures migrate with all the new columns empty.
 
 **Not in this milestone:** due and overdue messages and snooze, and the fleet strip (milestone 3); service bundles' sign-off and household templates (milestone 4); readiness (milestone 6); the airworthiness modes and supersession (the aircraft phase).

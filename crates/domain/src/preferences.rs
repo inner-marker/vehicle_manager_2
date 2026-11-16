@@ -29,6 +29,7 @@ use core::fmt;
 use serde::{Deserialize, Serialize};
 
 use crate::command::{Patch, Record};
+use crate::due::DueDefaults;
 use crate::id::Id;
 
 /// How distances are shown.
@@ -336,6 +337,9 @@ pub struct Preferences {
     pub squawk_word: SquawkWord,
     /// Whether originals may be kept (the household's choice only).
     pub originals: Originals,
+    /// When things come due (the household's choice only; #082).
+    #[serde(default)]
+    pub due_warnings: DueDefaults,
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -364,12 +368,15 @@ pub struct PreferenceChoices {
     pub squawk_word: Option<SquawkWord>,
     /// Whether originals may be kept: the household's record only (a person's is ignored).
     pub originals: Option<Originals>,
+    /// When things come due: the household's record only (a person's is ignored).
+    #[serde(default)]
+    pub due_warnings: Option<DueDefaults>,
 }
 
 impl Preferences {
     /// The preferences in effect: each setting from `mine` if chosen, else the household's,
-    /// else the built-in default. What squawks are called, and whether originals may be kept,
-    /// come from the household only.
+    /// else the built-in default. What squawks are called, whether originals may be kept, and
+    /// when things come due, come from the household only.
     #[must_use]
     pub fn resolve(mine: &PreferenceChoices, household: &PreferenceChoices) -> Self {
         let defaults = Self::default();
@@ -409,6 +416,7 @@ impl Preferences {
                 .unwrap_or(defaults.garage_sort),
             squawk_word: household.squawk_word.unwrap_or(defaults.squawk_word),
             originals: household.originals.unwrap_or(defaults.originals),
+            due_warnings: household.due_warnings.unwrap_or(defaults.due_warnings),
         }
     }
 }
@@ -478,6 +486,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::originals`] (the household's record only).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub originals: Option<Choice<Originals>>,
+    /// See [`Preferences::due_warnings`] (the household's record only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_warnings: Option<Choice<DueDefaults>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -494,6 +505,7 @@ impl Patch for PreferencesPatch {
             ("garage_sort", self.garage_sort.is_some()),
             ("squawk_word", self.squawk_word.is_some()),
             ("originals", self.originals.is_some()),
+            ("due_warnings", self.due_warnings.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -534,6 +546,9 @@ impl Patch for PreferencesPatch {
         }
         if !keep("originals") {
             self.originals = None;
+        }
+        if !keep("due_warnings") {
+            self.due_warnings = None;
         }
     }
 }

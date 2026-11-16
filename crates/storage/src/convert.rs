@@ -102,6 +102,45 @@ pub fn json_from_sql<T: DeserializeOwned>(
     serde_json::from_str(text).map_err(|_| StorageError::InvalidValue { column })
 }
 
+/// An optional value as JSON text, for a nullable column (`None` stays NULL).
+///
+/// # Errors
+///
+/// [`StorageError::InvalidValue`] if it can't be written as JSON.
+pub fn optional_json<T: Serialize>(
+    value: Option<T>,
+    column: &'static str,
+) -> Result<Option<String>, StorageError> {
+    value.map(|value| json_to_sql(&value, column)).transpose()
+}
+
+/// A nullable JSON column back to its value (NULL is `None`).
+///
+/// # Errors
+///
+/// [`StorageError::InvalidValue`] if the text isn't one.
+pub fn optional_from_json<T: DeserializeOwned>(
+    text: Option<String>,
+    column: &'static str,
+) -> Result<Option<T>, StorageError> {
+    text.map(|text| json_from_sql(&text, column)).transpose()
+}
+
+/// A [`Clearable`] change to a nullable JSON column: whether it changes, and to what.
+///
+/// # Errors
+///
+/// [`StorageError::InvalidValue`] if the value can't be written as JSON.
+pub(crate) fn clearable_json<T: Serialize + Clone>(
+    change: Option<&Clearable<T>>,
+    column: &'static str,
+) -> Result<(bool, Option<String>), StorageError> {
+    match change {
+        None => Ok((false, None)),
+        Some(change) => Ok((true, optional_json(change.clone().into_option(), column)?)),
+    }
+}
+
 /// A named value's column text (every enum stored by name has one).
 pub(crate) fn name<T: Serialize>(value: &T, column: &'static str) -> Result<String, StorageError> {
     name_to_sql(value).ok_or(StorageError::InvalidValue { column })
