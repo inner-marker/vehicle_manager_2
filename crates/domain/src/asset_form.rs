@@ -30,7 +30,9 @@ use crate::custom_field::{CustomFieldError, FieldKind, FieldRange, check_field};
 use crate::group::{Group, GroupIcon, GroupId, GroupName, GroupNameError};
 use crate::i18n::{MessageId, messages};
 use crate::label::{Label, LabelError};
-use crate::meter::{EventKind, MeterDimension, MeterError, MeterUnit, check_meter};
+use crate::meter::{
+    EventKind, MeterDimension, MeterDirection, MeterError, MeterUnit, check_meter, check_reset,
+};
 use crate::notes::{Notes, NotesError};
 
 /// Why a form or request was refused.
@@ -199,6 +201,12 @@ pub struct MeterForm {
     pub description: String,
     /// The kinds of events that require it.
     pub required_for: Vec<EventKind>,
+    /// Which way it counts (fixed once it has a reading; Phase 5, #080).
+    #[serde(default)]
+    pub direction: MeterDirection,
+    /// What a reset sets it to, in the stored unit; `None`: it can't be reset.
+    #[serde(default)]
+    pub reset_to: Option<i64>,
 }
 
 /// A meter form, checked.
@@ -216,6 +224,10 @@ pub struct ParsedMeter {
     pub description: Option<String>,
     /// The kinds of events that require it, without repeats, in order.
     pub required_for: Vec<EventKind>,
+    /// Which way it counts.
+    pub direction: MeterDirection,
+    /// What a reset sets it to, if it can be reset.
+    pub reset_to: Option<i64>,
 }
 
 impl MeterForm {
@@ -231,6 +243,7 @@ impl MeterForm {
         let mut required_for = self.required_for.clone();
         required_for.sort_unstable();
         required_for.dedup();
+        check_reset(self.dimension, &required_for, self.reset_to).map_err(Problem::Meter)?;
         Ok(ParsedMeter {
             name,
             dimension: self.dimension,
@@ -238,6 +251,8 @@ impl MeterForm {
             precision: self.precision,
             description,
             required_for,
+            direction: self.direction,
+            reset_to: self.reset_to,
         })
     }
 }
@@ -417,6 +432,8 @@ mod tests {
             precision: 1,
             description: String::new(),
             required_for: vec![EventKind::Maintenance, EventKind::Fuel, EventKind::Fuel],
+            direction: MeterDirection::Up,
+            reset_to: None,
         };
         let meter = form.parse().unwrap();
         assert_eq!(
@@ -428,6 +445,36 @@ mod tests {
             ..form
         };
         assert_eq!(wrong.parse(), Err(Problem::Meter(MeterError::WrongUnit)));
+    }
+    #[test]
+    fn a_meter_forms_reset_is_checked() {
+        let oil_life = MeterForm {
+            name: "Oil life".into(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: String::new(),
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        let parsed = oil_life.parse().unwrap();
+        assert_eq!(
+            (parsed.direction, parsed.reset_to),
+            (MeterDirection::Down, Some(10_000))
+        );
+        let odometer = MeterForm {
+            name: "Odometer".into(),
+            dimension: MeterDimension::Distance,
+            unit: MeterUnit::Miles,
+            required_for: vec![EventKind::Fuel],
+            reset_to: Some(0),
+            ..oil_life
+        };
+        assert_eq!(
+            odometer.parse(),
+            Err(Problem::Meter(MeterError::ResettableFuelMeter))
+        );
     }
 
     #[test]

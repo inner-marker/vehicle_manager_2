@@ -126,6 +126,7 @@ mod make_fixture {
             readings: vec![Reading {
                 meter: odometer,
                 value: miles * MILE,
+                reset: false,
             }],
             skipped: vec![],
             fields: vec![],

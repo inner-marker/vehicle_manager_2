@@ -864,10 +864,24 @@ event-kind-reading = Reading
 event-kind-maintenance = Maintenance
 event-kind-repair = Repair
 unit-hours = hours
+unit-percent = %
 label-empty = Enter a name.
 label-too-long = That's too long: at most 40 characters.
 meter-wrong-unit = That unit doesn't measure this meter (e.g. hours for a distance).
 meter-too-precise = A meter can show at most 2 decimal places.
+meter-negative-reset = A reset value can't be below zero.
+meter-resettable-fuel = A distance meter that fuel-ups need can't be reset: fuel economy needs its running total.
+meter-direction-fixed = Which way a meter counts can't change once it has a reading.
+meter-counts-up = Up
+meter-counts-down = Down
+meter-counts = Counts
+meter-counts-note = Down: e.g. Oil life, from 100% toward 0%. Fixed once the meter has a reading.
+meter-resettable = Can be reset
+meter-summary-down = counts down
+# $value (text): the reset value with its unit, e.g. "100 %".
+meter-summary-resets = resets to { $value }
+meter-reset-to = to
+meter-reset-note = A reading can then be marked ↺ Reset, e.g. when the oil is changed.
 field-too-many-decimals = A number can have at most 4 decimal places.
 field-bad-choices = A choice list needs 1 to 30 choices.
 field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.
@@ -951,6 +965,7 @@ precision-1 = tenths
 precision-2 = hundredths
 dimension-distance = Distance
 dimension-duration = Duration
+dimension-percentage = Percentage
 setup-details = Details
 setup-edit-details = Edit details
 setup-no-description = No description.
@@ -1223,6 +1238,7 @@ unit-abbr-mpg-uk = mpg (UK)
 unit-abbr-km-per-l = km/L
 unit-abbr-l-per-100-km = L/100 km
 unit-abbr-h = h
+unit-abbr-percent = %
 
 ## Events: fuel-ups and readings (milestone 6)
 
@@ -1328,6 +1344,12 @@ screen-correct-event = Correct event
 event-not-found = There's no such event, or you can't see it.
 log-clash-below = Lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-clash-above = Higher than { $value } { $unit } on { $date }. Check it, or correct that event.
+log-reset = ↺ Reset
+# $name (text): the meter; $from: its last reading; $to: the new one as typed; $unit: e.g. "%".
+log-reset-done = { $name } was reset: { $from } → { $to } { $unit }.
+log-it-was-a-reset = ↺ It was a reset
+log-clash-above-earlier = This meter counts down: higher than { $value } { $unit } on { $date }. Check it, or correct that event.
+log-clash-below-later = This meter counts down: lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-correct-note = A correction replaces this event's values; the original stays, linked to it.
 log-correct-reason = Why? (required)
 event-status-draft = Draft · locks in { $when }
@@ -1469,7 +1491,8 @@ schedule-not-empty = This vehicle already has requirements. Copying a schedule i
 event-bad-part = Each part needs a description (up to 100 characters), a part number of up to 40, and a quantity above zero.
 event-bad-next-due = A next due date goes only on a task whose requirement has a fixed-date rule, and must be a date.
 event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
-event-end-below-start = The end reading is lower than the start one. Check them.
+event-end-below-start = The end reading goes the wrong way from the start one. Check them.
+event-not-resettable = This meter can't be reset. Untick Reset, or make the meter resettable in Setup.
 event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.
 
 ## Attachments (milestone 8)

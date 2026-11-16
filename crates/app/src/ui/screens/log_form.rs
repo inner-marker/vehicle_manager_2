@@ -39,7 +39,9 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::{CurrencyCode, Preferences};
 use domain::profile::{Section, profile};
-use domain::quantity::{duration_as_typed, parse_money, parse_volume, show_reading, unit_price};
+use domain::quantity::{
+    duration_as_typed, parse_money, parse_volume, reading_value, show_reading, unit_price,
+};
 use domain::requirement::{Bundle, BundleId};
 use domain::squawk::SquawkId;
 use domain::time::Clock;
@@ -375,6 +377,11 @@ fn LogScreen(
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Inputs {
     readings: Signal<Vec<(MeterId, String)>>,
+    /// The meters whose reading is a reset.
+    resets: Signal<Vec<MeterId>>,
+    /// A resettable meter whose reading the server refused for going the wrong way: it
+    /// offers "↺ It was a reset" (sketch 3A).
+    reset_offer: Signal<Option<MeterId>>,
     fields: Signal<Vec<(CustomFieldId, String)>>,
     skipped: Signal<Vec<(Requirement, String)>>,
     volume: Signal<String>,
@@ -408,6 +415,7 @@ impl Inputs {
     fn typed(self) -> Typed {
         Typed {
             readings: (self.readings)(),
+            resets: (self.resets)(),
             fields: (self.fields)(),
             skipped: (self.skipped)(),
             volume: (self.volume)(),
@@ -470,6 +478,8 @@ fn use_inputs(start: &Typed) -> Inputs {
     let start = start.clone();
     Inputs {
         readings: use_signal(|| start.readings.clone()),
+        resets: use_signal(|| start.resets.clone()),
+        reset_offer: use_signal(|| None),
         fields: use_signal(|| start.fields.clone()),
         skipped: use_signal(|| start.skipped.clone()),
         volume: use_signal(|| start.volume.clone()),
@@ -604,6 +614,8 @@ fn clash_text(
     let id = match clash.side {
         ClashSide::BelowEarlier => messages::LOG_CLASH_BELOW,
         ClashSide::AboveLater => messages::LOG_CLASH_ABOVE,
+        ClashSide::AboveEarlier => messages::LOG_CLASH_ABOVE_EARLIER,
+        ClashSide::BelowLater => messages::LOG_CLASH_BELOW_LATER,
     };
     tr_with(
         id,
@@ -771,10 +783,16 @@ fn FormBody(
                     }
                 }
                 Ok(EventsOutcome::Invalid { problem: refused }) => {
-                    if let EventProblem::ReadingOutOfOrder(clash) = refused
-                        && may_override
-                    {
-                        show_override.set(Some(clash.meter));
+                    if let EventProblem::ReadingOutOfOrder(clash) = refused {
+                        if may_override {
+                            show_override.set(Some(clash.meter));
+                        }
+                        let resettable = names
+                            .0
+                            .iter()
+                            .any(|(id, meter)| *id == clash.meter && meter.resettable());
+                        let mut offer = inputs.reset_offer;
+                        offer.set(resettable.then_some(clash.meter));
                     }
                     problem.set(Some(refusal(refused, mode, &names.0, &units, &zone)));
                 }
@@ -1069,11 +1087,7 @@ fn SavedNotice(event: EventId, warnings: Vec<String>) -> Element {
 
 /// A meter's unit, short: "mi", "km", "h".
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// "last 52,310 · 1 Mar 2026".
@@ -1129,6 +1143,7 @@ fn MeterInput(
 ) -> Element {
     let item = Requirement::Meter(id);
     let label = format!("{} ({})", meter.name.as_str(), meter_abbr(meter.unit));
+    let resetting = (inputs.resets)().contains(&id);
     rsx! {
         div { class: "log-item",
             Heading { text: meter.name.as_str().to_owned(), required }
@@ -1148,6 +1163,26 @@ fn MeterInput(
                         if let Some(latest) = latest {
                             span { class: "reading-hint", {latest_text(&meter, latest, &zone, &units)} }
                         }
+                        if meter.resettable() {
+                            ResetTick { inputs, id, meter: meter.clone() }
+                        }
+                    }
+                }
+                if resetting && let Some(latest) = latest {
+                    p { class: "reset-done", {reset_text(&meter, latest.value, &text_of(&(inputs.readings)(), &id))} }
+                }
+                if (inputs.reset_offer)() == Some(id) && !resetting {
+                    button {
+                        class: "secondary-button",
+                        r#type: "button",
+                        onclick: move |_| {
+                            let mut resets = inputs.resets;
+                            resets.write().push(id);
+                            let (mut offer, mut problem) = (inputs.reset_offer, inputs.problem);
+                            offer.set(None);
+                            problem.set(None);
+                        },
+                        {tr(messages::LOG_IT_WAS_A_RESET)}
                     }
                 }
                 if required {
@@ -1158,6 +1193,54 @@ fn MeterInput(
             if show_override {
                 OverrideBox { inputs }
             }
+        }
+    }
+}
+
+/// "Oil life was reset: 18% → 100%." under a reading marked as a reset.
+fn reset_text(meter: &Meter, from: i64, to: &str) -> String {
+    tr_with(
+        messages::LOG_RESET_DONE,
+        &[
+            ("name", MessageArg::from(meter.name.as_str().to_owned())),
+            (
+                "from",
+                MessageArg::from(show_reading(from, meter.unit, meter.precision)),
+            ),
+            ("to", MessageArg::from(to.trim().to_owned())),
+            ("unit", MessageArg::from(meter_abbr(meter.unit))),
+        ],
+    )
+}
+
+/// "↺ Reset" beside a resettable meter's reading (sketch 2A): ticking it fills the meter's
+/// reset value, which stays editable.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ResetTick(inputs: Inputs, id: MeterId, meter: Meter) -> Element {
+    let ticked = (inputs.resets)().contains(&id);
+    rsx! {
+        label { class: "switch reset-tick",
+            input {
+                r#type: "checkbox",
+                checked: ticked,
+                onchange: move |event| {
+                    let mut resets = inputs.resets;
+                    resets.write().retain(|have| *have != id);
+                    if event.checked() {
+                        resets.write().push(id);
+                        if let Some(value) = meter.reset_to {
+                            set_text(inputs.readings, &id, reading_value(value, meter.unit, meter.precision));
+                        }
+                        let mut offer = inputs.reset_offer;
+                        offer.set(None);
+                    }
+                },
+            }
+            span { {tr(messages::LOG_RESET)} }
         }
     }
 }

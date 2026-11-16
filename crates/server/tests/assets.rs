@@ -409,6 +409,8 @@ mod assets {
             precision: 1,
             description: String::new(),
             required_for: vec![EventKind::Maintenance],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         // Driver mode can't; Maintainer mode can.
         let driver = context(&database, &jordan, &clock);

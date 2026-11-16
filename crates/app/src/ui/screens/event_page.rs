@@ -317,9 +317,10 @@ fn Tiles(event: Event, vehicle: AssetView, units: Preferences) -> Element {
             let (_, meter) = vehicle.meters.iter().find(|(id, _)| *id == reading.meter)?;
             Some((
                 format!(
-                    "{} {}",
+                    "{} {}{}",
                     show_reading(reading.value, meter.unit, meter.precision),
-                    tr(meter_abbr(meter.unit))
+                    tr(meter_abbr(meter.unit)),
+                    super::timeline::reset_mark(reading.reset)
                 ),
                 meter.name.as_str().to_owned(),
             ))
@@ -365,11 +366,7 @@ fn Tiles(event: Event, vehicle: AssetView, units: Preferences) -> Element {
 
 /// A meter unit's short name.
 const fn meter_abbr(unit: domain::meter::MeterUnit) -> MessageId {
-    match unit {
-        domain::meter::MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        domain::meter::MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        domain::meter::MeterUnit::Hours => messages::UNIT_ABBR_H,
-    }
+    unit.abbr()
 }
 
 /// One short list: a heading and its rows.

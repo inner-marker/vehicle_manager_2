@@ -1780,9 +1780,10 @@ Some things can only be verified by a person (real devices, the NAS, Tailscale, 
 - For failures, **the exported debug log is fed back to the agent** (attached or pasted), along with any other captured details, so the agent can analyze what actually happened before proposing a fix.
 - Agents add **useful `tracing` messages** in new code paths (at debug level, never logging secrets), so a failed manual test produces a log that actually explains what happened.
 
-**Keeping test plans**
-- Test plans are saved in the repo (e.g. `docs/test-plans/p<phase>m<milestone>-<feature>.md`).
-- Before a release, the relevant plans are re-run as a **manual regression checklist.**
+**Keeping test plans** (from Phase 5, decision #081)
+- **One cumulative plan per phase,** `docs/test-plans/p<phase>-phase.md`: each milestone adds its section as it finishes, and the whole plan is run at the end of the phase, before the release, as its **manual regression checklist.**
+- **A milestone's own plan is optional,** when the human asks or something risky needs a person before it merges.
+- Plans are kept in the repo, and archived once run (`docs/test-plans/archive/`).
 
 ### Human review
 

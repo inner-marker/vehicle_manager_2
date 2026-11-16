@@ -1320,6 +1320,29 @@ body:has(.dialog-scrim) {
     font-weight: 700;
 }
 
+/* The meter dialog's "to [100] %" (phase-5.md milestone 1). */
+.reset-to {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.reset-to .reset-value {
+    width: 7em;
+}
+
+/* A reading marked ↺ Reset: the tick beside it, and the line confirming it. */
+.reset-tick {
+    margin-left: 12px;
+}
+
+.reset-done {
+    margin: 4px 0 0;
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
 .switch {
     display: inline-flex;
     align-items: center;
