@@ -1,0 +1,29 @@
+# The SQLCipher spike (phase-3.md 1e; docs/sub-plans/04-security.md 7.1): can sqlx open an
+# encrypted SQLite database on macOS, Windows, and Linux, and at what cost?
+#
+# Deliberately NOT part of the workspace (its own [workspace] table and Cargo.lock): its
+# SQLCipher build of libsqlite3-sys must never mix into the server's plain SQLite through
+# Cargo's feature unification. Run by .github/workflows/sqlcipher-spike.yml.
+
+[package]
+name = "sqlcipher-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+
+[workspace]
+
+[dependencies]
+# The same sqlx as the app (Cargo.toml's workspace dependencies), with the same features.
+sqlx = { version = "0.9.0", default-features = false, features = ["sqlite-bundled", "runtime-tokio"] }
+# The libsqlite3-sys sqlx 0.9.0 uses, only to choose its SQLCipher build (a feature below).
+libsqlite3-sys = { version = "0.37.0", default-features = false }
+tokio = { version = "1", features = ["macros", "rt"] }
+
+[features]
+# SQLCipher with the platform's crypto: Apple's CommonCrypto on macOS, the system OpenSSL
+# elsewhere (which must be installed).
+system-crypto = ["libsqlite3-sys/bundled-sqlcipher"]
+# SQLCipher with OpenSSL built from source into the binary (no system library needed).
+vendored-openssl = ["libsqlite3-sys/bundled-sqlcipher-vendored-openssl"]

@@ -7,7 +7,7 @@ use domain::custom_field::FieldKind;
 use domain::i18n::messages;
 use domain::preferences::{DistanceUnit, EconomyUnit, Preferences, VolumeUnit};
 
-use crate::api;
+use crate::data;
 use crate::ui::tr;
 
 /// The person's effective preferences: the built-in defaults until they're loaded (after
@@ -16,7 +16,7 @@ pub(crate) fn use_units() -> Signal<Preferences> {
     let mut units = use_signal(Preferences::default);
     use_effect(move || {
         spawn(async move {
-            if let Ok(PreferencesOutcome::Preferences { view }) = api::get_preferences().await {
+            if let Ok(PreferencesOutcome::Preferences { view }) = data::get_preferences().await {
                 units.set(view.effective);
             }
         });

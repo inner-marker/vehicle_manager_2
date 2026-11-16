@@ -3,7 +3,7 @@
 //!
 //! - the **mode chip** (`Driver ▾`): switch between the modes the user's roles allow;
 //!   Admin asks for the password in a dialog first;
-//! - the **account chip** (`Stuart ▾`): change password, sign out;
+//! - the **account chip** (`Jordan ▾`): change password, sign out;
 //! - the **Admin banner**: an orange strip with **Leave** while in Admin mode (with the
 //!   orange chip, the only Admin-mode signal; no sidebar edge, decision #046).
 //!
@@ -18,7 +18,7 @@ use domain::log_area;
 use super::auth::{AuthState, refresh, use_auth};
 use super::screens::{ChangePasswordForm, problem_from_error};
 use super::{tr, tr_with};
-use crate::{api, client};
+use crate::api;
 
 /// The label of a mode.
 const fn mode_label(mode: ActiveMode) -> MessageId {
@@ -32,7 +32,7 @@ const fn mode_label(mode: ActiveMode) -> MessageId {
 /// Asks the server to switch mode, then refreshes the session. Returns the error to show,
 /// if any (only Admin's password can be wrong).
 pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option<String> {
-    match api::switch_mode(mode, password).await {
+    match api::switch_mode(mode, password.map(domain::secret::Secret::new)).await {
         Ok(SwitchModeOutcome::Switched { mode }) => {
             tracing::info!(target: log_area::AUTH, ?mode, "mode switched");
             None
@@ -46,13 +46,13 @@ pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option
     }
 }
 
-/// Signs out: tells the server, forgets the desktop token, and refreshes the session (which
-/// shows sign-in). Used by the account chip and the idle watcher.
+/// Signs out: tells the server, forgets the desktop token and its pairing (#073), and refreshes
+/// the session (which shows sign-in). Used by the account chip and the idle watcher.
 pub(super) async fn sign_out(state: Signal<AuthState>) {
     if let Err(error) = api::sign_out().await {
         tracing::warn!(target: log_area::AUTH, %error, "sign-out request failed; forgetting the session anyway");
     }
-    client::set_session_token(None);
+    crate::pairing::forget();
     refresh(state).await;
 }
 
@@ -221,6 +221,8 @@ pub(crate) fn AccountChip() -> Element {
     let state = use_auth();
     let mut menu_open = use_signal(|| false);
     let mut password_dialog = use_signal(|| false);
+    // Changes on this computer not yet sent: signing out asks first (phase-3.md 5e, 3B).
+    let mut unsent_check = use_signal(|| false);
     let AuthState::SignedIn(session) = state() else {
         return rsx! {};
     };
@@ -229,6 +231,10 @@ pub(crate) fn AccountChip() -> Element {
 
     let sign_out_now = move |_| {
         menu_open.set(false);
+        if crate::ui::outbox::unsent_count() > 0 {
+            unsent_check.set(true);
+            return;
+        }
         spawn(sign_out(state));
     };
 
@@ -265,7 +271,8 @@ pub(crate) fn AccountChip() -> Element {
             }
             if password_dialog() {
                 div { class: "dialog-scrim",
-                    div { class: "dialog", role: "dialog", "aria-modal": "true",
+                    // A password is the server's: off while offline.
+                    div { class: "dialog needs-server-zone", role: "dialog", "aria-modal": "true",
                         h2 { class: "dialog-title", {tr(messages::PASSWORD_DIALOG_TITLE)} }
                         ChangePasswordForm {
                             on_done: move |()| {
@@ -275,6 +282,15 @@ pub(crate) fn AccountChip() -> Element {
                             on_cancel: move |()| password_dialog.set(false),
                         }
                     }
+                }
+            }
+            if unsent_check() {
+                crate::ui::outbox::SignOutCheck {
+                    on_cancel: move |()| unsent_check.set(false),
+                    on_sign_out: move |()| {
+                        unsent_check.set(false);
+                        spawn(sign_out(state));
+                    },
                 }
             }
         }

@@ -230,12 +230,21 @@ html {
     font-size: 1.25rem;
 }
 
-.sync-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 0.875rem;
+/* "↑ 3 to send" (phase-3.md 5e, sketch 1A): changes on this computer waiting to be sent; it
+   opens Diagnostics. The OFFLINE tag's shape, in blue. */
+.send-chip {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
 .log-button {
@@ -507,6 +516,22 @@ html {
     color: var(--text-muted);
 }
 
+/* After the PIN, while the desktop tries the server before opening its copy offline. */
+.auth-connecting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.auth-connecting-note {
+    margin: 0;
+    max-width: 32em;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
 .auth-form {
     display: flex;
     flex-direction: column;
@@ -640,6 +665,258 @@ a.secondary-button {
     font: inherit;
     font-weight: 600;
     cursor: pointer;
+}
+
+/* ---------- Desktop sign-in: recent servers (p3m2-devices-options.svg, option 1A) ---------- */
+
+.server-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.server-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.server-card.on {
+    border-color: var(--accent);
+}
+
+.server-dot {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+}
+
+.server-card.on .server-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.server-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.server-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.server-detail {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ---------- Devices (p3m2-devices-options.svg, options 2B and 3A) ---------- */
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.device-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-raised);
+}
+
+.device-row > .icon {
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.device-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.device-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.device-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.device-detail {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.device-rename,
+.device-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.device-sign-out-others {
+    align-self: flex-start;
+}
+
+/* ---------- Desktop app lock (p3m3-lock-options.svg, options 1B and 2B) ---------- */
+
+.lock-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    box-sizing: border-box;
+    background: var(--bg);
+}
+
+.lock-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+}
+
+.lock-title {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.lock-subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.lock-problem {
+    margin: 0;
+    color: var(--error);
+    font-size: 0.9rem;
+}
+
+.keypad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 8px;
+    border-radius: 14px;
+    outline: none;
+}
+
+.keypad:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.pin-dots {
+    display: flex;
+    gap: 10px;
+    min-height: 16px;
+}
+
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+}
+
+.pin-dot.on {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.keypad-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 12px;
+}
+
+.keypad-key {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.keypad-key.ok {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.keypad-key:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.lock-password {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+}
+
+.lock-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lock-links .link-button {
+    align-self: center;
+}
+
+.link-button.muted {
+    color: var(--text-muted);
 }
 
 /* ---------- Mode and account chips, menus, dialog (p2m2-mode-options.svg, option A) ---------- */
@@ -2170,8 +2447,7 @@ textarea.field-input {
     }
 
     .topbar-theme,
-    .log-button,
-    .sync-status-label {
+    .log-button {
         display: none;
     }
 
@@ -3721,6 +3997,25 @@ a.squawk-history-job {
     font-weight: 800;
 }
 
+/* 2A (phase-3.md 6e): a photo added on this computer, not yet uploaded: a small blue ↑ in the
+   tile's corner, the tooltip says why. */
+.attachment-tile-upload {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+}
+
 .attachment-add {
     border: 1.5px dashed var(--accent);
     background: transparent;
@@ -3845,6 +4140,20 @@ body:has(.photo-viewer) {
     max-height: calc(100dvh - 120px);
     object-fit: contain;
     border-radius: 6px;
+}
+
+/* 1A (phase-3.md 6e): offline, a photo whose full size isn't here: its thumbnail, enlarged,
+   with a note under it. */
+.photo-viewer-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.photo-viewer-preview img {
+    width: min(100%, 720px);
+    height: auto;
 }
 
 .photo-viewer-step {
@@ -4333,4 +4642,187 @@ body:has(.photo-viewer) {
     text-align: left;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+/* ---------- Offline on the desktop (phase-3.md 4e; sketch options 1A and 3A) ---------- */
+
+/* "OFFLINE · copy 10:42": the TEST SERVER tag's shape, outlined in amber so the two differ. */
+.offline-tag {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 12px;
+    color: var(--warn);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* Offline (milestone 5, decision #076): the changes Driver mode allows are saved on this
+   computer and sent later, so their buttons stay on, photos and documents too (milestone 6). What
+   still needs the server is off: a button marked `needs-server` is disabled by the app, with
+   why as its tooltip; in an area marked `needs-server-zone` (changing the password), the save
+   buttons are off, with the saving note beside them. */
+.app[data-offline="true"] .needs-server:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.app[data-offline="true"] .needs-server-zone :is(.primary-button, .danger-button, button[type="submit"]) {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.app[data-offline="true"] .needs-server-zone .form-buttons {
+    flex-wrap: wrap;
+}
+
+/* The note beside the buttons; its words come from the app's root (`--offline-note`), so
+   they're in the person's language. */
+.app[data-offline="true"] .needs-server-zone .form-buttons::before {
+    content: var(--offline-note);
+    flex-basis: 100%;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+/* ---------- Changes not yet on the server (phase-3.md 5e; sketch options 1A, 2A, 3B) ---------- */
+
+/* 2A: this computer's own messages at the top of Messages: amber, like a warning. */
+.not-sent-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.not-sent-card p {
+    margin: 0;
+}
+
+.not-sent-title {
+    color: var(--warn);
+    font-weight: 700;
+}
+
+.not-sent-reason {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.not-sent-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* 3B: the changes signing out would lose. */
+.unsent-list {
+    margin: 0 0 8px;
+    padding-left: 20px;
+}
+
+.unsent-list li {
+    margin: 2px 0;
+}
+
+/* ---------- Protecting this computer's copy (phase-3.md 7d; sketch options 1A, 2A, 3B) ---------- */
+
+/* 1A: "PROTECTED" in the top bar, the OFFLINE tag's shape in red. */
+.protected-tag {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 3px 10px;
+    border: 1px solid var(--error);
+    border-radius: 12px;
+    color: var(--error);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* 1A: the red strip under the top bar, on every screen until it's settled. */
+.protected-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--error);
+    background: color-mix(in srgb, var(--error) 18%, var(--surface));
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.protected-strip-text {
+    flex: 1;
+}
+
+.protected-choices {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+/* The sign-in and setup cards' notes, and Messages' alert. */
+.protected-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--error);
+    border-radius: 8px;
+}
+
+.protected-notice p {
+    margin: 0;
+}
+
+.not-sent-card.protected-card {
+    border-color: var(--error);
+}
+
+.not-sent-card.protected-card .not-sent-title {
+    color: var(--error);
+}
+
+/* 3B: the checks, one to a line. */
+.rebuild-checks {
+    margin: 0 0 8px;
+    padding-left: 4px;
+    list-style: none;
+}
+
+/* Diagnostics: the copy's snapshots. */
+.snapshot-list {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.snapshot-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+/* The third-party notices (Diagnostics → About → Licenses; decision #079): the plain-text
+   file in a frame, light like a page so its default text colors read. */
+.notices-frame {
+    width: 100%;
+    height: 60vh;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color-scheme: light;
 }

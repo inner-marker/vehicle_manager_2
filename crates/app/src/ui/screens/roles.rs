@@ -350,6 +350,7 @@ mod tests {
             roles,
             is_you: false,
             is_last_admin: false,
+            devices: 0,
         }
     }
 

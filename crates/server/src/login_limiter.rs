@@ -98,23 +98,23 @@ mod tests {
     fn five_failures_are_allowed_and_the_sixth_attempt_waits() {
         let limiter = LoginLimiter::new();
         for minute in 0..5 {
-            assert_eq!(limiter.check(&["user:stuart"], at(minute * 60_000)), Ok(()));
-            limiter.record_failure(&["user:stuart"], at(minute * 60_000));
+            assert_eq!(limiter.check(&["user:jordan"], at(minute * 60_000)), Ok(()));
+            limiter.record_failure(&["user:jordan"], at(minute * 60_000));
         }
 
         // The first failure was at NOW, so attempts free up at NOW + 15 minutes.
         assert_eq!(
-            limiter.check(&["user:stuart"], at(10 * 60_000)),
+            limiter.check(&["user:jordan"], at(10 * 60_000)),
             Err(5 * 60_000)
         );
-        assert_eq!(limiter.check(&["user:stuart"], at(WINDOW_MILLIS)), Ok(()));
+        assert_eq!(limiter.check(&["user:jordan"], at(WINDOW_MILLIS)), Ok(()));
     }
 
     #[test]
     fn keys_are_independent_and_the_longest_wait_wins() {
         let limiter = LoginLimiter::new();
         for _ in 0..5 {
-            limiter.record_failure(&["user:stuart", "client:phone"], NOW);
+            limiter.record_failure(&["user:jordan", "client:phone"], NOW);
         }
 
         assert!(limiter.check(&["user:other", "client:laptop"], NOW).is_ok());
@@ -124,7 +124,7 @@ mod tests {
         );
         assert!(
             limiter
-                .check(&["user:stuart", "client:laptop"], NOW)
+                .check(&["user:jordan", "client:laptop"], NOW)
                 .is_err(),
             "same user"
         );
@@ -134,9 +134,9 @@ mod tests {
     fn a_successful_sign_in_clears_that_users_failures() {
         let limiter = LoginLimiter::new();
         for _ in 0..5 {
-            limiter.record_failure(&["user:stuart"], NOW);
+            limiter.record_failure(&["user:jordan"], NOW);
         }
-        limiter.clear("user:stuart");
-        assert_eq!(limiter.check(&["user:stuart"], NOW), Ok(()));
+        limiter.clear("user:jordan");
+        assert_eq!(limiter.check(&["user:jordan"], NOW), Ok(()));
     }
 }

@@ -1,6 +1,7 @@
 //! Device settings saved in `settings.json` in the data folder (`crate::data_folder`).
 //!
-//! For now it holds only the desktop app's server address (decision #027). The app
+//! It holds the desktop app's server address (decision #027), and where its window was and
+//! whether it stays on top (phase-3.md 1b): things about this computer, never synced. The app
 //! must always start, so a missing, unreadable, or invalid file means "nothing saved",
 //! with a warning in the log; it never stops the app.
 //!
@@ -15,16 +16,65 @@ use domain::log_area;
 use domain::server_address::{ServerAddress, ServerAddressError};
 use serde::{Deserialize, Serialize};
 
+use crate::window_placement::WindowPlacement;
+
 /// The settings file inside the data folder.
 pub const SETTINGS_FILE_NAME: &str = "settings.json";
 
 /// Everything in `settings.json`. Missing fields take their defaults and unknown ones
 /// are ignored, so older and newer versions of the app can read each other's files.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     /// The server the desktop app talks to, as typed by the user (checked again on load).
     pub server_address: Option<String>,
+    /// Where the desktop window was when last moved or resized.
+    pub window: Option<WindowPlacement>,
+    /// Whether the desktop window stays on top of other windows (off by default).
+    pub keep_on_top: bool,
+    /// Servers this desktop has signed in to, most recently used first (phase-3.md 2d).
+    pub servers: Vec<KnownServer>,
+    /// How long the desktop may sit idle before it locks (phase-3.md milestone 3, #074).
+    pub lock_after: domain::pin::LockAfter,
+    /// How much disk downloaded photos may use (phase-3.md 6c, #077).
+    pub photo_limit: domain::attachment::PhotoLimit,
+}
+
+/// A server this desktop has signed in to, shown on the sign-in screen (phase-3.md 2d, #073).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KnownServer {
+    /// Its address, as the app uses it (normalized; also what its pairing is filed under).
+    pub address: String,
+    /// Its instance name (e.g. `test`; #062), shown as a tag; `None` on a main server.
+    #[serde(default)]
+    pub instance: Option<String>,
+    /// Its database's ID: the same server even if its address changes (milestone 4 keeps
+    /// this desktop's copy of its data in a folder by this ID).
+    #[serde(default)]
+    pub database_id: Option<String>,
+    /// When this desktop last signed in to it or started with it, in Unix milliseconds.
+    pub last_used_ms: i64,
+}
+
+/// How many servers the list keeps (the oldest are dropped).
+pub const KNOWN_SERVERS_MAX: usize = 10;
+
+/// `servers` with `server` added or updated (matched by address, or by database ID if it moved
+/// to a new address), most recently used first, at most [`KNOWN_SERVERS_MAX`].
+#[must_use]
+pub fn with_known_server(mut servers: Vec<KnownServer>, server: KnownServer) -> Vec<KnownServer> {
+    servers.retain(|known| {
+        known.address != server.address
+            && (server.database_id.is_none() || known.database_id != server.database_id)
+    });
+    servers.push(server);
+    servers.sort_by(|a, b| {
+        b.last_used_ms
+            .cmp(&a.last_used_ms)
+            .then(a.address.cmp(&b.address))
+    });
+    servers.truncate(KNOWN_SERVERS_MAX);
+    servers
 }
 
 /// Why saving a server address failed.
@@ -72,6 +122,17 @@ pub fn save(data_folder: &Path, settings: &Settings) -> io::Result<()> {
     let temporary = data_folder.join(format!("{SETTINGS_FILE_NAME}.tmp"));
     std::fs::write(&temporary, text)?;
     std::fs::rename(&temporary, data_folder.join(SETTINGS_FILE_NAME))
+}
+
+/// Changes the settings in `data_folder` with `change`, keeping the rest.
+///
+/// # Errors
+///
+/// Returns the I/O error if the file can't be written.
+pub fn update(data_folder: &Path, change: impl FnOnce(&mut Settings)) -> io::Result<()> {
+    let mut settings = load(data_folder);
+    change(&mut settings);
+    save(data_folder, &settings)
 }
 
 /// The saved server address, if there is one and it still follows the rules. An
@@ -135,10 +196,42 @@ mod tests {
         let folder = temp.path().join("vehiclemanager");
         let settings = Settings {
             server_address: Some("https://nas.example.ts.net".into()),
+            window: Some(WindowPlacement {
+                x: 40.0,
+                y: 60.0,
+                width: 1100.0,
+                height: 760.0,
+                maximized: true,
+                fullscreen: false,
+            }),
+            keep_on_top: true,
+            lock_after: domain::pin::LockAfter::ThirtyMinutes,
+            photo_limit: domain::attachment::PhotoLimit::FiveGb,
+            servers: vec![KnownServer {
+                address: "https://nas.example.ts.net".into(),
+                instance: None,
+                database_id: Some("0190f0c4-0000-7000-8000-000000000001".into()),
+                last_used_ms: 1_700_000_000_000,
+            }],
         };
         save(&folder, &settings).unwrap();
         assert_eq!(load(&folder), settings);
         assert!(!folder.join(format!("{SETTINGS_FILE_NAME}.tmp")).exists());
+    }
+
+    #[test]
+    fn update_changes_one_setting_and_keeps_the_rest() {
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("vehiclemanager");
+        save_server_address(Some(&folder), "https://nas.example.ts.net").unwrap();
+        update(&folder, |settings| settings.keep_on_top = true).unwrap();
+        let read = load(&folder);
+        assert!(read.keep_on_top);
+        assert_eq!(
+            read.server_address.as_deref(),
+            Some("https://nas.example.ts.net")
+        );
+        assert_eq!(read.window, None);
     }
 
     #[test]
@@ -206,5 +299,43 @@ mod tests {
             save_server_address(Some(&blocked), "https://nas.example.ts.net"),
             Err(SaveAddressError::Io(_))
         ));
+    }
+
+    fn server(address: &str, database: Option<&str>, last_used_ms: i64) -> KnownServer {
+        KnownServer {
+            address: address.into(),
+            instance: None,
+            database_id: database.map(str::to_owned),
+            last_used_ms,
+        }
+    }
+
+    #[test]
+    fn known_servers_are_updated_in_place_newest_first() {
+        let list = with_known_server(Vec::new(), server("https://a.ts.net", Some("db-a"), 10));
+        let list = with_known_server(list, server("https://b.ts.net:8443", Some("db-b"), 20));
+        let list = with_known_server(list, server("https://a.ts.net", Some("db-a"), 30));
+        let addresses: Vec<&str> = list.iter().map(|known| known.address.as_str()).collect();
+        assert_eq!(addresses, ["https://a.ts.net", "https://b.ts.net:8443"]);
+        assert_eq!(list[0].last_used_ms, 30);
+    }
+
+    #[test]
+    fn a_server_that_moved_replaces_its_old_address() {
+        let list = with_known_server(Vec::new(), server("https://old.ts.net", Some("db-a"), 10));
+        let list = with_known_server(list, server("https://new.ts.net", Some("db-a"), 20));
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].address, "https://new.ts.net");
+    }
+
+    #[test]
+    fn the_list_keeps_the_newest_ten() {
+        let mut list = Vec::new();
+        for n in 0..12 {
+            list = with_known_server(list, server(&format!("https://s{n}.ts.net"), None, n));
+        }
+        assert_eq!(list.len(), KNOWN_SERVERS_MAX);
+        assert_eq!(list[0].address, "https://s11.ts.net");
+        assert!(list.iter().all(|known| known.last_used_ms >= 2));
     }
 }

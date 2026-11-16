@@ -14,7 +14,14 @@ all-features = true                  # check every feature combination we ship (
 unmaintained = "workspace"
 yanked = "deny"
 # Every ignore needs a comment saying why it's acceptable and when to revisit it.
-ignore = []
+ignore = [
+    # SQLite before 3.54.0 (bundled by libsqlite3-sys 0.37) can return uninitialized memory
+    # when it opens a database with a -wal file of another page size. Only a database and -wal
+    # written by a less-trusted party expose it; the server and the desktop open only their own.
+    # The fix (libsqlite3-sys >= 0.39) needs an sqlx newer than 0.9.0. Revisit when sqlx allows
+    # it: GitHub issue #41 (added 2026-11-09, the human's choice).
+    { id = "RUSTSEC-2026-0459", reason = "only our own databases are opened; fix blocked on sqlx (issue #41)" },
+]
 
 # ---------------------------------------------------------------------------
 # Licenses: must be compatible with shipping under MIT OR Apache-2.0

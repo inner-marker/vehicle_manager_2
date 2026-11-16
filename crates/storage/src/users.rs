@@ -459,6 +459,28 @@ pub struct Session {
     pub active_mode: ActiveMode,
 }
 
+/// Stores `session` on `connection` (a plain connection or a transaction's).
+pub(crate) async fn insert_session_on(
+    connection: &mut SqliteConnection,
+    session: &Session,
+) -> Result<(), StorageError> {
+    sqlx::query(
+        "INSERT INTO sessions
+             (token_hash, user_id, device_id, created_at_ms, last_used_ms, expires_at_ms, active_mode)
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(session.token_hash.to_vec())
+    .bind(id_to_sql(session.user))
+    .bind(id_to_sql(session.device))
+    .bind(session.created_at.as_millis())
+    .bind(session.last_used.as_millis())
+    .bind(session.expires_at.as_millis())
+    .bind(mode_to_sql(session.active_mode))
+    .execute(connection)
+    .await?;
+    Ok(())
+}
+
 fn session_from_row(row: &SqliteRow) -> Result<Session, StorageError> {
     let token_hash: &[u8] = row.try_get("token_hash")?;
     let mode: String = row.try_get("active_mode")?;
@@ -478,27 +500,15 @@ fn session_from_row(row: &SqliteRow) -> Result<Session, StorageError> {
 }
 
 impl Database {
-    /// Stores a new session.
+    /// Stores a new session on a device that's already stored (a new device and its first
+    /// session go together: [`Database::insert_device_with_session`]).
     ///
     /// # Errors
     ///
-    /// [`StorageError::Sqlx`] if the query fails.
+    /// [`StorageError::Sqlx`] if the query fails (e.g. the device isn't stored).
     pub async fn insert_session(&self, session: &Session) -> Result<(), StorageError> {
-        sqlx::query(
-            "INSERT INTO sessions
-                 (token_hash, user_id, device_id, created_at_ms, last_used_ms, expires_at_ms, active_mode)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
-        )
-        .bind(session.token_hash.to_vec())
-        .bind(id_to_sql(session.user))
-        .bind(id_to_sql(session.device))
-        .bind(session.created_at.as_millis())
-        .bind(session.last_used.as_millis())
-        .bind(session.expires_at.as_millis())
-        .bind(mode_to_sql(session.active_mode))
-        .execute(self.pool())
-        .await?;
-        Ok(())
+        let mut connection = self.pool().acquire().await?;
+        insert_session_on(&mut connection, session).await
     }
 
     /// The session with this token hash, if it exists (expired or not; the caller decides).
@@ -519,7 +529,7 @@ impl Database {
         .transpose()
     }
 
-    /// Records a use of the session: when, and its new end.
+    /// Records a use of the session (when, and its new end) and of its device.
     ///
     /// # Errors
     ///
@@ -530,12 +540,23 @@ impl Database {
         now: UnixMillis,
         expires_at: UnixMillis,
     ) -> Result<(), StorageError> {
+        let mut transaction = self.pool().begin().await?;
         sqlx::query("UPDATE sessions SET last_used_ms = ?, expires_at_ms = ? WHERE token_hash = ?")
             .bind(now.as_millis())
             .bind(expires_at.as_millis())
             .bind(token_hash.to_vec())
-            .execute(self.pool())
+            .execute(&mut *transaction)
             .await?;
+        // Its device was used too (Settings -> Devices shows when).
+        sqlx::query(
+            "UPDATE devices SET last_seen_ms = ?
+             WHERE id = (SELECT device_id FROM sessions WHERE token_hash = ?)",
+        )
+        .bind(now.as_millis())
+        .bind(token_hash.to_vec())
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
         Ok(())
     }
 

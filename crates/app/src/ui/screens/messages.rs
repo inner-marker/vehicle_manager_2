@@ -93,6 +93,8 @@ pub(crate) fn Messages() -> Element {
     rsx! {
         div { class: layout,
             div { class: "messages-list",
+                // This computer's own (refused changes, waiting too long): phase-3.md 5e, 2A.
+                super::not_sent::NotSent {}
                 div { class: "filter-chips", role: "group",
                     for (severity, label) in FILTERS {
                         button {
@@ -177,6 +179,38 @@ fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> St
                 ),
             ],
         ),
+        MessageKind::FailedUnlocks {
+            device_name,
+            person,
+            count,
+            ..
+        } => tr_with(
+            kind.body(),
+            &[
+                (
+                    "device",
+                    MessageArg::from(desktop_name(device_name).as_str()),
+                ),
+                ("person", MessageArg::from(person.as_str())),
+                ("count", MessageArg::from(i64::from(*count))),
+            ],
+        ),
+        MessageKind::ClockAhead {
+            device_name,
+            person,
+            minutes,
+            ..
+        } => tr_with(
+            kind.body(),
+            &[
+                (
+                    "device",
+                    MessageArg::from(desktop_name(device_name).as_str()),
+                ),
+                ("person", MessageArg::from(person.as_str())),
+                ("minutes", MessageArg::from(*minutes)),
+            ],
+        ),
         MessageKind::JobFailed { .. }
         | MessageKind::JobSkipped { .. }
         | MessageKind::ServerUnhealthy { .. }
@@ -227,5 +261,41 @@ fn MessageDetail(
                 {tr(messages::MESSAGES_DISMISS)}
             }
         }
+    }
+}
+
+/// A desktop's name for a message; an unnamed one is "Desktop app".
+fn desktop_name(name: &str) -> String {
+    if name.is_empty() {
+        tr(messages::DEVICES_DESKTOP)
+    } else {
+        name.to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_unlocks_message_names_the_computer_and_its_person() {
+        let units = domain::preferences::Preferences::default();
+        let kind = |name: &str, count| MessageKind::FailedUnlocks {
+            device: domain::test_support::test_id(1),
+            device_name: name.to_owned(),
+            person: "Sam".into(),
+            count,
+        };
+        let text = body_text(&kind("Garage Mac", 3), &units);
+        assert!(
+            text.starts_with("Someone typed 3 wrong PINs or passwords on Garage Mac (Sam)"),
+            "{text}"
+        );
+        assert!(text.contains("sign the computer out"), "{text}");
+        let one = body_text(&kind("", 1), &units);
+        assert!(
+            one.contains("1 wrong PIN or password on Desktop app (Sam)"),
+            "{one}"
+        );
     }
 }

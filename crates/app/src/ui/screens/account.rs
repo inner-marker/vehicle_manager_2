@@ -10,6 +10,7 @@ use domain::api::{
 };
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
+use domain::secret::Secret;
 
 use crate::api;
 use crate::client;
@@ -19,7 +20,7 @@ use crate::ui::screens::problem_from_error;
 use crate::ui::{tr, tr_with};
 
 /// "Too many attempts. Try again in N minutes.", rounding up so it never says 0.
-fn too_many_attempts(retry_after_seconds: i64) -> String {
+pub(crate) fn too_many_attempts(retry_after_seconds: i64) -> String {
     let minutes = (retry_after_seconds + 59) / 60;
     tr_with(
         messages::TOO_MANY_ATTEMPTS,
@@ -196,9 +197,13 @@ fn RecoverWithCode(username: String, on_back: EventHandler<()>) -> Element {
         busy.set(true);
         let username = username.clone();
         spawn(async move {
-            let result =
-                api::complete_recovery(username, code(), password(), client::USES_SESSION_TOKEN)
-                    .await;
+            let result = api::complete_recovery(
+                username,
+                Secret::new(code()),
+                Secret::new(password()),
+                client::USES_SESSION_TOKEN,
+            )
+            .await;
             busy.set(false);
             match result {
                 Ok(RecoveryOutcome::SignedIn { session, token }) => {
@@ -269,15 +274,25 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
         }
         busy.set(true);
         spawn(async move {
-            let result = api::sign_in(username(), password(), client::USES_SESSION_TOKEN).await;
+            // A desktop pairs as it signs in (#073): a new key, sent with the sign-in.
+            let pairing = crate::pairing::new_pairing();
+            let (key, pairing) =
+                pairing.map_or((None, None), |(key, pairing)| (Some(key), Some(pairing)));
+            let result = api::sign_in(
+                username(),
+                Secret::new(password()),
+                client::USES_SESSION_TOKEN,
+                pairing,
+            )
+            .await;
             busy.set(false);
             match result {
                 Ok(SignInOutcome::SignedIn { session, token }) => {
-                    tracing::info!(target: log_area::AUTH, "signed in");
-                    if token.is_some() {
-                        client::set_session_token(token);
-                    }
+                    tracing::info!(target: log_area::AUTH, paired = key.is_some(), "signed in");
+                    crate::pairing::finish_sign_in(token, key, &Secret::new(password()));
                     state.set(AuthState::SignedIn(session));
+                    crate::ui::recent_servers::remember_once(crate::ui::auth::SERVER_INSTANCE())
+                        .await;
                 }
                 Ok(SignInOutcome::InvalidCredentials) => {
                     password.set(String::new());
@@ -302,6 +317,10 @@ fn SignInForm(on_forgot: EventHandler<()>) -> Element {
                 h1 { class: "auth-title", {tr(messages::SIGN_IN_TITLE)} }
                 p { class: "auth-subtitle", {tr(messages::SIGN_IN_SUBTITLE)} }
                 SignedOutNotice {}
+                crate::ui::lock::LockSignedOutNotice {}
+                // The server no longer knows this computer: its copy is kept (7d).
+                crate::ui::protective::ForgottenNotice {}
+                crate::ui::recent_servers::ServerList {}
                 Field { label: messages::FIELD_USERNAME, value: username, autocomplete: "username", autofocus: true }
                 Field { label: messages::FIELD_PASSWORD, value: password, kind: "password", autocomplete: "current-password" }
                 FormError { message: error() }
@@ -326,6 +345,8 @@ pub(crate) fn Setup() -> Element {
     let error = use_signal(|| None::<String>);
     rsx! {
         AuthCard {
+            // A fresh server, and this computer has a copy: rebuild from it (7d, 3B).
+            crate::ui::protective::RebuildOffer {}
             if step_two() {
                 SetupAccount { code, step_two, error }
             } else {
@@ -358,7 +379,7 @@ fn SetupCode(
         }
         busy.set(true);
         spawn(async move {
-            let result = api::check_setup_code(code()).await;
+            let result = api::check_setup_code(Secret::new(code())).await;
             busy.set(false);
             match result {
                 Ok(CheckSetupCodeOutcome::Valid) => {
@@ -427,10 +448,10 @@ fn SetupAccount(
         busy.set(true);
         spawn(async move {
             let result = api::setup(
-                code(),
+                Secret::new(code()),
                 username(),
                 display_name(),
-                password(),
+                Secret::new(password()),
                 client::USES_SESSION_TOKEN,
             )
             .await;
@@ -526,7 +547,7 @@ pub(crate) fn ChangePasswordForm(
         }
         busy.set(true);
         spawn(async move {
-            let result = api::change_password(current(), new()).await;
+            let result = api::change_password(Secret::new(current()), Secret::new(new())).await;
             busy.set(false);
             match result {
                 Ok(ChangePasswordOutcome::Changed) => {

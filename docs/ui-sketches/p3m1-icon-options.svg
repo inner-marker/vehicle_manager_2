@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="980" height="1056" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<defs><linearGradient id="gblue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f80e4"/><stop offset="1" stop-color="#16529c"/></linearGradient>
+<symbol id="iA" viewBox="0 0 512 512"><rect x="0" y="0" width="512" height="512" rx="112" fill="url(#gblue)"/>
+<path d="M 136 352 A 140 140 0 1 1 376 352" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+<g stroke="#ffffff" stroke-width="18" stroke-linecap="round">
+  <line x1="256" y1="148" x2="256" y2="178"/>
+  <line x1="170" y1="184" x2="186" y2="204"/>
+  <line x1="342" y1="184" x2="326" y2="204"/>
+</g>
+<line x1="256" y1="292" x2="338" y2="214" stroke="#f0883e" stroke-width="30" stroke-linecap="round"/>
+<circle cx="256" cy="292" r="34" fill="#ffffff"/>
+<rect x="196" y="372" width="120" height="44" rx="12" fill="#ffffff" opacity="0.9"/></symbol>
+<symbol id="iB" viewBox="0 0 512 512"><rect x="0" y="0" width="512" height="512" rx="112" fill="#1d2128"/>
+<path d="M 150 250 L 190 160 Q 198 144 216 144 L 296 144 Q 314 144 322 160 L 362 250 Z" fill="none" stroke="#5aa9ff" stroke-width="30" stroke-linejoin="round"/>
+<rect x="112" y="236" width="288" height="112" rx="36" fill="#5aa9ff"/>
+<circle cx="170" cy="292" r="22" fill="#1d2128"/>
+<circle cx="342" cy="292" r="22" fill="#1d2128"/>
+<rect x="132" y="336" width="64" height="58" rx="18" fill="#5aa9ff"/>
+<rect x="316" y="336" width="64" height="58" rx="18" fill="#5aa9ff"/>
+<circle cx="392" cy="392" r="78" fill="#f0883e" stroke="#1d2128" stroke-width="16"/>
+<g transform="rotate(45 392 392)">
+  <rect x="379" y="384" width="26" height="70" rx="13" fill="#ffffff"/>
+  <circle cx="392" cy="362" r="34" fill="#ffffff"/>
+  <rect x="381" y="322" width="22" height="40" rx="4" fill="#f0883e"/>
+</g></symbol>
+<symbol id="iC" viewBox="0 0 512 512"><rect x="0" y="0" width="512" height="512" rx="112" fill="url(#gblue)"/>
+<rect x="140" y="104" width="232" height="304" rx="28" fill="#ffffff"/>
+<rect x="140" y="104" width="44" height="304" rx="14" fill="#d6e6fa"/>
+<path d="M 318 104 L 318 196 L 340 176 L 362 196 L 362 104 Z" fill="#f0883e"/>
+<g stroke="#9db8dc" stroke-width="14" stroke-linecap="round">
+  <line x1="210" y1="240" x2="330" y2="240"/>
+  <line x1="210" y1="282" x2="300" y2="282"/>
+</g>
+<path d="M 210 338 L 244 370 L 318 300" fill="none" stroke="#1f6fd1" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="iD" viewBox="0 0 512 512"><rect x="0" y="0" width="512" height="512" rx="112" fill="#1d2128"/>
+<path d="M 92 236 L 256 118 L 420 236" fill="none" stroke="#5aa9ff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="148" y="236" width="216" height="168" rx="10" fill="#ffffff"/>
+<g stroke="#1d2128" stroke-width="14">
+  <line x1="148" y1="282" x2="364" y2="282"/>
+  <line x1="148" y1="324" x2="364" y2="324"/>
+  <line x1="148" y1="366" x2="364" y2="366"/>
+</g>
+<circle cx="256" cy="190" r="22" fill="#f0883e"/></symbol>
+</defs>
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" font-weight="700" fill="#1b1f24">Phase 3 · milestone 1 · App icon options</text>
+<text x="24" y="66" font-size="14" fill="#5b6470">Each at 160 px, then 64, 32, and 16 px (Dock, taskbar, browser tab), on light and on dark. Originals, drawn for this app.</text>
+<rect x="16" y="96" width="948" height="216" rx="12" fill="#ffffff" stroke="#d6dae0"/>
+<use href="#iA" xlink:href="#iA" x="32" y="124" width="160" height="160"/>
+<text x="216" y="136" font-size="18" font-weight="700" fill="#1b1f24">A · Gauge</text>
+<text x="216" y="160" font-size="13" fill="#5b6470">An odometer dial with an orange needle, on the app's blue. Says 'meters and readings'.</text>
+<rect x="216" y="180" width="330" height="112" rx="10" fill="#eef0f3"/>
+<rect x="566" y="180" width="330" height="112" rx="10" fill="#14171c"/>
+<use href="#iA" xlink:href="#iA" x="236" y="204" width="64" height="64"/>
+<use href="#iA" xlink:href="#iA" x="334" y="220" width="32" height="32"/>
+<use href="#iA" xlink:href="#iA" x="400" y="228" width="16" height="16"/>
+<rect x="426" y="220" width="104" height="32" rx="8" fill="#ffffff"/>
+<use href="#iA" xlink:href="#iA" x="434" y="228" width="16" height="16"/>
+<text x="456" y="241" font-size="11" fill="#1b1f24">Vehicle Ma…</text>
+<use href="#iA" xlink:href="#iA" x="586" y="204" width="64" height="64"/>
+<use href="#iA" xlink:href="#iA" x="684" y="220" width="32" height="32"/>
+<use href="#iA" xlink:href="#iA" x="750" y="228" width="16" height="16"/>
+<rect x="776" y="220" width="104" height="32" rx="8" fill="#262b34"/>
+<use href="#iA" xlink:href="#iA" x="784" y="228" width="16" height="16"/>
+<text x="806" y="241" font-size="11" fill="#e8eaed">Vehicle Ma…</text>
+<rect x="16" y="326" width="948" height="216" rx="12" fill="#ffffff" stroke="#d6dae0"/>
+<use href="#iB" xlink:href="#iB" x="32" y="354" width="160" height="160"/>
+<text x="216" y="366" font-size="18" font-weight="700" fill="#1b1f24">B · Car + wrench</text>
+<text x="216" y="390" font-size="13" fill="#5b6470">A car's front with an orange wrench badge, on the app's dark grey. Says 'vehicle maintenance'.</text>
+<rect x="216" y="410" width="330" height="112" rx="10" fill="#eef0f3"/>
+<rect x="566" y="410" width="330" height="112" rx="10" fill="#14171c"/>
+<use href="#iB" xlink:href="#iB" x="236" y="434" width="64" height="64"/>
+<use href="#iB" xlink:href="#iB" x="334" y="450" width="32" height="32"/>
+<use href="#iB" xlink:href="#iB" x="400" y="458" width="16" height="16"/>
+<rect x="426" y="450" width="104" height="32" rx="8" fill="#ffffff"/>
+<use href="#iB" xlink:href="#iB" x="434" y="458" width="16" height="16"/>
+<text x="456" y="471" font-size="11" fill="#1b1f24">Vehicle Ma…</text>
+<use href="#iB" xlink:href="#iB" x="586" y="434" width="64" height="64"/>
+<use href="#iB" xlink:href="#iB" x="684" y="450" width="32" height="32"/>
+<use href="#iB" xlink:href="#iB" x="750" y="458" width="16" height="16"/>
+<rect x="776" y="450" width="104" height="32" rx="8" fill="#262b34"/>
+<use href="#iB" xlink:href="#iB" x="784" y="458" width="16" height="16"/>
+<text x="806" y="471" font-size="11" fill="#e8eaed">Vehicle Ma…</text>
+<rect x="16" y="556" width="948" height="216" rx="12" fill="#ffffff" stroke="#d6dae0"/>
+<use href="#iC" xlink:href="#iC" x="32" y="584" width="160" height="160"/>
+<text x="216" y="596" font-size="18" font-weight="700" fill="#1b1f24">C · Logbook</text>
+<text x="216" y="620" font-size="13" fill="#5b6470">A logbook with an orange ribbon and a check, on blue. Says 'records kept'.</text>
+<rect x="216" y="640" width="330" height="112" rx="10" fill="#eef0f3"/>
+<rect x="566" y="640" width="330" height="112" rx="10" fill="#14171c"/>
+<use href="#iC" xlink:href="#iC" x="236" y="664" width="64" height="64"/>
+<use href="#iC" xlink:href="#iC" x="334" y="680" width="32" height="32"/>
+<use href="#iC" xlink:href="#iC" x="400" y="688" width="16" height="16"/>
+<rect x="426" y="680" width="104" height="32" rx="8" fill="#ffffff"/>
+<use href="#iC" xlink:href="#iC" x="434" y="688" width="16" height="16"/>
+<text x="456" y="701" font-size="11" fill="#1b1f24">Vehicle Ma…</text>
+<use href="#iC" xlink:href="#iC" x="586" y="664" width="64" height="64"/>
+<use href="#iC" xlink:href="#iC" x="684" y="680" width="32" height="32"/>
+<use href="#iC" xlink:href="#iC" x="750" y="688" width="16" height="16"/>
+<rect x="776" y="680" width="104" height="32" rx="8" fill="#262b34"/>
+<use href="#iC" xlink:href="#iC" x="784" y="688" width="16" height="16"/>
+<text x="806" y="701" font-size="11" fill="#e8eaed">Vehicle Ma…</text>
+<rect x="16" y="786" width="948" height="216" rx="12" fill="#ffffff" stroke="#d6dae0"/>
+<use href="#iD" xlink:href="#iD" x="32" y="814" width="160" height="160"/>
+<text x="216" y="826" font-size="18" font-weight="700" fill="#1b1f24">D · Garage</text>
+<text x="216" y="850" font-size="13" fill="#5b6470">A garage roof and door, on dark grey; ties in with the Garage screen.</text>
+<rect x="216" y="870" width="330" height="112" rx="10" fill="#eef0f3"/>
+<rect x="566" y="870" width="330" height="112" rx="10" fill="#14171c"/>
+<use href="#iD" xlink:href="#iD" x="236" y="894" width="64" height="64"/>
+<use href="#iD" xlink:href="#iD" x="334" y="910" width="32" height="32"/>
+<use href="#iD" xlink:href="#iD" x="400" y="918" width="16" height="16"/>
+<rect x="426" y="910" width="104" height="32" rx="8" fill="#ffffff"/>
+<use href="#iD" xlink:href="#iD" x="434" y="918" width="16" height="16"/>
+<text x="456" y="931" font-size="11" fill="#1b1f24">Vehicle Ma…</text>
+<use href="#iD" xlink:href="#iD" x="586" y="894" width="64" height="64"/>
+<use href="#iD" xlink:href="#iD" x="684" y="910" width="32" height="32"/>
+<use href="#iD" xlink:href="#iD" x="750" y="918" width="16" height="16"/>
+<rect x="776" y="910" width="104" height="32" rx="8" fill="#262b34"/>
+<use href="#iD" xlink:href="#iD" x="784" y="918" width="16" height="16"/>
+<text x="806" y="931" font-size="11" fill="#e8eaed">Vehicle Ma…</text>
+<text x="24" y="1038" font-size="12" fill="#5b6470">End of sheet · the chosen icon is then made into the favicon and the desktop icon (PNG at each size).</text>
+</svg>

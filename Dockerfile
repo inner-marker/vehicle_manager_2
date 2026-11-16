@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # The server image: the Dioxus fullstack server plus its web UI (plan §7 Building the
-# app image). linux/amd64 for the DS1019+ NAS (decisions.md #025).
+# app image). linux/amd64 for the Synology NAS (decisions.md #025).
 #
 #   docker build -t vehicle_manager_2 .
 #
@@ -9,7 +9,7 @@
 # toolchain and the Dioxus CLI, and a slim runtime stage that ships only the bundle, the
 # geocoder data, and CA certificates (no compiler, no GDAL, no source).
 #
-# Never add `-C target-cpu=native` or similar: the NAS CPU (Intel J3455) has no AVX,
+# Never add `-C target-cpu=native` or similar: the NAS CPU has no AVX,
 # so a binary tuned for the build machine could crash there (#025).
 
 # ---------- Geocoder data stage (decision #059) ----------
@@ -45,12 +45,23 @@ COPY . .
 #
 # TEST_TIMERS=true builds in test timers (decision #054): only the Dev image workflow sets it
 # (dev and milestone images); a release never does, so a release can't shorten its timers.
+#
+# BUILD_COMMIT, BUILD_TAG, and BUILD_DATE name this exact build on Diagnostics (phase-3.md
+# 1c, GitHub #37); the image workflows set them, and the app reads them at compile time as
+# VEHICLEMANAGER_BUILD_* (domain::build_info; crates/app/tests/deploy_config.rs checks the
+# names). Declared here, just before the build, so they never invalidate earlier layers.
 ARG TEST_TIMERS=false
+ARG BUILD_COMMIT=""
+ARG BUILD_TAG=""
+ARG BUILD_DATE=""
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cd crates/app \
     && if [ "$TEST_TIMERS" = "true" ]; then FEATURES="--features test-timers"; else FEATURES=""; fi \
-    && dx bundle --platform web --release $FEATURES --out-dir /out
+    && VEHICLEMANAGER_BUILD_COMMIT="$BUILD_COMMIT" \
+       VEHICLEMANAGER_BUILD_TAG="$BUILD_TAG" \
+       VEHICLEMANAGER_BUILD_DATE="$BUILD_DATE" \
+       dx bundle --platform web --release $FEATURES --out-dir /out
 
 # ---------- Runtime stage ----------
 FROM debian:trixie-slim
@@ -72,6 +83,8 @@ COPY --from=build /out/server /app/server
 COPY --from=build /out/public /app/public
 # The geocoder's data, read-only (decision #059).
 COPY --from=geodata /out/ /app/geodata/
+# The third-party notices (decision #079); public/ has them too, for the app's Licenses link.
+COPY crates/app/assets/THIRD-PARTY-NOTICES.txt /app/THIRD-PARTY-NOTICES.txt
 
 # Listen on all interfaces inside the container; exposure is decided on the host
 # (compose.yaml publishes to NAS loopback only, plan §7 Networking).

@@ -33,7 +33,7 @@ mod user_admin {
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const PASSWORD: &str = "correct horse battery";
 
-    /// A database with Admin `stuart` (user 1), signed in and switched to Admin mode.
+    /// A database with Admin `jordan` (user 1), signed in and switched to Admin mode.
     async fn admin_session() -> (tempfile::TempDir, Database, SignedIn) {
         let temp = tempfile::tempdir().unwrap();
         let ids = NewDatabaseIds {
@@ -43,8 +43,8 @@ mod user_admin {
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
         let clock = ManualClock::new(NOW);
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
@@ -92,7 +92,7 @@ mod user_admin {
         let (_, mut admin) = sign_in(
             &database,
             &LoginLimiter::new(),
-            "stuart",
+            "jordan",
             PASSWORD.into(),
             "a",
             NOW,
@@ -132,7 +132,11 @@ mod user_admin {
         users
     }
 
-    async fn add(context: &AdminContext<'_>, username: &str, role: Role) -> (UserId, String) {
+    async fn add(
+        context: &AdminContext<'_>,
+        username: &str,
+        role: Role,
+    ) -> (UserId, domain::secret::Secret) {
         let UserAdminOutcome::TemporaryPassword { password } =
             add_user(context, username, username, role).await
         else {
@@ -174,9 +178,10 @@ mod user_admin {
         let (sam, password) = add(&context, "sam", Role::Driver).await;
 
         assert_eq!(
-            password.len(),
+            password.expose().len(),
             14,
-            "12 characters in groups of 4: {password}"
+            "12 characters in groups of 4: {}",
+            password.expose()
         );
         let summary = users(&context)
             .await
@@ -278,6 +283,7 @@ mod user_admin {
             user: &admin,
             health: Health::Healthy,
             clock: &clock,
+            origin: server::origin::Origin::Online,
         };
         let form = domain::asset_form::AssetForm {
             name: "Truck".into(),

@@ -18,7 +18,7 @@ use storage::{Database, NewDatabaseIds};
 /// The tests' "now".
 pub(crate) const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
 
-/// A database with Admin `stuart` (1) and Driver `sam` (2), both signed in (Driver mode).
+/// A database with Admin `jordan` (1) and Driver `sam` (2), both signed in (Driver mode).
 pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn) {
     let temp = tempfile::tempdir().unwrap();
     let ids = NewDatabaseIds {
@@ -27,7 +27,7 @@ pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn)
     };
     let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
     let clock = ManualClock::new(NOW);
-    for (n, name, role) in [(1, "stuart", Role::Admin), (2, "sam", Role::Driver)] {
+    for (n, name, role) in [(1, "jordan", Role::Admin), (2, "sam", Role::Driver)] {
         let user = User {
             username: Username::parse(name).unwrap(),
             display_name: name.into(),
@@ -77,10 +77,10 @@ pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn)
             .unwrap();
     }
     let limiter = LoginLimiter::new();
-    let (_, stuart) = sign_in(
+    let (_, jordan) = sign_in(
         &database,
         &limiter,
-        "stuart",
+        "jordan",
         "a long password".into(),
         "a",
         NOW,
@@ -97,5 +97,5 @@ pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn)
     )
     .await
     .unwrap();
-    (temp, database, stuart, sam)
+    (temp, database, jordan, sam)
 }

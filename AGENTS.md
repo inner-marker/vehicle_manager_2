@@ -111,6 +111,12 @@ If a helper doesn't fit an existing module, propose a new `xxx_utils.rs` in your
 - **Errors:** `thiserror` enums in the library crates (`domain`, `storage`, `server`); propagate with `?`.
 - **No `unwrap()`, `expect()`, or `panic!()` outside tests.** Handle the error or return it.
 - **Logging:** `tracing` only; never `println!` / `eprintln!` / `dbg!`. Always pass an area from `domain::log_area` as the target (e.g. `tracing::debug!(target: log_area::SYNC, ...)`), so the log viewer can filter by area and its level can be raised at runtime.
+- **What logs may contain** (phase-3.md 1d; `docs/sub-plans/04-security.md` §7.4). Logs are exported and shared for troubleshooting, so:
+  - **Never** a password, PIN, session token, key, temporary password, or the text of a record (notes, descriptions, names of places). Hold every password, code, and token in `domain::secret::Secret` (it prints as `[redacted]` and has no `Display`) from the moment it arrives, and call `.expose()` only where it's used (hashed, compared, sent). A new struct holding a secret uses `Secret` for that field, so its derived `Debug` stays safe.
+  - **IDs, not contents:** log record and user IDs, counts, kinds, and outcomes ("sign-in refused: wrong password", `user = %id`), never what someone typed.
+  - **Codes a person must read from the server log** (the setup code, #028; a recovery code, #047) are logged on purpose, at `warn`, with `console_only = true`: they reach the container's console but never the log files or the in-app log viewer (`app::logging::capture`).
+  - **Levels:** `error` and `warn` for what an Admin should act on; `info` for what happened (sign-ins, jobs, changes); `debug` for why (refusal reasons, decisions); `trace` for step-by-step detail. The rules above hold at every level.
+  - `crates/server/tests/secrets_in_logs.rs` runs every path a secret travels at `trace` and fails if one reaches the log; extend it when adding such a path (PINs, device keys).
 - **Lint overrides (`#[allow(...)]` / `#[expect(...)]`) are a last resort.** Fix the code first. Override only when it is strictly necessary or there is a genuinely good reason (e.g. a false positive, generated or macro code, a deliberate and documented trade-off).
   - **Every override has a justifying comment** directly above it explaining *why* the lint is wrong here or why fixing it is worse, plus a `reason = "..."` in the attribute. Clippy enforces the `reason`; reviewers check the comment.
   - **Prefer `#[expect]` over `#[allow]`:** `expect` errors once the lint stops firing, so stale overrides don't linger. Use `#[allow]` when `expect` doesn't fit, e.g. a lint that fires only on some platforms or `cfg` combinations.
@@ -139,6 +145,7 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 - Use **property-based tests** for invariants (HLC monotonic, unit conversion round-trips, command idempotency) and **snapshot tests** for generated output (reports, user-facing messages).
 - Sync changes need **sync scenario tests**; schema changes need a **migration fixture test**.
 - No network access and no shared state between tests.
+- **No personal information in the repository** (the human, 2026-11-14): not the human's name, any real person's name, email, address, places, vehicles (VINs, plates), or equipment (the NAS's model, host names, tailnet names). Tests, examples, sketches, fixtures, and docs use made-up people (`jordan`, `sam`, `alex`, `pat`) and example hosts (`nas.example.ts.net`). The human's real setup, where you need it, is in **`local/equipment.md`**, which git ignores: read it, never copy from it into tracked files.
 - **Name tests after the behavior** (e.g. `oil_interval_resets_from_start_reading`).
 - **Bug fixes start with a failing test** that reproduces the bug.
 - Don't write filler tests to raise coverage; coverage is informational only.
@@ -151,6 +158,8 @@ If any part of a change can only be verified by a person (real devices, the NAS,
 2. **Setup:** device, data, mode, and server state needed first.
 3. **Checklist:** numbered steps, each with its **expected result**, so each item is clearly pass or fail.
 4. **If a step fails, capture:** which debug log area and level to enable before testing (e.g. `sync` at `debug`), what to export afterward (Settings → Diagnostics → Export), and any screenshots or error messages.
+
+**Older test plans go into `docs/test-plans/archive/`** (the human, 2026-11-09): once a plan's milestone (or fix, or release) has merged into `dev` and its results are recorded, it moves there, and links to it are updated to the new path. `docs/test-plans/` holds only plans still to be run or being run.
 
 **Container logs by time, not by line count:** steps that read the server's log use `docker logs --since 5m <container>` (or a time that fits the step), never `--tail N`. The server logs a line for every route it registers at startup, so a fixed number of lines cuts off the first startup messages as the API grows (the human, 2026-11-04).
 
@@ -209,5 +218,6 @@ Then confirm:
 - [ ] Tests cover the change
 - [ ] If the human must verify anything, a manual test plan is written in `docs/test-plans/`
 - [ ] New code paths have debug-level `tracing` messages useful for troubleshooting
+- [ ] No personal information (names, places, equipment) in tracked files
 - [ ] No unrelated changes
 - [ ] No new dependencies without approval

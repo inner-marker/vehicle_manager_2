@@ -66,7 +66,8 @@ pub(crate) fn Shell() -> Element {
             let _ = refresh_garage(vehicles).await;
         });
     }));
-    let unread = unread_count(inbox);
+    // The server's unread messages, and this computer's own (refused changes, waiting too long).
+    let unread = unread_count(inbox) + super::outbox::alert_count();
     // A group's page is titled with the group's name (#056).
     let title = match &route {
         Route::GroupVehicles { group_id } => {
@@ -209,18 +210,21 @@ pub(crate) fn Shell() -> Element {
                         IconView { icon: Icon::Menu }
                     }
                     h1 { class: "page-title", {title} }
-                    span { class: "sync-status",
-                        IconView { icon: Icon::SyncOff }
-                        span { class: "sync-status-label", {tr(messages::SYNC_STATUS_UNKNOWN)} }
-                    }
+                    // Changes waiting to be sent (the desktop; phase-3.md 5e, sketch 1A).
+                    super::outbox::SendChip {}
                     div { class: "topbar-theme", ThemeToggle {} }
                     if may_log {
-                        button { class: "log-button", r#type: "button", onclick: move |_| chooser.open(here),
+                        button {
+                            class: "log-button",
+                            r#type: "button",
+                            onclick: move |_| chooser.open(here),
                             IconView { icon: Icon::Add }
                             span { {tr(messages::ACTION_LOG)} }
                         }
                     }
                     super::auth::InstanceTag {}
+                    super::offline::OfflineTag {}
+                    super::protective::ProtectedTag {}
                     if let AuthState::SignedIn(session) = auth() {
                         if let Some(minutes) = session.timers.test_minutes() {
                             span { class: "test-timers-tag", title: tr_with(messages::TEST_TIMERS_TAG, &[("minutes", MessageArg::from(i64::from(minutes)))]),
@@ -231,6 +235,8 @@ pub(crate) fn Shell() -> Element {
                     ModeChip {}
                     AccountChip {}
                 }
+                // Protecting this computer's copy (phase-3.md 7d, sketch 1A).
+                super::protective::ProtectedStrip {}
                 AdminBanner {}
                 AdminEndedNotice {}
                 UrgentBanner {}
@@ -254,7 +260,11 @@ pub(crate) fn Shell() -> Element {
                 }
             }
             if may_log {
-                button { class: "fab", r#type: "button", "aria-label": tr(messages::ACTION_LOG), onclick: move |_| chooser.open(here),
+                button {
+                    class: "fab",
+                    r#type: "button",
+                    "aria-label": tr(messages::ACTION_LOG),
+                    onclick: move |_| chooser.open(here),
                     IconView { icon: Icon::Add }
                 }
             }

@@ -84,7 +84,7 @@ pub fn rotate_snapshots(dir: &Path, keep: usize) -> Result<Vec<PathBuf>, Storage
     Ok(removed)
 }
 
-fn is_snapshot_file(path: &Path) -> bool {
+pub(crate) fn is_snapshot_file(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
         .is_some_and(|name| name.starts_with(SNAPSHOT_PREFIX) && name.ends_with(".sqlite"))

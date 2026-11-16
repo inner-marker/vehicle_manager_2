@@ -24,6 +24,7 @@ use crate::codes::{group_by_four, random_code};
 use crate::login_limiter::LoginLimiter;
 use crate::passwords::hash_password;
 use crate::sessions::{SessionToken, SignedIn, sign_in};
+use domain::secret::Secret;
 
 /// Characters in a recovery code (before the dashes), as for the setup code.
 const CODE_CHARS: usize = 16;
@@ -129,8 +130,8 @@ pub async fn complete(
     database: &Database,
     limiter: &LoginLimiter,
     username: &str,
-    code: &str,
-    new_password: String,
+    code: &Secret,
+    new_password: Secret,
     client: &str,
     clock: &(dyn Clock + Sync),
 ) -> Result<(SessionToken, SignedIn), RecoveryError> {
@@ -140,13 +141,13 @@ pub async fn complete(
     limiter
         .check(&key_refs, now)
         .map_err(RecoveryError::RateLimited)?;
-    check_new_password(&new_password).map_err(RecoveryError::InvalidPassword)?;
+    check_new_password(new_password.expose()).map_err(RecoveryError::InvalidPassword)?;
 
     let Some(user) = recoverable_admin(database, username).await else {
         limiter.record_failure(&key_refs, now);
         return Err(RecoveryError::WrongCode);
     };
-    if !take_code(user, code, now) {
+    if !take_code(user, code.expose(), now) {
         limiter.record_failure(&key_refs, now);
         tracing::debug!(target: log_area::AUTH, %user, "recovery refused: wrong or expired code");
         return Err(RecoveryError::WrongCode);
@@ -203,7 +204,7 @@ mod tests {
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
 
-    /// A database with Admin `stuart` (user 1) and Driver `sam` (user 2).
+    /// A database with Admin `jordan` (user 1) and Driver `sam` (user 2).
     async fn database() -> (tempfile::TempDir, Database) {
         let temp = tempfile::tempdir().unwrap();
         let ids = NewDatabaseIds {
@@ -211,7 +212,7 @@ mod tests {
             server_device_id: test_id(901),
         };
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
-        for (n, name, role) in [(1, "stuart", Role::Admin), (2, "sam", Role::Driver)] {
+        for (n, name, role) in [(1, "jordan", Role::Admin), (2, "sam", Role::Driver)] {
             let user = User {
                 username: Username::parse(name).unwrap(),
                 display_name: name.into(),
@@ -280,7 +281,7 @@ mod tests {
         );
         assert_eq!(code_for(2), None);
         assert_eq!(
-            request_code(database, limiter, "Stuart", "c", NOW, Timers::NORMAL).await,
+            request_code(database, limiter, "Jordan", "c", NOW, Timers::NORMAL).await,
             Ok(())
         );
         let code = code_for(1).unwrap();
@@ -298,8 +299,8 @@ mod tests {
         let wrong = complete(
             database,
             limiter,
-            "stuart",
-            "AAAA-AAAA-AAAA-AAAA",
+            "jordan",
+            &Secret::from("AAAA-AAAA-AAAA-AAAA"),
             "a new password!".into(),
             "d",
             clock,
@@ -309,8 +310,8 @@ mod tests {
         let short = complete(
             database,
             limiter,
-            "stuart",
-            code,
+            "jordan",
+            &Secret::from(code),
             "short".into(),
             "e",
             clock,
@@ -335,7 +336,7 @@ mod tests {
         let (old, _) = sign_in(
             &database,
             &limiter,
-            "stuart",
+            "jordan",
             "old password here".into(),
             "f",
             NOW,
@@ -346,8 +347,8 @@ mod tests {
         let (_, signed_in) = complete(
             &database,
             &limiter,
-            "stuart",
-            &loose,
+            "jordan",
+            &Secret::from(loose.as_str()),
             "a new password!".into(),
             "g",
             &clock,
@@ -371,8 +372,8 @@ mod tests {
         let again = complete(
             &database,
             &limiter,
-            "stuart",
-            &code,
+            "jordan",
+            &Secret::from(code.as_str()),
             "another new one!".into(),
             "h",
             &clock,
@@ -381,7 +382,7 @@ mod tests {
         assert_eq!(again.err(), Some(RecoveryError::WrongCode));
 
         // A fresh code expires after 15 minutes.
-        request_code(&database, &limiter, "stuart", "i", NOW, Timers::NORMAL)
+        request_code(&database, &limiter, "jordan", "i", NOW, Timers::NORMAL)
             .await
             .unwrap();
         let fresh = code_for(1).unwrap();
@@ -391,8 +392,8 @@ mod tests {
         let expired = complete(
             &database,
             &limiter,
-            "stuart",
-            &fresh,
+            "jordan",
+            &Secret::from(fresh.as_str()),
             "too late for this".into(),
             "j",
             &late,

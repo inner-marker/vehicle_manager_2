@@ -17,7 +17,9 @@ fn main() {
             None
         }
     };
-    tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), "app starting");
+    // The exact build too (phase-3.md 1c), so the log says which image is running.
+    let build = app::build_info::this_build().label("local build", "uncommitted changes");
+    tracing::info!(target: log_area::APP, version = env!("CARGO_PKG_VERSION"), build = %build, "app starting");
 
     launch(log_handles);
 }
@@ -74,6 +76,7 @@ fn launch(log_handles: Option<LogHandles>) {
     let paths = server_paths();
     // Before the router: the auth layer names the session cookie after it.
     server::startup::set_instance(server_instance());
+    server::client_address::set_proxy_hops(server_proxy_hops());
     // Called again on every hot reload in development, so it rebuilds the router each time.
     dioxus::serve(move || {
         let log_handles = log_handles.clone();
@@ -98,7 +101,10 @@ fn launch(log_handles: Option<LogHandles>) {
             let app = Router::new()
                 .merge(app::file_routes::routes())
                 .serve_dioxus_application(config, app::ui::App);
-            Ok(server::auth::protect(app, auth))
+            // Size and time limits outside the auth layer, so an oversized request is
+            // refused before anything else (decision #071).
+            let app = server::auth::protect(app, auth);
+            Ok(server::limits::apply(app, server::limits::Limits::SERVER))
         }
     })
 }
@@ -184,6 +190,18 @@ fn server_instance() -> Option<domain::identity::InstanceName> {
     }
 }
 
+/// How many proxies sit in front of the server, from `VEHICLEMANAGER_PROXY_HOPS` (decision
+/// #071): 1 (`tailscale serve`) if unset. An invalid count is ignored, with a warning.
+#[cfg(feature = "server")]
+fn server_proxy_hops() -> server::client_address::ProxyHops {
+    let env_var = domain::identity::env_var_name(server::client_address::PROXY_HOPS_ENV_NAME);
+    let setting = std::env::var(&env_var).unwrap_or_default();
+    server::client_address::ProxyHops::parse(&setting).unwrap_or_else(|error| {
+        tracing::warn!(target: log_area::APP, env_var = %env_var, %error, "proxy count ignored; using 1");
+        server::client_address::ProxyHops::default()
+    })
+}
+
 /// The local development data folder, used when `VEHICLEMANAGER_DATA_DIR` isn't set.
 #[cfg(feature = "server")]
 const DEV_DATA_DIR: &str = "dev-data";
@@ -193,6 +211,8 @@ const DEV_DATA_DIR: &str = "dev-data";
 fn launch(log_handles: Option<LogHandles>) {
     #[cfg(feature = "desktop")]
     use_saved_server_address();
+    // A paired desktop's sign-in is sealed with its PIN (#074): it's opened on the lock screen
+    // (phase-3.md 3c), not here.
 
     let mut launcher = dioxus::LaunchBuilder::new();
     // The log viewer reads the handles from context.
@@ -206,6 +226,10 @@ fn launch(log_handles: Option<LogHandles>) {
     launcher.launch(app::ui::App);
 }
 
+/// The app icon for the desktop window, at 256 px (made from `assets/app-icon/icon.svg`).
+#[cfg(all(feature = "desktop", not(feature = "server")))]
+const APP_ICON_PNG: &[u8] = include_bytes!("../assets/app-icon/icon-256.png");
+
 /// The desktop window's starting size, in logical pixels (a laptop screen, with room to spare).
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 const WINDOW_SIZE: (f64, f64) = (1200.0, 820.0);
@@ -214,8 +238,9 @@ const WINDOW_SIZE: (f64, f64) = (1200.0, 820.0);
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 const WINDOW_MIN_SIZE: (f64, f64) = (400.0, 600.0);
 
-/// The desktop window: its title, starting and smallest size, and never kept on top (Dioxus
-/// keeps a debug build's window on top of others by default). No right-click menu, so no
+/// The desktop window: its title and icon, its saved place (or the starting size), its
+/// smallest size, and whether it stays on top (off unless chosen in Settings; Dioxus would
+/// keep a debug build's window on top by default; phase-3.md 1b). No right-click menu, so no
 /// Reload or Inspect, and no developer tools (Dioxus turns them on only with that menu). No
 /// menu bar on Windows and Linux, where Dioxus's default one shows inside the window; macOS
 /// keeps the default, whose Edit menu makes copy and paste work in text fields.
@@ -224,16 +249,44 @@ const WINDOW_MIN_SIZE: (f64, f64) = (400.0, 600.0);
 /// the setting that turns its keyboard shortcuts off.
 #[cfg(all(feature = "desktop", not(feature = "server")))]
 fn desktop_config() -> dioxus::desktop::Config {
-    use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
+    use dioxus::desktop::tao::window::Fullscreen;
+    use dioxus::desktop::{Config, LogicalPosition, LogicalSize, WindowBuilder};
 
-    let window = WindowBuilder::new()
+    let saved = app::data_folder::platform_data_folder()
+        .map(|folder| app::settings::load(&folder))
+        .unwrap_or_default();
+    let mut window = WindowBuilder::new()
         .with_title(domain::identity::DISPLAY_NAME)
-        .with_inner_size(LogicalSize::new(WINDOW_SIZE.0, WINDOW_SIZE.1))
         .with_min_inner_size(LogicalSize::new(WINDOW_MIN_SIZE.0, WINDOW_MIN_SIZE.1))
-        .with_always_on_top(false);
-    let config = Config::new()
+        .with_always_on_top(saved.keep_on_top);
+    // The saved place; the app's window keeper moves it back on screen if it can't be seen.
+    match saved
+        .window
+        .filter(app::window_placement::WindowPlacement::is_valid)
+        .map(|placement| placement.at_least(WINDOW_MIN_SIZE))
+    {
+        Some(placement) => {
+            window = window
+                .with_inner_size(LogicalSize::new(placement.width, placement.height))
+                .with_position(LogicalPosition::new(placement.x, placement.y))
+                .with_maximized(placement.maximized);
+            if placement.fullscreen {
+                window = window.with_fullscreen(Some(Fullscreen::Borderless(None)));
+            }
+        }
+        None => window = window.with_inner_size(LogicalSize::new(WINDOW_SIZE.0, WINDOW_SIZE.1)),
+    }
+    let mut config = Config::new()
         .with_window(window)
         .with_disable_context_menu(true);
+    // The app icon (phase-3.md 1a) as the window's icon: the taskbar on Windows and Linux.
+    // macOS ignores window icons; its Dock icon comes from the app bundle (`Dioxus.toml`).
+    match dioxus::desktop::icon_from_memory::<dioxus::desktop::tao::window::Icon>(APP_ICON_PNG) {
+        Ok(icon) => config = config.with_icon(icon),
+        Err(error) => {
+            tracing::warn!(target: log_area::APP, %error, "the app icon couldn't be loaded; using the default");
+        }
+    }
     if cfg!(target_os = "macos") {
         config
     } else {

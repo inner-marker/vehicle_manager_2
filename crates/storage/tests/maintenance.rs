@@ -42,7 +42,7 @@ mod maintenance {
 
     const NOW: UnixMillis = UnixMillis::from_millis(1_700_000_000_000);
     const DAY: i64 = 24 * 60 * 60 * 1000;
-    const STUART: u32 = 1;
+    const JORDAN: u32 = 1;
     const GARAGE: u32 = 50;
     const TRUCK: u32 = 10;
     const ODOMETER: u32 = 20;
@@ -66,13 +66,13 @@ mod maintenance {
         let (database, _) = Database::open(temp.path(), NOW, ids).await.unwrap();
         let mut connection = database.pool().acquire().await.unwrap();
         let user = User {
-            username: Username::parse("stuart").unwrap(),
-            display_name: "Stuart".into(),
+            username: Username::parse("jordan").unwrap(),
+            display_name: "Jordan".into(),
             disabled: false,
             must_change_password: false,
         };
         UserWriter
-            .create(&mut connection, test_id(STUART), &UserPatch::all(user), 1)
+            .create(&mut connection, test_id(JORDAN), &UserPatch::all(user), 1)
             .await
             .unwrap();
         let group = Group {
@@ -179,7 +179,7 @@ mod maintenance {
             notes: Notes::default(),
             severity: Severity::Low,
             opened_at: NOW,
-            opened_by: test_id(STUART),
+            opened_by: test_id(JORDAN),
             found_on: None,
             received_at: NOW,
         }
@@ -256,7 +256,7 @@ mod maintenance {
             fields: vec![],
             notes: Notes::default(),
             source: EventSource::Typed,
-            logged_by: test_id(STUART),
+            logged_by: test_id(JORDAN),
             performed_by: None,
             fuel: None,
             work: Some(WorkDetails {
@@ -306,7 +306,7 @@ mod maintenance {
             .update(
                 connection,
                 test_id(n),
-                &finalize(Finalizer::User(test_id(STUART)), when),
+                &finalize(Finalizer::User(test_id(JORDAN)), when),
                 20,
             )
             .await

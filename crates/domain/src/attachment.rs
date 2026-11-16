@@ -341,6 +341,61 @@ pub struct Original {
     pub file_type: FileType,
 }
 
+/// How much disk a desktop may use for photos it has downloaded (phase-3.md 6c, #077): past
+/// it, the photos opened longest ago are dropped. Thumbnails, PDFs, and anything not yet sent
+/// never count or go.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PhotoLimit {
+    /// 1 GB.
+    OneGb,
+    /// 2 GB (the default).
+    #[default]
+    TwoGb,
+    /// 5 GB.
+    FiveGb,
+    /// 10 GB.
+    TenGb,
+    /// No limit: every photo opened is kept until sign-out.
+    NoLimit,
+}
+
+impl PhotoLimit {
+    /// Every choice, smallest first.
+    pub const ALL: [Self; 5] = [
+        Self::OneGb,
+        Self::TwoGb,
+        Self::FiveGb,
+        Self::TenGb,
+        Self::NoLimit,
+    ];
+
+    /// The limit in bytes (a gigabyte is 1024³); `None` for no limit.
+    #[must_use]
+    pub const fn bytes(self) -> Option<u64> {
+        const GB: u64 = 1024 * 1024 * 1024;
+        match self {
+            Self::OneGb => Some(GB),
+            Self::TwoGb => Some(2 * GB),
+            Self::FiveGb => Some(5 * GB),
+            Self::TenGb => Some(10 * GB),
+            Self::NoLimit => None,
+        }
+    }
+
+    /// Its label.
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::OneGb => messages::PHOTO_LIMIT_1_GB,
+            Self::TwoGb => messages::PHOTO_LIMIT_2_GB,
+            Self::FiveGb => messages::PHOTO_LIMIT_5_GB,
+            Self::TenGb => messages::PHOTO_LIMIT_10_GB,
+            Self::NoLimit => messages::PHOTO_LIMIT_NONE,
+        }
+    }
+}
+
 // --- Attachments ---------------------------------------------------------------------------
 
 /// What an attachment is on. Every attachment is about one vehicle ([`Attachment::asset`]).

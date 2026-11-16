@@ -8,6 +8,10 @@
 //! 4. a **forced password change** after an Admin set a temporary password;
 //! 5. otherwise, the app itself.
 //!
+//! **Offline** (a desktop that can't reach its server but has a complete copy; phase-3.md
+//! 4e), the app opens as the person the desktop is sealed for, in Driver mode, reading the
+//! copy; the copy's puller asks again once the server answers.
+//!
 //! [`refresh`] asks the server again; call it after anything that changes the session
 //! (sign-in, sign-out, mode switch, password change) and on navigation, so an Admin mode
 //! the server ended after 15 idle minutes stops showing.
@@ -46,16 +50,39 @@ pub(crate) fn use_auth() -> Signal<AuthState> {
 /// last session check. Shown as the **TEST SERVER** tag.
 pub(crate) static SERVER_INSTANCE: GlobalSignal<Option<String>> = Signal::global(|| None);
 
-/// Asks the server who is signed in, and updates `state`.
-pub(crate) async fn refresh(mut state: Signal<AuthState>) {
+/// Measures the server's clock (the public, unsigned handshake), so a paired desktop's
+/// signatures use the server's time (#073).
+async fn measure_server_time() {
+    match api::handshake().await {
+        Ok(handshake) => client::set_server_time(handshake.server_time_ms),
+        Err(error) => {
+            tracing::debug!(target: log_area::AUTH, %error, "can't measure the server's clock");
+        }
+    }
+    client::apply_request_headers();
+}
+
+/// Asks the server who is signed in. A paired desktop first measures the server's clock (once
+/// per run); if the server then says nobody is signed in, it measures again and asks once
+/// more, so a computer clock that jumped never costs a pairing.
+async fn ask_session() -> Result<domain::api::SessionState, ServerFnError> {
+    if client::has_device_key() && !client::server_time_known() {
+        measure_server_time().await;
+    }
     client::apply_request_headers();
     let answer = api::session().await;
-    if let Ok(session) = &answer
-        && *SERVER_INSTANCE.peek() != session.instance
-    {
-        SERVER_INSTANCE.write().clone_from(&session.instance);
+    let signed_out =
+        matches!(&answer, Ok(session) if session.signed_in.is_none() && !session.setup_needed);
+    if client::has_device_key() && signed_out {
+        measure_server_time().await;
+        return api::session().await;
     }
-    let next = match answer {
+    answer
+}
+
+/// The state the server's answer means.
+fn state_from(answer: Result<domain::api::SessionState, ServerFnError>) -> AuthState {
+    match answer {
         Ok(session) if session.setup_needed => AuthState::NeedsSetup,
         Ok(session) => session
             .signed_in
@@ -65,19 +92,115 @@ pub(crate) async fn refresh(mut state: Signal<AuthState>) {
             tracing::debug!(target: log_area::AUTH, ?problem, "session check failed");
             AuthState::Unreachable(problem.message())
         }
-    };
-    // A token the server no longer accepts is useless; forget it.
-    if matches!(next, AuthState::SignedOut) {
-        client::set_session_token(None);
-    }
-    if *state.peek() != next {
-        tracing::debug!(target: log_area::AUTH, signed_in = matches!(next, AuthState::SignedIn(_)), "session state changed");
-        state.set(next);
     }
 }
 
-/// The **TEST SERVER** tag (and the tab's title), on a server that isn't the household's main
-/// one; nothing on the main server.
+/// Asks the server who is signed in, and updates `state` (see [`ask_session`]).
+pub(crate) async fn refresh(mut state: Signal<AuthState>) {
+    // A desktop with its copy open counts down on the waiting screen, and may skip the wait.
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    let answer = crate::local_copy::check_session(ask_session()).await;
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let answer = client::within(client::SESSION_WAIT, ask_session()).await;
+    if let Ok(session) = &answer
+        && *SERVER_INSTANCE.peek() != session.instance
+    {
+        SERVER_INSTANCE.write().clone_from(&session.instance);
+    }
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut next = state_from(answer);
+    #[cfg_attr(
+        not(all(feature = "desktop", not(target_arch = "wasm32"))),
+        expect(unused_mut, reason = "only the desktop opens offline")
+    )]
+    let mut offline = false;
+    // No connection: a desktop with a complete copy opens it, in Driver mode (phase-3.md 4e),
+    // with the server's instance (its TEST SERVER tag) as last remembered.
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if matches!(next, AuthState::Unreachable(_))
+        && let Some(session) = crate::local_copy::offline_session().await
+    {
+        next = AuthState::SignedIn(session);
+        offline = true;
+        let instance = crate::local_copy::known_instance();
+        if *SERVER_INSTANCE.peek() != instance {
+            *SERVER_INSTANCE.write() = instance;
+        }
+    }
+    // A token the server no longer accepts is useless; forget it (and a desktop's pairing:
+    // it was signed out, perhaps from Settings -> Devices). But a desktop with its copy open
+    // keeps everything (the copy, its unsent changes, its sealed sign-in) until the person
+    // decides: the server may have been reset or restored (7c, #078).
+    if matches!(next, AuthState::SignedOut) {
+        signed_out_by_server();
+    }
+    protect_by_session(&next);
+    let signed_in = matches!(next, AuthState::SignedIn(_));
+    if *state.peek() != next {
+        tracing::debug!(target: log_area::AUTH, signed_in, "session state changed");
+        state.set(next);
+    }
+    // The desktop remembers this server (its recent servers; phase-3.md 2d), once per run;
+    // not offline, when the handshake can't say what it is.
+    if signed_in && !offline {
+        crate::ui::recent_servers::remember_once(SERVER_INSTANCE.peek().clone()).await;
+    }
+}
+
+/// The server no longer accepts this desktop's sign-in: forgotten, unless it keeps its copy.
+fn signed_out_by_server() {
+    if keeps_its_copy() {
+        tracing::warn!(target: log_area::AUTH, "the server no longer knows this computer; keeping its copy");
+        client::set_session_token(None);
+        return;
+    }
+    if client::has_device_key() {
+        tracing::info!(target: log_area::AUTH, "the server no longer accepts this device's sign-in; forgetting it");
+    }
+    crate::pairing::forget();
+}
+
+/// Whether a sign-out by the server should keep this computer's copy (a paired desktop with
+/// its copy open: 7c). Never on the web.
+fn keeps_its_copy() -> bool {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        client::has_device_key() && crate::local_copy::current().is_some()
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    false
+}
+
+/// Protective mode from the session check (7c): signed out with the copy kept ("forgotten"),
+/// a fresh server asking for setup while a copy is open ("the server changed"), and back to
+/// normal once signed in again after being forgotten. Nothing on the web.
+fn protect_by_session(state: &AuthState) {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        use crate::protect::{PROTECTED, Protection, protect};
+        let copy_open = crate::local_copy::current().is_some();
+        match state {
+            AuthState::SignedOut if copy_open => protect(Protection::Forgotten),
+            AuthState::NeedsSetup if copy_open => protect(Protection::ServerChanged { now: None }),
+            AuthState::SignedIn(_) if *PROTECTED.peek() == Some(Protection::Forgotten) => {
+                crate::protect::clear();
+            }
+            AuthState::Loading
+            | AuthState::SignedOut
+            | AuthState::NeedsSetup
+            | AuthState::SignedIn(_)
+            | AuthState::Unreachable(_) => {}
+        }
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    let _ = state;
+}
+
+/// The **TEST SERVER** tag on a server that isn't the household's main one (the tab's title
+/// says so too: `ui::page_title`); nothing on the main server.
 #[component]
 pub(crate) fn InstanceTag() -> Element {
     let Some(name) = SERVER_INSTANCE() else {
@@ -88,12 +211,63 @@ pub(crate) fn InstanceTag() -> Element {
         &[("name", domain::i18n::MessageArg::from(name.as_str()))],
     );
     rsx! {
-        Title { {label.clone()} }
         span { class: "instance-tag", title: tr(domain::i18n::messages::INSTANCE_TAG_NOTE),
             // The full "TEST SERVER", or just "TEST" in a phone's crowded top bar.
             span { class: "instance-tag-full", {label} }
             span { class: "instance-tag-short", {name} }
         }
+    }
+}
+
+/// While the session check runs: "Loading…", or, on a desktop whose PIN opened its copy,
+/// "Connecting to the server…". After a second with no answer it adds how long until the copy
+/// opens offline, and **Start in Offline Mode Now** to stop waiting.
+#[cfg_attr(
+    all(feature = "desktop", not(target_arch = "wasm32")),
+    expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )
+)]
+#[component]
+fn Waiting() -> Element {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        use domain::i18n::{MessageArg, messages};
+
+        let mut now = use_signal(std::time::Instant::now);
+        use_future(move || async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                now.set(std::time::Instant::now());
+            }
+        });
+        if let Some(until) = crate::local_copy::CONNECTING() {
+            let left = until.saturating_duration_since(now());
+            let first_second = left + std::time::Duration::from_secs(1) > client::SESSION_WAIT;
+            let seconds = i64::try_from(left.as_millis().div_ceil(1000))
+                .unwrap_or(1)
+                .max(1);
+            return rsx! {
+                div { class: "auth-connecting", role: "status",
+                    p { class: "auth-loading", {tr(messages::CONNECTING_TITLE)} }
+                    if !first_second {
+                        p { class: "auth-connecting-note",
+                            {crate::ui::tr_with(messages::CONNECTING_OFFLINE_IN, &[("seconds", MessageArg::from(seconds))])}
+                        }
+                        button {
+                            class: "secondary-button",
+                            r#type: "button",
+                            onclick: move |_| crate::local_copy::open_offline_now(),
+                            {tr(messages::CONNECTING_OFFLINE_NOW)}
+                        }
+                    }
+                }
+            };
+        }
+    }
+    rsx! {
+        p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
     }
 }
 
@@ -109,7 +283,7 @@ pub(crate) fn AuthGate(children: Element) -> Element {
     match state() {
         AuthState::Loading => rsx! {
             div { class: "auth-page",
-                p { class: "auth-loading", {tr(domain::i18n::messages::LOADING)} }
+                Waiting {}
             }
         },
         AuthState::NeedsSetup => rsx! { Setup {} },

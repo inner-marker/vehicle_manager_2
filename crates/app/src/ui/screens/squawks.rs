@@ -34,7 +34,7 @@ use super::attachments::AttachmentStrip;
 use super::log_form::ZONE_SCRIPT;
 use super::problem_from_error;
 use super::vehicle::Tab;
-use crate::api;
+use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::routes::Route;
@@ -56,6 +56,8 @@ struct SheetTarget {
     found_on: Option<EventId>,
     /// The squawk being changed, if it isn't a new one.
     editing: Option<(SquawkId, Squawk)>,
+    /// A new squawk's values to start from (a refused one opened again, phase-3.md 5e).
+    prefill: Option<Squawk>,
 }
 
 /// The squawk sheet's state, in context (provided by the shell).
@@ -77,6 +79,7 @@ impl SquawkSheet {
             high_word: high_severity_name(&asset.kind, Translator::english()),
             found_on,
             editing: None,
+            prefill: None,
         }));
     }
 
@@ -90,6 +93,23 @@ impl SquawkSheet {
             high_word: high_severity_name(&asset.kind, Translator::english()),
             found_on: squawk.found_on,
             editing: Some((id, squawk)),
+            prefill: None,
+        }));
+    }
+
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    /// Opens the sheet with a refused squawk's values (Messages' **Open**, phase-3.md 5e):
+    /// changing `squawk` (`editing`), or a new one.
+    pub(crate) fn reopen(mut self, editing: Option<SquawkId>, squawk: Squawk, asset: &Asset) {
+        let serial = self.next_serial();
+        self.target.set(Some(SheetTarget {
+            serial,
+            asset: squawk.asset,
+            vehicle: asset.name.as_str().to_owned(),
+            high_word: high_severity_name(&asset.kind, Translator::english()),
+            found_on: squawk.found_on,
+            editing: editing.map(|id| (id, squawk.clone())),
+            prefill: editing.is_none().then_some(squawk),
         }));
     }
 
@@ -157,7 +177,7 @@ pub(crate) fn SquawkSheetDialog() -> Element {
 }
 
 /// The browser's time zone (UTC until it's known).
-pub(super) fn use_device_zone() -> Signal<TimeZone> {
+pub(crate) fn use_device_zone() -> Signal<TimeZone> {
     let mut zone = use_signal(TimeZone::utc);
     use_effect(move || {
         spawn(async move {
@@ -233,7 +253,11 @@ fn refusal(outcome: &SquawksOutcome) -> MessageId {
 fn SheetForm(target: SheetTarget) -> Element {
     let sheet = use_squawk_sheet();
     let zone = use_device_zone();
-    let start = target.editing.as_ref().map(|(_, squawk)| squawk.clone());
+    let start = target
+        .editing
+        .as_ref()
+        .map(|(_, squawk)| squawk.clone())
+        .or_else(|| target.prefill.clone());
     let mut typed = use_signal(|| Typed {
         description: start
             .as_ref()
@@ -281,8 +305,8 @@ fn SheetForm(target: SheetTarget) -> Element {
         busy.set(true);
         spawn(async move {
             let result = match editing {
-                Some(id) => api::edit_squawk(id, input).await,
-                None => api::open_squawk(input).await,
+                Some(id) => crate::data::edit_squawk(id, input).await,
+                None => crate::data::open_squawk(input).await,
             };
             busy.set(false);
             match result {
@@ -477,7 +501,7 @@ pub(super) fn use_vehicle_squawks(asset: AssetId) -> Signal<Option<VehicleSquawk
     use_effect(use_reactive!(|asset| {
         let _ = (sheet.changes)();
         spawn(async move {
-            match api::vehicle_squawks(asset).await {
+            match data::vehicle_squawks(asset).await {
                 Ok(SquawksOutcome::Squawks { squawks, may_open }) => {
                     tracing::debug!(target: log_area::UI, %asset, count = squawks.len(), "squawks loaded");
                     loaded.set(Some(VehicleSquawks { squawks, may_open }));
@@ -710,7 +734,7 @@ fn FoundOn(event: EventId, zone: TimeZone, units: Preferences) -> Element {
     let mut label = use_signal(|| None::<String>);
     use_effect(use_reactive!(|event, zone, units| {
         spawn(async move {
-            if let Ok(EventsOutcome::Event { view }) = api::event_view(event).await {
+            if let Ok(EventsOutcome::Event { view }) = data::event_view(event).await {
                 let event = &view.event;
                 label.set(Some(format!(
                     "{} · {}",
@@ -874,7 +898,12 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
                             onclick: move |_| sheet.edit(view.id, squawk.clone(), &asset),
                             {tr(messages::ACTION_EDIT)}
                         }
-                        button { class: "secondary-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::SQUAWK_REMOVE)} }
+                        button {
+                            class: "secondary-button",
+                            r#type: "button",
+                            onclick: move |_| confirm.set(true),
+                            {tr(messages::SQUAWK_REMOVE)}
+                        }
                     }
                 }
             }
@@ -904,7 +933,7 @@ fn RemoveDialog(id: SquawkId, on_close: EventHandler<bool>) -> Element {
     let mut problem = use_signal(|| None::<MessageId>);
     let remove = move |_| {
         spawn(async move {
-            match api::delete_squawk(id).await {
+            match crate::data::delete_squawk(id).await {
                 Ok(SquawksOutcome::Done) => {
                     tracing::debug!(target: log_area::UI, squawk = %id, "squawk removed");
                     sheet.changed();
@@ -941,7 +970,7 @@ struct Loaded {
 
 async fn load(id: SquawkId) -> Result<Loaded, MessageId> {
     let failed = |error: &ServerFnError| problem_from_error(error).message();
-    let view = match api::squawk_view(id).await.map_err(|e| failed(&e))? {
+    let view = match data::squawk_view(id).await.map_err(|e| failed(&e))? {
         SquawksOutcome::Squawk { view } => *view,
         other @ (SquawksOutcome::Squawks { .. }
         | SquawksOutcome::Saved { .. }
@@ -951,7 +980,7 @@ async fn load(id: SquawkId) -> Result<Loaded, MessageId> {
         | SquawksOutcome::Invalid { .. }
         | SquawksOutcome::Unavailable) => return Err(refusal(&other)),
     };
-    let AssetsOutcome::Asset { view: vehicle } = api::vehicle_page(view.squawk.asset)
+    let AssetsOutcome::Asset { view: vehicle } = data::vehicle_page(view.squawk.asset)
         .await
         .map_err(|e| failed(&e))?
     else {
@@ -1135,6 +1164,7 @@ mod tests {
             high_word: "Not drivable".into(),
             found_on: Some(test_id(100)),
             editing: None,
+            prefill: None,
         };
         let utc = TimeZone::parse("UTC").unwrap();
         let now = UnixMillis::from_millis(1_700_000_000_000);

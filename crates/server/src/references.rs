@@ -433,6 +433,9 @@ async fn remove_reference(
             .save(&AttachmentWriter, Change::Delete { id: attachment })
             .await
             .map_err(|outcome| from_assets(&outcome))?;
+        crate::attachments::note_removal(context, attachment)
+            .await
+            .map_err(|outcome| from_assets(&outcome))?;
     }
     context
         .save(&ReferenceDocumentWriter, Change::Delete { id })

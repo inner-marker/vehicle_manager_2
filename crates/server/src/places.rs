@@ -24,9 +24,9 @@ use geocoder::Geocoder;
 use storage::Database;
 use storage::places::SavedPlaceWriter;
 
-use crate::commands::issue;
+use crate::commands::issue_from;
 use crate::health::Health;
-use crate::ids::new_id;
+use crate::origin::Origin;
 use crate::sessions::SignedIn;
 
 /// The environment variable naming the place data file, without the app prefix.
@@ -155,6 +155,8 @@ pub struct PlacesContext<'a> {
     pub clock: &'a (dyn Clock + Sync),
     /// The place data, if it's open.
     pub geocoder: Option<&'a Geocoder>,
+    /// Where the change comes from: online, or a desktop's pushed operation (`crate::origin`).
+    pub origin: Origin<'a>,
 }
 
 fn unavailable(what: &str, error: &dyn std::fmt::Display) -> PlacesOutcome {
@@ -173,7 +175,8 @@ impl PlacesContext<'_> {
             user: self.user.user,
             mode: self.user.mode,
         };
-        issue(
+        issue_from(
+            &self.origin,
             self.database,
             &SavedPlaceWriter,
             change,
@@ -292,8 +295,10 @@ async fn add_place(
     let place = form
         .parse(context.user.user)
         .map_err(|problem| PlacesOutcome::Invalid { problem })?;
-    let id: SavedPlaceId =
-        new_id(context.clock.now()).map_err(|error| unavailable("new id", &error))?;
+    let id: SavedPlaceId = context
+        .origin
+        .new_id(context.clock.now())
+        .map_err(|error| unavailable("new id", &error))?;
     context
         .save(Change::Create {
             id,
@@ -322,13 +327,32 @@ async fn edit_place(
     let wanted = form
         .parse(context.user.user)
         .map_err(|problem| PlacesOutcome::Invalid { problem })?;
-    let patch = SavedPlacePatch {
-        owner: None,
-        name: (wanted.name != current.name).then_some(wanted.name),
-        coordinates: (wanted.coordinates != current.coordinates).then_some(wanted.coordinates),
-        radius_m: (wanted.radius_m != current.radius_m).then_some(wanted.radius_m),
-        place: (wanted.place != current.place).then_some(wanted.place),
-    };
+    let patch = current.changes_to(wanted);
+    if !patch.changed_fields().is_empty() {
+        context.save(Change::Update { id, patch }).await?;
+    }
+    Ok(PlacesOutcome::Done)
+}
+
+/// Changes one of the person's saved places by only the fields a desktop's operation changed
+/// (#076; never its owner, and its radius checked as the form's).
+pub async fn edit_changes(
+    context: &PlacesContext<'_>,
+    id: SavedPlaceId,
+    changes: SavedPlacePatch,
+) -> PlacesOutcome {
+    either(edit_place_changes(context, id, changes).await)
+}
+
+async fn edit_place_changes(
+    context: &PlacesContext<'_>,
+    id: SavedPlaceId,
+    changes: SavedPlacePatch,
+) -> Result<PlacesOutcome, PlacesOutcome> {
+    context.own(id).await?;
+    let patch = changes
+        .checked()
+        .map_err(|problem| PlacesOutcome::Invalid { problem })?;
     if !patch.changed_fields().is_empty() {
         context.save(Change::Update { id, patch }).await?;
     }

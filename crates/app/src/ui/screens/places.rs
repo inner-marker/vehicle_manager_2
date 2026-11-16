@@ -13,6 +13,7 @@ use domain::location::{CountryCode, DEFAULT_RADIUS_M, SavedPlace, SavedPlaceForm
 use domain::log_area;
 
 use crate::api;
+use crate::data;
 use crate::ui::location::{PlacePart, WherePart, place_text, use_picker};
 use crate::ui::screens::{Field, FormError, problem_from_error};
 use crate::ui::{tr, tr_with};
@@ -77,7 +78,7 @@ pub(crate) fn Places() -> Element {
     use_effect(move || {
         let _ = reloads();
         spawn(async move {
-            match api::get_places().await {
+            match data::get_places().await {
                 Ok(PlacesOutcome::Places { places: list }) => {
                     tracing::debug!(target: log_area::UI, count = list.len(), "places loaded");
                     places.set(Some(list));
@@ -218,8 +219,8 @@ fn PlaceDialog(
         busy.set(true);
         spawn(async move {
             let result = match editing {
-                Some(id) => api::edit_place(id, form).await,
-                None => api::add_place(form).await,
+                Some(id) => crate::data::edit_place(id, form).await,
+                None => crate::data::add_place(form).await,
             };
             busy.set(false);
             error.set(failure(&result));
@@ -280,7 +281,7 @@ fn ConfirmRemove(
     let mut error = use_signal(|| None::<String>);
     let remove = move |_| {
         spawn(async move {
-            let result = api::delete_place(id).await;
+            let result = crate::data::delete_place(id).await;
             error.set(failure(&result));
             if error().is_none() {
                 on_removed.call(());

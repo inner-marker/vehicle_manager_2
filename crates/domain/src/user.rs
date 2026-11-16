@@ -9,8 +9,8 @@
 //! ```
 //! use domain::user::{PasswordError, Username, check_new_password};
 //!
-//! let name = Username::parse("  Stuart.R ").unwrap();
-//! assert_eq!(name.as_str(), "stuart.r");
+//! let name = Username::parse("  Jordan.K ").unwrap();
+//! assert_eq!(name.as_str(), "jordan.k");
 //!
 //! assert_eq!(check_new_password("short"), Err(PasswordError::TooShort));
 //! assert!(check_new_password("correct horse battery staple").is_ok());
@@ -42,7 +42,7 @@ pub const DISPLAY_NAME_MAX_CHARS: usize = 64;
 pub struct User {
     /// What they sign in with: unique, lowercase.
     pub username: Username,
-    /// What the app calls them, e.g. "Stuart".
+    /// What the app calls them, e.g. "Jordan".
     pub display_name: String,
     /// A disabled user can't sign in, and their sessions end.
     pub disabled: bool,
@@ -52,7 +52,7 @@ pub struct User {
 }
 
 /// A username: 3–32 characters, lowercase letters, digits, `.`, `-`, and `_`, starting with a
-/// letter or digit. Stored lowercase, so "Stuart" and "stuart" are the same user.
+/// letter or digit. Stored lowercase, so "Jordan" and "jordan" are the same user.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct Username(String);
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn usernames_are_trimmed_and_lowercased() {
-        assert_eq!(Username::parse(" Stuart ").unwrap().as_str(), "stuart");
+        assert_eq!(Username::parse(" Jordan ").unwrap().as_str(), "jordan");
         assert_eq!(Username::parse("a.b-c_9").unwrap().as_str(), "a.b-c_9");
         assert_eq!(Username::parse("abc"), Username::parse("ABC"));
     }
@@ -283,10 +283,10 @@ mod tests {
             ("ab", UsernameError::WrongLength),
             (&"a".repeat(33), UsernameError::WrongLength),
             ("stu art", UsernameError::InvalidCharacter),
-            ("stuart@home", UsernameError::InvalidCharacter),
+            ("jordan@home", UsernameError::InvalidCharacter),
             ("stüart", UsernameError::InvalidCharacter),
-            ("_stuart", UsernameError::MustStartWithLetterOrDigit),
-            (".stuart", UsernameError::MustStartWithLetterOrDigit),
+            ("_jordan", UsernameError::MustStartWithLetterOrDigit),
+            (".jordan", UsernameError::MustStartWithLetterOrDigit),
         ];
         for (input, expected) in cases {
             assert_eq!(Username::parse(input), Err(expected), "{input:?}");
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn display_names_are_trimmed_and_limited() {
-        assert_eq!(check_display_name("  Stuart  "), Ok("Stuart".to_owned()));
+        assert_eq!(check_display_name("  Jordan  "), Ok("Jordan".to_owned()));
         assert_eq!(check_display_name("   "), Err(DisplayNameError::Empty));
         assert_eq!(
             check_display_name(&"x".repeat(65)),
@@ -324,9 +324,9 @@ mod tests {
 
     #[test]
     fn usernames_round_trip_through_json_and_bad_ones_are_refused() {
-        let name = Username::parse("stuart").unwrap();
+        let name = Username::parse("jordan").unwrap();
         let json = serde_json::to_string(&name).unwrap();
-        assert_eq!(json, "\"stuart\"");
+        assert_eq!(json, "\"jordan\"");
         assert_eq!(serde_json::from_str::<Username>(&json).unwrap(), name);
         assert!(serde_json::from_str::<Username>("\"no spaces\"").is_err());
     }

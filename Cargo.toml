@@ -15,7 +15,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
+version = "0.3.0"               # single source of truth for the app version; release tags must match (vX.Y.Z)
 edition = "2024"
 license = "MIT OR Apache-2.0"   # standard Rust dual license; crates inherit with `license.workspace = true`
 rust-version = "1.95"           # matches rust-toolchain.toml
@@ -53,6 +53,17 @@ jiff = { version = "0.2.39", default-features = false, features = ["std", "tzdb-
 # Quantities and unit conversions in the domain (approved, phase-2.md milestone 6, #007).
 uom = { version = "0.38.0", default-features = false, features = ["std", "si", "f64"] }
 sha2 = "0.11.1"                   # session tokens are stored only as their SHA-256 (phase-2.md 2c)
+# A paired desktop's device key and its signed requests (phase-3.md 2b, decision #073). Pure
+# Rust (builds for the browser too); no randomness here: the desktop makes its own key.
+ed25519-dalek = { version = "3.0.0", default-features = false, features = ["zeroize"] }
+# The desktop's device key and token in the OS keychain (phase-3.md 2c, #073): macOS Keychain,
+# Windows Credential Manager, Linux Secret Service (through zbus, pure Rust).
+keyring = "4.2.0"
+# Seals the desktop's stored sign-in with a key made from its PIN or password (phase-3.md 3b,
+# #074): XChaCha20-Poly1305. No `getrandom` feature: the app draws its own nonces.
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc"] }
+# The desktop's default device name: the computer's name (phase-3.md 2c).
+gethostname = "1.1.0"
 serde_json = "1.0.154"
 subtle = "2.6.1"                # constant-time credential comparison
 # Photos: JPEG and PNG only, pure Rust (phase-2.md 8d, #036; approved 2026-11-04).
@@ -76,8 +87,11 @@ web-time = "1.1.0"              # SystemTime that also works on wasm32 (std's pa
 
 # Dev-only
 proptest = "1"                    # property-based tests (AGENTS.md §7)
-http-body-util = "0.1.5"        # reading response bodies in middleware tests
+http-body-util = "0.1.5"        # body size limits; reading response bodies in middleware tests
 tempfile = "3.27.0"
+# Draws the app icon's PNGs from its SVG, in an ignored test (phase-3.md 1a); no text or
+# fonts needed.
+resvg = { version = "0.49.0", default-features = false }
 
 # ---------------------------------------------------------------------------
 # Rustc lints
@@ -137,3 +151,16 @@ clone_on_ref_ptr = "warn"           # write Arc::clone(&x), not x.clone(), for c
 str_to_string = "warn"              # consistent: use .to_owned()
 large_enum_variant = "warn"         # keeps command/event enums lean
 wildcard_enum_match_arm = "warn"    # `_ =>` hides new enum variants (matters for commands)
+
+# ---------------------------------------------------------------------------
+# Build profiles
+# ---------------------------------------------------------------------------
+# Argon2 (and its BLAKE2 hash) optimized even in debug builds: unoptimized, the desktop's
+# unlock (256 MiB, phase-3.md 3b) takes about 5 s instead of 0.3 s, and the server's password
+# checks are slow too. Only these crates; everything else keeps normal debug builds.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+

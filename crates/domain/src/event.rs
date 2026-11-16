@@ -499,6 +499,18 @@ impl EventInput {
     }
 }
 
+impl EventInput {
+    /// The fields of `current` this input changes, and only those (an edit made offline,
+    /// #076): the form started from `current`, so a field left as it was isn't sent, and a
+    /// change made meanwhile on another device to that field stands (#043). When it was
+    /// edited is set when the change is applied.
+    #[must_use]
+    pub fn changes_from(self, current: &Event) -> EventPatch {
+        let edited = self.edit(current, current.last_edited_at);
+        event_changes(current, &edited)
+    }
+}
+
 /// The change from `before` to `after`: only the fields that differ.
 #[must_use]
 pub fn event_changes(before: &Event, after: &Event) -> EventPatch {
@@ -853,6 +865,23 @@ record_patch! {
 }
 
 impl EventPatch {
+    /// The fields a person edits in a draft (the log form's): a pushed edit keeps only these
+    /// (`keep_only`), so it can never set what the server sets (status, who logged it, when it
+    /// was finalized, what it corrects).
+    pub const EDITABLE: [&'static str; 11] = [
+        "dates",
+        "location",
+        "readings",
+        "skipped",
+        "fields",
+        "notes",
+        "performed_by",
+        "fuel",
+        "work",
+        "lifecycle",
+        "reading_override",
+    ];
+
     /// Every field of `event`, for creating it.
     #[must_use]
     pub fn all(event: Event) -> Self {

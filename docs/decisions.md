@@ -208,9 +208,9 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 *Decided: 2026-10-29 · Plan: §7 Target NAS & image architectures · Reverses the plan's "arm64 first"*
 
 - **Decision:**
-  - The NAS is a Synology **DS1019+**: Intel Celeron J3455 (x86_64), 8 GB RAM, DSM 7.4.1, with Container Manager and Tailscale installed.
+  - The NAS is a Synology with an Intel (x86_64) processor, on DSM 7.4, with Container Manager and Tailscale installed.
   - Server images start **amd64-only**. **arm64 is kept for later**, for hosts such as a Raspberry Pi, as a multi-arch image under one tag.
-  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the J3455 has no AVX.
+  - Builds target the default `x86-64` baseline and never `-C target-cpu=native`, because the NAS CPU has no AVX.
   - `rust-toolchain.toml` pins `x86_64-unknown-linux-gnu` instead of `aarch64-unknown-linux-gnu`.
 - **Why:**
   - The plan assumed an ARM Synology. The real CPU, checked in DSM's Info Center before milestone 3 as the plan required, is x86_64, so an arm64-only image wouldn't run.
@@ -235,7 +235,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **macOS is the first desktop platform** for Phase 1's first runs. Linux (WebKitGTK) and Windows follow; all three still build in the PR-to-`main` gate.
   - **The server address is a desktop setting**, saved in `settings.json` in the platform data folder (from `domain::identity::DATA_DIR_NAME`) and **applied at launch**. A changed address takes effect after a restart, and the app says so.
   - Accepted addresses: `https://`, or `http://` only for a loopback host (local `dx serve`).
-  - **The desktop credential is typed in and kept in memory only**, as on the web (#024). No keychain.
+  - **The desktop credential is typed in and kept in memory only**, as on the web (#024). No keychain. *(Replaced by #073, 2026-11-09: a paired desktop keeps its key and token in the OS keychain.)*
   - **Desktop packages** (`.deb`, `.rpm`, and the macOS bundle) are set up with the first release, not in milestone 4. During development the app runs with `dx serve --platform desktop`.
 - **Why:**
   - The human develops on a Mac, so macOS gives the quickest first end-to-end runs. The exit criterion needs "the desktop app", not a particular OS.
@@ -361,7 +361,7 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Groundwork for a USB disk:** the snapshot folder is configurable (`VEHICLEMANAGER_SNAPSHOT_DIR`, built from `APP_ID`), so it can later point at a second mount in `compose.yaml`, such as a USB disk. If that folder is missing or not writable, the server keeps running, skips the snapshot, and reports it (log and Admin message).
   - **Not a focus now:** no USB setup, Hyper Backup task, or docs for it in Phase 2. They come later, or with offsite backups (post-MVP).
 - **Why:**
-  - The DS1019+ has one storage pool (4 data disks + 1 parity), so there's no "different NAS disk". Its parity already survives one failed disk.
+  - The NAS has one storage pool (with parity), so there's no "different NAS disk". Its parity already survives one failed disk.
   - Same-pool snapshots still cover what they're mainly for: corruption, a bad migration, a bad sync, and accidental deletion.
   - A configurable folder makes a USB disk (or any second volume) a deployment change later, not a code change.
 - **Not covered until offsite backups:** losing the whole pool or the NAS.
@@ -816,3 +816,123 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - Release images are built without test timers, like `:dev` (#054).
 - **Why:** the human, 2026-11-07, as recommended: from `v0.2.0` the rest of the household uses the main server, so its records should change only at a release, after the regression pass, not whenever `dev` moves.
 - **Unaffected:** migrations still freeze once merged into `dev` (#062), since every release comes from `dev`.
+
+### 071. Security sub-plan confirmed: what's built when; the web app is online-only
+*Decided: 2026-11-07 · Plan: §6 Security (defense in depth), §9 Phases 3, 6, 7 · Sub-plan: `docs/sub-plans/04-security.md` · Issues #27–#31*
+
+- **Decision:** the security sub-plan is confirmed as drafted, with its open questions settled as proposed:
+  - **Before Phase 3 code** (a `fix/` branch, before the app icon): the per-client sign-in limit uses only the `X-Forwarded-For` entry the proxies wrote, found by **counting proxies** (`VEHICLEMANAGER_PROXY_HOPS`, default 1 for `tailscale serve`; amended 2026-11-08, below); a cap on concurrent password hashing; request size and time limits.
+  - **Phase 3:** secret types and log tiers first; then, with the device database and pairing, an encrypted (SQLCipher) device database, OS secure storage, a device key pair that signs each request (DPoP-style), an app lock with a per-device PIN, and a Devices list for signing devices out.
+  - **The web app is online-only:** it stores nothing in the browser (`no-store`, cleared at sign-out), has no PIN, and keeps idle sign-out (#049).
+  - **After 10 wrong PINs** a device signs out and forgets its local key.
+  - **Admin-mode re-auth:** password or PIN, per Admin (Phase 6); no "none".
+  - **Phase 6:** API-wide rate limits, growing sign-in delays kept in the database, a fail2ban log format, the internet-facing deployment guide, and custom roles (#27) in their own sub-plan.
+  - **Phase 7:** server database, attachment, snapshot, and backup encryption, with a recovery key and rotation. Until then, the NAS guide recommends an encrypted shared folder.
+- **Why:** the human, 2026-11-07, as recommended. What's hard to change later (the device database's format, the pairing protocol) is built in Phase 3; a client could set its own `X-Forwarded-For` and get around the per-client limit; custom roles sync as data, so they follow sync.
+- **Amended 2026-11-08** (the human approved the `fix/sign-in-hardening` plan; done in that branch):
+  - **Proxies are counted, not listed by address.** Dioxus 0.7.10's server never passes the connection's own address to the app, and inside Docker it would be Docker's network anyway, so "trust only these addresses" can't be checked. Each proxy adds the address it heard from to the end of `X-Forwarded-For`, so the entry `VEHICLEMANAGER_PROXY_HOPS` places from the right is the client; entries further left are the client's own and are ignored. Too few entries means `direct`. Confirmed on the test server: the log showed the Mac's tailnet address, and a forged entry was ignored.
+  - **Hashing:** at most 2 at once, each waiting up to 10 seconds; a sign-in that can't get a turn answers "try again in 5 seconds", other password checks answer "unavailable".
+  - **Limits:** bodies over 2 MB get 413 (uploads 51 MB); 1 minute to answer (uploads and downloads 10 minutes), else 408. Bodies other than uploads are read in full before the handler runs, because Dioxus's server functions panic on a body they can't read.
+  - A failed sign-in logs the counted client address at `info` (no username or password), the start of the fail2ban format planned for Phase 6.
+
+### 072. Phase 3: the desktop goes local-first; signing in pairs it; tombstones are kept forever
+*Decided: 2026-11-08 · Plan: §3 Sync protocol, §6 Security, §9 Phase 3, §10 Phase 3 questions · Phase plan: `phase-3.md` · Builds on #027, #043, #065, #071*
+
+- **Decision:**
+  - **Scope:** Phase 3 builds the full sync engine (encrypted local database, outbox, push and pull, loss detection) for the **desktop app**. The web app stays online-only (#071); the phone apps (post-MVP, #041) reuse the engine.
+  - **Pairing is signing in:** the first sign-in on a desktop takes the server address, username, and password; it makes the device key, gets a token tied to it, and asks for a PIN (sub-plan 04 §4.1, §6). **Settings → Devices** lists and signs out devices. No pairing codes and no Admin approval. Pairing moves from Phase 6's list into Phase 3, since sync needs it.
+  - **Recent servers:** the desktop's `settings.json` keeps a list of servers (address, name, TEST tag, database ID, last used), offered at sign-in with "Another server…". Each server's local data lives in its own folder named by the server's **database ID**, so a server that moves to a new address keeps its data. Switching servers restarts the app (Dioxus sets the address once per run, #027).
+  - **API versions:** the server accepts the current API version and the one before, upcasting the older one's commands. An app further behind is told to update and keeps its outbox.
+  - **Tombstones are kept forever.** Deletes are rare (records are archived, and finalized events are corrected, not deleted), so the table stays small and no device can miss a delete however long it's offline. A purge can be added later if it's ever needed.
+  - **Erased photos and PDFs keep an audit record** on the server: the file's and its thumbnail's SHA-256, size, type, and name; the record it belonged to; who removed it and when; and when the file was erased (#065's 8-day wait). No content is kept. An audit can show the file existed and was removed, and check a copy someone produces.
+  - **Files on the desktop:** thumbnails and PDFs download automatically (registration and insurance are what's needed offline); photos download when opened and are then kept; originals (#036) only on request.
+  - **Also in Phase 3:** the app icon, the exact build on Diagnostics (GitHub #37), and window title and launch settings (#19). #24 (main photo) and #26 (saving a place from the fuel-up form) wait for a later phase.
+- **Why:** the human, 2026-11-08, choosing the recommended options except tombstones ("keep forever", with the audit record for erased files as their idea). The desktop is the only offline-capable app before the phone apps, and building the engine now means the phone apps add no new sync design. Signing in is the same trust as the web, with the device key and PIN added.
+- **Later, with email** (sub-plan 03): a new user gets an emailed "Create your new password" link, valid 10 minutes, from the Admin, instead of a temporary password.
+
+### 073. Desktop pairing: device keys in the OS keychain, signed requests, and a Devices list
+*Decided: 2026-11-09 · Plan: §6 Security → Application · Phase plan: phase-3.md milestone 2 · Sub-plan: 04 §4.3, §6 · Replaces #027's memory-only desktop credential · Builds on #071, #072*
+
+- **Decision:**
+  - **Signing in on a desktop pairs it:** the desktop makes an Ed25519 key pair, sends the public key and a name (the computer's name, renameable) with the sign-in, and gets a token tied to that device. The private key and the token are kept in the **OS keychain**, so the desktop stays signed in across restarts (milestone 3's PIN then protects it). **Debug builds** keep them in a file in the data folder instead, so development rebuilds don't set off Keychain prompts.
+  - **Every request from a paired desktop is signed** in our own compact format, shaped like DPoP (RFC 9449) but without JWTs: the method, path and query, time, a nonce, and the token's hash. The server refuses a paired device's token without a valid signature, a signature more than 5 minutes from its clock, or a nonce already used. The app signs with the server's time (from the handshake). Browsers keep the cookie and no key.
+  - **A `devices` table**: every session belongs to a device, a desktop (with a key) or a browser (named from its user agent).
+  - **Settings → Devices** (its own tab) lists your desktops and browsers, with Sign out and Sign out everywhere else; the household Admin does the same for anyone from Users, in Admin mode. A signed-out desktop's key is removed; it must pair again.
+  - **Recent servers** on the desktop's sign-in screen; choosing another server says "Quit and reopen to switch".
+  - **API version 2**; version-1 desktop apps still sign in, unsigned, shown as "Desktop app (older version)", within #072's window.
+- **Why:** the human, 2026-11-09, choosing the recommended options except "quit and reopen" (over restarting itself). A copied token is useless without the device's key (sub-plan 04 §6); the desktop must stay signed in to work offline (Phase 3), which the memory-only token (#027) couldn't.
+
+### 074. The desktop's app lock: a required PIN that encrypts its sign-in
+*Decided: 2026-11-11 · Phase plan: phase-3.md milestone 3 · Sub-plan: 04 §4.1 · Builds on #071, #073*
+
+- **Decision:**
+  - **A PIN is required** on every paired desktop, chosen right after pairing: 6 digits or more, no repeats or runs. It never leaves the computer.
+  - **The PIN encrypts the stored sign-in** (the device key and token, #073): a key made from the PIN with Argon2id seals it with XChaCha20-Poly1305. A second copy is sealed with a key made from the **password**, so the password unlocks it too, offline.
+  - **The desktop locks at launch and after an idle time** (15 minutes by default; 5, 15, 30, 60, or only at launch; per computer). While locked, the key and token aren't in memory.
+  - **Wrong tries:** 5 wrong PINs and only the password works; 10 wrong tries in all and the desktop signs out and forgets its sign-in. Failed unlocks are reported to the server when it can, and the household Admin sees them in Messages.
+  - **Screens:** choosing a PIN and the lock screen use dots and a keypad (the keyboard works too); Lock after and Change PIN are under Settings → You → This device.
+  - Desktops paired before this (an unencrypted sign-in) sign in once more, then choose a PIN.
+- **Why:** the human, 2026-11-11, choosing the recommended options except the keypad layouts (1B, 2B). A lost laptop must not open the household's records (sub-plan 04 §3), and milestone 4 keeps those records on the desktop.
+- **Limits, accepted:** the wrong-try count lives beside the encrypted sign-in, so someone who copies the file can try PINs without it, paying an Argon2 hash per try; the release build's keychain is the first barrier.
+
+
+### 075. The desktop's local copy: household records, encrypted, pulled by change number; screens read it through one data layer
+*Decided: 2026-11-11 · Phase plan: phase-3.md milestone 4 · Sub-plan: 04 §7.1 · Builds on #005, #043, #072, #074*
+
+- **Decision:**
+  - **What's copied:** the household's records (vehicles, groups, events, squawks, documents, references, schedules, users' names and roles), and the person's own preferences, saved places, garage order, and message marks. **Never** server-only tables (passwords, sessions, devices, jobs, applied commands) or other people's private rows. Screens hide what the person's role can't see with the same checks the server uses (#069).
+  - **Encrypted:** SQLCipher, with a random 32-byte database key sealed inside the sign-in (#074), so the PIN or the password opens it. Changing the PIN reseals the key; the database isn't rewritten.
+  - **Where:** one database per server, in `servers/<database ID>` in the data folder, with `-<instance>` added for a named instance (`-test`). Main and the test server can share a database ID (#062), and a moved server keeps its copy.
+  - **Pull:** pages of the rows changed since the desktop's cursor (the server's change number), with tombstones and per-field clocks; first a full download, then every minute, after each change, and at unlock. Only from a server whose database version matches the desktop's; otherwise the desktop reads from the server while online and says to update.
+  - **One data layer:** on the desktop, screens read the copy by running the server's own read code against it; the web calls the server as now. Messages, Users, Devices, place lookup, and files stay online-only until later milestones.
+  - **Offline:** with no connection the desktop unlocks into its copy in Driver mode, with an **OFFLINE · copy 10:42** tag in the top bar (sketch 1A); saving buttons turn off with "Saving needs the server (offline)" (3A) until milestone 5. The copy's status and **Sync now** are on Diagnostics (2B).
+  - **Signing out**, or the 10th wrong try, **deletes the copy** with its key (nothing unsent exists yet; milestone 5 revisits this).
+- **Why:** the human, 2026-11-11, choosing the recommended options except the status's place (Diagnostics) and the saving buttons (turned off). Copying household records keeps a role change or a vehicle moving groups from needing a re-download, and running the server's read code keeps one set of access rules.
+- **Limits, accepted:** the desktop build grows (it now includes the server and storage crates and SQLCipher); sign-ins sealed by milestone 3 (before the database key) are forgotten once, and the desktop signs in again.
+
+### 076. Offline changes: operations applied to the copy, an outbox pushed before every pull, and the server re-running each one
+*Decided: 2026-11-12 · Phase plan: phase-3.md milestone 5 · Sketch: `docs/ui-sketches/p3m5-outbox-options.svg` (1A, 2A, 3B) · Builds on #005, #043, #072, #075*
+
+- **Decision:**
+  - **What works offline:** every change Driver mode allows the person online: events (log, edit, finish, correct, the kinds their role allows), squawks (open, edit, remove, sign off or defer as their role allows), and their own preferences, saved places, and garage order (message marks aren't needed: Messages stay online-only on the desktop). Admin work stays online-only (Admin mode needs the server); files are milestone 6.
+  - **An operation** is the input a screen sends today, plus the IDs of new records and the HLC stamp (made on the desktop) and an operation ID; an edit carries only the fields the person changed (#043); versioned, absolute values (#005).
+  - **The desktop applies it to its copy first** with the server's own write code, with the operation added to the **outbox** just before (and taken out if the copy refuses it). Online it's sent at once and the form waits for the answer; otherwise it waits. The outbox is **pushed before every pull**.
+  - **The server re-runs each operation** through the same server function as an online save, with the desktop's IDs and stamp, so every check runs again (permissions as the person is now, domain rules, newest-wins per field). Each operation's ID and outcome are kept, so a resent one is never applied twice. **Refused** operations come back with the reason (the desktop then downloads its copy's records again, keeping its outbox); they stay on the desktop as a message in Messages (sketch 2A) with **Open** (back in its form, as typed) and **Discard**.
+  - **Versions:** the server accepts the current operation format and the one before, upcasting; an older app is told to update and keeps its outbox (#072). A stamp more than 5 minutes ahead is refused and the device flagged for the Admin.
+  - **On screen:** a **↑ 3 to send** chip in the top bar (1A); a message after 24 hours unsent or 100 changes; signing out with changes waiting lists them, with Send now, Cancel, and Sign out anyway (3B). The 10th wrong PIN still signs out without asking. This replaces #075's "nothing unsent exists yet".
+- **Why:** the human, 2026-11-12, choosing the recommended options. Re-running the same server function keeps one set of rules for online and offline saves, and lets the server check everything again as #005 requires; applying to the copy first shows mistakes in the form, offline too.
+- **Limits, accepted:** a refused change is only on the desktop that made it; its other operations still go (each stands alone); the server functions for Driver-mode writes change shape to take their IDs and stamp from either an online request or a pushed operation.
+
+### 077. Files on the desktop: a second encrypted database, downloaded as needed, added offline and uploaded first
+*Decided: 2026-11-12 · Phase plan: phase-3.md milestone 6 · Sketch: `docs/ui-sketches/p3m6-files-options.svg` (1A, 2A, 3B) · Sub-plan: 04 §7.2 · Builds on #036, #037, #065, #072, #075, #076*
+
+- **Decision:**
+  - **Where:** the desktop keeps photos and PDFs in a second SQLCipher database, `files.sqlite`, beside its copy and under the same key, by SHA-256. Separate from the records, so downloading them again (#076) keeps the files; deleted with the copy (signing out, the 10th wrong PIN).
+  - **What's downloaded:** thumbnails and PDFs by themselves, after each pull; a photo when opened, then kept, up to a limit set per computer on Diagnostics (default 2 GB; 1, 2, 5, 10 GB, or none), past which the photos opened longest ago are dropped. Thumbnails, PDFs, and anything not yet sent are never dropped. Originals only on request (#036).
+  - **Offline:** adding (photos and PDFs), removing, and moving attachments between a job's tasks are operations (#076). An added file is processed on the desktop with the server's own code and kept as an upload waiting; a push uploads it right before the operation that uses it, and the operation goes with the server's hashes. Originals still need the server. Offline, a photo whose full size isn't here opens as its thumbnail, enlarged, with a note (1A); one waiting to upload has a small ↑ on its tile (2A).
+  - **The audit record (#072):** the server records who removed an attachment and when, and the nightly file check writes an `erased_files` row for each file it erases (#065's 8 days): its SHA-256, size, kind, type, name, the attachment and record it belonged to, who removed it and when, and when it was erased. No content.
+- **Why:** the human, 2026-11-12, choosing the recommended options except where the limit is set (Diagnostics, with the copy's numbers). SQLCipher is already built and tested on every platform, so files are encrypted at rest without a new dependency (sub-plan 04 §7.2).
+- **Limits, accepted:** a large PDF still reaches the webview as Base64; if the desktop's processing ever differs from the server's (another version), the server's file wins and the desktop downloads it once more.
+
+### 078. Loss detection: protective mode on every pull, suspicious pulls wait, encrypted snapshots of the copy, and rebuilding a fresh server from the Admin's desktop
+*Decided: 2026-11-13 · Phase plan: phase-3.md milestone 7 · Sketch: `docs/ui-sketches/p3m7-loss-detection-options.svg` (1A, 2A, 3B) · Plan §6 "Data integrity & loss detection" · Builds on #035, #065, #072, #075, #076, #077*
+
+- **Decision:**
+  - **Detecting, on every pull:** a database ID other than the copy's means "the server changed" (reset, or another server); a newest change number below the copy's cursor means "the server went back in time" (restored from an older snapshot); both put the desktop in **protective mode**. The handshake never overwrites a remembered database ID. An **unhealthy server refuses pulls and pushes**, and the desktop waits, resuming by itself.
+  - **Protective mode:** nothing pulled is applied and nothing is pushed; the copy, its files, and its outbox are untouched; the app reads and saves here as usual. A red **PROTECTED** tag and strip on every screen (1A), and a sync alert in Messages (shown offline). The choices: keep protected; use this server (a snapshot first, then the copy downloads it again, keeping the outbox); rebuild the server (the Admin).
+  - **If the server no longer knows this desktop** (it signed it out, or forgot the pairing in a reset or restore), the copy and its unsent changes are **kept until the person decides**: sign in again (the copy's key carries over, so the copy and outbox stay), rebuild (Admin), or delete it. Signing out from the account menu still deletes it.
+  - **A suspicious pull** would delete more than 25 records and more than 10% of the copy: it waits, in a dialog naming what would go (2A), with Keep this computer's copy (protective until settled) and Apply them (a snapshot first).
+  - **Snapshots of the copy**, encrypted under its key: one a day before the first pull, and before every risky step (applying a suspicious pull, using a changed server, downloading again after a refusal, a rebuild); the 7 newest kept; restored from Diagnostics. The files database isn't snapshotted.
+  - **Rebuild the server from this device:** onto a fresh server (no users yet) only, proved by its setup code (as setting up is); the household Admin's desktop only, with a copy complete at its last pull and nothing waiting or refused; a step-by-step dialog ending in a typed REBUILD (3B). The server takes the copy's records with their field clocks and tombstones, re-keys the household's settings to its new database ID, gives every person a new temporary password (shown once to the Admin), and pairs this desktop; the files this desktop has are uploaded, and attachments whose file it doesn't have (photos never opened) are left out and listed. Other people's own settings, places, and Garage order start empty; other desktops see "the server changed" and choose to use it.
+- **Why:** the human, 2026-11-13, choosing the recommended options throughout. The survey found that a reset or restored server could delete the desktop's copy and unsent changes, or make it skip changes for good; the desktop's copy is the household's backup (plan §6), so it must never be damaged by a damaged server.
+- **Limits, accepted:** rebuilt passwords are new; photos never downloaded are lost with the server; a desktop can't tell a reset from another server (both are "the server changed", with the same choices); the SQLCipher snapshot method is settled by a spike in 7a.
+
+
+### 079. `v0.3.0`: the server image only (desktop packages later), and third-party notices made by `cargo-about` and committed
+*Decided: 2026-11-14 · Phase plan: phase-3.md "The `v0.3.0` release plan" · `docs/releasing.md` · Builds on #041, #070*
+
+- **Decision:**
+  - **No desktop packages in `v0.3.0`.** The release publishes the server image, as `v0.2.0` did (#070: the main server runs release tags). The desktop app is built locally with `dx bundle`. Published packages, and whether to sign them (#041), are decided in Phase 6.
+  - **Third-party notices:** `cargo-about` (a tool, MIT or Apache-2.0) writes the Rust crates' notices from their license data (the same data `cargo deny` checks), and `scripts/notices.sh` puts them in `crates/app/assets/THIRD-PARTY-NOTICES.txt` after Lucide's, pdf.js's, SQLCipher's, and OpenSSL's notices from their own license files. (The file sits with the app's assets so the app can bundle it.) The file is **committed**, remade at each release (like `CHANGELOG.md`), and the Main gate fails if it's out of date. The server image carries it, and Diagnostics has a **Licenses** link that shows it.
+- **Why:** the human, 2026-11-14, choosing the recommended options. The desktop app is used by the household's Admin for now, who builds it locally; packages bring signing and per-system testing that can wait. The embedded icons, pdf.js, and the crates ask for their notices to go with every copy, which the image and the web app already are; a committed file is reviewed like any change, and the check keeps it current.
+- **Limits, accepted:** a new dependency in the notices needs `cargo about generate` run again before the Main gate passes; the desktop's local bundles carry the notices only through the app's Licenses link until packages exist.

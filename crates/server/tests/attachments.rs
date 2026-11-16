@@ -34,7 +34,7 @@ mod attachments {
     use lopdf::{Document, Object, dictionary};
     use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
     use server::attachments::{
-        UploadContext, add, count_pages, download, list, move_to, process_photo, remove, upload,
+        UploadContext, count_pages, download, list, move_to, process_photo, remove, upload,
     };
     use server::events::{add as add_event, correct, edit, finish};
     use server::groups::ensure_default_group;
@@ -43,9 +43,18 @@ mod attachments {
     use server::sessions::SignedIn;
     use server::squawks;
     use storage::Database;
-    use storage::files::FileStore;
+    use storage::files::{FileStore, Files};
 
     const MILE: i64 = 1_609;
+
+    /// Adds an attachment with the server's own files (its folder).
+    async fn add(
+        context: &AssetsContext<'_>,
+        store: &FileStore,
+        input: AttachmentInput,
+    ) -> AttachmentsOutcome {
+        server::attachments::add(context, &Files::Folder(store.clone()), input).await
+    }
 
     fn context<'a>(
         database: &'a Database,
@@ -58,6 +67,7 @@ mod attachments {
             user,
             health: Health::Healthy,
             clock,
+            origin: server::origin::Origin::Online,
         }
     }
 
@@ -134,14 +144,14 @@ mod attachments {
     /// A truck and its odometer.
     async fn new_truck(
         database: &Database,
-        stuart: &SignedIn,
+        jordan: &SignedIn,
         clock: &ManualClock,
     ) -> (AssetId, MeterId) {
         ensure_default_group(database, test_id(901), Health::Healthy, clock)
             .await
             .unwrap();
         let group = database.groups().await.unwrap()[0].0;
-        let admin = in_mode(stuart, ActiveMode::Admin);
+        let admin = in_mode(jordan, ActiveMode::Admin);
         let form = AssetForm {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
@@ -220,9 +230,10 @@ mod attachments {
         purpose: UploadPurpose,
         bytes: Vec<u8>,
     ) -> UploadedFile {
+        let files = Files::Folder(store.clone());
         let upload_context = UploadContext {
             database,
-            store,
+            files: &files,
             user,
             health: Health::Healthy,
             now: NOW,
@@ -371,7 +382,7 @@ mod attachments {
 
     #[tokio::test]
     async fn uploads_need_a_driver_and_a_file_of_the_right_kind() {
-        let (temp, database, stuart, sam) = setup().await;
+        let (temp, database, jordan, sam) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let photo = uploaded(
             &database,
@@ -388,13 +399,14 @@ mod attachments {
         assert!(store.get(&photo.thumbnail.unwrap().hash).is_ok());
 
         let pdf_upload =
-            uploaded(&database, &store, &stuart, UploadPurpose::Document, pdf(2)).await;
+            uploaded(&database, &store, &jordan, UploadPurpose::Document, pdf(2)).await;
         assert_eq!(pdf_upload.pages, Some(2));
 
         let refuse = async |user: &SignedIn, purpose, bytes| {
+            let files = Files::Folder(store.clone());
             let upload_context = UploadContext {
                 database: &database,
-                store: &store,
+                files: &files,
                 user,
                 health: Health::Healthy,
                 now: NOW,
@@ -437,10 +449,10 @@ mod attachments {
 
     #[tokio::test]
     async fn a_driver_attaches_photos_to_their_squawk_but_not_to_the_vehicle() {
-        let (temp, database, stuart, sam) = setup().await;
+        let (temp, database, jordan, sam) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let (truck, _) = new_truck(&database, &stuart, &clock).await;
+        let (truck, _) = new_truck(&database, &jordan, &clock).await;
         let driver = context(&database, &sam, &clock);
         let squawk = open_squawk(&driver, truck).await;
         let photo = small_photo(&database, &store, &sam).await;
@@ -504,11 +516,11 @@ mod attachments {
 
     #[tokio::test]
     async fn originals_need_a_maintainer_and_the_households_say_so() {
-        let (temp, database, stuart, _) = setup().await;
+        let (temp, database, jordan, _) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, odometer) = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let job = event_saved(&add_event(&shop, brake_job(truck, odometer)).await);
         let on_job = AttachmentOwner::Event {
@@ -552,13 +564,14 @@ mod attachments {
         assert_eq!(kept.mime, "image/heic");
 
         // The household turns originals off.
-        let admin = in_mode(&stuart, ActiveMode::Admin);
+        let admin = in_mode(&jordan, ActiveMode::Admin);
         let preferences = PreferencesContext {
             database: &database,
             database_id: test_id(900),
             user: &admin,
             health: Health::Healthy,
             clock: &clock,
+            origin: server::origin::Origin::Online,
         };
         let off = PreferencesPatch {
             originals: Some(Choice::Set(Originals::Off)),
@@ -576,11 +589,11 @@ mod attachments {
 
     #[tokio::test]
     async fn a_drafts_attachments_follow_its_tasks() {
-        let (temp, database, stuart, _) = setup().await;
+        let (temp, database, jordan, _) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, odometer) = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let job = event_saved(&add_event(&shop, brake_job(truck, odometer)).await);
         let on = |task| AttachmentOwner::Event { event: job, task };
@@ -621,11 +634,11 @@ mod attachments {
 
     #[tokio::test]
     async fn a_finished_jobs_attachments_are_locked_and_its_correction_keeps_them() {
-        let (temp, database, stuart, _) = setup().await;
+        let (temp, database, jordan, _) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let (truck, odometer) = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, odometer) = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let shop = context(&database, &maintainer, &clock);
         let job = event_saved(&add_event(&shop, brake_job(truck, odometer)).await);
         let on = |task| AttachmentOwner::Event { event: job, task };
@@ -680,11 +693,11 @@ mod attachments {
         use domain::reference::{RECALL, ReferenceType};
         use domain::requirement::{Applicability, ComplianceMode};
 
-        let (temp, database, stuart, sam) = setup().await;
+        let (temp, database, jordan, sam) = setup().await;
         let store = FileStore::open(temp.path()).unwrap();
         let clock = ManualClock::new(NOW);
-        let (truck, _) = new_truck(&database, &stuart, &clock).await;
-        let maintainer = in_mode(&stuart, ActiveMode::Maintainer);
+        let (truck, _) = new_truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
         let maintain = context(&database, &maintainer, &clock);
         let input = ReferenceInput {
             doc_type: ReferenceType::listed(RECALL).unwrap(),

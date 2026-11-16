@@ -17,6 +17,13 @@ Sub-plan for the vehicle maintenance manager (Dioxus/Rust, self-hosted on NAS vi
 2. **Admin-issued reset.** An Admin triggers a reset for a user and receives a one-time code to hand over out of band.
 3. **Email reset (when SMTP is configured).** See below.
 
+## New Users by Email (the human, 2026-11-08; `docs/decisions.md` #072)
+
+- When email is configured, an Admin adding a user can send a **"Create your new password" link** instead of handing over a temporary password (#046).
+- The link works **once** and **expires after 10 minutes**; the server stores only its hash, as for the reset token below. An expired link is resent by the Admin.
+- Following it sets the password and signs the person in on that browser. Their first desktop sign-in then pairs that desktop as usual (server address, username, password; #072).
+- Without email, the temporary password stays the way.
+
 ## Email Reset Flow
 
 1. User requests a reset by username or email.

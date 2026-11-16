@@ -18,13 +18,20 @@
 
 mod account;
 pub(crate) mod auth;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) mod desktop_window;
 mod icons;
 pub(crate) mod idle;
 pub(crate) mod inbox;
 pub(crate) mod location;
+pub(crate) mod lock;
 pub(crate) mod nav;
+pub(crate) mod offline;
+pub(crate) mod outbox;
 pub(crate) mod pdfs;
 pub(crate) mod photos;
+pub(crate) mod protective;
+pub(crate) mod recent_servers;
 pub(crate) mod routes;
 mod screens;
 mod shell;
@@ -44,22 +51,81 @@ use theme::ThemeChoice;
 /// The app's single stylesheet: theme colors and the three layouts.
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
-/// The root component: provides the theme, loads the stylesheet, and starts the router.
+/// The app icon (phase-3.md 1a): the master SVG, for browsers that take an SVG favicon.
+const ICON_SVG: Asset = asset!("/assets/app-icon/icon.svg");
+
+/// The app icon at 32 px, for browsers without SVG favicons.
+const ICON_32: Asset = asset!("/assets/app-icon/icon-32.png");
+
+/// The app icon at 180 px: an iPhone's home screen, when the web app is added to it.
+const ICON_180: Asset = asset!("/assets/app-icon/icon-180.png");
+
+/// The root component: provides the theme, loads the stylesheet and the icon, and starts the
+/// router.
 ///
 /// Expects the debug log's `LogHandles` in context (`LaunchBuilder::with_context`);
 /// without them the log viewer says logging isn't running.
 #[component]
 pub fn App() -> Element {
     let theme = use_context_provider(|| Signal::new(ThemeChoice::default()));
-    use_context_provider(|| Signal::new(auth::AuthState::Loading));
+    // Owned by the root, not this component: the session check also runs in tasks that outlive
+    // the screen that started them (`spawn_forever`, which runs in the root scope).
+    use_context_provider(|| Signal::new_in_scope(auth::AuthState::Loading, ScopeId::ROOT));
     idle::provide_idle_context();
 
     rsx! {
+        Title { {page_title(auth::SERVER_INSTANCE())} }
         Stylesheet { href: MAIN_CSS }
-        div { class: "app", "data-theme": theme().attribute(),
-            auth::AuthGate { Router::<Route> {} }
+        document::Link { rel: "icon", href: ICON_SVG.to_string(), r#type: "image/svg+xml" }
+        document::Link { rel: "icon", href: ICON_32.to_string(), r#type: "image/png", sizes: "32x32" }
+        document::Link { rel: "apple-touch-icon", href: ICON_180.to_string(), sizes: "180x180" }
+        DesktopWindow {}
+        div {
+            class: "app",
+            "data-theme": theme().attribute(),
+            // Offline on the desktop: the stylesheet turns saving off (phase-3.md 4e).
+            "data-offline": if offline::is_offline_now() { "true" } else { "false" },
+            style: offline::saving_note(),
+            lock::LockGate {
+                auth::AuthGate { Router::<Route> {} }
+            }
         }
     }
+}
+
+/// The page's (and the desktop window's) title: always the app's name (phase-3.md 1b, GitHub
+/// #19), with a second server's tag in front, e.g. "test server · Vehicle Manager" (#062).
+fn page_title(instance: Option<String>) -> String {
+    let name = domain::identity::DISPLAY_NAME;
+    instance.map_or_else(
+        || name.to_owned(),
+        |instance| {
+            let tag = tr_with(
+                domain::i18n::messages::INSTANCE_TAG,
+                &[("name", MessageArg::from(instance.as_str()))],
+            );
+            format!("{tag} · {name}")
+        },
+    )
+}
+
+/// The desktop window's keeper (its place remembered; phase-3.md 1b), its signature renewer
+/// (phase-3.md 2c), and its copy's puller (phase-3.md 4c).
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+#[component]
+fn DesktopWindow() -> Element {
+    rsx! {
+        desktop_window::WindowKeeper {}
+        desktop_window::SignatureRenewer {}
+        crate::local_copy::CopyPuller {}
+    }
+}
+
+/// Nothing on the web.
+#[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+#[component]
+fn DesktopWindow() -> Element {
+    rsx! {}
 }
 
 /// What the household calls squawks (#064), as its place in [`SquawkWord::ALL`]: read by

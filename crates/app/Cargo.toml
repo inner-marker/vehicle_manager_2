@@ -37,6 +37,19 @@ server = { workspace = true, optional = true }
 # the `desktop` feature, so its tests run in the default native test build.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 dirs.workspace = true
+# The desktop's new device key and request nonces (phase-3.md 2c). Native only: the web app
+# never signs.
+getrandom.workspace = true
+# The desktop's sealed sign-in (phase-3.md 3b, #074): a key made from the PIN or password
+# (Argon2id) seals it (XChaCha20-Poly1305). Native only; tested in the default build.
+argon2.workspace = true
+chacha20poly1305.workspace = true
+# Desktop only (the `desktop` feature): the keychain, the computer's name, the timer that
+# renews the session signature, and a blocking thread for unlocking (Argon2 takes ~0.3 s;
+# Dioxus desktop already runs on tokio).
+keyring = { workspace = true, optional = true }
+gethostname = { workspace = true, optional = true }
+tokio = { version = "1", default-features = false, features = ["time", "rt", "sync"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tracing-wasm.workspace = true
@@ -44,6 +57,7 @@ tracing-wasm.workspace = true
 [dev-dependencies]
 domain = { workspace = true, features = ["test-support"] }
 tempfile.workspace = true
+resvg.workspace = true
 # Server-feature tests: drive the real router (async runtime + oneshot requests).
 tokio = { version = "1", features = ["macros", "rt"] }
 tower = { workspace = true, features = ["util"] }
@@ -51,7 +65,10 @@ tower = { workspace = true, features = ["util"] }
 [features]
 default = ["web"]
 web = ["dioxus/web"]
-desktop = ["dioxus/desktop"]
+# The desktop also keeps an encrypted copy of its server's records (phase-3.md 4c, #075):
+# `storage` with SQLCipher. The server's build (`server`, built on its own) keeps plain SQLite.
+# Its screens read the copy with the server crate's own read code (`app::data`, 4d).
+desktop = ["dioxus/desktop", "dep:keyring", "dep:gethostname", "dep:tokio", "dep:storage", "storage/sqlcipher", "dep:server"]
 mobile = ["dioxus/mobile"]
 server = ["dioxus/server", "dep:storage", "dep:server"]
 # Short timers for manual testing (#054): honoured only with this feature, which only the

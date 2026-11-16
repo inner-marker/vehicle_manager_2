@@ -33,6 +33,7 @@ use super::places::use_countries;
 use super::problem_from_error;
 use super::squawks::use_device_zone;
 use crate::api;
+use crate::data;
 use crate::logging::SystemClock;
 use crate::ui::units::use_units;
 use crate::ui::{tr, tr_with};
@@ -226,7 +227,7 @@ fn authority_name(plate: &LicensePlate) -> Option<String> {
 
 /// `asset`'s documents and plates as of `today`.
 async fn load(asset: domain::asset::AssetId, today: CalendarDate) -> Result<Loaded, MessageId> {
-    match api::documents(asset, today).await {
+    match data::documents(asset, today).await {
         Ok(DocumentsOutcome::Documents {
             documents,
             plates,

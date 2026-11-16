@@ -1,5 +1,7 @@
 # Build output (includes Dioxus CLI output under target/dx)
 /target
+# The spikes' own build output (each spike is its own workspace)
+/spikes/*/target
 
 # macOS
 .DS_Store
@@ -15,6 +17,9 @@
 !crates/storage/tests/fixtures/*.sqlite
 # The server's local development data folder (dx serve without VEHICLEMANAGER_DATA_DIR)
 dev-data/
+
+# The human's own setup (equipment, hosts), for agents to read; never committed (AGENTS.md §7)
+/local/
 
 # Personal Claude Code settings (shared settings live in .claude/settings.json)
 .claude/settings.local.json

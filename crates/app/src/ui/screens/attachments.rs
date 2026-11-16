@@ -30,6 +30,7 @@ use domain::log_area;
 use super::problem_from_error;
 use super::squawks::use_device_zone;
 use crate::api;
+use crate::data;
 use crate::files;
 use crate::ui::location::place_text;
 use crate::ui::pdfs::{PdfPages, PdfState, ZOOMS, first_page_thumbnail};
@@ -46,7 +47,7 @@ async fn fetched(id: AttachmentId, part: AttachmentPart, mime: &str) -> Option<S
     if let Some(url) = FETCHED.read().get(&(id, part)) {
         return Some(url.clone());
     }
-    match files::download(id, part).await {
+    match files::fetch(id, part).await {
         Ok(bytes) => {
             let url = files::data_url(mime, &bytes);
             FETCHED.write().insert((id, part), url.clone());
@@ -68,7 +69,7 @@ struct Loaded {
 }
 
 async fn load(asset: AssetId, owner: AttachmentOwner) -> Result<Loaded, MessageId> {
-    match api::attachments(asset, owner).await {
+    match data::attachments(asset, owner).await {
         Ok(AttachmentsOutcome::Attachments {
             attachments,
             may_add,
@@ -200,6 +201,16 @@ fn Tile(view: AttachmentView, on_open: EventHandler<()>) -> Element {
             });
         }
     }));
+    // Added on this computer and not uploaded yet (2A): asked again when the outbox changes.
+    let mut waiting = use_signal(|| false);
+    let hash = view.attachment.file.hash.clone();
+    use_effect(move || {
+        let _changed = crate::ui::outbox::outbox_changes();
+        let hash = hash.clone();
+        spawn(async move {
+            waiting.set(crate::ui::outbox::waiting_to_upload(&hash).await);
+        });
+    });
     let name = view.attachment.name.as_str().to_owned();
     let pages = match view.attachment.content {
         Content::Document { pages } => Some(pages),
@@ -217,6 +228,9 @@ fn Tile(view: AttachmentView, on_open: EventHandler<()>) -> Element {
             }
             if let Some(pages) = pages {
                 span { class: "attachment-tile-badge", {tr_with(messages::ATTACHMENT_PDF_PAGES, &[("count", MessageArg::from(i64::from(pages)))])} }
+            }
+            if waiting() {
+                span { class: "attachment-tile-upload", title: tr(messages::UPLOAD_WAITING), "aria-label": tr(messages::UPLOAD_WAITING), "↑" }
             }
         }
     }
@@ -249,7 +263,7 @@ fn upload_problem(outcome: &UploadOutcome) -> MessageId {
 
 /// Uploads `bytes` for `purpose`.
 async fn send(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadedFile, MessageId> {
-    match files::upload(purpose, bytes).await {
+    match data::upload(purpose, bytes).await {
         Ok(UploadOutcome::Uploaded { uploaded }) => Ok(uploaded),
         Ok(other) => Err(upload_problem(&other)),
         Err(error) => {
@@ -318,7 +332,7 @@ async fn add_photo(
             original,
         },
     };
-    match api::add_attachment(input).await {
+    match data::add_attachment(input).await {
         Ok(AttachmentsOutcome::Saved { id }) => {
             tracing::debug!(target: log_area::UI, attachment = %id, "photo added");
             Ok(())
@@ -366,7 +380,7 @@ async fn add_pdf(
             pages: uploaded.pages.unwrap_or(1),
         },
     };
-    match api::add_attachment(input).await {
+    match data::add_attachment(input).await {
         Ok(AttachmentsOutcome::Saved { id }) => {
             tracing::debug!(target: log_area::UI, attachment = %id, "PDF added");
             Ok(())
@@ -429,7 +443,14 @@ fn AddSheet(
                 let added = if pdf {
                     add_pdf(asset, owner, file.clone()).await
                 } else {
-                    add_photo(asset, owner, file.clone(), size(), keep_original()).await
+                    add_photo(
+                        asset,
+                        owner,
+                        file.clone(),
+                        size(),
+                        keep_original() && !crate::ui::offline::is_offline_now(),
+                    )
+                    .await
                 };
                 match added {
                     Ok(()) => added_any.set(true),
@@ -519,11 +540,12 @@ fn AddSheet(
                     }
                 }
                 if may_keep_originals {
-                    label { class: "check",
+                    // An original needs the server (they're large; #077): off while offline.
+                    label { class: "check", title: crate::ui::offline::needs_server_note(),
                         input {
                             r#type: "checkbox",
-                            checked: keep_original(),
-                            disabled: busy,
+                            checked: keep_original() && !crate::ui::offline::is_offline_now(),
+                            disabled: busy || crate::ui::offline::is_offline_now(),
                             onchange: move |event| keep_original.set(event.checked()),
                         }
                         span { {tr(messages::ATTACHMENT_KEEP_ORIGINAL)} }
@@ -651,6 +673,9 @@ fn Viewer(
     let mut confirm = use_signal(|| false);
     let mut note = use_signal(|| None::<String>);
     let mut url = use_signal(|| None::<String>);
+    // Offline, a photo whose full size isn't here: its thumbnail, enlarged (1A).
+    let mut preview = use_signal(|| None::<String>);
+    let mut missing = use_signal(|| false);
     let mut place = use_signal(|| None::<String>);
     let mut zoom = use_signal(|| FIT_WIDTH);
     let mut pdf_state = use_signal(PdfState::default);
@@ -679,12 +704,22 @@ fn Viewer(
     let coordinates = metadata.as_ref().and_then(|metadata| metadata.coordinates);
     use_effect(use_reactive!(|id, coordinates| {
         url.set(None);
+        preview.set(None);
+        missing.set(false);
         place.set(None);
         note.set(None);
         zoom.set(FIT_WIDTH);
         pdf_state.set(PdfState::default());
         spawn(async move {
-            url.set(fetched(id, AttachmentPart::File, mime).await);
+            let full = fetched(id, AttachmentPart::File, mime).await;
+            if full.is_none() && crate::ui::offline::is_offline_now() {
+                missing.set(true);
+                if mime == FileType::Jpeg.mime() {
+                    preview
+                        .set(fetched(id, AttachmentPart::Thumbnail, FileType::Jpeg.mime()).await);
+                }
+            }
+            url.set(full);
         });
         if let Some(point) = coordinates {
             spawn(async move {
@@ -740,7 +775,7 @@ fn Viewer(
             } else {
                 mime
             };
-            match files::download(id, part).await {
+            match files::fetch(id, part).await {
                 Ok(bytes) => {
                     if let Some(path) = save_download(&file_name, part_mime, &bytes).await {
                         note.set(Some(tr_with(
@@ -815,6 +850,15 @@ fn Viewer(
                                 state: pdf_state,
                             }
                         },
+                        None if missing() => match preview() {
+                            Some(src) => rsx! {
+                                div { class: "photo-viewer-preview",
+                                    img { src: "{src}", alt: "{name}" }
+                                    p { class: "muted-note", {tr(messages::PHOTO_PREVIEW_NOTE)} }
+                                }
+                            },
+                            None => rsx! { p { class: "muted-note", {tr(messages::FILE_NOT_HERE)} } },
+                        },
                         None => rsx! { p { class: "muted-note", {tr(messages::LOADING)} } },
                     }
                     if let Some(next) = next {
@@ -847,7 +891,12 @@ fn Viewer(
                             button { class: "secondary-button", r#type: "button", onclick: move |_| download(AttachmentPart::Original, original_name.clone()), {tr(messages::ATTACHMENT_ORIGINAL)} }
                         }
                         if view.may_change {
-                            button { class: "danger-button", r#type: "button", onclick: move |_| confirm.set(true), {tr(messages::ACTION_REMOVE)} }
+                            button {
+                                class: "danger-button",
+                                r#type: "button",
+                                onclick: move |_| confirm.set(true),
+                                {tr(messages::ACTION_REMOVE)}
+                            }
                         }
                     }
                     if let Some(note) = note() {
@@ -877,7 +926,7 @@ fn RemoveDialog(id: AttachmentId, on_close: EventHandler<bool>) -> Element {
     let mut problem = use_signal(|| None::<MessageId>);
     let remove = move |_| {
         spawn(async move {
-            match api::remove_attachment(id).await {
+            match data::remove_attachment(id).await {
                 Ok(AttachmentsOutcome::Done) => on_close.call(true),
                 Ok(other) => problem.set(Some(refusal(&other))),
                 Err(error) => problem.set(Some(problem_from_error(&error).message())),

@@ -39,7 +39,6 @@ action-log = Log
 action-refresh = Refresh
 menu-open = Open menu
 menu-close = Close menu
-sync-status-unknown = Sync not set up
 
 ## Theme
 
@@ -133,6 +132,7 @@ api-error-missing-api-version = The app didn't send its API version.
 api-error-malformed-api-version = The server couldn't read the app's API version.
 api-error-client-too-old = This app is too old for the server. Update the app.
 api-error-client-too-new = This app is newer than the server. Update the server first.
+api-error-device-signature = This device's sign-in couldn't be confirmed. If the computer's clock is far off, fix it; otherwise sign in again.
 
 ## Signing in, first-Admin setup, modes, and the account menu
 
@@ -258,6 +258,14 @@ users-back = ← Users
 ## Password recovery (decision #047)
 
 sign-in-forgot-link = Forgot your password?
+sign-in-server = SERVER
+sign-in-another-server = + Another server…
+sign-in-server-address = Server address
+sign-in-use-server = Use this server
+sign-in-reopen-to-switch = Saved. Quit and reopen the app to switch to { $address }.
+server-last-used-today = Last used today
+server-last-used-yesterday = Last used yesterday
+server-last-used-days = Last used { $days } days ago
 recovery-title = Forgot your password?
 recovery-subtitle = Enter your username.
 recovery-continue = Continue
@@ -275,12 +283,233 @@ recovery-wrong-code = That code isn't right, or it has expired.
 
 settings-tab-you = You
 settings-tab-household = Household
+settings-tab-devices = Devices
+devices-help = Where you're signed in. Signing out a desktop app means signing in on it again (it pairs again).
+devices-this-device = This device
+devices-browser = Browser
+devices-desktop = Desktop app
+devices-desktop-older = Desktop app (older version)
+devices-kind-desktop = Desktop app
+devices-kind-browser = Browser
+devices-kind-desktop-older = Desktop app, unsigned
+devices-seen-now = Active now
+devices-seen-minutes = { $minutes } min ago
+devices-seen-hours = { $hours ->
+    [one] 1 hour ago
+   *[other] { $hours } hours ago
+}
+devices-seen-yesterday = Yesterday
+devices-seen-days = { $days } days ago
+devices-sign-out = Sign out
+devices-sign-out-others = Sign out everywhere else
+devices-sign-out-others-confirm = Sign out every other device and browser? Desktop apps will need to sign in again.
+devices-rename = Rename
+devices-name = Name
+devices-only-this = You're signed in only here.
+devices-unavailable = The devices couldn't be loaded or changed. Try again.
+devices-name-empty = Type a name.
+devices-name-too-long = Use 64 characters or fewer.
+devices-name-control = Keep the name on one line.
+users-devices = Devices ({ $count })
+users-devices-title = { $name }'s devices
+users-devices-sign-out-all = Sign out all of { $name }'s devices
+users-devices-none = Not signed in anywhere.
 settings-you-help = Follow the household default, or choose your own. Changes save at once.
 settings-household-help = For everyone who hasn't chosen their own.
 settings-household-admin-only = Switch to Admin mode to change the household defaults.
 settings-use-household = Use household default
 settings-this-device = THIS DEVICE
 settings-theme = Theme
+settings-keep-on-top = Keep window on top
+settings-keep-on-top-note = Above other windows, on this computer
+pin-not-digits = Use digits only.
+pin-too-short = Use at least 6 digits.
+pin-too-long = Use 12 digits or fewer.
+pin-repeated = Don't repeat one digit.
+pin-run = Don't use a run like 123456.
+lock-after-5 = 5 minutes
+lock-after-15 = 15 minutes
+lock-after-30 = 30 minutes
+lock-after-60 = 1 hour
+lock-after-launch = Only when the app opens
+pin-mismatch = The two PINs didn't match. Choose one again.
+pin-choose-title = Choose a PIN
+pin-choose-help = 6 digits or more. This computer asks for it when the app opens and after it's been idle.
+pin-choose-again = Type it again.
+pin-saving = Saving…
+pin-save-failed = The PIN couldn't be saved. Try again.
+lock-title = Locked
+lock-unlock = Unlock
+lock-wrong-pin = Wrong PIN.
+lock-wrong-password = Wrong password.
+lock-pin-tries-left = { $count ->
+    [one] 1 more wrong PIN and only your password will work.
+   *[other] { $count } more wrong PINs and only your password will work.
+}
+lock-password-only = Use your password. { $count ->
+    [one] 1 more wrong try signs this computer out.
+   *[other] { $count } more wrong tries sign this computer out.
+}
+lock-unlocking = Unlocking…
+lock-use-password = Use your password instead
+lock-use-pin = Use your PIN instead
+lock-sign-out = Sign out of this computer
+lock-signed-out = Signed out of this computer after too many wrong tries. Sign in to use it again.
+settings-lock-after = Lock after
+settings-pin = PIN
+pin-change = Change PIN
+pin-change-current = Current PIN
+pin-change-password = Your password
+pin-change-new = New PIN
+pin-change-new-again = New PIN again
+pin-changed = PIN changed. Use the new one from now on.
+offline-tag = OFFLINE · copy { $time }
+offline-tag-no-time = OFFLINE
+offline-tag-note = Can't reach the server. Showing this computer's copy from { $time }.
+offline-saving-note = Saving needs the server (offline).
+offline-needs-server = This needs the server, which can't be reached (offline).
+connecting-title = Connecting to the server…
+# $seconds (number): seconds left before the copy opens offline.
+connecting-offline-in =
+    { $seconds ->
+        [one] No answer yet. Opening this computer's copy (offline) in { $seconds } second.
+       *[other] No answer yet. Opening this computer's copy (offline) in { $seconds } seconds.
+    }
+connecting-offline-now = Start in Offline Mode Now
+copy-heading = Offline copy
+copy-status = Status
+copy-last-pull = Last pull
+copy-records = Records
+copy-size = Size on disk
+copy-folder = Folder
+copy-sync-now = Sync now
+copy-closed = Not open (locked, or not signed in yet)
+copy-downloading = Downloading… { $done } of { $total }
+copy-up-to-date = Up to date
+copy-offline = Offline: can't reach the server
+copy-other-schema = Not updating: the server's database version is { $server } and this app's is { $app }. Update the app or the server.
+outbox-chip = ↑ { $count } to send
+outbox-chip-note =
+    { $count ->
+        [one] 1 change waiting to be sent, from { $when }. It goes when the server answers.
+       *[other] { $count } changes waiting to be sent; the oldest from { $when }. They go when the server answers.
+    }
+outbox-long-title = Changes waiting to be sent
+outbox-long-body =
+    { $count ->
+        [one] 1 change on this computer hasn't reached the server since { $when }. Connect to the server to send it.
+       *[other] { $count } changes on this computer haven't reached the server; the oldest is from { $when }. Connect to the server to send them.
+    }
+outbox-stopped-title = Changes can't be sent
+outbox-stopped-app = This app is too old for the server: update it to send your changes. They're kept on this computer.
+outbox-stopped-server = The server is older than this app: update the server to send your changes. They're kept on this computer.
+outbox-stopped-clock = This computer's clock is { $minutes } minutes ahead of the server's: set its date and time right to send your changes.
+outbox-stopped-busy = The server can't take changes right now; they'll be sent later.
+refused-title = Not saved: { $what }
+refused-made = Made on this computer, { $when }.
+refused-open = Open
+refused-discard = Discard
+change-event = { $kind } on { $vehicle }
+change-event-edit = A change to an event
+change-event-finalize = Finalizing an event
+change-event-finish = Finishing a job
+change-event-delete = Deleting a draft
+change-event-correct = A correction ({ $kind }) on { $vehicle }
+change-squawk = “{ $text }” on { $vehicle }
+change-squawk-edit = A change to a reported problem
+change-squawk-delete = Removing a reported problem
+change-preferences = Your settings
+change-place = Saved place “{ $name }”
+change-place-edit = A change to a saved place
+change-place-delete = Removing a saved place
+change-garage-order = The Garage order
+change-attachment-add = A photo or document on { $vehicle }
+change-attachment-move = Moving a photo or document
+change-attachment-remove = Removing a photo or document
+sign-out-waiting-title =
+    { $count ->
+        [one] 1 change hasn't been sent
+       *[other] { $count } changes haven't been sent
+    }
+sign-out-waiting-body = Signing out deletes this computer's copy, and these changes with it.
+sign-out-not-saved = { $what } (not saved)
+sign-out-and-more = and { $count } more
+sign-out-send-now = Send now
+sign-out-anyway = Sign out anyway
+copy-waiting = Waiting to send
+copy-refused = Not saved
+copy-oldest = Oldest waiting
+copy-sending = Sending
+photo-limit-1-gb = 1 GB
+photo-limit-2-gb = 2 GB
+photo-limit-5-gb = 5 GB
+photo-limit-10-gb = 10 GB
+photo-limit-none = No limit
+photo-preview-note = Full size downloads when this computer can reach the server (a small preview).
+file-not-here = Not on this computer yet. It downloads when the server can be reached.
+upload-waiting = Waiting to upload (offline).
+copy-files = Files
+copy-files-value = { $count } · { $size }
+copy-photos-kept = Photos kept
+copy-photos-kept-value = { $used } of { $limit }
+copy-photo-limit = Keep photos up to
+copy-unwell = Waiting: the server isn't well (its database failed a check)
+protected-tag = PROTECTED
+protected-server-changed = Syncing stopped: the server's database changed (it was reset, or it's another server). This computer's copy is kept.
+protected-went-back = Syncing stopped: the server went back in time (it was restored from an older backup). This computer's copy is kept.
+protected-forgotten = Syncing stopped: the server no longer knows this computer. Its copy and unsent changes are kept.
+protected-pull-held = Syncing stopped: the server would delete { $count } records. This computer's copy is kept.
+protected-details = Details
+protected-title = Protecting this computer's copy
+protected-keep = Keep protected
+protected-use-server = Use this server
+protected-use-server-note = A snapshot of this copy is kept first. Changes not yet sent go to this server and are checked there.
+protected-rebuild = Rebuild the server from this computer
+protected-sign-in-note = The server no longer knows this computer. Its copy and { $count } unsent changes are kept: sign in again to carry on, or delete the copy.
+protected-delete-copy = Delete this computer's copy
+protected-delete-confirm = Delete this computer's copy and its unsent changes? This can't be undone.
+held-title = The server would delete { $count } records
+held-vehicle = { $vehicle }: { $count }
+held-note = If that's not right, keep this computer's copy.
+held-keep = Keep this computer's copy
+held-apply = Apply them
+held-apply-note = Apply takes a snapshot first.
+rebuild-title = Rebuild the server · step { $step } of 3
+rebuild-check-complete = This copy was complete at its last pull
+rebuild-check-nothing-waiting = Nothing waiting to be sent or refused
+rebuild-check-fresh = The server is new (it's asking for setup)
+rebuild-what-records = A new database, with this computer's records
+rebuild-what-passwords = Everyone else gets a new temporary password, shown once, to give out
+rebuild-what-devices = Other computers pair again; people's own settings and saved places start empty
+rebuild-what-photos = Photos this computer never opened are left out
+rebuild-code = The server's setup code (from its log)
+rebuild-password = Your password (from now on)
+rebuild-type = Type REBUILD to confirm
+rebuild-button = Rebuild
+rebuild-busy = Rebuilding…
+rebuild-next = Next
+rebuild-back = Back
+rebuild-done = The server is rebuilt.
+rebuild-passwords = Give each person their temporary password; they choose a new one when they sign in:
+rebuild-left-out = Left out (not on this computer): { $names }
+rebuild-unsettled = The server is rebuilt, but this computer's photos and documents aren't sent yet, and the photos it doesn't have aren't left out yet. Send them when the server can be reached.
+rebuild-settle = Send the files
+rebuild-settle-failed = The files couldn't be sent yet (the log says why). Try again when the server can be reached and you're signed in.
+rebuild-wrong-code = That isn't the server's setup code.
+rebuild-not-fresh = This server isn't new: only a new server can be rebuilt.
+rebuild-not-allowed = Only the household's Admin can rebuild the server, with a password that follows the usual rules.
+rebuild-not-ready = This computer can't rebuild the server yet (see the checks).
+rebuild-failed = The rebuild didn't finish (the log says why). This computer's copy is unchanged.
+rebuild-offer = This computer has a copy of the household's records. Rebuild this server from it?
+snapshots-heading = Snapshots of this copy
+snapshot-restore = Restore
+snapshot-restore-confirm = Put this snapshot back as this computer's copy? Changes since then come back from the server at the next pull; changes not yet sent are kept.
+snapshot-none = None yet
+snapshot-take = Take one now
+sync-unwell-title = The server isn't well
+sync-unwell-body = Its database failed a check, so it isn't taking or sending changes. This computer waits, and carries on when it's well.
+copy-failed = Not updating: something went wrong (see the log below)
+copy-never = Never
 setting-distance = Distance
 setting-volume = Fuel volume
 setting-economy = Fuel economy
@@ -917,10 +1146,17 @@ place-remove-title = Remove { $name }?
 place-remove-text = Past events keep their own copy of it.
 about-heading = About
 about-app = App
+about-build = Build
+about-server = Server
+about-build-local = local build
+about-build-modified = uncommitted changes
 about-place-data = Place data
 about-place-data-unavailable = Not available
 about-credits = Credits
 about-credits-default = Contains GeoNames data (CC BY 4.0, geonames.org). Boundaries: Natural Earth (public domain, naturalearthdata.com).
+about-licenses = Licenses
+about-licenses-open = Third-party notices
+licenses-intro = Vehicle Manager is built with the work of others. These are their licenses and notices.
 
 ## Nearby places in the picker (decision #061)
 
@@ -1424,6 +1660,16 @@ event-already-disposed = This vehicle's disposal is already recorded: correct th
 event-vehicle-disposed = This vehicle was disposed of: its records can be corrected, but nothing new added.
 inbox-overdue-return = A vehicle isn't back yet
 inbox-overdue-return-body = { $vehicle } was expected back from service on { $date }. Record its return when it's back, or update the expected date.
+inbox-failed-unlocks = Wrong PINs on a computer
+inbox-failed-unlocks-body = { $count ->
+    [one] Someone typed 1 wrong PIN or password on { $device } ({ $person }) before it was unlocked.
+   *[other] Someone typed { $count } wrong PINs or passwords on { $device } ({ $person }) before it was unlocked.
+} If that wasn't { $person }, sign the computer out from their Devices on the Users screen.
+inbox-clock-ahead = A computer's clock is wrong
+inbox-clock-ahead-body = { $minutes ->
+    [one] { $device } ({ $person }) sent changes with its clock 1 minute ahead of the server's.
+   *[other] { $device } ({ $person }) sent changes with its clock { $minutes } minutes ahead of the server's.
+} Its changes wait on that computer until its date and time are set right.
 inbox-open-send-out = Open the send-out
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back

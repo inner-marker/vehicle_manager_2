@@ -13,10 +13,12 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong,
-    PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
-    SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
+    DevicesOutcome, DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage,
+    PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome,
+    SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
 };
+use domain::secret::Secret;
+use domain::sync::{PullOutcome, PushOutcome};
 
 // Imports used only inside function bodies are declared there: the `#[get]` macro
 // keeps bodies in the server build only, so top-level imports would be unused on web.
@@ -72,6 +74,8 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
         min_supported_api_version: MIN_SUPPORTED_API_VERSION,
         server_time_ms: SystemClock.now().as_millis(),
         healthy: ::server::health::current().is_healthy(),
+        build: crate::build_info::this_build(),
+        database_id: ::server::startup::database_id().map(|id| id.to_string()),
     })
 }
 
@@ -86,23 +90,48 @@ pub(crate) async fn handshake() -> ServerFnResult<Handshake> {
 #[post("/api/v1/sign-in")]
 pub(crate) async fn sign_in(
     username: String,
-    password: String,
+    password: Secret,
     want_token: bool,
+    pairing: Option<domain::api::Pairing>,
 ) -> ServerFnResult<SignInOutcome> {
-    use ::server::sessions::SignInError;
+    use ::server::sessions::{SignInError, SigningInDevice};
 
     let Some(database) = ::server::startup::database() else {
         return Ok(SignInOutcome::Unavailable);
     };
+    // A desktop pairs with its key (#073); one too old to (API version 1) still gets a token.
+    let device = match pairing {
+        Some(pairing) => {
+            let Some(public_key) = domain::device_signature::parse_public_key(&pairing.public_key)
+            else {
+                tracing::warn!(target: domain::log_area::AUTH, "sign-in refused: the pairing key isn't usable");
+                return Ok(SignInOutcome::Unavailable);
+            };
+            SigningInDevice::Desktop {
+                public_key,
+                name: pairing
+                    .name
+                    .as_deref()
+                    .and_then(domain::device::DeviceName::tidy),
+            }
+        }
+        None if want_token => SigningInDevice::OlderDesktop,
+        None => SigningInDevice::Browser {
+            name: server_side::user_agent()
+                .as_deref()
+                .and_then(domain::device::browser_label),
+        },
+    };
     let now = server_side::now();
     let client = server_side::client_key();
-    match ::server::sessions::sign_in(
+    match ::server::sessions::sign_in_from(
         database,
         &server_side::LOGIN_LIMITER,
         &username,
         password,
         &client,
         now,
+        device,
     )
     .await
     {
@@ -110,7 +139,7 @@ pub(crate) async fn sign_in(
             server_side::set_session_cookie(Some(token.as_str()));
             Ok(SignInOutcome::SignedIn {
                 session: server_side::session_info(&signed_in),
-                token: want_token.then(|| token.as_str().to_owned()),
+                token: want_token.then(|| Secret::new(token.as_str())),
             })
         }
         Err(SignInError::InvalidCredentials) => Ok(SignInOutcome::InvalidCredentials),
@@ -154,10 +183,10 @@ pub(crate) async fn session() -> ServerFnResult<SessionState> {
 /// Only transport errors; refusals are [`SetupOutcome`] values.
 #[post("/api/v1/setup")]
 pub(crate) async fn setup(
-    code: String,
+    code: Secret,
     username: String,
     display_name: String,
-    password: String,
+    password: Secret,
     want_token: bool,
 ) -> ServerFnResult<SetupOutcome> {
     use ::server::setup::SetupError;
@@ -209,12 +238,113 @@ pub(crate) async fn setup(
         Err(SetupError::Unavailable) => return Ok(SetupOutcome::Unavailable),
     }
     // Signed straight in, so the new Admin doesn't have to type it all again.
-    Ok(match sign_in(username, password, want_token).await? {
+    Ok(match sign_in(username, password, want_token, None).await? {
         SignInOutcome::SignedIn { session, token } => SetupOutcome::SignedIn { session, token },
         SignInOutcome::InvalidCredentials
         | SignInOutcome::TooManyAttempts { .. }
         | SignInOutcome::Unavailable => SetupOutcome::Unavailable,
     })
+}
+
+/// Starts rebuilding this fresh server from the copy of the server `from` (phase-3.md 7b,
+/// decision #078), proved by the setup code (from the server's log). A public path; wrong
+/// codes count toward the same limit as in [`setup`].
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/begin")]
+pub(crate) async fn rebuild_begin(
+    code: Secret,
+    from: domain::id::DatabaseId,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    use domain::sync::RebuildOutcome;
+    let Some(database) = ::server::startup::database() else {
+        return Ok(RebuildOutcome::Unavailable);
+    };
+    let now = server_side::now();
+    let client_key = format!("setup:{}", server_side::client_key());
+    if let Err(retry_after_millis) = server_side::LOGIN_LIMITER.check(&[&client_key], now) {
+        return Ok(RebuildOutcome::TooManyAttempts {
+            retry_after_seconds: (retry_after_millis + 999) / 1000,
+        });
+    }
+    let outcome = ::server::rebuild::begin(
+        database,
+        ::server::health::current(),
+        &crate::logging::SystemClock,
+        code.expose(),
+        from,
+    )
+    .await;
+    if outcome == RebuildOutcome::WrongCode {
+        server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
+    }
+    Ok(outcome)
+}
+
+/// One page of the copy's records for the rebuild with `token`. A public path (the token,
+/// from the setup code, is the proof).
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/page")]
+pub(crate) async fn rebuild_page(
+    token: Secret,
+    page: domain::sync::PullPage,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let Some(database) = ::server::startup::database() else {
+        return Ok(domain::sync::RebuildOutcome::Unavailable);
+    };
+    Ok(::server::rebuild::page(database, token.expose(), &page).await)
+}
+
+/// Finishes the rebuild with `token`: the household Admin `admin`'s password set, and
+/// everyone else's new temporary passwords returned once. A public path (the token is the
+/// proof).
+///
+/// # Errors
+///
+/// Only transport errors.
+#[post("/api/v1/rebuild/finish")]
+pub(crate) async fn rebuild_finish(
+    token: Secret,
+    admin: String,
+    password: Secret,
+) -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let (Some(database), Some(device)) = (
+        ::server::startup::database(),
+        ::server::startup::server_device(),
+    ) else {
+        return Ok(domain::sync::RebuildOutcome::Unavailable);
+    };
+    Ok(::server::rebuild::finish(
+        database,
+        device,
+        ::server::health::current(),
+        &crate::logging::SystemClock,
+        token.expose(),
+        &admin,
+        password,
+    )
+    .await)
+}
+
+/// After a rebuild, once the files are uploaded: leaves out the attachments whose files never
+/// came (the household Admin, signed in).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `RebuildOutcome` values.
+#[post("/api/v1/rebuild/settle")]
+pub(crate) async fn rebuild_settle() -> ServerFnResult<domain::sync::RebuildOutcome> {
+    let (Some(database), Some(signed_in)) =
+        (::server::startup::database(), server_side::signed_in())
+    else {
+        return Ok(domain::sync::RebuildOutcome::NotAllowed);
+    };
+    Ok(::server::rebuild::settle(database, &signed_in, &crate::logging::SystemClock).await)
 }
 
 /// Setup step 1: checks the setup code before the person types their account details.
@@ -231,7 +361,7 @@ pub(crate) async fn setup(
         reason = "server functions must be async; this one only checks memory"
     )
 )]
-pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupCodeOutcome> {
+pub(crate) async fn check_setup_code(code: Secret) -> ServerFnResult<CheckSetupCodeOutcome> {
     if !::server::setup::is_open() {
         return Ok(CheckSetupCodeOutcome::AlreadySetUp);
     }
@@ -242,7 +372,7 @@ pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupC
             retry_after_seconds: (retry_after_millis + 999) / 1000,
         });
     }
-    if ::server::setup::code_is_valid(&code) {
+    if ::server::setup::code_is_valid(code.expose()) {
         Ok(CheckSetupCodeOutcome::Valid)
     } else {
         server_side::LOGIN_LIMITER.record_failure(&[&client_key], now);
@@ -257,8 +387,8 @@ pub(crate) async fn check_setup_code(code: String) -> ServerFnResult<CheckSetupC
 /// Refused by the auth layer without a session; refusals are [`ChangePasswordOutcome`] values.
 #[post("/api/v1/password")]
 pub(crate) async fn change_password(
-    current: String,
-    new: String,
+    current: Secret,
+    new: Secret,
 ) -> ServerFnResult<ChangePasswordOutcome> {
     use ::server::sessions::ChangePasswordError;
 
@@ -313,7 +443,7 @@ pub(crate) async fn sign_out() -> ServerFnResult<()> {
 #[post("/api/v1/mode")]
 pub(crate) async fn switch_mode(
     mode: domain::access::ActiveMode,
-    password: Option<String>,
+    password: Option<Secret>,
 ) -> ServerFnResult<SwitchModeOutcome> {
     use ::server::sessions::SwitchModeError;
 
@@ -372,8 +502,8 @@ pub(crate) async fn request_recovery(username: String) -> ServerFnResult<()> {
 #[post("/api/v1/recovery/complete")]
 pub(crate) async fn complete_recovery(
     username: String,
-    code: String,
-    new_password: String,
+    code: Secret,
+    new_password: Secret,
     want_token: bool,
 ) -> ServerFnResult<RecoveryOutcome> {
     use ::server::recovery::RecoveryError;
@@ -396,7 +526,7 @@ pub(crate) async fn complete_recovery(
             server_side::set_session_cookie(Some(token.as_str()));
             RecoveryOutcome::SignedIn {
                 session: server_side::session_info(&signed_in),
-                token: want_token.then(|| token.as_str().to_owned()),
+                token: want_token.then(|| Secret::new(token.as_str())),
             }
         }
         Err(RecoveryError::WrongCode) => RecoveryOutcome::WrongCode,
@@ -1059,7 +1189,12 @@ pub(crate) async fn add_attachment(
     input: domain::api::AttachmentInput,
 ) -> ServerFnResult<AttachmentsOutcome> {
     Ok(server_side::with_attachments(async |context, store| {
-        ::server::attachments::add(&context, store, input).await
+        ::server::attachments::add(
+            &context,
+            &storage::files::Files::Folder(store.clone()),
+            input,
+        )
+        .await
     })
     .await)
 }
@@ -1501,6 +1636,157 @@ pub(crate) async fn reset_user_password(
     .await)
 }
 
+// --- Devices (phase-3.md 2e, #073) ------------------------------------------------------
+
+/// Your signed-in devices and browsers, this one marked.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[get("/api/v1/devices")]
+pub(crate) async fn devices() -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::my_devices(database, signed_in, now).await
+        })
+        .await,
+    )
+}
+
+/// Renames one of your devices.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/rename")]
+pub(crate) async fn rename_device(
+    device: domain::id::DeviceId,
+    name: String,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::rename(database, signed_in, device, &name, now).await
+        })
+        .await,
+    )
+}
+
+/// Signs out one of your devices (not this one).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/sign-out")]
+pub(crate) async fn sign_out_device(
+    device: domain::id::DeviceId,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::sign_out(database, signed_in, device, now).await
+        })
+        .await,
+    )
+}
+
+/// Signs out all your devices except this one.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/sign-out-others")]
+pub(crate) async fn sign_out_other_devices() -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::sign_out_others(database, signed_in, now).await
+        })
+        .await,
+    )
+}
+
+/// This desktop was just unlocked after `count` wrong PINs or passwords, the last at `last_at`
+/// (phase-3.md 3d): the household Admin sees it in Messages.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/devices/failed-unlocks")]
+pub(crate) async fn report_failed_unlocks(
+    count: u32,
+    last_at: domain::time::UnixMillis,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(
+        server_side::with_signed_in_devices(async |database, signed_in, now| {
+            ::server::devices::report_failed_unlocks(database, signed_in, count, last_at, now).await
+        })
+        .await,
+    )
+}
+
+/// The next page of changes after `cursor` for this desktop's copy (phase-3.md 4b, decision
+/// #075): paired desktops only, and only if `schema` is the server's schema version.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PullOutcome`] values.
+#[post("/api/v1/sync/pull")]
+pub(crate) async fn pull(cursor: u64, schema: i64) -> ServerFnResult<PullOutcome> {
+    Ok(
+        server_side::with_pull(async |database, database_id, signed_in| {
+            ::server::sync::pull(database, database_id, signed_in, cursor, schema).await
+        })
+        .await,
+    )
+}
+
+/// Sends this desktop's outbox, oldest first (phase-3.md 5c, decision #076): paired desktops
+/// only, and only if `schema` is the server's schema version. Each operation runs through the
+/// same server function as an online save; the answer says which were applied, which were
+/// refused and why, and why the server stopped early, if it did.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`PushOutcome`] values.
+#[post("/api/v1/sync/push")]
+pub(crate) async fn push(
+    schema: i64,
+    operations: Vec<domain::operation::Operation>,
+) -> ServerFnResult<PushOutcome> {
+    Ok(server_side::with_push(async |context| {
+        ::server::sync::push(&context, schema, &operations).await
+    })
+    .await)
+}
+
+/// A person's signed-in devices: the household Admin, in Admin mode.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/users/devices")]
+pub(crate) async fn user_devices(user: domain::user::UserId) -> ServerFnResult<DevicesOutcome> {
+    Ok(server_side::with_admin_devices(async |context| {
+        ::server::devices::devices_of(&context, user).await
+    })
+    .await)
+}
+
+/// Signs out one of a person's devices, or all of them (`device` `None`): the household
+/// Admin, in Admin mode.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DevicesOutcome`] values.
+#[post("/api/v1/users/devices/sign-out")]
+pub(crate) async fn sign_out_user_devices(
+    user: domain::user::UserId,
+    device: Option<domain::id::DeviceId>,
+) -> ServerFnResult<DevicesOutcome> {
+    Ok(server_side::with_admin_devices(async |context| {
+        ::server::devices::admin_sign_out(&context, user, device).await
+    })
+    .await)
+}
+
 /// Server-side helpers for the server functions above: the current request's signed-in
 /// user and client, the session cookie, and the login limiter.
 #[cfg(feature = "server")]
@@ -1529,21 +1815,36 @@ mod server_side {
         FullstackContext::current()?.extension::<SignedIn>()
     }
 
-    /// Where the request came from, for the login limit. The server listens only on the
-    /// NAS's loopback, behind `tailscale serve`, which names the real client in
-    /// `X-Forwarded-For`; without it, all requests share one key.
+    /// Where the request came from, for the login limit: the address the trusted proxies
+    /// (`tailscale serve`) put in `X-Forwarded-For`, never one the client wrote itself
+    /// (`server::client_address`, decision #071).
     pub(super) fn client_key() -> String {
-        FullstackContext::current()
-            .and_then(|context| {
-                context
-                    .parts_mut()
-                    .headers
-                    .get("x-forwarded-for")
-                    .and_then(|value| value.to_str().ok())
-                    .and_then(|value| value.split(',').next())
-                    .map(|first| first.trim().to_owned())
-            })
-            .unwrap_or_else(|| "unknown".to_owned())
+        let forwarded_for = FullstackContext::current().and_then(|context| {
+            context
+                .parts_mut()
+                .headers
+                .get_all("x-forwarded-for")
+                .iter()
+                .filter_map(|value| value.to_str().ok())
+                .map(str::to_owned)
+                .reduce(|all, next| format!("{all},{next}"))
+        });
+        server::client_address::client_from_forwarded(
+            forwarded_for.as_deref(),
+            server::client_address::proxy_hops(),
+        )
+    }
+
+    /// The request's `User-Agent`, if it sent one (to name a browser; phase-3.md 2e).
+    pub(super) fn user_agent() -> Option<String> {
+        FullstackContext::current().and_then(|context| {
+            context
+                .parts_mut()
+                .headers
+                .get("user-agent")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+        })
     }
 
     /// Sets the session cookie to `token`, or clears it with `None`.
@@ -1585,6 +1886,94 @@ mod server_side {
         action(context).await
     }
 
+    /// Runs `action` with the database, the signed-in user, and now, or answers that it's
+    /// unavailable or not signed in (phase-3.md 2e).
+    pub(super) async fn with_signed_in_devices(
+        action: impl AsyncFnOnce(
+            &storage::Database,
+            &SignedIn,
+            UnixMillis,
+        ) -> domain::api::DevicesOutcome,
+    ) -> domain::api::DevicesOutcome {
+        let Some(database) = server::startup::database() else {
+            return domain::api::DevicesOutcome::Unavailable;
+        };
+        let Some(signed_in) = signed_in() else {
+            return domain::api::DevicesOutcome::NotSignedIn;
+        };
+        action(database, &signed_in, now()).await
+    }
+
+    /// For a pull: the database, its ID, and who's asking (refusals as [`PullOutcome`]).
+    pub(super) async fn with_pull(
+        action: impl AsyncFnOnce(
+            &storage::Database,
+            domain::id::DatabaseId,
+            &SignedIn,
+        ) -> domain::sync::PullOutcome,
+    ) -> domain::sync::PullOutcome {
+        let (Some(database), Some(database_id)) =
+            (server::startup::database(), server::startup::database_id())
+        else {
+            return domain::sync::PullOutcome::Unavailable;
+        };
+        let Some(signed_in) = signed_in() else {
+            return domain::sync::PullOutcome::NotSignedIn;
+        };
+        // An unhealthy server serves no pages (7b, #078): what it has may be damaged.
+        if !server::health::current().is_healthy() {
+            return domain::sync::PullOutcome::Unhealthy;
+        }
+        action(database, database_id, &signed_in).await
+    }
+
+    /// Runs `action` with what a push needs, or answers why it can't (no database, or nobody
+    /// signed in).
+    pub(super) async fn with_push(
+        action: impl AsyncFnOnce(server::sync::PushContext<'_>) -> domain::sync::PushOutcome,
+    ) -> domain::sync::PushOutcome {
+        let (Some(database), Some(database_id)) =
+            (server::startup::database(), server::startup::database_id())
+        else {
+            return domain::sync::PushOutcome::Unavailable;
+        };
+        let Some(user) = signed_in() else {
+            return domain::sync::PushOutcome::NotSignedIn;
+        };
+        // Adding a photo or document needs the server's files.
+        let files = server::startup::file_store()
+            .cloned()
+            .map(storage::files::Files::Folder);
+        let context = server::sync::PushContext {
+            database,
+            database_id,
+            user: &user,
+            health: server::health::current(),
+            clock: &SystemClock,
+            files: files.as_ref(),
+        };
+        action(context).await
+    }
+
+    /// As [`with_admin`], for the Admin's view of a person's devices.
+    pub(super) async fn with_admin_devices(
+        action: impl AsyncFnOnce(server::user_admin::AdminContext<'_>) -> domain::api::DevicesOutcome,
+    ) -> domain::api::DevicesOutcome {
+        let Some(database) = server::startup::database() else {
+            return domain::api::DevicesOutcome::Unavailable;
+        };
+        let Some(admin) = signed_in() else {
+            return domain::api::DevicesOutcome::NotAllowed;
+        };
+        let context = server::user_admin::AdminContext {
+            database,
+            admin: &admin,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
     /// Runs `action` with the signed-in user's preferences context, or answers that it's
     /// unavailable (no database, or not signed in).
     pub(super) async fn with_preferences(
@@ -1605,6 +1994,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1651,6 +2041,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1673,6 +2064,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         };
         action(context).await
     }
@@ -1689,6 +2081,7 @@ mod server_side {
             user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
         }
     }
 
@@ -1785,6 +2178,7 @@ mod server_side {
             user: &user,
             health: server::health::current(),
             clock: &SystemClock,
+            origin: ::server::origin::Origin::Online,
             geocoder: server::places::geocoder(),
         };
         action(context).await

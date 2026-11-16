@@ -10,7 +10,7 @@
 <rect x="762" y="178" width="80" height="28" rx="14" fill="#f0883e"/>
 <text x="802" y="197" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
 <rect x="850" y="178" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="197" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="42" y="216" width="896" height="28" rx="0" fill="#3a2615"/>
 <line x1="42" y1="244" x2="938" y2="244" stroke="#f0883e" stroke-width="2"/>
 <text x="56" y="235" font-size="10.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
@@ -73,7 +73,7 @@
 <rect x="383" y="630" width="78" height="32" rx="16" fill="#5aa9ff"/>
 <text x="422" y="651" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Dark</text>
 <text x="501" y="651" font-size="12.5" fill="#e8eaed" font-weight="500" text-anchor="middle">System</text>
-<text x="72" y="694" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Example: Stuart chose Kilometers; everything else follows the household.</text>
+<text x="72" y="694" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Example: Jordan chose Kilometers; everything else follows the household.</text>
 <text x="72" y="716" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Changes save at once (no Save button); each setting is its own record (#029).</text>
 <text x="980" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Driver mode</text>
 <rect x="980" y="166" width="250" height="650" rx="24" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
@@ -121,7 +121,7 @@
 <rect x="762" y="924" width="80" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <text x="802" y="943" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
 <rect x="850" y="924" width="76" height="28" rx="14" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="888" y="943" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="888" y="943" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="72" y="982" width="250" height="36" rx="18" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <rect x="74" y="984" width="124" height="32" rx="16" fill="#5aa9ff"/>
 <text x="136" y="1005" font-size="13" fill="#0b1420" font-weight="700" text-anchor="middle">You</text>

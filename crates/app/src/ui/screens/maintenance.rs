@@ -40,6 +40,7 @@ use super::squawks::use_device_zone;
 use super::timeline::{Shown, Timeline};
 use super::vehicle_setup::{RowButtons, SectionHeading};
 use crate::api;
+use crate::data;
 use crate::ui::routes::Route;
 use crate::ui::units::use_units;
 use crate::ui::vehicles::use_vehicles;
@@ -96,7 +97,7 @@ fn use_schedule(
     use_effect(use_reactive!(|asset| {
         let _ = reloads();
         spawn(async move {
-            let answer = match api::vehicle_schedule(asset).await {
+            let answer = match data::vehicle_schedule(asset).await {
                 Ok(ScheduleOutcome::Schedule {
                     requirements,
                     bundles,
@@ -1304,12 +1305,12 @@ async fn preview(from: AssetId, to: &AssetView) -> Result<Preview, MessageId> {
         requirements,
         bundles,
         ..
-    } = api::vehicle_schedule(from).await.map_err(|e| failed(&e))?
+    } = data::vehicle_schedule(from).await.map_err(|e| failed(&e))?
     else {
         return Err(messages::SOMETHING_WENT_WRONG);
     };
     let AssetsOutcome::Asset { view: source } =
-        api::vehicle_page(from).await.map_err(|e| failed(&e))?
+        data::vehicle_page(from).await.map_err(|e| failed(&e))?
     else {
         return Err(messages::SOMETHING_WENT_WRONG);
     };

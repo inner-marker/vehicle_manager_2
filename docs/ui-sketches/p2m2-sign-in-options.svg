@@ -10,7 +10,7 @@
 <text x="214" y="278" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="214" y="310" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="214" y="318" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="226" y="343" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="226" y="343" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="214" y="380" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="214" y="388" width="272" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="226" y="413" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -25,7 +25,7 @@
 <text x="708" y="268" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="708" y="300" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="708" y="308" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="720" y="333" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="720" y="333" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="708" y="370" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="708" y="378" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="720" y="403" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -48,10 +48,10 @@
 <text x="1000" y="393" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start" font-family="ui-monospace, Menlo, monospace">XXXX-XXXX-XXXX-XXXX</text>
 <text x="988" y="426" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="988" y="434" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="1000" y="459" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="1000" y="459" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="988" y="492" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Your name</text>
 <rect x="988" y="500" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="1000" y="525" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Stuart</text>
+<text x="1000" y="525" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">Jordan</text>
 <text x="988" y="558" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password (12+ characters)</text>
 <rect x="988" y="566" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="1000" y="591" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -78,7 +78,7 @@
 <text x="366" y="1058" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="366" y="1090" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="366" y="1098" width="270" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="378" y="1123" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="378" y="1123" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="366" y="1160" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="366" y="1168" width="270" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="378" y="1193" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>
@@ -94,7 +94,7 @@
 <text x="708" y="1128" font-size="13.5" fill="#9aa1ab" font-weight="400" text-anchor="start">to App Name on nas.tailnet</text>
 <text x="708" y="1160" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Username</text>
 <rect x="708" y="1168" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
-<text x="720" y="1193" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">stuart</text>
+<text x="720" y="1193" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">jordan</text>
 <text x="708" y="1230" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Password</text>
 <rect x="708" y="1238" width="214" height="40" rx="8" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <text x="720" y="1263" font-size="14" fill="#e8eaed" font-weight="500" text-anchor="start">•••••••••••••</text>

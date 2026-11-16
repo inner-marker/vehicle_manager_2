@@ -20,7 +20,7 @@ use super::FormError;
 use super::documents::date_text;
 use super::life_input::TypedLife;
 use super::log_form::MoneyInput;
-use crate::api;
+use crate::data;
 use crate::ui::{tr, tr_with};
 
 /// A disposal method's `<option>` value.
@@ -286,11 +286,11 @@ pub(super) fn LifeBanner(view: AssetView, may_return: bool) -> Element {
                 loaded.set(None);
                 return;
             };
-            let units = match api::get_preferences().await {
+            let units = match data::get_preferences().await {
                 Ok(PreferencesOutcome::Preferences { view }) => view.effective,
                 _ => Preferences::default(),
             };
-            if let Ok(EventsOutcome::Event { view }) = api::event_view(id).await {
+            if let Ok(EventsOutcome::Event { view }) = data::event_view(id).await {
                 loaded.set(Some((view.event, units)));
             }
         });
@@ -419,7 +419,7 @@ fn ReturnOf(sent_out: Option<EventId>, units: Preferences) -> Element {
                 text.set(None);
                 return;
             };
-            if let Ok(EventsOutcome::Event { view }) = api::event_view(id).await
+            if let Ok(EventsOutcome::Event { view }) = data::event_view(id).await
                 && let Some(LifecycleDetails::SentOut(sent)) = &view.event.lifecycle
             {
                 let day = utc_to_local(view.event.dates.start, &view.event.dates.zone)

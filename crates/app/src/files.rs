@@ -2,9 +2,10 @@
 //! #037).
 //!
 //! Uploads and downloads use the server's plain file routes (`domain::api::UPLOAD_PATH` and
-//! `domain::api::download_path`), not server functions, so they're sent here with the same
-//! headers every server-function call carries ([`crate::client::current_headers`]): the API
-//! version, and on desktop the session token. On the web the session cookie goes with them.
+//! `domain::api::download_path`), not server functions, so they're sent here with the headers
+//! a request carries ([`crate::client::current_headers_for`]): the API version, and on desktop
+//! the session token and a signature for this request alone (#073). On the web the session
+//! cookie goes with them.
 //!
 //! A fetched file is shown from a `data:` URL, because an `<img src>` pointing at the server
 //! couldn't carry those headers.
@@ -32,14 +33,22 @@ async fn base_url() -> Result<String, String> {
 ///
 /// What went wrong reaching the server (not a refusal, which is an [`UploadOutcome`]).
 pub async fn upload(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadOutcome, String> {
-    let url = format!("{}{UPLOAD_PATH}?{}", base_url().await?, purpose.to_query());
+    let path = format!("{UPLOAD_PATH}?{}", purpose.to_query());
+    let url = format!("{}{path}", base_url().await?);
     let response = reqwest::Client::new()
         .post(url)
-        .headers(crate::client::current_headers())
+        .headers(crate::client::current_headers_for("POST", &path))
         .body(bytes)
         .send()
         .await
         .map_err(|error| error.to_string())?;
+    // The server's size limit (`server::limits`) refuses an oversized body before the upload
+    // route sees it; it's the same refusal as the check before sending.
+    if response.status() == StatusCode::PAYLOAD_TOO_LARGE {
+        return Ok(UploadOutcome::Invalid {
+            problem: domain::attachment::AttachmentProblem::PdfTooLarge,
+        });
+    }
     response
         .json::<UploadOutcome>()
         .await
@@ -52,10 +61,11 @@ pub async fn upload(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadOutc
 ///
 /// What went wrong, including a refusal (e.g. "403 Forbidden").
 pub async fn download(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>, String> {
-    let url = format!("{}{}", base_url().await?, download_path(id, part));
+    let path = download_path(id, part);
+    let url = format!("{}{path}", base_url().await?);
     let response = reqwest::Client::new()
         .get(url)
-        .headers(crate::client::current_headers())
+        .headers(crate::client::current_headers_for("GET", &path))
         .send()
         .await
         .map_err(|error| error.to_string())?;
@@ -68,6 +78,31 @@ pub async fn download(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>,
         .map(|bytes| bytes.to_vec())
         .map_err(|error| error.to_string())
 }
+
+/// One part of an attachment's file, for showing: on a desktop, from this computer if it has
+/// it (phase-3.md 6c), otherwise from the server (and then kept); offline, only what's here.
+///
+/// # Errors
+///
+/// What went wrong, including a refusal, or "not on this computer" offline.
+pub async fn fetch(id: AttachmentId, part: AttachmentPart) -> Result<Vec<u8>, String> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        if let Some(bytes) = crate::copy_files::local(id, part).await {
+            return Ok(bytes);
+        }
+        if crate::local_copy::is_offline() {
+            return Err(NOT_HERE.to_owned());
+        }
+    }
+    let bytes = download(id, part).await?;
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    crate::copy_files::keep(id, part, &bytes).await;
+    Ok(bytes)
+}
+
+/// [`fetch`]'s answer offline for a file this computer doesn't have.
+pub const NOT_HERE: &str = "not on this computer (offline)";
 
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

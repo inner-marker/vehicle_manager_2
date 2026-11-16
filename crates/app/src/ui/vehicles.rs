@@ -14,7 +14,7 @@ use domain::log_area;
 use super::icons::{Icon, IconView};
 use super::routes::Route;
 use super::tr;
-use crate::api;
+use crate::data;
 
 /// The vehicles state, in context (provided by the shell).
 #[derive(Debug, Clone, Copy)]
@@ -61,7 +61,7 @@ pub(crate) fn apply(
 
 /// Asks the server for the Garage again.
 pub(crate) async fn refresh_garage(context: VehiclesContext) -> Option<MessageId> {
-    apply(context, api::get_garage().await)
+    apply(context, data::get_garage().await)
 }
 
 /// A group's icon.

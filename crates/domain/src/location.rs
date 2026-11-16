@@ -722,6 +722,20 @@ impl SavedPlaceForm {
     }
 }
 
+impl SavedPlace {
+    /// The fields that differ in `wanted`, and only those (#043); never the owner.
+    #[must_use]
+    pub fn changes_to(&self, wanted: Self) -> SavedPlacePatch {
+        SavedPlacePatch {
+            owner: None,
+            name: (wanted.name != self.name).then_some(wanted.name),
+            coordinates: (wanted.coordinates != self.coordinates).then_some(wanted.coordinates),
+            radius_m: (wanted.radius_m != self.radius_m).then_some(wanted.radius_m),
+            place: (wanted.place != self.place).then_some(wanted.place),
+        }
+    }
+}
+
 /// The changeable fields of a [`SavedPlace`]; `Some` means "set to this".
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SavedPlacePatch {
@@ -740,6 +754,22 @@ pub struct SavedPlacePatch {
     /// See [`SavedPlace::place`] (city, region, and country change together).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub place: Option<Place>,
+}
+
+impl SavedPlacePatch {
+    /// The patch as a person may send it: never the owner, and a radius within limits (the
+    /// other fields are checked by their types).
+    ///
+    /// # Errors
+    ///
+    /// [`LocationError`] for a radius out of range.
+    pub fn checked(mut self) -> Result<Self, LocationError> {
+        self.owner = None;
+        if let Some(radius) = self.radius_m {
+            check_radius(radius)?;
+        }
+        Ok(self)
+    }
 }
 
 impl SavedPlacePatch {

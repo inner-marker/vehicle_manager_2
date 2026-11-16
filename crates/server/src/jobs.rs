@@ -22,11 +22,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use domain::attachment::FileHash;
 use domain::id::DeviceId;
 use domain::log_area;
 use domain::time::{Clock, UnixMillis};
 use domain::timers::Timers;
 use storage::Database;
+use storage::file_audit::ErasedFile;
 use storage::files::{FileCheck, FileStore};
 use storage::jobs::{JobResult, JobRun};
 use storage::snapshot::{rotate_snapshots, verify_snapshot};
@@ -445,6 +447,9 @@ async fn erase_unused(context: &JobContext, store: &FileStore) -> Result<usize, 
             Ok(Err(error)) => return Err(format!("can't erase a file: {error}")),
             Err(_) => return Err("erasing stopped".to_owned()),
         }
+        // The audit record (#072), before the file stops being listed: if this fails, the
+        // next run erases it again (already gone) and writes the record then.
+        record_erasure(context, &hash).await?;
         context
             .database
             .forget_file(&hash)
@@ -453,6 +458,27 @@ async fn erase_unused(context: &JobContext, store: &FileStore) -> Result<usize, 
         erased += 1;
     }
     Ok(erased)
+}
+
+/// Writes the audit record of the erased file `hash` (#072): one row for each removed
+/// attachment that used it.
+async fn record_erasure(context: &JobContext, hash: &FileHash) -> Result<(), String> {
+    let erased_at = context.clock.now();
+    let removed = context
+        .database
+        .removed_attachments_using(hash)
+        .await
+        .map_err(|error| format!("can't find what an erased file belonged to: {error}"))?;
+    for attachment in &removed {
+        if let Some(record) = ErasedFile::of(attachment, hash, erased_at) {
+            context
+                .database
+                .record_erased_file(&record)
+                .await
+                .map_err(|error| format!("can't record an erased file: {error}"))?;
+        }
+    }
+    Ok(())
 }
 
 /// At startup: if any listed file is missing, brings the file check forward so the Admin hears

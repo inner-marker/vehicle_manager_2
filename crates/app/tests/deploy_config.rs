@@ -181,6 +181,20 @@ fn compose_passes_the_instance_name_empty_by_default() {
 }
 
 #[test]
+fn compose_passes_the_proxy_count_empty_by_default() {
+    // server::client_address::PROXY_HOPS_ENV_NAME (decision #071); empty means 1.
+    let hops = env_var_name("PROXY_HOPS");
+    assert!(
+        COMPOSE.contains(&format!("{hops}: ${{{hops}:-}}")),
+        "compose.yaml must pass {hops}, empty by default"
+    );
+    assert!(
+        ENV_EXAMPLE.lines().any(|line| line == format!("{hops}=")),
+        ".env.example must list {hops}, empty"
+    );
+}
+
+#[test]
 fn image_and_container_never_run_as_root() {
     assert!(
         DOCKERFILE.contains("\nUSER 10001:10001\n"),
@@ -189,6 +203,16 @@ fn image_and_container_never_run_as_root() {
     assert!(
         COMPOSE.contains("user: \"${VEHICLEMANAGER_UID:?"),
         "compose.yaml must set the NAS user"
+    );
+}
+
+#[test]
+fn image_carries_the_third_party_notices() {
+    assert!(
+        DOCKERFILE.contains(
+            "\nCOPY crates/app/assets/THIRD-PARTY-NOTICES.txt /app/THIRD-PARTY-NOTICES.txt\n"
+        ),
+        "Dockerfile must copy the notices into the image (decision #079)"
     );
 }
 
@@ -236,4 +260,32 @@ fn the_geocoder_data_is_built_from_the_pinned_sources_everywhere() {
     );
     // Only the data file reaches the runtime image.
     assert!(DOCKERFILE.contains("COPY --from=geodata /out/ /app/geodata/"));
+}
+
+/// The reusable image workflow, which passes the build's identity to `docker build`.
+const SERVER_IMAGE_WORKFLOW: &str = include_str!("../../../.github/workflows/server-image.yml");
+
+#[test]
+fn the_image_names_its_exact_build() {
+    // phase-3.md 1c (#37): the workflow passes each build argument, and the Dockerfile hands
+    // it to the build under the name domain::build_info reads.
+    let pairs = [
+        ("BUILD_COMMIT", domain::build_info::COMMIT_ENV),
+        ("BUILD_TAG", domain::build_info::TAG_ENV),
+        ("BUILD_DATE", domain::build_info::DATE_ENV),
+    ];
+    for (argument, env_name) in pairs {
+        assert!(
+            SERVER_IMAGE_WORKFLOW.contains(&format!("{argument}=${{{{")),
+            "server-image.yml must pass the {argument} build argument"
+        );
+        assert!(
+            DOCKERFILE.contains(&format!("ARG {argument}=")),
+            "the Dockerfile must declare ARG {argument}"
+        );
+        assert!(
+            DOCKERFILE.contains(&format!("{env_name}=\"${argument}\"")),
+            "the Dockerfile must pass {argument} to the build as {env_name}"
+        );
+    }
 }

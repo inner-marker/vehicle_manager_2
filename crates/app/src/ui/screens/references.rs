@@ -27,6 +27,7 @@ use super::compliance::{ComplianceChoices, TypedCompliance};
 use super::documents::date_text;
 use super::problem_from_error;
 use crate::api;
+use crate::data;
 use crate::ui::tr;
 use crate::ui::units::use_units;
 
@@ -71,7 +72,7 @@ pub(super) fn use_references(reloads: Signal<u32>) -> Signal<Vec<ReferenceView>>
     use_effect(move || {
         let _ = reloads();
         spawn(async move {
-            if let Ok(ReferencesOutcome::References { references }) = api::references().await {
+            if let Ok(ReferencesOutcome::References { references }) = data::references().await {
                 loaded.set(references);
             }
         });
@@ -488,7 +489,7 @@ pub(super) fn ReferenceSheet(
     use_effect(use_reactive!(|id| {
         let _ = changes();
         spawn(async move {
-            let answer = match api::reference(id).await {
+            let answer = match data::reference(id).await {
                 Ok(ReferencesOutcome::Reference { view }) => Ok(*view),
                 Ok(other) => Err(refusal(&other)),
                 Err(error) => Err(problem_from_error(&error).message()),
@@ -624,7 +625,7 @@ pub(super) fn ReferenceLine(reference: ReferenceDocumentId, vehicle: AssetView) 
     let mut open = use_signal(|| false);
     use_effect(use_reactive!(|reference| {
         spawn(async move {
-            if let Ok(ReferencesOutcome::Reference { view }) = api::reference(reference).await {
+            if let Ok(ReferencesOutcome::Reference { view }) = data::reference(reference).await {
                 text.set(Some(summary(&view.document)));
             }
         });

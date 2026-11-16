@@ -4,6 +4,7 @@ mod account;
 mod attachments;
 mod compliance;
 mod connection;
+mod devices;
 mod diagnostics;
 mod documents;
 mod event_page;
@@ -16,6 +17,7 @@ mod log_form;
 mod log_input;
 mod maintenance;
 mod messages;
+mod not_sent;
 mod placeholders;
 mod places;
 mod references;
@@ -30,6 +32,8 @@ mod vehicles;
 mod work_input;
 mod work_log;
 
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) use account::too_many_attempts;
 pub(crate) use account::{
     ChangePasswordForm, Field, ForcedPasswordChange, FormError, Setup, SignIn,
 };
@@ -43,6 +47,8 @@ pub(crate) use messages::Messages;
 pub(crate) use placeholders::{Due, NotFound, Reports, Timeline};
 pub(crate) use places::Places;
 pub(crate) use settings::Settings;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub(crate) use squawks::use_device_zone;
 pub(crate) use squawks::{SquawkDetail, SquawkSheetDialog, provide_squawk_sheet};
 pub(crate) use users::Users;
 pub(crate) use vehicle::{VehicleDetail, VehicleTab};

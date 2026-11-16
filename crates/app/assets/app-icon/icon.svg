@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Vehicle Manager's app icon (Phase 3 milestone 1, option A1: the gauge). The master:
+       the PNGs beside it are made from this file by the ignored make_icons test in
+       crates/app/tests (see that file). Original artwork for this app. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f80e4"/>
+      <stop offset="1" stop-color="#16529c"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#tile)"/>
+  <path d="M 136 352 A 140 140 0 1 1 376 352" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+  <g stroke="#ffffff" stroke-width="18" stroke-linecap="round">
+    <line x1="256" y1="148" x2="256" y2="178"/>
+    <line x1="170" y1="184" x2="186" y2="204"/>
+    <line x1="342" y1="184" x2="326" y2="204"/>
+  </g>
+  <line x1="256" y1="292" x2="338" y2="214" stroke="#f0883e" stroke-width="30" stroke-linecap="round"/>
+  <circle cx="256" cy="292" r="34" fill="#ffffff"/>
+  <rect x="196" y="372" width="120" height="44" rx="12" fill="#ffffff" fill-opacity="0.9"/>
+</svg>

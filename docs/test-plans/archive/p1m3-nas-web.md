@@ -4,7 +4,7 @@
 
 ## 1. Intended behavior
 
-- **The image:** `ghcr.io/inner-marker/vehicle_manager_2` (linux/amd64) runs on the DS1019+ as the Container Manager Project `vehiclemanager`:
+- **The image:** `ghcr.io/inner-marker/vehicle_manager_2` (linux/amd64) runs on the NAS as the Container Manager Project `vehiclemanager`:
   - as the DSM user `vehiclemanager` (1030:100), never root;
   - with a read-only filesystem except `/data` and a small `/tmp`;
   - with logs in `data/logs/`.

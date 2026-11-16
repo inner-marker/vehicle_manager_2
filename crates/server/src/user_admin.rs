@@ -26,6 +26,7 @@ use crate::health::Health;
 use crate::ids::new_id;
 use crate::passwords::hash_password;
 use crate::sessions::SignedIn;
+use domain::secret::Secret;
 
 /// Characters in a temporary password (before the dashes): 12, the minimum password length.
 const TEMPORARY_PASSWORD_CHARS: usize = 12;
@@ -43,7 +44,8 @@ pub struct AdminContext<'a> {
 }
 
 impl AdminContext<'_> {
-    fn allowed(&self) -> bool {
+    /// Whether the signed-in person may manage users: the household's Admin, in Admin mode.
+    pub(crate) fn allowed(&self) -> bool {
         permits_admin(
             &self.admin.grants,
             self.admin.mode,
@@ -105,10 +107,17 @@ pub async fn list_users(context: &AdminContext<'_>) -> UserAdminOutcome {
         (Ok(users), Ok(grants)) => (users, grants),
         (Err(error), _) | (_, Err(error)) => return unavailable("list", &error),
     };
-    let summaries = users
-        .iter()
-        .map(|stored| summary(stored, &users, &grants, context.admin.user))
-        .collect();
+    let now = context.clock.now();
+    let mut summaries = Vec::with_capacity(users.len());
+    for stored in &users {
+        let mut one = summary(stored, &users, &grants, context.admin.user);
+        // How many devices they're signed in on (phase-3.md 2e).
+        one.devices = match context.database.signed_in_devices_of(stored.id, now).await {
+            Ok(devices) => u32::try_from(devices.len()).unwrap_or(u32::MAX),
+            Err(error) => return unavailable("list", &error),
+        };
+        summaries.push(one);
+    }
     UserAdminOutcome::Users { users: summaries }
 }
 
@@ -156,6 +165,7 @@ fn summary(
         roles,
         is_you: stored.id == you,
         is_last_admin,
+        devices: 0,
     }
 }
 
@@ -175,9 +185,10 @@ fn is_enabled(users: &[StoredUser], user: UserId) -> bool {
 }
 
 /// A new temporary password, and its hash.
-async fn temporary_password() -> Result<(String, String), String> {
-    let password =
-        group_by_four(&random_code(TEMPORARY_PASSWORD_CHARS).map_err(|error| error.to_string())?);
+pub(crate) async fn temporary_password() -> Result<(Secret, String), String> {
+    let password = Secret::new(group_by_four(
+        &random_code(TEMPORARY_PASSWORD_CHARS).map_err(|error| error.to_string())?,
+    ));
     let hash = hash_password(password.clone())
         .await
         .map_err(|error| error.to_string())?;

@@ -10,6 +10,7 @@ A self-hosted app for tracking vehicles, everything that happens to them, and th
 - *`docs/sub-plans/01-signatures-and-records.md`: electronic signatures and record-keeping (draft; see Logbook entries, statement templates & signatures).*
 - *`docs/sub-plans/02-voice-capture.md`: hands-free logging of fuel-ups, readings, and squawks by voice, saved as drafts (draft; see Fast logging).*
 - *`docs/sub-plans/03-email-and-password-reset.md`: optional email over SMTP, email password reset, and later email notifications (draft; see Security → Application, and In-app notifications).*
+- *`docs/sub-plans/04-security.md`: app lock and PIN, devices and device-bound tokens, internet-facing hardening, encryption at rest, and secrets in logs, placed by phase (confirmed, #071; GitHub issues #28–#31; see Security (defense in depth)).*
 
 **Long-term aspiration (well past MVP):** extend the app, or a sibling app built on the same core, to **aircraft maintenance records**, alongside or instead of ground vehicles. Aircraft features are not being planned yet, but early data-model decisions are made so they won't block it (see Aircraft-ready groundwork).
 
@@ -133,9 +134,9 @@ Devices don't send database rows or SQL. They send a log of **typed domain comma
 - Each device keeps a **cursor** and pulls **current state of records changed since its cursor**, rather than replaying commands.
 - Simple, and a device can always catch up, even after a long time offline.
 
-**Deletes** become **tombstones** on the server, so they propagate through pull. Tombstones are purged once every device's cursor has passed them.
+**Deletes** become **tombstones** on the server, so they propagate through pull. Tombstones are **kept forever** (`docs/decisions.md` #072), so a device offline for any length of time still learns of every delete.
 
-**Photos and blobs** sync separately and lazily, so record sync stays fast on a weak signal.
+**Photos and blobs** sync separately and lazily, so record sync stays fast on a weak signal: on the desktop, thumbnails and PDFs download automatically, photos when opened, originals on request (#072).
 
 **Commands as a stable API.** The command format is versioned independently of the database schema. An old app version sends old-format commands, and the server **upcasts** them to the current format before applying (see Schema & versioning).
 
@@ -1384,7 +1385,7 @@ For the MVP there is no separate backup of the master database. Device copies ac
 **Known gap until offsite backups exist:** device copies are only as fresh as each device's last sync. Data entered only through the web UI, or photos not yet pulled by any device, could exist only on the server.
 
 **MVP mitigation: nightly local snapshot**
-- The server makes a **nightly `VACUUM INTO` copy** of the master database in `data/snapshots/`. The DS1019+ has one storage pool, so for now that's the **same pool** as the live database (`docs/decisions.md` #035).
+- The server makes a **nightly `VACUUM INTO` copy** of the master database in `data/snapshots/`. The NAS has one storage pool, so for now that's the **same pool** as the live database (`docs/decisions.md` #035).
 - The snapshot folder is **configurable** (`VEHICLEMANAGER_SNAPSHOT_DIR`), so it can later point at a USB disk or another volume mounted into the container. If it's unavailable, the server skips the snapshot and reports it.
 - Keeps the last 7 nightly copies; older ones are rotated out.
 - Each snapshot is **integrity-checked** after it's written.
@@ -1448,6 +1449,8 @@ For the MVP there is no separate backup of the master database. Device copies ac
 
 Dioxus provides no encryption or authentication on its own; server functions are ordinary HTTP endpoints. The design assumes a bad actor could be **on the home network**, not just the internet.
 
+*The draft `docs/sub-plans/04-security.md` details the app lock and PIN, device-bound tokens, internet-facing servers, encryption at rest, and secrets in logs, and places each in a phase.*
+
 **Network**
 - Server listens on **localhost only** and is published with **`tailscale serve`**, which provides HTTPS with a real certificate on the MagicDNS name. Nothing is exposed on the LAN, even at home.
 - **Tailscale ACLs:** deny by default; only approved devices can reach the app.
@@ -1455,7 +1458,7 @@ Dioxus provides no encryption or authentication on its own; server functions are
 
 **Application**
 - **Two credential types, one auth middleware:**
-  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone).
+  - **Native apps:** per-device tokens issued at pairing, stored in the OS keychain, hashed (argon2) on the server, and individually revocable (e.g. a lost phone). Pairing is signing in on the device; each request is signed with the device's key (`docs/decisions.md` #073).
   - **Web UI:** browsers have no keychain, so the web UI uses a **username and password** login (argon2-hashed) that sets an **HttpOnly, Secure, SameSite=Strict session cookie**. Until Phase 3 pairing, native apps use the same login (`docs/decisions.md` #028).
   - **First Admin:** on a server with no users, a **one-time setup code** in the server log lets the first visitor create the Admin (#028). Passkeys are later.
   - **Forgotten passwords:** an Admin resets anyone's with a temporary password (#046); an Admin who forgot their own uses a one-time recovery code in the server log (#047). **Optional email** (any SMTP provider) and an email reset link are proposed in the draft `docs/sub-plans/03-email-and-password-reset.md` (idea 13).
@@ -1536,11 +1539,11 @@ The NAS runs two servers side by side (`docs/decisions.md` #062), each its own C
 
 ### Target NAS & image architectures
 
-- **Primary NAS:** Synology **DS1019+** (Intel Celeron J3455, 4 cores, 8 GB RAM, x86_64) on **DSM 7.4.1**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
+- **Primary NAS:** a Synology with an Intel (x86_64) processor on **DSM 7.4**, with **Container Manager** (Docker) and the **Tailscale** package installed. Verified before milestone 3 (`docs/decisions.md` #025).
 - **Architectures:** images will support both **x86_64 (amd64)** and **arm64**.
   - **First images: amd64 only,** matching the NAS. GitHub's standard Linux runners are amd64, so CI builds them natively, with no cross-compiling or emulation.
   - **arm64 later**, for other always-on hosts such as a Raspberry Pi (see Hosting options), as a multi-arch image under one tag.
-- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the J3455 has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
+- **CPU baseline:** build for the default `x86-64` target. **Never use `-C target-cpu=native`** on a build machine: the NAS CPU has SSE4.2 but no AVX, so a binary tuned for a newer CPU would crash on the NAS.
 - **Building arm64 efficiently (later):** cross-compile the Rust binary for `aarch64` and copy it into the runtime image, or use native ARM runners in CI. Emulated (QEMU) Rust builds work but are very slow.
 
 ### Getting the image onto the NAS
@@ -1830,13 +1833,17 @@ Each phase has open questions in section 10 that must be resolved before work on
 
 ### Phase 2: Data model & server storage.
 
-- *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md).* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
+- *Phase plan: [`phase_plans/phase-2.md`](phase_plans/phase-2.md) · **Complete:** exit criteria met 2026-11-08; released as `v0.2.0`.* Assets (vehicles), events, tasks, meters, and intervals in the SQLite master database; clients work online-only. Includes users with per-asset roles and mode switching, the migration framework, the database ID, server integrity checks on startup, and the nightly local snapshot (same pool for now, #035). **Message center infrastructure** (inbox, severity, read/dismiss) with system messages such as "app update required." **Event location:** required city/state/country, coordinates from the phone browser, saved places, and the server-side offline reverse geocoder. **Extensibility groundwork:** generic assets with kinds, parents, and data-driven profiles; locale formatting of dates, numbers, and units (the translation layer itself arrives in Phase 1); currency codes; UTC + time zone on events; custom field definitions. **Aircraft-ready groundwork:** draft/finalized events with amendments, performed-by vs. logged-by, typed asset identifiers, requirements and reference documents (one-time and recurring), end-of-month calendar rules. **Attachments:** photo and PDF document upload, with a document viewer. **Official asset documents:** registration, insurance, title, certificates with scans and renewal history. **Asset lifecycle:** status, acquisition and disposal records with attachments, archive instead of delete, send-out / return tracking. **Multi-day events** (optional end date).
 
 ### Phase 3: Local-first & sync.
 - **First: the app icon** (the human, 2026-11-04): the desktop window's and the browser tab's icon (Dioxus's `Config::with_icon` on desktop; a favicon on the web), before the desktop app gets more use.
-- Local SQLite, offline logging, command outbox, tombstones, incremental pull. 
+- **Also first: the exact build on Diagnostics** (the human, 2026-11-08; GitHub issue #37): the commit, image tag, and build date beside the version, so a test can confirm from the app which image it's running.
+- **Also first: window title and launch settings** (GitHub #19): window size and position remembered, always-on-top.
+- **For the desktop app** (the web stays online-only, #071; `docs/decisions.md` #072): an encrypted local SQLite database per server, offline logging, command outbox, tombstones (kept forever), incremental pull, and lazy file sync (thumbnails and PDFs automatically, photos when opened).
+- **Pairing** (moved from Phase 6, #072): signing in on a desktop pairs it (device key, token tied to it, PIN); **Settings → Devices** signs devices out; a list of recent servers.
 - **Includes loss detection from the start:** protective mode, suspicious-pull confirmation, pre-sync snapshots, and "rebuild server from this device." 
 - Sync alerts (rejected commands, protective mode, server unhealthy) go to the message center.
+- Milestones: `docs/phase_plans/phase-3.md` · **All seven merged into `dev` (2026-11-14);** the `v0.3.0` release (its regression pass and the exit criteria) completes the phase.
 
 ### Phase 4: Mobile (Moved to post-MVP)
 *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
@@ -1847,7 +1854,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - What's due (including initial-deadline and terminating-action compliance modes, supersession, and **official document expirations** with lead times and a renew flow), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 
 ### Phase 6: Polish.
-- **Phase 6: Polish.** Import/export, pairing flow, reports
+- **Phase 6: Polish.** Import/export, reports (pairing moved to Phase 3, #072)
 - **multi-page document capture in the web UI**
 - **standalone mode** (single device, no server, local backups, upgrade path to a server).
 - Built-in Help Documents
@@ -1856,6 +1863,17 @@ Each phase has open questions in section 10 that must be resolved before work on
 - **Photos, after milestone 8's test** (the human, 2026-11-04):
   - **Pinch to zoom a photo on a phone** zooms and pans just the photo in the viewer, not the whole page (iOS Safari ignores the page's own "don't zoom" setting, so the viewer handles the gestures itself).
   - **Add photos and documents while logging,** before the first save: a new fuel-up, reading, maintenance, or repair (today they can be added once the draft is saved).
+- **After Phase 3 milestone 1's test** (the human, 2026-11-09):
+  - **The desktop window's size isn't restored** under `dx serve`: its position and a maximized state are, its size isn't (`docs/test-plans/archive/p3m1-groundwork.md` step 8). Minor; find why, then retest.
+  - **Test with a second monitor** before the end of Phase 6: a window left on a monitor that's since been unplugged opens on the main screen (step 10 of the same plan, not run).
+  - **Reorganize Settings:** a column of tabs down the left side, or another way to keep it uncluttered as settings are added (open to ideas).
+- **After Phase 3 milestone 3's test** (the human, 2026-11-11):
+  - **Lock now** in the account menu (under the person's name) on a desktop with a PIN, to lock the app at once without waiting for Lock after.
+- **After Phase 3 milestone 4's test** (the human, 2026-11-12):
+  - **Timeline paging:** a long timeline gets slow to draw, so show a page at a time (100 records, or a number the person picks) with **Previous** and **Next**, and a **Jump to date**.
+  - **Skip the wait when there's no network at all** (an idea to weigh): the desktop could ask the operating system whether it has any network (Wi-Fi or Ethernet) and, with none, open its copy straight away instead of waiting up to 8 s. It only helps with no network at all: with Tailscale off, or the server down, the network is still up, so the wait stays.
+- **After Phase 3 milestone 7's test** (the human, 2026-11-14):
+  - **Make the text to type stand out** in "type to confirm" dialogs (e.g. "Type Van Test to confirm." when deleting a vehicle): show it in a monospace font, highlighted, or both, so it's clear exactly what to type. Apply it everywhere the app asks for typed confirmation (deleting a vehicle, REBUILD, and others).
 - **Labor rates** (the human, 2026-11-04, after milestone 7's test): a labor rate that Maintainers and Admins set, so typing a task's labor time fills in its labor cost (time × rate), which can still be changed (a discount, a promotion, a fixed price).
 
 ### Phase 7: Security.
@@ -1930,11 +1948,11 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 
 ### Phase 3: Local-first & sync
 
-- **Web app:** local-first too (browser storage), or online-only, talking to the server directly?
-- **Device pairing flow:** how a new device joins (QR code, pairing code, Admin approval?). Needed before multiple devices sync.
-- **Version support window:** how many older API versions the server accepts.
-- **Tombstone purge policy:** how long tombstones are kept when a device stays offline for a long time.
-- **Blob sync rules:** which photos and attachments each device downloads automatically vs. on demand.
+- ~~**Web app:** local-first too (browser storage), or online-only, talking to the server directly?~~ *Settled: online-only, storing nothing in the browser (#071, `docs/sub-plans/04-security.md` §7.1).*
+- ~~**Device pairing flow:** how a new device joins (QR code, pairing code, Admin approval?).~~ *Settled: signing in pairs the device; Settings → Devices signs it out (#072).*
+- ~~**Version support window:** how many older API versions the server accepts.~~ *Settled: the current one and the one before (#072).*
+- ~~**Tombstone purge policy:** how long tombstones are kept when a device stays offline for a long time.~~ *Settled: kept forever; erased files keep an audit record (#072).*
+- ~~**Blob sync rules:** which photos and attachments each device downloads automatically vs. on demand.~~ *Settled: thumbnails and PDFs automatically, photos when opened, originals on request (#072).*
 
 ### Phase 5: Maintenance intelligence
 

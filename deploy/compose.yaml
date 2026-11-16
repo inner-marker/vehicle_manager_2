@@ -31,6 +31,10 @@ services:
       # Empty on the household's main server; `test` on the test server beside it (decision
       # #062): its own session cookie, and a TEST SERVER tag in the app.
       VEHICLEMANAGER_INSTANCE: ${VEHICLEMANAGER_INSTANCE:-}
+      # How many proxies are in front of the server (decision #071). Empty means 1, for
+      # `tailscale serve`; 2 if another proxy (e.g. Caddy) also sits in front. The sign-in
+      # limit uses it to find the client's real address.
+      VEHICLEMANAGER_PROXY_HOPS: ${VEHICLEMANAGER_PROXY_HOPS:-}
       # Optional: a snapshot folder other than /data/snapshots (decisions.md #035). Empty
       # means the default. A folder set here is never created, so it must be mounted below.
       VEHICLEMANAGER_SNAPSHOT_DIR: ${VEHICLEMANAGER_SNAPSHOT_DIR:-}

@@ -52,13 +52,13 @@
 <text x="630" y="754" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Skipped: &quot;Hour meter is broken&quot;</text>
 <text x="70" y="796" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">WHO AND NOTES</text>
 <text x="70" y="820" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Done by</text>
-<text x="630" y="820" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart (logged it)</text>
+<text x="630" y="820" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Jordan (logged it)</text>
 <line x1="70" y1="830" x2="630" y2="830" stroke="#333a45" stroke-width="1"/>
 <text x="70" y="848" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
 <text x="630" y="848" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Pump 4 was slow</text>
 <text x="70" y="890" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">RECORD</text>
 <text x="70" y="914" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Logged</text>
-<text x="630" y="914" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart · 2 Nov, 3:31 pm · typed</text>
+<text x="630" y="914" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">Jordan · 2 Nov, 3:31 pm · typed</text>
 <line x1="70" y1="924" x2="630" y2="924" stroke="#333a45" stroke-width="1"/>
 <text x="70" y="942" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Last edited</text>
 <text x="630" y="942" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">2 Nov, 3:35 pm</text>
@@ -126,18 +126,18 @@
 <text x="550" y="1416" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Skipped: &quot;Hour meter is broken&quot;</text>
 <line x1="70" y1="1426" x2="550" y2="1426" stroke="#333a45" stroke-width="1"/>
 <text x="70" y="1444" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Done by</text>
-<text x="550" y="1444" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Stuart</text>
+<text x="550" y="1444" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Jordan</text>
 <line x1="70" y1="1454" x2="550" y2="1454" stroke="#333a45" stroke-width="1"/>
 <text x="70" y="1472" font-size="12" fill="#9aa1ab" font-weight="600" text-anchor="start">Notes</text>
 <text x="550" y="1472" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="end">Pump 4 was slow</text>
 <text x="610" y="1280" font-size="10.5" fill="#9aa1ab" font-weight="800" text-anchor="start">HISTORY</text>
 <circle cx="618" cy="1308" r="6" fill="#5aa9ff"/>
 <line x1="618" y1="1314" x2="618" y2="1360" stroke="#333a45" stroke-width="2"/>
-<text x="634" y="1313" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Logged by Stuart (typed)</text>
+<text x="634" y="1313" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Logged by Jordan (typed)</text>
 <text x="634" y="1332" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov, 3:31 pm</text>
 <circle cx="618" cy="1366" r="6" fill="#5aa9ff"/>
 <line x1="618" y1="1372" x2="618" y2="1418" stroke="#333a45" stroke-width="2"/>
-<text x="634" y="1371" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Edited by Stuart</text>
+<text x="634" y="1371" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Edited by Jordan</text>
 <text x="634" y="1390" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">2 Nov, 3:35 pm</text>
 <circle cx="618" cy="1424" r="6" fill="#9aa1ab"/>
 <text x="634" y="1429" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Locks: then only a correction</text>
@@ -159,7 +159,7 @@
 <rect x="306" y="1724" width="94" height="40" rx="10" fill="#5aa9ff"/>
 <text x="353.0" y="1749.0" font-size="14.5" fill="#0b1420" font-weight="700" text-anchor="middle">Finalize</text>
 <rect x="450" y="1594" width="500" height="64" rx="10" fill="#3a2615" stroke="#f0883e" stroke-width="1.5"/>
-<text x="468" y="1620" font-size="12.5" fill="#f0883e" font-weight="700" text-anchor="start">Corrected on 4 Nov by Stuart: &quot;Typed 809,000 for 802,000&quot;</text>
+<text x="468" y="1620" font-size="12.5" fill="#f0883e" font-weight="700" text-anchor="start">Corrected on 4 Nov by Jordan: &quot;Typed 809,000 for 802,000&quot;</text>
 <text x="468" y="1642" font-size="12.5" fill="#5aa9ff" font-weight="600" text-anchor="start">See the correction ›</text>
 <rect x="450" y="1672" width="500" height="64" rx="10" fill="#1d2128" stroke="#5aa9ff" stroke-width="1.5"/>
 <text x="468" y="1698" font-size="12.5" fill="#5aa9ff" font-weight="700" text-anchor="start">⚑ Correction of the fuel-up on 2 Nov: &quot;Typed 809,000 …&quot;</text>

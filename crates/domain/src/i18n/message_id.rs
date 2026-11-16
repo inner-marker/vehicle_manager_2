@@ -78,8 +78,6 @@ define_messages! {
     MENU_OPEN => "menu-open",
     /// Button label for screen readers: close the navigation menu.
     MENU_CLOSE => "menu-close",
-    /// Top bar: sync status before sync exists.
-    SYNC_STATUS_UNKNOWN => "sync-status-unknown",
 
     /// Theme switcher label.
     THEME_LABEL => "theme-label",
@@ -215,6 +213,8 @@ define_messages! {
     API_ERROR_CLIENT_TOO_OLD => "api-error-client-too-old",
     /// Refusal reason: the app is newer than the server.
     API_ERROR_CLIENT_TOO_NEW => "api-error-client-too-new",
+    /// A paired device's request wasn't signed properly (phase-3.md 2b).
+    API_ERROR_DEVICE_SIGNATURE => "api-error-device-signature",
 
     /// Shown while the app checks who's signed in.
     LOADING => "loading",
@@ -408,6 +408,22 @@ define_messages! {
 
     /// Sign-in screen: the link to recover a password.
     SIGN_IN_FORGOT_LINK => "sign-in-forgot-link",
+    /// Sign-in (desktop): the recent servers' heading (phase-3.md 2d).
+    SIGN_IN_SERVER => "sign-in-server",
+    /// Sign-in (desktop): opens the field for another server's address.
+    SIGN_IN_ANOTHER_SERVER => "sign-in-another-server",
+    /// Sign-in (desktop): the new server address field.
+    SIGN_IN_SERVER_ADDRESS => "sign-in-server-address",
+    /// Sign-in (desktop): saves the typed server address.
+    SIGN_IN_USE_SERVER => "sign-in-use-server",
+    /// Sign-in (desktop): another server was chosen; it takes a restart.
+    SIGN_IN_REOPEN_TO_SWITCH => "sign-in-reopen-to-switch",
+    /// A recent server: used today.
+    SERVER_LAST_USED_TODAY => "server-last-used-today",
+    /// A recent server: used yesterday.
+    SERVER_LAST_USED_YESTERDAY => "server-last-used-yesterday",
+    /// A recent server: used some days ago.
+    SERVER_LAST_USED_DAYS => "server-last-used-days",
     /// Recovery: heading of the username step.
     RECOVERY_TITLE => "recovery-title",
     /// Recovery: the username step's instruction.
@@ -437,6 +453,62 @@ define_messages! {
     SETTINGS_TAB_YOU => "settings-tab-you",
     /// Settings: the tab with the household defaults.
     SETTINGS_TAB_HOUSEHOLD => "settings-tab-household",
+    /// Settings: the Devices tab (phase-3.md 2e).
+    SETTINGS_TAB_DEVICES => "settings-tab-devices",
+    /// Devices: the note at the top.
+    DEVICES_HELP => "devices-help",
+    /// Devices: the chip on the device you're using.
+    DEVICES_THIS_DEVICE => "devices-this-device",
+    /// Devices: a browser with no name.
+    DEVICES_BROWSER => "devices-browser",
+    /// Devices: a paired desktop app with no name.
+    DEVICES_DESKTOP => "devices-desktop",
+    /// Devices: a desktop app too old to pair.
+    DEVICES_DESKTOP_OLDER => "devices-desktop-older",
+    /// Devices: the kind line for a paired desktop.
+    DEVICES_KIND_DESKTOP => "devices-kind-desktop",
+    /// Devices: the kind line for a browser.
+    DEVICES_KIND_BROWSER => "devices-kind-browser",
+    /// Devices: the kind line for an older desktop app.
+    DEVICES_KIND_DESKTOP_OLDER => "devices-kind-desktop-older",
+    /// Devices: used in the last few minutes.
+    DEVICES_SEEN_NOW => "devices-seen-now",
+    /// Devices: used some minutes ago.
+    DEVICES_SEEN_MINUTES => "devices-seen-minutes",
+    /// Devices: used some hours ago.
+    DEVICES_SEEN_HOURS => "devices-seen-hours",
+    /// Devices: used yesterday.
+    DEVICES_SEEN_YESTERDAY => "devices-seen-yesterday",
+    /// Devices: used some days ago.
+    DEVICES_SEEN_DAYS => "devices-seen-days",
+    /// Devices: sign one device out.
+    DEVICES_SIGN_OUT => "devices-sign-out",
+    /// Devices: sign out every other device.
+    DEVICES_SIGN_OUT_OTHERS => "devices-sign-out-others",
+    /// Devices: confirming "sign out everywhere else".
+    DEVICES_SIGN_OUT_OTHERS_CONFIRM => "devices-sign-out-others-confirm",
+    /// Devices: rename this device.
+    DEVICES_RENAME => "devices-rename",
+    /// Devices: the name field.
+    DEVICES_NAME => "devices-name",
+    /// Devices: nothing but this device.
+    DEVICES_ONLY_THIS => "devices-only-this",
+    /// Devices: something went wrong.
+    DEVICES_UNAVAILABLE => "devices-unavailable",
+    /// Devices: a name with nothing in it.
+    DEVICES_NAME_EMPTY => "devices-name-empty",
+    /// Devices: a name over 64 characters.
+    DEVICES_NAME_TOO_LONG => "devices-name-too-long",
+    /// Devices: a name with a line break or tab.
+    DEVICES_NAME_CONTROL => "devices-name-control",
+    /// Users: the button opening a person's devices.
+    USERS_DEVICES => "users-devices",
+    /// Users: the devices dialog's title.
+    USERS_DEVICES_TITLE => "users-devices-title",
+    /// Users: sign out all of a person's devices.
+    USERS_DEVICES_SIGN_OUT_ALL => "users-devices-sign-out-all",
+    /// Users: the person has no signed-in devices.
+    USERS_DEVICES_NONE => "users-devices-none",
     /// Settings, You tab: what it's for.
     SETTINGS_YOU_HELP => "settings-you-help",
     /// Settings, Household tab: what it's for.
@@ -449,6 +521,340 @@ define_messages! {
     SETTINGS_THIS_DEVICE => "settings-this-device",
     /// Settings: the theme row.
     SETTINGS_THEME => "settings-theme",
+    /// Settings: the desktop's "keep window on top" row (phase-3.md 1b).
+    SETTINGS_KEEP_ON_TOP => "settings-keep-on-top",
+    /// Settings: the words beside the "keep window on top" switch.
+    SETTINGS_KEEP_ON_TOP_NOTE => "settings-keep-on-top-note",
+    /// PIN: something other than digits (phase-3.md milestone 3).
+    PIN_NOT_DIGITS => "pin-not-digits",
+    /// PIN: too few digits.
+    PIN_TOO_SHORT => "pin-too-short",
+    /// PIN: too many digits.
+    PIN_TOO_LONG => "pin-too-long",
+    /// PIN: one digit repeated.
+    PIN_REPEATED => "pin-repeated",
+    /// PIN: a run up or down.
+    PIN_RUN => "pin-run",
+    /// Lock after: 5 minutes.
+    LOCK_AFTER_5 => "lock-after-5",
+    /// Lock after: 15 minutes.
+    LOCK_AFTER_15 => "lock-after-15",
+    /// Lock after: 30 minutes.
+    LOCK_AFTER_30 => "lock-after-30",
+    /// Lock after: 60 minutes.
+    LOCK_AFTER_60 => "lock-after-60",
+    /// Lock after: only when the app opens.
+    LOCK_AFTER_LAUNCH => "lock-after-launch",
+    /// PIN: the second entry didn't match the first.
+    PIN_MISMATCH => "pin-mismatch",
+    /// Choose a PIN: the title.
+    PIN_CHOOSE_TITLE => "pin-choose-title",
+    /// Choose a PIN: the first entry's help.
+    PIN_CHOOSE_HELP => "pin-choose-help",
+    /// Choose a PIN: the second entry.
+    PIN_CHOOSE_AGAIN => "pin-choose-again",
+    /// Choose a PIN: sealing the sign-in.
+    PIN_SAVING => "pin-saving",
+    /// Choose a PIN: sealing or keeping it failed.
+    PIN_SAVE_FAILED => "pin-save-failed",
+    /// Locked: the title.
+    LOCK_TITLE => "lock-title",
+    /// Locked: the password form's button.
+    LOCK_UNLOCK => "lock-unlock",
+    /// Locked: a wrong PIN.
+    LOCK_WRONG_PIN => "lock-wrong-pin",
+    /// Locked: a wrong password.
+    LOCK_WRONG_PASSWORD => "lock-wrong-password",
+    /// Locked: wrong PINs left before only the password works.
+    LOCK_PIN_TRIES_LEFT => "lock-pin-tries-left",
+    /// Locked: only the password works now.
+    LOCK_PASSWORD_ONLY => "lock-password-only",
+    /// Locked: opening the sign-in.
+    LOCK_UNLOCKING => "lock-unlocking",
+    /// Locked: switch to the password.
+    LOCK_USE_PASSWORD => "lock-use-password",
+    /// Locked: switch back to the PIN.
+    LOCK_USE_PIN => "lock-use-pin",
+    /// Locked: sign out of this computer.
+    LOCK_SIGN_OUT => "lock-sign-out",
+    /// The sign-in card after too many wrong unlocks.
+    LOCK_SIGNED_OUT => "lock-signed-out",
+    /// Settings → This device: how long idle before the desktop locks.
+    SETTINGS_LOCK_AFTER => "settings-lock-after",
+    /// Settings → This device: the PIN row's label.
+    SETTINGS_PIN => "settings-pin",
+    /// Change PIN: the button and the form's title.
+    PIN_CHANGE => "pin-change",
+    /// Change PIN: the current PIN's field.
+    PIN_CHANGE_CURRENT => "pin-change-current",
+    /// Change PIN: the password's field (instead of the current PIN).
+    PIN_CHANGE_PASSWORD => "pin-change-password",
+    /// Change PIN: the new PIN's field.
+    PIN_CHANGE_NEW => "pin-change-new",
+    /// Change PIN: the new PIN again.
+    PIN_CHANGE_NEW_AGAIN => "pin-change-new-again",
+    /// Change PIN: done.
+    PIN_CHANGED => "pin-changed",
+    /// The top bar while offline, with the copy's time (sketch 1A).
+    OFFLINE_TAG => "offline-tag",
+    /// The top bar while offline, before the copy has ever been pulled.
+    OFFLINE_TAG_NO_TIME => "offline-tag-no-time",
+    /// The OFFLINE tag's tooltip, with the copy's time.
+    OFFLINE_TAG_NOTE => "offline-tag-note",
+    /// Beside a form's buttons while offline (sketch 3A).
+    OFFLINE_SAVING_NOTE => "offline-saving-note",
+    /// The tooltip on a dimmed button that would start a change while offline.
+    OFFLINE_NEEDS_SERVER => "offline-needs-server",
+    /// After the PIN, while the desktop tries the server before opening its copy.
+    CONNECTING_TITLE => "connecting-title",
+    /// Below it, with the seconds left before the copy opens offline.
+    CONNECTING_OFFLINE_IN => "connecting-offline-in",
+    /// Opens the copy offline without waiting.
+    CONNECTING_OFFLINE_NOW => "connecting-offline-now",
+    /// Diagnostics: the copy's section (sketch 2B).
+    COPY_HEADING => "copy-heading",
+    /// Diagnostics: the copy's status.
+    COPY_STATUS => "copy-status",
+    /// Diagnostics: the last pull.
+    COPY_LAST_PULL => "copy-last-pull",
+    /// Diagnostics: the records in the copy.
+    COPY_RECORDS => "copy-records",
+    /// Diagnostics: the copy's size on disk.
+    COPY_SIZE => "copy-size",
+    /// Diagnostics: the copy's folder.
+    COPY_FOLDER => "copy-folder",
+    /// Diagnostics: pull now.
+    COPY_SYNC_NOW => "copy-sync-now",
+    /// The copy's status: none open.
+    COPY_CLOSED => "copy-closed",
+    /// The copy's status: downloading, with progress.
+    COPY_DOWNLOADING => "copy-downloading",
+    /// The copy's status: up to date.
+    COPY_UP_TO_DATE => "copy-up-to-date",
+    /// The copy's status: offline.
+    COPY_OFFLINE => "copy-offline",
+    /// The copy's status: another schema version.
+    COPY_OTHER_SCHEMA => "copy-other-schema",
+    /// The copy's status: the server isn't well (7c).
+    COPY_UNWELL => "copy-unwell",
+    /// The top bar while protecting the copy (sketch 1A).
+    PROTECTED_TAG => "protected-tag",
+    /// Why: another database.
+    PROTECTED_SERVER_CHANGED => "protected-server-changed",
+    /// Why: gone back in time.
+    PROTECTED_WENT_BACK => "protected-went-back",
+    /// Why: forgotten.
+    PROTECTED_FORGOTTEN => "protected-forgotten",
+    /// Why: a big delete.
+    PROTECTED_PULL_HELD => "protected-pull-held",
+    /// Opens the choices.
+    PROTECTED_DETAILS => "protected-details",
+    /// The choices' title.
+    PROTECTED_TITLE => "protected-title",
+    /// Stays protected.
+    PROTECTED_KEEP => "protected-keep",
+    /// Follows the server as it is now.
+    PROTECTED_USE_SERVER => "protected-use-server",
+    /// What using it does.
+    PROTECTED_USE_SERVER_NOTE => "protected-use-server-note",
+    /// Opens the rebuild (3B).
+    PROTECTED_REBUILD => "protected-rebuild",
+    /// The sign-in card, forgotten.
+    PROTECTED_SIGN_IN_NOTE => "protected-sign-in-note",
+    /// Deletes it.
+    PROTECTED_DELETE_COPY => "protected-delete-copy",
+    /// Confirms the delete.
+    PROTECTED_DELETE_CONFIRM => "protected-delete-confirm",
+    /// 2A's title.
+    HELD_TITLE => "held-title",
+    /// 2A: one vehicle's share.
+    HELD_VEHICLE => "held-vehicle",
+    /// 2A's advice.
+    HELD_NOTE => "held-note",
+    /// 2A: stays protected.
+    HELD_KEEP => "held-keep",
+    /// 2A: applies the deletes.
+    HELD_APPLY => "held-apply",
+    /// 2A's note.
+    HELD_APPLY_NOTE => "held-apply-note",
+    /// 3B's title.
+    REBUILD_TITLE => "rebuild-title",
+    /// 3B check.
+    REBUILD_CHECK_COMPLETE => "rebuild-check-complete",
+    /// 3B check.
+    REBUILD_CHECK_NOTHING_WAITING => "rebuild-check-nothing-waiting",
+    /// 3B check.
+    REBUILD_CHECK_FRESH => "rebuild-check-fresh",
+    /// 3B: what happens.
+    REBUILD_WHAT_RECORDS => "rebuild-what-records",
+    /// 3B: what happens.
+    REBUILD_WHAT_PASSWORDS => "rebuild-what-passwords",
+    /// 3B: what happens.
+    REBUILD_WHAT_DEVICES => "rebuild-what-devices",
+    /// 3B: what happens.
+    REBUILD_WHAT_PHOTOS => "rebuild-what-photos",
+    /// 3B field.
+    REBUILD_CODE => "rebuild-code",
+    /// 3B field.
+    REBUILD_PASSWORD => "rebuild-password",
+    /// 3B field.
+    REBUILD_TYPE => "rebuild-type",
+    /// 3B's button.
+    REBUILD_BUTTON => "rebuild-button",
+    /// 3B busy.
+    REBUILD_BUSY => "rebuild-busy",
+    /// 3B step.
+    REBUILD_NEXT => "rebuild-next",
+    /// 3B step.
+    REBUILD_BACK => "rebuild-back",
+    /// 3B done.
+    REBUILD_DONE => "rebuild-done",
+    /// 3B done: passwords.
+    REBUILD_PASSWORDS => "rebuild-passwords",
+    /// 3B done: left out.
+    REBUILD_LEFT_OUT => "rebuild-left-out",
+    /// 3B done, but the files aren't settled yet.
+    REBUILD_UNSETTLED => "rebuild-unsettled",
+    /// Settling a rebuild's files.
+    REBUILD_SETTLE => "rebuild-settle",
+    /// Settling failed again.
+    REBUILD_SETTLE_FAILED => "rebuild-settle-failed",
+    /// 3B problem.
+    REBUILD_WRONG_CODE => "rebuild-wrong-code",
+    /// 3B problem.
+    REBUILD_NOT_FRESH => "rebuild-not-fresh",
+    /// 3B problem.
+    REBUILD_NOT_ALLOWED => "rebuild-not-allowed",
+    /// 3B problem.
+    REBUILD_NOT_READY => "rebuild-not-ready",
+    /// 3B problem.
+    REBUILD_FAILED => "rebuild-failed",
+    /// The setup card.
+    REBUILD_OFFER => "rebuild-offer",
+    /// Diagnostics.
+    SNAPSHOTS_HEADING => "snapshots-heading",
+    /// Diagnostics.
+    SNAPSHOT_RESTORE => "snapshot-restore",
+    /// Diagnostics.
+    SNAPSHOT_RESTORE_CONFIRM => "snapshot-restore-confirm",
+    /// Diagnostics.
+    SNAPSHOT_NONE => "snapshot-none",
+    /// Diagnostics.
+    SNAPSHOT_TAKE => "snapshot-take",
+    /// Messages, this computer's.
+    SYNC_UNWELL_TITLE => "sync-unwell-title",
+    /// Messages, this computer's.
+    SYNC_UNWELL_BODY => "sync-unwell-body",
+    /// The top bar: changes waiting to be sent (sketch 1A).
+    OUTBOX_CHIP => "outbox-chip",
+    /// The chip's tooltip, with the oldest's time.
+    OUTBOX_CHIP_NOTE => "outbox-chip-note",
+    /// Messages: changes waiting too long (24 hours, or 100).
+    OUTBOX_LONG_TITLE => "outbox-long-title",
+    /// Its text.
+    OUTBOX_LONG_BODY => "outbox-long-body",
+    /// Messages: the server stopped taking this desktop's changes.
+    OUTBOX_STOPPED_TITLE => "outbox-stopped-title",
+    /// Why: the app is too old.
+    OUTBOX_STOPPED_APP => "outbox-stopped-app",
+    /// Why: the server is too old.
+    OUTBOX_STOPPED_SERVER => "outbox-stopped-server",
+    /// Why: the clock is ahead.
+    OUTBOX_STOPPED_CLOCK => "outbox-stopped-clock",
+    /// Why: the server can't take changes now.
+    OUTBOX_STOPPED_BUSY => "outbox-stopped-busy",
+    /// Messages: a change the server refused (sketch 2A).
+    REFUSED_TITLE => "refused-title",
+    /// When it was made.
+    REFUSED_MADE => "refused-made",
+    /// Opens it again in its form.
+    REFUSED_OPEN => "refused-open",
+    /// Drops it.
+    REFUSED_DISCARD => "refused-discard",
+    /// A change: an event logged.
+    CHANGE_EVENT => "change-event",
+    /// A change: an event edited.
+    CHANGE_EVENT_EDIT => "change-event-edit",
+    /// A change: an event finalized.
+    CHANGE_EVENT_FINALIZE => "change-event-finalize",
+    /// A change: a job finished.
+    CHANGE_EVENT_FINISH => "change-event-finish",
+    /// A change: a draft deleted.
+    CHANGE_EVENT_DELETE => "change-event-delete",
+    /// A change: a correction.
+    CHANGE_EVENT_CORRECT => "change-event-correct",
+    /// A change: a squawk opened.
+    CHANGE_SQUAWK => "change-squawk",
+    /// A change: a squawk edited.
+    CHANGE_SQUAWK_EDIT => "change-squawk-edit",
+    /// A change: a squawk removed.
+    CHANGE_SQUAWK_DELETE => "change-squawk-delete",
+    /// A change: the person's settings.
+    CHANGE_PREFERENCES => "change-preferences",
+    /// A change: a saved place added.
+    CHANGE_PLACE => "change-place",
+    /// A change: a saved place edited.
+    CHANGE_PLACE_EDIT => "change-place-edit",
+    /// A change: a saved place removed.
+    CHANGE_PLACE_DELETE => "change-place-delete",
+    /// A change: the Garage order.
+    CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// A change: a photo or document added.
+    CHANGE_ATTACHMENT_ADD => "change-attachment-add",
+    /// A change: a photo or document moved between tasks.
+    CHANGE_ATTACHMENT_MOVE => "change-attachment-move",
+    /// A change: a photo or document removed.
+    CHANGE_ATTACHMENT_REMOVE => "change-attachment-remove",
+    /// Signing out with changes not sent (sketch 3B).
+    SIGN_OUT_WAITING_TITLE => "sign-out-waiting-title",
+    /// Why it matters.
+    SIGN_OUT_WAITING_BODY => "sign-out-waiting-body",
+    /// A refused change in the list.
+    SIGN_OUT_NOT_SAVED => "sign-out-not-saved",
+    /// The rest of a long list.
+    SIGN_OUT_AND_MORE => "sign-out-and-more",
+    /// Sends them, then signs out.
+    SIGN_OUT_SEND_NOW => "sign-out-send-now",
+    /// Signs out, losing them.
+    SIGN_OUT_ANYWAY => "sign-out-anyway",
+    /// Diagnostics: changes waiting.
+    COPY_WAITING => "copy-waiting",
+    /// Diagnostics: refused changes.
+    COPY_REFUSED => "copy-refused",
+    /// Diagnostics: the oldest waiting.
+    COPY_OLDEST => "copy-oldest",
+    /// Diagnostics: why sending stopped.
+    COPY_SENDING => "copy-sending",
+    /// The photos limit: 1 GB.
+    PHOTO_LIMIT_1_GB => "photo-limit-1-gb",
+    /// The photos limit: 2 GB.
+    PHOTO_LIMIT_2_GB => "photo-limit-2-gb",
+    /// The photos limit: 5 GB.
+    PHOTO_LIMIT_5_GB => "photo-limit-5-gb",
+    /// The photos limit: 10 GB.
+    PHOTO_LIMIT_10_GB => "photo-limit-10-gb",
+    /// The photos limit: none.
+    PHOTO_LIMIT_NONE => "photo-limit-none",
+    /// Offline, a photo whose full size isn't here: its thumbnail, enlarged (sketch 1A).
+    PHOTO_PREVIEW_NOTE => "photo-preview-note",
+    /// Offline, a file that isn't here at all.
+    FILE_NOT_HERE => "file-not-here",
+    /// A photo added on this computer, not yet uploaded (sketch 2A).
+    UPLOAD_WAITING => "upload-waiting",
+    /// Diagnostics: this computer's files (sketch 3B).
+    COPY_FILES => "copy-files",
+    /// Diagnostics: how many files, and their size.
+    COPY_FILES_VALUE => "copy-files-value",
+    /// Diagnostics: the photos kept.
+    COPY_PHOTOS_KEPT => "copy-photos-kept",
+    /// Diagnostics: the photos' size, of the limit.
+    COPY_PHOTOS_KEPT_VALUE => "copy-photos-kept-value",
+    /// Diagnostics: the limit's setting.
+    COPY_PHOTO_LIMIT => "copy-photo-limit",
+    /// The copy's status: a failure.
+    COPY_FAILED => "copy-failed",
+    /// Diagnostics: never pulled.
+    COPY_NEVER => "copy-never",
     /// Setting: distance unit.
     SETTING_DISTANCE => "setting-distance",
     /// Setting: fuel volume unit.
@@ -1113,6 +1519,14 @@ define_messages! {
     ABOUT_HEADING => "about-heading",
     /// About: the app's version.
     ABOUT_APP => "about-app",
+    /// About: the exact build's row (phase-3.md 1c).
+    ABOUT_BUILD => "about-build",
+    /// About: the server's version and build, when it isn't this app's.
+    ABOUT_SERVER => "about-server",
+    /// About: a build not made by the image workflows.
+    ABOUT_BUILD_LOCAL => "about-build-local",
+    /// About: a local build with uncommitted changes.
+    ABOUT_BUILD_MODIFIED => "about-build-modified",
     /// About: the place data's version.
     ABOUT_PLACE_DATA => "about-place-data",
     /// About: the server couldn't open its place data.
@@ -1121,6 +1535,12 @@ define_messages! {
     ABOUT_CREDITS => "about-credits",
     /// About: the data credits when the server doesn't give them.
     ABOUT_CREDITS_DEFAULT => "about-credits-default",
+    /// Diagnostics → About: the third-party notices' row (decision #079).
+    ABOUT_LICENSES => "about-licenses",
+    /// Its link.
+    ABOUT_LICENSES_OPEN => "about-licenses-open",
+    /// The notices' dialog: what they are.
+    LICENSES_INTRO => "licenses-intro",
     /// Picker: the nearby places list's heading (#061).
     PLACE_NEARBY => "place-nearby",
     /// Picker: typing is still possible.
@@ -2318,6 +2738,14 @@ define_messages! {
     INBOX_OVERDUE_RETURN => "inbox-overdue-return",
     /// Messages: the overdue return's text; takes `vehicle` and `date`.
     INBOX_OVERDUE_RETURN_BODY => "inbox-overdue-return-body",
+    /// Inbox: a desktop unlocked after wrong tries (phase-3.md 3d).
+    INBOX_FAILED_UNLOCKS => "inbox-failed-unlocks",
+    /// Inbox: its text.
+    INBOX_FAILED_UNLOCKS_BODY => "inbox-failed-unlocks-body",
+    /// Messages: a desktop's clock is far ahead (title).
+    INBOX_CLOCK_AHEAD => "inbox-clock-ahead",
+    /// Messages: a desktop's clock is far ahead (text).
+    INBOX_CLOCK_AHEAD_BODY => "inbox-clock-ahead-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
     /// Log: what an acquisition records.

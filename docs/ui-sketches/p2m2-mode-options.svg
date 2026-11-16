@@ -2,7 +2,7 @@
 <rect x="0" y="0" width="1560" height="1780" rx="0" fill="#0d1014"/>
 <text x="40" y="48" font-size="22" fill="#e8eaed" font-weight="800" text-anchor="start">Phase 2 · step 2f · Mode switching, the Admin indicator, and signing out: two options</text>
 <text x="40" y="74" font-size="14" fill="#9aa1ab" font-weight="400" text-anchor="start">Every session starts in Driver mode. Admin mode asks for the password again (the dialog is the same in both options) and ends after 15 idle minutes.</text>
-<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Two chips in the top bar: a mode chip (Driver ▾) and an account chip (Stuart ▾); Admin mode adds an orange banner</text>
+<text x="40" y="124" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">A · Two chips in the top bar: a mode chip (Driver ▾) and an account chip (Jordan ▾); Admin mode adds an orange banner</text>
 <text x="40" y="154" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Wide · Driver mode, mode menu open</text>
 <rect x="40" y="166" width="720" height="400" rx="10" fill="#14171c" stroke="#4a535e" stroke-width="2"/>
 <rect x="42" y="168" width="150" height="396" rx="0" fill="#1d2128"/>
@@ -23,7 +23,7 @@
 <rect x="568.4" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <text x="610.8" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Driver ▾</text>
 <rect x="661.1999999999999" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="703.5999999999999" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="703.5999999999999" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="212" y="238" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
 <rect x="483" y="238" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
 <rect x="560" y="216" width="190" height="126" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
@@ -52,7 +52,7 @@
 <rect x="1336.0" y="178" width="77.19999999999999" height="30" rx="15" fill="#f0883e"/>
 <text x="1374.6" y="198" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Admin ▾</text>
 <rect x="1421.2" y="178" width="84.8" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="1463.6000000000001" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart ▾</text>
+<text x="1463.6000000000001" y="198" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan ▾</text>
 <rect x="952" y="218" width="566" height="38" rx="0" fill="#3a2615"/>
 <line x1="952" y1="256" x2="1518" y2="256" stroke="#f0883e" stroke-width="2"/>
 <text x="968" y="242" font-size="11.5" fill="#f0883e" font-weight="800" text-anchor="start">ADMIN MODE</text>
@@ -71,7 +71,7 @@
 <rect x="224.0" y="660" width="52" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
 <text x="250.0" y="680" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">S ▾</text>
 <rect x="108" y="706" width="170" height="126" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="124" y="737" font-size="13.5" fill="#9aa1ab" font-weight="500" text-anchor="start">    Stuart (stuart)</text>
+<text x="124" y="737" font-size="13.5" fill="#9aa1ab" font-weight="500" text-anchor="start">    Jordan (jordan)</text>
 <text x="124" y="775" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Change password</text>
 <text x="124" y="813" font-size="13.5" fill="#e8eaed" font-weight="500" text-anchor="start">    Sign out</text>
 <text x="320" y="608" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="start">Phone · Admin mode</text>
@@ -125,11 +125,11 @@
 <rect x="522.8" y="1204" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
 <text x="553.8" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
 <rect x="592.8" y="1204" width="153.2" height="30" rx="15" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="669.4" y="1224" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Stuart · Driver ▾</text>
+<text x="669.4" y="1224" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Jordan · Driver ▾</text>
 <rect x="212" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
 <rect x="483" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
 <rect x="490" y="1248" width="256" height="214" rx="10" fill="#262b34" stroke="#333a45" stroke-width="1.5"/>
-<text x="506" y="1276" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Stuart (stuart)</text>
+<text x="506" y="1276" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Jordan (jordan)</text>
 <rect x="506" y="1290" width="224" height="34" rx="17" fill="#14171c" stroke="#333a45" stroke-width="1.5"/>
 <rect x="508" y="1292" width="72" height="30" rx="15" fill="#5aa9ff"/>
 <text x="544" y="1312" font-size="12" fill="#0b1420" font-weight="700" text-anchor="middle">Driver</text>
@@ -157,7 +157,7 @@
 <rect x="1290.4" y="1204" width="62.0" height="30" rx="15" fill="#5aa9ff"/>
 <text x="1321.4" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">+ Log</text>
 <rect x="1360.4" y="1204" width="145.6" height="30" rx="15" fill="#f0883e"/>
-<text x="1433.2" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Stuart · Admin ▾</text>
+<text x="1433.2" y="1224" font-size="12.5" fill="#0b1420" font-weight="700" text-anchor="middle">Jordan · Admin ▾</text>
 <line x1="952" y1="1244" x2="1518" y2="1244" stroke="#f0883e" stroke-width="2"/>
 <rect x="972" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>
 <rect x="1243" y="1264" width="255" height="110" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1.5"/>

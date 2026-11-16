@@ -5,13 +5,28 @@
 //! its modules unit-testable and lets later code use them before the UI does.
 
 pub mod api;
+pub mod build_info;
 pub mod client;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod copy_files;
+pub mod data;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod data_folder;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod device_credential;
 #[cfg(feature = "server")]
 pub mod file_routes;
 pub mod files;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod local_copy;
 pub mod logging;
+pub mod pairing;
+#[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+pub mod protect;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod sealed;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod settings;
 pub mod ui;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod window_placement;
