@@ -98,7 +98,7 @@
 | **1a** `feat(domain):` meter kinds | ☑️ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
 | **1b** `feat(storage):` migration 0022 | ☑️ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
 | **1c** `feat(server):` saving and syncing | ☑️ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. The API stays at version 2 (see the choices). |
-| **1d** `feat(app):` the screens | ⬜ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
+| **1d** `feat(app):` the screens | ☑️ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
 | **1e** `docs:` | ⬜ | The test plan, `docs/test-plans/p5m1-meters.md`, on the test server with the web and desktop apps. |
 
 **New dependencies:** none expected.
@@ -144,5 +144,18 @@
 - **Readings with a reset** travel inside their events, both online and through the outbox. The pull copies every column of `meters` and `event_readings` by name, checked against the copy's schema (`storage::sync`), so the new columns need no change there.
 - **Older desktops:** see the choices. A desktop on schema 21 is refused pull and push by the schema check that's already there (`PullOutcome::OtherSchema`), and told to update. The API version stays at 2.
 - **Server tests** (`tests/events.rs`, two tests): Oil life added, counting down and resettable. A resettable fuel-up odometer refused. 18%, then 62% refused (`AboveEarlier`), then accepted as a reset and kept. Staying at 62% is fine. A reset on the odometer refused (`NotResettable`). Oil life's direction is fixed once it has readings, but its reset value changes. A meter with no readings can still change direction. Also a domain test of the form's reset check.
+
+**Step 1d notes (2026-11-16):**
+- **The meter dialog (1A):**
+  - **Measures** offers Percentage.
+  - **Counts: Up / Down** uses the segmented control the compliance choices use. It notes that it's fixed once the meter has a reading; the server refuses a late change.
+  - **Can be reset** opens "to [value] unit", typed in the meter's own unit and decimals, and filled with 100% for a percentage counting down (otherwise 0). A reset value left at its default follows a change of direction.
+  - A bad value is refused in the dialog with the usual number messages. `TypedCounting` holds these rows.
+- **Readings (2A):** a resettable meter's reading has a **↺ Reset** tick. Ticking it fills the meter's reset value, which stays editable. With a reading before it, a line confirms "Oil life was reset: 18 → 100 %". The form's `Typed` carries `resets` (the meters ticked), and editing an event ticks them again.
+- **The refusal (3A):** when the server refuses a reading of a resettable meter for going the wrong way, that meter offers **↺ It was a reset**. It ticks Reset and clears the message, ready to save again. Meters counting down have their own refusal texts ("This meter counts down: higher than 18 % on 3 Nov…").
+- **Where resets show:** ↺ after the value on the timeline, on the event page's tiles, and in a job's "start → end" line. **Setup → Meters** says "Percentage · % · whole · counts down · resets to 100 %".
+- **Only a job's start readings** have the tick in this milestone. Its end readings get "Reset Oil life to 100%" with milestone 2's tasks.
+- **Tests:** the form builds a ticked reading as a reset, and an event typed back into the form is ticked again and builds the same event. The dialog types the reset value in the meter's unit, and an unticked value isn't checked. The meter summary for Oil life.
+- **Not seen running yet:** the dialog and the form, on the web and the desktop. That's for the test plan (1e).
 
 **Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).

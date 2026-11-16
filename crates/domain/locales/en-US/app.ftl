@@ -874,6 +874,14 @@ meter-resettable-fuel = A distance meter that fuel-ups need can't be reset: fuel
 meter-direction-fixed = Which way a meter counts can't change once it has a reading.
 meter-counts-up = Up
 meter-counts-down = Down
+meter-counts = Counts
+meter-counts-note = Down: e.g. Oil life, from 100% toward 0%. Fixed once the meter has a reading.
+meter-resettable = Can be reset
+meter-summary-down = counts down
+# $value (text): the reset value with its unit, e.g. "100 %".
+meter-summary-resets = resets to { $value }
+meter-reset-to = to
+meter-reset-note = A reading can then be marked ↺ Reset, e.g. when the oil is changed.
 field-too-many-decimals = A number can have at most 4 decimal places.
 field-bad-choices = A choice list needs 1 to 30 choices.
 field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.
@@ -1336,6 +1344,10 @@ screen-correct-event = Correct event
 event-not-found = There's no such event, or you can't see it.
 log-clash-below = Lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-clash-above = Higher than { $value } { $unit } on { $date }. Check it, or correct that event.
+log-reset = ↺ Reset
+# $name (text): the meter; $from: its last reading; $to: the new one as typed; $unit: e.g. "%".
+log-reset-done = { $name } was reset: { $from } → { $to } { $unit }.
+log-it-was-a-reset = ↺ It was a reset
 log-clash-above-earlier = This meter counts down: higher than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-clash-below-later = This meter counts down: lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-correct-note = A correction replaces this event's values; the original stays, linked to it.

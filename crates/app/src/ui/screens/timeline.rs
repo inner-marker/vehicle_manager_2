@@ -141,6 +141,11 @@ fn meter_abbr(unit: MeterUnit) -> String {
     tr(unit.abbr())
 }
 
+/// " ↺" after a reading that was a reset (phase-5.md milestone 1), otherwise nothing.
+pub(super) const fn reset_mark(reset: bool) -> &'static str {
+    if reset { " ↺" } else { "" }
+}
+
 /// "52,644 mi · 18.004 gal · 62.27 USD": the readings, then a fuel-up's volume and cost.
 pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Preferences) -> String {
     // A lifecycle event: its details first.
@@ -156,9 +161,10 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
             .filter_map(|reading| {
                 let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
                 Some(format!(
-                    "{} {}",
+                    "{} {}{}",
                     show_reading(reading.value, meter.unit, meter.precision),
-                    meter_abbr(meter.unit)
+                    meter_abbr(meter.unit),
+                    reset_mark(reading.reset)
                 ))
             })
             .collect::<Vec<_>>(),

@@ -14,12 +14,16 @@ use domain::custom_field::{CustomField, CustomFieldId, FieldKind, FieldRange, MA
 use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::label::Label;
-use domain::meter::{EventKind, MAX_PRECISION, Meter, MeterDimension, MeterId, MeterUnit};
+use domain::meter::{
+    EventKind, MAX_PRECISION, Meter, MeterDimension, MeterDirection, MeterId, MeterUnit,
+    default_reset,
+};
 use domain::preferences::Preferences;
 use domain::profile::profile;
 use domain::quantity::{
     QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
-    parse_duration, parse_economy, parse_volume, show_duration, volume_value,
+    parse_duration, parse_economy, parse_reading, parse_volume, reading_value, show_duration,
+    volume_value,
 };
 
 use super::users::role_label;
@@ -513,8 +517,142 @@ fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
         .collect()
 }
 
-/// Add a meter, or change one (its name, unit, decimals, description, and which kinds of
-/// event require it).
+/// A meter's measure as an `<option>` value, and back.
+const fn dimension_value(dimension: MeterDimension) -> &'static str {
+    match dimension {
+        MeterDimension::Distance => "distance",
+        MeterDimension::Duration => "duration",
+        MeterDimension::Percentage => "percentage",
+    }
+}
+
+/// What a meter measures, by its `<option>` value.
+fn dimension_of(value: &str) -> MeterDimension {
+    [
+        MeterDimension::Distance,
+        MeterDimension::Duration,
+        MeterDimension::Percentage,
+    ]
+    .into_iter()
+    .find(|dimension| dimension_value(*dimension) == value)
+    .unwrap_or(MeterDimension::Distance)
+}
+
+/// How a meter counts and resets, as typed in its dialog (sketch 1A, phase-5.md).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TypedCounting {
+    /// Up or down.
+    direction: MeterDirection,
+    /// "Can be reset" ticked.
+    resettable: bool,
+    /// The reset value, in the meter's unit, as typed.
+    reset_text: String,
+}
+
+impl TypedCounting {
+    /// `meter`'s, or a new meter's (counting up, not resettable).
+    fn of(meter: Option<&Meter>) -> Self {
+        Self {
+            direction: meter.map_or(MeterDirection::Up, |meter| meter.direction),
+            resettable: meter.is_some_and(Meter::resettable),
+            reset_text: meter
+                .and_then(|meter| {
+                    let value = meter.reset_to?;
+                    Some(reading_value(value, meter.unit, meter.precision))
+                })
+                .unwrap_or_default(),
+        }
+    }
+
+    /// The reset value, in the stored unit (`None`: not resettable).
+    ///
+    /// # Errors
+    ///
+    /// [`QuantityError`] if the typed value isn't one.
+    fn reset_to(&self, unit: MeterUnit, precision: u8) -> Result<Option<i64>, QuantityError> {
+        if !self.resettable {
+            return Ok(None);
+        }
+        parse_reading(&self.reset_text, unit, precision).map(Some)
+    }
+}
+
+/// "Counts: Up / Down" and "Can be reset to [100] %": the meter dialog's Phase 5 rows.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn CountingChoices(
+    counting: Signal<TypedCounting>,
+    dimension: MeterDimension,
+    unit: MeterUnit,
+    precision: u8,
+    adding: bool,
+) -> Element {
+    let mut counting = counting;
+    let current = counting();
+    let default_text =
+        move |direction| reading_value(default_reset(dimension, direction), unit, precision);
+    rsx! {
+        div { class: "field",
+            span { class: "field-label", {tr(messages::METER_COUNTS)} }
+            div { class: "segmented", role: "radiogroup",
+                for direction in MeterDirection::ALL {
+                    button {
+                        key: "{direction:?}",
+                        class: if direction == current.direction { "segment on" } else { "segment" },
+                        r#type: "button",
+                        role: "radio",
+                        "aria-checked": direction == current.direction,
+                        onclick: move |_| {
+                            let mut typed = counting.write();
+                            // A reset value left at the old default follows the direction.
+                            if typed.resettable && typed.reset_text == default_text(typed.direction) {
+                                typed.reset_text = default_text(direction);
+                            }
+                            typed.direction = direction;
+                        },
+                        {tr(direction.label())}
+                    }
+                }
+            }
+            span { class: "muted-note", {tr(if adding { messages::METER_COUNTS_NOTE } else { messages::METER_DIRECTION_FIXED })} }
+        }
+        div { class: "field",
+            label { class: "switch",
+                input {
+                    r#type: "checkbox",
+                    checked: current.resettable,
+                    onchange: move |event| {
+                        let mut typed = counting.write();
+                        typed.resettable = event.checked();
+                        if typed.resettable && typed.reset_text.trim().is_empty() {
+                            typed.reset_text = default_text(typed.direction);
+                        }
+                    },
+                }
+                span { {tr(messages::METER_RESETTABLE)} }
+            }
+            if current.resettable {
+                label { class: "reset-to",
+                    span { {tr(messages::METER_RESET_TO)} }
+                    input {
+                        class: "field-input reset-value",
+                        inputmode: "decimal",
+                        value: "{current.reset_text}",
+                        oninput: move |event| counting.write().reset_text = event.value(),
+                    }
+                    span { {tr(unit.abbr())} }
+                }
+                span { class: "muted-note", {tr(messages::METER_RESET_NOTE)} }
+            }
+        }
+    }
+}
+
+/// Add a meter, or change one (its name, unit, decimals, description, which kinds of event
+/// require it, which way it counts, and whether it can be reset).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -561,13 +699,17 @@ fn MeterDialog(
             .map(|meter| meter.required_for.clone())
             .unwrap_or_default()
     });
-    // Kept as they are until the dialog offers them (phase-5.md step 1d).
-    let (direction, reset_to) = existing
-        .as_ref()
-        .map(|meter| (meter.direction, meter.reset_to))
-        .unwrap_or_default();
+    let counting = use_signal(|| TypedCounting::of(existing.as_ref()));
     let submit = move |event: FormEvent| {
         event.prevent_default();
+        let typed = counting();
+        let reset_to = match typed.reset_to(unit(), precision()) {
+            Ok(value) => value,
+            Err(problem) => {
+                error.set(Some(tr(problem.message())));
+                return;
+            }
+        };
         let form = MeterForm {
             name: name(),
             dimension: dimension(),
@@ -575,7 +717,7 @@ fn MeterDialog(
             precision: precision(),
             description: description(),
             required_for: required_for(),
-            direction,
+            direction: typed.direction,
             reset_to,
         };
         busy.set(true);
@@ -605,7 +747,7 @@ fn MeterDialog(
                             class: "field-input",
                             disabled: !adding,
                             onchange: move |event| {
-                                let chosen = if event.value() == "duration" { MeterDimension::Duration } else { MeterDimension::Distance };
+                                let chosen = dimension_of(&event.value());
                                 dimension.set(chosen);
                                 if !unit().fits(chosen) {
                                     unit.set(units_for(chosen)[0]);
@@ -613,6 +755,7 @@ fn MeterDialog(
                             },
                             option { value: "distance", selected: dimension() == MeterDimension::Distance, {tr(messages::DIMENSION_DISTANCE)} }
                             option { value: "duration", selected: dimension() == MeterDimension::Duration, {tr(messages::DIMENSION_DURATION)} }
+                            option { value: "percentage", selected: dimension() == MeterDimension::Percentage, {tr(messages::DIMENSION_PERCENTAGE)} }
                         }
                     }
                     label { class: "field",
@@ -640,6 +783,7 @@ fn MeterDialog(
                         }
                     }
                 }
+                CountingChoices { counting, dimension: dimension(), unit: unit(), precision: precision(), adding }
                 Field { label: messages::FIELD_METER_DESCRIPTION, value: description }
                 KindChecks { label: messages::METER_REQUIRED_LABEL, kinds, chosen: required_for, note: messages::METER_REQUIRED_NOTE }
                 if !adding {
@@ -1442,6 +1586,52 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
 mod tests {
     use super::*;
     use domain::preferences::{DistanceUnit, EconomyUnit, VolumeUnit};
+    use domain::test_support::test_id;
+
+    #[test]
+    fn a_meters_counting_is_typed_in_its_own_unit() {
+        let oil_life = Meter {
+            asset: test_id(1),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        let typed = TypedCounting::of(Some(&oil_life));
+        assert_eq!(
+            typed,
+            TypedCounting {
+                direction: MeterDirection::Down,
+                resettable: true,
+                reset_text: "100".into(),
+            }
+        );
+        assert_eq!(typed.reset_to(MeterUnit::Percent, 0), Ok(Some(10_000)));
+        let off = TypedCounting {
+            resettable: false,
+            reset_text: "junk".into(),
+            ..typed
+        };
+        assert_eq!(off.reset_to(MeterUnit::Percent, 0), Ok(None), "not checked");
+        let bad = TypedCounting {
+            reset_text: "99.5".into(),
+            ..typed
+        };
+        assert_eq!(
+            bad.reset_to(MeterUnit::Percent, 0),
+            Err(QuantityError::TooPrecise)
+        );
+        let new = TypedCounting::of(None);
+        assert_eq!((new.direction, new.resettable), (MeterDirection::Up, false));
+        assert_eq!(
+            dimension_of(dimension_value(MeterDimension::Percentage)),
+            MeterDimension::Percentage
+        );
+    }
 
     #[test]
     fn range_ends_are_typed_with_the_fields_decimals() {

@@ -14,7 +14,7 @@ use dioxus::prelude::*;
 use domain::api::{AssetView, RequirementView, ScheduleOutcome, SquawkView};
 use domain::asset::AssetId;
 use domain::attachment::{AttachmentOwner, PhotoSize};
-use domain::event::{Event, EventId, Task, WorkDetails};
+use domain::event::{Event, EventId, Reading, Task, WorkDetails};
 use domain::i18n::{MessageArg, Translator, messages};
 use domain::meter::{Meter, MeterId, MeterUnit};
 use domain::preferences::CurrencyCode;
@@ -33,22 +33,26 @@ fn unit_abbr(unit: MeterUnit) -> String {
     tr(unit.abbr())
 }
 
-/// "52,644 → 52,700 mi" (or just the start, without an end reading): one meter's readings.
+/// "52,644 → 52,700 mi" (or just the start, without an end reading): one meter's readings,
+/// each reset marked ↺ ("18 → 100 ↺ %").
 pub(super) fn readings_text(event: &Event, meter_id: MeterId, meter: &Meter) -> Option<String> {
-    let start = event.reading(meter_id)?;
-    let shown = |value| show_reading(value, meter.unit, meter.precision);
-    let end = event
-        .work
-        .as_ref()
-        .and_then(|work| work.end_reading(meter_id));
+    let of = |readings: &[Reading]| {
+        readings
+            .iter()
+            .find(|reading| reading.meter == meter_id)
+            .map(|reading| {
+                format!(
+                    "{}{}",
+                    show_reading(reading.value, meter.unit, meter.precision),
+                    super::timeline::reset_mark(reading.reset)
+                )
+            })
+    };
+    let start = of(&event.readings)?;
+    let end = event.work.as_ref().and_then(|work| of(&work.end_readings));
     Some(match end {
-        Some(end) => format!(
-            "{} → {} {}",
-            shown(start),
-            shown(end),
-            unit_abbr(meter.unit)
-        ),
-        None => format!("{} {}", shown(start), unit_abbr(meter.unit)),
+        Some(end) => format!("{start} → {end} {}", unit_abbr(meter.unit)),
+        None => format!("{start} {}", unit_abbr(meter.unit)),
     })
 }
 

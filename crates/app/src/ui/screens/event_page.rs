@@ -317,9 +317,10 @@ fn Tiles(event: Event, vehicle: AssetView, units: Preferences) -> Element {
             let (_, meter) = vehicle.meters.iter().find(|(id, _)| *id == reading.meter)?;
             Some((
                 format!(
-                    "{} {}",
+                    "{} {}{}",
                     show_reading(reading.value, meter.unit, meter.precision),
-                    tr(meter_abbr(meter.unit))
+                    tr(meter_abbr(meter.unit)),
+                    super::timeline::reset_mark(reading.reset)
                 ),
                 meter.name.as_str().to_owned(),
             ))

@@ -1037,6 +1037,20 @@ define_messages! {
     METER_COUNTS_UP => "meter-counts-up",
     /// A meter's direction: counts down.
     METER_COUNTS_DOWN => "meter-counts-down",
+    /// Meter dialog: which way it counts.
+    METER_COUNTS => "meter-counts",
+    /// Meter dialog: a note on counting down.
+    METER_COUNTS_NOTE => "meter-counts-note",
+    /// Meter dialog: the meter can be reset.
+    METER_RESETTABLE => "meter-resettable",
+    /// Meter dialog: before the reset value ("to 100 %").
+    METER_RESET_TO => "meter-reset-to",
+    /// Meter dialog: a note on resetting.
+    METER_RESET_NOTE => "meter-reset-note",
+    /// A meter's summary: it counts down.
+    METER_SUMMARY_DOWN => "meter-summary-down",
+    /// A meter's summary: what a reset sets it to; takes `value` ("100 %").
+    METER_SUMMARY_RESETS => "meter-summary-resets",
     /// Too many decimal places on a number field.
     FIELD_TOO_MANY_DECIMALS => "field-too-many-decimals",
     /// A choice list with no choices or too many.
@@ -1849,6 +1863,12 @@ define_messages! {
     LOG_CLASH_BELOW => "log-clash-below",
     /// Log form: a reading above the one after.
     LOG_CLASH_ABOVE => "log-clash-above",
+    /// Log form: the tick marking a reading as a reset.
+    LOG_RESET => "log-reset",
+    /// Log form: under a reset reading; takes `name`, `from`, `to`, and `unit`.
+    LOG_RESET_DONE => "log-reset-done",
+    /// Log form: the button on a refused reading of a resettable meter.
+    LOG_IT_WAS_A_RESET => "log-it-was-a-reset",
     /// A reading higher than an earlier one on a meter counting down; takes `value`, `unit`,
     /// and `date`.
     LOG_CLASH_ABOVE_EARLIER => "log-clash-above-earlier",
