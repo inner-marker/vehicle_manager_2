@@ -284,6 +284,18 @@ mod preferences {
 
         jordan.mode = ActiveMode::Admin;
         let admin = context(&database, &jordan, &clock);
+        let backwards = domain::due::DueDefaults {
+            interval: domain::due::IntervalSteps {
+                coming_up: 5,
+                due_soon: 10,
+                very_soon: 20,
+            },
+            ..earlier
+        };
+        assert_eq!(
+            set_household(&admin, warnings(Choice::Set(backwards))).await,
+            PreferencesOutcome::BadDueWarnings
+        );
         unwrap_view(set_household(&admin, warnings(Choice::Set(earlier))).await);
         let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
         assert_eq!(sams.effective.due_warnings, earlier, "everyone's");

@@ -19,7 +19,7 @@
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetsOutcome, AttachmentsOutcome, DocumentsOutcome, EventsOutcome, PlacesOutcome,
+    AssetsOutcome, AttachmentsOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, PlacesOutcome,
     PreferencesOutcome, ReferencesOutcome, ScheduleOutcome, SquawkInput, SquawksOutcome,
 };
 use domain::asset::AssetId;
@@ -811,13 +811,25 @@ pub(crate) async fn get_places() -> ServerFnResult<PlacesOutcome> {
     read!(reader => ::server::places::list(&reader.places()).await, api::get_places())
 }
 
-/// The Garage (`api::get_garage`).
+/// The Garage (`api::get_garage`), with each vehicle's due step in the device's zone.
 ///
 /// # Errors
 ///
 /// As the server function.
 pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
-    read!(reader => ::server::assets::garage(&reader.assets()).await, api::get_garage())
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::assets::garage(&reader.assets(), &zone).await, api::get_garage(zone.clone()))
+}
+
+/// What comes due on one vehicle (`api::vehicle_due`), in the device's zone.
+///
+/// # Errors
+///
+/// As the server function.
+#[expect(dead_code, reason = "the Overview's Coming up calls it from step 2d")]
+pub(crate) async fn vehicle_due(asset: AssetId) -> ServerFnResult<DueOutcome> {
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::due::list(&reader.assets(), asset, &zone).await, api::vehicle_due(asset, zone.clone()))
 }
 
 /// One vehicle's page (`api::vehicle_page`).
@@ -923,5 +935,6 @@ pub(crate) async fn reference(id: ReferenceDocumentId) -> ServerFnResult<Referen
 ///
 /// As the server function.
 pub(crate) async fn vehicle_schedule(asset: AssetId) -> ServerFnResult<ScheduleOutcome> {
-    read!(reader => ::server::schedule::view(&reader.assets(), asset).await, api::vehicle_schedule(asset))
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::schedule::view(&reader.assets(), asset, &zone).await, api::vehicle_schedule(asset, zone.clone()))
 }

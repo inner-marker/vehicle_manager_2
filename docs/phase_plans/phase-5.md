@@ -199,7 +199,7 @@
 | **2.0** `docs:` | ☑️ | This plan; the sketch; decision #082; the airworthiness modes moved to the aircraft phase in `plan.md`. |
 | **2a** `feat(domain):` what's due | ☑️ | `domain::due`: the steps and their defaults; each rule's next due; `IntervalRule::Reaches`; "last done before these records"; the 90-day projection; a requirement's and a document's step; a vehicle's items in urgency order. Unit and property tests first (whichever comes first; end of month; never done; a reset meter; too few readings). |
 | **2b** `feat(storage):` migration 0023 | ☑️ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
-| **2c** `feat(server):` due on the server | ⬜ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
+| **2c** `feat(server):` due on the server | ☑️ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
 | **2d** `feat(app):` the screens | ⬜ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
 | **2e** `docs:` | ⬜ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
@@ -259,5 +259,30 @@
   - a document's warning days set and clear;
   - only the Admin sets the household's due warnings, everyone sees them, and they go back to the defaults;
   - the release fixtures migrate with all the new columns empty.
+
+**Step 2c notes (2026-11-16):**
+- **Today is the person's:** each call takes the device's time zone, as the documents' status already does. The data layer asks the browser or webview itself (`ui::device_zone`, which `use_device_zone` now uses too), so screens don't pass it. An unknown zone falls back to UTC.
+- **`server::due`:**
+  - `vehicle_due` gathers one vehicle's meters, readings, finished tasks, requirements, documents, and the household's warnings, and asks `domain::due`. It returns `DueEntry`s (a requirement with its name, or a document with its type), most urgent first, by `due::urgency_order`.
+  - `list` serves the Overview to anyone whose role covers the vehicle; it's **Not found** otherwise.
+  - When a requirement was added comes from the clock of its `asset` field, which is set once and never changes (`Database::requirements_added`).
+- **The schedule view** (`schedule::view`) gives each requirement its `due`.
+- **The Garage** gives each card its most urgent step (`AssetSummary::due`), and **Most urgent** is a new sort and the default (#040). Ties go by name.
+- **Checks:**
+  - a requirement's own warnings, and "last done before" (a date; the vehicle's meters, each once; none negative), via `check_due_settings`;
+  - a document's warning days (`DocumentProblem::BadWarnDays`);
+  - the household's warnings when the Admin sets them (`PreferencesOutcome::BadDueWarnings`).
+
+  Edits carry the new fields.
+- **Endpoints:**
+  - The Garage moved from `GET /api/v1/assets` to `POST /api/v1/assets/garage`, now that it takes the zone.
+  - `POST /api/v1/due` is new, with its own `server_side::with_due` wrapper.
+  - `POST /api/v1/requirements` takes the zone.
+  - On the desktop, the same server functions run on its copy, offline included. The due list has no caller until the Overview in 2d.
+- **The Garage's sort menu** offers **Most urgent**, since it's now the default.
+- **Tests:**
+  - server (`tests/due.rs`): a truck's oil change counted from before the records, and its insurance, both **Due soon**, on the list, the schedule, and the Garage; a vehicle Sam can't see; refusals for backwards warnings, an unknown meter, a bad date, and backwards document days;
+  - the household's backwards warnings refused;
+  - domain: `check_due_settings`, and the Most urgent order.
 
 **Not in this milestone:** due and overdue messages and snooze, and the fleet strip (milestone 3); service bundles' sign-off and household templates (milestone 4); readiness (milestone 6); the airworthiness modes and supersession (the aircraft phase).

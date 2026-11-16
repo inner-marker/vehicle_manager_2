@@ -150,8 +150,10 @@ impl IdleSignOut {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum GarageSort {
-    /// Newest activity first (until vehicles have events: newest added first).
+    /// The most urgent first: overdue, then due very soon, … (the default, #040, #082).
     #[default]
+    MostUrgent,
+    /// Newest activity first (until vehicles have events: newest added first).
     NewestActivity,
     /// By name, A to Z.
     Name,
@@ -573,7 +575,7 @@ mod tests {
         assert_eq!(defaults.currency.as_str(), "USD");
         assert_eq!(defaults.language, Language::EnglishUs);
         assert_eq!(defaults.idle_sign_out, IdleSignOut::EightHours);
-        assert_eq!(defaults.garage_sort, GarageSort::NewestActivity);
+        assert_eq!(defaults.garage_sort, GarageSort::MostUrgent);
         assert_eq!(defaults.squawk_word, SquawkWord::Issue);
     }
 

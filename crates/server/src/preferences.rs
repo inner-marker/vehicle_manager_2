@@ -97,6 +97,11 @@ pub async fn set_household(
     ) {
         return PreferencesOutcome::NotAllowed;
     }
+    if let Some(domain::preferences::Choice::Set(warnings)) = patch.due_warnings
+        && !warnings.valid()
+    {
+        return PreferencesOutcome::BadDueWarnings;
+    }
     change(context, context.household_id(), patch).await
 }
 

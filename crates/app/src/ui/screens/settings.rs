@@ -328,6 +328,7 @@ fn apply(
         Ok(PreferencesOutcome::NotAllowed) => {
             error.set(Some(tr(messages::SETTINGS_HOUSEHOLD_ADMIN_ONLY)));
         }
+        Ok(PreferencesOutcome::BadDueWarnings) => error.set(Some(tr(messages::DUE_BAD_WARNINGS))),
         Ok(PreferencesOutcome::Unavailable) => error.set(Some(tr(messages::SOMETHING_WENT_WRONG))),
         Err(failure) => error.set(Some(tr(problem_from_error(&failure).message()))),
     }

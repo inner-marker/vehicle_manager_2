@@ -618,16 +618,21 @@ pub enum DueItem {
     Document(AssetDocumentId),
 }
 
-/// Sorts `items` most urgent first: by step, then the earliest date (none last).
+/// Which of `a` and `b` is more urgent (`Less` puts `a` first): by step, then the earliest
+/// date (none last).
+#[must_use]
+pub fn urgency_order(a: &Due, b: &Due) -> core::cmp::Ordering {
+    b.step.cmp(&a.step).then_with(|| match (&a.date, &b.date) {
+        (Some(a), Some(b)) => a.on.cmp(&b.on),
+        (Some(_), None) => core::cmp::Ordering::Less,
+        (None, Some(_)) => core::cmp::Ordering::Greater,
+        (None, None) => core::cmp::Ordering::Equal,
+    })
+}
+
+/// Sorts `items` most urgent first (see [`urgency_order`]).
 pub fn most_urgent_first(items: &mut [(DueItem, Due)]) {
-    items.sort_by(|(_, a), (_, b)| {
-        b.step.cmp(&a.step).then_with(|| match (&a.date, &b.date) {
-            (Some(a), Some(b)) => a.on.cmp(&b.on),
-            (Some(_), None) => core::cmp::Ordering::Less,
-            (None, Some(_)) => core::cmp::Ordering::Greater,
-            (None, None) => core::cmp::Ordering::Equal,
-        })
-    });
+    items.sort_by(|(_, a), (_, b)| urgency_order(a, b));
 }
 
 #[cfg(test)]

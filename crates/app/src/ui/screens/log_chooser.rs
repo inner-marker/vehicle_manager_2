@@ -355,6 +355,7 @@ mod tests {
             },
             role,
             plate: None,
+            due: None,
         }
     }
 

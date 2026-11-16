@@ -371,6 +371,35 @@ impl Database {
         .collect()
     }
 
+    /// When each of one vehicle's requirements was added: the clock of its `asset` field,
+    /// which is set once, when it's made, and never changes (#043). For a calendar rule never
+    /// done (#082).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn requirements_added(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(RequirementId, domain::time::UnixMillis)>, StorageError> {
+        sqlx::query(
+            "SELECT r.id, c.hlc FROM requirements r
+             JOIN field_clocks c ON c.entity = 'requirement' AND c.record_id = r.id
+                                AND c.field = 'asset'
+             WHERE r.asset_id = ? AND r.deleted = 0",
+        )
+        .bind(id_to_sql(asset))
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(|row| {
+            let id = id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?;
+            let hlc = crate::convert::hlc_from_sql(row.try_get("hlc")?, "field_clocks.hlc")?;
+            Ok((id, hlc.physical()))
+        })
+        .collect()
+    }
+
     /// Every task done for a requirement on one vehicle (from its counted events), oldest
     /// first; [`domain::requirement::last_done`] picks each requirement's latest.
     ///

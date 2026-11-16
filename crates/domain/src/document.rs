@@ -329,6 +329,9 @@ pub fn check(
     {
         return Err(DocumentProblem::ExpiresBeforeIssued);
     }
+    if document.warn_days.is_some_and(|days| !days.valid()) {
+        return Err(DocumentProblem::BadWarnDays);
+    }
     if let Some(previous) = document.supersedes {
         let Some((_, renewed)) = documents.iter().find(|(other, _)| *other == previous) else {
             return Err(DocumentProblem::RenewsUnknown);
@@ -381,6 +384,9 @@ pub enum DocumentProblem {
     UnknownPlate,
     /// Removing a document a later one renews (remove the latest first).
     Renewed,
+    /// Its own warning days don't make sense (a step earlier than the one before it, or past
+    /// the most days; #082).
+    BadWarnDays,
 }
 
 impl DocumentProblem {
@@ -398,6 +404,7 @@ impl DocumentProblem {
             Self::PlateNotRegistration => messages::DOCUMENT_PLATE_NOT_REGISTRATION,
             Self::UnknownPlate => messages::DOCUMENT_UNKNOWN_PLATE,
             Self::Renewed => messages::DOCUMENT_RENEWED,
+            Self::BadWarnDays => messages::DUE_BAD_WARNINGS,
         }
     }
 }

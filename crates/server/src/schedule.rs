@@ -15,9 +15,10 @@
 //! left empty goes too.
 
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
-use domain::api::{AssetsOutcome, RequirementView, ScheduleOutcome};
+use domain::api::{AssetsOutcome, DueSubject, RequirementView, ScheduleOutcome};
 use domain::asset::AssetId;
 use domain::command::{Change, Clearable};
+use domain::location::TimeZone;
 use domain::log_area;
 use domain::requirement::{
     Bundle, BundleId, BundlePatch, Requirement, RequirementId, RequirementPatch,
@@ -113,6 +114,7 @@ impl AssetsContext<'_> {
             .await
             .map_err(|error| failed("meters", &error))?;
         check_rules(&requirement.rules, &meters).map_err(invalid)?;
+        domain::requirement::check_due_settings(requirement, &meters).map_err(invalid)?;
         let mut readable = Vec::new();
         if let Some(reference) = requirement.reference
             && crate::references::readable(self, reference)
@@ -177,14 +179,16 @@ impl AssetsContext<'_> {
 
 // --- Seeing a schedule -------------------------------------------------------------------
 
-/// One vehicle's requirements (each with when it was last done) and bundles.
-pub async fn view(context: &AssetsContext<'_>, asset: AssetId) -> ScheduleOutcome {
-    either(view_schedule(context, asset).await)
+/// One vehicle's requirements (each with when it was last done, and when it comes due in the
+/// person's `zone`, #082) and bundles.
+pub async fn view(context: &AssetsContext<'_>, asset: AssetId, zone: &TimeZone) -> ScheduleOutcome {
+    either(view_schedule(context, asset, zone).await)
 }
 
 async fn view_schedule(
     context: &AssetsContext<'_>,
     asset: AssetId,
+    zone: &TimeZone,
 ) -> Result<ScheduleOutcome, ScheduleOutcome> {
     let scope = context.schedule_scope(asset).await?;
     let done = context
@@ -192,6 +196,24 @@ async fn view_schedule(
         .done_tasks_of(asset)
         .await
         .map_err(|error| failed("done tasks", &error))?;
+    let defaults = crate::due::household_warnings(context.database, context.database_id.cast())
+        .await
+        .map_err(|error| failed("due warnings", &error))?;
+    let due = crate::due::vehicle_due(
+        context.database,
+        asset,
+        zone,
+        context.clock.now(),
+        &defaults,
+    )
+    .await
+    .map_err(|error| failed("due", &error))?;
+    let due_of = |id: RequirementId| {
+        due.iter().find_map(|entry| match &entry.subject {
+            DueSubject::Requirement { id: of, .. } if *of == id => Some(entry.due.clone()),
+            DueSubject::Requirement { .. } | DueSubject::Document { .. } => None,
+        })
+    };
     let requirements = context
         .requirements_for(asset)
         .await?
@@ -201,6 +223,7 @@ async fn view_schedule(
             last_done: last_done(id, &done).cloned(),
             status: requirement.status(id, &done),
             requirement,
+            due: due_of(id),
         })
         .collect();
     Ok(ScheduleOutcome::Schedule {
@@ -270,6 +293,10 @@ async fn edit_requirement_of(
         mode: (current.mode != requirement.mode).then_some(requirement.mode),
         applicability: (current.applicability != requirement.applicability)
             .then_some(requirement.applicability),
+        before_records: (current.before_records != requirement.before_records)
+            .then(|| Clearable::from_option(requirement.before_records)),
+        warnings: (current.warnings != requirement.warnings)
+            .then(|| Clearable::from_option(requirement.warnings)),
         ..RequirementPatch::default()
     };
     context

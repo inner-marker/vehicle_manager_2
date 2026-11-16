@@ -813,6 +813,7 @@ mod tests {
             },
             last_done: None,
             status: domain::requirement::RequirementStatus::Active,
+            due: None,
         }
     }
 

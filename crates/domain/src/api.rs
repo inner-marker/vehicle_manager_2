@@ -446,6 +446,9 @@ pub enum PreferencesOutcome {
     },
     /// Household defaults need the household's Admin in Admin mode.
     NotAllowed,
+    /// Due warnings that don't make sense (a step earlier than the one before it, or past
+    /// 100% or the most days).
+    BadDueWarnings,
     /// The server couldn't do it right now.
     Unavailable,
 }
@@ -478,6 +481,9 @@ pub struct AssetSummary {
     /// (milestone 9, #067).
     #[serde(default)]
     pub standing: crate::lifecycle::Standing,
+    /// Its most urgent due step, if anything on it comes due (Phase 5, #082).
+    #[serde(default)]
+    pub due: Option<crate::due::DueStep>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -1062,6 +1068,9 @@ pub struct DocumentInput {
     pub plate: Option<crate::plate::LicensePlateId>,
     /// Notes.
     pub notes: crate::notes::Notes,
+    /// How early its expiry warns, instead of the household's days (#082).
+    #[serde(default)]
+    pub warn_days: Option<crate::due::DaySteps>,
 }
 
 /// A license plate as typed in.
@@ -1163,6 +1172,53 @@ pub struct RequirementView {
     pub last_done: Option<crate::requirement::DoneTask>,
     /// Where it stands (open, complied, active, not applicable).
     pub status: crate::requirement::RequirementStatus,
+    /// When it comes due, if it's on the schedule with a rule that can be worked out (#082).
+    #[serde(default)]
+    pub due: Option<crate::due::Due>,
+}
+
+/// What a due item is about, with what the screens need to name it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum DueSubject {
+    /// A requirement on the schedule.
+    Requirement {
+        /// Its ID.
+        id: crate::requirement::RequirementId,
+        /// Its name.
+        name: crate::label::Label,
+    },
+    /// An official document with an expiry.
+    Document {
+        /// Its ID.
+        id: crate::document::AssetDocumentId,
+        /// What kind (named by the screens, #066).
+        doc_type: crate::document::DocumentType,
+    },
+}
+
+/// One thing that comes due on a vehicle, and where it stands.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DueEntry {
+    /// What it is.
+    pub subject: DueSubject,
+    /// Where it stands.
+    pub due: crate::due::Due,
+}
+
+/// The answer to "what's due on this vehicle?" (#082).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DueOutcome {
+    /// Everything that comes due, most urgent first.
+    Due {
+        /// The entries.
+        entries: Vec<DueEntry>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
 }
 
 /// A reference document as typed in (everything but who added it and when).

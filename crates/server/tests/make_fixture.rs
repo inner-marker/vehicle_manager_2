@@ -330,6 +330,7 @@ mod make_fixture {
                     expires_on: Some(CalendarDate::parse("2024-01-31").unwrap()),
                     plate: None,
                     notes: Notes::default(),
+                    warn_days: None,
                 },
             )
             .await

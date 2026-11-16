@@ -1027,6 +1027,12 @@ define_messages! {
     DUE_VERY_SOON => "due-very-soon",
     /// What's due: past it.
     DUE_OVERDUE => "due-overdue",
+    /// Due warnings that don't make sense.
+    DUE_BAD_WARNINGS => "due-bad-warnings",
+    /// "Last done before these records" that doesn't make sense.
+    REQUIREMENT_BAD_BEFORE_RECORDS => "requirement-bad-before-records",
+    /// Garage sort: the most urgent first.
+    SORT_MOST_URGENT => "sort-most-urgent",
     /// Meter unit: percent.
     UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.

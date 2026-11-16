@@ -586,6 +586,7 @@ fn document_input(
             None
         },
         notes: Notes::parse(&typed.notes).map_err(|_| messages::DOCUMENTS_NOTES_TOO_LONG)?,
+        warn_days: None,
     })
 }
 

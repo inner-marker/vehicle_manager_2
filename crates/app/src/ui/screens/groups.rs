@@ -429,6 +429,7 @@ mod tests {
             },
             role: Role::Admin,
             plate: None,
+            due: None,
         }
     }
 

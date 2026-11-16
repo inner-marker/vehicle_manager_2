@@ -315,6 +315,7 @@ mod lifecycle {
             expires_on: None,
             plate: None,
             notes: Notes::default(),
+            warn_days: None,
         };
         assert_eq!(
             server::documents::add_document(&context(&database, &maintainer, &clock), document)
@@ -524,7 +525,7 @@ mod lifecycle {
             EventsOutcome::Done
         );
         let ScheduleOutcome::Schedule { requirements, .. } =
-            server::schedule::view(&shop, truck).await
+            server::schedule::view(&shop, truck, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no schedule");
         };

@@ -405,6 +405,12 @@ pub enum RequirementProblem {
     OneTimeWithRules,
     /// A link to a reference document that doesn't exist.
     UnknownReference,
+    /// Its own warnings don't make sense (a step earlier than the one before it, or past 100%
+    /// or the most days; #082).
+    BadWarnings,
+    /// "Last done before these records" that isn't a date, names a meter twice or one that
+    /// isn't this vehicle's, or has a negative reading (#082).
+    BadBeforeRecords,
 }
 
 impl RequirementProblem {
@@ -422,6 +428,8 @@ impl RequirementProblem {
             Self::InUse => messages::REQUIREMENT_IN_USE,
             Self::ScheduleNotEmpty => messages::SCHEDULE_NOT_EMPTY,
             Self::OneTimeWithRules => messages::REQUIREMENT_ONE_TIME_WITH_RULES,
+            Self::BadWarnings => messages::DUE_BAD_WARNINGS,
+            Self::BadBeforeRecords => messages::REQUIREMENT_BAD_BEFORE_RECORDS,
         }
     }
 }
@@ -479,6 +487,38 @@ pub fn check_rules(
                 if *at < 0 {
                     return Err(RequirementProblem::BadInterval);
                 }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Checks a requirement's due settings (#082): its own warnings make sense, and "last done
+/// before these records" is a date with readings of the vehicle's `meters`, each once, none
+/// negative.
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadWarnings`] or [`RequirementProblem::BadBeforeRecords`].
+pub fn check_due_settings(
+    requirement: &Requirement,
+    meters: &[(MeterId, Meter)],
+) -> Result<(), RequirementProblem> {
+    if requirement
+        .warnings
+        .is_some_and(|warnings| !warnings.valid())
+    {
+        return Err(RequirementProblem::BadWarnings);
+    }
+    if let Some(before) = &requirement.before_records {
+        civil(&before.on).map_err(|_| RequirementProblem::BadBeforeRecords)?;
+        for (index, reading) in before.readings.iter().enumerate() {
+            let known = meters.iter().any(|(id, _)| *id == reading.meter);
+            let repeated = before.readings[..index]
+                .iter()
+                .any(|earlier| earlier.meter == reading.meter);
+            if !known || repeated || reading.value < 0 {
+                return Err(RequirementProblem::BadBeforeRecords);
             }
         }
     }
@@ -739,6 +779,57 @@ mod tests {
             before_records: None,
             warnings: None,
         }
+    }
+
+    #[test]
+    fn due_settings_are_checked() {
+        let meters = meters();
+        let reading = |meter: u32, value: i64| Reading {
+            meter: test_id(meter),
+            value,
+            reset: false,
+        };
+        let with = |on: &str, readings: Vec<Reading>| Requirement {
+            before_records: Some(LastDoneBefore {
+                on: on.into(),
+                readings,
+            }),
+            ..oil()
+        };
+        assert_eq!(check_due_settings(&oil(), &meters), Ok(()), "none set");
+        assert_eq!(
+            check_due_settings(&with("2026-08-02", vec![reading(ODOMETER, 5)]), &meters),
+            Ok(())
+        );
+        for bad in [
+            with("August", vec![]),
+            with("2026-08-02", vec![reading(99, 5)]),
+            with(
+                "2026-08-02",
+                vec![reading(ODOMETER, 5), reading(ODOMETER, 6)],
+            ),
+            with("2026-08-02", vec![reading(ODOMETER, -1)]),
+        ] {
+            assert_eq!(
+                check_due_settings(&bad, &meters),
+                Err(RequirementProblem::BadBeforeRecords)
+            );
+        }
+        let backwards = Requirement {
+            warnings: Some(DueDefaults {
+                interval: crate::due::IntervalSteps {
+                    coming_up: 5,
+                    due_soon: 10,
+                    very_soon: 1,
+                },
+                days: crate::due::DaySteps::default(),
+            }),
+            ..oil()
+        };
+        assert_eq!(
+            check_due_settings(&backwards, &meters),
+            Err(RequirementProblem::BadWarnings)
+        );
     }
 
     #[test]
