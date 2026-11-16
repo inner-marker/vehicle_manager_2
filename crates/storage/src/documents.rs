@@ -384,6 +384,7 @@ fn document_from_row(row: &SqliteRow) -> Result<(AssetDocumentId, AssetDocument)
                 "asset_documents.added_by",
             )?,
             received_at: UnixMillis::from_millis(row.try_get("received_ms")?),
+            warn_days: None,
         },
     ))
 }

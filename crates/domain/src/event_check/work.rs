@@ -211,6 +211,8 @@ mod tests {
             reference: None,
             mode: crate::requirement::ComplianceMode::Recurring,
             applicability: crate::requirement::Applicability::Applies,
+            before_records: None,
+            warnings: None,
         };
         vec![
             (

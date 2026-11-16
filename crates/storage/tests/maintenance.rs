@@ -150,6 +150,8 @@ mod maintenance {
                 reference: None,
                 mode: domain::requirement::ComplianceMode::Recurring,
                 applicability: domain::requirement::Applicability::Applies,
+                before_records: None,
+                warnings: None,
             };
             RequirementWriter
                 .create(

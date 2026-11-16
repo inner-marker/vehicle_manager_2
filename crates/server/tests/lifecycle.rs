@@ -386,6 +386,8 @@ mod lifecycle {
             applicability: Applicability::NotApplicable {
                 reason: domain::event::Reason::parse("Built after the VIN range").unwrap(),
             },
+            before_records: None,
+            warnings: None,
         };
         assert!(matches!(
             server::schedule::add_requirement(context, requirement).await,

@@ -230,13 +230,14 @@ pub async fn add(
     either(add_reference(context, input, link).await)
 }
 
-async fn add_reference(
+/// `Ok` if the person may add a reference document to `asset` now: they configure its
+/// maintenance, and it still takes new records.
+async fn may_add_reference(
     context: &AssetsContext<'_>,
-    input: ReferenceInput,
-    link: ReferenceLink,
-) -> Result<ReferencesOutcome, ReferencesOutcome> {
+    asset: domain::asset::AssetId,
+) -> Result<(), ReferencesOutcome> {
     let scope = context
-        .visible(link.asset)
+        .visible(asset)
         .await
         .map_err(|outcome| from_assets(&outcome))?;
     if !permits_on_asset(
@@ -247,12 +248,21 @@ async fn add_reference(
     ) {
         return Err(ReferencesOutcome::NotAllowed);
     }
-    if !crate::lifecycle::takes_new_records(context.database, link.asset)
+    if !crate::lifecycle::takes_new_records(context.database, asset)
         .await
         .map_err(|error| failed("lifecycle", &error))?
     {
         return Err(ReferencesOutcome::NotAllowed);
     }
+    Ok(())
+}
+
+async fn add_reference(
+    context: &AssetsContext<'_>,
+    input: ReferenceInput,
+    link: ReferenceLink,
+) -> Result<ReferencesOutcome, ReferencesOutcome> {
+    may_add_reference(context, link.asset).await?;
     let now = context.clock.now();
     let id: ReferenceDocumentId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
     let blank = ReferenceDocument {
@@ -283,6 +293,8 @@ async fn add_reference(
         reference: Some(id),
         mode: link.mode,
         applicability: link.applicability,
+        before_records: None,
+        warnings: None,
     };
     check_compliance(&requirement, &[id])
         .map_err(|problem| ReferencesOutcome::InvalidRequirement { problem })?;

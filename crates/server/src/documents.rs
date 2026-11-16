@@ -180,6 +180,7 @@ fn document_from(
         added_at: now,
         added_by: context.user.user,
         received_at: now,
+        warn_days: None,
     }
 }
 

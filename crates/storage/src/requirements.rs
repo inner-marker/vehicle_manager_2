@@ -231,6 +231,8 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
                 .transpose()?,
             mode: required_name(mode, "requirements.mode")?,
             applicability: json_from_sql(&applicability, "requirements.applicability")?,
+            before_records: None,
+            warnings: None,
         },
     ))
 }

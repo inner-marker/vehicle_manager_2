@@ -241,6 +241,8 @@ mod make_fixture {
             reference: None,
             mode: ComplianceMode::Recurring,
             applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
         };
         let ScheduleOutcome::SavedRequirement { id: oil } =
             server::schedule::add_requirement(shop, oil).await

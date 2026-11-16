@@ -1017,6 +1017,16 @@ define_messages! {
     EVENT_KIND_REPAIR => "event-kind-repair",
     /// Meter unit: hours.
     UNIT_HOURS => "unit-hours",
+    /// What's due: not near yet.
+    DUE_OK => "due-ok",
+    /// What's due: yellow.
+    DUE_COMING_UP => "due-coming-up",
+    /// What's due: orange.
+    DUE_SOON => "due-soon",
+    /// What's due: red.
+    DUE_VERY_SOON => "due-very-soon",
+    /// What's due: past it.
+    DUE_OVERDUE => "due-overdue",
     /// Meter unit: percent.
     UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.
@@ -2244,6 +2254,14 @@ define_messages! {
     SCHEDULE_ADD_CALENDAR_RULE => "schedule-add-calendar-rule",
     /// Requirement dialog: add a fixed date.
     SCHEDULE_ADD_FIXED_RULE => "schedule-add-fixed-rule",
+    /// Requirement dialog: add a "when a meter reaches" rule.
+    SCHEDULE_ADD_REACHES_RULE => "schedule-add-reaches-rule",
+    /// Requirement dialog: before the meter of a "reaches" rule.
+    SCHEDULE_WHEN_LABEL => "schedule-when-label",
+    /// Requirement dialog: between the meter and the mark of a "reaches" rule.
+    SCHEDULE_REACHES_LABEL => "schedule-reaches-label",
+    /// A "reaches" rule in words; takes `meter` and `value` ("15 %").
+    SCHEDULE_REACHES => "schedule-reaches",
     /// Requirement dialog: about the rules.
     SCHEDULE_RULES_HINT => "schedule-rules-hint",
     /// A rule's inputs: every.

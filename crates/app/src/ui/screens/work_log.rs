@@ -808,6 +808,8 @@ mod tests {
                 reference: None,
                 mode: domain::requirement::ComplianceMode::Recurring,
                 applicability: domain::requirement::Applicability::Applies,
+                before_records: None,
+                warnings: None,
             },
             last_done: None,
             status: domain::requirement::RequirementStatus::Active,

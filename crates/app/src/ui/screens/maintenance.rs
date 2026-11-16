@@ -258,6 +258,22 @@ fn rules_text(
                     count
                 });
             }
+            IntervalRule::Reaches { meter, at } => {
+                if let Some((_, meter)) = meters.iter().find(|(id, _)| id == meter) {
+                    let value = format!(
+                        "{} {}",
+                        show_reading(*at, meter.unit, meter.precision),
+                        unit_abbr(meter.unit)
+                    );
+                    periodic.push(tr_with(
+                        messages::SCHEDULE_REACHES,
+                        &[
+                            ("meter", MessageArg::from(meter.name.as_str().to_owned())),
+                            ("value", MessageArg::from(value)),
+                        ],
+                    ));
+                }
+            }
             IntervalRule::FixedDate { first } => {
                 fixed = Some(match next.or(first.as_deref()) {
                     Some(date) => tr_with(
@@ -304,7 +320,7 @@ fn last_done_text(
     let date =
         format_date(done.at, zone, units.date_format, Translator::english()).unwrap_or_default();
     let ruled = requirement.rules.iter().find_map(|rule| match rule {
-        IntervalRule::Meter { meter, .. } => Some(*meter),
+        IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => Some(*meter),
         IntervalRule::Calendar { .. } | IntervalRule::FixedDate { .. } => None,
     });
     let reading = ruled
@@ -714,6 +730,11 @@ enum TypedRule {
     FixedDate {
         first: String,
     },
+    /// "When Oil life reaches [15] %" (#082).
+    Reaches {
+        meter: MeterId,
+        at: String,
+    },
 }
 
 impl TypedRule {
@@ -739,6 +760,14 @@ impl TypedRule {
             },
             IntervalRule::FixedDate { first } => Self::FixedDate {
                 first: first.clone().unwrap_or_default(),
+            },
+            IntervalRule::Reaches { meter, at } => Self::Reaches {
+                meter: *meter,
+                at: meters
+                    .iter()
+                    .find(|(id, _)| id == meter)
+                    .map(|(_, found)| reading_value(*at, found.unit, found.precision))
+                    .unwrap_or_default(),
             },
         }
     }
@@ -780,6 +809,15 @@ fn rules_from(
             TypedRule::FixedDate { first } => Ok(IntervalRule::FixedDate {
                 first: Some(first.trim().to_owned()).filter(|date| !date.is_empty()),
             }),
+            TypedRule::Reaches { meter, at } => {
+                let (_, found) = meters
+                    .iter()
+                    .find(|(id, _)| id == meter)
+                    .ok_or(messages::SOMETHING_WENT_WRONG)?;
+                let at = parse_reading(at, found.unit, found.precision)
+                    .map_err(domain::quantity::QuantityError::message)?;
+                Ok(IntervalRule::Reaches { meter: *meter, at })
+            }
         })
         .collect::<Result<Vec<_>, MessageId>>()?;
     check_rules(&rules, meters).map_err(domain::requirement::RequirementProblem::message)?;
@@ -818,6 +856,8 @@ fn requirement_from(
         reference,
         mode: compliance.mode,
         applicability: compliance.applicability()?,
+        before_records: None,
+        warnings: None,
     })
 }
 
@@ -896,6 +936,17 @@ fn RequirementDialog(
     let has_fixed = rules
         .iter()
         .any(|rule| matches!(rule, TypedRule::FixedDate { .. }));
+    // A "reaches" rule suits a resettable meter (Oil life) best; any meter without one will do.
+    let reaches_meter = vehicle
+        .meters
+        .iter()
+        .filter(|(id, _)| {
+            !rules
+                .iter()
+                .any(|rule| matches!(rule, TypedRule::Reaches { meter: used, .. } if used == id))
+        })
+        .max_by_key(|(_, meter)| meter.resettable())
+        .map(|(id, _)| *id);
     let save_meters = vehicle.meters.clone();
     let asset = vehicle.id;
     let editing_id = existing.as_ref().map(|(id, _)| *id);
@@ -990,6 +1041,12 @@ fn RequirementDialog(
                         button { class: "secondary-button", r#type: "button",
                             onclick: move |_| typed.write().rules.push(TypedRule::FixedDate { first: String::new() }),
                             {tr(messages::SCHEDULE_ADD_FIXED_RULE)}
+                        }
+                    }
+                    if let Some(meter) = reaches_meter {
+                        button { class: "secondary-button", r#type: "button",
+                            onclick: move |_| typed.write().rules.push(TypedRule::Reaches { meter, at: String::new() }),
+                            {tr(messages::SCHEDULE_ADD_REACHES_RULE)}
                         }
                     }
                 }
@@ -1094,6 +1151,38 @@ fn RuleInputs(
                             span { {tr(messages::SCHEDULE_END_OF_MONTH)} }
                         }
                     }
+                }
+            }
+        }
+        TypedRule::Reaches { meter, at } => {
+            let unit = meters
+                .iter()
+                .find(|(id, _)| *id == meter)
+                .map(|(_, found)| unit_abbr(found.unit))
+                .unwrap_or_default();
+            let at_now = at.clone();
+            rsx! {
+                div { class: "rule-inputs",
+                    span { class: "rule-kind", {tr(messages::SCHEDULE_WHEN_LABEL)} }
+                    select {
+                        class: "field-input",
+                        onchange: move |event| {
+                            if let Ok(chosen) = event.value().parse() {
+                                set(TypedRule::Reaches { meter: chosen, at: at_now.clone() });
+                            }
+                        },
+                        for (id, found) in meters {
+                            option { key: "{id}", value: "{id}", selected: id == meter, {found.name.as_str().to_owned()} }
+                        }
+                    }
+                    span { {tr(messages::SCHEDULE_REACHES_LABEL)} }
+                    input {
+                        class: "field-input rule-number",
+                        inputmode: "decimal",
+                        value: at,
+                        oninput: move |event| set(TypedRule::Reaches { meter, at: event.value() }),
+                    }
+                    span { {unit} }
                 }
             }
         }
@@ -1551,6 +1640,8 @@ mod tests {
             reference: None,
             mode: ComplianceMode::Recurring,
             applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
         };
         let done = DoneTask {
             requirement: test_id(40),
@@ -1656,6 +1747,24 @@ mod tests {
                 every: "100.0".into()
             }
         );
+    }
+
+    #[test]
+    fn a_reaches_rule_types_back_and_saves_again() {
+        // "When engine hours reach 250.0": typed back the same, and saved again.
+        let reaches = IntervalRule::Reaches {
+            meter: test_id(21),
+            at: 900_000,
+        };
+        let typed = TypedRule::from_rule(&reaches, &meters());
+        assert_eq!(
+            typed,
+            TypedRule::Reaches {
+                meter: test_id(21),
+                at: "250.0".into()
+            }
+        );
+        assert_eq!(rules_from(&[typed], &meters()), Ok(vec![reaches]));
     }
 
     #[test]

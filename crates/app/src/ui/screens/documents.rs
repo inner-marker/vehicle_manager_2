@@ -1044,6 +1044,7 @@ mod tests {
                 added_at: UnixMillis::from_millis(0),
                 added_by: test_id(5),
                 received_at: UnixMillis::from_millis(0),
+                warn_days: None,
             },
             status: if renewed_by.is_some() {
                 DocumentStatus::Superseded

@@ -161,6 +161,7 @@ mod attachments {
             added_at: NOW,
             added_by: test_id(JORDAN),
             received_at: NOW,
+            warn_days: None,
         }
     }
 
