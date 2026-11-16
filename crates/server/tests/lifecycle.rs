@@ -315,6 +315,7 @@ mod lifecycle {
             expires_on: None,
             plate: None,
             notes: Notes::default(),
+            warn_days: None,
         };
         assert_eq!(
             server::documents::add_document(&context(&database, &maintainer, &clock), document)
@@ -386,6 +387,8 @@ mod lifecycle {
             applicability: Applicability::NotApplicable {
                 reason: domain::event::Reason::parse("Built after the VIN range").unwrap(),
             },
+            before_records: None,
+            warnings: None,
         };
         assert!(matches!(
             server::schedule::add_requirement(context, requirement).await,
@@ -522,7 +525,7 @@ mod lifecycle {
             EventsOutcome::Done
         );
         let ScheduleOutcome::Schedule { requirements, .. } =
-            server::schedule::view(&shop, truck).await
+            server::schedule::view(&shop, truck, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no schedule");
         };

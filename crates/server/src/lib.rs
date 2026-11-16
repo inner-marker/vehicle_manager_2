@@ -13,6 +13,7 @@ pub mod codes;
 pub mod commands;
 pub mod devices;
 pub mod documents;
+pub mod due;
 pub mod events;
 pub mod groups;
 pub mod health;

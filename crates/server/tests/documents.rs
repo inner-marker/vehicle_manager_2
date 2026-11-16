@@ -100,6 +100,7 @@ mod documents {
             expires_on: Some(date(expires)),
             plate: Some(plate),
             notes: Notes::default(),
+            warn_days: None,
         }
     }
 

@@ -13,9 +13,10 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DevicesOutcome, DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage,
-    PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome,
-    SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
+    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, Handshake, InboxOutcome,
+    MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome,
+    ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome,
+    UserAdminOutcome,
 };
 use domain::secret::Secret;
 use domain::sync::{PullOutcome, PushOutcome};
@@ -607,14 +608,34 @@ pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnRe
     .await)
 }
 
-/// The Garage: the groups and vehicles the signed-in person can see (#052).
+/// The Garage: the groups and vehicles the signed-in person can see (#052), each with its most
+/// urgent due step in the person's `zone` (#082).
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
-#[get("/api/v1/assets")]
-pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
-    Ok(server_side::with_assets(async |context| ::server::assets::garage(&context).await).await)
+#[post("/api/v1/assets/garage")]
+pub(crate) async fn get_garage(zone: domain::location::TimeZone) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| ::server::assets::garage(&context, &zone).await)
+            .await,
+    )
+}
+
+/// What comes due on one vehicle, most urgent first, in the person's `zone` (#082).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DueOutcome`] values.
+#[post("/api/v1/due")]
+pub(crate) async fn vehicle_due(
+    asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<DueOutcome> {
+    Ok(
+        server_side::with_due(async |context| ::server::due::list(&context, asset, &zone).await)
+            .await,
+    )
 }
 
 /// One vehicle's page: details, meters, custom fields, and what the person may do.
@@ -1434,8 +1455,8 @@ pub(crate) async fn remove_reference(
     .await)
 }
 
-/// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
-/// bundles.
+/// One vehicle's maintenance schedule: its requirements (each with when it was last done, and
+/// when it comes due in the person's `zone`) and bundles.
 ///
 /// # Errors
 ///
@@ -1443,11 +1464,12 @@ pub(crate) async fn remove_reference(
 #[post("/api/v1/requirements")]
 pub(crate) async fn vehicle_schedule(
     asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
 ) -> ServerFnResult<ScheduleOutcome> {
-    Ok(
-        server_side::with_schedule(async |context| ::server::schedule::view(&context, asset).await)
-            .await,
-    )
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::view(&context, asset, &zone).await
+    })
+    .await)
 }
 
 /// Adds a requirement.
@@ -2161,6 +2183,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::ScheduleOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a "what's due" request,
+    /// or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_due(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::DueOutcome,
+    ) -> domain::api::DueOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::DueOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

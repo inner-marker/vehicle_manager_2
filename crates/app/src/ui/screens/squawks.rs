@@ -176,17 +176,23 @@ pub(crate) fn SquawkSheetDialog() -> Element {
     rsx! { SheetForm { key: "{target.serial}", target } }
 }
 
+/// The device's time zone, asked of the browser or webview (UTC if it can't say).
+pub(crate) async fn device_zone() -> TimeZone {
+    match document::eval(ZONE_SCRIPT).join::<String>().await {
+        Ok(found) => TimeZone::parse(&found)
+            .ok()
+            .filter(domain::dates::is_known_zone)
+            .unwrap_or_else(TimeZone::utc),
+        Err(_) => TimeZone::utc(),
+    }
+}
+
 /// The browser's time zone (UTC until it's known).
 pub(crate) fn use_device_zone() -> Signal<TimeZone> {
     let mut zone = use_signal(TimeZone::utc);
     use_effect(move || {
         spawn(async move {
-            if let Ok(found) = document::eval(ZONE_SCRIPT).join::<String>().await
-                && let Ok(found) = TimeZone::parse(&found)
-                && domain::dates::is_known_zone(&found)
-            {
-                zone.set(found);
-            }
+            zone.set(device_zone().await);
         });
     });
     zone

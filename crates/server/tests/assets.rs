@@ -191,7 +191,8 @@ mod assets {
         )
         .await;
 
-        let admins = the_garage(garage(&ctx).await);
+        let admins =
+            the_garage(garage(&ctx, &domain::location::TimeZone::parse("UTC").unwrap()).await);
         assert_eq!(admins.assets.len(), 1);
         assert_eq!(
             admins.groups.len(),
@@ -200,7 +201,13 @@ mod assets {
         );
         assert!(admins.can_add && admins.can_manage_groups);
 
-        let sams = the_garage(garage(&context(&database, &sam, &clock)).await);
+        let sams = the_garage(
+            garage(
+                &context(&database, &sam, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert_eq!(sams.assets.len(), 1, "Driver on all vehicles");
         assert_eq!(sams.assets[0].role, Role::Driver);
         assert_eq!(
@@ -260,11 +267,14 @@ mod assets {
             AssetsOutcome::Done
         );
         assert_eq!(
-            the_garage(garage(&sams).await).order,
+            the_garage(garage(&sams, &domain::location::TimeZone::parse("UTC").unwrap()).await)
+                .order,
             vec![truck_id, car_id]
         );
         assert!(
-            the_garage(garage(&ctx).await).order.is_empty(),
+            the_garage(garage(&ctx, &domain::location::TimeZone::parse("UTC").unwrap()).await)
+                .order
+                .is_empty(),
             "Jordan's own: none yet"
         );
     }
@@ -357,7 +367,13 @@ mod assets {
 
         assert_eq!(move_to(&ctx, id, hangar).await, AssetsOutcome::Done);
         assert_eq!(database.asset(id).await.unwrap().unwrap().group, hangar);
-        let sams = the_garage(garage(&context(&database, &sam, &clock)).await);
+        let sams = the_garage(
+            garage(
+                &context(&database, &sam, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert!(sams.assets.is_empty(), "Sam can't see it in the Hangar");
         assert_eq!(
             view(&context(&database, &sam, &clock), id).await,

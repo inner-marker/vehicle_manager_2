@@ -615,6 +615,11 @@ schedule-due-when = Due when, whichever comes first
 schedule-add-meter-rule = + Meter rule
 schedule-add-calendar-rule = + Calendar rule
 schedule-add-fixed-rule = + Fixed date
+schedule-add-reaches-rule = + When a meter reaches
+schedule-when-label = When
+schedule-reaches-label = reaches
+# $meter (text): the meter's name; $value (text): the mark with its unit, e.g. "15 %".
+schedule-reaches = when { $meter } reaches { $value }
 schedule-rules-hint = No rules: done when needed. A fixed date's first date is optional; each job gives the next.
 schedule-every-label = every
 schedule-calendar = Calendar
@@ -864,6 +869,46 @@ event-kind-reading = Reading
 event-kind-maintenance = Maintenance
 event-kind-repair = Repair
 unit-hours = hours
+due-ok = OK
+due-coming-up = Coming up
+due-soon = Due soon
+due-very-soon = Due very soon
+due-overdue = ⚠ Overdue
+due-bad-warnings = Each warning must come no earlier than the one before it: yellow, then orange, then red (at most 100%, or 730 days).
+requirement-bad-before-records = Check "Last done before these records": a date, and each meter's reading once, none below zero.
+sort-most-urgent = Most urgent
+# $amount (text): e.g. "310 mi".
+due-in = in { $amount }
+due-over-by = { $amount } over
+# $meter (text): e.g. "Oil life"; $amount (text): e.g. "80 %".
+due-to-go = { $meter }: { $amount } to go
+due-meter-over = { $meter }: { $amount } over
+# $date (text): a date as the person writes dates.
+due-by = by { $date }
+due-was = was due { $date }
+due-about = ~{ $date }
+due-or = or
+due-not-done-yet = Not done yet
+# $interval (text): e.g. "20 / 10 / 5"; $days (text): e.g. "60 / 30 / 14".
+due-warnings-text = { $interval }% left · { $days } days before a date
+due-before-records = Last done before these records (optional)
+due-before-date = Date
+due-warn-me = Warn me
+# $warnings (text): the household's warnings in words.
+due-household-default = Household default: { $warnings }
+# $days (text): e.g. "60 / 30 / 14".
+due-household-days = Household default: { $days } days before it expires
+due-change = Change
+due-use-household = Use the household's warnings
+due-percent-left = Of the interval left
+due-days-before = Before a date (a fixed date, an expiry)
+due-percent = %
+due-days = days
+# $meter (text): the meter, e.g. "Oil life"; $value (text): its reset value, e.g. "100 %".
+work-reset-meter = ↺ Reset { $meter } to { $value } at the end of the job
+setting-due-warnings = Due soon warnings
+setting-due-warnings-household = The household's Admin sets these for everyone.
+due-built-in = Use the built-in warnings (20 / 10 / 5% · 60 / 30 / 14 days)
 unit-percent = %
 label-empty = Enter a name.
 label-too-long = That's too long: at most 40 characters.
@@ -913,7 +958,6 @@ vehicles-empty = No vehicles yet.
 vehicles-empty-admin = Use + Add vehicle to add the first one.
 vehicles-empty-group = No vehicles in this group yet.
 vehicles-group-menu = Show
-vehicles-card-coming = Readings and due items arrive later.
 vehicles-move-up = Move up
 vehicles-move-down = Move down
 add-vehicle-title = Add a vehicle
@@ -951,8 +995,9 @@ tab-setup = Setup
 tab-coming = This tab fills in with milestone { $milestone }.
 panel-ready = Ready to use?
 panel-ready-coming = Arrives with what's due (Phase 5).
-panel-due = Coming due
-panel-due-coming = Next services (Phase 5).
+panel-due = Coming up
+panel-due-none = Nothing comes due yet. Set up its schedule, or add documents with an expiry.
+panel-due-see-all = See all on Maintenance →
 panel-squawks = Open { $squawks }
 panel-fuel = Latest fuel-ups
 panel-meters = Meters

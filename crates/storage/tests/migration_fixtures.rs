@@ -136,7 +136,8 @@ async fn rows_before(file: &Path) -> (i64, i64) {
 }
 
 /// Every meter and reading survived the rebuild of `meters` (migration 0022), with every
-/// meter counting up and not resettable, and no reading a reset.
+/// meter counting up and not resettable, and no reading a reset; and migration 0023's
+/// columns read as empty.
 #[cfg(test)]
 async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, i64)) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -157,5 +158,13 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
         }
         let readings = database.readings_of(asset).await.unwrap();
         assert!(readings.iter().all(|reading| !reading.reset));
+        // Migration 0023: nothing has a date before the records or its own warnings yet.
+        for (_, requirement) in database.requirements_of(asset).await.unwrap() {
+            assert_eq!(requirement.before_records, None, "{}", fixture.display());
+            assert_eq!(requirement.warnings, None, "{}", fixture.display());
+        }
+        for (_, document) in database.documents_of(asset).await.unwrap() {
+            assert_eq!(document.warn_days, None, "{}", fixture.display());
+        }
     }
 }

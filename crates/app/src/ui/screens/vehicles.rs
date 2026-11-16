@@ -23,7 +23,12 @@ use crate::ui::vehicles::{VehiclesContext, group_icon, refresh_garage, use_vehic
 use crate::ui::{tr, tr_with};
 
 /// The sort choices, in menu order, with their labels.
-const SORTS: [(GarageSort, &str, MessageId); 3] = [
+const SORTS: [(GarageSort, &str, MessageId); 4] = [
+    (
+        GarageSort::MostUrgent,
+        "most-urgent",
+        messages::SORT_MOST_URGENT,
+    ),
     (
         GarageSort::NewestActivity,
         "newest-activity",
@@ -394,8 +399,10 @@ fn VehicleCard(
                     span { class: "badge", {tr(status_label(status))} }
                 } else if status == LifecycleStatus::OutForService {
                     span { class: "badge warn", {tr(status_label(status))} }
-                } else {
-                    span { class: "vehicle-card-coming", {tr(messages::VEHICLES_CARD_COMING)} }
+                }
+                // Its most urgent step (3A, #082); nothing when all is OK.
+                if let Some(step) = item.due.filter(|step| *step > domain::due::DueStep::Ok) {
+                    super::due_view::DueChip { step }
                 }
             }
             if arranging {
@@ -622,6 +629,7 @@ mod tests {
 
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
+            due: None,
             standing: domain::lifecycle::Standing {
                 status,
                 ..domain::lifecycle::Standing::default()
@@ -685,6 +693,9 @@ mod tests {
                 "{status:?}"
             );
         }
-        assert_eq!(SORTS.len(), 3);
+        assert_eq!(SORTS.len(), 4);
+        for (_, _, label) in SORTS {
+            assert!(Translator::english().has(label), "{label:?}");
+        }
     }
 }

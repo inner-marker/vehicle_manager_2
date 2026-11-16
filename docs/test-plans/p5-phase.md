@@ -58,6 +58,42 @@
 
 **Milestone 1 also checks:** the release fixtures' migration (`v0.2.0`, `v0.3.0`) and the reading rules, in the automated tests.
 
+## Milestone 2: what's due
+
+**Intended behavior:**
+- Each requirement on a vehicle's schedule, and each document with an expiry, has a step: **Coming up** (yellow), **Due soon** (orange), **Due very soon** (red), **⚠ Overdue** (a darker red), or OK. Each step always shows its word.
+- Interval rules warn at 20 / 10 / 5% of the interval left. Dates without an interval (a fixed date, an expiry) warn at 60 / 30 / 14 days. Whichever rule comes first sets the step.
+- A requirement counts from its last job, else from **Last done before these records**, else from the first reading ("Not done yet").
+- Mileage dates are projected from the last 90 days of readings, shown with "~".
+- The household's Admin sets the default warnings. A requirement or a document can have its own.
+- A job doing the oil change can **↺ Reset Oil life to 100 %** at its end.
+- The Overview's **Coming up** lists the 5 most urgent items, OK ones included. The Garage shows a chip only past OK.
+- It works the same on the desktop, offline included.
+
+**Before you start:** `Test truck` has Oil life from milestone 1, at about 95 %. Note its odometer (call it **N**).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 2.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open` with `schema_now` at least 23 (`0023_due`); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 2.2 | **Mac browser**, `admin`: the **Garage** | The sort menu offers **Most urgent**, and it's chosen (unless you'd picked another before). Vehicles with nothing coming due have no chip. |
+| [ ] | 2.3 | **Admin mode** → **Settings** → **Household** | **Due soon warnings** shows yellow 20, orange 10, and red 5 (% of the interval left), and 60 / 30 / 14 (days before a date). On the **You** tab: "20 / 10 / 5% left · 60 / 30 / 14 days before a date", set by the Admin. |
+| [ ] | 2.4 | **Maintainer mode**: `Test truck` → **Maintenance** → **Set up** → **+ Requirement** `Engine oil & filter`: **+ Every** 5,000 mi, **+ Calendar** 12 months, and **+ When a meter reaches** Oil life 15 %. Under **Last done before these records**: a date two months ago, the odometer at **N − 4,700**, and Oil life 100. **Save** | Saved. The dialog shows a reading field for the odometer and for Oil life (the meters its rules use). **Warn me** says "Household default: 20 / 10 / 5% left · 60 / 30 / 14 days before a date". |
+| [ ] | 2.5 | **Maintenance** → **Schedule** | The card has an orange edge and **Due soon** (300 mi of 5,000 left: 6 %), with "in 300 mi or by … or Oil life: 80 % to go" in orange, above its three rules. |
+| [ ] | 2.6 | The vehicle's **Overview** | **Coming up** lists `Engine oil & filter` with "in 300 mi …" and **Due soon**. **See all on Maintenance →** opens the Schedule. |
+| [ ] | 2.7 | The **Garage** | `Test truck`'s card shows **Due soon**, and it's first in its group. |
+| [ ] | 2.8 | **Phone**, Sam: **+ Reading** for `Test truck`, the odometer at **N + 400** → **Save**. Then reload the Overview | **⚠ Overdue** in the darker red, with "100 mi over …". The Garage card says **⚠ Overdue** too. |
+| [ ] | 2.9 | **Mac browser**, Maintainer: edit the requirement → **Warn me** → **Change**: yellow 40, orange 30, red 10 → **Save**. Edit again → **Use the household's warnings** → **Save** | The steps open, filled with the household's. Saved, it's still **⚠ Overdue** (past is past). It folds back to "Household default …". Yellow 5, orange 10, red 20 is refused: "Each warning must come no earlier than the one before it …". |
+| [ ] | 2.10 | `Test truck` → **Documents** → **+ Document**: Insurance, expiring in 20 days → **Save**. Then edit it → **Warn me** → **Change**: 10 / 5 / 2 days → **Save** | First, the Overview's **Coming up** lists Insurance, **Due soon**, "by …". With its own days it's **OK** (20 days is beyond 10), still listed with its **OK** chip. |
+| [ ] | 2.11 | **Admin mode** → **Settings** → **Household** → **Due soon warnings**: days 30 / 20 / 10 → **Save**. Then **Use the built-in warnings** | Saved; the You tab's words follow. Back to 20 / 10 / 5 · 60 / 30 / 14. |
+| [ ] | 2.12 | **Maintainer mode**: `Test truck` → **+ Log** → **Maintenance**: the task from **Engine oil & filter** (the menu), the odometer at the start | The task shows **↺ Reset Oil life to 100 % at the end of the job**, ticked. |
+| [ ] | 2.13 | **Finish…** → **Finish and lock** | The job's page shows Oil life "… → 100 % ↺". The Schedule card is **OK** (green edge), last done today, and **Coming up** shows it **OK**. The Garage card has no chip (unless the insurance still needs one). |
+| [ ] | 2.14 | Edit a draft job with the reset ticked (start another, or before finishing in 2.13) | The tick comes back ticked; Oil life isn't among the typed end readings. Unticked and saved, no reset reading is added. |
+| [ ] | 2.15 | **Desktop:** Sync now; the Garage, then `Test truck`'s Overview and Maintenance | The same chips, steps, and words as on the web. |
+| [ ] | 2.16 | **Desktop, Tailscale off** (wait for **OFFLINE**): **+ Reading** with the odometer 5,100 mi past the job's, then the Overview | Offline, it's worked out on the desktop: the oil change is **⚠ Overdue**, "100 mi over". Tailscale on, Sync now: the web agrees. |
+| [ ] | 2.17 | **Phone**, Sam (Driver): `Test truck` → **Overview**, **Maintenance**, and the Garage | Sam sees the chips, **Coming up**, and the Schedule, but no **Set up**, and no **Due soon warnings** on the Household tab. |
+
+**Milestone 2 also checks:** the due arithmetic (steps, whichever comes first, never done, projection, resets, documents), the server's refusals, and the migration of the release fixtures, all in the automated tests.
+
 ## Results
 
 # Human Notes

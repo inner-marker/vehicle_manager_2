@@ -460,7 +460,7 @@ fn Overview(
         div { class: "vehicle-panels",
             SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
             Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
-            Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
+            super::due_view::ComingUp { view: view.clone() }
             section { class: "vehicle-panel vehicle-photos",
                 AttachmentStrip {
                     asset: view.id,

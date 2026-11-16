@@ -652,6 +652,8 @@ mod lifecycle {
             reference: Some(test_id(AXLE)),
             mode: ComplianceMode::OneTime,
             applicability: Applicability::UnderReview,
+            before_records: None,
+            warnings: None,
         };
         RequirementWriter
             .create(

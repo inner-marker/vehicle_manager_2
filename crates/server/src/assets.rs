@@ -23,6 +23,7 @@ use domain::garage::{GarageOrderId, GarageOrderPatch, MAX_ORDER_LENGTH};
 use domain::group::GroupId;
 use domain::i18n::Translator;
 use domain::id::{DatabaseId, Id};
+use domain::location::TimeZone;
 use domain::log_area;
 use domain::meter::{Meter, MeterError, MeterId, MeterPatch};
 use domain::preferences::{Preferences, PreferencesId};
@@ -142,12 +143,16 @@ fn either(result: Result<AssetsOutcome, AssetsOutcome>) -> AssetsOutcome {
 
 // --- The Garage and one vehicle ----------------------------------------------------------
 
-/// The Garage: the groups and vehicles the person can see.
-pub async fn garage(context: &AssetsContext<'_>) -> AssetsOutcome {
-    either(garage_view(context).await)
+/// The Garage: the groups and vehicles the person can see, each with its most urgent due step
+/// in the person's `zone` (#082).
+pub async fn garage(context: &AssetsContext<'_>, zone: &TimeZone) -> AssetsOutcome {
+    either(garage_view(context, zone).await)
 }
 
-async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, AssetsOutcome> {
+async fn garage_view(
+    context: &AssetsContext<'_>,
+    zone: &TimeZone,
+) -> Result<AssetsOutcome, AssetsOutcome> {
     let database = context.database;
     let groups = database
         .groups()
@@ -172,10 +177,18 @@ async fn garage_view(context: &AssetsContext<'_>) -> Result<AssetsOutcome, Asset
                 asset,
                 role,
                 plate: None,
+                due: None,
             })
         })
         .collect();
+    let warnings = crate::due::household_warnings(database, context.database_id.cast())
+        .await
+        .map_err(|error| unavailable("due warnings", &error))?;
+    let now = context.clock.now();
     for summary in &mut assets {
+        summary.due = crate::due::most_urgent(database, summary.id, zone, now, &warnings)
+            .await
+            .map_err(|error| unavailable("due", &error))?;
         summary.plate = current_plate(database, summary.id).await?;
         summary.standing = crate::lifecycle::standing(database, summary.id, summary.asset.status)
             .await

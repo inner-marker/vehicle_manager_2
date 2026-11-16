@@ -29,6 +29,7 @@ use domain::preferences::Preferences;
 use domain::time::{Clock, UnixMillis};
 
 use super::attachments::AttachmentStrip;
+use super::due_view::{StepInputs, TypedSteps, days_text, days_typed, parse_days};
 use super::places::use_countries;
 use super::problem_from_error;
 use super::squawks::use_device_zone;
@@ -70,7 +71,7 @@ pub(super) fn date_text(date: &CalendarDate, units: &Preferences) -> String {
 }
 
 /// A document type's name: the profile's (translated) or the household's own.
-fn type_name(doc_type: &DocumentType) -> String {
+pub(super) fn type_name(doc_type: &DocumentType) -> String {
     match doc_type {
         DocumentType::Listed { key } => Translator::english().tr_key(key),
         DocumentType::Custom { name } => name.as_str().to_owned(),
@@ -521,6 +522,8 @@ struct TypedDocument {
     expires: String,
     plate: String,
     notes: String,
+    /// Its own warning days; `None` follows the household's (#082).
+    warn_days: Option<TypedSteps>,
 }
 
 fn typed_document(document: &AssetDocument, dates: bool) -> TypedDocument {
@@ -552,6 +555,8 @@ fn typed_document(document: &AssetDocument, dates: bool) -> TypedDocument {
         } else {
             String::new()
         },
+        // A renewal keeps the warnings it had.
+        warn_days: document.warn_days.map(days_typed),
     }
 }
 
@@ -586,7 +591,58 @@ fn document_input(
             None
         },
         notes: Notes::parse(&typed.notes).map_err(|_| messages::DOCUMENTS_NOTES_TOO_LONG)?,
+        warn_days: typed.warn_days.as_ref().map(parse_days).transpose()?,
     })
+}
+
+/// How early an expiry warns (#082): folded to the household's days until **Change**.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn WarnDays(typed: Signal<TypedDocument>) -> Element {
+    let mut typed = typed;
+    let household = use_units()().due_warnings.days;
+    let own = typed().warn_days;
+    let mut days = use_signal(|| own.clone().unwrap_or_else(|| days_typed(household)));
+    // The step fields write back into the document as they change.
+    use_effect(move || {
+        let days = days();
+        if let Some(warn) = typed.write().warn_days.as_mut() {
+            *warn = days;
+        }
+    });
+    rsx! {
+        div { class: "field due-warn",
+            span { class: "field-label", {tr(messages::DUE_WARN_ME)} }
+            if own.is_some() {
+                StepInputs { label: messages::DUE_DAYS_BEFORE, values: days, unit: messages::DUE_DAYS }
+                button {
+                    class: "link-button",
+                    r#type: "button",
+                    onclick: move |_| typed.write().warn_days = None,
+                    {tr(messages::DUE_USE_HOUSEHOLD)}
+                }
+            } else {
+                div { class: "check-row",
+                    span { class: "muted-note",
+                        {tr_with(messages::DUE_HOUSEHOLD_DAYS, &[("days", MessageArg::from(days_text(household)))])}
+                    }
+                    button {
+                        class: "link-button",
+                        r#type: "button",
+                        onclick: move |_| {
+                            let start = days_typed(household);
+                            days.set(start.clone());
+                            typed.write().warn_days = Some(start);
+                        },
+                        {tr(messages::DUE_CHANGE)}
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Add, renew, or change a document (and remove one, when changing it).
@@ -709,6 +765,9 @@ fn DocumentDialog(
                     {field(messages::DOCUMENTS_ISSUED, now.issued.clone(), "date", |typed, value| typed.issued = value)}
                     {field(messages::DOCUMENTS_EFFECTIVE, now.effective.clone(), "date", |typed, value| typed.effective = value)}
                     {field(messages::DOCUMENTS_EXPIRES, now.expires.clone(), "date", |typed, value| typed.expires = value)}
+                }
+                if !now.expires.is_empty() {
+                    WarnDays { typed }
                 }
                 if registration {
                     label { class: "field",
@@ -1044,6 +1103,7 @@ mod tests {
                 added_at: UnixMillis::from_millis(0),
                 added_by: test_id(5),
                 received_at: UnixMillis::from_millis(0),
+                warn_days: None,
             },
             status: if renewed_by.is_some() {
                 DocumentStatus::Superseded

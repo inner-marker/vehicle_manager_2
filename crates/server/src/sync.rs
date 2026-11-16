@@ -359,7 +359,9 @@ pub async fn run_operation(context: &PushContext<'_>, operation: &Operation) -> 
             match preferences::set_mine(&preferences, *patch).await {
                 PreferencesOutcome::Preferences { .. } => Ran::Applied,
                 PreferencesOutcome::Unavailable => Ran::Unavailable,
-                other @ PreferencesOutcome::NotAllowed => Ran::Refused(Refusal::Preferences(other)),
+                other @ (PreferencesOutcome::NotAllowed | PreferencesOutcome::BadDueWarnings) => {
+                    Ran::Refused(Refusal::Preferences(other))
+                }
             }
         }
         OperationChange::AddPlace { .. }

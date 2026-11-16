@@ -14,7 +14,8 @@ use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
 use crate::convert::{
-    clearable, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, required,
+    clearable, clearable_json, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql,
+    optional_from_json, optional_json, required,
 };
 use crate::{Database, StorageError};
 
@@ -231,8 +232,8 @@ impl RecordWriter<AssetDocument> for AssetDocumentWriter {
             "INSERT INTO asset_documents
                  (id, asset_id, type_key, type_name, number, issuer, issued_on, effective_on,
                   expires_on, supersedes_id, plate_id, notes, added_ms, added_by, received_ms,
-                  sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  warn_days, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(
@@ -265,6 +266,12 @@ impl RecordWriter<AssetDocument> for AssetDocumentWriter {
             "asset_documents.added_by",
         )?))
         .bind(required(values.received_at, "asset_documents.received_ms")?.as_millis())
+        .bind(optional_json(
+            values
+                .warn_days
+                .and_then(domain::command::Clearable::into_option),
+            "asset_documents.warn_days",
+        )?)
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -291,6 +298,7 @@ impl RecordWriter<AssetDocument> for AssetDocumentWriter {
         let effective = clearable(patch.effective_on.as_ref(), date_to_sql);
         let expires = clearable(patch.expires_on.as_ref(), date_to_sql);
         let plate = clearable(patch.plate.as_ref(), id_to_sql);
+        let warn_days = clearable_json(patch.warn_days.as_ref(), "asset_documents.warn_days")?;
         sqlx::query(
             "UPDATE asset_documents SET
                  type_key     = CASE WHEN ? THEN ? ELSE type_key END,
@@ -302,6 +310,7 @@ impl RecordWriter<AssetDocument> for AssetDocumentWriter {
                  expires_on   = CASE WHEN ? THEN ? ELSE expires_on END,
                  plate_id     = CASE WHEN ? THEN ? ELSE plate_id END,
                  notes        = coalesce(?, notes),
+                 warn_days    = CASE WHEN ? THEN ? ELSE warn_days END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -322,6 +331,8 @@ impl RecordWriter<AssetDocument> for AssetDocumentWriter {
         .bind(plate.0)
         .bind(plate.1)
         .bind(patch.notes.as_ref().map(|notes| notes.as_str().to_owned()))
+        .bind(warn_days.0)
+        .bind(warn_days.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -384,6 +395,7 @@ fn document_from_row(row: &SqliteRow) -> Result<(AssetDocumentId, AssetDocument)
                 "asset_documents.added_by",
             )?,
             received_at: UnixMillis::from_millis(row.try_get("received_ms")?),
+            warn_days: optional_from_json(row.try_get("warn_days")?, "asset_documents.warn_days")?,
         },
     ))
 }

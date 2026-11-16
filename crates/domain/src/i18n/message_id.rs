@@ -1017,6 +1017,72 @@ define_messages! {
     EVENT_KIND_REPAIR => "event-kind-repair",
     /// Meter unit: hours.
     UNIT_HOURS => "unit-hours",
+    /// What's due: not near yet.
+    DUE_OK => "due-ok",
+    /// What's due: yellow.
+    DUE_COMING_UP => "due-coming-up",
+    /// What's due: orange.
+    DUE_SOON => "due-soon",
+    /// What's due: red.
+    DUE_VERY_SOON => "due-very-soon",
+    /// What's due: past it.
+    DUE_OVERDUE => "due-overdue",
+    /// Due warnings that don't make sense.
+    DUE_BAD_WARNINGS => "due-bad-warnings",
+    /// "Last done before these records" that doesn't make sense.
+    REQUIREMENT_BAD_BEFORE_RECORDS => "requirement-bad-before-records",
+    /// Garage sort: the most urgent first.
+    SORT_MOST_URGENT => "sort-most-urgent",
+    /// What's left on a meter rule; takes `amount` ("310 mi").
+    DUE_IN => "due-in",
+    /// How far past a meter rule; takes `amount`.
+    DUE_OVER_BY => "due-over-by",
+    /// What's left on another meter; takes `meter` and `amount`.
+    DUE_TO_GO => "due-to-go",
+    /// How far past on another meter; takes `meter` and `amount`.
+    DUE_METER_OVER => "due-meter-over",
+    /// A date still to come; takes `date`.
+    DUE_BY => "due-by",
+    /// A date gone by; takes `date`.
+    DUE_WAS => "due-was",
+    /// A projected date, an estimate; takes `date`.
+    DUE_ABOUT => "due-about",
+    /// Between two rules' "what's left".
+    DUE_OR => "due-or",
+    /// Never done, and no "last done before these records".
+    DUE_NOT_DONE_YET => "due-not-done-yet",
+    /// Warnings in words; takes `interval` ("20 / 10 / 5") and `days` ("60 / 30 / 14").
+    DUE_WARNINGS_TEXT => "due-warnings-text",
+    /// Requirement dialog: "Last done before these records".
+    DUE_BEFORE_RECORDS => "due-before-records",
+    /// Requirement dialog: that date.
+    DUE_BEFORE_DATE => "due-before-date",
+    /// The warnings' label.
+    DUE_WARN_ME => "due-warn-me",
+    /// The household's warnings, folded; takes `warnings`.
+    DUE_HOUSEHOLD_DEFAULT => "due-household-default",
+    /// The household's day warnings, folded; takes `days` ("60 / 30 / 14").
+    DUE_HOUSEHOLD_DAYS => "due-household-days",
+    /// Open the warnings to change them.
+    DUE_CHANGE => "due-change",
+    /// Back to the household's warnings.
+    DUE_USE_HOUSEHOLD => "due-use-household",
+    /// The interval steps' label.
+    DUE_PERCENT_LEFT => "due-percent-left",
+    /// The day steps' label.
+    DUE_DAYS_BEFORE => "due-days-before",
+    /// After a percentage step.
+    DUE_PERCENT => "due-percent",
+    /// After a day step.
+    DUE_DAYS => "due-days",
+    /// A job's task: reset a meter at the end; takes `meter` and `value` ("100 %").
+    WORK_RESET_METER => "work-reset-meter",
+    /// Settings: when things come due.
+    SETTING_DUE_WARNINGS => "setting-due-warnings",
+    /// Settings, You tab: the household's Admin sets them.
+    SETTING_DUE_WARNINGS_HOUSEHOLD => "setting-due-warnings-household",
+    /// Settings: back to the built-in warnings.
+    DUE_BUILT_IN => "due-built-in",
     /// Meter unit: percent.
     UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.
@@ -1095,8 +1161,6 @@ define_messages! {
     VEHICLES_EMPTY_GROUP => "vehicles-empty-group",
     /// The phone's group menu label.
     VEHICLES_GROUP_MENU => "vehicles-group-menu",
-    /// A card's note until readings arrive.
-    VEHICLES_CARD_COMING => "vehicles-card-coming",
     /// Arranging: move a vehicle up.
     VEHICLES_MOVE_UP => "vehicles-move-up",
     /// Arranging: move a vehicle down.
@@ -1193,10 +1257,12 @@ define_messages! {
     PANEL_READY => "panel-ready",
     /// Overview panel: readiness, not built yet.
     PANEL_READY_COMING => "panel-ready-coming",
-    /// Overview panel: coming due.
+    /// Overview panel: coming up (what's due, #082).
     PANEL_DUE => "panel-due",
-    /// Overview panel: coming due, not built yet.
-    PANEL_DUE_COMING => "panel-due-coming",
+    /// Overview: nothing comes due.
+    PANEL_DUE_NONE => "panel-due-none",
+    /// Overview: to the Maintenance tab.
+    PANEL_DUE_SEE_ALL => "panel-due-see-all",
     /// Overview panel: open squawks.
     PANEL_SQUAWKS => "panel-squawks",
     /// Overview panel: latest fuel-ups.
@@ -2244,6 +2310,14 @@ define_messages! {
     SCHEDULE_ADD_CALENDAR_RULE => "schedule-add-calendar-rule",
     /// Requirement dialog: add a fixed date.
     SCHEDULE_ADD_FIXED_RULE => "schedule-add-fixed-rule",
+    /// Requirement dialog: add a "when a meter reaches" rule.
+    SCHEDULE_ADD_REACHES_RULE => "schedule-add-reaches-rule",
+    /// Requirement dialog: before the meter of a "reaches" rule.
+    SCHEDULE_WHEN_LABEL => "schedule-when-label",
+    /// Requirement dialog: between the meter and the mark of a "reaches" rule.
+    SCHEDULE_REACHES_LABEL => "schedule-reaches-label",
+    /// A "reaches" rule in words; takes `meter` and `value` ("15 %").
+    SCHEDULE_REACHES => "schedule-reaches",
     /// Requirement dialog: about the rules.
     SCHEDULE_RULES_HINT => "schedule-rules-hint",
     /// A rule's inputs: every.

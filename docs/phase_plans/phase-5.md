@@ -32,8 +32,8 @@
 
 | # | Milestone | Status | What it delivers | You can check |
 |---|---|---|---|---|
-| 1 | **Meters** | 🔨 | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
-| 2 | **What's due** | ⬜ | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
+| 1 | **Meters** | ✅ | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
+| 2 | **What's due** | 🔨 | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
 | 3 | **Due messages and snooze** | ⬜ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected | Snooze "1 week or 500 mi"; it returns at whichever comes first |
 | 4 | **Specs and service bundles** | ⬜ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
 | 5 | **Fuel economy** | ⬜ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
@@ -94,12 +94,12 @@
 
 | Step | Status | What |
 |---|---|---|
-| **1.0** `docs:` | ☑️ | This plan; the sketch. |
-| **1a** `feat(domain):` meter kinds | ☑️ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
-| **1b** `feat(storage):` migration 0022 | ☑️ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
-| **1c** `feat(server):` saving and syncing | ☑️ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. The API stays at version 2 (see the choices). |
-| **1d** `feat(app):` the screens | ☑️ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
-| **1e** `docs:` | ☑️ | Milestone 1's section of the phase's test plan, `docs/test-plans/p5-phase.md` (#081: run at the end of the phase, not now). |
+| **1.0** `docs:` | ✅ | This plan; the sketch. |
+| **1a** `feat(domain):` meter kinds | ✅ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
+| **1b** `feat(storage):` migration 0022 | ✅ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
+| **1c** `feat(server):` saving and syncing | ✅ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. The API stays at version 2 (see the choices). |
+| **1d** `feat(app):` the screens | ✅ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
+| **1e** `docs:` | ✅ | Milestone 1's section of the phase's test plan, `docs/test-plans/p5-phase.md` (#081: run at the end of the phase, not now). |
 
 **New dependencies:** none expected.
 
@@ -161,3 +161,162 @@
 **Step 1e notes (2026-11-16):** the human changed the practice (decision #081): one cumulative test plan per phase, run at its end, and a milestone's own plan only when needed. So 1e starts `docs/test-plans/p5-phase.md` (its setup, and what to capture on a failure) with milestone 1's section: 16 steps. They cover the migration on the test server's data, Oil life set up, readings falling, staying level, refused when rising, "It was a reset", the Reset tick, the direction fixed, the reset value changed, a job's start reading, and the desktop online and offline. Nothing is run until the end of Phase 5. AGENTS.md, `plan.md` ("Keeping test plans"), and this file's "How this file works" say so.
 
 **Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).
+
+### Milestone 2 plan: what's due
+
+*Agreed 2026-11-16 · branch `milestone/p5-m2-due` · sketch: `docs/ui-sketches/p5m2-due-options.svg` · Decisions #080, #082*
+
+**Choices (the human, 2026-11-16):**
+- **Never done: "Last done before these records."** Setting up a requirement (and Copy from…) offers an optional date and the readings then, and the first due counts from them. Without it, the requirement says **Not done yet** and counts from the vehicle's first reading of that meter (or, for months, the day the requirement was added).
+- **Projected dates** come from the meter's average use over its **last 90 days** of readings (at least two, 7 or more days apart). Failing that, they use all its readings. Failing that, there's no date, only what's left ("in 1,200 mi"). An estimate is shown with "~".
+- **Dates without an interval** (a fixed "next due on" date, and document expiries) warn **60 / 30 / 14 days** before. Like the 20/10/5% for intervals, these are household defaults, changeable per requirement and per document.
+- **The two airworthiness compliance modes** ("initial deadline, then recurring" and "recurring until a terminating action") and **supersession** move to the **aircraft phase**. Recalls are one-time, which already exists.
+- **The household's defaults** are changed in **Admin mode → Settings → Household** ("Due soon warnings"). Maintainers change them per requirement and per document.
+- **The Overview** shows the **5 most urgent** items (requirements and expiring documents), each with its step and what's left, and **See all** to the Maintenance tab.
+- **The Garage:** each card gets a **badge** with its vehicle's most urgent step, and **Most urgent** becomes the default sort (#040). The fleet strip comes with milestone 3's messages.
+- **A job's reset:** a task whose requirement has a rule on a resettable meter shows **↺ Reset Oil life to 100%**, ticked by default. It adds a reset reading to the job's end readings.
+- **The sketch: 1A, 2A, 3A, 4A.**
+  - **1A:** the schedule cards get the step's colour on their left edge, a chip, and what's left in that colour.
+  - **2A:** the Overview's **Coming up** is a list: the name, what's left, and a chip, then **See all on Maintenance**.
+  - **3A:** the Garage card has a chip in its corner, and nothing when everything is OK.
+  - **4A:** a requirement's warnings are folded ("Household default: 20% / 10% / 5% left · Change").
+
+**The rules, in `domain::due` (test-first):**
+- **Steps:** OK, **Coming up** (yellow), **Due soon** (orange), **Due very soon** (red), and **⚠ Overdue** (a darker red, always with its word). Colour is never the only sign. A step is reached when what's left is at or below its share: of the interval for an interval rule (20/10/5%), and in days for a date (60/30/14).
+- **Each rule's next due:**
+  - every N on a meter, from the reading it was last done at;
+  - every N days, months, or years (end of month as before), from when it was last done;
+  - a fixed date, from the last task's next date or the rule's first;
+  - **when a meter reaches X** (new, for a counting-down or counting-up meter), from its latest reading, with its steps measured over the span from its reset value to X.
+- **A requirement's step** is its most urgent rule's ("whichever comes first"), with the earliest date (projected or fixed) and what's left on each meter rule ("in 310 mi or Oil life 9%").
+- **Only what's on the schedule** comes due (`Requirement::on_schedule`): turned on, applies, and not a one-time one already done.
+- **A document's step** comes from its expiry and its own (or the household's) day steps. A renewed (superseded) document doesn't come due.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **2.0** `docs:` | ☑️ | This plan; the sketch; decision #082; the airworthiness modes moved to the aircraft phase in `plan.md`. |
+| **2a** `feat(domain):` what's due | ☑️ | `domain::due`: the steps and their defaults; each rule's next due; `IntervalRule::Reaches`; "last done before these records"; the 90-day projection; a requirement's and a document's step; a vehicle's items in urgency order. Unit and property tests first (whichever comes first; end of month; never done; a reset meter; too few readings). |
+| **2b** `feat(storage):` migration 0023 | ☑️ | `requirements` gains "last done before" (a date and readings) and its warning steps, `asset_documents` its warning days, and the household's preferences the default steps. The release fixtures migrate. |
+| **2c** `feat(server):` due on the server | ☑️ | The vehicle's due items (Maintenance, Overview), each Garage card's most urgent step and the **Most urgent** sort, the household's due defaults (the Admin), and the requirement and document forms' new fields. The desktop gets the same answers offline, from its own copy. |
+| **2d** `feat(app):` the screens | ☑️ | The schedule cards (row 1), the Overview's **Coming up** (row 2), the Garage badge and sort (row 3), the requirement dialog (row 4: last done before, its warnings, and the **reaches X** rule), the document form's warning days, the task's **↺ Reset** in a job, and **Due soon warnings** on the Household tab. |
+| **2e** `docs:` | ☑️ | Milestone 2's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**New dependencies:** none expected.
+
+**Open issues** (reviewed 2026-11-16): none touch what's due. #24 (a vehicle's main photo) could join the Garage card later; not now.
+
+**Step 2a notes (2026-11-16):**
+- **`domain::due`:**
+  - `DueStep`, with OK < Coming up < Due soon < Due very soon < Overdue, so the most urgent is the greatest. Its words are "OK", "Coming up", "Due soon", "Due very soon", "⚠ Overdue".
+  - `IntervalSteps` (20/10/5% of the interval left) and `DaySteps` (60/30/14 days), together the household's `DueDefaults`, with a check that each step comes no earlier than the one before it. Exactly due is **Due very soon**; one past it is **Overdue**.
+  - `requirement_due` gives a requirement's step, each rule's step and what's left (`Left::Meter`, with a projected date, or `Left::Date`), the earliest date (`DueDate`, with `estimate` for a projected one), and **not done yet**. It's `None` for what isn't on the schedule (#068), or with no rule it can work out.
+  - `document_due` gives a document's step by days; it's `None` for one renewed or that never expires.
+  - `most_urgent_first` sorts by step, then the soonest date (none last).
+- **Counting from:** the latest finished task. Else `Requirement::before_records` (`LastDoneBefore`: a date and readings). Else the meter's first reading, or the day the requirement was added (`added_on`, which 2c passes in).
+- **"When a meter reaches X":** `IntervalRule::Reaches { meter, at }`, checked like a meter rule (the vehicle's meter, the mark zero or more, once per meter). It can sit beside an "every" rule on the same meter. Its steps are measured over the span from the meter's reset value (or the reading when last done) to the mark.
+- **Projection (`usage`):** the meter's movement in its own direction over consecutive readings in the last 90 days, never across a reset, from at least two readings 7 or more days apart. Else all its readings; else none. Integer arithmetic throughout.
+- **New fields** (serde defaults, so older records read as before):
+  - `Requirement::before_records` and `Requirement::warnings` (its own `DueDefaults`);
+  - `AssetDocument::warn_days`;
+  - their patches.
+
+  Storage writes them from 2b; until then they read as empty.
+- **Copying a schedule** moves a "reaches" rule to the matching meter, like an "every" rule (`IntervalRule::on_meter`). It leaves "last done before" behind, since that's the other vehicle's past.
+- **Ahead of 2d, because the rule needed them:**
+  - the schedule card says "when Oil life reaches 15 %";
+  - the requirement dialog has **+ When a meter reaches** (offering a resettable meter first) with its meter and mark, and its round trip.
+- **Tests:**
+  - the steps at their shares, and a property test that less left is never less urgent;
+  - a meter rule;
+  - whichever comes first (a date);
+  - Oil life falling to its mark;
+  - never done, from the first reading or from before the records;
+  - a calendar rule from the day added, with end of month;
+  - fixed dates before and after a sign-off;
+  - a projected date;
+  - too few readings;
+  - use across a reset;
+  - only what's on the schedule;
+  - a requirement's own warnings;
+  - documents (due soon, expired, renewed, never expiring);
+  - the urgency order;
+  - the reaches rule's checks and `on_meter`; a copy leaving "last done before" behind.
+- **Tidying:** adding the two fields pushed `server::references::add_reference` over the 80-line limit, so its permission checks moved into `may_add_reference`.
+
+**Step 2b notes (2026-11-16):**
+- **`0023_due.sql`** only adds nullable columns, so every existing row reads as before:
+  - `requirements.before_records` and `requirements.warnings`;
+  - `asset_documents.warn_days`;
+  - `preferences.due_warnings` (the household's record only).
+
+  Each is JSON text. "When a meter reaches X" lives inside the existing `requirements.rules` JSON, so it needs no change.
+- **Storage:** the requirement and document writers store the new fields, and a patch can set or clear each. New helpers in `storage::convert`: `optional_json`, `optional_from_json`, and `clearable_json`. The household's due warnings are the one structured preference: `ColumnChange::json` writes them, and a value this build can't read counts as "not chosen", like an unknown name.
+- **`domain::preferences`:** `due_warnings` is household-only, like what issues are called. `Preferences::resolve` takes it from the household alone. The server refuses it in a person's own preferences, ahead of 2c, so the gap never existed.
+- **Tests:**
+  - a requirement keeps its date before the records and its own warnings, and both clear;
+  - a document's warning days set and clear;
+  - only the Admin sets the household's due warnings, everyone sees them, and they go back to the defaults;
+  - the release fixtures migrate with all the new columns empty.
+
+**Step 2c notes (2026-11-16):**
+- **Today is the person's:** each call takes the device's time zone, as the documents' status already does. The data layer asks the browser or webview itself (`ui::device_zone`, which `use_device_zone` now uses too), so screens don't pass it. An unknown zone falls back to UTC.
+- **`server::due`:**
+  - `vehicle_due` gathers one vehicle's meters, readings, finished tasks, requirements, documents, and the household's warnings, and asks `domain::due`. It returns `DueEntry`s (a requirement with its name, or a document with its type), most urgent first, by `due::urgency_order`.
+  - `list` serves the Overview to anyone whose role covers the vehicle; it's **Not found** otherwise.
+  - When a requirement was added comes from the clock of its `asset` field, which is set once and never changes (`Database::requirements_added`).
+- **The schedule view** (`schedule::view`) gives each requirement its `due`.
+- **The Garage** gives each card its most urgent step (`AssetSummary::due`), and **Most urgent** is a new sort and the default (#040). Ties go by name.
+- **Checks:**
+  - a requirement's own warnings, and "last done before" (a date; the vehicle's meters, each once; none negative), via `check_due_settings`;
+  - a document's warning days (`DocumentProblem::BadWarnDays`);
+  - the household's warnings when the Admin sets them (`PreferencesOutcome::BadDueWarnings`).
+
+  Edits carry the new fields.
+- **Endpoints:**
+  - The Garage moved from `GET /api/v1/assets` to `POST /api/v1/assets/garage`, now that it takes the zone.
+  - `POST /api/v1/due` is new, with its own `server_side::with_due` wrapper.
+  - `POST /api/v1/requirements` takes the zone.
+  - On the desktop, the same server functions run on its copy, offline included. The due list has no caller until the Overview in 2d.
+- **The Garage's sort menu** offers **Most urgent**, since it's now the default.
+- **Tests:**
+  - server (`tests/due.rs`): a truck's oil change counted from before the records, and its insurance, both **Due soon**, on the list, the schedule, and the Garage; a vehicle Sam can't see; refusals for backwards warnings, an unknown meter, a bad date, and backwards document days;
+  - the household's backwards warnings refused;
+  - domain: `check_due_settings`, and the Most urgent order.
+
+**Step 2d notes (2026-11-16):**
+- **`ui::screens::due_view`:**
+  - `DueChip`, the step's word in its colour, so colour is never the only sign;
+  - `step_class`;
+  - `left_text`: "in 310 mi or by 12 Dec · ~19 Nov", "1 mi over", "was due 2 Nov", with "Not done yet" first when it applies. A date reads "was due" when its own rule is overdue.
+- **Colours:** set on the app's theme selectors (light, dark, and the system's choice). Yellow, orange, red, and a darker red on a tinted background for Overdue.
+- **1A, the schedule cards:** a coloured left edge, the chip beside the name, and what's left in the step's colour above the rules.
+- **2A, the Overview:** the placeholder "Coming due" panel is now **Coming up**, the 5 most urgent items (requirements by name, documents by type) with what's left and the chip, then **See all on Maintenance →**. With nothing set up, it says so.
+- **3A, the Garage card:** the chip replaces "Readings and due items arrive later", and shows nothing when everything is OK. The lifecycle badges stay.
+- **4A, the requirement dialog** (`DueSettings`), below the rules of a recurring one:
+  - **"Last done before these records"**: a date, and a reading for each meter its rules count on.
+  - **"Warn me"**, folded to "Household default: 20 / 10 / 5% left · 60 / 30 / 14 days before a date · Change". Change opens the steps, pre-filled with the household's (percent of the interval, and days before a date). **Use the household's warnings** folds them again.
+- **The document dialog:** "Warn me", once it has an expiry, folded the same way in days. A renewal keeps the old document's choice.
+- **A job's task:** **↺ Reset Oil life to 100 % at the end of the job**, for each resettable meter its requirement counts on. It's ticked when the task is added, from the menu or a bundle. `TypedWork.resets` turns it into a reset end reading at the meter's reset value, and editing the job ticks it again rather than showing it as a typed end reading.
+- **Settings:** **Due soon warnings** on the Household tab (the steps, **Save**, and **Use the built-in warnings**). The You tab shows them in words, set by the Admin.
+- **Shared pieces:** `TypedWarnings`, `StepInputs`, `days_typed`, and `parse_days` are used by the requirement, the document, and the Household tab alike.
+- **Tests:**
+  - every step has its word and colour;
+  - what's left reads as one line, including overdue and not done yet;
+  - a ticked reset becomes a reset end reading at the reset value (and a non-resettable meter's tick does nothing), and comes back ticked.
+- **Tidying:** clippy asked for the day steps by value (`DaySteps` is 6 bytes), and `typed_work` grew past 80 lines, so a task's part moved into `typed_task`.
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (2e).
+
+**Step 2e notes (2026-11-16):**
+- **The test plan:** milestone 2's section of `docs/test-plans/p5-phase.md`, 17 steps, run at the end of the phase (#081). They cover:
+  - the migration;
+  - the Garage's sort and chips, and the Household tab's warnings;
+  - an oil change counted from before the records, with three rules, going **Due soon** then **⚠ Overdue**;
+  - a requirement's own warnings, and backwards ones refused;
+  - insurance by days, and its own days;
+  - a job resetting Oil life and setting the oil change back to OK;
+  - the desktop offline, and a Driver's view.
+- **A wording fix found while writing it:** a meter other than distance now names itself in "what's left": "Oil life: 80 % to go", "Engine hours: 12 h over". A distance still reads "in 300 mi". Tested.
+
+**Not in this milestone:** due and overdue messages and snooze, and the fleet strip (milestone 3); service bundles' sign-off and household templates (milestone 4); readiness (milestone 6); the airworthiness modes and supersession (the aircraft phase).

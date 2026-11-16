@@ -241,6 +241,8 @@ mod make_fixture {
             reference: None,
             mode: ComplianceMode::Recurring,
             applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
         };
         let ScheduleOutcome::SavedRequirement { id: oil } =
             server::schedule::add_requirement(shop, oil).await
@@ -328,6 +330,7 @@ mod make_fixture {
                     expires_on: Some(CalendarDate::parse("2024-01-31").unwrap()),
                     plate: None,
                     notes: Notes::default(),
+                    warn_days: None,
                 },
             )
             .await

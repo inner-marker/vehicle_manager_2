@@ -246,6 +246,8 @@ mod maintenance {
             reference: None,
             mode: domain::requirement::ComplianceMode::Recurring,
             applicability: domain::requirement::Applicability::Applies,
+            before_records: None,
+            warnings: None,
         }
     }
 
@@ -399,7 +401,8 @@ mod maintenance {
         saved(&correct(&shop, next, corrected, "Not fixed after all").await);
 
         // Last done is the latest finished task.
-        let ScheduleOutcome::Schedule { requirements, .. } = schedule::view(&driver, truck).await
+        let ScheduleOutcome::Schedule { requirements, .. } =
+            schedule::view(&driver, truck, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no schedule");
         };
@@ -479,7 +482,9 @@ mod maintenance {
             schedule::delete_requirement(&shop, tires).await,
             ScheduleOutcome::Done
         );
-        let ScheduleOutcome::Schedule { bundles, .. } = schedule::view(&shop, truck).await else {
+        let ScheduleOutcome::Schedule { bundles, .. } =
+            schedule::view(&shop, truck, &TimeZone::parse("UTC").unwrap()).await
+        else {
             panic!("no schedule");
         };
         assert_eq!(
@@ -525,7 +530,7 @@ mod maintenance {
             requirements: copied,
             bundles,
             may_configure,
-        } = schedule::view(&shop, van).await
+        } = schedule::view(&shop, van, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no van schedule");
         };
