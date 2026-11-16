@@ -22,7 +22,7 @@
 - One branch and **one PR into `dev` per milestone** (`milestone/p5-mN-<slug>`), merged with a merge commit.
 - Each **step** is one Conventional Commit. Steps are planned in detail, and approved, when their milestone starts.
 - Screens get **SVG layout options** in `docs/ui-sketches/` before they're built (#040).
-- Each milestone has a test plan in `docs/test-plans/`, run on the test server (#062) with the web and desktop apps.
+- **One cumulative test plan for the phase** (#081): each milestone's last step adds its section to `docs/test-plans/p5-phase.md`. The whole plan is run at the end of the phase, on the test server (#062) with the web and desktop apps, as `v0.5.0`'s regression pass. A milestone's own plan is optional.
 - `cargo clean` at each step's end, once its checks have run (the human's disk is small).
 - Status: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
 
@@ -99,7 +99,7 @@
 | **1b** `feat(storage):` migration 0022 | ☑️ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
 | **1c** `feat(server):` saving and syncing | ☑️ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. The API stays at version 2 (see the choices). |
 | **1d** `feat(app):` the screens | ☑️ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
-| **1e** `docs:` | ⬜ | The test plan, `docs/test-plans/p5m1-meters.md`, on the test server with the web and desktop apps. |
+| **1e** `docs:` | ☑️ | Milestone 1's section of the phase's test plan, `docs/test-plans/p5-phase.md` (#081: run at the end of the phase, not now). |
 
 **New dependencies:** none expected.
 
@@ -156,6 +156,8 @@
 - **Where resets show:** ↺ after the value on the timeline, on the event page's tiles, and in a job's "start → end" line. **Setup → Meters** says "Percentage · % · whole · counts down · resets to 100 %".
 - **Only a job's start readings** have the tick in this milestone. Its end readings get "Reset Oil life to 100%" with milestone 2's tasks.
 - **Tests:** the form builds a ticked reading as a reset, and an event typed back into the form is ticked again and builds the same event. The dialog types the reset value in the meter's unit, and an unticked value isn't checked. The meter summary for Oil life.
-- **Not seen running yet:** the dialog and the form, on the web and the desktop. That's for the test plan (1e).
+- **Not seen running yet:** the dialog and the form, on the web and the desktop. They're in the phase's test plan (1e), run at the end of the phase (#081).
+
+**Step 1e notes (2026-11-16):** the human changed the practice (decision #081): one cumulative test plan per phase, run at its end, and a milestone's own plan only when needed. So 1e starts `docs/test-plans/p5-phase.md` (its setup, and what to capture on a failure) with milestone 1's section: 16 steps. They cover the migration on the test server's data, Oil life set up, readings falling, staying level, refused when rising, "It was a reset", the Reset tick, the direction fixed, the reset value changed, a job's start reading, and the desktop online and offline. Nothing is run until the end of Phase 5. AGENTS.md, `plan.md` ("Keeping test plans"), and this file's "How this file works" say so.
 
 **Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).

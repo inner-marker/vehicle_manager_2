@@ -150,9 +150,15 @@ See "Testing strategy" and "Manual testing by the human" in `docs/plan.md` for t
 - **Bug fixes start with a failing test** that reproduces the bug.
 - Don't write filler tests to raise coverage; coverage is informational only.
 
-**Manual test plans (when the human must verify something)**
+**Manual test plans: one per phase, built up as it goes** (the human, 2026-11-16; decision #081)
 
-If any part of a change can only be verified by a person (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior), include a **manual test plan** with your work, saved as `docs/test-plans/p<phase>m<milestone>-<feature>.md`:
+Anything only a person can verify (real devices, the NAS, Tailscale, camera, OBD adapter, UI behavior) goes into the phase's **cumulative test plan**, `docs/test-plans/p<phase>-phase.md`:
+
+- **Each milestone adds its own section** to it as the milestone's last step: what it changed, and the steps that check it. Nothing is run then.
+- **The whole plan is required at the end of the phase:** the human runs it on the test server before the release, as the release's regression pass (with the exit criteria and the earlier releases' main paths).
+- **A milestone's own test plan is optional:** written only when the human asks for one, or when the agent thinks something risky needs a person before it merges (say why, and ask). It's saved as `docs/test-plans/p<phase>m<milestone>-<feature>.md`.
+
+Each plan, and each milestone's section, has:
 
 1. **Intended behavior:** what the feature should do, including edge cases and what should be rejected.
 2. **Setup:** device, data, mode, and server state needed first.
@@ -216,7 +222,7 @@ Then confirm:
 - [ ] I searched for and reused existing helpers; no duplicated functions
 - [ ] New helpers went into the right `*_utils.rs` module (and the table in section 4 is updated)
 - [ ] Tests cover the change
-- [ ] If the human must verify anything, a manual test plan is written in `docs/test-plans/`
+- [ ] If the human must verify anything, it's in the phase's cumulative test plan (`docs/test-plans/p<phase>-phase.md`)
 - [ ] New code paths have debug-level `tracing` messages useful for troubleshooting
 - [ ] No personal information (names, places, equipment) in tracked files
 - [ ] No unrelated changes
