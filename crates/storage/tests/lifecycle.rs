@@ -19,7 +19,7 @@ mod lifecycle {
     use domain::label::Label;
     use domain::lifecycle::{LifecycleDetails, Money, Party, Return, SendOut};
     use domain::location::{LocationSource, TimeZone};
-    use domain::meter::{EventKind, Meter, MeterDimension, MeterPatch, MeterUnit};
+    use domain::meter::{EventKind, Meter};
     use domain::notes::Notes;
     use domain::preferences::CurrencyCode;
     use domain::reference::{
@@ -34,7 +34,7 @@ mod lifecycle {
     use domain::user::{User, UserPatch, Username};
     use sqlx::sqlite::SqliteConnectOptions;
     use sqlx::{Connection, Row, SqliteConnection};
-    use storage::assets::{AssetWriter, GroupWriter, MeterWriter};
+    use storage::assets::{AssetWriter, GroupWriter};
     use storage::attachments::AttachmentWriter;
     use storage::commands::RecordWriter;
     use storage::database::MIGRATOR;
@@ -103,21 +103,18 @@ mod lifecycle {
             .create(connection, test_id(TRUCK), &AssetPatch::all(asset), 3)
             .await
             .unwrap();
-        let meter = Meter {
-            asset: test_id(TRUCK),
-            name: Label::parse("Odometer").unwrap(),
-            dimension: MeterDimension::Distance,
-            unit: MeterUnit::Miles,
-            precision: 0,
-            description: None,
-            required_for: vec![EventKind::Maintenance],
-            direction: domain::meter::MeterDirection::Up,
-            reset_to: None,
-        };
-        MeterWriter
-            .create(connection, test_id(ODOMETER), &MeterPatch::all(meter), 4)
-            .await
-            .unwrap();
+        // Written in SQL, not by `MeterWriter`: the 0015 tests fill a database from before
+        // migration 0022 added the meter's direction and reset value.
+        sqlx::query(
+            "INSERT INTO meters (id, asset_id, name, dimension, unit, precision, required_for,
+                                 sequence)
+             VALUES (?, ?, 'Odometer', 'distance', 'miles', 0, '[\"maintenance\"]', 4)",
+        )
+        .bind(storage::convert::id_to_sql(test_id::<Meter>(ODOMETER)))
+        .bind(storage::convert::id_to_sql(test_id::<Asset>(TRUCK)))
+        .execute(&mut *connection)
+        .await
+        .unwrap();
         let squawk = Squawk {
             asset: test_id(TRUCK),
             description: SquawkText::parse("Rattle").unwrap(),
@@ -316,6 +313,12 @@ mod lifecycle {
         .execute(&mut *connection)
         .await
         .unwrap();
+        // Today's `EventWriter` also writes each reading's reset flag (migration 0022), so the
+        // column is here while the events are written, and gone again before 0015 runs.
+        sqlx::query("ALTER TABLE event_readings ADD COLUMN reset INTEGER NOT NULL DEFAULT 0")
+            .execute(&mut *connection)
+            .await
+            .unwrap();
         create_event(connection, JOB, &oil_change()).await;
         let mut fix = oil_change();
         fix.corrects = Some(test_id(JOB));
@@ -326,6 +329,10 @@ mod lifecycle {
         gone.status = EventStatus::Draft;
         gone.finalized = None;
         create_event(connection, GONE, &gone).await;
+        sqlx::query("ALTER TABLE event_readings DROP COLUMN reset")
+            .execute(&mut *connection)
+            .await
+            .unwrap();
         sqlx::query("UPDATE events SET deleted = 1 WHERE id = ?")
             .bind(test_id::<Event>(GONE).to_bytes().to_vec())
             .execute(&mut *connection)

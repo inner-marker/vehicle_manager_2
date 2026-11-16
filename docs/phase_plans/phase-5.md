@@ -96,7 +96,7 @@
 |---|---|---|
 | **1.0** `docs:` | ☑️ | This plan; the sketch. |
 | **1a** `feat(domain):` meter kinds | ☑️ | `MeterDimension::Percentage` and `MeterUnit::Percent`; `MeterDirection` (up, down); `Meter::reset_to` (an optional reset value) on the meter and its patch; `check_meter` refuses a reset value of the wrong kind; `Reading::reset`; `neighbours` and `clash` aware of direction and resets (the history carries each reading's reset flag); parsing and showing percentages; the new messages. Unit tests first, including a back-dated reading either side of a reset. |
-| **1b** `feat(storage):` migration 0022 | ⬜ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
+| **1b** `feat(storage):` migration 0022 | ☑️ | The `meters` table rebuilt to allow `percentage` and `percent` and to add `direction` and `reset_to`. SQLite can't change a `CHECK` in place, and `event_readings` and the tasks' readings point at `meters`, so the rebuild keeps every row and ID and is checked by `foreign_key_check`. `event_readings` gains `reset`. The `v0.2.0` and `v0.3.0` fixtures migrate. The desktop's copy runs the same migration. |
 | **1c** `feat(server):` saving and syncing | ⬜ | Meter and event commands carry the new fields. The server refuses a direction change once the meter has readings, a reset on a meter that isn't resettable, and a resettable fuel-up odometer. The desktop's outbox and pull carry them. **API version 3:** a version-2 app's pull leaves out the meters it can't read and their readings (and the reset flag, which it ignores anyway), and its event edits keep those readings on the server. Tests for both. |
 | **1d** `feat(app):` the screens | ⬜ | The meter dialog (the chosen row 1), the Reset choice on readings (row 2), the refusal (row 3), ↺ on the timeline and the event's page, and the meter's summary in Setup ("% · counts down · resets to 100%"). The same on the desktop, offline. |
 | **1e** `docs:` | ⬜ | The test plan, `docs/test-plans/p5m1-meters.md`, on the test server with the web and desktop apps. |
@@ -120,5 +120,20 @@
   - The server passes `reset: false` until 1b stores the flag.
 - **Tests:** Oil life falling, sitting at 0%, and refused when it rises. Readings either side of a reset, including back-dated ones and one at the reset's own moment. A reset on a meter that can't be reset. A job's end reading counting down, or reset. Percent parsing and showing (also in the round-trip property test). A property test that counting down is counting up mirrored. A meter stored before Phase 5 still reads.
 - **Not yet:** the meter dialog doesn't offer Percentage yet (1d), and nothing stores the new fields (1b).
+
+**Step 1b notes (2026-11-16):**
+- **`0022_meter_kinds.sql`** rebuilds `meters` by 0015's procedure:
+  - it runs outside sqlx's transaction, with foreign keys off;
+  - in one transaction it creates the new table, copies every row, drops the old one, renames the new one, and recreates both indexes (`meters_by_asset`, `meters_by_sequence`, the only ones);
+  - it checks every foreign key before committing.
+
+  Following 0015's rule, `dimension` and `unit` no longer list their values. New columns: `direction` (default `'up'`), `reset_to` (NULL, or zero and up), and `event_readings.reset` (0 or 1).
+- **Storage:** meters write and read their direction and reset value (a patch can clear the reset value). Readings write and read the flag. `CountedReading` carries it to the server's checks.
+- **Readings at the same moment** now come in the order they happened: resets last, a job's start before its end, then in the meter's direction. So the last of them is the latest, which `latest_readings` relies on. Before, they were simply sorted by value.
+- **Tests:**
+  - The release fixture test now also counts every meter and reading before and after migrating. `v0.2.0`'s and `v0.3.0`'s all come through, counting up, not resettable, and with no resets.
+  - A meter's direction and reset value round-trip, and the reset value can be cleared.
+  - A reset is kept, and comes last at its moment, after two readings counting down.
+- **0015's own test** builds a database at schema 14 and fills it with today's writers, which now need 0022's columns. Its meter is written in SQL instead. The `reset` column is added only while its events are written, and dropped before 0015 runs, so its snapshot is still the real schema 14.
 
 **Not in this milestone:** "when a meter reaches X" rules, due dates, and a job's "Reset Oil life to 100%" (milestone 2); derived meters (milestone 7); rollover and replacement (Phase 6).

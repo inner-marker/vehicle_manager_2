@@ -412,6 +412,7 @@ mod maintenance {
             event: test_id(event),
             at: at(days),
             value,
+            reset: false,
         };
         assert_eq!(
             database.readings_of(test_id(TRUCK)).await.unwrap(),

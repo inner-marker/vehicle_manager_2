@@ -305,8 +305,8 @@ impl RecordWriter<Meter> for MeterWriter {
     ) -> Result<(), StorageError> {
         sqlx::query(
             "INSERT INTO meters (id, asset_id, name, dimension, unit, precision, description,
-                                 required_for, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 required_for, direction, reset_to, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -327,6 +327,12 @@ impl RecordWriter<Meter> for MeterWriter {
             &values.required_for.clone().unwrap_or_default(),
             "required_for",
         )?)
+        .bind(name(&values.direction.unwrap_or_default(), "direction")?)
+        .bind(
+            values
+                .reset_to
+                .and_then(domain::command::Clearable::into_option),
+        )
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -341,6 +347,7 @@ impl RecordWriter<Meter> for MeterWriter {
         sequence: i64,
     ) -> Result<(), StorageError> {
         let description = clearable(patch.description.as_ref(), |text| text);
+        let reset_to = clearable(patch.reset_to.as_ref(), |value| value);
         let required_for = patch
             .required_for
             .as_ref()
@@ -355,6 +362,8 @@ impl RecordWriter<Meter> for MeterWriter {
                  precision = coalesce(?, precision),
                  description = CASE WHEN ? THEN ? ELSE description END,
                  required_for = coalesce(?, required_for),
+                 direction = coalesce(?, direction),
+                 reset_to = CASE WHEN ? THEN ? ELSE reset_to END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -366,6 +375,9 @@ impl RecordWriter<Meter> for MeterWriter {
         .bind(description.0)
         .bind(description.1)
         .bind(required_for)
+        .bind(optional_name(patch.direction.as_ref(), "direction")?)
+        .bind(reset_to.0)
+        .bind(reset_to.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -403,8 +415,8 @@ fn meter_from_row(row: &SqliteRow) -> Result<(MeterId, Meter), StorageError> {
             precision: u8::try_from(precision).map_err(invalid("meters.precision"))?,
             description: row.try_get("description")?,
             required_for: json_from_sql::<Vec<EventKind>>(&required_for, "meters.required_for")?,
-            direction: domain::meter::MeterDirection::Up,
-            reset_to: None,
+            direction: required_name(row.try_get("direction")?, "meters.direction")?,
+            reset_to: row.try_get("reset_to")?,
         },
     ))
 }
@@ -761,7 +773,8 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn meters_of(&self, asset: AssetId) -> Result<Vec<(MeterId, Meter)>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, name, dimension, unit, precision, description, required_for
+            "SELECT id, asset_id, name, dimension, unit, precision, description, required_for,
+                    direction, reset_to
              FROM meters WHERE asset_id = ? AND deleted = 0 ORDER BY name",
         )
         .bind(id_to_sql(asset))
@@ -779,7 +792,8 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn meter(&self, id: MeterId) -> Result<Option<Meter>, StorageError> {
         sqlx::query(
-            "SELECT id, asset_id, name, dimension, unit, precision, description, required_for
+            "SELECT id, asset_id, name, dimension, unit, precision, description, required_for,
+                    direction, reset_to
              FROM meters WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

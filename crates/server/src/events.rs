@@ -205,7 +205,7 @@ impl AssetsContext<'_> {
                 meter: reading.meter,
                 at: reading.at,
                 value: reading.value,
-                reset: false,
+                reset: reading.reset,
             })
             .collect();
         let kinds = event_kinds(&asset.kind);

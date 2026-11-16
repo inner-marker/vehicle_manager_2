@@ -237,13 +237,14 @@ async fn write_readings(
         .await?;
     for reading in readings {
         sqlx::query(
-            "INSERT INTO event_readings (event_id, reading_set, meter_id, value)
-             VALUES (?, ?, ?, ?)",
+            "INSERT INTO event_readings (event_id, reading_set, meter_id, value, reset)
+             VALUES (?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(set.clone())
         .bind(id_to_sql(reading.meter))
         .bind(reading.value)
+        .bind(reading.reset)
         .execute(&mut *connection)
         .await?;
     }
@@ -487,7 +488,7 @@ async fn with_parts(
 ) -> Result<Vec<(EventId, Event)>, StorageError> {
     let (readings_sql, fields_sql, fuel_sql, lifecycle_sql) = match scope {
         Scope::Event(_) => (
-            "SELECT event_id, reading_set, meter_id, value FROM event_readings
+            "SELECT event_id, reading_set, meter_id, value, reset FROM event_readings
              WHERE event_id = ? ORDER BY meter_id",
             "SELECT event_id, field_id, data FROM event_field_values WHERE event_id = ?
              ORDER BY field_id",
@@ -495,7 +496,7 @@ async fn with_parts(
             "SELECT event_id, details FROM lifecycle_details WHERE event_id = ?",
         ),
         Scope::Asset(_) => (
-            "SELECT r.event_id, r.reading_set, r.meter_id, r.value FROM event_readings r
+            "SELECT r.event_id, r.reading_set, r.meter_id, r.value, r.reset FROM event_readings r
              JOIN events e ON e.id = r.event_id WHERE e.asset_id = ? AND e.deleted = 0
              ORDER BY r.meter_id",
             "SELECT v.event_id, v.field_id, v.data FROM event_field_values v
@@ -529,7 +530,7 @@ async fn with_parts(
                     "event_readings.meter_id",
                 )?,
                 value: row.try_get("value")?,
-                reset: false,
+                reset: row.try_get("reset")?,
             };
             let set = required_name(row.try_get("reading_set")?, "event_readings.reading_set")?;
             work::add_reading(&mut events, position, set, reading)?;
@@ -607,7 +608,7 @@ async fn load(
         .map(|(_, event)| event))
 }
 
-/// A reading that counts: its meter, its event, when, and its value.
+/// A reading that counts: its meter, its event, when, its value, and whether it was a reset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CountedReading {
     /// Which meter.
@@ -618,6 +619,8 @@ pub struct CountedReading {
     pub at: UnixMillis,
     /// The value, in the meter's stored unit.
     pub value: i64,
+    /// Whether it was a reset (the meter's new start).
+    pub reset: bool,
 }
 
 impl Database {
@@ -696,7 +699,9 @@ impl Database {
 
     /// Every reading on one vehicle's events that counts, in time order: not on a deleted
     /// event, nor on one that has been corrected (its correction's readings count instead). A
-    /// job's end readings are at its end (or its start, for a one-day job).
+    /// job's end readings are at its end (or its start, for a one-day job). Readings at the
+    /// same moment come in the order they happened: a reset last, a job's start before its
+    /// end, then in the meter's direction (so the last of them is the latest).
     /// The checks compare a new reading with its neighbours here (leave the event itself out,
     /// and for a correction, the event it corrects).
     ///
@@ -705,13 +710,15 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn readings_of(&self, asset: AssetId) -> Result<Vec<CountedReading>, StorageError> {
         sqlx::query(
-            "SELECT r.meter_id, r.event_id, r.value,
+            "SELECT r.meter_id, r.event_id, r.value, r.reset,
                     CASE r.reading_set WHEN 'end' THEN coalesce(e.end_ms, e.start_ms)
                                        ELSE e.start_ms END AS at_ms
              FROM event_readings r JOIN events e ON e.id = r.event_id
+                  JOIN meters m ON m.id = r.meter_id
              WHERE e.asset_id = ? AND e.deleted = 0
                AND NOT EXISTS (SELECT 1 FROM events c WHERE c.corrects_id = e.id AND c.deleted = 0)
-             ORDER BY at_ms, r.value",
+             ORDER BY at_ms, r.reset, r.reading_set DESC,
+                      CASE m.direction WHEN 'down' THEN -r.value ELSE r.value END",
         )
         .bind(id_to_sql(asset))
         .fetch_all(self.pool())
@@ -729,6 +736,7 @@ impl Database {
                 )?,
                 at: UnixMillis::from_millis(row.try_get("at_ms")?),
                 value: row.try_get("value")?,
+                reset: row.try_get("reset")?,
             })
         })
         .collect()

@@ -225,6 +225,35 @@ mod assets {
         assert_eq!(updated.description, None);
         assert!(updated.required_for.is_empty());
         assert_eq!(updated.name, meter.name, "unchanged");
+
+        // Made resettable, counting down; then not resettable again.
+        let patch = MeterPatch {
+            direction: Some(domain::meter::MeterDirection::Down),
+            reset_to: Some(Clearable::Set(36_000)),
+            ..MeterPatch::default()
+        };
+        MeterWriter
+            .update(&mut connection, test_id(20), &patch, 5)
+            .await
+            .unwrap();
+        let (_, updated) = database.meters_of(test_id(TRUCK)).await.unwrap().remove(0);
+        assert_eq!(updated.direction, domain::meter::MeterDirection::Down);
+        assert_eq!(updated.reset_to, Some(36_000));
+        let patch = MeterPatch {
+            reset_to: Some(Clearable::Clear),
+            ..MeterPatch::default()
+        };
+        MeterWriter
+            .update(&mut connection, test_id(20), &patch, 6)
+            .await
+            .unwrap();
+        let (_, updated) = database.meters_of(test_id(TRUCK)).await.unwrap().remove(0);
+        assert_eq!(updated.reset_to, None);
+        assert_eq!(
+            updated.direction,
+            domain::meter::MeterDirection::Down,
+            "kept"
+        );
     }
 
     #[tokio::test]
