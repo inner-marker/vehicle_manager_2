@@ -978,3 +978,16 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Moved to the aircraft phase:** the "initial deadline, then recurring" and "recurring until a terminating action" compliance modes, and supersession. Ground vehicles' recalls are one-time, which exists.
 - **Why:** the human, 2026-11-16, choosing the recommended options throughout. Red is called **Due very soon** so that orange and red differ in words, not only in colour.
 - **Limits, accepted:** a projected date is an estimate, and a vehicle used in bursts (a trailer, a summer car) may see it move. A requirement set up without "last done before" can warn too early or too late until its first job is logged.
+
+### 083. Due messages: from Due soon (a household choice), one per cycle plus one for Overdue, snoozed per person by time or a meter; the fleet strip and Due & squawks
+*Decided: 2026-11-16 · Phase plan: phase-5.md milestone 3 · Sketch: `docs/ui-sketches/p5m3-messages-options.svg` (1A, 2A, 3A, 4A) · Builds on #040, #050, #080, #082*
+
+- **Decision:**
+  - **Due messages** are worked out from the records, like every other message (#050), so the desktop makes them offline from its own copy. They start at **Due soon** by default. The Admin can make that **Coming up** or **Due very soon** on the Household tab, beside the due warnings. Overdue always sends one.
+  - **One message per cycle, and one for Overdue:** an item's message lasts from its last sign-off (or its document) to its next, showing the step it's at now. Going **⚠ Overdue** raises a second message of its own, so it comes back unread even if the first was dismissed or snoozed. Signing it off starts a new cycle.
+  - **Who:** anyone with a role on the vehicle, as for its Maintenance tab. Coming up is **Info**; Due soon, Due very soon, and Overdue are **Warnings**, without the banner, which stays for server problems.
+  - **Snooze is per person**, kept on their read and dismissed mark: a time, a value on the item's counting-up meter, or both, whichever comes first ("1 week or 500 mi"). A **Snooze ▾** menu offers 1 day, 1 week, 1 month, a meter amount fitted to the item (500 mi, 10 h), the two together, and **Custom…**. Items with only dates offer time only. Messages has a **Snoozed** filter with **Wake now**.
+  - **The Garage's fleet strip:** four tiles, **⚠ Overdue**, **Due soon** (Due soon and Due very soon), **Open squawks**, and, on the desktop app, **Synced**. Each opens **Due & squawks**.
+  - **Due & squawks**, the sidebar's screen, is built now: every due item the person can see across their vehicles, most urgent first, then the open squawks, with filters matching the strip.
+- **Why:** the human, 2026-11-16, choosing the recommended options throughout. A separate Overdue message is what makes "Overdue breaks through" work without a snooze that watches steps.
+- **Limits, accepted:** a snooze lives on one person's mark, so it doesn't hide the message from anyone else. Moving from Due soon to Due very soon doesn't make the message unread again. Snooze by meter needs a counting-up meter; Oil life items snooze by time, or by the odometer if a rule uses it.

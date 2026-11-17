@@ -1234,7 +1234,7 @@ When a vehicle is sold to someone who also runs this app, export it as an **impo
 
 **Home ("Garage") screen** (proposed)
 - **A section per group** (#052), with the group's name and icon; a household with one group sees just its cards.
-- **Fleet strip:** counts of overdue, due soon, open squawks, and sync status; each taps through to its list.
+- **Fleet strip:** counts of overdue, due soon, open squawks, and sync status; each taps through to its list (Due & squawks; Phase 5 milestone 3, #083).
 - **One card per vehicle:**
   - Photo, name, and primary meter readings
   - Status badge (OK / due soon / overdue)
