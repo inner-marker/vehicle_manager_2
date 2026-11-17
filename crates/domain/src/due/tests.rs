@@ -439,12 +439,12 @@ fn a_document_warns_by_days_until_renewed() {
     let defaults = DueDefaults::default();
     let current = insurance("2026-12-06");
     let documents = vec![(test_id(30), current.clone())];
-    let due = document_due(test_id(30), &current, &documents, &today, &defaults).unwrap();
+    let due = document_due(test_id(30), &current, &documents, &today, &utc(), &defaults).unwrap();
     assert_eq!(due.step, DueStep::DueSoon, "20 days");
     let expired = insurance("2026-11-15");
     let gone = vec![(test_id(31), expired.clone())];
     assert_eq!(
-        document_due(test_id(31), &expired, &gone, &today, &defaults)
+        document_due(test_id(31), &expired, &gone, &today, &utc(), &defaults)
             .unwrap()
             .step,
         DueStep::Overdue
@@ -454,13 +454,13 @@ fn a_document_warns_by_days_until_renewed() {
     renewal.supersedes = Some(test_id(31));
     let both = vec![(test_id(31), expired.clone()), (test_id(32), renewal)];
     assert_eq!(
-        document_due(test_id(31), &expired, &both, &today, &defaults),
+        document_due(test_id(31), &expired, &both, &today, &utc(), &defaults),
         None
     );
     let mut title = insurance("2026-12-06");
     title.expires_on = None;
     assert_eq!(
-        document_due(test_id(33), &title, &[], &today, &defaults),
+        document_due(test_id(33), &title, &[], &today, &utc(), &defaults),
         None
     );
 }
@@ -493,6 +493,129 @@ fn the_most_urgent_come_first_then_the_soonest() {
         order,
         [4, 3, 2, 1].map(|n| DueItem::Requirement(test_id(n)))
     );
+}
+
+#[test]
+fn a_step_is_reached_by_the_reading_that_took_it_there() {
+    let requirement = oil_change(vec![every_miles(7_500)]);
+    let done = [done_on("2026-06-01", 50_000)];
+    let mut readings = vec![
+        read(ODOMETER, "2026-06-01", 50_000 * MILE),
+        read(ODOMETER, "2026-08-01", 55_000 * MILE),
+        // 700 mi left (9%): due soon from here.
+        read(ODOMETER, "2026-09-01", 56_800 * MILE),
+        read(ODOMETER, "2026-10-01", 57_000 * MILE),
+    ];
+    let soon = due(&requirement, "2026-10-15", &readings, &done).unwrap();
+    assert_eq!(soon.step, DueStep::DueSoon);
+    assert_eq!(soon.since(), Some(on("2026-09-01")));
+    // 100 mi over: overdue from the reading that went past.
+    readings.push(read(ODOMETER, "2026-11-01", 57_600 * MILE));
+    let over = due(&requirement, "2026-11-10", &readings, &done).unwrap();
+    assert_eq!(over.step, DueStep::Overdue);
+    assert_eq!(over.since(), Some(on("2026-11-01")));
+    // OK: no time.
+    let ok = due(&requirement, "2026-08-02", &readings[..2], &done).unwrap();
+    assert_eq!((ok.step, ok.since()), (DueStep::Ok, None));
+}
+
+#[test]
+fn a_dates_step_began_at_the_start_of_its_day() {
+    let today = CalendarDate::parse("2026-12-10").unwrap();
+    let document = insurance("2026-12-31");
+    let documents = vec![(test_id(30), document.clone())];
+    let due = document_due(
+        test_id(30),
+        &document,
+        &documents,
+        &today,
+        &utc(),
+        &DueDefaults::default(),
+    )
+    .unwrap();
+    // 21 days left: due soon since 30 days before.
+    assert_eq!(due.step, DueStep::DueSoon);
+    assert_eq!(
+        due.since(),
+        Some(local_to_utc("2026-12-01", "00:00", &utc()).unwrap())
+    );
+    // Expired: overdue from the day after.
+    let late = CalendarDate::parse("2027-01-05").unwrap();
+    let over = document_due(
+        test_id(30),
+        &document,
+        &documents,
+        &late,
+        &utc(),
+        &DueDefaults::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        over.since(),
+        Some(local_to_utc("2027-01-01", "00:00", &utc()).unwrap())
+    );
+}
+
+#[test]
+fn a_snooze_counts_on_a_meter_that_counts_up() {
+    let reaches = IntervalRule::Reaches {
+        meter: test_id(OIL_LIFE),
+        at: 1_500,
+    };
+    let months = IntervalRule::Calendar {
+        every: 12,
+        unit: CalendarUnit::Months,
+        end_of_month: false,
+    };
+    assert_eq!(
+        snooze_meter(
+            &oil_change(vec![reaches.clone(), months.clone(), every_miles(7_500)]),
+            &meters()
+        ),
+        Some(test_id(ODOMETER)),
+        "Oil life counts down"
+    );
+    assert_eq!(
+        snooze_meter(&oil_change(vec![reaches, months]), &meters()),
+        None,
+        "time only"
+    );
+}
+
+#[test]
+fn the_fleet_counts_overdue_and_due_soon_items() {
+    let counts = FleetCounts::of(
+        [
+            DueStep::Ok,
+            DueStep::ComingUp,
+            DueStep::DueSoon,
+            DueStep::DueVerySoon,
+            DueStep::Overdue,
+        ],
+        3,
+    );
+    assert_eq!(
+        counts,
+        FleetCounts {
+            overdue: 1,
+            due_soon: 2,
+            open_squawks: 3,
+        }
+    );
+}
+
+#[test]
+fn messages_start_at_coming_up_due_soon_or_due_very_soon() {
+    let starts: Vec<bool> = [
+        DueStep::Ok,
+        DueStep::ComingUp,
+        DueStep::DueSoon,
+        DueStep::DueVerySoon,
+        DueStep::Overdue,
+    ]
+    .map(DueStep::starts_messages)
+    .to_vec();
+    assert_eq!(starts, [false, true, true, true, false]);
 }
 
 proptest! {

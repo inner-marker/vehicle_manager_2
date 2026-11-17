@@ -107,7 +107,13 @@ pub async fn view(context: &MessagesContext<'_>) -> InboxOutcome {
         Ok(marks) => marks.into_iter().map(|(_, mark)| mark).collect::<Vec<_>>(),
         Err(error) => return unavailable(&error),
     };
-    let inbox = inbox(&messages, &marks, context.user.mode);
+    let inbox = inbox(
+        &messages,
+        &marks,
+        context.user.mode,
+        context.clock.now(),
+        &[],
+    );
     tracing::debug!(target: log_area::APP, user = %context.user.user, items = inbox.items.len(), unread = inbox.unread, "inbox");
     InboxOutcome::Inbox { inbox }
 }
@@ -123,7 +129,7 @@ pub async fn mark(
         Err(outcome) => return outcome,
     };
     // Only messages this person can see now (marks don't matter: a dismissed one stays theirs).
-    let visible = inbox(&messages, &[], context.user.mode);
+    let visible = inbox(&messages, &[], context.user.mode, context.clock.now(), &[]);
     if !visible.items.iter().any(|item| item.message.key == key) {
         tracing::debug!(target: log_area::APP, user = %context.user.user, %key, "mark refused: no such message for this person");
         return InboxOutcome::NotFound;

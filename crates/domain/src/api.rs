@@ -1178,7 +1178,7 @@ pub struct RequirementView {
 }
 
 /// What a due item is about, with what the screens need to name it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum DueSubject {
     /// A requirement on the schedule.

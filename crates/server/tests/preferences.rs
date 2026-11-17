@@ -167,6 +167,7 @@ mod preferences {
                 squawk_word: None,
                 originals: None,
                 due_warnings: None,
+                due_messages_from: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(

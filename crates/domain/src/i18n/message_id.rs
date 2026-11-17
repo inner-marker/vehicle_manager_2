@@ -2866,6 +2866,20 @@ define_messages! {
     INBOX_CLOCK_AHEAD_BODY => "inbox-clock-ahead-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
+    /// Messages: something on a vehicle is coming up (#083).
+    INBOX_DUE_COMING_UP => "inbox-due-coming-up",
+    /// Messages: something on a vehicle is due soon.
+    INBOX_DUE_SOON => "inbox-due-soon",
+    /// Messages: something on a vehicle is due very soon.
+    INBOX_DUE_VERY_SOON => "inbox-due-very-soon",
+    /// Messages: something on a vehicle is overdue.
+    INBOX_DUE_OVERDUE => "inbox-due-overdue",
+    /// Messages: what comes due, on which vehicle, and what's left (text).
+    INBOX_DUE_BODY => "inbox-due-body",
+    /// Messages: open the vehicle's Maintenance tab.
+    INBOX_OPEN_MAINTENANCE => "inbox-open-maintenance",
+    /// Messages: open the vehicle's Documents tab.
+    INBOX_OPEN_DOCUMENTS => "inbox-open-documents",
     /// Log: what an acquisition records.
     LOG_ACQUIRED_DETAIL => "log-acquired-detail",
     /// Log: what a send-out records.

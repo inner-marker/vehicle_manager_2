@@ -541,12 +541,14 @@ mod tests {
                         left: 310 * 1_609_344 / 1_000,
                         projected: Some("2099-11-19".into()),
                     },
+                    since: None,
                 },
                 RuleDue {
                     step: DueStep::Ok,
                     left: Left::Date {
                         due: "2099-12-10".into(),
                     },
+                    since: None,
                 },
             ],
             date: Some(DueDate {
@@ -567,6 +569,7 @@ mod tests {
                     left: -1_609,
                     projected: None,
                 },
+                since: None,
             }],
             date: None,
             not_done_yet: true,
@@ -589,6 +592,7 @@ mod tests {
                     left: 1_500,
                     projected: None,
                 },
+                since: None,
             }],
             not_done_yet: false,
             ..over

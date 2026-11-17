@@ -96,6 +96,7 @@ fn mark_from_row(row: &SqliteRow) -> Result<(MessageMarkId, MessageMark), Storag
             })?,
             read: row.try_get("read")?,
             dismissed: row.try_get("dismissed")?,
+            snooze: None,
         },
     ))
 }

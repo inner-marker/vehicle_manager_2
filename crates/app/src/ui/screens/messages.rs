@@ -211,6 +211,27 @@ fn body_text(kind: &MessageKind, units: &domain::preferences::Preferences) -> St
                 ("minutes", MessageArg::from(*minutes)),
             ],
         ),
+        MessageKind::Due {
+            vehicle,
+            subject,
+            due,
+            ..
+        } => {
+            let item = match subject {
+                domain::api::DueSubject::Requirement { name, .. } => name.as_str().to_owned(),
+                domain::api::DueSubject::Document { doc_type, .. } => {
+                    super::documents::type_name(doc_type)
+                }
+            };
+            tr_with(
+                kind.body(),
+                &[
+                    ("vehicle", MessageArg::from(vehicle.as_str())),
+                    ("item", MessageArg::from(item.as_str())),
+                    ("left", MessageArg::from(tr(due.step.label()).as_str())),
+                ],
+            )
+        }
         MessageKind::JobFailed { .. }
         | MessageKind::JobSkipped { .. }
         | MessageKind::ServerUnhealthy { .. }
@@ -252,6 +273,12 @@ fn MessageDetail(
                         }
                         MessageAction::OpenEvent { event } | MessageAction::OpenSendOut { event } => {
                             navigator.push(Route::EventDetail { event_id: event.to_string() });
+                        }
+                        MessageAction::OpenMaintenance { asset } => {
+                            navigator.push(Route::VehicleTab { asset_id: asset.to_string(), tab: "maintenance".into() });
+                        }
+                        MessageAction::OpenDocuments { asset } => {
+                            navigator.push(Route::VehicleTab { asset_id: asset.to_string(), tab: "documents".into() });
                         }
                     },
                     {tr(action.label())}

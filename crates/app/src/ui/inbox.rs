@@ -176,7 +176,13 @@ mod tests {
             jobs: vec![],
             place_lookup_problem: None,
         });
-        let seen = inbox(&messages, &[], ActiveMode::Driver);
+        let seen = inbox(
+            &messages,
+            &[],
+            ActiveMode::Driver,
+            UnixMillis::from_millis(0),
+            &[],
+        );
         let newest = newest_urgent(&seen).map(|item| item.message.raised_at);
         assert_eq!(newest, Some(UnixMillis::from_millis(9)));
         assert!(newest_urgent(&Inbox::default()).is_none());

@@ -108,7 +108,7 @@ pub(crate) async fn vehicle_due(
     {
         let documents = database.documents_of(asset).await?;
         for (id, document) in &documents {
-            if let Some(due) = document_due(*id, document, &documents, &today, defaults) {
+            if let Some(due) = document_due(*id, document, &documents, &today, &zone, defaults) {
                 entries.push(DueEntry {
                     subject: DueSubject::Document {
                         id: *id,

@@ -352,11 +352,36 @@
 | Step | Status | What |
 |---|---|---|
 | **3.0** `docs:` | ☑️ | This plan; the sketch; decision #083; milestone 2 marked ✅. |
-| **3a** `feat(domain):` due messages | ⬜ | `MessageKind::Due`, their keys (cycle, and Overdue apart), severity, and button; `Snooze` on `MessageMark` and its patch, and the inbox leaving out snoozed messages until they wake; the household's `due_messages_from`; the fleet counts. Unit tests first (the starting step; Overdue past a dismiss and a snooze; a sign-off starting a new cycle; waking by time and by meter; role filtering). |
+| **3a** `feat(domain):` due messages | ☑️ | `MessageKind::Due`, their keys (cycle, and Overdue apart), severity, and button; `Snooze` on `MessageMark` and its patch, and the inbox leaving out snoozed messages until they wake; the household's `due_messages_from`; the fleet counts. Unit tests first (the starting step; Overdue past a dismiss and a snooze; a sign-off starting a new cycle; waking by time and by meter; role filtering). |
 | **3b** `feat(storage):` migration 0024 | ⬜ | `message_marks.snooze` and `preferences.due_messages_from`, nullable JSON, so existing rows read as before. The release fixtures migrate. |
 | **3c** `feat(server):` | ⬜ | Due messages in each person's inbox, for the vehicles their role covers (the inbox takes the device's time zone, as the Garage does); **Snooze** and **Wake now**; the fleet counts on the Garage; the Due & squawks list across vehicles; the Admin's starting step. The desktop gets the same, offline, from its copy, and its marks sync as before. |
 | **3d** `feat(app):` the screens | ⬜ | The **Snooze ▾** menu and **Custom…** (row 1), the fleet strip (row 2), the Due & squawks screen in place of its placeholder (row 3), the Household setting and the **Snoozed** filter (row 4). |
 | **3e** `docs:` | ⬜ | Milestone 3's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 3a notes (2026-11-16):**
+- **`domain::inbox`:**
+  - `MessageKind::Due` carries the vehicle, its name, what comes due (`DueSubject`), and where it stands (`Due`). Its titles are the step ("Due soon", "⚠ Overdue"), and its text names the vehicle, the item, and what's left.
+  - `due_message` makes it, or nothing: OK, or before the household's starting step, gives none, and Overdue always gives one.
+    - **Keys:** `due:<item>:<cycle>`, where the cycle is the finished task its count runs from, or `first`. Overdue is `due-overdue:<item>:<cycle>`, so it's a new, unread message whatever was done with the first.
+    - **Severity:** Coming up is Info; the rest are Warnings.
+    - **Its button:** `MessageAction::OpenMaintenance` (a requirement) or `OpenDocuments` (a document).
+  - **Snooze:**
+    - `Snooze` (until a time, until a meter reaches a value, or both) sits on `MessageMark`, and its patch can set or clear it.
+    - `SnoozeRequest` (days, from 1 to 366, and/or an amount more than zero) turns into one at a moment, from the meter's latest value.
+    - `inbox` now takes now and each meter's latest value. It sets asleep messages aside in `Inbox::snoozed` (timed ones soonest first, then those waiting on a meter), out of the list and the unread count. A woken one comes back with its read state.
+- **When a message is raised:** `RuleDue::since` and `Due::since` give when an item reached its step: the reading that took it there, or the start of the day a date's step began. `document_due` takes the zone for that. The inbox orders by it, and it doesn't change with each new reading.
+- **`domain::due`:**
+  - `snooze_meter`: the first counting-up meter a requirement's rules use (Oil life counts down, so it isn't used).
+  - `FleetCounts::of`: the counts for the fleet strip; Coming up isn't counted.
+  - `DueStep::starts_messages`: Coming up, Due soon, or Due very soon.
+- **Preferences:** `due_messages_from`, the household's alone (default Due soon), resolved like the due warnings. Older stored preferences read as Due soon. `Preferences` now spells out its `Default`, since a step has no sensible one of its own.
+- **Until 3b and 3c:**
+  - storage reads the new fields as empty;
+  - the server passes no meter values to `inbox`, since nothing can snooze yet;
+  - the Messages screen names a due message's vehicle, item, and step, and its button opens the vehicle's tab. What's left in full comes in 3d.
+- **Tests:**
+  - domain: a step reached by the reading that took it there, and by the start of a date's day; the snooze meter; the fleet counts; which steps can start messages; the household's starting step;
+  - inbox: the starting step, severity, and button; one message per cycle and one for Overdue; Overdue after a dismiss and a snooze; waking by time or by meter; snooze requests; the mark's new field.
 
 **API version:** stays at 2. Snooze is a new field on an existing record, not a new operation, and older desktops are already stopped by the schema check (as in milestone 2).
 

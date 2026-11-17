@@ -1739,6 +1739,13 @@ inbox-clock-ahead-body = { $minutes ->
    *[other] { $device } ({ $person }) sent changes with its clock { $minutes } minutes ahead of the server's.
 } Its changes wait on that computer until its date and time are set right.
 inbox-open-send-out = Open the send-out
+inbox-due-coming-up = Coming up
+inbox-due-soon = Due soon
+inbox-due-very-soon = Due very soon
+inbox-due-overdue = ⚠ Overdue
+inbox-due-body = { $vehicle }: { $item }, { $left }.
+inbox-open-maintenance = Open on Maintenance
+inbox-open-documents = Open Documents
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back
 log-returned-detail = Back from the shop, and what it cost

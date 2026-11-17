@@ -192,6 +192,7 @@ fn choices_from_row(row: &SqliteRow) -> Result<PreferenceChoices, StorageError> 
         due_warnings: row
             .try_get::<Option<String>, _>("due_warnings")?
             .and_then(|text| serde_json::from_str(&text).ok()),
+        due_messages_from: None,
     })
 }
 
