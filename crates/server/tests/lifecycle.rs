@@ -221,8 +221,11 @@ mod lifecycle {
     }
 
     async fn overdue(database: &Database, user: &SignedIn, clock: &ManualClock) -> usize {
-        let InboxOutcome::Inbox { inbox } =
-            inbox_view(&messages_context(database, user, clock)).await
+        let InboxOutcome::Inbox { inbox } = inbox_view(
+            &messages_context(database, user, clock),
+            &TimeZone::parse("UTC").unwrap(),
+        )
+        .await
         else {
             panic!("no inbox");
         };

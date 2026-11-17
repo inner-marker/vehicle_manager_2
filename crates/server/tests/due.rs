@@ -10,14 +10,15 @@ mod due {
     use domain::access::ActiveMode;
     use domain::api::{
         AssetsOutcome, DocumentInput, DocumentsOutcome, DueOutcome, DueSubject, EventsOutcome,
-        ScheduleOutcome,
+        FleetOutcome, InboxOutcome, MarkMessage, ScheduleOutcome,
     };
     use domain::asset::AssetId;
     use domain::asset_form::AssetForm;
     use domain::dates::{CalendarDate, EventDates};
     use domain::document::{DocumentProblem, DocumentType};
-    use domain::due::{DaySteps, DueDefaults, DueStep, IntervalSteps, LastDoneBefore};
+    use domain::due::{DaySteps, DueDefaults, DueStep, FleetCounts, IntervalSteps, LastDoneBefore};
     use domain::event::{EventInput, EventLocation, EventSource, Reading};
+    use domain::inbox::{InboxItem, MessageKey, MessageKind, SnoozeRequest};
     use domain::label::Label;
     use domain::location::{LocationSource, Place, TimeZone};
     use domain::meter::{EventKind, MeterId};
@@ -27,6 +28,7 @@ mod due {
         Applicability, ComplianceMode, IntervalRule, Requirement, RequirementProblem,
     };
     use domain::test_support::{ManualClock, test_id};
+    use domain::time::{Clock, UnixMillis};
     use server::assets::{AssetsContext, add as add_vehicle, garage, view as vehicle_page};
     use server::health::Health;
     use server::sessions::SignedIn;
@@ -90,11 +92,16 @@ mod due {
 
     /// A reading of `miles` on the odometer, now.
     fn reading(asset: AssetId, odometer: MeterId, miles: i64) -> EventInput {
+        reading_at(asset, odometer, miles, NOW)
+    }
+
+    /// A reading of `miles` on the odometer at `at`.
+    fn reading_at(asset: AssetId, odometer: MeterId, miles: i64, at: UnixMillis) -> EventInput {
         EventInput {
             asset,
             kind: EventKind::Reading,
             dates: EventDates {
-                start: NOW,
+                start: at,
                 end: None,
                 zone: utc(),
             },
@@ -275,5 +282,223 @@ mod due {
                 problem: DocumentProblem::BadWarnDays
             }
         );
+    }
+
+    const DAY: i64 = 24 * 60 * 60 * 1_000;
+
+    fn messages_context<'a>(
+        database: &'a Database,
+        user: &'a SignedIn,
+        clock: &'a ManualClock,
+    ) -> server::messages::MessagesContext<'a> {
+        server::messages::MessagesContext {
+            database,
+            database_id: test_id(900),
+            user,
+            health: Health::Healthy,
+            problem: None,
+            clock,
+            timers: domain::timers::Timers::NORMAL,
+        }
+    }
+
+    /// The person's inbox, in UTC.
+    async fn inbox_of(
+        database: &Database,
+        user: &SignedIn,
+        clock: &ManualClock,
+    ) -> domain::inbox::Inbox {
+        let outcome =
+            server::messages::view(&messages_context(database, user, clock), &utc()).await;
+        let InboxOutcome::Inbox { inbox } = outcome else {
+            panic!("no inbox: {outcome:?}");
+        };
+        inbox
+    }
+
+    /// The due messages in `items`: their keys, steps, and whether each is read.
+    fn due_items(items: &[InboxItem]) -> Vec<(String, DueStep, bool)> {
+        items
+            .iter()
+            .filter_map(|item| {
+                let MessageKind::Due(notice) = &item.message.kind else {
+                    return None;
+                };
+                Some((
+                    item.message.key.as_str().to_owned(),
+                    notice.due.step,
+                    item.read,
+                ))
+            })
+            .collect()
+    }
+
+    async fn snooze(
+        database: &Database,
+        user: &SignedIn,
+        clock: &ManualClock,
+        key: &str,
+        days: Option<u16>,
+        miles: Option<i64>,
+    ) -> InboxOutcome {
+        server::messages::mark(
+            &messages_context(database, user, clock),
+            &utc(),
+            MessageKey::parse(key).unwrap(),
+            MarkMessage::Snooze {
+                request: SnoozeRequest {
+                    days,
+                    amount: miles.map(|miles| miles * MILE),
+                },
+            },
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_due_message_snoozes_by_distance_and_comes_back_overdue() {
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        let added = server::schedule::add_requirement(&shop, oil_change(truck, odometer)).await;
+        assert!(matches!(added, ScheduleOutcome::SavedRequirement { .. }));
+        let sams = context(&database, &sam, &clock);
+        let log = |miles: i64, at: UnixMillis| {
+            let sams = &sams;
+            async move {
+                let saved = server::events::add(sams, reading_at(truck, odometer, miles, at)).await;
+                assert!(matches!(saved, EventsOutcome::Saved { .. }), "{saved:?}");
+            }
+        };
+        // 600 mi of 7,500 left: due soon, a message for Sam (a Driver on it).
+        log(56_900, NOW).await;
+        let inbox = inbox_of(&database, &sam, &clock).await;
+        let due = due_items(&inbox.items);
+        assert_eq!(due.len(), 1, "{due:?}");
+        let (soon_key, step, read) = due[0].clone();
+        assert_eq!((step, read), (DueStep::DueSoon, false));
+        assert!(soon_key.starts_with("due:requirement:"), "{soon_key}");
+
+        // A snooze needs days or an amount.
+        assert_eq!(
+            snooze(&database, &sam, &clock, &soon_key, None, None).await,
+            InboxOutcome::BadSnooze
+        );
+        // "1 week or 500 mi": asleep, and not unread.
+        let InboxOutcome::Inbox { inbox } =
+            snooze(&database, &sam, &clock, &soon_key, Some(7), Some(500)).await
+        else {
+            panic!("not snoozed");
+        };
+        assert!(due_items(&inbox.items).is_empty());
+        assert_eq!(due_items(&inbox.snoozed).len(), 1);
+        // 400 mi later (due very soon): still asleep.
+        clock.set(UnixMillis::from_millis(NOW.as_millis() + DAY));
+        log(57_300, clock.now()).await;
+        assert!(due_items(&inbox_of(&database, &sam, &clock).await.items).is_empty());
+        // 550 mi: awake, read as before, and more urgent.
+        clock.set(UnixMillis::from_millis(NOW.as_millis() + 2 * DAY));
+        log(57_450, clock.now()).await;
+        let awake = due_items(&inbox_of(&database, &sam, &clock).await.items);
+        assert_eq!(awake, vec![(soon_key.clone(), DueStep::DueVerySoon, true)]);
+
+        // Snoozed for a month, then overdue: a new message, unread.
+        let snoozed = snooze(&database, &sam, &clock, &soon_key, Some(30), None).await;
+        assert!(matches!(snoozed, InboxOutcome::Inbox { .. }), "{snoozed:?}");
+        clock.set(UnixMillis::from_millis(NOW.as_millis() + 3 * DAY));
+        log(57_600, clock.now()).await;
+        let inbox = inbox_of(&database, &sam, &clock).await;
+        let overdue = due_items(&inbox.items);
+        assert_eq!(overdue.len(), 1, "{overdue:?}");
+        assert_ne!(overdue[0].0, soon_key);
+        assert_eq!((overdue[0].1, overdue[0].2), (DueStep::Overdue, false));
+        assert!(inbox.unread >= 1);
+        // Overdue replaces the first message, so its snooze no longer has anything to hide.
+        assert!(inbox.snoozed.is_empty());
+        let wake = |key: String| {
+            let sam = &sam;
+            let (database, clock) = (&database, &clock);
+            async move {
+                server::messages::mark(
+                    &messages_context(database, sam, clock),
+                    &utc(),
+                    MessageKey::parse(&key).unwrap(),
+                    MarkMessage::Wake,
+                )
+                .await
+            }
+        };
+        assert_eq!(wake(soon_key).await, InboxOutcome::NotFound);
+        // The overdue one snoozes and wakes like any other.
+        let overdue_key = overdue[0].0.clone();
+        snooze(&database, &sam, &clock, &overdue_key, Some(1), None).await;
+        let InboxOutcome::Inbox { inbox } = wake(overdue_key).await else {
+            panic!("not woken");
+        };
+        assert!(inbox.snoozed.is_empty());
+        assert_eq!(due_items(&inbox.items).len(), 1);
+    }
+
+    #[tokio::test]
+    async fn due_and_squawks_covers_the_vehicles_the_garage_shows() {
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let (truck, odometer) = truck(&database, &jordan, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        server::schedule::add_requirement(&shop, oil_change(truck, odometer)).await;
+        // 100 mi over: overdue. Insurance in 20 days: due soon.
+        let sams = context(&database, &sam, &clock);
+        server::events::add(&sams, reading(truck, odometer, 57_600)).await;
+        server::documents::add_document(&shop, insurance(truck, "2023-12-04")).await;
+        // A retired car with expired insurance isn't counted.
+        let admin = in_mode(&jordan, ActiveMode::Admin);
+        let group = database.groups().await.unwrap()[0].0;
+        let form = AssetForm {
+            name: "Old car".into(),
+            status: domain::asset::LifecycleStatus::Retired,
+            ..AssetForm::new("car", group)
+        };
+        let AssetsOutcome::Added { id: car } =
+            add_vehicle(&context(&database, &admin, &clock), &form).await
+        else {
+            panic!("the car wasn't added");
+        };
+        let expired = server::documents::add_document(&shop, insurance(car, "2023-01-01")).await;
+        assert!(
+            matches!(expired, DocumentsOutcome::SavedDocument { .. }),
+            "{expired:?}"
+        );
+
+        let FleetOutcome::Fleet { view } = server::due::fleet(&sams, &utc()).await else {
+            panic!("no list");
+        };
+        let steps: Vec<(String, DueStep)> = view
+            .due
+            .iter()
+            .map(|item| (item.vehicle.clone(), item.entry.due.step))
+            .collect();
+        assert_eq!(
+            steps,
+            vec![
+                ("Truck".to_owned(), DueStep::Overdue),
+                ("Truck".to_owned(), DueStep::DueSoon)
+            ]
+        );
+        let counts = FleetCounts {
+            overdue: 1,
+            due_soon: 1,
+            open_squawks: 0,
+        };
+        assert_eq!(view.counts, counts);
+        let AssetsOutcome::Garage { view } = garage(&sams, &utc()).await else {
+            panic!("no garage");
+        };
+        assert_eq!(view.fleet, counts, "the strip agrees");
+        // The retired car's messages don't come either.
+        let inbox = inbox_of(&database, &sam, &clock).await;
+        assert_eq!(due_items(&inbox.items).len(), 2);
     }
 }

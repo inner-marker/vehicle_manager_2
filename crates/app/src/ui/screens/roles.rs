@@ -338,6 +338,7 @@ mod tests {
             can_manage_groups: true,
             sort: GarageSort::NewestActivity,
             order: vec![],
+            fleet: domain::due::FleetCounts::default(),
         }
     }
 

@@ -69,7 +69,13 @@ mod messages {
         let (_temp, database, mut jordan, _sam) = setup().await;
         jordan.mode = ActiveMode::Admin;
         let clock = ManualClock::new(NOW);
-        let inbox = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
+        let inbox = unwrap_inbox(
+            view(
+                &context(&database, &jordan, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert!(inbox.items.is_empty());
         assert_eq!(inbox.unread, 0);
     }
@@ -80,13 +86,31 @@ mod messages {
         failed_snapshot(&database, 5_000).await;
         let clock = ManualClock::new(NOW);
 
-        let driver = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
+        let driver = unwrap_inbox(
+            view(
+                &context(&database, &jordan, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert!(driver.items.is_empty(), "Driver mode");
-        let others = unwrap_inbox(view(&context(&database, &sam, &clock)).await);
+        let others = unwrap_inbox(
+            view(
+                &context(&database, &sam, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert!(others.items.is_empty(), "not an Admin");
 
         jordan.mode = ActiveMode::Admin;
-        let admin = unwrap_inbox(view(&context(&database, &jordan, &clock)).await);
+        let admin = unwrap_inbox(
+            view(
+                &context(&database, &jordan, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+            )
+            .await,
+        );
         assert_eq!(admin.unread, 1);
         assert_eq!(admin.items[0].message.key, snapshot_key(5_000));
         assert_eq!(
@@ -103,11 +127,27 @@ mod messages {
         let clock = ManualClock::new(NOW);
         let ctx = context(&database, &jordan, &clock);
 
-        let read = unwrap_inbox(mark(&ctx, snapshot_key(5_000), MarkMessage::Read).await);
+        let read = unwrap_inbox(
+            mark(
+                &ctx,
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+                snapshot_key(5_000),
+                MarkMessage::Read,
+            )
+            .await,
+        );
         assert_eq!(read.unread, 0);
         assert!(read.items[0].read);
         // Marking it again updates the same record.
-        let dismissed = unwrap_inbox(mark(&ctx, snapshot_key(5_000), MarkMessage::Dismiss).await);
+        let dismissed = unwrap_inbox(
+            mark(
+                &ctx,
+                &domain::location::TimeZone::parse("UTC").unwrap(),
+                snapshot_key(5_000),
+                MarkMessage::Dismiss,
+            )
+            .await,
+        );
         assert!(dismissed.items.is_empty());
         assert_eq!(
             database.message_marks_of(jordan.user).await.unwrap().len(),
@@ -116,7 +156,8 @@ mod messages {
 
         // The next night's failure is a new message.
         failed_snapshot(&database, 9_000).await;
-        let later = unwrap_inbox(view(&ctx).await);
+        let later =
+            unwrap_inbox(view(&ctx, &domain::location::TimeZone::parse("UTC").unwrap()).await);
         assert_eq!(later.unread, 1);
         assert_eq!(later.items[0].message.key, snapshot_key(9_000));
     }
@@ -129,6 +170,7 @@ mod messages {
         for person in [&jordan, &sam] {
             let outcome = mark(
                 &context(&database, person, &clock),
+                &domain::location::TimeZone::parse("UTC").unwrap(),
                 snapshot_key(5_000),
                 MarkMessage::Read,
             )
@@ -140,6 +182,7 @@ mod messages {
         admin.mode = ActiveMode::Admin;
         let outcome = mark(
             &context(&database, &admin, &clock),
+            &domain::location::TimeZone::parse("UTC").unwrap(),
             made_up,
             MarkMessage::Read,
         )
@@ -166,13 +209,20 @@ mod messages {
             )),
             ..context(&database, &sam, &clock)
         };
-        let inbox = unwrap_inbox(view(&ctx).await);
+        let inbox =
+            unwrap_inbox(view(&ctx, &domain::location::TimeZone::parse("UTC").unwrap()).await);
         assert_eq!(inbox.items.len(), 1);
         let message = &inbox.items[0].message;
         assert_eq!(message.severity, Severity::Urgent);
         assert!(message.detail.is_empty(), "details are for Admin mode");
 
-        let outcome = mark(&ctx, message.key.clone(), MarkMessage::Dismiss).await;
+        let outcome = mark(
+            &ctx,
+            &domain::location::TimeZone::parse("UTC").unwrap(),
+            message.key.clone(),
+            MarkMessage::Dismiss,
+        )
+        .await;
         assert_eq!(outcome, InboxOutcome::Unavailable, "changes are refused");
     }
 }

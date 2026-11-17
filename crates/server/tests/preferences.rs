@@ -167,6 +167,7 @@ mod preferences {
                 squawk_word: None,
                 originals: None,
                 due_warnings: None,
+                due_messages_from: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -304,6 +305,50 @@ mod preferences {
         assert_eq!(
             sams.effective.due_warnings,
             domain::due::DueDefaults::default()
+        );
+    }
+
+    #[tokio::test]
+    async fn when_due_messages_start_is_the_households_alone() {
+        use domain::due::DueStep;
+        let (_temp, database, mut jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let starting = |choice| PreferencesPatch {
+            due_messages_from: Some(choice),
+            ..PreferencesPatch::default()
+        };
+        assert_eq!(
+            set_mine(
+                &context(&database, &sam, &clock),
+                starting(Choice::Set(DueStep::ComingUp))
+            )
+            .await,
+            PreferencesOutcome::NotAllowed,
+            "a person can't choose their own"
+        );
+
+        jordan.mode = ActiveMode::Admin;
+        let admin = context(&database, &jordan, &clock);
+        for step in [DueStep::Ok, DueStep::Overdue] {
+            assert_eq!(
+                set_household(&admin, starting(Choice::Set(step))).await,
+                PreferencesOutcome::BadDueWarnings,
+                "{step:?}"
+            );
+        }
+        unwrap_view(set_household(&admin, starting(Choice::Set(DueStep::ComingUp))).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            sams.effective.due_messages_from,
+            DueStep::ComingUp,
+            "everyone's"
+        );
+        unwrap_view(set_household(&admin, starting(Choice::Default)).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            sams.effective.due_messages_from,
+            DueStep::DueSoon,
+            "the default"
         );
     }
 

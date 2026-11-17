@@ -181,19 +181,7 @@ async fn garage_view(
             })
         })
         .collect();
-    let warnings = crate::due::household_warnings(database, context.database_id.cast())
-        .await
-        .map_err(|error| unavailable("due warnings", &error))?;
-    let now = context.clock.now();
-    for summary in &mut assets {
-        summary.due = crate::due::most_urgent(database, summary.id, zone, now, &warnings)
-            .await
-            .map_err(|error| unavailable("due", &error))?;
-        summary.plate = current_plate(database, summary.id).await?;
-        summary.standing = crate::lifecycle::standing(database, summary.id, summary.asset.status)
-            .await
-            .map_err(|error| unavailable("lifecycle", &error))?;
-    }
+    let fleet = fill_in_summaries(context, &mut assets, zone).await?;
     let can_manage_groups = context.may(AdminAction::ManageGroups);
     // Each group with how many visible vehicles it has; empty ones only for the Admin.
     let groups: Vec<GroupSummary> = groups
@@ -223,8 +211,45 @@ async fn garage_view(
             can_manage_groups,
             sort: person_preferences(context).await?.garage_sort,
             order,
+            fleet,
         },
     })
+}
+
+/// Fills in each Garage card's due step, plate, and lifecycle standing, and gives the fleet
+/// strip's counts over the vehicles the Garage shows (not retired or disposed, #083).
+async fn fill_in_summaries(
+    context: &AssetsContext<'_>,
+    assets: &mut [AssetSummary],
+    zone: &TimeZone,
+) -> Result<domain::due::FleetCounts, AssetsOutcome> {
+    let database = context.database;
+    let warnings = crate::due::household_warnings(database, context.database_id.cast())
+        .await
+        .map_err(|error| unavailable("due warnings", &error))?;
+    let now = context.clock.now();
+    // The fleet strip counts what the Garage shows: not retired or disposed vehicles (#083).
+    let mut steps = Vec::new();
+    let mut open_squawks = 0;
+    for summary in assets.iter_mut() {
+        let due = crate::due::vehicle_due_in_full(database, summary.id, zone, now, &warnings)
+            .await
+            .map_err(|error| unavailable("due", &error))?;
+        summary.due = due.most_urgent();
+        summary.plate = current_plate(database, summary.id).await?;
+        summary.standing = crate::lifecycle::standing(database, summary.id, summary.asset.status)
+            .await
+            .map_err(|error| unavailable("lifecycle", &error))?;
+        if summary.standing.status.shows_in_garage() {
+            steps.extend(due.entries.iter().map(|entry| entry.due.step));
+            open_squawks += database
+                .outstanding_squawks_of(summary.id)
+                .await
+                .map_err(|error| unavailable("squawks", &error))?
+                .len();
+        }
+    }
+    Ok(domain::due::FleetCounts::of(steps, open_squawks))
 }
 
 /// One vehicle's page.

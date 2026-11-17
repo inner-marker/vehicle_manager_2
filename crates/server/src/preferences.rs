@@ -73,12 +73,17 @@ pub async fn view(context: &PreferencesContext<'_>) -> PreferencesOutcome {
 }
 
 /// Changes the signed-in user's own preferences (never what squawks are called, whether
-/// originals may be kept, or when things come due: the household's alone).
+/// originals may be kept, when things come due, or when due messages start: the household's
+/// alone).
 pub async fn set_mine(
     context: &PreferencesContext<'_>,
     patch: PreferencesPatch,
 ) -> PreferencesOutcome {
-    if patch.squawk_word.is_some() || patch.originals.is_some() || patch.due_warnings.is_some() {
+    if patch.squawk_word.is_some()
+        || patch.originals.is_some()
+        || patch.due_warnings.is_some()
+        || patch.due_messages_from.is_some()
+    {
         tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: a household-only setting");
         return PreferencesOutcome::NotAllowed;
     }
@@ -99,6 +104,13 @@ pub async fn set_household(
     }
     if let Some(domain::preferences::Choice::Set(warnings)) = patch.due_warnings
         && !warnings.valid()
+    {
+        return PreferencesOutcome::BadDueWarnings;
+    }
+    // Due messages start at Coming up, Due soon, or Due very soon (#083); the screen offers
+    // only those, so anything else is refused like backwards warnings.
+    if let Some(domain::preferences::Choice::Set(step)) = patch.due_messages_from
+        && !step.starts_messages()
     {
         return PreferencesOutcome::BadDueWarnings;
     }

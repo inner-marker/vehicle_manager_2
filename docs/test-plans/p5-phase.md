@@ -94,6 +94,44 @@
 
 **Milestone 2 also checks:** the due arithmetic (steps, whichever comes first, never done, projection, resets, documents), the server's refusals, and the migration of the release fixtures, all in the automated tests.
 
+## Milestone 3: due messages and snooze
+
+**Intended behavior:**
+- What's due sends a message from **Due soon** (the household's choice: Coming up, Due soon, or Due very soon) to anyone with a role on the vehicle. Overdue always sends one. Coming up is **Info**; the rest are **Warnings**, with no red banner.
+- A due message is titled by vehicle and item ("Test truck: Engine oil & filter"), with its chip and what's left, and **Open on Maintenance** (or **Open Documents**).
+- **Snooze ▾**: 1 day, 1 week, 1 month, an amount on the item's meter (500 mi), the two together, or **Custom…**, whichever comes first. Snoozes are each person's own. Snoozed messages wait under **Snoozed (n)**, with **Wake now**.
+- **Overdue replaces** a message that was snoozed or dismissed while due soon: a new, unread one. Signing the item off ends its messages.
+- The Garage's **fleet strip** (All vehicles): **⚠ Overdue**, **Due soon**, **Open** issues, and on the desktop **Synced**. Each opens **Due & issues** with its filter. (Your household's word for squawks shows throughout.)
+- The desktop shows its due messages offline. Snoozing, dismissing, and marking read need the server.
+
+**Before you start:** after milestone 2, `Test truck`'s oil change (every 5,000 mi) is **⚠ Overdue**, "100 mi over" (2.16). Note the odometer's latest reading (call it **M**).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 3.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open` with `schema_now` at least 24 (`0024_due_messages`); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 3.2 | **Mac browser**, `admin`: **All vehicles** | Above the groups, three tiles: **⚠ Overdue** at least 1 (in the darker red), **Due soon**, and **Open issues**. No **Synced** tile on the web. A group's own page has no strip. |
+| [ ] | 3.3 | Click **⚠ Overdue** | **Due & issues** opens with the **Overdue** chip on: "Engine oil & filter", "Test truck · 100 mi over …", **⚠ Overdue**. Clicking the row opens `Test truck` → **Maintenance**. |
+| [ ] | 3.4 | **Due & issues** → **All**, then **Issues** | **All** lists every coming-up item, most urgent first, then the open and deferred issues (each with its vehicle, severity, and status). **Issues** shows only them; a row opens the issue. With nothing to show: "Nothing coming due, and no open issues." |
+| [ ] | 3.5 | **Phone**, Sam (Driver on `Test truck`): **Messages** | The unread badge counts it. "Test truck: Engine oil & filter", **Warning** with its time, unread. No red banner under the top bar. |
+| [ ] | 3.6 | Open it | The **⚠ Overdue** chip beside the title; "100 mi over …" in the darker red; **Open on Maintenance**, **Snooze ▾**, and **Dismiss**. **Open on Maintenance** opens the Maintenance tab. |
+| [ ] | 3.7 | Back in the message: **Snooze ▾** | The menu offers 1 day, 1 week, 1 month, 500 mi, 1 week or 500 mi, and **Custom…** (blue). |
+| [ ] | 3.8 | Choose **1 week or 500 mi** | It leaves the list; the badge drops by one. A **Snoozed (1)** chip appears; under it, the message says "Snoozed until … UTC or **M + 500** mi". |
+| [ ] | 3.9 | **Mac browser**, `admin` (Jordan, a role on the truck): **Messages** | Jordan still has the oil change message, unread: a snooze is Sam's alone. |
+| [ ] | 3.10 | **Phone**, Sam: **+ Reading** for `Test truck`, the odometer at **M + 600** → **Save**, then **Messages** | The message is back in the list (read, as Sam left it), "700 mi over …". **Snoozed** is gone. |
+| [ ] | 3.11 | Open it → **Snooze ▾** → **Custom…**: both fields empty → **Snooze**; then Days 400; then Days 2 | Empty and 400 are refused: "That snooze can't be used. Choose days, or an amount more than zero." Days 2: snoozed until two days from now. |
+| [ ] | 3.12 | **Snoozed** → open it → **Wake now** | Back in the list at once. |
+| [ ] | 3.13 | **Desktop**, Sync now: **All vehicles**, then **Messages** | Four tiles, the last **✓ Synced**, opening Messages. The same due messages as on the web. |
+| [ ] | 3.14 | **Desktop, Tailscale off** (wait for **OFFLINE**): **Messages**, **Due & issues**, then **+ Reading** for `Test truck` (**M + 650**) | Offline, Messages still lists the oil change (worked out on the desktop), now "750 mi over". **Snooze ▾** → **1 day** says "Couldn't reach the server." Due & issues works. The sync tile says **– Offline**. |
+| [ ] | 3.15 | **Tailscale on**, Sync now | The reading is sent; the tile goes back to **✓ Synced**. Snooze works again. |
+| [ ] | 3.16 | **Mac browser**, Maintainer: `Test truck` → **+ Log** → **Maintenance**: the task from **Engine oil & filter** (reset ticked), the odometer at **M + 650** → **Finish and lock** | Sam's and Jordan's oil change messages are gone (reload Messages). The ⚠ Overdue tile drops by one. |
+| [ ] | 3.17 | **Phone**, Sam: **+ Reading**, the odometer at **M + 5,350** (300 mi of 5,000 left), then **Messages** → open it → **Snooze ▾** → **1 month** | A new "Test truck: Engine oil & filter", **Due soon**, unread. Snoozed for a month. |
+| [ ] | 3.18 | **+ Reading** at **M + 5,700**, then **Messages** | A new message, **⚠ Overdue**, unread: Overdue gets past the month's snooze. **Snoozed** no longer lists the Due soon one. |
+| [ ] | 3.19 | **Mac browser**, Maintainer: `Test truck` → **Documents** → Insurance (milestone 2's, about 20 days left) → **Warn me** → **Change**: 30 / 10 / 5 → **Save** | Its step is **Coming up** (yellow). No message about it (the household starts at Due soon). |
+| [ ] | 3.20 | **Admin mode** → **Settings** → **Household** → **Messages about what's due start at**: **Coming up**; then **Messages** | The menu offers Coming up, Due soon, and Due very soon. "Test truck: Insurance" appears, **Info**, with the **Coming up** chip and **Open Documents**. Its **Snooze ▾** offers only 1 day, 1 week, 1 month, and Custom (a document has no meter). |
+| [ ] | 3.21 | Set it back to **Due soon**; then **Phone**, Sam: **Settings** → **You** | The insurance message goes. Sam's You tab shows "Messages about what's due start at: Due soon", chosen by the Admin, with nothing to change. |
+
+**Milestone 3 also checks:** message keys and cycles, Overdue past a dismiss or a snooze, waking by time or meter, snooze requests and the mark's field, the starting step's checks, who gets messages, retired vehicles left out, the fleet counts matching Due & issues, and migration 0024 on the release fixtures, all in the automated tests.
+
 ## Results
 
 # Human Notes

@@ -13,7 +13,7 @@ use domain::time_utils::format_utc_minute;
 
 use super::routes::Route;
 use super::{tr, tr_with};
-use crate::api;
+use crate::data;
 
 /// The messages state, in context (provided by the shell).
 #[derive(Debug, Clone, Copy)]
@@ -50,6 +50,7 @@ pub(crate) fn apply(
         }
         // The message is gone (e.g. its cause was fixed): the next refresh shows the rest.
         Ok(InboxOutcome::NotFound) => None,
+        Ok(InboxOutcome::BadSnooze) => Some(messages::MESSAGES_BAD_SNOOZE),
         Ok(InboxOutcome::Unavailable) => Some(messages::SOMETHING_WENT_WRONG),
         Err(error) => {
             tracing::debug!(target: log_area::UI, %error, "inbox request failed");
@@ -60,7 +61,7 @@ pub(crate) fn apply(
 
 /// Asks the server for the inbox again.
 pub(crate) async fn refresh_inbox(context: InboxContext) {
-    let _ = apply(context, api::get_messages().await);
+    let _ = apply(context, data::get_messages().await);
 }
 
 /// Marks a message read or dismisses it, keeping the server's new answer.
@@ -71,7 +72,7 @@ pub(crate) async fn mark(
 ) -> Option<MessageId> {
     apply(
         context,
-        api::mark_message(key.as_str().to_owned(), action).await,
+        data::mark_message(key.as_str().to_owned(), action).await,
     )
 }
 
@@ -176,7 +177,13 @@ mod tests {
             jobs: vec![],
             place_lookup_problem: None,
         });
-        let seen = inbox(&messages, &[], ActiveMode::Driver);
+        let seen = inbox(
+            &messages,
+            &[],
+            ActiveMode::Driver,
+            UnixMillis::from_millis(0),
+            &[],
+        );
         let newest = newest_urgent(&seen).map(|item| item.message.raised_at);
         assert_eq!(newest, Some(UnixMillis::from_millis(9)));
         assert!(newest_urgent(&Inbox::default()).is_none());

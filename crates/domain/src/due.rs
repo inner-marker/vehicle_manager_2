@@ -39,7 +39,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::dates::utc_to_local;
+use crate::dates::{local_to_utc, utc_to_local};
 use crate::document::{AssetDocument, AssetDocumentId, DocumentStatus};
 use crate::event_check::PastReading;
 use crate::i18n::{MessageId, messages};
@@ -86,6 +86,13 @@ impl DueStep {
             Self::DueVerySoon => messages::DUE_VERY_SOON,
             Self::Overdue => messages::DUE_OVERDUE,
         }
+    }
+
+    /// Whether the household may start due messages at this step (#083): Coming up, Due
+    /// soon, or Due very soon. Overdue always sends one.
+    #[must_use]
+    pub const fn starts_messages(self) -> bool {
+        matches!(self, Self::ComingUp | Self::DueSoon | Self::DueVerySoon)
     }
 }
 
@@ -217,7 +224,7 @@ pub struct LastDoneBefore {
 }
 
 /// What's left on one rule.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum Left {
     /// On a meter: how much is left in its stored unit, and when that's projected to run out.
@@ -237,16 +244,20 @@ pub enum Left {
 }
 
 /// One rule's step and what's left on it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleDue {
     /// Its step.
     pub step: DueStep,
     /// What's left.
     pub left: Left,
+    /// When it reached its step: the reading that took it there, or the start of the day a
+    /// date's step began (in the zone). `None` when OK, or not known (#083).
+    #[serde(default)]
+    pub since: Option<UnixMillis>,
 }
 
 /// When something comes due: a date, and whether it's an estimate (projected from use).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DueDate {
     /// The date (`2027-01-03`).
     pub on: String,
@@ -255,7 +266,7 @@ pub struct DueDate {
 }
 
 /// Where a requirement or a document stands.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Due {
     /// The most urgent rule's step.
     pub step: DueStep,
@@ -265,6 +276,18 @@ pub struct Due {
     pub date: Option<DueDate>,
     /// Never done, and no "last done before these records".
     pub not_done_yet: bool,
+}
+
+impl Due {
+    /// When it reached its step: the earliest of its most urgent rules' (#083).
+    #[must_use]
+    pub fn since(&self) -> Option<UnixMillis> {
+        self.rules
+            .iter()
+            .filter(|rule| rule.step == self.step)
+            .filter_map(|rule| rule.since)
+            .min()
+    }
 }
 
 /// What [`requirement_due`] needs beyond the requirement: the vehicle's meters, their readings
@@ -483,18 +506,20 @@ fn rule_due(
                 MeterDirection::Up => base + every,
                 MeterDirection::Down => base - every,
             };
-            let left = match direction {
-                MeterDirection::Up => due_at - now,
-                MeterDirection::Down => now - due_at,
+            let left_at = |value: i64| match direction {
+                MeterDirection::Up => due_at - value,
+                MeterDirection::Down => value - due_at,
             };
-            Some(meter_left(*meter, left, *every, direction, steps, context))
+            Some(meter_left(
+                *meter, left_at, now, *every, direction, steps, context,
+            ))
         }
         IntervalRule::Reaches { meter, at } => {
             let direction = direction_of(*meter, context)?;
             let now = context.latest(*meter)?.value;
-            let left = match direction {
-                MeterDirection::Up => at - now,
-                MeterDirection::Down => now - at,
+            let left_at = |value: i64| match direction {
+                MeterDirection::Up => at - value,
+                MeterDirection::Down => value - at,
             };
             // The span it's measured over: from where it started (its reset value, or the
             // reading when last done) to the mark.
@@ -506,7 +531,7 @@ fn rule_due(
                 .or_else(|| base_reading(*meter, last, before, context))?;
             let interval = (start - at).abs();
             Some(meter_left(
-                *meter, left, interval, direction, steps, context,
+                *meter, left_at, now, interval, direction, steps, context,
             ))
         }
         IntervalRule::Calendar {
@@ -522,11 +547,13 @@ fn rule_due(
                     .ok()?;
             let left = days_between(context.today()?, due)?;
             let interval = days_between(from, due)?;
+            let step_at = |days: i64| steps.interval.step(days, interval);
             Some(RuleDue {
-                step: steps.interval.step(left, interval),
+                step: step_at(left),
                 left: Left::Date {
                     due: due.to_string(),
                 },
+                since: day_step_began(left, step_at, due, context.zone),
             })
         }
         IntervalRule::FixedDate { first } => {
@@ -537,9 +564,11 @@ fn rule_due(
             };
             let due: jiff::civil::Date = next.parse().ok()?;
             let left = days_between(context.today()?, due)?;
+            let step_at = |days: i64| steps.days.step(days);
             Some(RuleDue {
-                step: steps.days.step(left),
+                step: step_at(left),
                 left: Left::Date { due: next },
+                since: day_step_began(left, step_at, due, context.zone),
             })
         }
     }
@@ -553,27 +582,75 @@ fn direction_of(meter: MeterId, context: &DueContext<'_>) -> Option<MeterDirecti
         .map(|(_, meter)| meter.direction)
 }
 
+/// A meter rule's step and what's left at the meter's latest reading `now`, where `left_at`
+/// gives what's left at any reading's value.
 fn meter_left(
     meter: MeterId,
-    left: i64,
+    left_at: impl Fn(i64) -> i64,
+    now: i64,
     interval: i64,
     direction: MeterDirection,
     steps: &DueDefaults,
     context: &DueContext<'_>,
 ) -> RuleDue {
+    let left = left_at(now);
     let projected = usage(context.readings, meter, direction, context.now)
         .and_then(|usage| projected(left, usage, context.now, context.zone));
+    let step = steps.interval.step(left, interval);
+    // Back from the latest reading, while each was at this step or beyond: the earliest of
+    // them took it there.
+    let since = if step == DueStep::Ok {
+        None
+    } else {
+        let mut readings: Vec<&PastReading> = context
+            .readings
+            .iter()
+            .filter(|reading| reading.meter == meter && reading.at <= context.now)
+            .collect();
+        readings.sort_by_key(|reading| (reading.at, reading.reset));
+        readings
+            .iter()
+            .rev()
+            .take_while(|reading| steps.interval.step(left_at(reading.value), interval) >= step)
+            .last()
+            .map(|reading| reading.at)
+    };
     RuleDue {
-        step: steps.interval.step(left, interval),
+        step,
         left: Left::Meter {
             meter,
             left,
             projected,
         },
+        since,
     }
 }
 
-/// Where document `id` stands on `today` (`2026-11-16`) among its vehicle's `documents`, or
+/// The longest stretch searched back for when a date's step began (about ten years).
+const STEP_SEARCH_DAYS: i64 = 3_660;
+
+/// The start of the day (in `zone`) a date rule due on `due`, with `left` days to go and
+/// steps from `step_at`, reached its step: the most days ahead it was still at that step.
+/// `None` when OK.
+fn day_step_began(
+    left: i64,
+    step_at: impl Fn(i64) -> DueStep,
+    due: jiff::civil::Date,
+    zone: &TimeZone,
+) -> Option<UnixMillis> {
+    let step = step_at(left);
+    if step == DueStep::Ok {
+        return None;
+    }
+    let mut ahead = left;
+    while ahead - left < STEP_SEARCH_DAYS && step_at(ahead + 1) >= step {
+        ahead += 1;
+    }
+    let began = due.checked_sub(jiff::Span::new().days(ahead)).ok()?;
+    local_to_utc(&began.to_string(), "00:00", zone).ok()
+}
+
+/// Where document `id` stands on `today` (`2026-11-16`, in `zone`) among its vehicle's `documents`, or
 /// `None` if it never expires or has been renewed.
 #[must_use]
 pub fn document_due(
@@ -581,6 +658,7 @@ pub fn document_due(
     document: &AssetDocument,
     documents: &[(AssetDocumentId, AssetDocument)],
     today: &crate::dates::CalendarDate,
+    zone: &TimeZone,
     defaults: &DueDefaults,
 ) -> Option<Due> {
     if crate::document::status(id, document, documents, today) == DocumentStatus::Superseded {
@@ -592,6 +670,7 @@ pub fn document_due(
     let left = days_between(from, to)?;
     let steps = document.warn_days.unwrap_or(defaults.days);
     let step = steps.step(left);
+    let since = day_step_began(left, |days| steps.step(days), to, zone);
     Some(Due {
         step,
         rules: vec![RuleDue {
@@ -599,6 +678,7 @@ pub fn document_due(
             left: Left::Date {
                 due: expires.as_str().to_owned(),
             },
+            since,
         }],
         date: Some(DueDate {
             on: expires.as_str().to_owned(),
@@ -606,6 +686,69 @@ pub fn document_due(
         }),
         not_done_yet: false,
     })
+}
+
+/// The vehicle's `meters` that `due`'s rules count on, for showing what's left (#083).
+#[must_use]
+pub fn meters_in(due: &Due, meters: &[(MeterId, Meter)]) -> Vec<(MeterId, Meter)> {
+    meters
+        .iter()
+        .filter(|(id, _)| {
+            due.rules
+                .iter()
+                .any(|rule| matches!(rule.left, Left::Meter { meter, .. } if meter == *id))
+        })
+        .cloned()
+        .collect()
+}
+
+/// The meter a requirement's message snoozes on (#083): the first counting-up meter its
+/// rules use (an odometer or hours), or `None` (time only).
+#[must_use]
+pub fn snooze_meter(requirement: &Requirement, meters: &[(MeterId, Meter)]) -> Option<MeterId> {
+    requirement.rules.iter().find_map(|rule| {
+        let meter = match rule {
+            IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => *meter,
+            IntervalRule::Calendar { .. } | IntervalRule::FixedDate { .. } => return None,
+        };
+        meters
+            .iter()
+            .any(|(id, found)| *id == meter && found.direction == MeterDirection::Up)
+            .then_some(meter)
+    })
+}
+
+/// The Garage's fleet strip (#083): how many items are overdue and due soon (Due soon and Due
+/// very soon) across the vehicles someone can see, and their open squawks.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FleetCounts {
+    /// Items overdue.
+    pub overdue: usize,
+    /// Items due soon or very soon.
+    pub due_soon: usize,
+    /// Open squawks (deferred ones included).
+    pub open_squawks: usize,
+}
+
+impl FleetCounts {
+    /// The counts for items at `steps`, with `open_squawks`. Coming up isn't counted.
+    #[must_use]
+    pub fn of(steps: impl IntoIterator<Item = DueStep>, open_squawks: usize) -> Self {
+        steps.into_iter().fold(
+            Self {
+                open_squawks,
+                ..Self::default()
+            },
+            |mut counts, step| {
+                match step {
+                    DueStep::Overdue => counts.overdue += 1,
+                    DueStep::DueSoon | DueStep::DueVerySoon => counts.due_soon += 1,
+                    DueStep::Ok | DueStep::ComingUp => {}
+                }
+                counts
+            },
+        )
+    }
 }
 
 /// What a due item is.

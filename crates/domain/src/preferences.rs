@@ -29,7 +29,7 @@ use core::fmt;
 use serde::{Deserialize, Serialize};
 
 use crate::command::{Patch, Record};
-use crate::due::DueDefaults;
+use crate::due::{DueDefaults, DueStep};
 use crate::id::Id;
 
 /// How distances are shown.
@@ -315,7 +315,7 @@ impl From<CurrencyCode> for String {
 }
 
 /// The preferences in effect for someone: every setting has a value.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Preferences {
     /// Distances.
     pub distance: DistanceUnit,
@@ -342,6 +342,34 @@ pub struct Preferences {
     /// When things come due (the household's choice only; #082).
     #[serde(default)]
     pub due_warnings: DueDefaults,
+    /// The step at which what's due starts sending messages (the household's choice only;
+    /// #083): Coming up, Due soon (the default), or Due very soon. Overdue always sends one.
+    #[serde(default = "default_due_messages_from")]
+    pub due_messages_from: DueStep,
+}
+
+const fn default_due_messages_from() -> DueStep {
+    DueStep::DueSoon
+}
+
+impl Default for Preferences {
+    fn default() -> Self {
+        Self {
+            distance: DistanceUnit::default(),
+            volume: VolumeUnit::default(),
+            economy: EconomyUnit::default(),
+            pressure: PressureUnit::default(),
+            date_format: DateFormat::default(),
+            currency: CurrencyCode::default(),
+            language: Language::default(),
+            idle_sign_out: IdleSignOut::default(),
+            garage_sort: GarageSort::default(),
+            squawk_word: SquawkWord::default(),
+            originals: Originals::default(),
+            due_warnings: DueDefaults::default(),
+            due_messages_from: default_due_messages_from(),
+        }
+    }
 }
 
 /// What someone (or the household) chose: `None` means "not chosen" (a user then follows the
@@ -373,6 +401,10 @@ pub struct PreferenceChoices {
     /// When things come due: the household's record only (a person's is ignored).
     #[serde(default)]
     pub due_warnings: Option<DueDefaults>,
+    /// When what's due starts sending messages: the household's record only (a person's is
+    /// ignored).
+    #[serde(default)]
+    pub due_messages_from: Option<DueStep>,
 }
 
 impl Preferences {
@@ -419,6 +451,9 @@ impl Preferences {
             squawk_word: household.squawk_word.unwrap_or(defaults.squawk_word),
             originals: household.originals.unwrap_or(defaults.originals),
             due_warnings: household.due_warnings.unwrap_or(defaults.due_warnings),
+            due_messages_from: household
+                .due_messages_from
+                .unwrap_or(defaults.due_messages_from),
         }
     }
 }
@@ -491,6 +526,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::due_warnings`] (the household's record only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub due_warnings: Option<Choice<DueDefaults>>,
+    /// See [`Preferences::due_messages_from`] (the household's record only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_messages_from: Option<Choice<DueStep>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -508,6 +546,7 @@ impl Patch for PreferencesPatch {
             ("squawk_word", self.squawk_word.is_some()),
             ("originals", self.originals.is_some()),
             ("due_warnings", self.due_warnings.is_some()),
+            ("due_messages_from", self.due_messages_from.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -551,6 +590,9 @@ impl Patch for PreferencesPatch {
         }
         if !keep("due_warnings") {
             self.due_warnings = None;
+        }
+        if !keep("due_messages_from") {
+            self.due_messages_from = None;
         }
     }
 }
@@ -670,6 +712,37 @@ mod tests {
             patch
         );
         assert_eq!(Choice::<PressureUnit>::Default.value(), None);
+    }
+
+    #[test]
+    fn only_the_household_decides_when_due_messages_start() {
+        assert_eq!(Preferences::default().due_messages_from, DueStep::DueSoon);
+        let mine = PreferenceChoices {
+            due_messages_from: Some(DueStep::ComingUp),
+            ..PreferenceChoices::default()
+        };
+        let household = PreferenceChoices {
+            due_messages_from: Some(DueStep::DueVerySoon),
+            ..PreferenceChoices::default()
+        };
+        assert_eq!(
+            Preferences::resolve(&mine, &household).due_messages_from,
+            DueStep::DueVerySoon
+        );
+        assert_eq!(
+            Preferences::resolve(&mine, &PreferenceChoices::default()).due_messages_from,
+            DueStep::DueSoon,
+            "a person's own is ignored"
+        );
+        // Older stored preferences, without it, read as the default.
+        let mut stored = serde_json::to_value(Preferences {
+            due_messages_from: DueStep::ComingUp,
+            ..Preferences::default()
+        })
+        .unwrap();
+        stored.as_object_mut().unwrap().remove("due_messages_from");
+        let older: Preferences = serde_json::from_value(stored).unwrap();
+        assert_eq!(older.due_messages_from, DueStep::DueSoon);
     }
 
     #[test]

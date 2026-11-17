@@ -1739,6 +1739,45 @@ inbox-clock-ahead-body = { $minutes ->
    *[other] { $device } ({ $person }) sent changes with its clock { $minutes } minutes ahead of the server's.
 } Its changes wait on that computer until its date and time are set right.
 inbox-open-send-out = Open the send-out
+inbox-due-coming-up = Coming up
+inbox-due-soon = Due soon
+inbox-due-very-soon = Due very soon
+inbox-due-overdue = ⚠ Overdue
+inbox-due-body = { $vehicle }: { $item }, { $left }.
+inbox-open-maintenance = Open on Maintenance
+inbox-open-documents = Open Documents
+messages-bad-snooze = That snooze can't be used. Choose days, or an amount more than zero.
+inbox-due-row = { $vehicle }: { $item }
+snooze = Snooze
+snooze-day = 1 day
+snooze-week = 1 week
+snooze-month = 1 month
+snooze-either = { $time } or { $amount }
+snooze-custom = Custom…
+snooze-days = Days
+snooze-or-meter = or { $meter } ({ $unit })
+snooze-hint = Leave either empty; whichever comes first.
+messages-snoozed-until = Snoozed until { $when }
+messages-wake = Wake now
+messages-filter-snoozed = Snoozed ({ $count })
+due-filter-all = All
+due-filter-overdue = Overdue
+due-filter-soon = Due soon
+due-filter-squawks = { $Squawks }
+due-list-squawks = Open { $squawks }
+due-list-nothing = Nothing coming due, and no open { $squawks }.
+fleet-label = Across your vehicles
+fleet-overdue = ⚠ Overdue
+fleet-due-soon = Due soon
+fleet-squawks = Open { $squawks }
+fleet-synced = Synced
+fleet-waiting = { $count ->
+    [one] change waiting to send
+   *[other] changes waiting to send
+}
+fleet-offline = Offline
+setting-due-messages = Messages about what's due start at
+setting-due-messages-note = Overdue always sends one. Each person can snooze or dismiss their own.
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back
 log-returned-detail = Back from the shop, and what it cost

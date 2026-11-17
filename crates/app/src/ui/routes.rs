@@ -4,9 +4,9 @@ use dioxus::prelude::*;
 use domain::i18n::{MessageId, messages};
 
 use super::screens::{
-    AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
-    LogEvent, LogForm, Messages, NotFound, Places, RepairSquawk, Reports, Settings, SquawkDetail,
-    Timeline, Users, VehicleDetail, VehicleTab,
+    AllVehicles, CorrectEvent, Diagnostics, Due, DueList, EditEvent, EventDetail, GroupVehicles,
+    Groups, LogEvent, LogForm, Messages, NotFound, Places, RepairSquawk, Reports, Settings,
+    SquawkDetail, Timeline, Users, VehicleDetail, VehicleTab,
 };
 use super::shell::Shell;
 
@@ -20,6 +20,9 @@ pub(crate) enum Route {
         AllVehicles {},
         #[route("/due")]
         Due {},
+        // Due & squawks with one filter, from the Garage's fleet strip (#083).
+        #[route("/due/:filter")]
+        DueList { filter: String },
         #[route("/messages")]
         Messages {},
         #[route("/timeline")]
@@ -77,7 +80,7 @@ impl Route {
         match self {
             Self::AllVehicles {} => messages::NAV_ALL_VEHICLES,
             Self::GroupVehicles { .. } => messages::NAV_VEHICLES,
-            Self::Due {} => messages::NAV_DUE_AND_SQUAWKS,
+            Self::Due {} | Self::DueList { .. } => messages::NAV_DUE_AND_SQUAWKS,
             Self::Messages {} => messages::NAV_MESSAGES,
             Self::Timeline {} => messages::NAV_TIMELINE,
             Self::Reports {} => messages::NAV_REPORTS,
@@ -111,6 +114,9 @@ mod tests {
                 group_id: "0192f3a4".to_owned(),
             },
             Route::Due {},
+            Route::DueList {
+                filter: "overdue".to_owned(),
+            },
             Route::Messages {},
             Route::Timeline {},
             Route::Reports {},

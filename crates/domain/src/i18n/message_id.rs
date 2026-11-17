@@ -2866,6 +2866,78 @@ define_messages! {
     INBOX_CLOCK_AHEAD_BODY => "inbox-clock-ahead-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
+    /// Messages: something on a vehicle is coming up (#083).
+    INBOX_DUE_COMING_UP => "inbox-due-coming-up",
+    /// Messages: something on a vehicle is due soon.
+    INBOX_DUE_SOON => "inbox-due-soon",
+    /// Messages: something on a vehicle is due very soon.
+    INBOX_DUE_VERY_SOON => "inbox-due-very-soon",
+    /// Messages: something on a vehicle is overdue.
+    INBOX_DUE_OVERDUE => "inbox-due-overdue",
+    /// Messages: what comes due, on which vehicle, and what's left (text).
+    INBOX_DUE_BODY => "inbox-due-body",
+    /// Messages: open the vehicle's Maintenance tab.
+    INBOX_OPEN_MAINTENANCE => "inbox-open-maintenance",
+    /// Messages: open the vehicle's Documents tab.
+    INBOX_OPEN_DOCUMENTS => "inbox-open-documents",
+    /// Messages: a snooze that can't be used.
+    MESSAGES_BAD_SNOOZE => "messages-bad-snooze",
+    /// Messages: a due message's row and title, "Outback: Engine oil & filter".
+    INBOX_DUE_ROW => "inbox-due-row",
+    /// Messages: the snooze button and its menu.
+    SNOOZE => "snooze",
+    /// Snooze: for a day.
+    SNOOZE_DAY => "snooze-day",
+    /// Snooze: for a week.
+    SNOOZE_WEEK => "snooze-week",
+    /// Snooze: for a month.
+    SNOOZE_MONTH => "snooze-month",
+    /// Snooze: a time or an amount, whichever comes first.
+    SNOOZE_EITHER => "snooze-either",
+    /// Snooze: choose days and an amount.
+    SNOOZE_CUSTOM => "snooze-custom",
+    /// Snooze: the days field.
+    SNOOZE_DAYS => "snooze-days",
+    /// Snooze: the amount field, named by its meter.
+    SNOOZE_OR_METER => "snooze-or-meter",
+    /// Snooze: how the two fields work together.
+    SNOOZE_HINT => "snooze-hint",
+    /// Messages: when a snoozed message wakes.
+    MESSAGES_SNOOZED_UNTIL => "messages-snoozed-until",
+    /// Messages: bring a snoozed message back now.
+    MESSAGES_WAKE => "messages-wake",
+    /// Messages: the filter for snoozed messages, with how many.
+    MESSAGES_FILTER_SNOOZED => "messages-filter-snoozed",
+    /// Due & squawks: the filter for everything.
+    DUE_FILTER_ALL => "due-filter-all",
+    /// Due & squawks: the filter for overdue items.
+    DUE_FILTER_OVERDUE => "due-filter-overdue",
+    /// Due & squawks: the filter for items due soon or very soon.
+    DUE_FILTER_SOON => "due-filter-soon",
+    /// Due & squawks: the filter for open squawks (the household's word).
+    DUE_FILTER_SQUAWKS => "due-filter-squawks",
+    /// Due & squawks: the squawks' heading.
+    DUE_LIST_SQUAWKS => "due-list-squawks",
+    /// Due & squawks: nothing to show.
+    DUE_LIST_NOTHING => "due-list-nothing",
+    /// The fleet strip's name, for screen readers.
+    FLEET_LABEL => "fleet-label",
+    /// The fleet strip: overdue items.
+    FLEET_OVERDUE => "fleet-overdue",
+    /// The fleet strip: items due soon or very soon.
+    FLEET_DUE_SOON => "fleet-due-soon",
+    /// The fleet strip: open squawks (the household's word).
+    FLEET_SQUAWKS => "fleet-squawks",
+    /// The fleet strip: nothing waiting to be sent.
+    FLEET_SYNCED => "fleet-synced",
+    /// The fleet strip: changes waiting to be sent.
+    FLEET_WAITING => "fleet-waiting",
+    /// The fleet strip: the desktop is offline.
+    FLEET_OFFLINE => "fleet-offline",
+    /// Settings: when what's due starts sending messages.
+    SETTING_DUE_MESSAGES => "setting-due-messages",
+    /// Settings: what the starting step means.
+    SETTING_DUE_MESSAGES_NOTE => "setting-due-messages-note",
     /// Log: what an acquisition records.
     LOG_ACQUIRED_DETAIL => "log-acquired-detail",
     /// Log: what a send-out records.

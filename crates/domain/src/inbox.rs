@@ -28,8 +28,8 @@
 //! };
 //! let messages = server_messages(&state);
 //! // An Admin message: shown in Admin mode, not in Driver mode.
-//! assert_eq!(inbox(&messages, &[], ActiveMode::Admin).unread, 1);
-//! assert_eq!(inbox(&messages, &[], ActiveMode::Driver).unread, 0);
+//! assert_eq!(inbox(&messages, &[], ActiveMode::Admin, UnixMillis::from_millis(0), &[]).unread, 1);
+//! assert_eq!(inbox(&messages, &[], ActiveMode::Driver, UnixMillis::from_millis(0), &[]).unread, 0);
 //! ```
 
 use core::fmt;
@@ -37,11 +37,13 @@ use core::fmt;
 use serde::{Deserialize, Serialize};
 
 use crate::access::ActiveMode;
-use crate::command::{Patch, Record};
+use crate::command::{Clearable, Patch, Record};
 use crate::dates::CalendarDate;
+use crate::due::{Due, DueStep};
 use crate::event::{Event, EventId};
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
+use crate::meter::MeterId;
 use crate::time::UnixMillis;
 use crate::user::UserId;
 
@@ -146,7 +148,7 @@ pub enum ServerProblem {
 }
 
 /// What a message is about.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum MessageKind {
     /// A scheduled job's latest run failed.
@@ -208,6 +210,28 @@ pub enum MessageKind {
         /// How far ahead, in whole minutes (at least 1).
         minutes: i64,
     },
+    /// Something on a vehicle comes due (Phase 5 milestone 3, #083): for anyone whose role
+    /// covers the vehicle.
+    Due(DueNotice),
+}
+
+/// What a due message is about (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DueNotice {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name, for the text.
+    pub vehicle: String,
+    /// What comes due.
+    pub subject: crate::api::DueSubject,
+    /// Where it stands now.
+    pub due: Due,
+    /// The vehicle's meters its rules count on, for what's left ("in 310 mi").
+    #[serde(default)]
+    pub meters: Vec<(MeterId, crate::meter::Meter)>,
+    /// The meter a snooze counts on (`crate::due::snooze_meter`); `None`: time only.
+    #[serde(default)]
+    pub snooze_meter: Option<MeterId>,
 }
 
 impl MessageKind {
@@ -237,6 +261,12 @@ impl MessageKind {
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS,
             Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD,
+            Self::Due(notice) => match notice.due.step {
+                DueStep::Ok | DueStep::ComingUp => messages::INBOX_DUE_COMING_UP,
+                DueStep::DueSoon => messages::INBOX_DUE_SOON,
+                DueStep::DueVerySoon => messages::INBOX_DUE_VERY_SOON,
+                DueStep::Overdue => messages::INBOX_DUE_OVERDUE,
+            },
         }
     }
 
@@ -268,6 +298,7 @@ impl MessageKind {
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN_BODY,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS_BODY,
             Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD_BODY,
+            Self::Due(_) => messages::INBOX_DUE_BODY,
         }
     }
 }
@@ -288,6 +319,16 @@ pub enum MessageAction {
         /// Which event.
         event: EventId,
     },
+    /// Open a vehicle's Maintenance tab (a requirement coming due).
+    OpenMaintenance {
+        /// Which vehicle.
+        asset: crate::asset::AssetId,
+    },
+    /// Open a vehicle's Documents tab (a document expiring).
+    OpenDocuments {
+        /// Which vehicle.
+        asset: crate::asset::AssetId,
+    },
 }
 
 impl MessageAction {
@@ -298,6 +339,8 @@ impl MessageAction {
             Self::OpenDiagnostics => messages::INBOX_OPEN_DIAGNOSTICS,
             Self::OpenEvent { .. } => messages::INBOX_OPEN_JOB,
             Self::OpenSendOut { .. } => messages::INBOX_OPEN_SEND_OUT,
+            Self::OpenMaintenance { .. } => messages::INBOX_OPEN_MAINTENANCE,
+            Self::OpenDocuments { .. } => messages::INBOX_OPEN_DOCUMENTS,
         }
     }
 }
@@ -532,6 +575,58 @@ pub fn clock_ahead_message(
     }
 }
 
+/// The message for `notice`'s item coming due (#083), if it has reached `from` (the
+/// household's starting step) or is overdue. `cycle` is the finished task its count runs from
+/// (`None`: never done, or a document).
+///
+/// Its key names the item and its cycle, so a sign-off starts a new message. **Overdue has a
+/// key of its own,** so it comes back unread whatever was done with the first (#083). It's
+/// raised when the item reached its step ([`Due::since`]), else at `now`.
+#[must_use]
+pub fn due_message(
+    notice: DueNotice,
+    cycle: Option<EventId>,
+    from: DueStep,
+    now: UnixMillis,
+) -> Option<Message> {
+    use crate::api::DueSubject;
+    let (asset, due) = (notice.asset, &notice.due);
+    if due.step == DueStep::Ok || (due.step < from && due.step != DueStep::Overdue) {
+        return None;
+    }
+    let (item, action) = match &notice.subject {
+        DueSubject::Requirement { id, .. } => (
+            format!("requirement:{id}"),
+            MessageAction::OpenMaintenance { asset },
+        ),
+        DueSubject::Document { id, .. } => (
+            format!("document:{id}"),
+            MessageAction::OpenDocuments { asset },
+        ),
+    };
+    let cycle = cycle.map_or_else(|| "first".to_owned(), |event| event.to_string());
+    let prefix = if due.step == DueStep::Overdue {
+        "due-overdue"
+    } else {
+        "due"
+    };
+    let severity = if due.step == DueStep::ComingUp {
+        Severity::Info
+    } else {
+        Severity::Warning
+    };
+    let raised_at = due.since().unwrap_or(now);
+    Some(Message {
+        key: MessageKey(format!("{prefix}:{item}:{cycle}")),
+        kind: MessageKind::Due(notice),
+        severity,
+        audience: Audience::Everyone,
+        raised_at,
+        detail: String::new(),
+        action: Some(action),
+    })
+}
+
 /// A problem's stable name, for keys.
 const fn problem_name(problem: ServerProblem) -> &'static str {
     match problem {
@@ -558,6 +653,91 @@ pub struct MessageMark {
     pub read: bool,
     /// They've put it away; it no longer shows.
     pub dismissed: bool,
+    /// Snoozed: hidden until it wakes (#083).
+    #[serde(default)]
+    pub snooze: Option<Snooze>,
+}
+
+/// One day, in milliseconds.
+const DAY_MS: i64 = 24 * 60 * 60 * 1_000;
+
+/// A meter value a snooze waits for: it wakes once the meter's latest reading reaches `at`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SnoozeMeter {
+    /// Which meter (one that counts up).
+    pub meter: MeterId,
+    /// The value, in its stored unit.
+    pub at: i64,
+}
+
+/// How long a message sleeps (#083): until a time, until a meter reaches a value, or both,
+/// whichever comes first.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Snooze {
+    /// When it wakes, if by time.
+    #[serde(default)]
+    pub until: Option<UnixMillis>,
+    /// What it waits for on a meter, if by distance or hours.
+    #[serde(default)]
+    pub meter: Option<SnoozeMeter>,
+}
+
+impl Snooze {
+    /// Whether it has woken at `now`, given each meter's latest value: either limit passed
+    /// (one with neither is awake).
+    #[must_use]
+    pub fn awake(&self, now: UnixMillis, latest: &[(MeterId, i64)]) -> bool {
+        let by_time = self.until.is_some_and(|until| now >= until);
+        let by_meter = self.meter.is_some_and(|wait| {
+            latest
+                .iter()
+                .any(|(meter, value)| *meter == wait.meter && *value >= wait.at)
+        });
+        by_time || by_meter || (self.until.is_none() && self.meter.is_none())
+    }
+}
+
+/// The longest snooze, in days.
+pub const MAX_SNOOZE_DAYS: u16 = 366;
+
+/// What someone asks for when they snooze (#083): a number of days, an amount on the item's
+/// meter, or both. The quick choices are these too ("1 week or 500 mi" is 7 days and 500 mi).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SnoozeRequest {
+    /// For this many days (1 to [`MAX_SNOOZE_DAYS`]).
+    #[serde(default)]
+    pub days: Option<u16>,
+    /// For this much more on the item's meter, in its stored unit (more than zero).
+    #[serde(default)]
+    pub amount: Option<i64>,
+}
+
+impl SnoozeRequest {
+    /// The snooze it makes at `now`, with the item's `meter` and its latest value (if it has
+    /// one that counts up). `None` if it asks for nothing usable: no days and no amount, days
+    /// out of range, an amount of zero or less, or an amount with no meter.
+    #[must_use]
+    pub fn snooze(self, now: UnixMillis, meter: Option<(MeterId, i64)>) -> Option<Snooze> {
+        let until = match self.days {
+            None => None,
+            Some(days) if (1..=MAX_SNOOZE_DAYS).contains(&days) => Some(UnixMillis::from_millis(
+                now.as_millis().checked_add(i64::from(days) * DAY_MS)?,
+            )),
+            Some(_) => return None,
+        };
+        let meter = match self.amount {
+            None => None,
+            Some(amount) if amount > 0 => {
+                let (meter, latest) = meter?;
+                Some(SnoozeMeter {
+                    meter,
+                    at: latest.checked_add(amount)?,
+                })
+            }
+            Some(_) => return None,
+        };
+        (until.is_some() || meter.is_some()).then_some(Snooze { until, meter })
+    }
 }
 
 /// Changed fields of a message mark; `None` means unchanged.
@@ -575,6 +755,9 @@ pub struct MessageMarkPatch {
     /// See [`MessageMark::dismissed`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dismissed: Option<bool>,
+    /// See [`MessageMark::snooze`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snooze: Option<Clearable<Snooze>>,
 }
 
 impl Patch for MessageMarkPatch {
@@ -584,6 +767,7 @@ impl Patch for MessageMarkPatch {
             ("key", self.key.is_some()),
             ("read", self.read.is_some()),
             ("dismissed", self.dismissed.is_some()),
+            ("snooze", self.snooze.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -604,6 +788,9 @@ impl Patch for MessageMarkPatch {
         if !keep("dismissed") {
             self.dismissed = None;
         }
+        if !keep("snooze") {
+            self.snooze = None;
+        }
     }
 }
 
@@ -619,6 +806,9 @@ pub struct InboxItem {
     pub message: Message,
     /// They've read it.
     pub read: bool,
+    /// Its snooze, while it sleeps (only on [`Inbox::snoozed`]).
+    #[serde(default)]
+    pub snooze: Option<Snooze>,
 }
 
 /// One person's inbox: what they can see and haven't dismissed.
@@ -628,17 +818,28 @@ pub struct Inbox {
     pub items: Vec<InboxItem>,
     /// How many are unread (the badge).
     pub unread: usize,
+    /// Snoozed and still asleep (not in `items` or `unread`), by when they wake, soonest first, then those waiting on a meter (#083).
+    #[serde(default)]
+    pub snoozed: Vec<InboxItem>,
 }
 
 /// The inbox for someone working in `mode`, with their `marks` applied: messages they can't
-/// see and ones they've dismissed are left out; details only show in Admin mode.
+/// see and ones they've dismissed are left out; details only show in Admin mode. Snoozed ones
+/// still asleep at `now`, given each meter's `latest` value, are set aside in
+/// [`Inbox::snoozed`] (#083).
 #[must_use]
-pub fn inbox(messages: &[Message], marks: &[MessageMark], mode: ActiveMode) -> Inbox {
+pub fn inbox(
+    messages: &[Message],
+    marks: &[MessageMark],
+    mode: ActiveMode,
+    now: UnixMillis,
+    latest: &[(MeterId, i64)],
+) -> Inbox {
     let in_admin = mode == ActiveMode::Admin;
     let mark_for = |key: &MessageKey| marks.iter().find(|mark| &mark.key == key);
 
-    // Visible, not dismissed, with read state and details settled for this person.
-    let mut items: Vec<InboxItem> = messages
+    // Visible, not dismissed, with read state, snooze, and details settled for this person.
+    let (asleep, mut items): (Vec<InboxItem>, Vec<InboxItem>) = messages
         .iter()
         .filter(|message| in_admin || message.audience == Audience::Everyone)
         .filter(|message| !mark_for(&message.key).is_some_and(|mark| mark.dismissed))
@@ -647,10 +848,24 @@ pub fn inbox(messages: &[Message], marks: &[MessageMark], mode: ActiveMode) -> I
             if !in_admin {
                 message.detail.clear();
             }
-            let read = mark_for(&message.key).is_some_and(|mark| mark.read);
-            InboxItem { message, read }
+            let mark = mark_for(&message.key);
+            let read = mark.is_some_and(|mark| mark.read);
+            let snooze = mark
+                .and_then(|mark| mark.snooze)
+                .filter(|snooze| !snooze.awake(now, latest));
+            InboxItem {
+                message,
+                read,
+                snooze,
+            }
         })
-        .collect();
+        .partition(|item| item.snooze.is_some());
+    let mut snoozed = asleep;
+    // By time first (soonest first), then those waiting only on a meter.
+    snoozed.sort_by_key(|item| {
+        let until = item.snooze.and_then(|snooze| snooze.until);
+        (until.is_none(), until)
+    });
     // Unread first (false sorts before true), then newest first.
     items.sort_by(|a, b| {
         a.read
@@ -658,7 +873,11 @@ pub fn inbox(messages: &[Message], marks: &[MessageMark], mode: ActiveMode) -> I
             .then(b.message.raised_at.cmp(&a.message.raised_at))
     });
     let unread = items.iter().filter(|item| !item.read).count();
-    Inbox { items, unread }
+    Inbox {
+        items,
+        unread,
+        snoozed,
+    }
 }
 
 #[cfg(test)]
@@ -681,6 +900,7 @@ mod tests {
             key: message.key.clone(),
             read,
             dismissed,
+            snooze: None,
         }
     }
 
@@ -793,9 +1013,20 @@ mod tests {
             jobs: vec![job("nightly-snapshot", JobOutcome::Failed, 2)],
             place_lookup_problem: None,
         });
-        assert_eq!(inbox(&messages, &[], ActiveMode::Admin).items.len(), 2);
+        assert_eq!(
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Admin,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .items
+            .len(),
+            2
+        );
         for mode in [ActiveMode::Driver, ActiveMode::Maintainer] {
-            let seen = inbox(&messages, &[], mode);
+            let seen = inbox(&messages, &[], mode, UnixMillis::from_millis(0), &[]);
             assert_eq!(seen.items.len(), 1, "{mode:?}");
             assert_eq!(seen.items[0].message.audience, Audience::Everyone);
         }
@@ -813,13 +1044,27 @@ mod tests {
         });
         messages[0].detail = "file is not a database".into();
         assert_eq!(
-            inbox(&messages, &[], ActiveMode::Admin).items[0]
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Admin,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .items[0]
                 .message
                 .detail,
             "file is not a database"
         );
         assert!(
-            inbox(&messages, &[], ActiveMode::Driver).items[0]
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Driver,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .items[0]
                 .message
                 .detail
                 .is_empty()
@@ -841,7 +1086,13 @@ mod tests {
             mark(&messages[0], true, false),
             mark(&messages[1], false, true),
         ];
-        let seen = inbox(&messages, &marks, ActiveMode::Admin);
+        let seen = inbox(
+            &messages,
+            &marks,
+            ActiveMode::Admin,
+            UnixMillis::from_millis(0),
+            &[],
+        );
         let keys: Vec<&str> = seen.items.iter().map(|i| i.message.key.as_str()).collect();
         assert_eq!(
             keys,
@@ -863,7 +1114,13 @@ mod tests {
             place_lookup_problem: None,
         });
         let marks = [mark(&messages[1], true, false)];
-        let seen = inbox(&messages, &marks, ActiveMode::Admin);
+        let seen = inbox(
+            &messages,
+            &marks,
+            ActiveMode::Admin,
+            UnixMillis::from_millis(0),
+            &[],
+        );
         let names: Vec<&str> = seen
             .items
             .iter()
@@ -875,7 +1132,8 @@ mod tests {
                 | MessageKind::ForgottenJob { .. }
                 | MessageKind::OverdueReturn { .. }
                 | MessageKind::FailedUnlocks { .. }
-                | MessageKind::ClockAhead { .. } => "",
+                | MessageKind::ClockAhead { .. }
+                | MessageKind::Due(_) => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);
@@ -991,7 +1249,13 @@ mod tests {
             jobs: vec![job("nightly-snapshot", JobOutcome::Skipped, 2)],
             place_lookup_problem: None,
         });
-        let seen = inbox(&messages, &[], ActiveMode::Admin);
+        let seen = inbox(
+            &messages,
+            &[],
+            ActiveMode::Admin,
+            UnixMillis::from_millis(0),
+            &[],
+        );
         let json = serde_json::to_string(&seen).unwrap();
         assert_eq!(serde_json::from_str::<Inbox>(&json).unwrap(), seen);
     }
@@ -1007,8 +1271,29 @@ mod tests {
         assert_eq!(message.key.as_str(), "place-lookup-unavailable:5");
         assert_eq!(message.severity, Severity::Warning);
         assert_eq!(message.audience, Audience::AdminMode);
-        assert!(inbox(&messages, &[], ActiveMode::Driver).items.is_empty());
-        assert_eq!(inbox(&messages, &[], ActiveMode::Admin).items.len(), 1);
+        assert!(
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Driver,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .items
+            .is_empty()
+        );
+        assert_eq!(
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Admin,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .items
+            .len(),
+            1
+        );
     }
 
     #[test]
@@ -1031,7 +1316,253 @@ mod tests {
         assert_eq!(first.audience, Audience::AdminMode);
         assert_ne!(first.key, later.key);
         let messages = [first];
-        assert_eq!(inbox(&messages, &[], ActiveMode::Admin).unread, 1);
-        assert_eq!(inbox(&messages, &[], ActiveMode::Maintainer).unread, 0);
+        assert_eq!(
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Admin,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .unread,
+            1
+        );
+        assert_eq!(
+            inbox(
+                &messages,
+                &[],
+                ActiveMode::Maintainer,
+                UnixMillis::from_millis(0),
+                &[]
+            )
+            .unread,
+            0
+        );
+    }
+
+    fn oil_due(step: DueStep, since: Option<i64>) -> Due {
+        Due {
+            step,
+            rules: vec![crate::due::RuleDue {
+                step,
+                left: crate::due::Left::Date {
+                    due: "2026-12-01".into(),
+                },
+                since: since.map(UnixMillis::from_millis),
+            }],
+            date: None,
+            not_done_yet: false,
+        }
+    }
+
+    fn notice(subject: crate::api::DueSubject, due: Due) -> DueNotice {
+        DueNotice {
+            asset: test_id(1),
+            vehicle: "Outback".into(),
+            subject,
+            due,
+            meters: vec![],
+            snooze_meter: None,
+        }
+    }
+
+    fn oil(step: DueStep, cycle: Option<EventId>) -> Option<Message> {
+        due_message(
+            notice(
+                crate::api::DueSubject::Requirement {
+                    id: test_id(20),
+                    name: crate::label::Label::parse("Engine oil & filter").unwrap(),
+                },
+                oil_due(step, Some(4_000)),
+            ),
+            cycle,
+            DueStep::DueSoon,
+            UnixMillis::from_millis(9_000),
+        )
+    }
+
+    #[test]
+    fn a_due_message_starts_at_the_households_step() {
+        assert_eq!(oil(DueStep::Ok, None), None);
+        assert_eq!(oil(DueStep::ComingUp, None), None, "before Due soon");
+        let soon = oil(DueStep::DueSoon, None).unwrap();
+        assert_eq!(soon.severity, Severity::Warning);
+        assert_eq!(soon.audience, Audience::Everyone);
+        assert_eq!(
+            soon.raised_at,
+            UnixMillis::from_millis(4_000),
+            "when it got there"
+        );
+        assert_eq!(soon.kind.title(), messages::INBOX_DUE_SOON);
+        assert_eq!(
+            soon.action,
+            Some(MessageAction::OpenMaintenance { asset: test_id(1) })
+        );
+        // From Coming up, an Info.
+        let early = due_message(
+            notice(
+                crate::api::DueSubject::Document {
+                    id: test_id(30),
+                    doc_type: crate::document::DocumentType::listed("document-insurance").unwrap(),
+                },
+                oil_due(DueStep::ComingUp, None),
+            ),
+            None,
+            DueStep::ComingUp,
+            UnixMillis::from_millis(9_000),
+        )
+        .unwrap();
+        assert_eq!(early.severity, Severity::Info);
+        assert_eq!(early.raised_at, UnixMillis::from_millis(9_000), "now");
+        assert_eq!(
+            early.action,
+            Some(MessageAction::OpenDocuments { asset: test_id(1) })
+        );
+    }
+
+    #[test]
+    fn one_message_per_cycle_and_one_for_overdue() {
+        let soon = oil(DueStep::DueSoon, None).unwrap();
+        let very_soon = oil(DueStep::DueVerySoon, None).unwrap();
+        let overdue = oil(DueStep::Overdue, None).unwrap();
+        assert_eq!(soon.key, very_soon.key, "the same message, more urgent");
+        assert_ne!(soon.key, overdue.key, "Overdue is its own");
+        assert_eq!(overdue.kind.title(), messages::INBOX_DUE_OVERDUE);
+        let next_cycle = oil(DueStep::DueSoon, Some(test_id(50))).unwrap();
+        assert_ne!(soon.key, next_cycle.key, "a sign-off starts a new one");
+        assert!(
+            next_cycle
+                .key
+                .as_str()
+                .ends_with(&test_id::<Event>(50).to_string())
+        );
+    }
+
+    #[test]
+    fn overdue_comes_back_after_a_dismiss_or_a_snooze() {
+        let soon = oil(DueStep::DueSoon, None).unwrap();
+        let snoozed = MessageMark {
+            snooze: Some(Snooze {
+                until: Some(UnixMillis::from_millis(100_000)),
+                meter: None,
+            }),
+            ..mark(&soon, true, false)
+        };
+        let now = UnixMillis::from_millis(10_000);
+        let asleep = inbox(
+            std::slice::from_ref(&soon),
+            std::slice::from_ref(&snoozed),
+            ActiveMode::Driver,
+            now,
+            &[],
+        );
+        assert!(asleep.items.is_empty());
+        assert_eq!(asleep.unread, 0);
+        assert_eq!(asleep.snoozed.len(), 1);
+        assert_eq!(asleep.snoozed[0].snooze, snoozed.snooze);
+        // Overdue: a new message, unread, though the first was snoozed and another dismissed.
+        let overdue = oil(DueStep::Overdue, None).unwrap();
+        let dismissed = mark(
+            &oil(DueStep::DueSoon, Some(test_id(50))).unwrap(),
+            true,
+            true,
+        );
+        let seen = inbox(
+            std::slice::from_ref(&overdue),
+            &[snoozed, dismissed],
+            ActiveMode::Driver,
+            now,
+            &[],
+        );
+        assert_eq!(seen.unread, 1);
+        assert_eq!(seen.items[0].message.key, overdue.key);
+    }
+
+    #[test]
+    fn a_snooze_wakes_by_time_or_by_meter_whichever_first() {
+        let odometer: MeterId = test_id(10);
+        let snooze = Snooze {
+            until: Some(UnixMillis::from_millis(100_000)),
+            meter: Some(SnoozeMeter {
+                meter: odometer,
+                at: 5_000,
+            }),
+        };
+        let early = UnixMillis::from_millis(99_999);
+        assert!(!snooze.awake(early, &[(odometer, 4_999)]));
+        assert!(snooze.awake(early, &[(odometer, 5_000)]), "the meter");
+        assert!(
+            snooze.awake(UnixMillis::from_millis(100_000), &[(odometer, 10)]),
+            "the time"
+        );
+        assert!(
+            !snooze.awake(early, &[(test_id(11), 9_999)]),
+            "another meter"
+        );
+        // In the inbox: back, keeping its read state.
+        let soon = oil(DueStep::DueSoon, None).unwrap();
+        let marked = MessageMark {
+            snooze: Some(snooze),
+            ..mark(&soon, true, false)
+        };
+        let woken = inbox(
+            &[soon],
+            &[marked],
+            ActiveMode::Driver,
+            early,
+            &[(odometer, 6_000)],
+        );
+        assert_eq!(woken.items.len(), 1);
+        assert!(woken.items[0].read);
+        assert_eq!(woken.items[0].snooze, None);
+        assert!(woken.snoozed.is_empty());
+    }
+
+    #[test]
+    fn a_snooze_request_makes_a_snooze() {
+        let now = UnixMillis::from_millis(1_000);
+        let odometer: MeterId = test_id(10);
+        let both = SnoozeRequest {
+            days: Some(7),
+            amount: Some(500),
+        };
+        assert_eq!(
+            both.snooze(now, Some((odometer, 80_000))),
+            Some(Snooze {
+                until: Some(UnixMillis::from_millis(1_000 + 7 * DAY_MS)),
+                meter: Some(SnoozeMeter {
+                    meter: odometer,
+                    at: 80_500,
+                }),
+            })
+        );
+        assert_eq!(both.snooze(now, None), None, "an amount needs a meter");
+        let days = |days| SnoozeRequest {
+            days: Some(days),
+            amount: None,
+        };
+        assert!(days(1).snooze(now, None).is_some());
+        assert!(days(MAX_SNOOZE_DAYS).snooze(now, None).is_some());
+        assert_eq!(days(0).snooze(now, None), None);
+        assert_eq!(days(MAX_SNOOZE_DAYS + 1).snooze(now, None), None);
+        let nothing = SnoozeRequest::default();
+        assert_eq!(nothing.snooze(now, Some((odometer, 1))), None);
+        let backwards = SnoozeRequest {
+            days: None,
+            amount: Some(-5),
+        };
+        assert_eq!(backwards.snooze(now, Some((odometer, 1))), None);
+    }
+
+    #[test]
+    fn a_marks_snooze_is_a_field_of_its_own() {
+        let patch = MessageMarkPatch {
+            snooze: Some(Clearable::Clear),
+            ..MessageMarkPatch::default()
+        };
+        assert_eq!(patch.changed_fields(), vec!["snooze"]);
+        let mut kept = patch;
+        kept.keep_only(&["read"]);
+        assert_eq!(kept, MessageMarkPatch::default());
     }
 }

@@ -1,6 +1,7 @@
 //! The `message_marks` table: each person's read and dismissed marks on messages (#050), and
 //! the job results messages are derived from.
 
+use domain::command::Clearable;
 use domain::id::Id;
 use domain::inbox::{
     JobOutcome, JobReport, MessageKey, MessageMark, MessageMarkId, MessageMarkPatch,
@@ -12,7 +13,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::{id_from_sql, id_to_sql, required};
+use crate::convert::{clearable_json, id_from_sql, id_to_sql, optional_json, required};
 use crate::{Database, StorageError};
 
 /// Writes the `message_marks` table for the command pipeline.
@@ -28,15 +29,20 @@ impl RecordWriter<MessageMarkRecord> for MessageMarkWriter {
         sequence: i64,
     ) -> Result<(), StorageError> {
         let key = required(values.key.as_ref(), "key")?;
+        let snooze = optional_json(
+            values.snooze.and_then(Clearable::into_option),
+            "message_marks.snooze",
+        )?;
         sqlx::query(
-            "INSERT INTO message_marks (id, user_id, key, read, dismissed, sequence)
-             VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO message_marks (id, user_id, key, read, dismissed, snooze, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.user, "user_id")?))
         .bind(key.as_str())
         .bind(values.read.unwrap_or(false))
         .bind(values.dismissed.unwrap_or(false))
+        .bind(snooze)
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -50,12 +56,14 @@ impl RecordWriter<MessageMarkRecord> for MessageMarkWriter {
         patch: &MessageMarkPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
+        let snooze = clearable_json(patch.snooze.as_ref(), "message_marks.snooze")?;
         sqlx::query(
             "UPDATE message_marks SET
                  user_id = coalesce(?, user_id),
                  key = coalesce(?, key),
                  read = coalesce(?, read),
                  dismissed = coalesce(?, dismissed),
+                 snooze = CASE WHEN ? THEN ? ELSE snooze END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -63,6 +71,8 @@ impl RecordWriter<MessageMarkRecord> for MessageMarkWriter {
         .bind(patch.key.as_ref().map(MessageKey::as_str))
         .bind(patch.read)
         .bind(patch.dismissed)
+        .bind(snooze.0)
+        .bind(snooze.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -96,6 +106,10 @@ fn mark_from_row(row: &SqliteRow) -> Result<(MessageMarkId, MessageMark), Storag
             })?,
             read: row.try_get("read")?,
             dismissed: row.try_get("dismissed")?,
+            // A snooze this build can't read counts as none: the message shows.
+            snooze: row
+                .try_get::<Option<String>, _>("snooze")?
+                .and_then(|text| serde_json::from_str(&text).ok()),
         },
     ))
 }
@@ -135,7 +149,7 @@ impl Database {
         user: UserId,
     ) -> Result<Vec<(MessageMarkId, MessageMark)>, StorageError> {
         sqlx::query(
-            "SELECT id, user_id, key, read, dismissed FROM message_marks
+            "SELECT id, user_id, key, read, dismissed, snooze FROM message_marks
              WHERE user_id = ? AND deleted = 0",
         )
         .bind(id_to_sql(user))

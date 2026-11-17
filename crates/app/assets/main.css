@@ -4966,3 +4966,156 @@ body:has(.photo-viewer) {
     margin: 4px 0 8px;
     margin-left: 0;
 }
+
+/* Due messages and snooze (phase-5.md milestone 3, #083; p5m3 sketch 1A and 4A). */
+.message-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.message-body.due-left {
+    font-size: 1rem;
+}
+
+.snooze {
+    position: relative;
+}
+
+.snooze-menu {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 4px);
+    left: 0;
+    display: grid;
+    min-width: 13rem;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.snooze-choice {
+    min-height: 40px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.snooze-choice:hover,
+.snooze-choice:focus-visible {
+    background: var(--surface);
+}
+
+.snooze-choice.link-button {
+    color: var(--accent);
+}
+
+.snooze-custom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 12px;
+    margin-top: 10px;
+}
+
+.snooze-custom .field input {
+    width: 9em;
+}
+
+.snooze-custom .muted-note,
+.snooze-custom .form-error {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+/* 2A: the Garage's fleet strip, above the groups. */
+.fleet-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.fleet-tile {
+    display: grid;
+    gap: 4px;
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.fleet-tile:hover,
+.fleet-tile:focus-visible {
+    border-color: var(--accent);
+}
+
+.fleet-count {
+    color: var(--text);
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.fleet-overdue .fleet-count { color: var(--due-overdue); }
+.fleet-due-soon .fleet-count { color: var(--due-soon); }
+.fleet-synced .fleet-count { color: #3fb950; }
+.fleet-waiting .fleet-count { color: var(--warn); }
+
+/* 3A: Due & squawks, one list. */
+.due-list {
+    display: grid;
+    gap: 12px;
+    max-width: 52rem;
+}
+
+.due-rows {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.due-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.due-row:hover,
+.due-row:focus-visible {
+    border-color: var(--accent);
+}
+
+.due-row-text {
+    display: grid;
+    flex: 1;
+    gap: 2px;
+}
+
+.due-row-name {
+    font-weight: 600;
+}
+
+.due-row-meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
