@@ -460,6 +460,7 @@ async fn copy_onto(
     let copied = copy_schedule(
         &context.requirements_for(from).await?,
         &bundles,
+        &[],
         &meters(from).await?,
         &meters(to).await?,
         to,

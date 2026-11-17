@@ -209,6 +209,7 @@ mod lifecycle {
                         part_number: Some("FL-500S".into()),
                         quantity_milli: 1_000,
                         unit_price_minor: Some(1_299),
+                        spec: None,
                     }],
                     labor_seconds: Some(1_800),
                     labor_cost_minor: None,
@@ -654,6 +655,7 @@ mod lifecycle {
             applicability: Applicability::UnderReview,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         RequirementWriter
             .create(

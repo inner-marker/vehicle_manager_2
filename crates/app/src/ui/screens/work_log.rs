@@ -894,6 +894,7 @@ mod tests {
                 applicability: domain::requirement::Applicability::Applies,
                 before_records: None,
                 warnings: None,
+                specs: vec![],
             },
             last_done: None,
             status: domain::requirement::RequirementStatus::Active,

@@ -168,6 +168,7 @@ fn part_from_row(row: &SqliteRow) -> Result<Part, StorageError> {
         part_number: row.try_get("part_number")?,
         quantity_milli: row.try_get("quantity_milli")?,
         unit_price_minor: row.try_get("unit_price_minor")?,
+        spec: None,
     })
 }
 

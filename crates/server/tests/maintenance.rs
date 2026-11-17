@@ -248,6 +248,7 @@ mod maintenance {
             applicability: domain::requirement::Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         }
     }
 

@@ -392,6 +392,7 @@ mod lifecycle {
             },
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         assert!(matches!(
             server::schedule::add_requirement(context, requirement).await,

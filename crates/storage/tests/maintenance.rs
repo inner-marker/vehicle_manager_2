@@ -153,6 +153,7 @@ mod maintenance {
                 applicability: domain::requirement::Applicability::Applies,
                 before_records: None,
                 warnings: None,
+                specs: vec![],
             };
             RequirementWriter
                 .create(
@@ -215,26 +216,33 @@ mod maintenance {
         }
     }
 
-    /// An oil change `days` after `NOW`, at `odometer` meters, with every part of its work
-    /// filled in: two tasks (one with parts, reset from the end readings), and both squawks
-    /// dispositioned.
-    fn oil_change(days: i64, odometer: i64) -> Event {
-        let mut oil = task("Engine oil & filter", Some(OIL));
-        oil.notes = Notes::parse("5W-30 **synthetic**").unwrap();
-        oil.parts = vec![
+    /// The oil change's parts: a filter with its price, and the oil.
+    fn oil_parts() -> Vec<Part> {
+        vec![
             Part {
                 description: "Oil filter".into(),
                 part_number: Some("FL-500S".into()),
                 quantity_milli: 1_000,
                 unit_price_minor: Some(1_299),
+                spec: None,
             },
             Part {
                 description: "Engine oil".into(),
                 part_number: None,
                 quantity_milli: 5_500,
                 unit_price_minor: None,
+                spec: None,
             },
-        ];
+        ]
+    }
+
+    /// An oil change `days` after `NOW`, at `odometer` meters, with every part of its work
+    /// filled in: two tasks (one with parts, reset from the end readings), and both squawks
+    /// dispositioned.
+    fn oil_change(days: i64, odometer: i64) -> Event {
+        let mut oil = task("Engine oil & filter", Some(OIL));
+        oil.notes = Notes::parse("5W-30 **synthetic**").unwrap();
+        oil.parts = oil_parts();
         oil.labor_seconds = Some(1_800);
         oil.labor_cost_minor = Some(4_500);
         oil.resets_from = ReadingSet::End;

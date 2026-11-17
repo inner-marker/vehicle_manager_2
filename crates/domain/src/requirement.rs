@@ -217,6 +217,10 @@ pub struct Requirement {
     /// Its own warnings, instead of the household's (#082).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub warnings: Option<DueDefaults>,
+    /// The vehicle's specs its job uses, in order (#084): they pre-fill a task's parts and
+    /// reminders.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub specs: Vec<crate::spec::SpecId>,
 }
 
 /// Where a requirement stands (worked out, never stored).
@@ -311,6 +315,8 @@ record_patch! {
         before_records: Clearable<LastDoneBefore>,
         /// See [`Requirement::warnings`].
         warnings: Clearable<DueDefaults>,
+        /// See [`Requirement::specs`] (the whole list).
+        specs: Vec<crate::spec::SpecId>,
     }
 }
 
@@ -329,6 +335,7 @@ impl RequirementPatch {
             applicability: Some(requirement.applicability),
             before_records: Some(Clearable::from_option(requirement.before_records)),
             warnings: Some(Clearable::from_option(requirement.warnings)),
+            specs: Some(requirement.specs),
         }
     }
 }
@@ -411,6 +418,8 @@ pub enum RequirementProblem {
     /// "Last done before these records" that isn't a date, names a meter twice or one that
     /// isn't this vehicle's, or has a negative reading (#082).
     BadBeforeRecords,
+    /// Specs that aren't this vehicle's, or one twice (#084).
+    BadSpecs,
 }
 
 impl RequirementProblem {
@@ -418,7 +427,9 @@ impl RequirementProblem {
     #[must_use]
     pub const fn message(self) -> MessageId {
         match self {
-            Self::UnknownMeter | Self::UnknownReference => messages::SOMETHING_WENT_WRONG,
+            Self::UnknownMeter | Self::UnknownReference | Self::BadSpecs => {
+                messages::SOMETHING_WENT_WRONG
+            }
             Self::BadInterval => messages::REQUIREMENT_BAD_INTERVAL,
             Self::BadCalendar => messages::REQUIREMENT_BAD_CALENDAR,
             Self::BadDate => messages::DATE_BAD_DATE,
@@ -547,6 +558,24 @@ pub fn check_compliance(
     Ok(())
 }
 
+/// Checks a requirement's `specs` against its vehicle's (`known`): each the vehicle's, and
+/// each once (#084).
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadSpecs`] otherwise.
+pub fn check_specs(
+    specs: &[crate::spec::SpecId],
+    known: &[crate::spec::SpecId],
+) -> Result<(), RequirementProblem> {
+    for (index, spec) in specs.iter().enumerate() {
+        if !known.contains(spec) || specs[..index].contains(spec) {
+            return Err(RequirementProblem::BadSpecs);
+        }
+    }
+    Ok(())
+}
+
 /// Checks a bundle's requirements: at least one, each the vehicle's (`known`), none twice.
 ///
 /// # Errors
@@ -623,25 +652,29 @@ pub fn last_done(requirement: RequirementId, done: &[DoneTask]) -> Option<&DoneT
 }
 
 /// A schedule copied onto another vehicle: the requirements (with the IDs they had, so the
-/// bundles' items can be mapped to their new ones), the bundles, and the meter rules left out
-/// because the new vehicle has no matching meter.
+/// bundles' items and the requirements' specs can be mapped to their new ones), the bundles,
+/// the specs, and the meter rules left out because the new vehicle has no matching meter.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopiedSchedule {
     /// Each requirement, with its ID on the vehicle it came from.
     pub requirements: Vec<(RequirementId, Requirement)>,
     /// Each bundle, still naming the requirements by their old IDs.
     pub bundles: Vec<Bundle>,
+    /// Each spec, with its ID on the vehicle it came from (the requirements still name
+    /// these, #084).
+    pub specs: Vec<(crate::spec::SpecId, crate::spec::Spec)>,
     /// "Engine oil & filter: Engine hours": a requirement and a meter it couldn't keep.
     pub left_out: Vec<(Label, Label)>,
 }
 
-/// Copies `requirements` and `bundles` onto `to_asset` (#031): copies, never links. A meter
-/// rule moves to the new vehicle's meter with the same name (ignoring case) and dimension;
-/// with none, it's left out and listed.
+/// Copies `requirements`, `bundles`, and `specs` onto `to_asset` (#031, #084): copies, never
+/// links. A meter rule moves to the new vehicle's meter with the same name (ignoring case)
+/// and dimension; with none, it's left out and listed.
 #[must_use]
 pub fn copy_schedule(
     requirements: &[(RequirementId, Requirement)],
     bundles: &[Bundle],
+    specs: &[(crate::spec::SpecId, crate::spec::Spec)],
     from_meters: &[(MeterId, Meter)],
     to_meters: &[(MeterId, Meter)],
     to_asset: AssetId,
@@ -703,6 +736,18 @@ pub fn copy_schedule(
             .map(|bundle| Bundle {
                 asset: to_asset,
                 ..bundle.clone()
+            })
+            .collect(),
+        specs: specs
+            .iter()
+            .map(|(id, spec)| {
+                (
+                    *id,
+                    crate::spec::Spec {
+                        asset: to_asset,
+                        ..spec.clone()
+                    },
+                )
             })
             .collect(),
         left_out,
@@ -778,6 +823,7 @@ mod tests {
             applicability: Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         }
     }
 
@@ -1109,7 +1155,14 @@ mod tests {
             name: Label::parse("10,000-mile service").unwrap(),
             requirements: vec![test_id(40)],
         }];
-        let copied = copy_schedule(&requirements, &bundles, &meters(), &to_meters, test_id(2));
+        let copied = copy_schedule(
+            &requirements,
+            &bundles,
+            &[],
+            &meters(),
+            &to_meters,
+            test_id(2),
+        );
         let (old_id, copy) = &copied.requirements[0];
         assert_eq!(*old_id, test_id(40));
         assert_eq!(copy.asset, test_id(2));
@@ -1145,9 +1198,24 @@ mod tests {
     }
 
     #[test]
+    fn a_requirements_specs_are_the_vehicles_each_once() {
+        let known = [test_id(30), test_id(31)];
+        assert_eq!(check_specs(&[], &known), Ok(()));
+        assert_eq!(check_specs(&[test_id(31), test_id(30)], &known), Ok(()));
+        assert_eq!(
+            check_specs(&[test_id(30), test_id(30)], &known),
+            Err(RequirementProblem::BadSpecs)
+        );
+        assert_eq!(
+            check_specs(&[test_id(99)], &known),
+            Err(RequirementProblem::BadSpecs)
+        );
+    }
+
+    #[test]
     fn patches_set_every_field_and_survive_the_trip() {
         let patch = RequirementPatch::all(oil());
-        assert_eq!(patch.changed_fields().len(), 10);
+        assert_eq!(patch.changed_fields().len(), 11);
         let json = serde_json::to_string(&patch).unwrap();
         assert!(json.contains("\"rule\":\"calendar\""), "{json}");
         assert_eq!(

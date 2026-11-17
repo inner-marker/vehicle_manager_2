@@ -1747,6 +1747,42 @@ define_messages! {
     UNIT_ABBR_H => "unit-abbr-h",
     /// Short unit: percent.
     UNIT_ABBR_PERCENT => "unit-abbr-percent",
+    /// Units: US liquid quarts.
+    UNIT_ABBR_QT => "unit-abbr-qt",
+    /// Units: US fluid ounces.
+    UNIT_ABBR_FL_OZ => "unit-abbr-fl-oz",
+    /// Units: milliliters.
+    UNIT_ABBR_ML => "unit-abbr-ml",
+    /// Units: foot-pounds.
+    UNIT_ABBR_FT_LB => "unit-abbr-ft-lb",
+    /// Units: inch-pounds.
+    UNIT_ABBR_IN_LB => "unit-abbr-in-lb",
+    /// Units: newton-meters.
+    UNIT_ABBR_N_M => "unit-abbr-n-m",
+    /// Units: pounds per square inch.
+    UNIT_ABBR_PSI => "unit-abbr-psi",
+    /// Units: kilopascals.
+    UNIT_ABBR_KPA => "unit-abbr-kpa",
+    /// Units: bar.
+    UNIT_ABBR_BAR => "unit-abbr-bar",
+    /// Units: inches.
+    UNIT_ABBR_IN => "unit-abbr-in",
+    /// Units: millimeters.
+    UNIT_ABBR_MM => "unit-abbr-mm",
+    /// Specs: a volume.
+    SPEC_KIND_VOLUME => "spec-kind-volume",
+    /// Specs: a torque.
+    SPEC_KIND_TORQUE => "spec-kind-torque",
+    /// Specs: a pressure.
+    SPEC_KIND_PRESSURE => "spec-kind-pressure",
+    /// Specs: a length or gap.
+    SPEC_KIND_LENGTH => "spec-kind-length",
+    /// Specs: the detail is too long.
+    SPEC_BAD_DETAIL => "spec-bad-detail",
+    /// Specs: the part number is too long.
+    SPEC_BAD_PART_NUMBER => "spec-bad-part-number",
+    /// Specs: the amount isn't above zero.
+    SPEC_BAD_AMOUNT => "spec-bad-amount",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.

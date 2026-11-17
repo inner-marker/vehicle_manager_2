@@ -386,6 +386,7 @@ mod tests {
                         part_number: None,
                         quantity_milli: 1_000,
                         unit_price_minor: Some(1_299),
+                        spec: None,
                     }],
                 ),
                 task("Brake light bulbs", Some(600), None, vec![]),

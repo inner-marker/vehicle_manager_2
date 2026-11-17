@@ -894,6 +894,7 @@ fn requirement_from(
         applicability: compliance.applicability()?,
         before_records: None,
         warnings: None,
+        specs: vec![],
     })
 }
 
@@ -1462,7 +1463,7 @@ async fn preview(from: AssetId, to: &AssetView) -> Result<Preview, MessageId> {
         .map(|view| (view.id, view.requirement))
         .collect();
     let bundles: Vec<Bundle> = bundles.into_iter().map(|(_, bundle)| bundle).collect();
-    let copied = copy_schedule(&listed, &bundles, &source.meters, &to.meters, to.id);
+    let copied = copy_schedule(&listed, &bundles, &[], &source.meters, &to.meters, to.id);
     Ok(Preview {
         requirements: copied.requirements.len(),
         bundles: copied.bundles.len(),
@@ -1700,6 +1701,7 @@ mod tests {
             applicability: Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         let done = DoneTask {
             requirement: test_id(40),

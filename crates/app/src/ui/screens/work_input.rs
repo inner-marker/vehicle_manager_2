@@ -162,6 +162,7 @@ fn part(typed: &TypedPart, currency: CurrencyCode) -> Result<Option<Part>, Probl
         part_number: Some(typed.part_number.trim().to_owned()).filter(|text| !text.is_empty()),
         quantity_milli,
         unit_price_minor: money(&typed.unit_price, currency)?,
+        spec: None,
     }))
 }
 

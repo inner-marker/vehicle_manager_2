@@ -468,7 +468,7 @@
   - **5A:** **Log this service** on the Schedule's bundle card.
 
 **The rules, in `domain` (test-first):**
-- **A spec:** a name (1–60 characters), an optional amount (more than zero, at most 3 decimals) in one of the units, an optional detail (up to 100), part number (up to 40), and note. Its kind comes from its unit.
+- **A spec:** a name (a label, up to 40 characters), an optional amount (more than zero, at most 3 decimals) in one of the units, an optional detail (up to 100), part number (up to 40), and note. Its kind comes from its unit.
 - **Conversion** (for show only) with `uom`, as fuel volumes already use: volume to the other system (qt ↔ L, gal ↔ L, fl oz ↔ mL), torque (ft-lb and in-lb ↔ N·m), pressure (psi ↔ kPa; bar ↔ psi), length (in ↔ mm).
 - **A requirement's specs:** the vehicle's own, each once. Removing a spec takes it off its requirements.
 - **Pre-filling a task:** a part for each ticked volume spec, and each ticked spec with a part number and no amount; a reminder for each torque, pressure, or length spec. A pre-filled part remembers its spec, so saving can tell what differs.
@@ -480,11 +480,27 @@
 | Step | Status | What |
 |---|---|---|
 | **4.0** `docs:` | ☑️ | This plan; the sketch; decision #084; milestone 3 marked ✅. |
-| **4a** `feat(domain):` specs and templates | ⬜ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
-| **4b** `feat(storage):` migration 0025 | ⬜ | A `specs` table, `requirements.specs`, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
+| **4a** `feat(domain):` specs and templates | ☑️ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
+| **4b** `feat(storage):` migration 0025 | ⬜ | A `specs` table, `requirements.specs`, a job's part's spec, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
 | **4c** `feat(server):` | ⬜ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
 | **4d** `feat(app):` the screens | ⬜ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
 | **4e** `docs:` | ⬜ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 4a notes (2026-11-17):**
+- **`domain::spec`:**
+  - `SpecUnit` (14 units) and `SpecKind` (volume, torque, pressure, length). Each unit knows its kind, its short name, and the other system's unit with the decimals that suit it (qt and gal to L, L to qt, fl oz to mL, ft-lb and in-lb to N·m, psi to kPa, kPa and bar to psi, in to mm, mm to in).
+  - `SpecAmount`: thousandths of the unit as entered (5.5 qt is 5,500), up to three decimals, above zero. `show` gives "5.5 qt"; `show_both` gives "5.5 qt (5.2 L)", converted with `uom` for show only.
+  - `Spec` (a name, amount, detail up to 100 characters, part number up to 40, note), `SpecId`, `SpecPatch` (with `all` and `changes`), and `check_spec`. The name is a label, so up to 40 characters (the plan said 60; corrected).
+  - `Spec::use_on_task`: a **part** for a volume, or a part number with no amount; a **reminder** for a torque, pressure, or length; nothing for a name alone. `task_specs` gives a requirement's parts (description "Engine oil 5W-30 full synthetic (qt)", cut to a part's 100 characters; the amount as the quantity, 1 without one) and reminders.
+  - `spec_updates`: the parts from specs whose part number, or for a volume whose quantity, now differs, one per spec, each with its `SpecPatch`. A cleared part number offers clearing the spec's.
+- **`domain::template`:** `ScheduleTemplate` (a name, the meters its rules use, requirements, bundles, specs), `TemplateId`, `ScheduleTemplatePatch`, and `TemplateCounts`. `from_vehicle` leaves each requirement's recall and "last done before" behind; `apply` is Copy schedule from the template's meters.
+- **Elsewhere in `domain`:**
+  - `Requirement::specs` (the ticked specs, in order) and its patch field; `check_specs` (the vehicle's, each once; `RequirementProblem::BadSpecs`).
+  - `copy_schedule` takes and returns specs (with their old IDs, for re-linking). Until 4c, the server and the copy preview pass none.
+  - `Part::spec`: the spec a part was pre-filled from. Storage reads it as none until 4b; parts are stored as rows, so 4b adds a column.
+  - The four number helpers in `quantity` are shared within `domain`.
+- **Tidying:** clippy asked for the four base units' conversions to share one arm each way, and a part's description built without `format!`. Adding `spec: None` pushed a storage test's oil change over 80 lines, so its parts moved into `oil_parts`.
+- **Tests:** every unit's kind, short name, and round trip; eight conversions as shown; amounts' checks; a spec's checks; parts and reminders from ticked specs, an unknown one skipped; a long name and detail fitting a part; what a job offers back (a changed quantity and part number, a hand-typed part ignored, a cleared number); a spec patch's changes; a template leaving the vehicle's past behind and keeping only used meters; applying one (a meter matched ignoring case, one left out and listed, specs moved); a requirement's specs checked.
 
 **API version:** stays at 2. Specs and templates are Maintainer and Admin changes, which go to the server like other schedule changes, so the desktop gains no operations. A pre-filled part's spec is a new field inside a job, read as none by older records.
 

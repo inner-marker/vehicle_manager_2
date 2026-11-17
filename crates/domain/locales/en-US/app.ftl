@@ -1284,6 +1284,24 @@ unit-abbr-km-per-l = km/L
 unit-abbr-l-per-100-km = L/100 km
 unit-abbr-h = h
 unit-abbr-percent = %
+unit-abbr-qt = qt
+unit-abbr-fl-oz = fl oz
+unit-abbr-ml = mL
+unit-abbr-ft-lb = ft-lb
+unit-abbr-in-lb = in-lb
+unit-abbr-n-m = N·m
+unit-abbr-psi = psi
+unit-abbr-kpa = kPa
+unit-abbr-bar = bar
+unit-abbr-in = in
+unit-abbr-mm = mm
+spec-kind-volume = Volume
+spec-kind-torque = Torque
+spec-kind-pressure = Pressure
+spec-kind-length = Length or gap
+spec-bad-detail = The detail can be up to 100 characters.
+spec-bad-part-number = The part number can be up to 40 characters.
+spec-bad-amount = The amount must be more than zero.
 
 ## Events: fuel-ups and readings (milestone 6)
 

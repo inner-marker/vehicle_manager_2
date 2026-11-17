@@ -243,6 +243,7 @@ mod make_fixture {
             applicability: Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         let ScheduleOutcome::SavedRequirement { id: oil } =
             server::schedule::add_requirement(shop, oil).await
@@ -260,6 +261,7 @@ mod make_fixture {
                     part_number: Some("FL-500S".into()),
                     quantity_milli: 1_000,
                     unit_price_minor: Some(1_299),
+                    spec: None,
                 }],
                 labor_seconds: Some(1_800),
                 labor_cost_minor: None,
