@@ -600,10 +600,20 @@
 | Step | Status | What |
 |---|---|---|
 | **5.0** `docs:` | ☑️ | This plan; the sketch; decision #085; milestone 4 marked ✅. |
-| **5a** `feat(domain):` fuel economy | ⬜ | `domain::fuel`: the fuel odometer, stretches, each fill's part, averages, bands, towed vehicles, and the car's figure. Unit and property tests first (partials, a missed fill-up, a missing reading, a correction, the first full fill, an average never using a dropped stretch). |
+| **5a** `feat(domain):` fuel economy | ☑️ | `domain::fuel`: the fuel odometer, stretches, each fill's part, averages, bands, towed vehicles, and the car's figure. Unit and property tests first (partials, a missed fill-up, a missing reading, a correction, the first full fill, an average never using a dropped stretch). |
 | **5b** `feat(server):` | ⬜ | A vehicle's fuel summary (for the Fuel tab and the Overview), from its counted fuel-ups, for anyone whose role covers it. The desktop works it out from its copy, offline too. |
 | **5c** `feat(app):` the screens | ⬜ | The tiles (row 1), the chart with its details and table view (row 2), the breakdowns (row 3), each fuel-up's line and the **ⓘ** popovers (row 4), and the Overview's Fuel panel (row 5). |
 | **5d** `docs:` | ⬜ | Milestone 5's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 5a notes (2026-11-17):**
+- **`domain::fuel`:**
+  - `fuel_meter`: the vehicle's first distance meter that fuel-ups require.
+  - `Fill`: a fuel-up as economy needs it (`Fill::of` reads one from its event and the fuel odometer).
+  - `summarize` sorts the fills by time and walks them: a full fill starts a stretch, the next full fill ends it, and partials between add their fuel. Each `Stretch` has its distance, fuel, shares weighted by fuel, towed vehicles, the car's figure from the fill it ends at, and why it's dropped, if it is (`DropReason`: a missed fill-up in it, a missing reading at either end, or no distance).
+  - `FillPart` says what each fill did: before the first full fill, starts, a partial (in a stretch, or waiting for the next full fill), or ends a stretch.
+  - `Averages` (the last 5 counted stretches, those ending in the last 365 days, and all) and `Breakdowns` (`Band::highway` and `Band::load`, three bands each; and each towed vehicle, with "not towing" first) are totals over totals (`Average`), in meters per liter, rounded.
+- **Which fills:** the server passes the vehicle's counted fuel-ups (5b), so a correction stands in for what it corrects.
+- **Tests:** the fuel odometer; partials adding in, and each fill's part; order by time, not by list; a missed fill-up, a missing reading, and no distance each dropping a stretch; the three averages' spans; no fills, or one; shares weighted by fuel into bands, and a towed vehicle; the bands' edges; the car's figure; a fill read from a fuel-up; and a property test that a dropped stretch never moves an average.
 
 **Nothing new stored:** the figures come from the fuel-ups already recorded, so there's no migration, and the API stays at 2.
 
