@@ -502,6 +502,9 @@ pub struct GarageView {
     pub sort: crate::preferences::GarageSort,
     /// Their custom order, for the Custom sort.
     pub order: Vec<crate::asset::AssetId>,
+    /// The fleet strip's counts, over the vehicles the Garage shows (#083).
+    #[serde(default)]
+    pub fleet: crate::due::FleetCounts,
 }
 
 /// One vehicle's page.
@@ -1221,6 +1224,52 @@ pub enum DueOutcome {
     Unavailable,
 }
 
+/// Something coming due on one of the person's vehicles, for Due & squawks (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetDue {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name.
+    pub vehicle: String,
+    /// What comes due, and where it stands.
+    pub entry: DueEntry,
+}
+
+/// An open or deferred squawk on one of the person's vehicles, for Due & squawks (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetSquawk {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name.
+    pub vehicle: String,
+    /// The squawk.
+    pub view: SquawkView,
+}
+
+/// Due & squawks: across the vehicles the Garage shows the person (#083).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetView {
+    /// What comes due (Coming up or more urgent), most urgent first, then by vehicle.
+    pub due: Vec<FleetDue>,
+    /// Open and deferred squawks: the most severe first, then the oldest.
+    pub squawks: Vec<FleetSquawk>,
+    /// The fleet strip's counts.
+    pub counts: crate::due::FleetCounts,
+}
+
+/// The answer to "what's due, and what's open, across my vehicles?" (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum FleetOutcome {
+    /// The list.
+    Fleet {
+        /// It.
+        view: FleetView,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// A reference document as typed in (everything but who added it and when).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReferenceInput {
@@ -1375,6 +1424,14 @@ pub enum MarkMessage {
     Read,
     /// Put it away (it's also marked read).
     Dismiss,
+    /// Hide a due message until a time or its meter passes, whichever comes first (#083; it's
+    /// also marked read).
+    Snooze {
+        /// For how long.
+        request: crate::inbox::SnoozeRequest,
+    },
+    /// Bring a snoozed message back now.
+    Wake,
 }
 
 /// The answer to a message center request.
@@ -1388,6 +1445,9 @@ pub enum InboxOutcome {
     },
     /// There's no message with that key for this person (gone, or not theirs to see).
     NotFound,
+    /// That snooze can't be used: only due messages snooze, for 1 to 366 days and/or an
+    /// amount more than zero on an item with a meter that counts up (#083).
+    BadSnooze,
     /// The server couldn't do it right now (e.g. it's refusing changes).
     Unavailable,
 }

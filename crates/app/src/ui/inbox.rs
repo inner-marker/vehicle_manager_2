@@ -50,6 +50,7 @@ pub(crate) fn apply(
         }
         // The message is gone (e.g. its cause was fixed): the next refresh shows the rest.
         Ok(InboxOutcome::NotFound) => None,
+        Ok(InboxOutcome::BadSnooze) => Some(messages::MESSAGES_BAD_SNOOZE),
         Ok(InboxOutcome::Unavailable) => Some(messages::SOMETHING_WENT_WRONG),
         Err(error) => {
             tracing::debug!(target: log_area::UI, %error, "inbox request failed");
@@ -60,7 +61,7 @@ pub(crate) fn apply(
 
 /// Asks the server for the inbox again.
 pub(crate) async fn refresh_inbox(context: InboxContext) {
-    let _ = apply(context, api::get_messages().await);
+    let _ = apply(context, api::get_messages(super::device_zone().await).await);
 }
 
 /// Marks a message read or dismisses it, keeping the server's new answer.
@@ -71,7 +72,7 @@ pub(crate) async fn mark(
 ) -> Option<MessageId> {
     apply(
         context,
-        api::mark_message(key.as_str().to_owned(), action).await,
+        api::mark_message(key.as_str().to_owned(), action, super::device_zone().await).await,
     )
 }
 

@@ -2880,6 +2880,8 @@ define_messages! {
     INBOX_OPEN_MAINTENANCE => "inbox-open-maintenance",
     /// Messages: open the vehicle's Documents tab.
     INBOX_OPEN_DOCUMENTS => "inbox-open-documents",
+    /// Messages: a snooze that can't be used.
+    MESSAGES_BAD_SNOOZE => "messages-bad-snooze",
     /// Log: what an acquisition records.
     LOG_ACQUIRED_DETAIL => "log-acquired-detail",
     /// Log: what a send-out records.

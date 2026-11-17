@@ -1746,6 +1746,7 @@ inbox-due-overdue = ⚠ Overdue
 inbox-due-body = { $vehicle }: { $item }, { $left }.
 inbox-open-maintenance = Open on Maintenance
 inbox-open-documents = Open Documents
+messages-bad-snooze = That snooze can't be used. Choose days, or an amount more than zero.
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back
 log-returned-detail = Back from the shop, and what it cost

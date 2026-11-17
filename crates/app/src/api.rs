@@ -13,10 +13,10 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, Handshake, InboxOutcome,
-    MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome,
-    ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome,
-    UserAdminOutcome,
+    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, Handshake,
+    InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
+    ReferencesOutcome, ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome,
+    SwitchModeOutcome, UserAdminOutcome,
 };
 use domain::secret::Secret;
 use domain::sync::{PullOutcome, PushOutcome};
@@ -582,28 +582,37 @@ pub(crate) async fn set_household_preferences(
     .await)
 }
 
-/// The signed-in person's messages: what they can see in their mode, unread first (#050).
+/// The signed-in person's messages: what they can see in their mode, unread first (#050), with
+/// what's due in their `zone` (#083).
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; otherwise only transport errors.
-#[get("/api/v1/messages")]
-pub(crate) async fn get_messages() -> ServerFnResult<InboxOutcome> {
-    Ok(server_side::with_messages(async |context| ::server::messages::view(&context).await).await)
+#[post("/api/v1/messages")]
+pub(crate) async fn get_messages(zone: domain::location::TimeZone) -> ServerFnResult<InboxOutcome> {
+    Ok(
+        server_side::with_messages(async |context| ::server::messages::view(&context, &zone).await)
+            .await,
+    )
 }
 
-/// Marks one of the signed-in person's messages read, or dismisses it.
+/// Marks one of the signed-in person's messages read, dismisses it, snoozes it, or wakes it
+/// (#083), in their `zone`.
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; refusals are [`InboxOutcome`] values.
 #[post("/api/v1/messages/mark")]
-pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnResult<InboxOutcome> {
+pub(crate) async fn mark_message(
+    key: String,
+    action: MarkMessage,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<InboxOutcome> {
     let Some(key) = domain::inbox::MessageKey::parse(&key) else {
         return Ok(InboxOutcome::NotFound);
     };
     Ok(server_side::with_messages(async |context| {
-        ::server::messages::mark(&context, key, action).await
+        ::server::messages::mark(&context, &zone, key, action).await
     })
     .await)
 }
@@ -636,6 +645,17 @@ pub(crate) async fn vehicle_due(
         server_side::with_due(async |context| ::server::due::list(&context, asset, &zone).await)
             .await,
     )
+}
+
+/// Due & squawks: what comes due and the open squawks across the person's vehicles, in their
+/// `zone` (#083).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/due/fleet")]
+pub(crate) async fn fleet_due(zone: domain::location::TimeZone) -> ServerFnResult<FleetOutcome> {
+    Ok(server_side::with_fleet(async |context| ::server::due::fleet(&context, &zone).await).await)
 }
 
 /// One vehicle's page: details, meters, custom fields, and what the person may do.
@@ -2198,6 +2218,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::DueOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for Due & squawks, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_fleet(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::FleetOutcome,
+    ) -> domain::api::FleetOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::FleetOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

@@ -354,7 +354,7 @@
 | **3.0** `docs:` | ☑️ | This plan; the sketch; decision #083; milestone 2 marked ✅. |
 | **3a** `feat(domain):` due messages | ☑️ | `MessageKind::Due`, their keys (cycle, and Overdue apart), severity, and button; `Snooze` on `MessageMark` and its patch, and the inbox leaving out snoozed messages until they wake; the household's `due_messages_from`; the fleet counts. Unit tests first (the starting step; Overdue past a dismiss and a snooze; a sign-off starting a new cycle; waking by time and by meter; role filtering). |
 | **3b** `feat(storage):` migration 0024 | ☑️ | `message_marks.snooze` and `preferences.due_messages_from`, nullable JSON, so existing rows read as before. The release fixtures migrate. |
-| **3c** `feat(server):` | ⬜ | Due messages in each person's inbox, for the vehicles their role covers (the inbox takes the device's time zone, as the Garage does); **Snooze** and **Wake now**; the fleet counts on the Garage; the Due & squawks list across vehicles; the Admin's starting step. The desktop gets the same, offline, from its copy, and its marks sync as before. |
+| **3c** `feat(server):` | ☑️ | Due messages in each person's inbox, for the vehicles their role covers (the inbox takes the device's time zone, as the Garage does); **Snooze** and **Wake now**; the fleet counts on the Garage; the Due & squawks list across vehicles; the Admin's starting step. The desktop gets the same, offline, from its copy, and its marks sync as before. |
 | **3d** `feat(app):` the screens | ⬜ | The **Snooze ▾** menu and **Custom…** (row 1), the fleet strip (row 2), the Due & squawks screen in place of its placeholder (row 3), the Household setting and the **Snoozed** filter (row 4). |
 | **3e** `docs:` | ⬜ | Milestone 3's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
@@ -393,6 +393,27 @@
   - storage: a snooze kept through a dismiss, cleared, and an unreadable one ignored; the starting step stored by name and put back to the default;
   - the release fixtures migrate with no snoozes and no starting step;
   - server: a person can't choose their own starting step; OK and Overdue are refused; the Admin's choice is everyone's, and goes back to Due soon.
+
+**Step 3c notes (2026-11-16):**
+- **Which vehicles:** due messages, the fleet strip, and Due & squawks cover the vehicles the Garage shows the person: their role covers it, and it isn't retired or disposed (`due::shown_vehicles`). The Garage's own badges still show on archived cards.
+- **`server::due`:**
+  - `vehicle_due_in_full` also gives the vehicle's finished tasks (each message's cycle) and each meter's latest value (for snoozes); `vehicle_due` and the Garage use it.
+  - `due_messages`: each item at or past the household's starting step, as `domain::inbox::due_message` makes it.
+  - `snooze_meter_of`: the item's counting-up meter and its latest value.
+  - `fleet`: Due & squawks. What comes due (Coming up or more urgent), most urgent first and then by vehicle; open and deferred squawks, as the vehicle's page shows them, most severe first and then oldest; and the counts.
+- **Messages:**
+  - The inbox and marks take the device's time zone, so `GET /api/v1/messages` became `POST`. The mark carries the zone too.
+  - `MarkMessage::Snooze` (with a `SnoozeRequest`, marking it read) and `MarkMessage::Wake`.
+  - A snooze on anything but a due message, or one that can't be used, is `InboxOutcome::BadSnooze`; the app says "That snooze can't be used".
+  - **Overdue replaces the first message,** not joins it: the first message (and its snooze) is gone once the item is overdue, so Wake on it is Not found. Decision #083's wording now says so.
+- **The Garage:** `GarageView::fleet`, the strip's counts: items over the vehicles it shows, and their outstanding squawks.
+- **Endpoints:** `POST /api/v1/due/fleet` is new (`server_side::with_fleet`). On the desktop, the same server functions run on its copy, offline included, and marks sync as before.
+- **Tests** (server, `tests/due.rs`):
+  - Sam's message at Due soon; a snooze needing days or an amount; "1 week or 500 mi" asleep until the odometer passes, then back, read, at Due very soon; snoozed again, then Overdue as a new unread message; Wake;
+  - Due & squawks and the Garage's counts agree; a retired car's expired insurance isn't counted or sent.
+
+  The older message tests take the zone.
+- **Tidying:** the fleet counts pushed `assets::garage_view` over 80 lines, so filling in each card (its due step, plate, and standing) and counting the fleet moved into `fill_in_summaries`.
 
 **API version:** stays at 2. Snooze is a new field on an existing record, not a new operation, and older desktops are already stopped by the schema check (as in milestone 2).
 

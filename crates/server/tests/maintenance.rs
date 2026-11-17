@@ -563,7 +563,9 @@ mod maintenance {
             clock,
             timers,
         };
-        let InboxOutcome::Inbox { inbox } = inbox_view(&context).await else {
+        let InboxOutcome::Inbox { inbox } =
+            inbox_view(&context, &TimeZone::parse("UTC").unwrap()).await
+        else {
             panic!("no inbox");
         };
         inbox
