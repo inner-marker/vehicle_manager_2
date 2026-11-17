@@ -34,8 +34,8 @@
 |---|---|---|---|---|
 | 1 | **Meters** | ✅ | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
 | 2 | **What's due** | ✅ | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
-| 3 | **Due messages and snooze** | 🔨 | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected; the Garage's **fleet strip** and the **Due & squawks** screen (#083) | Snooze "1 week or 500 mi"; it returns at whichever comes first |
-| 4 | **Specs and service bundles** | ⬜ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
+| 3 | **Due messages and snooze** | ✅ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected; the Garage's **fleet strip** and the **Due & squawks** screen (#083) | Snooze "1 week or 500 mi"; it returns at whichever comes first |
+| 4 | **Specs and service bundles** | 🔨 | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
 | 5 | **Fuel economy** | ⬜ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
 | 6 | **Readiness** | ⬜ | **Operation types** in the profiles (**Normal use** on each ground profile; **Towing** on the truck); **needed for use** on requirements and documents; **"Ready to use?"** on the Overview, each item with ✓ or ✗ and its reason; the Garage badge; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; deferred High: not ready |
 | 7 | **Calculated fields and derived meters** | ⬜ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
@@ -448,3 +448,48 @@
 **Open issues** (reviewed 2026-11-16): none touch messages or snooze.
 
 **Not in this milestone:** squawk messages (plan §5 lists them; not planned into a milestone yet), notifications outside the app and email (post-MVP, idea 13), specs and bundles (milestone 4), readiness (milestone 6).
+
+### Milestone 4 plan: specs and service bundles
+
+*Agreed 2026-11-17 · branch `milestone/p5-m4-specs` · sketch: `docs/ui-sketches/p5m4-specs-options.svg` · Decision #084*
+
+**Choices (the human, 2026-11-17):**
+- **A spec's value is typed, with units:** volume (qt, L, US and imperial gal, fl oz), torque (ft-lb, in-lb, N·m), pressure (psi, kPa, bar), and length (in, mm). A spec can also be just a name and a part number.
+- **Shown as entered, with the other system beside it:** "5.5 qt (5.2 L)".
+- **A pre-filled part's quantity** is the spec's amount, with its unit in the text ("Engine oil 5W-30 (qt)", 5.5). Torque, pressure, and length specs aren't parts: they show on the task as reminders.
+- **"Update the spec too?"** is asked when the job is saved.
+- **Templates:** Maintainers save and apply them, and they hold requirements, bundles, and specs. The Admin renames and deletes them.
+- **Log this service** on each bundle card, with parts pre-filled.
+- **The sketch: 1A, 2A, 3A, 4B, 5A.**
+  - **1A:** Specs is a third view on the Maintenance tab: Schedule · Specs · Set up. Everyone sees it; Maintainers get **+ Spec**.
+  - **2A:** the spec dialog (name, kind, amount and unit with the conversion beside it, detail, part number, note), and a **Specs** checklist in the requirement dialog.
+  - **3A:** saving a job asks once, listing each changed part, ticked.
+  - **4B:** a **Templates** screen under Manage, each template with what it holds and **Apply to…**; new ones come from a vehicle's Set up (**Save as template…**).
+  - **5A:** **Log this service** on the Schedule's bundle card.
+
+**The rules, in `domain` (test-first):**
+- **A spec:** a name (1–60 characters), an optional amount (more than zero, at most 3 decimals) in one of the units, an optional detail (up to 100), part number (up to 40), and note. Its kind comes from its unit.
+- **Conversion** (for show only) with `uom`, as fuel volumes already use: volume to the other system (qt ↔ L, gal ↔ L, fl oz ↔ mL), torque (ft-lb and in-lb ↔ N·m), pressure (psi ↔ kPa; bar ↔ psi), length (in ↔ mm).
+- **A requirement's specs:** the vehicle's own, each once. Removing a spec takes it off its requirements.
+- **Pre-filling a task:** a part for each ticked volume spec, and each ticked spec with a part number and no amount; a reminder for each torque, pressure, or length spec. A pre-filled part remembers its spec, so saving can tell what differs.
+- **What differs:** a part from a spec whose part number or quantity was changed. Updating the spec takes the part's.
+- **Templates:** a household record holding requirements (with meters named, not by ID), bundles, and specs. Applying copies onto a vehicle as Copy schedule does, with specs, re-linked; what can't be matched is left out and listed. Copy schedule copies specs too.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **4.0** `docs:` | ☑️ | This plan; the sketch; decision #084; milestone 3 marked ✅. |
+| **4a** `feat(domain):` specs and templates | ⬜ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
+| **4b** `feat(storage):` migration 0025 | ⬜ | A `specs` table, `requirements.specs`, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
+| **4c** `feat(server):` | ⬜ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
+| **4d** `feat(app):` the screens | ⬜ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
+| **4e** `docs:` | ⬜ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**API version:** stays at 2. Specs and templates are Maintainer and Admin changes, which go to the server like other schedule changes, so the desktop gains no operations. A pre-filled part's spec is a new field inside a job, read as none by older records.
+
+**New dependencies:** none expected (`uom` is already used).
+
+**Open issues** (reviewed 2026-11-17): none touch specs or templates.
+
+**Not in this milestone:** fuel economy (milestone 5), readiness (milestone 6), formulas and derived meters (milestone 7); factory schedules from reference data packs (post-MVP, #031).
