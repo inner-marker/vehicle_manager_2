@@ -481,7 +481,7 @@
 |---|---|---|
 | **4.0** `docs:` | ☑️ | This plan; the sketch; decision #084; milestone 3 marked ✅. |
 | **4a** `feat(domain):` specs and templates | ☑️ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
-| **4b** `feat(storage):` migration 0025 | ⬜ | A `specs` table, `requirements.specs`, a job's part's spec, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
+| **4b** `feat(storage):` migration 0025 | ☑️ | A `specs` table, `requirements.specs`, a job's part's spec, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
 | **4c** `feat(server):` | ⬜ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
 | **4d** `feat(app):` the screens | ⬜ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
 | **4e** `docs:` | ⬜ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
@@ -501,6 +501,24 @@
   - The four number helpers in `quantity` are shared within `domain`.
 - **Tidying:** clippy asked for the four base units' conversions to share one arm each way, and a part's description built without `format!`. Adding `spec: None` pushed a storage test's oil change over 80 lines, so its parts moved into `oil_parts`.
 - **Tests:** every unit's kind, short name, and round trip; eight conversions as shown; amounts' checks; a spec's checks; parts and reminders from ticked specs, an unknown one skipped; a long name and detail fitting a part; what a job offers back (a changed quantity and part number, a hand-typed part ignored, a cleared number); a spec patch's changes; a template leaving the vehicle's past behind and keeping only used meters; applying one (a meter matched ignoring case, one left out and listed, specs moved); a requirement's specs checked.
+
+**Step 4b notes (2026-11-17):**
+- **`0025_specs.sql`:**
+  - `specs`: a vehicle's specs. An amount is kept as entered, in two columns that are set together: thousandths (`amount_milli`) and the unit's name (`amount_unit`, e.g. `quarts`).
+  - `requirements.specs`: the ticked specs, a JSON list, empty for every existing requirement.
+  - `task_parts.spec_id`: the spec a part was pre-filled from. It has no foreign key, so a job keeps what it recorded if the spec is removed later.
+  - `schedule_templates`: each template's meters, requirements, bundles, and specs as JSON.
+- **Storage:**
+  - `storage::specs` (`SpecWriter`, `spec`, `specs_of`, by name) and `storage::templates` (`TemplateWriter`, `template`, `templates`, by name).
+  - The requirement writer stores `specs`, and a job's parts their spec.
+- **The desktop's copy:** `specs` and `schedule_templates` join the synced record tables (after `assets`, for the foreign key). Sync copies whole rows, so the new columns come with them. Templates are the household's, so everyone's copy has them.
+- **Tests:**
+  - a spec's amount stored as entered, changed to another unit, its detail cleared, a part number set, the amount cleared, and the spec removed;
+  - a requirement's specs kept in order and changed;
+  - a template's round trip, renamed with the rest unchanged, then removed;
+  - a job's part keeping its spec (the maintenance round trip);
+  - the release fixtures migrate with no specs, templates, ticked specs, or parts from specs.
+- **Tidying:** the test of migration 0015 writes events with today's writer on a version-14 database, so it now adds `task_parts.spec_id` while it does (as it already did for readings' `reset`) and drops it before 0015 runs. The release fixture's oil change moved into its own function, keeping `everyday` under 80 lines.
 
 **API version:** stays at 2. Specs and templates are Maintainer and Admin changes, which go to the server like other schedule changes, so the desktop gains no operations. A pre-filled part's spec is a new field inside a job, read as none by older records.
 

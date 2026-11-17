@@ -201,28 +201,9 @@ mod make_fixture {
         (id, view.meters[0].0)
     }
 
-    /// A fuel-up, a requirement and a finished job doing it (with a part), and a squawk.
-    async fn everyday(
-        shop: &AssetsContext<'_>,
-        driver: &AssetsContext<'_>,
-        truck: AssetId,
-        odometer: MeterId,
-    ) {
-        let mut fuel_up = event(truck, odometer, EventKind::Fuel, 1, 52_000);
-        fuel_up.fuel = Some(FuelDetails {
-            volume_ml: 68_000,
-            cost_minor: Some(24_500),
-            currency: CurrencyCode::USD,
-            filled_full: true,
-            missed_previous: false,
-            highway_pct: 60,
-            towing_pct: 0,
-            hauling_pct: 0,
-            towed: vec![],
-            reported_economy: None,
-        });
-        saved(&add(driver, fuel_up).await);
-        let oil = Requirement {
+    /// The oil change: every 5,000 mi or 6 months.
+    fn oil_change(truck: AssetId, odometer: MeterId) -> Requirement {
+        Requirement {
             asset: truck,
             name: Label::parse("Engine oil & filter").unwrap(),
             notes: Notes::default(),
@@ -244,7 +225,31 @@ mod make_fixture {
             before_records: None,
             warnings: None,
             specs: vec![],
-        };
+        }
+    }
+
+    /// A fuel-up, a requirement and a finished job doing it (with a part), and a squawk.
+    async fn everyday(
+        shop: &AssetsContext<'_>,
+        driver: &AssetsContext<'_>,
+        truck: AssetId,
+        odometer: MeterId,
+    ) {
+        let mut fuel_up = event(truck, odometer, EventKind::Fuel, 1, 52_000);
+        fuel_up.fuel = Some(FuelDetails {
+            volume_ml: 68_000,
+            cost_minor: Some(24_500),
+            currency: CurrencyCode::USD,
+            filled_full: true,
+            missed_previous: false,
+            highway_pct: 60,
+            towing_pct: 0,
+            hauling_pct: 0,
+            towed: vec![],
+            reported_economy: None,
+        });
+        saved(&add(driver, fuel_up).await);
+        let oil = oil_change(truck, odometer);
         let ScheduleOutcome::SavedRequirement { id: oil } =
             server::schedule::add_requirement(shop, oil).await
         else {

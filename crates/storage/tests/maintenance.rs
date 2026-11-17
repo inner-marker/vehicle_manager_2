@@ -216,7 +216,7 @@ mod maintenance {
         }
     }
 
-    /// The oil change's parts: a filter with its price, and the oil.
+    /// The oil change's parts: a filter with its price, and the oil (from its spec).
     fn oil_parts() -> Vec<Part> {
         vec![
             Part {
@@ -231,7 +231,8 @@ mod maintenance {
                 part_number: None,
                 quantity_milli: 5_500,
                 unit_price_minor: None,
-                spec: None,
+                // Pre-filled from the truck's oil spec (#084).
+                spec: Some(test_id(77)),
             },
         ]
     }

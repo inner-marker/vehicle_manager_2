@@ -86,8 +86,8 @@ async fn write_task(
     for (part_position, part) in (0_i64..).zip(&task.parts) {
         sqlx::query(
             "INSERT INTO task_parts (event_id, task_position, position, description,
-                 part_number, quantity_milli, unit_price_minor)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+                 part_number, quantity_milli, unit_price_minor, spec_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(position)
@@ -96,6 +96,7 @@ async fn write_task(
         .bind(part.part_number.clone())
         .bind(part.quantity_milli)
         .bind(part.unit_price_minor)
+        .bind(part.spec.map(id_to_sql))
         .execute(&mut *connection)
         .await?;
     }
@@ -168,7 +169,7 @@ fn part_from_row(row: &SqliteRow) -> Result<Part, StorageError> {
         part_number: row.try_get("part_number")?,
         quantity_milli: row.try_get("quantity_milli")?,
         unit_price_minor: row.try_get("unit_price_minor")?,
-        spec: None,
+        spec: super::optional_id(row, "spec_id")?,
     })
 }
 

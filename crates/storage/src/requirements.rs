@@ -41,8 +41,9 @@ impl RecordWriter<Requirement> for RequirementWriter {
     ) -> Result<(), StorageError> {
         sqlx::query(
             "INSERT INTO requirements (id, asset_id, name, notes, enabled, rules, reference_id,
-                                       mode, applicability, before_records, warnings, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                       mode, applicability, before_records, warnings, specs,
+                                       sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -75,6 +76,10 @@ impl RecordWriter<Requirement> for RequirementWriter {
             values.warnings.and_then(Clearable::into_option),
             "requirements.warnings",
         )?)
+        .bind(json_to_sql(
+            &values.specs.clone().unwrap_or_default(),
+            "requirements.specs",
+        )?)
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -104,6 +109,7 @@ impl RecordWriter<Requirement> for RequirementWriter {
                  applicability = coalesce(?, applicability),
                  before_records = CASE WHEN ? THEN ? ELSE before_records END,
                  warnings = CASE WHEN ? THEN ? ELSE warnings END,
+                 specs = coalesce(?, specs),
                  sequence = ?
              WHERE id = ?",
         )
@@ -136,6 +142,13 @@ impl RecordWriter<Requirement> for RequirementWriter {
         .bind(before_records.1)
         .bind(warnings.0)
         .bind(warnings.1)
+        .bind(
+            patch
+                .specs
+                .as_ref()
+                .map(|specs| json_to_sql(specs, "requirements.specs"))
+                .transpose()?,
+        )
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -234,6 +247,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
     let rules: String = row.try_get("rules")?;
     let mode: String = row.try_get("mode")?;
     let applicability: String = row.try_get("applicability")?;
+    let specs: String = row.try_get("specs")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?,
         Requirement {
@@ -256,7 +270,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
                 "requirements.before_records",
             )?,
             warnings: optional_from_json(row.try_get("warnings")?, "requirements.warnings")?,
-            specs: vec![],
+            specs: json_from_sql(&specs, "requirements.specs")?,
         },
     ))
 }
