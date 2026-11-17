@@ -197,6 +197,13 @@ fn a_job_offers_back_what_differs_from_its_specs() {
         Some(Clearable::Set("FL-910S".to_owned()))
     );
     assert_eq!(patch.amount, None);
+    // Applied: the job's figures, the rest as it was.
+    let filter = updates[1].applied(&specs[1].1);
+    assert_eq!(filter.part_number.as_deref(), Some("FL-910S"));
+    assert_eq!(filter.name, specs[1].1.name);
+    let oil = updates[0].applied(&specs[0].1);
+    assert_eq!(oil.amount.map(SpecAmount::show), Some("6 qt".into()));
+    assert_eq!(oil.detail, specs[0].1.detail);
     // Clearing a part number offers clearing the spec's.
     parts[1].part_number = Some("  ".into());
     assert_eq!(spec_updates(&parts, &specs)[1].part_number, Some(None));

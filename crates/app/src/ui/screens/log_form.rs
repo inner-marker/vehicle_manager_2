@@ -54,7 +54,7 @@ use super::log_input::{Context, Target, Typed, build, required_items, typed_from
 use super::squawks::use_vehicle_squawks;
 use super::vehicle_setup::event_from_value;
 use super::work_input::{Action, FinishCheck, TypedDisposition, TypedWork, total_minor};
-use super::work_log::{WorkLog, job_squawk_ids, job_squawks};
+use super::work_log::{WorkLog, job_squawk_ids, job_squawks, service_work};
 use super::{FormError, problem_from_error};
 use crate::api;
 use crate::data;
@@ -64,6 +64,7 @@ use crate::ui::routes::Route;
 use crate::ui::units::{economy_abbr, field_unit, volume_abbr};
 use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
+use domain::spec::{Spec, SpecId, SpecUpdate, spec_updates};
 
 /// The browser's own time zone, for an event with no place data.
 pub(super) const ZONE_SCRIPT: &str =
@@ -90,8 +91,20 @@ pub(crate) fn LogForm(asset_id: String, kind: String) -> Element {
             let original = crate::ui::outbox::reopened_new_event(asset, kind).map(|input| {
                 input.into_draft(asset.cast(), domain::time::UnixMillis::from_millis(0))
             });
-            rsx! { LogScreen { asset, kind, mode: Mode::New, original, prefill: None } }
+            rsx! { LogScreen { asset, kind, mode: Mode::New, original, prefill: None, service: None } }
         }
+        _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/vehicles/:asset_id/service/:bundle_id` (**Log this service**, #084): a new maintenance
+/// job with a task for each of the bundle's requirements, parts pre-filled from the specs.
+#[component]
+pub(crate) fn LogService(asset_id: String, bundle_id: String) -> Element {
+    match (asset_id.parse::<AssetId>(), bundle_id.parse::<BundleId>()) {
+        (Ok(asset), Ok(bundle)) => rsx! {
+            LogScreen { asset, kind: EventKind::Maintenance, mode: Mode::New, original: None, prefill: None, service: Some(bundle) }
+        },
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
@@ -118,7 +131,7 @@ pub(crate) fn RepairSquawk(squawk_id: String) -> Element {
         None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
         Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
         Some(Ok(view)) => rsx! {
-            LogScreen { asset: view.squawk.asset, kind: EventKind::Repair, mode: Mode::New, original: None, prefill: Some(view) }
+            LogScreen { asset: view.squawk.asset, kind: EventKind::Repair, mode: Mode::New, original: None, prefill: Some(view), service: None }
         },
     }
 }
@@ -183,7 +196,7 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
                 changes.keep_only(&domain::event::EventPatch::EDITABLE);
                 event.apply(changes);
             }
-            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None } }
+            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None, service: None } }
         }
     }
 }
@@ -201,6 +214,10 @@ struct Loaded {
     /// A job's schedule: the vehicle's requirements and bundles (for its tasks).
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// Its specs (#084), to pre-fill parts and remind of.
+    specs: Vec<(SpecId, Spec)>,
+    /// The person may change the schedule, so a changed part can update its spec.
+    may_configure: bool,
 }
 
 async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
@@ -241,16 +258,17 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
         .and_then(|zone| TimeZone::parse(&zone).ok())
         .filter(domain::dates::is_known_zone)
         .unwrap_or_else(TimeZone::utc);
-    let (requirements, bundles) = if kind.finalizes_by_itself() {
-        (Vec::new(), Vec::new())
+    let (requirements, bundles, specs, may_configure) = if kind.finalizes_by_itself() {
+        (Vec::new(), Vec::new(), Vec::new(), false)
     } else {
         match data::vehicle_schedule(asset).await {
             Ok(ScheduleOutcome::Schedule {
                 requirements,
                 bundles,
-                ..
-            }) => (requirements, bundles),
-            _ => (Vec::new(), Vec::new()),
+                specs,
+                may_configure,
+            }) => (requirements, bundles, specs, may_configure),
+            _ => (Vec::new(), Vec::new(), Vec::new(), false),
         }
     };
     Ok(Loaded {
@@ -263,6 +281,8 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
         units,
         requirements,
         bundles,
+        specs,
+        may_configure,
     })
 }
 
@@ -295,6 +315,8 @@ fn LogScreen(
     mode: Mode,
     original: Option<Event>,
     prefill: Option<SquawkView>,
+    /// A bundle to start the job with (**Log this service**, #084).
+    service: Option<BundleId>,
 ) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
     let auth = crate::ui::auth::use_auth();
@@ -341,6 +363,19 @@ fn LogScreen(
                     typed_from(event, &data.view.meters, &data.view.fields, &data.units)
                 }
                 (None, Some(squawk)) => repair_start(squawk),
+                (None, None) if service.is_some() => {
+                    let bundle = data
+                        .bundles
+                        .iter()
+                        .find(|(id, _)| Some(*id) == service)
+                        .map(|(_, bundle)| bundle);
+                    Typed {
+                        work: bundle.map_or_else(TypedWork::default, |bundle| {
+                            service_work(bundle, &data.requirements, &data.specs, &data.view.meters)
+                        }),
+                        ..Typed::default()
+                    }
+                }
                 // A return ends the send-out the vehicle is on.
                 (None, None) => Typed {
                     life: TypedLife {
@@ -701,6 +736,13 @@ fn FormBody(
     let (meters, fields, fallback) = (view.meters.clone(), view.fields.clone(), data.zone.clone());
     let may_override = data.may_override;
     let squawks_left_out = leave_out.clone();
+    // "Update the spec too?" (#084): asked when a job's pre-filled part differs from its spec
+    // and the person may change the schedule; the answer, until the save it was asked for.
+    let specs = data.specs.clone();
+    let may_update_specs = job && data.may_configure;
+    let mut asking = use_signal(|| None::<(bool, Vec<SpecUpdate>)>);
+    let mut answered = use_signal(|| None::<Vec<SpecUpdate>>);
+    let dialog_specs = specs.clone();
     // Save draft (`false`), or save and Finish (`true`, a job).
     let submit = Callback::new(move |finish: bool| {
         let context = Context {
@@ -733,6 +775,21 @@ fn FormBody(
                 return;
             }
         };
+        let updates = if may_update_specs {
+            spec_updates(&job_parts(&input), &specs)
+        } else {
+            Vec::new()
+        };
+        let to_update = if updates.is_empty() {
+            Vec::new()
+        } else if let Some(chosen) = answered() {
+            answered.set(None);
+            chosen
+        } else {
+            asking.set(Some((finish, updates)));
+            return;
+        };
+        let spec_list = specs.clone();
         let zone = input.dates.zone.clone();
         let names = (meters.clone(), fields.clone());
         let removed_tasks = typed.work.removed_tasks.clone();
@@ -740,6 +797,9 @@ fn FormBody(
         spawn(async move {
             // Boxed: on the desktop a save runs the server's code on the copy (a large future).
             let result = Box::pin(send(mode, input, reason(), removed_tasks)).await;
+            if matches!(result, Ok(EventsOutcome::Saved { .. })) {
+                update_specs(&to_update, &spec_list).await;
+            }
             busy.set(false);
             match result {
                 Ok(EventsOutcome::Saved { id, .. }) if finish => {
@@ -897,6 +957,7 @@ fn FormBody(
                     vehicle: view.clone(),
                     requirements: data.requirements.clone(),
                     bundles: data.bundles.clone(),
+                    specs: data.specs.clone(),
                     squawks: shown_squawks,
                     currency,
                     work_problem: work_problem(Target::Work),
@@ -948,6 +1009,19 @@ fn FormBody(
         if finishing() {
             FinishDialog { checks, busy: busy(), on_finish: move |()| submit.call(true), on_close: move |()| finishing.set(false) }
         }
+        if let Some((finish, updates)) = asking() {
+            SpecUpdateDialog {
+                updates,
+                specs: dialog_specs,
+                busy: busy(),
+                on_save: move |chosen: Vec<SpecUpdate>| {
+                    asking.set(None);
+                    answered.set(Some(chosen));
+                    submit.call(finish);
+                },
+                on_close: move |()| asking.set(None),
+            }
+        }
         if confirming() {
             DisposeDialog {
                 vehicle: vehicle_name,
@@ -960,6 +1034,134 @@ fn FormBody(
             }
         }
     }
+}
+
+/// Every part of a job's tasks.
+fn job_parts(input: &EventInput) -> Vec<domain::event::Part> {
+    input
+        .work
+        .as_ref()
+        .map(|work| {
+            work.tasks
+                .iter()
+                .flat_map(|task| task.parts.iter().cloned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Brings the chosen specs in line with what the job used (#084). The job is saved either
+/// way, so a spec that can't be changed now (offline, say) is only logged.
+async fn update_specs(updates: &[SpecUpdate], specs: &[(SpecId, Spec)]) {
+    for update in updates {
+        let Some((_, spec)) = specs.iter().find(|(id, _)| *id == update.spec) else {
+            continue;
+        };
+        match api::edit_spec(update.spec, update.applied(spec)).await {
+            Ok(ScheduleOutcome::SavedSpec { id }) => {
+                tracing::debug!(target: log_area::UI, spec = %id, "spec updated from the job");
+            }
+            other => {
+                tracing::warn!(target: log_area::UI, spec = %update.spec, ?other, "spec not updated from the job");
+            }
+        }
+    }
+}
+
+/// "Update the specs too?" (#084; sketch 3A): each spec a job's part now differs from, with
+/// what it was and what the job used, ticked; **Save job** saves it and the ticked specs.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn SpecUpdateDialog(
+    updates: Vec<SpecUpdate>,
+    specs: Vec<(SpecId, Spec)>,
+    busy: bool,
+    on_save: EventHandler<Vec<SpecUpdate>>,
+    on_close: EventHandler<()>,
+) -> Element {
+    let count = updates.len();
+    let mut ticked = use_signal(move || vec![true; count]);
+    let lines: Vec<String> = updates
+        .iter()
+        .map(|update| spec_change_line(update, &specs))
+        .collect();
+    let chosen = updates;
+    rsx! {
+        div { class: "dialog-scrim", onclick: move |_| on_close.call(()),
+            div {
+                class: "dialog",
+                role: "dialog",
+                "aria-modal": "true",
+                onclick: move |event| event.stop_propagation(),
+                h2 { class: "dialog-title", {tr(messages::SPEC_UPDATE_TITLE)} }
+                for (index, line) in lines.into_iter().enumerate() {
+                    label { key: "{index}", class: "switch",
+                        input {
+                            r#type: "checkbox",
+                            checked: ticked().get(index).copied().unwrap_or(false),
+                            onchange: move |event| {
+                                if let Some(tick) = ticked.write().get_mut(index) {
+                                    *tick = event.checked();
+                                }
+                            },
+                        }
+                        span { {line} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::SPEC_UPDATE_NOTE)} }
+                div { class: "form-buttons",
+                    button {
+                        class: "primary-button",
+                        r#type: "button",
+                        disabled: busy,
+                        onclick: move |_| {
+                            let picks = ticked();
+                            let picked = chosen
+                                .iter()
+                                .zip(picks)
+                                .filter(|(_, tick)| *tick)
+                                .map(|(update, _)| update.clone())
+                                .collect();
+                            on_save.call(picked);
+                        },
+                        {tr(messages::SPEC_UPDATE_SAVE)}
+                    }
+                    button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()),
+                        {tr(messages::SPEC_UPDATE_BACK)}
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// "Oil filter: FL-500S → FL-910S", "Engine oil: 5.5 qt → 6 qt".
+fn spec_change_line(update: &SpecUpdate, specs: &[(SpecId, Spec)]) -> String {
+    let spec = specs
+        .iter()
+        .find(|(id, _)| *id == update.spec)
+        .map(|(_, spec)| spec);
+    let none = tr(messages::SPEC_UPDATE_NONE);
+    let mut changes = Vec::new();
+    if let Some(number) = &update.part_number {
+        let was = spec
+            .and_then(|spec| spec.part_number.clone())
+            .unwrap_or_else(|| none.clone());
+        changes.push(format!(
+            "{was} → {}",
+            number.clone().unwrap_or_else(|| none.clone())
+        ));
+    }
+    if let Some(amount) = update.amount {
+        let was = spec
+            .and_then(|spec| spec.amount)
+            .map_or_else(|| none.clone(), domain::spec::SpecAmount::show);
+        changes.push(format!("{was} → {}", amount.show()));
+    }
+    format!("{}: {}", update.name.as_str(), changes.join(", "))
 }
 
 /// Finish's checks, as far as the form can tell (the server checks everything again): the

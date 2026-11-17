@@ -483,8 +483,8 @@
 | **4a** `feat(domain):` specs and templates | ☑️ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
 | **4b** `feat(storage):` migration 0025 | ☑️ | A `specs` table, `requirements.specs`, a job's part's spec, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
 | **4c** `feat(server):` | ☑️ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
-| **4d** `feat(app):` the screens | ⬜ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
-| **4e** `docs:` | ⬜ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+| **4d** `feat(app):` the screens | ☑️ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
+| **4e** `docs:` | ☑️ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **Step 4a notes (2026-11-17):**
 - **`domain::spec`:**
@@ -538,6 +538,28 @@
   - a Driver can't add a spec and a Maintainer can; a part number that's too long is refused; a requirement can't tick another vehicle's spec; Sam sees the specs; an edit keeps a spec on its vehicle; removing one unticks it; a Driver can't remove one;
   - Copy schedule brings the specs, re-linked;
   - a template: nothing to save at first; a Driver can't save one; its counts; the vehicles it can go on; applied as a copy, not twice; renamed and removed only by the Admin in Admin mode; the van keeps its copy.
+
+**Step 4d notes (2026-11-17):**
+- **Specs (1A, 2A; `ui::screens::specs_view`):** the Maintenance tab's views are now Schedule · Specs · Jobs · Set up. Each spec shows its name, "5.5 qt (5.2 L) · 5W-30 full synthetic · Part FL-500S", and its note. Whoever may change the schedule gets **+ Spec** and opens a spec to change or remove it. The dialog takes the name, a kind (none, volume, torque, pressure, or length), the amount and its unit with "= 5.2 L" shown as it's typed, the detail, the part number, and a note.
+- **The requirement dialog:** **Specs its job uses**, a checklist of the vehicle's specs ("Engine oil · 5.5 qt", "Oil filter · FL-500S"), when it has any.
+- **A job's task:** a task from a requirement (from the menu, a bundle, or **Log this service**) gets its ticked specs' parts pre-filled, each remembering its spec; with none, an empty row as before. Torque, pressure, and length specs show on the task as "Reminder: Drain plug torque 30 ft-lb (41 N·m)".
+- **"Update the specs too?" (3A):** saving a job, when the person may change the schedule and a pre-filled part's number or a volume's quantity differs from its spec, opens a dialog listing each ("Oil filter: FL-500S → FL-910S"), ticked. **Save job** saves it, then the ticked specs (`SpecUpdate::applied`, new in `domain::spec`). The job is saved either way; a spec that can't be changed then (offline, say) is only logged.
+- **Log this service (5A):** on each bundle card on the Schedule, for whoever may change it, while the vehicle takes new records. It opens `/vehicles/:id/service/:bundle`: a new maintenance job with a task for each of the bundle's requirements, parts pre-filled and resets ticked (`work_log::service_work`).
+- **Templates (4B; `ui::screens::templates`):** a **Templates** screen under Manage (the wrench icon, so as not to share one with Groups or Reports). Each template shows what it holds ("9 requirements · 2 bundles · 6 specs") and **Apply to…** for the vehicles the person may give it to; applying says what was copied and any meter rules left out. The Admin, in Admin mode, gets **Rename** and **Remove**. Set up offers **Save as template…** once a vehicle has requirements, and **From a template…** (to the Templates screen) while it has none. On the desktop, the list is read from its copy; saving and applying need the server.
+- **Tests:** a spec in one line, typed and checked; a template's counts and what applying one did; a task pre-filled from specs, its reminder, and a bare task's empty row; the new routes and the sidebar's 11 entries.
+- **Tidying:** clippy's style findings (clones it didn't need, a shared arm for the wrench icon, a struct built in one go).
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (4e).
+
+**Step 4e notes (2026-11-17):**
+- **The test plan:** milestone 4's section of `docs/test-plans/p5-phase.md`, 18 steps, run at the end of the phase (#081). They cover:
+  - the migration;
+  - the Specs view and dialog (the conversion as it's typed, a unit changed and back, a bad amount);
+  - ticking specs on a requirement; a task's pre-filled parts and reminder; "Update the specs too?" with one ticked and one not, and asked again on an edit;
+  - a Driver's read-only Specs;
+  - a bundle's **Log this service**, finished, each requirement's clock reset;
+  - a template saved, applied as a copy (a later spec change not reaching the copy), renamed and removed by the Admin only;
+  - a new vehicle's Copy schedule and From a template; the desktop online and offline.
+- **Checked against the code while writing it:** a spec's summary is its own line under the name; a service job whose parts match their specs asks nothing.
 
 **API version:** stays at 2. Specs and templates are Maintainer and Admin changes, which go to the server like other schedule changes, so the desktop gains no operations. A pre-filled part's spec is a new field inside a job, read as none by older records.
 

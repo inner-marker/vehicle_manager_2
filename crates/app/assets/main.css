@@ -5119,3 +5119,65 @@ body:has(.photo-viewer) {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
+
+/* Specs (phase-5.md milestone 4, #084; p5m4 sketch 1A and 2A). */
+button.spec-row {
+    width: 100%;
+    min-height: 48px;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+button.spec-row:hover,
+button.spec-row:focus-visible {
+    background: var(--surface-raised);
+}
+
+.spec-amount {
+    align-items: flex-end;
+}
+
+.spec-amount .field input {
+    width: 8em;
+}
+
+.spec-converted {
+    margin: 0 0 10px;
+}
+
+.spec-checklist {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* A job's task: "Reminder: Lug nut torque 150 ft-lb (203 N·m)". */
+.task-reminder {
+    margin: 4px 0;
+}
+
+/* 5A: Log this service on a bundle card. */
+.log-service {
+    margin-top: 6px;
+    text-decoration: none;
+}
+
+/* 4B: the Templates screen. */
+.templates {
+    display: grid;
+    gap: 8px;
+    max-width: 52rem;
+}
+
+.template-apply {
+    width: auto;
+    min-width: 10rem;
+}

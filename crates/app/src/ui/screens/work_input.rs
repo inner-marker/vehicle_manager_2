@@ -29,6 +29,19 @@ pub(super) struct TypedPart {
     pub part_number: String,
     pub quantity: String,
     pub unit_price: String,
+    /// The spec it was pre-filled from, if any (#084).
+    pub spec: Option<domain::spec::SpecId>,
+}
+
+/// A part pre-filled from a spec (#084), as typed: no price yet.
+pub(super) fn prefilled_part(part: &Part) -> TypedPart {
+    TypedPart {
+        description: part.description.clone(),
+        part_number: part.part_number.clone().unwrap_or_default(),
+        quantity: quantity_value(part.quantity_milli),
+        unit_price: String::new(),
+        spec: part.spec,
+    }
 }
 
 /// One task as typed.
@@ -162,7 +175,7 @@ fn part(typed: &TypedPart, currency: CurrencyCode) -> Result<Option<Part>, Probl
         part_number: Some(typed.part_number.trim().to_owned()).filter(|text| !text.is_empty()),
         quantity_milli,
         unit_price_minor: money(&typed.unit_price, currency)?,
-        spec: None,
+        spec: typed.spec,
     }))
 }
 
@@ -331,6 +344,7 @@ fn typed_task(task: &Task, currency: CurrencyCode) -> TypedTask {
                 part_number: part.part_number.clone().unwrap_or_default(),
                 quantity: quantity_value(part.quantity_milli),
                 unit_price: money_text(part.unit_price_minor),
+                spec: part.spec,
             })
             .collect(),
         labor_time: task.labor_seconds.map(show_duration).unwrap_or_default(),
@@ -527,12 +541,14 @@ mod tests {
                         part_number: "FL-500S".into(),
                         quantity: "1".into(),
                         unit_price: "12.99".into(),
+                        spec: None,
                     },
                     TypedPart {
                         description: "Engine oil".into(),
                         part_number: String::new(),
                         quantity: "5.5".into(),
                         unit_price: "8.99".into(),
+                        spec: None,
                     },
                     TypedPart::default(),
                 ],

@@ -541,6 +541,19 @@ pub struct SpecUpdate {
 }
 
 impl SpecUpdate {
+    /// `spec` with this update applied: the job's part number and amount.
+    #[must_use]
+    pub fn applied(&self, spec: &Spec) -> Spec {
+        Spec {
+            part_number: self
+                .part_number
+                .clone()
+                .unwrap_or_else(|| spec.part_number.clone()),
+            amount: self.amount.or(spec.amount),
+            ..spec.clone()
+        }
+    }
+
     /// The change to the spec.
     #[must_use]
     pub fn patch(&self) -> SpecPatch {

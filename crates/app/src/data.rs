@@ -895,7 +895,6 @@ pub(crate) async fn fleet_due() -> ServerFnResult<FleetOutcome> {
 /// # Errors
 ///
 /// As the server function.
-#[expect(dead_code, reason = "the Templates screen comes with step 4d")]
 pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOutcome> {
     read!(reader => ::server::templates::list(&reader.assets()).await, api::list_templates())
 }

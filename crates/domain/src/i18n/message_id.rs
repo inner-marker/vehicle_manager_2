@@ -1785,6 +1785,80 @@ define_messages! {
     SPEC_BAD_AMOUNT => "spec-bad-amount",
     /// Templates: the vehicle has no requirements to save.
     TEMPLATE_NOTHING_TO_SAVE => "template-nothing-to-save",
+    /// A job's task: a spec to remember (torque, pressure, length).
+    SPEC_REMINDER => "spec-reminder",
+    /// A job: the specs its parts now differ from.
+    SPEC_UPDATE_TITLE => "spec-update-title",
+    /// A job: the job records what was used either way.
+    SPEC_UPDATE_NOTE => "spec-update-note",
+    /// A job: save it, and the ticked specs.
+    SPEC_UPDATE_SAVE => "spec-update-save",
+    /// A job: back to the form.
+    SPEC_UPDATE_BACK => "spec-update-back",
+    /// A spec's part number or amount that was empty.
+    SPEC_UPDATE_NONE => "spec-update-none",
+    /// The Maintenance tab: the specs view.
+    MAINTENANCE_SPECS => "maintenance-specs",
+    /// Specs: add one.
+    SPEC_ADD => "spec-add",
+    /// Specs: the new spec dialog's title.
+    SPEC_ADD_TITLE => "spec-add-title",
+    /// Specs: none yet.
+    SPEC_NONE_YET => "spec-none-yet",
+    /// Specs: the name field.
+    SPEC_NAME => "spec-name",
+    /// Specs: the kind of amount.
+    SPEC_KIND => "spec-kind",
+    /// Specs: no amount (a part number only).
+    SPEC_KIND_NONE => "spec-kind-none",
+    /// Specs: the amount field.
+    SPEC_AMOUNT => "spec-amount",
+    /// Specs: the unit field.
+    SPEC_UNIT => "spec-unit",
+    /// Specs: the detail field.
+    SPEC_DETAIL => "spec-detail",
+    /// Specs: the part number field.
+    SPEC_PART_NUMBER => "spec-part-number",
+    /// Specs: a part number, shown.
+    SPEC_PART_NUMBER_SHOWN => "spec-part-number-shown",
+    /// Specs: remove one.
+    SPEC_REMOVE => "spec-remove",
+    /// A requirement: the specs its job uses.
+    SPEC_CHECKLIST => "spec-checklist",
+    /// A requirement: what ticking a spec does.
+    SPEC_CHECKLIST_NOTE => "spec-checklist-note",
+    /// A bundle: start a job with its tasks.
+    SCHEDULE_LOG_SERVICE => "schedule-log-service",
+    /// Navigation: the Templates screen.
+    NAV_TEMPLATES => "nav-templates",
+    /// Templates: what they are.
+    TEMPLATES_INTRO => "templates-intro",
+    /// Templates: none yet.
+    TEMPLATES_NONE => "templates-none",
+    /// Templates: what one holds.
+    TEMPLATE_COUNTS => "template-counts",
+    /// Templates: what applying one did.
+    TEMPLATE_APPLIED => "template-applied",
+    /// Templates: meter rules left out.
+    TEMPLATE_LEFT_OUT => "template-left-out",
+    /// Templates: apply one to a vehicle.
+    TEMPLATE_APPLY_TO => "template-apply-to",
+    /// Templates: rename one.
+    TEMPLATE_RENAME => "template-rename",
+    /// Templates: the name field.
+    TEMPLATE_NAME => "template-name",
+    /// Templates: removing one.
+    TEMPLATE_REMOVE_TITLE => "template-remove-title",
+    /// Templates: what removing one leaves.
+    TEMPLATE_REMOVE_NOTE => "template-remove-note",
+    /// Templates: it's gone.
+    TEMPLATE_NOT_FOUND => "template-not-found",
+    /// Set up: save the schedule as a template.
+    TEMPLATE_SAVE_AS => "template-save-as",
+    /// Set up: the save-as-template dialog's title.
+    TEMPLATE_SAVE_TITLE => "template-save-title",
+    /// Set up: start from a template.
+    TEMPLATE_FROM => "template-from",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.
