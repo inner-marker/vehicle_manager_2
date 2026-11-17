@@ -355,8 +355,8 @@
 | **3a** `feat(domain):` due messages | ☑️ | `MessageKind::Due`, their keys (cycle, and Overdue apart), severity, and button; `Snooze` on `MessageMark` and its patch, and the inbox leaving out snoozed messages until they wake; the household's `due_messages_from`; the fleet counts. Unit tests first (the starting step; Overdue past a dismiss and a snooze; a sign-off starting a new cycle; waking by time and by meter; role filtering). |
 | **3b** `feat(storage):` migration 0024 | ☑️ | `message_marks.snooze` and `preferences.due_messages_from`, nullable JSON, so existing rows read as before. The release fixtures migrate. |
 | **3c** `feat(server):` | ☑️ | Due messages in each person's inbox, for the vehicles their role covers (the inbox takes the device's time zone, as the Garage does); **Snooze** and **Wake now**; the fleet counts on the Garage; the Due & squawks list across vehicles; the Admin's starting step. The desktop gets the same, offline, from its copy, and its marks sync as before. |
-| **3d** `feat(app):` the screens | ⬜ | The **Snooze ▾** menu and **Custom…** (row 1), the fleet strip (row 2), the Due & squawks screen in place of its placeholder (row 3), the Household setting and the **Snoozed** filter (row 4). |
-| **3e** `docs:` | ⬜ | Milestone 3's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+| **3d** `feat(app):` the screens | ☑️ | The **Snooze ▾** menu and **Custom…** (row 1), the fleet strip (row 2), the Due & squawks screen in place of its placeholder (row 3), the Household setting and the **Snoozed** filter (row 4). |
+| **3e** `docs:` | ☑️ | Milestone 3's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **Step 3a notes (2026-11-16):**
 - **`domain::inbox`:**
@@ -414,6 +414,32 @@
 
   The older message tests take the zone.
 - **Tidying:** the fleet counts pushed `assets::garage_view` over 80 lines, so filling in each card (its due step, plate, and standing) and counting the fleet moved into `fill_in_summaries`.
+
+**Step 3d notes (2026-11-16):**
+- **What a due message carries:** `MessageKind::Due` now holds a `DueNotice`: the vehicle, the item, where it stands, the vehicle's meters its rules count on (`due::meters_in`), and its snooze meter. The screens need no other request to say what's left or to offer "500 mi". `FleetDue` carries its meters the same way. `MessageKind` no longer derives `Hash` (nothing used it, and a meter isn't hashable).
+- **Messages (1A, 4A):**
+  - a due message is titled by vehicle and item ("Outback: Engine oil & filter"), with the step's chip, and what's left in the step's colour;
+  - **Snooze ▾** (`ui::screens::snooze`): 1 day, 1 week, 1 month, an amount fitted to the item's meter (500 mi or km, 10 h; none for a percentage), the two together, and **Custom…** (days and/or an amount in the meter's unit, whichever comes first). An item without a counting-up meter offers time only;
+  - snoozed messages wait under **Snoozed (n)**, each saying "Snoozed until … or 85,210 mi", with **Wake now**.
+- **The desktop, offline:** the data layer asks the server for the inbox first (so the server's own messages show), and when it can't be reached works it out from the copy: due messages, forgotten jobs, and overdue returns. **Marking needs the server:** there's no operation for marks, and adding one would raise the API version, which this milestone keeps at 2. Offline, Read, Dismiss, and Snooze say the server can't be reached. A follow-up could add a mark operation.
+- **The fleet strip (2A)** on All vehicles (its counts are the household's, so not on a group's page): **⚠ Overdue**, **Due soon**, **Open** squawks (in the household's word), each opening Due & squawks with that filter at `/due/<filter>`, and on the desktop app **Synced**, how many changes wait to be sent, or **Offline**, opening Messages.
+- **Due & squawks (3A)** replaces the placeholder: chips All, Overdue, Due soon, and the squawks; due items with their vehicle, what's left, and chip, opening the vehicle's Maintenance or Documents tab; then open squawks with their vehicle, severity, and status, opening the squawk. On the desktop it's read from the copy, offline too.
+- **Settings (4A):** "Messages about what's due start at" on the Household tab, a menu of Coming up, Due soon, and Due very soon; the You tab shows it in words.
+- **Tests:** the quick choices for a distance, an hours, and a percentage meter; a custom snooze's checks; "Snoozed until … or 85,210 mi"; a due message's title and text; each Due & squawks filter, and its name in the address; the new route.
+- **Tidying:** carrying each meter's snooze pushed `server::due::vehicle_due_in_full` over 80 lines, so its latest values moved into `latest_values`. The sync tile is a small `SyncTile` enum rather than a nested `Option`.
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (3e).
+
+**Step 3e notes (2026-11-17):**
+- **The test plan:** milestone 3's section of `docs/test-plans/p5-phase.md`, 21 steps, run at the end of the phase (#081) after milestone 2's, whose last steps leave the oil change overdue. They cover:
+  - the migration;
+  - the fleet strip and Due & squawks, with their filters;
+  - Sam's due message, opening Maintenance, and **Snooze ▾**'s choices;
+  - "1 week or 500 mi" asleep, Jordan still seeing it, and the odometer waking it;
+  - Custom's refusals, and **Wake now**;
+  - the desktop online (the **Synced** tile) and offline (messages from the copy; snoozing needs the server);
+  - a sign-off ending the messages; Due soon snoozed for a month, then Overdue getting past it;
+  - the household's starting step, with a document's Coming up message (time-only snooze), and the You tab.
+- **Checked against the code while writing it:** whether the sidebar marks **Due & squawks** at `/due/overdue` isn't certain (the link matches its own address), so the plan doesn't promise it; an offline snooze's words are quoted as the app has them.
 
 **API version:** stays at 2. Snooze is a new field on an existing record, not a new operation, and older desktops are already stopped by the schema check (as in milestone 2).
 

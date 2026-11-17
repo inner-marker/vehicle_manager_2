@@ -13,7 +13,7 @@ use domain::time_utils::format_utc_minute;
 
 use super::routes::Route;
 use super::{tr, tr_with};
-use crate::api;
+use crate::data;
 
 /// The messages state, in context (provided by the shell).
 #[derive(Debug, Clone, Copy)]
@@ -61,7 +61,7 @@ pub(crate) fn apply(
 
 /// Asks the server for the inbox again.
 pub(crate) async fn refresh_inbox(context: InboxContext) {
-    let _ = apply(context, api::get_messages(super::device_zone().await).await);
+    let _ = apply(context, data::get_messages().await);
 }
 
 /// Marks a message read or dismisses it, keeping the server's new answer.
@@ -72,7 +72,7 @@ pub(crate) async fn mark(
 ) -> Option<MessageId> {
     apply(
         context,
-        api::mark_message(key.as_str().to_owned(), action, super::device_zone().await).await,
+        data::mark_message(key.as_str().to_owned(), action).await,
     )
 }
 

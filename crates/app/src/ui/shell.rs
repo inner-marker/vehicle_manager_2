@@ -89,6 +89,7 @@ pub(crate) fn Shell() -> Element {
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
         }
         Route::Due {}
+        | Route::DueList { .. }
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}
@@ -112,6 +113,7 @@ pub(crate) fn Shell() -> Element {
         | Route::LogForm { asset_id, .. } => asset_id.parse().ok(),
         Route::AllVehicles {}
         | Route::Due {}
+        | Route::DueList { .. }
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}

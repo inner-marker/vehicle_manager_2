@@ -146,6 +146,10 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
     rsx! {
         div { class: "vehicles",
             GroupMenu { groups: view.groups.clone(), current: group }
+            // Household-wide counts, so on All vehicles only (#083).
+            if group.is_none() {
+                super::due_list::FleetStrip { counts: view.fleet }
+            }
             div { class: "vehicles-toolbar",
                 if view.can_add {
                     button { class: "primary-button", onclick: move |_| adding.set(true), {tr(messages::VEHICLES_ADD)} }

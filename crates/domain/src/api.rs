@@ -1233,6 +1233,9 @@ pub struct FleetDue {
     pub vehicle: String,
     /// What comes due, and where it stands.
     pub entry: DueEntry,
+    /// The vehicle's meters its rules count on, for what's left.
+    #[serde(default)]
+    pub meters: Vec<(crate::meter::MeterId, crate::meter::Meter)>,
 }
 
 /// An open or deferred squawk on one of the person's vehicles, for Due & squawks (#083).

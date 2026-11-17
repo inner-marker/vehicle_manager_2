@@ -688,6 +688,20 @@ pub fn document_due(
     })
 }
 
+/// The vehicle's `meters` that `due`'s rules count on, for showing what's left (#083).
+#[must_use]
+pub fn meters_in(due: &Due, meters: &[(MeterId, Meter)]) -> Vec<(MeterId, Meter)> {
+    meters
+        .iter()
+        .filter(|(id, _)| {
+            due.rules
+                .iter()
+                .any(|rule| matches!(rule.left, Left::Meter { meter, .. } if meter == *id))
+        })
+        .cloned()
+        .collect()
+}
+
 /// The meter a requirement's message snoozes on (#083): the first counting-up meter its
 /// rules use (an odometer or hours), or `None` (time only).
 #[must_use]

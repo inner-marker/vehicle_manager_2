@@ -23,16 +23,16 @@ use domain::api::{
 use domain::asset::{Asset, AssetId};
 use domain::dates::{CalendarDate, is_known_zone, today, utc_to_local};
 use domain::due::{
-    DueContext, DueDefaults, DueStep, FleetCounts, document_due, requirement_due, snooze_meter,
-    urgency_order,
+    DueContext, DueDefaults, DueStep, FleetCounts, document_due, meters_in, requirement_due,
+    snooze_meter, urgency_order,
 };
 use domain::event_check::PastReading;
-use domain::inbox::{Message, due_message};
+use domain::inbox::{DueNotice, Message, due_message};
 use domain::location::TimeZone;
 use domain::log_area;
-use domain::meter::MeterId;
+use domain::meter::{Meter, MeterId};
 use domain::preferences::PreferencesId;
-use domain::requirement::{DoneTask, last_done};
+use domain::requirement::{DoneTask, RequirementId, last_done};
 use domain::time::UnixMillis;
 use storage::{Database, StorageError};
 
@@ -83,6 +83,10 @@ pub(crate) struct VehicleDue {
     pub(crate) done: Vec<DoneTask>,
     /// Each meter's latest value.
     pub(crate) latest: Vec<(MeterId, i64)>,
+    /// Its meters, for what's left.
+    pub(crate) meters: Vec<(MeterId, Meter)>,
+    /// The meter each requirement's message snoozes on, if it has one ([`snooze_meter`]).
+    pub(crate) snooze_meters: Vec<(RequirementId, MeterId)>,
 }
 
 impl VehicleDue {
@@ -146,7 +150,11 @@ pub(crate) async fn vehicle_due_in_full(
         defaults,
     };
     let mut entries = Vec::new();
+    let mut snooze_meters = Vec::new();
     for (id, requirement) in database.requirements_of(asset).await? {
+        if let Some(meter) = snooze_meter(&requirement, &meters) {
+            snooze_meters.push((id, meter));
+        }
         let added_on = added
             .iter()
             .find(|(added, _)| *added == id)
@@ -180,7 +188,18 @@ pub(crate) async fn vehicle_due_in_full(
         }
     }
     entries.sort_by(|a, b| urgency_order(&a.due, &b.due));
-    let latest = meters
+    Ok(VehicleDue {
+        entries,
+        done,
+        latest: latest_values(&meters, &readings),
+        meters,
+        snooze_meters,
+    })
+}
+
+/// Each of `meters`' latest value among `readings` (a reset counts after others at its moment).
+fn latest_values(meters: &[(MeterId, Meter)], readings: &[PastReading]) -> Vec<(MeterId, i64)> {
+    meters
         .iter()
         .filter_map(|(meter, _)| {
             readings
@@ -189,12 +208,7 @@ pub(crate) async fn vehicle_due_in_full(
                 .max_by_key(|reading| (reading.at, reading.reset))
                 .map(|reading| (*meter, reading.value))
         })
-        .collect();
-    Ok(VehicleDue {
-        entries,
-        done,
-        latest,
-    })
+        .collect()
 }
 
 /// The vehicles the Garage shows the signed-in person: their role covers it, and it isn't
@@ -240,21 +254,24 @@ pub(crate) async fn due_messages(
     for (asset, vehicle) in shown_vehicles(context).await? {
         let due = vehicle_due_in_full(context.database, asset, zone, now, &defaults).await?;
         for entry in &due.entries {
-            let cycle = match &entry.subject {
-                DueSubject::Requirement { id, .. } => {
-                    last_done(*id, &due.done).map(|task| task.event)
-                }
-                DueSubject::Document { .. } => None,
+            let (cycle, snooze_meter) = match &entry.subject {
+                DueSubject::Requirement { id, .. } => (
+                    last_done(*id, &due.done).map(|task| task.event),
+                    due.snooze_meters
+                        .iter()
+                        .find_map(|(requirement, meter)| (requirement == id).then_some(*meter)),
+                ),
+                DueSubject::Document { .. } => (None, None),
             };
-            messages.extend(due_message(
+            let notice = DueNotice {
                 asset,
-                vehicle.name.as_str(),
-                &entry.subject,
-                &entry.due,
-                cycle,
-                from,
-                now,
-            ));
+                vehicle: vehicle.name.as_str().to_owned(),
+                subject: entry.subject.clone(),
+                due: entry.due.clone(),
+                meters: meters_in(&entry.due, &due.meters),
+                snooze_meter,
+            };
+            messages.extend(due_message(notice, cycle, from, now));
         }
         latest.extend(due.latest);
     }
@@ -322,11 +339,13 @@ async fn fleet_view(
     let mut squawks = Vec::new();
     for (asset, vehicle) in shown_vehicles(context).await? {
         let name = vehicle.name.as_str().to_owned();
-        for entry in vehicle_due(context.database, asset, zone, now, &defaults).await? {
+        let full = vehicle_due_in_full(context.database, asset, zone, now, &defaults).await?;
+        for entry in full.entries {
             if entry.due.step > DueStep::Ok {
                 due.push(FleetDue {
                     asset,
                     vehicle: name.clone(),
+                    meters: meters_in(&entry.due, &full.meters),
                     entry,
                 });
             }

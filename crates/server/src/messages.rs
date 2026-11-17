@@ -209,12 +209,13 @@ async fn patch_for(
             ..MessageMarkPatch::default()
         },
         MarkMessage::Snooze { request } => {
-            let MessageKind::Due { asset, subject, .. } = &message.kind else {
+            let MessageKind::Due(notice) = &message.kind else {
                 return Err(InboxOutcome::BadSnooze);
             };
-            let meter = crate::due::snooze_meter_of(context.database, *asset, subject)
-                .await
-                .map_err(|error| unavailable(&error))?;
+            let meter =
+                crate::due::snooze_meter_of(context.database, notice.asset, &notice.subject)
+                    .await
+                    .map_err(|error| unavailable(&error))?;
             let Some(snooze) = request.snooze(context.clock.now(), meter) else {
                 tracing::debug!(target: log_area::APP, user = %context.user.user, key = %message.key, ?request, "snooze refused");
                 return Err(InboxOutcome::BadSnooze);

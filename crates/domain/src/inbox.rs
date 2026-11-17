@@ -148,7 +148,7 @@ pub enum ServerProblem {
 }
 
 /// What a message is about.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum MessageKind {
     /// A scheduled job's latest run failed.
@@ -212,16 +212,26 @@ pub enum MessageKind {
     },
     /// Something on a vehicle comes due (Phase 5 milestone 3, #083): for anyone whose role
     /// covers the vehicle.
-    Due {
-        /// The vehicle.
-        asset: crate::asset::AssetId,
-        /// Its name, for the text.
-        vehicle: String,
-        /// What comes due.
-        subject: crate::api::DueSubject,
-        /// Where it stands now.
-        due: Due,
-    },
+    Due(DueNotice),
+}
+
+/// What a due message is about (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DueNotice {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name, for the text.
+    pub vehicle: String,
+    /// What comes due.
+    pub subject: crate::api::DueSubject,
+    /// Where it stands now.
+    pub due: Due,
+    /// The vehicle's meters its rules count on, for what's left ("in 310 mi").
+    #[serde(default)]
+    pub meters: Vec<(MeterId, crate::meter::Meter)>,
+    /// The meter a snooze counts on (`crate::due::snooze_meter`); `None`: time only.
+    #[serde(default)]
+    pub snooze_meter: Option<MeterId>,
 }
 
 impl MessageKind {
@@ -251,7 +261,7 @@ impl MessageKind {
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS,
             Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD,
-            Self::Due { due, .. } => match due.step {
+            Self::Due(notice) => match notice.due.step {
                 DueStep::Ok | DueStep::ComingUp => messages::INBOX_DUE_COMING_UP,
                 DueStep::DueSoon => messages::INBOX_DUE_SOON,
                 DueStep::DueVerySoon => messages::INBOX_DUE_VERY_SOON,
@@ -288,7 +298,7 @@ impl MessageKind {
             Self::OverdueReturn { .. } => messages::INBOX_OVERDUE_RETURN_BODY,
             Self::FailedUnlocks { .. } => messages::INBOX_FAILED_UNLOCKS_BODY,
             Self::ClockAhead { .. } => messages::INBOX_CLOCK_AHEAD_BODY,
-            Self::Due { .. } => messages::INBOX_DUE_BODY,
+            Self::Due(_) => messages::INBOX_DUE_BODY,
         }
     }
 }
@@ -565,28 +575,26 @@ pub fn clock_ahead_message(
     }
 }
 
-/// The message for something on vehicle `asset` (named `vehicle`) coming due (#083), if it
-/// has reached `from` (the household's starting step) or is overdue. `cycle` is the finished
-/// task its count runs from (`None`: never done, or a document).
+/// The message for `notice`'s item coming due (#083), if it has reached `from` (the
+/// household's starting step) or is overdue. `cycle` is the finished task its count runs from
+/// (`None`: never done, or a document).
 ///
 /// Its key names the item and its cycle, so a sign-off starts a new message. **Overdue has a
 /// key of its own,** so it comes back unread whatever was done with the first (#083). It's
 /// raised when the item reached its step ([`Due::since`]), else at `now`.
 #[must_use]
 pub fn due_message(
-    asset: crate::asset::AssetId,
-    vehicle: &str,
-    subject: &crate::api::DueSubject,
-    due: &Due,
+    notice: DueNotice,
     cycle: Option<EventId>,
     from: DueStep,
     now: UnixMillis,
 ) -> Option<Message> {
     use crate::api::DueSubject;
+    let (asset, due) = (notice.asset, &notice.due);
     if due.step == DueStep::Ok || (due.step < from && due.step != DueStep::Overdue) {
         return None;
     }
-    let (item, action) = match subject {
+    let (item, action) = match &notice.subject {
         DueSubject::Requirement { id, .. } => (
             format!("requirement:{id}"),
             MessageAction::OpenMaintenance { asset },
@@ -602,21 +610,18 @@ pub fn due_message(
     } else {
         "due"
     };
+    let severity = if due.step == DueStep::ComingUp {
+        Severity::Info
+    } else {
+        Severity::Warning
+    };
+    let raised_at = due.since().unwrap_or(now);
     Some(Message {
         key: MessageKey(format!("{prefix}:{item}:{cycle}")),
-        kind: MessageKind::Due {
-            asset,
-            vehicle: vehicle.to_owned(),
-            subject: subject.clone(),
-            due: due.clone(),
-        },
-        severity: if due.step == DueStep::ComingUp {
-            Severity::Info
-        } else {
-            Severity::Warning
-        },
+        kind: MessageKind::Due(notice),
+        severity,
         audience: Audience::Everyone,
-        raised_at: due.since().unwrap_or(now),
+        raised_at,
         detail: String::new(),
         action: Some(action),
     })
@@ -1128,7 +1133,7 @@ mod tests {
                 | MessageKind::OverdueReturn { .. }
                 | MessageKind::FailedUnlocks { .. }
                 | MessageKind::ClockAhead { .. }
-                | MessageKind::Due { .. } => "",
+                | MessageKind::Due(_) => "",
             })
             .collect();
         assert_eq!(names, vec!["new-unread", "old-unread", "new-read"]);
@@ -1350,15 +1355,26 @@ mod tests {
         }
     }
 
+    fn notice(subject: crate::api::DueSubject, due: Due) -> DueNotice {
+        DueNotice {
+            asset: test_id(1),
+            vehicle: "Outback".into(),
+            subject,
+            due,
+            meters: vec![],
+            snooze_meter: None,
+        }
+    }
+
     fn oil(step: DueStep, cycle: Option<EventId>) -> Option<Message> {
         due_message(
-            test_id(1),
-            "Outback",
-            &crate::api::DueSubject::Requirement {
-                id: test_id(20),
-                name: crate::label::Label::parse("Engine oil & filter").unwrap(),
-            },
-            &oil_due(step, Some(4_000)),
+            notice(
+                crate::api::DueSubject::Requirement {
+                    id: test_id(20),
+                    name: crate::label::Label::parse("Engine oil & filter").unwrap(),
+                },
+                oil_due(step, Some(4_000)),
+            ),
             cycle,
             DueStep::DueSoon,
             UnixMillis::from_millis(9_000),
@@ -1384,13 +1400,13 @@ mod tests {
         );
         // From Coming up, an Info.
         let early = due_message(
-            test_id(1),
-            "Outback",
-            &crate::api::DueSubject::Document {
-                id: test_id(30),
-                doc_type: crate::document::DocumentType::listed("document-insurance").unwrap(),
-            },
-            &oil_due(DueStep::ComingUp, None),
+            notice(
+                crate::api::DueSubject::Document {
+                    id: test_id(30),
+                    doc_type: crate::document::DocumentType::listed("document-insurance").unwrap(),
+                },
+                oil_due(DueStep::ComingUp, None),
+            ),
             None,
             DueStep::ComingUp,
             UnixMillis::from_millis(9_000),

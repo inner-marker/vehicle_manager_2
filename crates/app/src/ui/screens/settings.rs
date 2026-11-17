@@ -10,6 +10,7 @@
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
 use domain::api::{PreferencesOutcome, PreferencesView};
+use domain::due::DueStep;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
@@ -293,6 +294,7 @@ pub(crate) fn Settings() -> Element {
                 LanguageRow {}
                 SquawkWordRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 DueWarningsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
+                DueMessagesRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 if may_keep_originals {
                     OriginalsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 }
@@ -639,6 +641,56 @@ fn DueWarningsRow(
             } else {
                 span { class: "setting-value", {warnings_text(&current)} }
                 p { class: "muted-note", {tr(messages::SETTING_DUE_WARNINGS_HOUSEHOLD)} }
+            }
+        }
+    }
+}
+
+/// The steps due messages may start at (#083), in order.
+const DUE_MESSAGE_STARTS: [DueStep; 3] =
+    [DueStep::ComingUp, DueStep::DueSoon, DueStep::DueVerySoon];
+
+/// When what's due starts sending messages (#083; sketch `p5m3-messages-options.svg`, 4A): the
+/// household's Admin chooses on the Household tab; everyone sees it in words.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn DueMessagesRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let current = view.effective.due_messages_from;
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_DUE_MESSAGES)} }
+            if household_tab {
+                select {
+                    class: "role-select",
+                    // The value is the step's index in DUE_MESSAGE_STARTS.
+                    onchange: move |event| {
+                        let picked = event
+                            .value()
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|index| DUE_MESSAGE_STARTS.get(index).copied());
+                        if let Some(step) = picked {
+                            on_save.call(PreferencesPatch {
+                                due_messages_from: Some(Choice::Set(step)),
+                                ..PreferencesPatch::default()
+                            });
+                        }
+                    },
+                    for (index, step) in DUE_MESSAGE_STARTS.into_iter().enumerate() {
+                        option { key: "{index}", value: "{index}", selected: step == current, {tr(step.label())} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::SETTING_DUE_MESSAGES_NOTE)} }
+            } else {
+                span { class: "setting-value", {tr(current.label())} }
+                p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
             }
         }
     }

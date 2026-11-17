@@ -321,10 +321,14 @@ mod due {
         items
             .iter()
             .filter_map(|item| {
-                let MessageKind::Due { due, .. } = &item.message.kind else {
+                let MessageKind::Due(notice) = &item.message.kind else {
                     return None;
                 };
-                Some((item.message.key.as_str().to_owned(), due.step, item.read))
+                Some((
+                    item.message.key.as_str().to_owned(),
+                    notice.due.step,
+                    item.read,
+                ))
             })
             .collect()
     }
