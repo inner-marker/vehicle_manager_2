@@ -1382,6 +1382,9 @@ pub enum ScheduleOutcome {
         requirements: Vec<RequirementView>,
         /// Its bundles, by name.
         bundles: Vec<(crate::requirement::BundleId, crate::requirement::Bundle)>,
+        /// Its specs, by name (#084).
+        #[serde(default)]
+        specs: Vec<(crate::spec::SpecId, crate::spec::Spec)>,
         /// The person may change it (a Maintainer or higher, in that mode).
         may_configure: bool,
     },
@@ -1395,12 +1398,20 @@ pub enum ScheduleOutcome {
         /// Its ID.
         id: crate::requirement::BundleId,
     },
-    /// A schedule was copied from another vehicle.
+    /// A spec was added or changed (#084).
+    SavedSpec {
+        /// Its ID.
+        id: crate::spec::SpecId,
+    },
+    /// A schedule was copied from another vehicle, or a template applied (#084).
     Copied {
         /// How many requirements were copied.
         requirements: usize,
         /// How many bundles were copied.
         bundles: usize,
+        /// How many specs were copied.
+        #[serde(default)]
+        specs: usize,
         /// Meter rules left out, as "requirement: meter" (no matching meter).
         left_out: Vec<(crate::label::Label, crate::label::Label)>,
     },
@@ -1411,6 +1422,74 @@ pub enum ScheduleOutcome {
     /// The person's roles or mode don't allow it.
     NotAllowed,
     /// The requirement or bundle was refused.
+    Invalid {
+        /// Why.
+        problem: crate::requirement::RequirementProblem,
+    },
+    /// The spec was refused (#084).
+    InvalidSpec {
+        /// Why.
+        problem: crate::spec::SpecProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// A household template as listed (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemplateSummary {
+    /// Its ID.
+    pub id: crate::template::TemplateId,
+    /// Its name.
+    pub name: crate::label::Label,
+    /// What it holds.
+    pub counts: crate::template::TemplateCounts,
+}
+
+/// The Templates screen (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemplatesView {
+    /// The household's templates, by name.
+    pub templates: Vec<TemplateSummary>,
+    /// The vehicles the person may apply one to (they may change its schedule, and it has
+    /// none yet), by name.
+    pub apply_to: Vec<(crate::asset::AssetId, String)>,
+    /// The person may rename and remove templates (the household's Admin, in Admin mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a templates request (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum TemplatesOutcome {
+    /// The Templates screen.
+    Templates {
+        /// It.
+        view: TemplatesView,
+    },
+    /// A template was saved or renamed.
+    Saved {
+        /// Its ID.
+        id: crate::template::TemplateId,
+    },
+    /// A template was applied (as a copied schedule).
+    Applied {
+        /// How many requirements were copied.
+        requirements: usize,
+        /// How many bundles were copied.
+        bundles: usize,
+        /// How many specs were copied.
+        specs: usize,
+        /// Meter rules left out, as "requirement: meter" (no matching meter).
+        left_out: Vec<(crate::label::Label, crate::label::Label)>,
+    },
+    /// Done.
+    Done,
+    /// There's no such template or vehicle (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused: the vehicle already has a schedule, or the vehicle has nothing to save.
     Invalid {
         /// Why.
         problem: crate::requirement::RequirementProblem,

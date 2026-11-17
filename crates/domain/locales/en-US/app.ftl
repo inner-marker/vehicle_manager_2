@@ -1284,6 +1284,80 @@ unit-abbr-km-per-l = km/L
 unit-abbr-l-per-100-km = L/100 km
 unit-abbr-h = h
 unit-abbr-percent = %
+unit-abbr-qt = qt
+unit-abbr-fl-oz = fl oz
+unit-abbr-ml = mL
+unit-abbr-ft-lb = ft-lb
+unit-abbr-in-lb = in-lb
+unit-abbr-n-m = N·m
+unit-abbr-psi = psi
+unit-abbr-kpa = kPa
+unit-abbr-bar = bar
+unit-abbr-in = in
+unit-abbr-mm = mm
+spec-kind-volume = Volume
+spec-kind-torque = Torque
+spec-kind-pressure = Pressure
+spec-kind-length = Length or gap
+spec-bad-detail = The detail can be up to 100 characters.
+spec-bad-part-number = The part number can be up to 40 characters.
+spec-bad-amount = The amount must be more than zero.
+template-nothing-to-save = This vehicle has no requirements to save as a template yet.
+spec-reminder = Reminder: { $name } { $amount }
+spec-update-title = Update the specs too?
+spec-update-note = The job records what was used either way.
+spec-update-save = Save job
+spec-update-back = Back
+spec-update-none = none
+maintenance-specs = Specs
+spec-add = + Spec
+spec-add-title = New spec
+spec-none-yet = No specs yet: the oil it takes, its filter's part number, tire pressures.
+spec-name = Name
+spec-kind = Kind
+spec-kind-none = None (a part number only)
+spec-amount = Amount
+spec-unit = Unit
+spec-detail = Detail
+spec-part-number = Part number
+spec-part-number-shown = Part { $number }
+spec-remove = Remove
+spec-checklist = Specs its job uses
+spec-checklist-note = Ticked specs pre-fill a task's parts; torque, pressure, and length show on the task as reminders.
+schedule-log-service = Log this service
+nav-templates = Templates
+templates-intro = A template is a vehicle's requirements, bundles, and specs, saved under a name. Applying one copies it: later changes to the template don't reach the vehicle.
+templates-none = No templates yet. Save one from a vehicle's Maintenance → Set up.
+template-counts = { $requirements ->
+    [one] 1 requirement
+   *[other] { $requirements } requirements
+} · { $bundles ->
+    [one] 1 bundle
+   *[other] { $bundles } bundles
+} · { $specs ->
+    [one] 1 spec
+   *[other] { $specs } specs
+}
+template-applied = Copied { $requirements ->
+    [one] 1 requirement
+   *[other] { $requirements } requirements
+}, { $bundles ->
+    [one] 1 bundle
+   *[other] { $bundles } bundles
+}, and { $specs ->
+    [one] 1 spec
+   *[other] { $specs } specs
+} onto { $vehicle }.
+template-left-out = Left out (no matching meter): { $list }.
+template-apply-to = Apply to…
+template-rename = Rename
+template-name = Name
+template-remove-title = Remove the template { $name }?
+template-remove-note = Vehicles it was applied to keep their copy.
+template-not-found = That template is gone.
+template-save-as = Save as template…
+template-save-title = Save this schedule as a template
+template-from = From a template…
 
 ## Events: fuel-ups and readings (milestone 6)
 

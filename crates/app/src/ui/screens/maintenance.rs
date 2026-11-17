@@ -51,6 +51,8 @@ use crate::ui::{tr, tr_with};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum MaintenanceView {
     Schedule,
+    /// The vehicle's specs (#084).
+    Specs,
     Jobs,
     SetUp,
 }
@@ -60,6 +62,7 @@ impl MaintenanceView {
     pub(super) const fn slug(self) -> &'static str {
         match self {
             Self::Schedule => "maintenance",
+            Self::Specs => "specs",
             Self::Jobs => "jobs",
             Self::SetUp => "set-up",
         }
@@ -67,7 +70,7 @@ impl MaintenanceView {
 
     /// The view an address names, if it's one of the Maintenance tab's.
     pub(super) fn from_slug(slug: &str) -> Option<Self> {
-        [Self::Schedule, Self::Jobs, Self::SetUp]
+        [Self::Schedule, Self::Specs, Self::Jobs, Self::SetUp]
             .into_iter()
             .find(|view| view.slug() == slug)
     }
@@ -75,6 +78,7 @@ impl MaintenanceView {
     const fn label(self) -> MessageId {
         match self {
             Self::Schedule => messages::MAINTENANCE_SCHEDULE,
+            Self::Specs => messages::MAINTENANCE_SPECS,
             Self::Jobs => messages::MAINTENANCE_JOBS,
             Self::SetUp => messages::MAINTENANCE_SET_UP,
         }
@@ -86,6 +90,8 @@ impl MaintenanceView {
 struct Schedule {
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// The vehicle's specs, by name (#084).
+    specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
     may_configure: bool,
 }
 
@@ -102,12 +108,14 @@ fn use_schedule(
                 Ok(ScheduleOutcome::Schedule {
                     requirements,
                     bundles,
+                    specs,
                     may_configure,
                 }) => {
-                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), "schedule loaded");
+                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), specs = specs.len(), "schedule loaded");
                     Ok(Schedule {
                         requirements,
                         bundles,
+                        specs,
                         may_configure,
                     })
                 }
@@ -124,11 +132,13 @@ fn use_schedule(
 fn refusal(outcome: &ScheduleOutcome) -> MessageId {
     match outcome {
         ScheduleOutcome::Invalid { problem } => problem.message(),
+        ScheduleOutcome::InvalidSpec { problem } => problem.message(),
         ScheduleOutcome::NotFound => messages::VEHICLE_NOT_FOUND,
         ScheduleOutcome::NotAllowed => messages::VEHICLES_NOT_ALLOWED,
         ScheduleOutcome::Schedule { .. }
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
+        | ScheduleOutcome::SavedSpec { .. }
         | ScheduleOutcome::Copied { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::Unavailable => messages::SOMETHING_WENT_WRONG,
@@ -148,6 +158,7 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
     use_effect(use_reactive!(|start| view.set(start)));
     let views: Vec<MaintenanceView> = [
         MaintenanceView::Schedule,
+        MaintenanceView::Specs,
         MaintenanceView::Jobs,
         MaintenanceView::SetUp,
     ]
@@ -179,6 +190,9 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
                 (_, Some(Err(problem))) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
                 (MaintenanceView::Schedule, Some(Ok(loaded))) => rsx! {
                     ScheduleView { vehicle, schedule: loaded, reloads, on_set_up: move |()| view.set(MaintenanceView::SetUp) }
+                },
+                (MaintenanceView::Specs, Some(Ok(loaded))) => rsx! {
+                    super::specs_view::SpecsView { vehicle, specs: loaded.specs, may_configure: loaded.may_configure, reloads }
                 },
                 (MaintenanceView::SetUp, Some(Ok(loaded))) => rsx! {
                     SetUpView { vehicle, schedule: loaded, reloads }
@@ -449,6 +463,15 @@ fn ScheduleView(
                             span { class: "schedule-card-when",
                                 {tr_with(messages::SCHEDULE_BUNDLE_COUNT, &[("count", MessageArg::from(i64::try_from(bundle.requirements.len()).unwrap_or(i64::MAX)))])}
                             }
+                            // A job with its tasks, parts pre-filled (5A, #084); not once the
+                            // vehicle's disposal is finalized (#067).
+                            if schedule.may_configure && vehicle.standing.takes_new_records {
+                                Link {
+                                    class: "primary-button log-service",
+                                    to: Route::LogService { asset_id: vehicle.id.to_string(), bundle_id: id.to_string() },
+                                    {tr(messages::SCHEDULE_LOG_SERVICE)}
+                                }
+                            }
                         }
                     }
                 }
@@ -593,6 +616,8 @@ enum Editing {
     RemoveRequirement(RequirementId, String),
     RemoveBundle(BundleId, String),
     Copy,
+    /// **Save as template…** (#084).
+    SaveTemplate,
     /// **+ Recall or bulletin**: new, or one already recorded (1B).
     PickReference,
     NewReference,
@@ -632,6 +657,9 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                 div { class: "setup-row-buttons",
                     if schedule.requirements.is_empty() {
                         button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Copy)), {tr(messages::SCHEDULE_COPY_FROM)} }
+                        Link { class: "secondary-button", to: Route::Templates {}, {tr(messages::TEMPLATE_FROM)} }
+                    } else {
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::SaveTemplate)), {tr(messages::TEMPLATE_SAVE_AS)} }
                     }
                     button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::NewRequirement)), {tr(messages::SCHEDULE_ADD_REQUIREMENT)} }
                     // Nothing new once the vehicle's disposal is finalized (#067).
@@ -698,13 +726,14 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
         p { class: "muted-note", {tr(messages::SCHEDULE_REMOVE_NOTE)} }
         match editing() {
             None => rsx! {},
-            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, reloads, on_close: close } },
-            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), reloads, on_close: close } },
+            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, specs: schedule.specs.clone(), reloads, on_close: close } },
+            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), specs: schedule.specs.clone(), reloads, on_close: close } },
             Some(Editing::NewBundle) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: None, reloads, on_close: close } },
             Some(Editing::Bundle(id, bundle)) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: Some((id, bundle)), reloads, on_close: close } },
             Some(Editing::RemoveRequirement(id, name)) => rsx! { RemoveDialog { target: Removal::Requirement(id), name, reloads, on_close: close } },
             Some(Editing::RemoveBundle(id, name)) => rsx! { RemoveDialog { target: Removal::Bundle(id), name, reloads, on_close: close } },
             Some(Editing::Copy) => rsx! { CopyDialog { vehicle, reloads, on_close: close } },
+            Some(Editing::SaveTemplate) => rsx! { super::templates::SaveTemplateDialog { asset: vehicle.id, on_close: close } },
             Some(Editing::PickReference) => rsx! {
                 ReferencePicker {
                     known: refs,
@@ -725,7 +754,7 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                     on_close: close,
                 }
             },
-            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), reloads, on_close: close } },
+            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), specs: schedule.specs.clone(), reloads, on_close: close } },
             Some(Editing::ShowReference(id)) => rsx! { ReferenceSheet { id, vehicle, on_close: close } },
         }
     }
@@ -894,7 +923,20 @@ fn requirement_from(
         applicability: compliance.applicability()?,
         before_records: None,
         warnings: None,
+        specs: vec![],
     })
+}
+
+/// "Engine oil · 5.5 qt", "Oil filter · FL-500S": a spec in the checklist.
+fn spec_choice(spec: &domain::spec::Spec) -> String {
+    let what = spec
+        .amount
+        .map(domain::spec::SpecAmount::show)
+        .or_else(|| spec.part_number.clone());
+    what.map_or_else(
+        || spec.name.as_str().to_owned(),
+        |what| format!("{} · {what}", spec.name.as_str()),
+    )
 }
 
 /// Add or change a requirement: its name, notes, whether it's in use, and its rules.
@@ -909,9 +951,17 @@ fn RequirementDialog(
     /// A new requirement for this recall or bulletin (from **+ Recall or bulletin**).
     #[props(default)]
     link: Option<ReferenceView>,
+    /// The vehicle's specs, to tick the ones its job uses (#084).
+    #[props(default)]
+    specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
     reloads: Signal<u32>,
     on_close: EventHandler<()>,
 ) -> Element {
+    let start_specs = existing
+        .as_ref()
+        .map(|(_, requirement)| requirement.specs.clone())
+        .unwrap_or_default();
+    let mut ticked = use_signal(move || start_specs);
     let meters = vehicle.meters.clone();
     let start = existing.clone();
     let start_link = link.clone();
@@ -1014,7 +1064,10 @@ fn RequirementDialog(
         let requirement = requirement_from(&typed(), &compliance(), reference, asset, &save_meters)
             .and_then(|requirement| with_due_settings(requirement, &due_settings(), &save_meters));
         let requirement = match requirement {
-            Ok(requirement) => requirement,
+            Ok(requirement) => domain::requirement::Requirement {
+                specs: ticked(),
+                ..requirement
+            },
             Err(message) => {
                 problem.set(Some(message));
                 return;
@@ -1065,6 +1118,29 @@ fn RequirementDialog(
                 label { class: "switch",
                     input { r#type: "checkbox", checked: typed().enabled, onchange: move |event| typed.write().enabled = event.checked() }
                     span { {tr(messages::SCHEDULE_IN_USE)} }
+                }
+                // The specs its job uses (2A, #084): ticked ones pre-fill a task's parts.
+                if !specs.is_empty() {
+                    fieldset { class: "spec-checklist",
+                        legend { class: "field-label", {tr(messages::SPEC_CHECKLIST)} }
+                        for (id, spec) in specs.iter().cloned() {
+                            label { key: "{id}", class: "switch",
+                                input {
+                                    r#type: "checkbox",
+                                    checked: ticked().contains(&id),
+                                    onchange: move |event| {
+                                        let mut list = ticked.write();
+                                        list.retain(|have| *have != id);
+                                        if event.checked() {
+                                            list.push(id);
+                                        }
+                                    },
+                                }
+                                span { {spec_choice(&spec)} }
+                            }
+                        }
+                        p { class: "muted-note", {tr(messages::SPEC_CHECKLIST_NOTE)} }
+                    }
                 }
                 ComplianceChoices { compliance }
                 if compliance().mode == ComplianceMode::Recurring {
@@ -1462,7 +1538,7 @@ async fn preview(from: AssetId, to: &AssetView) -> Result<Preview, MessageId> {
         .map(|view| (view.id, view.requirement))
         .collect();
     let bundles: Vec<Bundle> = bundles.into_iter().map(|(_, bundle)| bundle).collect();
-    let copied = copy_schedule(&listed, &bundles, &source.meters, &to.meters, to.id);
+    let copied = copy_schedule(&listed, &bundles, &[], &source.meters, &to.meters, to.id);
     Ok(Preview {
         requirements: copied.requirements.len(),
         bundles: copied.bundles.len(),
@@ -1700,6 +1776,7 @@ mod tests {
             applicability: Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         let done = DoneTask {
             requirement: test_id(40),

@@ -889,6 +889,16 @@ pub(crate) async fn fleet_due() -> ServerFnResult<FleetOutcome> {
     read!(reader => ::server::due::fleet(&reader.assets(), &zone).await, api::fleet_due(zone.clone()))
 }
 
+/// The Templates screen (`api::list_templates`, #084): read from the copy on a desktop that
+/// has one, offline too. Saving and applying a template need the server.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOutcome> {
+    read!(reader => ::server::templates::list(&reader.assets()).await, api::list_templates())
+}
+
 /// One vehicle's page (`api::vehicle_page`).
 ///
 /// # Errors

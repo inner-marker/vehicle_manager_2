@@ -209,6 +209,7 @@ mod lifecycle {
                         part_number: Some("FL-500S".into()),
                         quantity_milli: 1_000,
                         unit_price_minor: Some(1_299),
+                        spec: None,
                     }],
                     labor_seconds: Some(1_800),
                     labor_cost_minor: None,
@@ -313,12 +314,15 @@ mod lifecycle {
         .execute(&mut *connection)
         .await
         .unwrap();
-        // Today's `EventWriter` also writes each reading's reset flag (migration 0022), so the
-        // column is here while the events are written, and gone again before 0015 runs.
-        sqlx::query("ALTER TABLE event_readings ADD COLUMN reset INTEGER NOT NULL DEFAULT 0")
-            .execute(&mut *connection)
-            .await
-            .unwrap();
+        // Today's `EventWriter` also writes each reading's reset flag (migration 0022) and each
+        // part's spec (0025), so those columns are here while the events are written, and gone
+        // again before 0015 runs.
+        for added in [
+            "ALTER TABLE event_readings ADD COLUMN reset INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE task_parts ADD COLUMN spec_id BLOB",
+        ] {
+            sqlx::query(added).execute(&mut *connection).await.unwrap();
+        }
         create_event(connection, JOB, &oil_change()).await;
         let mut fix = oil_change();
         fix.corrects = Some(test_id(JOB));
@@ -329,10 +333,15 @@ mod lifecycle {
         gone.status = EventStatus::Draft;
         gone.finalized = None;
         create_event(connection, GONE, &gone).await;
-        sqlx::query("ALTER TABLE event_readings DROP COLUMN reset")
-            .execute(&mut *connection)
-            .await
-            .unwrap();
+        for dropped in [
+            "ALTER TABLE event_readings DROP COLUMN reset",
+            "ALTER TABLE task_parts DROP COLUMN spec_id",
+        ] {
+            sqlx::query(dropped)
+                .execute(&mut *connection)
+                .await
+                .unwrap();
+        }
         sqlx::query("UPDATE events SET deleted = 1 WHERE id = ?")
             .bind(test_id::<Event>(GONE).to_bytes().to_vec())
             .execute(&mut *connection)
@@ -654,6 +663,7 @@ mod lifecycle {
             applicability: Applicability::UnderReview,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         RequirementWriter
             .create(

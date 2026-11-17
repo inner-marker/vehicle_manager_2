@@ -132,6 +132,41 @@
 
 **Milestone 3 also checks:** message keys and cycles, Overdue past a dismiss or a snooze, waking by time or meter, snooze requests and the mark's field, the starting step's checks, who gets messages, retired vehicles left out, the fleet counts matching Due & issues, and migration 0024 on the release fixtures, all in the automated tests.
 
+## Milestone 4: specs and service bundles
+
+**Intended behavior:**
+- A vehicle's **Specs** (Maintenance → Specs) each have a name, an amount in its own unit with the other system beside it ("5.5 qt (5.2 L)"), a detail, a part number, and a note. Everyone who sees the schedule sees them; Maintainers change them.
+- A requirement ticks the specs its job uses. A task for it gets a **part** for each volume spec and each part-number spec, and a **reminder** for each torque, pressure, or length spec.
+- Saving a job whose pre-filled part differs from its spec asks **"Update the specs too?"**, each ticked; the job records what was used either way.
+- **Log this service** on a bundle card starts a job with a task for each of its requirements, parts pre-filled. Finishing it resets each requirement's own clock.
+- **Templates** (Manage → Templates): a vehicle's requirements, bundles, and specs saved under a name, and copied onto a vehicle with no schedule yet. The Admin renames and removes them.
+- Copy schedule brings the specs too.
+
+**Before you start:** `Test truck` has the oil change from milestone 2 (every 5,000 mi, 12 months, Oil life 15 %). Note its odometer (call it **K**).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 4.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open` with `schema_now` at least 25 (`0025_specs`); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 4.2 | **Mac browser**, Maintainer mode: `Test truck` → **Maintenance** | The views are **Schedule · Specs · Jobs · Set up**. **Specs** says "No specs yet …" and offers **+ Spec**. |
+| [ ] | 4.3 | **+ Spec**: Engine oil; Kind **Volume**; Amount 5.5, Unit **qt**; Detail "5W-30 full synthetic" → **Save**. Then **+ Spec** Oil filter (Kind **None**, Part number FL-500S), and **+ Spec** Drain plug torque (**Torque**, 30 **ft-lb**) | While typing 5.5 qt the dialog shows "= 5.2 L". The list, by name, each with a line under it: Drain plug torque "30 ft-lb (41 N·m)"; Engine oil "5.5 qt (5.2 L) · 5W-30 full synthetic"; Oil filter "Part FL-500S". |
+| [ ] | 4.4 | Open Engine oil → Unit **L** → **Save**; then back to **qt** → **Save**. Type Amount "lots" → **Save** | Shown as "5.5 L (5.8 qt)", then "5.5 qt (5.2 L)" again (as entered, never rounded through the other unit). "lots" is refused: "The amount must be more than zero." |
+| [ ] | 4.5 | **Set up** → edit **Engine oil & filter** | **Specs its job uses** lists the three, unticked. Tick Engine oil, Oil filter, and Drain plug torque → **Save**. |
+| [ ] | 4.6 | **+ Log** → **Maintenance**: the task from **Engine oil & filter** (the menu) | The task's parts: "Engine oil 5W-30 full synthetic (qt)", 5.5, and "Oil filter", FL-500S, 1. Below: "Reminder: Drain plug torque 30 ft-lb (41 N·m)". |
+| [ ] | 4.7 | Change the filter's part number to FL-910S and the oil's quantity to 6 → **Save draft** | "Update the specs too?" lists "Engine oil: 5.5 qt → 6 qt" and "Oil filter: FL-500S → FL-910S", both ticked. Untick the oil → **Save job**. The draft is saved. **Specs** shows the filter as FL-910S, the oil still 5.5 qt. |
+| [ ] | 4.8 | Edit the draft again, change nothing → **Save draft** | Asked again, now only about the oil (6 qt against the spec's 5.5); the filter matches its spec. Tick nothing → **Save job**. Remove the draft afterwards. |
+| [ ] | 4.9 | **Phone**, Sam (Driver): `Test truck` → **Maintenance** → **Specs** | The same specs, no **+ Spec**, and tapping one opens nothing. |
+| [ ] | 4.10 | **Mac**, Maintainer: **Set up** → **+ Requirement** Tire rotation (every 6,000 mi) and **+ Bundle** "Annual service" with both requirements | The **Schedule** shows the bundle card with **Log this service**. |
+| [ ] | 4.11 | **Log this service** | A new maintenance job, titled "Maintenance · Test truck", with two tasks: Engine oil & filter (parts pre-filled, ↺ Reset Oil life ticked, the reminder) and Tire rotation. |
+| [ ] | 4.12 | Odometer **K** → **Finish…** → **Finish and lock** | No spec question (the parts match their specs). One event with both tasks. On the **Schedule**, both requirements say last done today, each with its own next due (5,000 mi and 6,000 mi on). |
+| [ ] | 4.13 | **Set up** → **Save as template…** "Pickup basics" → **Save** | The **Templates** screen opens (also in the sidebar under Manage, with a wrench): "Pickup basics · 2 requirements · 1 bundle · 3 specs". |
+| [ ] | 4.14 | **Admin mode** → add a vehicle `Test van` (a truck, its profile's odometer). Back in Maintainer mode: **Templates** → **Apply to…** → Test van | "Copied 2 requirements, 1 bundle, and 3 specs onto Test van." The van's Maintenance shows them; its Engine oil & filter ticks the van's own specs; **Apply to…** no longer offers the van. |
+| [ ] | 4.15 | `Test truck` → **Specs** → change Drain plug torque to 35 ft-lb | The van's Drain plug torque is still 30 ft-lb: a copy, never linked. |
+| [ ] | 4.16 | **Templates** in Maintainer mode, then in **Admin mode** | Maintainer: no Rename or Remove. Admin: **Rename** to "Truck basics" works; **Remove** asks "Remove the template Truck basics? Vehicles it was applied to keep their copy." and removes it. The van keeps its schedule. |
+| [ ] | 4.17 | A new vehicle with no schedule → **Set up** | **Copy schedule from…** and **From a template…** (to Templates); no **Save as template…** until it has a requirement. Copy from `Test truck`: the specs come too. |
+| [ ] | 4.18 | **Desktop**, Sync now: `Test truck` → Specs; **Templates**; **Log this service** | The same specs and templates; a service job pre-fills as on the web. **Tailscale off:** Specs and Templates still show (from the copy); **+ Spec**, **Apply to…**, and Save say the server can't be reached; a service job can still be saved as a draft offline. |
+
+**Milestone 4 also checks:** units and conversions, amounts' checks, what a job offers back, templates leaving a vehicle's past behind, copying with specs re-linked, who may change specs and templates, and migration 0025 on the release fixtures, all in the automated tests.
+
 ## Results
 
 # Human Notes

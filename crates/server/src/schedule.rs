@@ -13,6 +13,11 @@
 //! A requirement a task has done (in a draft or a finished job) stays in the history: it can
 //! be turned off but not removed. Removing one also takes it out of the bundles, and a bundle
 //! left empty goes too.
+//!
+//! **Specs** (#084) are part of the schedule: everyone who sees it sees them, and whoever may
+//! change it may change them. A requirement ticks the vehicle's own specs; removing a spec
+//! unticks it everywhere (a job's parts keep what they recorded). Copying a schedule, or
+//! applying a template ([`crate::templates`]), copies its specs too, re-linked.
 
 use domain::access::{AssetAction, AssetScope, permits_on_asset};
 use domain::api::{AssetsOutcome, DueSubject, RequirementView, ScheduleOutcome};
@@ -21,10 +26,13 @@ use domain::command::{Change, Clearable};
 use domain::location::TimeZone;
 use domain::log_area;
 use domain::requirement::{
-    Bundle, BundleId, BundlePatch, Requirement, RequirementId, RequirementPatch,
-    RequirementProblem, check_bundle, check_compliance, check_rules, copy_schedule, last_done,
+    Bundle, BundleId, BundlePatch, CopiedSchedule, Requirement, RequirementId, RequirementPatch,
+    RequirementProblem, check_bundle, check_compliance, check_rules, check_specs, copy_schedule,
+    last_done,
 };
+use domain::spec::{Spec, SpecId, SpecPatch, check_spec};
 use storage::requirements::{BundleWriter, RequirementWriter};
+use storage::specs::SpecWriter;
 
 use crate::assets::{AssetsContext, unavailable};
 
@@ -65,7 +73,7 @@ impl AssetsContext<'_> {
             .map_err(|outcome| from_assets(&outcome))
     }
 
-    fn may_configure(&self, scope: AssetScope) -> bool {
+    pub(crate) fn may_configure(&self, scope: AssetScope) -> bool {
         permits_on_asset(
             &self.user.grants,
             self.user.mode,
@@ -75,7 +83,7 @@ impl AssetsContext<'_> {
     }
 
     /// Checks the person may change `asset`'s schedule.
-    async fn configurable(&self, asset: AssetId) -> Result<(), ScheduleOutcome> {
+    pub(crate) async fn configurable(&self, asset: AssetId) -> Result<(), ScheduleOutcome> {
         let scope = self.schedule_scope(asset).await?;
         if self.may_configure(scope) {
             Ok(())
@@ -84,7 +92,7 @@ impl AssetsContext<'_> {
         }
     }
 
-    async fn requirements_for(
+    pub(crate) async fn requirements_for(
         &self,
         asset: AssetId,
     ) -> Result<Vec<(RequirementId, Requirement)>, ScheduleOutcome> {
@@ -94,7 +102,7 @@ impl AssetsContext<'_> {
             .map_err(|error| failed("requirements", &error))
     }
 
-    async fn bundles_for(
+    pub(crate) async fn bundles_for(
         &self,
         asset: AssetId,
     ) -> Result<Vec<(BundleId, Bundle)>, ScheduleOutcome> {
@@ -102,6 +110,34 @@ impl AssetsContext<'_> {
             .bundles_of(asset)
             .await
             .map_err(|error| failed("bundles", &error))
+    }
+
+    pub(crate) async fn specs_for(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(SpecId, Spec)>, ScheduleOutcome> {
+        self.database
+            .specs_of(asset)
+            .await
+            .map_err(|error| failed("specs", &error))
+    }
+
+    async fn save_spec(&self, change: Change<Spec>) -> Result<(), ScheduleOutcome> {
+        self.save(&SpecWriter, change)
+            .await
+            .map_err(|outcome| from_assets(&outcome))
+    }
+
+    /// The stored spec, if the person may change its vehicle's schedule.
+    async fn configurable_spec(&self, id: SpecId) -> Result<Spec, ScheduleOutcome> {
+        let spec = self
+            .database
+            .spec(id)
+            .await
+            .map_err(|error| failed("spec", &error))?
+            .ok_or(ScheduleOutcome::NotFound)?;
+        self.configurable(spec.asset).await?;
+        Ok(spec)
     }
 
     /// Checks a requirement's rules against its vehicle's meters, and its mode and link: a
@@ -115,6 +151,13 @@ impl AssetsContext<'_> {
             .map_err(|error| failed("meters", &error))?;
         check_rules(&requirement.rules, &meters).map_err(invalid)?;
         domain::requirement::check_due_settings(requirement, &meters).map_err(invalid)?;
+        let specs: Vec<SpecId> = self
+            .specs_for(requirement.asset)
+            .await?
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        check_specs(&requirement.specs, &specs).map_err(invalid)?;
         let mut readable = Vec::new();
         if let Some(reference) = requirement.reference
             && crate::references::readable(self, reference)
@@ -229,6 +272,7 @@ async fn view_schedule(
     Ok(ScheduleOutcome::Schedule {
         requirements,
         bundles: context.bundles_for(asset).await?,
+        specs: context.specs_for(asset).await?,
         may_configure: context.may_configure(scope),
     })
 }
@@ -297,6 +341,7 @@ async fn edit_requirement_of(
             .then(|| Clearable::from_option(requirement.before_records)),
         warnings: (current.warnings != requirement.warnings)
             .then(|| Clearable::from_option(requirement.warnings)),
+        specs: (current.specs != requirement.specs).then_some(requirement.specs),
         ..RequirementPatch::default()
     };
     context
@@ -427,9 +472,9 @@ async fn delete_bundle_of(
 
 // --- Copying a schedule ------------------------------------------------------------------
 
-/// Copies `from`'s requirements and bundles onto `to` (#031), which must have none yet. Meter
-/// rules move to `to`'s meter with the same name and kind; ones with no match are left out
-/// and listed.
+/// Copies `from`'s requirements, bundles, and specs onto `to` (#031, #084), which must have
+/// no requirements yet. Meter rules move to `to`'s meter with the same name and kind; ones
+/// with no match are left out and listed.
 pub async fn copy(context: &AssetsContext<'_>, from: AssetId, to: AssetId) -> ScheduleOutcome {
     either(copy_onto(context, from, to).await)
 }
@@ -460,33 +505,56 @@ async fn copy_onto(
     let copied = copy_schedule(
         &context.requirements_for(from).await?,
         &bundles,
+        &context.specs_for(from).await?,
         &meters(from).await?,
         &meters(to).await?,
         to,
     );
+    let outcome = write_copied(context, copied).await?;
+    tracing::debug!(target: log_area::APP, %from, %to, ?outcome, "schedule copied");
+    Ok(outcome)
+}
+
+/// Writes a copied schedule (from another vehicle, or a template) onto its vehicle: its specs
+/// first, then its requirements with their specs re-linked, then its bundles with their
+/// requirements re-linked. Answers what was copied.
+///
+/// # Errors
+///
+/// The schedule answer to give if a change can't be saved.
+pub(crate) async fn write_copied(
+    context: &AssetsContext<'_>,
+    copied: CopiedSchedule,
+) -> Result<ScheduleOutcome, ScheduleOutcome> {
+    let mut new_specs: Vec<(SpecId, SpecId)> = Vec::new();
+    for (old, spec) in copied.specs {
+        let id: SpecId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
+        context
+            .save_spec(Change::Create {
+                id,
+                values: SpecPatch::all(spec),
+            })
+            .await?;
+        new_specs.push((old, id));
+    }
     let mut new_ids: Vec<(RequirementId, RequirementId)> = Vec::new();
     for (old, requirement) in copied.requirements {
         let id: RequirementId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
+        let specs = relinked(&requirement.specs, &new_specs);
         context
             .save_requirement(Change::Create {
                 id,
-                values: RequirementPatch::all(requirement),
+                values: RequirementPatch::all(Requirement {
+                    specs,
+                    ..requirement
+                }),
             })
             .await?;
         new_ids.push((old, id));
     }
     let copied_bundles = copied.bundles.len();
     for bundle in copied.bundles {
-        let requirements = bundle
-            .requirements
-            .iter()
-            .filter_map(|old| {
-                new_ids
-                    .iter()
-                    .find(|(was, _)| was == old)
-                    .map(|(_, id)| *id)
-            })
-            .collect();
+        let requirements = relinked(&bundle.requirements, &new_ids);
         let id: BundleId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
         context
             .save_bundle(Change::Create {
@@ -498,10 +566,106 @@ async fn copy_onto(
             })
             .await?;
     }
-    tracing::debug!(target: log_area::APP, %from, %to, requirements = new_ids.len(), bundles = copied_bundles, left_out = copied.left_out.len(), "schedule copied");
     Ok(ScheduleOutcome::Copied {
         requirements: new_ids.len(),
         bundles: copied_bundles,
+        specs: new_specs.len(),
         left_out: copied.left_out,
     })
+}
+
+/// `old` IDs mapped to their new ones by `pairs` (any without one dropped).
+fn relinked<T: Copy + PartialEq>(old: &[T], pairs: &[(T, T)]) -> Vec<T> {
+    old.iter()
+        .filter_map(|was| {
+            pairs
+                .iter()
+                .find(|(from, _)| from == was)
+                .map(|(_, id)| *id)
+        })
+        .collect()
+}
+
+// --- Specs ---------------------------------------------------------------------------------
+
+/// Adds a spec to its vehicle (#084).
+pub async fn add_spec(context: &AssetsContext<'_>, spec: Spec) -> ScheduleOutcome {
+    either(add_spec_to(context, spec).await)
+}
+
+async fn add_spec_to(
+    context: &AssetsContext<'_>,
+    spec: Spec,
+) -> Result<ScheduleOutcome, ScheduleOutcome> {
+    context.configurable(spec.asset).await?;
+    check_spec(&spec).map_err(|problem| ScheduleOutcome::InvalidSpec { problem })?;
+    let id: SpecId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
+    let asset = spec.asset;
+    context
+        .save_spec(Change::Create {
+            id,
+            values: SpecPatch::all(spec),
+        })
+        .await?;
+    tracing::debug!(target: log_area::APP, spec = %id, %asset, "spec added");
+    Ok(ScheduleOutcome::SavedSpec { id })
+}
+
+/// Changes a spec (its vehicle stays): from its dialog, or after a job ("Update the spec
+/// too?", #084).
+pub async fn edit_spec(context: &AssetsContext<'_>, id: SpecId, spec: Spec) -> ScheduleOutcome {
+    either(edit_spec_of(context, id, spec).await)
+}
+
+async fn edit_spec_of(
+    context: &AssetsContext<'_>,
+    id: SpecId,
+    spec: Spec,
+) -> Result<ScheduleOutcome, ScheduleOutcome> {
+    let current = context.configurable_spec(id).await?;
+    let spec = Spec {
+        asset: current.asset,
+        ..spec
+    };
+    check_spec(&spec).map_err(|problem| ScheduleOutcome::InvalidSpec { problem })?;
+    let patch = SpecPatch::changes(&current, spec);
+    context.save_spec(Change::Update { id, patch }).await?;
+    tracing::debug!(target: log_area::APP, spec = %id, "spec changed");
+    Ok(ScheduleOutcome::SavedSpec { id })
+}
+
+/// Removes a spec, and unticks it on its vehicle's requirements (jobs keep their parts).
+pub async fn delete_spec(context: &AssetsContext<'_>, id: SpecId) -> ScheduleOutcome {
+    either(delete_spec_of(context, id).await)
+}
+
+async fn delete_spec_of(
+    context: &AssetsContext<'_>,
+    id: SpecId,
+) -> Result<ScheduleOutcome, ScheduleOutcome> {
+    let spec = context.configurable_spec(id).await?;
+    for (requirement_id, requirement) in context.requirements_for(spec.asset).await? {
+        if !requirement.specs.contains(&id) {
+            continue;
+        }
+        let patch = RequirementPatch {
+            specs: Some(
+                requirement
+                    .specs
+                    .into_iter()
+                    .filter(|ticked| *ticked != id)
+                    .collect(),
+            ),
+            ..RequirementPatch::default()
+        };
+        context
+            .save_requirement(Change::Update {
+                id: requirement_id,
+                patch,
+            })
+            .await?;
+    }
+    context.save_spec(Change::Delete { id }).await?;
+    tracing::debug!(target: log_area::APP, spec = %id, "spec removed");
+    Ok(ScheduleOutcome::Done)
 }

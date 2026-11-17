@@ -67,7 +67,7 @@ impl QuantityError {
 const MAX_STORED: f64 = 1e15;
 
 /// A typed decimal: commas and spaces ignored, never negative. Also its number of decimals.
-fn number(text: &str) -> Result<(f64, usize), QuantityError> {
+pub(crate) fn number(text: &str) -> Result<(f64, usize), QuantityError> {
     let cleaned: String = text
         .chars()
         .filter(|c| *c != ',' && !c.is_whitespace())
@@ -93,7 +93,7 @@ fn number(text: &str) -> Result<(f64, usize), QuantityError> {
 }
 
 /// `value` rounded to the nearest whole number, for storing.
-fn whole(value: f64) -> Result<i64, QuantityError> {
+pub(crate) fn whole(value: f64) -> Result<i64, QuantityError> {
     let rounded = value.round();
     if !rounded.is_finite() || rounded.abs() > MAX_STORED {
         return Err(QuantityError::TooLarge);
@@ -106,7 +106,7 @@ fn whole(value: f64) -> Result<i64, QuantityError> {
 }
 
 /// A stored whole number as `f64` (exact: stored values stay within ±1e15).
-fn float(stored: i64) -> f64 {
+pub(crate) fn float(stored: i64) -> f64 {
     #[expect(
         clippy::cast_precision_loss,
         reason = "stored values stay within ±1e15, below 2^53, so the conversion is exact"
@@ -116,7 +116,7 @@ fn float(stored: i64) -> f64 {
 }
 
 /// A number with `decimals` places.
-fn fixed(value: f64, decimals: usize) -> String {
+pub(crate) fn fixed(value: f64, decimals: usize) -> String {
     format!("{value:.decimals$}")
 }
 

@@ -201,6 +201,33 @@ mod make_fixture {
         (id, view.meters[0].0)
     }
 
+    /// The oil change: every 5,000 mi or 6 months.
+    fn oil_change(truck: AssetId, odometer: MeterId) -> Requirement {
+        Requirement {
+            asset: truck,
+            name: Label::parse("Engine oil & filter").unwrap(),
+            notes: Notes::default(),
+            enabled: true,
+            rules: vec![
+                IntervalRule::Meter {
+                    meter: odometer,
+                    every: 5_000 * MILE,
+                },
+                IntervalRule::Calendar {
+                    every: 6,
+                    unit: CalendarUnit::Months,
+                    end_of_month: false,
+                },
+            ],
+            reference: None,
+            mode: ComplianceMode::Recurring,
+            applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
+            specs: vec![],
+        }
+    }
+
     /// A fuel-up, a requirement and a finished job doing it (with a part), and a squawk.
     async fn everyday(
         shop: &AssetsContext<'_>,
@@ -222,28 +249,7 @@ mod make_fixture {
             reported_economy: None,
         });
         saved(&add(driver, fuel_up).await);
-        let oil = Requirement {
-            asset: truck,
-            name: Label::parse("Engine oil & filter").unwrap(),
-            notes: Notes::default(),
-            enabled: true,
-            rules: vec![
-                IntervalRule::Meter {
-                    meter: odometer,
-                    every: 5_000 * MILE,
-                },
-                IntervalRule::Calendar {
-                    every: 6,
-                    unit: CalendarUnit::Months,
-                    end_of_month: false,
-                },
-            ],
-            reference: None,
-            mode: ComplianceMode::Recurring,
-            applicability: Applicability::Applies,
-            before_records: None,
-            warnings: None,
-        };
+        let oil = oil_change(truck, odometer);
         let ScheduleOutcome::SavedRequirement { id: oil } =
             server::schedule::add_requirement(shop, oil).await
         else {
@@ -260,6 +266,7 @@ mod make_fixture {
                     part_number: Some("FL-500S".into()),
                     quantity_milli: 1_000,
                     unit_price_minor: Some(1_299),
+                    spec: None,
                 }],
                 labor_seconds: Some(1_800),
                 labor_cost_minor: None,

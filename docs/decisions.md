@@ -991,3 +991,16 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Due & squawks**, the sidebar's screen, is built now: every due item the person can see across their vehicles, most urgent first, then the open squawks, with filters matching the strip.
 - **Why:** the human, 2026-11-16, choosing the recommended options throughout. A separate Overdue message is what makes "Overdue breaks through" work without a snooze that watches steps.
 - **Limits, accepted:** a snooze lives on one person's mark, so it doesn't hide the message from anyone else. Moving from Due soon to Due very soon doesn't make the message unread again. Snooze by meter needs a counting-up meter; Oil life items snooze by time, or by the odometer if a rule uses it.
+
+### 084. Specs: typed amounts kept as entered, linked from requirements, pre-filling a job's parts; household templates on their own screen; "Log this service" on a bundle
+*Decided: 2026-11-17 · Phase plan: phase-5.md milestone 4 · Sketch: `docs/ui-sketches/p5m4-specs-options.svg` (1A, 2A, 3A, 4B, 5A) · Builds on #031, #032, #080*
+
+- **Decision:**
+  - **A spec** (a vehicle's own list, #080) has a name, an optional **amount in a unit of its own kind**, a detail ("5W-30 full synthetic"), a part number, and a note. The kinds: **volume** (qt, L, US and imperial gal, fl oz), **torque** (ft-lb, in-lb, N·m), **pressure** (psi, kPa, bar), and **length** (in, mm). A spec can also be just a name and a part number.
+  - **Shown as entered, with the other system beside it:** "5.5 qt (5.2 L)", "150 ft-lb (203 N·m)". The manual's number stays exact.
+  - **Requirements tick the specs their job uses.** A task added for the requirement gets a **part** for each volume spec and each spec with a part number but no amount (the quantity is the amount, the unit in its text: "Engine oil 5W-30 (qt)", 5.5). Torque, pressure, and length specs show on the task as **reminders**.
+  - **"Update the spec too?"** Saving a job whose pre-filled part differs from its spec (part number or quantity) asks once, in a short dialog, each change ticked. The job always records what was used.
+  - **Templates** (#031): a Maintainer saves a vehicle's requirements, bundles, and specs as a named household template, and applies one to a vehicle they maintain. Applying **copies**; meters are matched by name and kind, as Copy schedule does. They live on a **Templates** screen under Manage; the Admin can rename or delete them.
+  - **Log this service:** each bundle card on the Schedule starts a maintenance job with a task for each of its requirements, parts pre-filled. Signing off a bundle in one event, each clock reset, already works (Phase 2).
+- **Why:** the human, 2026-11-17: typed values with units over free text, all four kinds; the recommended layouts except templates on a screen of their own.
+- **Limits, accepted:** a spec's amount converts for show only; it isn't checked against what a job used. A template's meter rules need meters of the same name and kind on the vehicle; any that don't match are left out and listed, as with Copy schedule.

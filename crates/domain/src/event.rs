@@ -292,6 +292,10 @@ pub struct Part {
     pub quantity_milli: i64,
     /// The price of one, in the event's currency's minor unit, if known.
     pub unit_price_minor: Option<i64>,
+    /// The vehicle spec it was pre-filled from, if any (#084): saving the job can then tell
+    /// whether the spec should change too.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spec: Option<crate::spec::SpecId>,
 }
 
 impl Part {

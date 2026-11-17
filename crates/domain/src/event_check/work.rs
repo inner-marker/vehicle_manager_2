@@ -213,6 +213,7 @@ mod tests {
             applicability: crate::requirement::Applicability::Applies,
             before_records: None,
             warnings: None,
+            specs: vec![],
         };
         vec![
             (
@@ -242,6 +243,7 @@ mod tests {
             part_number: None,
             quantity_milli,
             unit_price_minor,
+            spec: None,
         }
     }
 
