@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1690" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 5 · milestone 5 · Fuel economy: layout options</text>
+<text x="24" y="64" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme. A stretch runs full fill to full fill; partials add in; a missed fill-up drops its stretch (a gap). Figures in each person&#x27;s unit.</text>
+<text x="24" y="100" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · The Fuel tab&#x27;s top: the averages</text>
+<text x="24" y="120" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Last 5 stretches, last 12 months, all time (distance ÷ fuel over the stretches that count).</text>
+<rect x="24" y="140" width="460" height="170" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1A · Three tiles</text>
+<text x="44" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Same weight; the last 5 first</text>
+<rect x="44" y="210" width="132" height="74" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="232" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Last 5</text>
+<text x="56" y="258" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">24.6 mpg</text>
+<text x="56" y="276" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">5 stretches</text>
+<rect x="186" y="210" width="132" height="74" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="198" y="232" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">12 months</text>
+<text x="198" y="258" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">24.0 mpg</text>
+<text x="198" y="276" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">14 stretches</text>
+<rect x="328" y="210" width="132" height="74" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="340" y="232" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">All time</text>
+<text x="340" y="258" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">23.8 mpg</text>
+<text x="340" y="276" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">31 stretches</text>
+<rect x="516" y="140" width="460" height="170" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1B · One headline, two beside</text>
+<text x="536" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Last 5 large; the others smaller</text>
+<text x="536" y="240" font-size="30" fill="#e8eaed" font-weight="700" text-anchor="start">24.6 mpg</text>
+<text x="536" y="262" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">last 5 stretches</text>
+<text x="736" y="232" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">12 months  24.0 mpg</text>
+<text x="736" y="254" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">All time  23.8 mpg</text>
+<text x="736" y="276" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Car says 25.3 (last 5)</text>
+<text x="24" y="350" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · The chart (drawn by the app; no chart library)</text>
+<text x="24" y="370" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Each stretch&#x27;s figure in order; a dropped stretch is a gap, never a line across it.</text>
+<rect x="24" y="390" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="420" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · A line with a dot per stretch</text>
+<text x="44" y="440" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Average as a hairline; only the latest labelled</text>
+<line x1="74" y1="618.75" x2="454" y2="618.75" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="68" y="622.75" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">20</text>
+<line x1="74" y1="576.25" x2="454" y2="576.25" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="68" y="580.25" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">22</text>
+<line x1="74" y1="533.75" x2="454" y2="533.75" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="68" y="537.75" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">24</text>
+<line x1="74" y1="491.25" x2="454" y2="491.25" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="68" y="495.25" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">26</text>
+<line x1="74" y1="533.75" x2="454" y2="533.75" stroke="#6b7480" stroke-width="1" stroke-linecap="round"/>
+<text x="80" y="527.75" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="start">average 24.0</text>
+<polyline fill="none" stroke="#5aa9ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="80.0,531.625 113.63636363636363,542.25 147.27272727272725,508.25"/>
+<rect x="174.9090909090909" y="470" width="12" height="170" fill="#1a1e24"/>
+<polyline fill="none" stroke="#5aa9ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="214.54545454545453,559.25 248.18181818181816,514.625 281.8181818181818,504.0 315.45454545454544,597.5"/>
+<rect x="343.09090909090907" y="470" width="12" height="170" fill="#1a1e24"/>
+<polyline fill="none" stroke="#5aa9ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="382.7272727272727,535.875 416.3636363636363,525.25 449.99999999999994,510.375"/>
+<circle cx="80.0" cy="531.625" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="113.63636363636363" cy="542.25" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="147.27272727272725" cy="508.25" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="214.54545454545453" cy="559.25" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="248.18181818181816" cy="514.625" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="281.8181818181818" cy="504.0" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="315.45454545454544" cy="597.5" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="382.7272727272727" cy="535.875" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="416.3636363636363" cy="525.25" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<circle cx="449.99999999999994" cy="510.375" r="4" fill="#5aa9ff" stroke="#14171c" stroke-width="2"/>
+<text x="449.99999999999994" y="500.375" font-size="10.5" fill="#e8eaed" font-weight="600" text-anchor="middle">25.1</text>
+<text x="80" y="656" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="start">Mar</text>
+<text x="444" y="656" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">Nov</text>
+<text x="44" y="672" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Hover or tap a dot: date, figure, distance, fuel, the car&#x27;s own figure.</text>
+<rect x="516" y="390" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="420" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · A column per stretch</text>
+<text x="536" y="440" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Gaps are empty slots</text>
+<line x1="566" y1="618.75" x2="956" y2="618.75" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="560" y="622.75" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">20</text>
+<line x1="566" y1="576.25" x2="956" y2="576.25" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="560" y="580.25" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">22</text>
+<line x1="566" y1="533.75" x2="956" y2="533.75" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="560" y="537.75" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">24</text>
+<line x1="566" y1="491.25" x2="956" y2="491.25" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="560" y="495.25" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="end">26</text>
+<rect x="576" y="531.625" width="18" height="108.375" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="607" y="542.25" width="18" height="97.75" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="638" y="508.25" width="18" height="131.75" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="700" y="559.25" width="18" height="80.75" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="731" y="514.625" width="18" height="125.375" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="762" y="504.0" width="18" height="136.0" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="793" y="597.5" width="18" height="42.5" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="855" y="535.875" width="18" height="104.125" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="886" y="525.25" width="18" height="114.75" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<rect x="917" y="510.375" width="18" height="129.625" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="536" y="672" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Bars must start at a baseline; a 19 mpg floor exaggerates differences.</text>
+<text x="24" y="730" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Breakdowns</text>
+<text x="24" y="750" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Highway, towing, hauling in three bands each (shares weighted by fuel); and by towed vehicle.</text>
+<rect x="24" y="770" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="800" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · Small bars, a group each</text>
+<text x="44" y="820" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Average and how many stretches</text>
+<text x="44" y="846" font-size="10.5" fill="#9aa1ab" font-weight="600" text-anchor="start">HIGHWAY</text>
+<text x="44" y="867" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Mostly city</text>
+<rect x="164" y="856" width="102.60555555555555" height="14" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="272.60555555555555" y="867" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">21.9 mpg · 4</text>
+<text x="44" y="893" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Mixed</text>
+<rect x="164" y="882" width="111.50740740740743" height="14" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="281.5074074074074" y="893" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">23.8 mpg · 7</text>
+<text x="44" y="919" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Mostly highway</text>
+<rect x="164" y="908" width="119.94074074074075" height="14" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="289.94074074074075" y="919" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">25.6 mpg · 6</text>
+<text x="44" y="946" font-size="10.5" fill="#9aa1ab" font-weight="600" text-anchor="start">TOWING</text>
+<text x="44" y="967" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">None</text>
+<rect x="164" y="956" width="115.72407407407407" height="14" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="285.72407407407405" y="967" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">24.7 mpg · 13</text>
+<text x="44" y="993" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Some</text>
+<rect x="164" y="982" width="92.76666666666668" height="14" rx="3" fill="#5aa9ff" stroke="#5aa9ff"/>
+<text x="262.76666666666665" y="993" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">19.8 mpg · 3</text>
+<text x="44" y="1019" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Mostly</text>
+<text x="164" y="1019" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">not enough yet</text>
+<text x="44" y="1040" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Hauling and towed vehicles follow the same way.</text>
+<rect x="516" y="770" width="460" height="300" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="800" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · One table</text>
+<text x="536" y="820" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every band in rows</text>
+<text x="536" y="846" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Condition</text>
+<text x="736" y="846" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="end">Average</text>
+<text x="836" y="846" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="end">Stretches</text>
+<line x1="536" y1="856" x2="946" y2="856" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="870" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Mostly city</text>
+<text x="736" y="870" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">21.9 mpg</text>
+<text x="836" y="870" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">4</text>
+<line x1="536" y1="880" x2="946" y2="880" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="894" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Mixed</text>
+<text x="736" y="894" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">23.8 mpg</text>
+<text x="836" y="894" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">7</text>
+<line x1="536" y1="904" x2="946" y2="904" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="918" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Mostly highway</text>
+<text x="736" y="918" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">25.6 mpg</text>
+<text x="836" y="918" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">6</text>
+<line x1="536" y1="928" x2="946" y2="928" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="942" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">No towing</text>
+<text x="736" y="942" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">24.7 mpg</text>
+<text x="836" y="942" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">13</text>
+<line x1="536" y1="952" x2="946" y2="952" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="966" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Some towing</text>
+<text x="736" y="966" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">19.8 mpg</text>
+<text x="836" y="966" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">3</text>
+<line x1="536" y1="976" x2="946" y2="976" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="990" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Towing the camper</text>
+<text x="736" y="990" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">19.6 mpg</text>
+<text x="836" y="990" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">2</text>
+<line x1="536" y1="1000" x2="946" y2="1000" stroke="#2a2f37" stroke-width="1" stroke-linecap="round"/>
+<text x="536" y="1014" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">No hauling</text>
+<text x="736" y="1014" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="end">24.2 mpg</text>
+<text x="836" y="1014" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">15</text>
+<text x="24" y="1110" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">4 · Each fuel-up&#x27;s line, and the ⓘ on the form</text>
+<text x="24" y="1130" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">One layout: the Fuel tab&#x27;s list says how each fuel-up counted; the form explains the two boxes.</text>
+<rect x="24" y="1150" width="952" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1180" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">4A · The list, and the form&#x27;s ⓘ</text>
+<rect x="44" y="1202" width="440" height="42" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1220" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">12 Nov  ·  12.4 gal · full</text>
+<text x="56" y="1236" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">24.9 mpg over 309 mi · car said 25.4</text>
+<rect x="44" y="1250" width="440" height="42" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1268" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">2 Nov  ·  5.0 gal · partial</text>
+<text x="56" y="1284" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">counts in the next full fill-up</text>
+<rect x="44" y="1298" width="440" height="42" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1316" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">28 Oct  ·  13.1 gal · full · missed one before</text>
+<text x="56" y="1332" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">not counted: an earlier fill-up wasn&#x27;t logged</text>
+<text x="516" y="1214" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Fuel-up form</text>
+<rect x="516" y="1231" width="14" height="14" rx="3" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="523" y="1242" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">✓</text>
+<text x="538" y="1242" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Filled full  ⓘ</text>
+<rect x="516" y="1259" width="14" height="14" rx="3" fill="#101318" stroke="#5b6470"/>
+<text x="538" y="1270" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Missed previous fill-up  ⓘ</text>
+<rect x="516" y="1286" width="430" height="92" rx="8" fill="#262b33" stroke="#444c58"/>
+<text x="530" y="1308" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Filled full: the tank was filled until the pump stopped.</text>
+<text x="530" y="1328" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Economy runs from one full fill to the next; a partial</text>
+<text x="530" y="1346" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">fill&#x27;s fuel is added in, and it has no figure of its own.</text>
+<text x="530" y="1366" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">(Opened by the ⓘ; Escape or tapping away closes it.)</text>
+<text x="24" y="1440" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">5 · The vehicle&#x27;s Overview</text>
+<text x="24" y="1460" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">One layout: the latest stretch, the last-5 average, the last fill-up.</text>
+<rect x="24" y="1480" width="952" height="150" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1510" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">5A · A Fuel panel</text>
+<rect x="44" y="1528" width="420" height="86" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1548" font-size="10.5" fill="#9aa1ab" font-weight="600" text-anchor="start">FUEL</text>
+<text x="56" y="1576" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">24.9 mpg</text>
+<text x="170" y="1576" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">latest · last 5: 24.6</text>
+<text x="56" y="1598" font-size="11.5" fill="#4a8fe7" font-weight="400" text-anchor="start">Last fill-up 12 Nov · See all on Fuel →</text>
+<text x="24" y="1660" font-size="13" fill="#1b1f24" font-weight="600" text-anchor="start">Recommended: 1A, 2A, 3A (with a table view behind it), 4A, 5A.</text>
+</svg>

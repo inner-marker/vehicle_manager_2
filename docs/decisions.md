@@ -1004,3 +1004,16 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Log this service:** each bundle card on the Schedule starts a maintenance job with a task for each of its requirements, parts pre-filled. Signing off a bundle in one event, each clock reset, already works (Phase 2).
 - **Why:** the human, 2026-11-17: typed values with units over free text, all four kinds; the recommended layouts except templates on a screen of their own.
 - **Limits, accepted:** a spec's amount converts for show only; it isn't checked against what a job used. A template's meter rules need meters of the same name and kind on the vehicle; any that don't match are left out and listed, as with Copy schedule.
+
+### 085. Fuel economy: stretches from full fill to full fill, averages as distance over fuel, three bands per condition, and a line chart with gaps
+*Decided: 2026-11-17 · Phase plan: phase-5.md milestone 5 · Sketch: `docs/ui-sketches/p5m5-fuel-options.svg` (1A, 2A, 3A, 4A, 5A) · Builds on #033, #080*
+
+- **Decision:**
+  - **A stretch** runs from one full fill to the next on the vehicle's fuel odometer (its first distance meter that fuel-ups require). Its figure is that distance over all the fuel bought after the first fill, up to and including the last: partial fills add in and have no figure of their own (#080).
+  - **Dropped:** a stretch with a **Missed previous fill-up** in it, or a missing reading, counts in no figure, and the chart shows a gap.
+  - **Averages:** the last 5 stretches, the last 12 months, and all time, each as total distance over total fuel (never an average of figures). In each person's economy unit.
+  - **Breakdowns:** a stretch's highway, towing, and hauling shares are its fills' shares weighted by fuel. Highway: mostly city (30% or less), mixed, mostly highway (70% or more). Towing and hauling: none, some (under 50%), mostly (50% or more). By towed vehicle: a stretch counts for a vehicle if any of its fills names it; "Not towing" is the stretches that name none.
+  - **The car's own figure** (#033) shows beside the app's for the stretch it ends.
+  - **The screens:** the Fuel tab starts with three tiles (last 5, 12 months, all time), then a line chart (a dot per stretch, gaps for dropped ones, the average as a hairline, details on hover or tap, and a table view), then the breakdowns as small bars from zero. Each fuel-up in the list says how it counted. **Filled full** and **Missed previous fill-up** get an **ⓘ** on the form. The Overview's Fuel panel shows the latest stretch, the last-5 average, and the last fill-up.
+- **Why:** the human, 2026-11-17, choosing the recommended options throughout. Totals over totals keep a short stretch from weighing as much as a long one.
+- **Limits, accepted:** one wrong reading or volume makes one wrong stretch, which shows plainly in the chart and the list; nothing is hidden as an outlier. A partial fill before the first full one counts in nothing.
