@@ -353,7 +353,7 @@
 |---|---|---|
 | **3.0** `docs:` | ☑️ | This plan; the sketch; decision #083; milestone 2 marked ✅. |
 | **3a** `feat(domain):` due messages | ☑️ | `MessageKind::Due`, their keys (cycle, and Overdue apart), severity, and button; `Snooze` on `MessageMark` and its patch, and the inbox leaving out snoozed messages until they wake; the household's `due_messages_from`; the fleet counts. Unit tests first (the starting step; Overdue past a dismiss and a snooze; a sign-off starting a new cycle; waking by time and by meter; role filtering). |
-| **3b** `feat(storage):` migration 0024 | ⬜ | `message_marks.snooze` and `preferences.due_messages_from`, nullable JSON, so existing rows read as before. The release fixtures migrate. |
+| **3b** `feat(storage):` migration 0024 | ☑️ | `message_marks.snooze` and `preferences.due_messages_from`, nullable JSON, so existing rows read as before. The release fixtures migrate. |
 | **3c** `feat(server):` | ⬜ | Due messages in each person's inbox, for the vehicles their role covers (the inbox takes the device's time zone, as the Garage does); **Snooze** and **Wake now**; the fleet counts on the Garage; the Due & squawks list across vehicles; the Admin's starting step. The desktop gets the same, offline, from its copy, and its marks sync as before. |
 | **3d** `feat(app):` the screens | ⬜ | The **Snooze ▾** menu and **Custom…** (row 1), the fleet strip (row 2), the Due & squawks screen in place of its placeholder (row 3), the Household setting and the **Snoozed** filter (row 4). |
 | **3e** `docs:` | ⬜ | Milestone 3's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
@@ -382,6 +382,17 @@
 - **Tests:**
   - domain: a step reached by the reading that took it there, and by the start of a date's day; the snooze meter; the fleet counts; which steps can start messages; the household's starting step;
   - inbox: the starting step, severity, and button; one message per cycle and one for Overdue; Overdue after a dismiss and a snooze; waking by time or by meter; snooze requests; the mark's new field.
+
+**Step 3b notes (2026-11-16):**
+- **`0024_due_messages.sql`** only adds nullable columns, so every existing row reads as before:
+  - `message_marks.snooze`, as JSON (`until`, and `meter` with its value);
+  - `preferences.due_messages_from`, by name like the other settings (`due-soon`).
+- **Storage:** a mark's writer stores its snooze, and a patch can set or clear it (Wake now) while read and dismissed changes leave it alone. A snooze this build can't read counts as none, so the message shows. Sync copies whole rows, so marks' snoozes reach the desktop with no change there.
+- **Ahead of 3c, so the gap never existed:** the server refuses `due_messages_from` in a person's own preferences, and the Admin's must be Coming up, Due soon, or Due very soon. Anything else gets the same answer as backwards warnings (`BadDueWarnings`), since the screen only offers those three.
+- **Tests:**
+  - storage: a snooze kept through a dismiss, cleared, and an unreadable one ignored; the starting step stored by name and put back to the default;
+  - the release fixtures migrate with no snoozes and no starting step;
+  - server: a person can't choose their own starting step; OK and Overdue are refused; the Admin's choice is everyone's, and goes back to Due soon.
 
 **API version:** stays at 2. Snooze is a new field on an existing record, not a new operation, and older desktops are already stopped by the schema check (as in milestone 2).
 

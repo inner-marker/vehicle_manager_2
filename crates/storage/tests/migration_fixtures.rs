@@ -136,8 +136,8 @@ async fn rows_before(file: &Path) -> (i64, i64) {
 }
 
 /// Every meter and reading survived the rebuild of `meters` (migration 0022), with every
-/// meter counting up and not resettable, and no reading a reset; and migration 0023's
-/// columns read as empty.
+/// meter counting up and not resettable, and no reading a reset; and migrations 0023's and
+/// 0024's columns read as empty.
 #[cfg(test)]
 async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, i64)) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -167,4 +167,18 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
             assert_eq!(document.warn_days, None, "{}", fixture.display());
         }
     }
+    // Migration 0024: no mark is snoozed, and due messages start at the default.
+    assert_eq!(
+        (
+            count("SELECT count(*) FROM message_marks WHERE snooze IS NOT NULL")
+                .await
+                .unwrap(),
+            count("SELECT count(*) FROM preferences WHERE due_messages_from IS NOT NULL")
+                .await
+                .unwrap()
+        ),
+        (0, 0),
+        "{}",
+        fixture.display()
+    );
 }
