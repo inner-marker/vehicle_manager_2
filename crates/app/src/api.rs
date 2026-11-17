@@ -16,7 +16,7 @@ use domain::api::{
     DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, Handshake,
     InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
     ReferencesOutcome, ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome,
-    SwitchModeOutcome, UserAdminOutcome,
+    SwitchModeOutcome, TemplatesOutcome, UserAdminOutcome,
 };
 use domain::secret::Secret;
 use domain::sync::{PullOutcome, PushOutcome};
@@ -1600,6 +1600,126 @@ pub(crate) async fn copy_schedule(
     .await)
 }
 
+/// Adds a spec to its vehicle (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/add")]
+pub(crate) async fn add_spec(spec: domain::spec::Spec) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::add_spec(&context, spec).await
+    })
+    .await)
+}
+
+/// Changes a spec, from its dialog or after a job (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/edit")]
+pub(crate) async fn edit_spec(
+    id: domain::spec::SpecId,
+    spec: domain::spec::Spec,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::edit_spec(&context, id, spec).await
+    })
+    .await)
+}
+
+/// Removes a spec, unticking it on its vehicle's requirements (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/delete")]
+pub(crate) async fn delete_spec(id: domain::spec::SpecId) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::delete_spec(&context, id).await
+    })
+    .await)
+}
+
+/// The Templates screen (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/templates")]
+pub(crate) async fn list_templates() -> ServerFnResult<TemplatesOutcome> {
+    Ok(
+        server_side::with_templates(async |context| ::server::templates::list(&context).await)
+            .await,
+    )
+}
+
+/// Saves a vehicle's schedule as a template named `name` (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/save")]
+pub(crate) async fn save_template(
+    from: domain::asset::AssetId,
+    name: domain::label::Label,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::save(&context, from, name).await
+    })
+    .await)
+}
+
+/// Applies a template to a vehicle with no schedule yet (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/apply")]
+pub(crate) async fn apply_template(
+    id: domain::template::TemplateId,
+    to: domain::asset::AssetId,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::apply(&context, id, to).await
+    })
+    .await)
+}
+
+/// Renames a template (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/rename")]
+pub(crate) async fn rename_template(
+    id: domain::template::TemplateId,
+    name: domain::label::Label,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::rename(&context, id, name).await
+    })
+    .await)
+}
+
+/// Removes a template (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/delete")]
+pub(crate) async fn delete_template(
+    id: domain::template::TemplateId,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(
+        server_side::with_templates(async |context| {
+            ::server::templates::delete(&context, id).await
+        })
+        .await,
+    )
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -2203,6 +2323,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::ScheduleOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a templates request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_templates(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::TemplatesOutcome,
+    ) -> domain::api::TemplatesOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::TemplatesOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

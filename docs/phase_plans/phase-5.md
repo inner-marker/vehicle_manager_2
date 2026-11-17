@@ -482,7 +482,7 @@
 | **4.0** `docs:` | ☑️ | This plan; the sketch; decision #084; milestone 3 marked ✅. |
 | **4a** `feat(domain):` specs and templates | ☑️ | `domain::spec` (the spec, its units and conversions, its checks); `Requirement::specs`; a part's spec; pre-filling a task's parts and reminders; what differs from the specs; `ScheduleTemplate`, saved from a vehicle and applied as a copy; Copy schedule with specs. Unit tests first. |
 | **4b** `feat(storage):` migration 0025 | ☑️ | A `specs` table, `requirements.specs`, a job's part's spec, and a `schedule_templates` table; both new tables reach the desktop's copy. The release fixtures migrate. |
-| **4c** `feat(server):` | ⬜ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
+| **4c** `feat(server):` | ☑️ | Specs (everyone whose role covers the vehicle sees them; Maintainers change them); updating specs after a job; templates (save from a vehicle, apply to one, rename and delete by the Admin); Copy schedule with specs. |
 | **4d** `feat(app):` the screens | ⬜ | The Specs view and dialog (rows 1, 2), the requirement's Specs checklist, pre-filled parts and reminders on a job's task, "Update the spec too?" (row 3), the Templates screen and **Save as template…** (row 4), and **Log this service** (row 5). |
 | **4e** `docs:` | ⬜ | Milestone 4's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
@@ -519,6 +519,25 @@
   - a job's part keeping its spec (the maintenance round trip);
   - the release fixtures migrate with no specs, templates, ticked specs, or parts from specs.
 - **Tidying:** the test of migration 0015 writes events with today's writer on a version-14 database, so it now adds `task_parts.spec_id` while it does (as it already did for readings' `reset`) and drops it before 0015 runs. The release fixture's oil change moved into its own function, keeping `everyday` under 80 lines.
+
+**Step 4c notes (2026-11-17):**
+- **Specs on the server (`server::schedule`):**
+  - The schedule's answer carries the vehicle's specs, by name, so everyone who sees the schedule sees them.
+  - `add_spec`, `edit_spec`, and `delete_spec` need the same permission as changing the schedule (a Maintainer on the vehicle, in Maintainer mode or above). A spec stays on its vehicle; a bad one is `ScheduleOutcome::InvalidSpec`.
+  - **"Update the spec too?"** is just `edit_spec`: the screen offers it only to someone who may change the schedule.
+  - Removing a spec unticks it on the vehicle's requirements; jobs keep their parts.
+  - A requirement's ticked specs must be the vehicle's own, each once (`RequirementProblem::BadSpecs`), and editing a requirement can change them.
+- **Copying:** Copy schedule and applying a template share `schedule::write_copied`: specs first, then requirements with their specs re-linked, then bundles. `ScheduleOutcome::Copied` now says how many specs.
+- **Templates (`server::templates`):**
+  - **List:** anyone signed in, with what each holds, the vehicles the person may apply one to (they may change its schedule, and it has none yet), and whether they may manage them.
+  - **Save** from a vehicle: whoever may change its schedule; it needs at least one requirement (`RequirementProblem::NothingToSave`).
+  - **Apply** to a vehicle with no requirements yet, as Copy schedule (`ScheduleNotEmpty` otherwise).
+  - **Rename** and **remove:** the household's Admin, in Admin mode (`AdminAction::ManageServerSettings`). Vehicles keep their copies.
+- **Endpoints:** `/api/v1/specs/add`, `/edit`, `/delete`; `GET /api/v1/templates`; `/api/v1/templates/save`, `/apply`, `/rename`, `/delete`. On the desktop, the Templates list is read from its copy (offline too; it has no caller until 4d). Changing specs and templates goes to the server, like other schedule changes.
+- **Tests** (server, `tests/specs.rs`):
+  - a Driver can't add a spec and a Maintainer can; a part number that's too long is refused; a requirement can't tick another vehicle's spec; Sam sees the specs; an edit keeps a spec on its vehicle; removing one unticks it; a Driver can't remove one;
+  - Copy schedule brings the specs, re-linked;
+  - a template: nothing to save at first; a Driver can't save one; its counts; the vehicles it can go on; applied as a copy, not twice; renamed and removed only by the Admin in Admin mode; the van keeps its copy.
 
 **API version:** stays at 2. Specs and templates are Maintainer and Admin changes, which go to the server like other schedule changes, so the desktop gains no operations. A pre-filled part's spec is a new field inside a job, read as none by older records.
 

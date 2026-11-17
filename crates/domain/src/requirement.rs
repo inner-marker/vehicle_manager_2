@@ -420,6 +420,8 @@ pub enum RequirementProblem {
     BadBeforeRecords,
     /// Specs that aren't this vehicle's, or one twice (#084).
     BadSpecs,
+    /// A template from a vehicle with no requirements (#084).
+    NothingToSave,
 }
 
 impl RequirementProblem {
@@ -438,6 +440,7 @@ impl RequirementProblem {
             Self::BadBundleItem => messages::BUNDLE_BAD_ITEM,
             Self::InUse => messages::REQUIREMENT_IN_USE,
             Self::ScheduleNotEmpty => messages::SCHEDULE_NOT_EMPTY,
+            Self::NothingToSave => messages::TEMPLATE_NOTHING_TO_SAVE,
             Self::OneTimeWithRules => messages::REQUIREMENT_ONE_TIME_WITH_RULES,
             Self::BadWarnings => messages::DUE_BAD_WARNINGS,
             Self::BadBeforeRecords => messages::REQUIREMENT_BAD_BEFORE_RECORDS,

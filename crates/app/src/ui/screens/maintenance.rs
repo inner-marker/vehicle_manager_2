@@ -86,6 +86,8 @@ impl MaintenanceView {
 struct Schedule {
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// The vehicle's specs, by name (#084).
+    specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
     may_configure: bool,
 }
 
@@ -102,12 +104,14 @@ fn use_schedule(
                 Ok(ScheduleOutcome::Schedule {
                     requirements,
                     bundles,
+                    specs,
                     may_configure,
                 }) => {
-                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), "schedule loaded");
+                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), specs = specs.len(), "schedule loaded");
                     Ok(Schedule {
                         requirements,
                         bundles,
+                        specs,
                         may_configure,
                     })
                 }
@@ -124,11 +128,13 @@ fn use_schedule(
 fn refusal(outcome: &ScheduleOutcome) -> MessageId {
     match outcome {
         ScheduleOutcome::Invalid { problem } => problem.message(),
+        ScheduleOutcome::InvalidSpec { problem } => problem.message(),
         ScheduleOutcome::NotFound => messages::VEHICLE_NOT_FOUND,
         ScheduleOutcome::NotAllowed => messages::VEHICLES_NOT_ALLOWED,
         ScheduleOutcome::Schedule { .. }
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
+        | ScheduleOutcome::SavedSpec { .. }
         | ScheduleOutcome::Copied { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::Unavailable => messages::SOMETHING_WENT_WRONG,

@@ -516,6 +516,7 @@ mod maintenance {
             requirements,
             bundles,
             left_out,
+            ..
         } = schedule::copy(&shop, truck, van).await
         else {
             panic!("the schedule wasn't copied");
@@ -531,6 +532,7 @@ mod maintenance {
             requirements: copied,
             bundles,
             may_configure,
+            ..
         } = schedule::view(&shop, van, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no van schedule");

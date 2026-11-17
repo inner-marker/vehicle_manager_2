@@ -1302,6 +1302,7 @@ spec-kind-length = Length or gap
 spec-bad-detail = The detail can be up to 100 characters.
 spec-bad-part-number = The part number can be up to 40 characters.
 spec-bad-amount = The amount must be more than zero.
+template-nothing-to-save = This vehicle has no requirements to save as a template yet.
 
 ## Events: fuel-ups and readings (milestone 6)
 

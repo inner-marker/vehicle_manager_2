@@ -1783,6 +1783,8 @@ define_messages! {
     SPEC_BAD_PART_NUMBER => "spec-bad-part-number",
     /// Specs: the amount isn't above zero.
     SPEC_BAD_AMOUNT => "spec-bad-amount",
+    /// Templates: the vehicle has no requirements to save.
+    TEMPLATE_NOTHING_TO_SAVE => "template-nothing-to-save",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.
