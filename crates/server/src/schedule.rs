@@ -31,8 +31,10 @@ use domain::requirement::{
     last_done,
 };
 use domain::spec::{Spec, SpecId, SpecPatch, check_spec};
+use domain::usage::{Usage, UsageId, UsagePatch, match_usages};
 use storage::requirements::{BundleWriter, RequirementWriter};
 use storage::specs::SpecWriter;
+use storage::usages::UsageWriter;
 
 use crate::assets::{AssetsContext, unavailable};
 
@@ -158,6 +160,17 @@ impl AssetsContext<'_> {
             .map(|(id, _)| id)
             .collect();
         check_specs(&requirement.specs, &specs).map_err(invalid)?;
+        if let Some(usages) = &requirement.usages {
+            let known: Vec<UsageId> = self
+                .database
+                .usages_of(requirement.asset)
+                .await
+                .map_err(|error| failed("usages", &error))?
+                .into_iter()
+                .map(|(id, _)| id)
+                .collect();
+            domain::requirement::check_usages(usages, &known).map_err(invalid)?;
+        }
         let mut readable = Vec::new();
         if let Some(reference) = requirement.reference
             && crate::references::readable(self, reference)
@@ -273,6 +286,11 @@ async fn view_schedule(
         requirements,
         bundles: context.bundles_for(asset).await?,
         specs: context.specs_for(asset).await?,
+        usages: context
+            .database
+            .usages_of(asset)
+            .await
+            .map_err(|error| failed("usages", &error))?,
         may_configure: context.may_configure(scope),
     })
 }
@@ -342,6 +360,8 @@ async fn edit_requirement_of(
         warnings: (current.warnings != requirement.warnings)
             .then(|| Clearable::from_option(requirement.warnings)),
         specs: (current.specs != requirement.specs).then_some(requirement.specs),
+        usages: (current.usages != requirement.usages)
+            .then(|| Clearable::from_option(requirement.usages)),
         ..RequirementPatch::default()
     };
     context
@@ -510,14 +530,20 @@ async fn copy_onto(
         &meters(to).await?,
         to,
     );
-    let outcome = write_copied(context, copied).await?;
+    let from_usages = context
+        .database
+        .usages_of(from)
+        .await
+        .map_err(|error| failed("usages", &error))?;
+    let outcome = write_copied(context, copied, &from_usages).await?;
     tracing::debug!(target: log_area::APP, %from, %to, ?outcome, "schedule copied");
     Ok(outcome)
 }
 
 /// Writes a copied schedule (from another vehicle, or a template) onto its vehicle: its specs
-/// first, then its requirements with their specs re-linked, then its bundles with their
-/// requirements re-linked. Answers what was copied.
+/// and the usages its requirements tick (`from_usages`, matched by name, made where the
+/// vehicle lacks them, #086) first, then its requirements with both re-linked, then its
+/// bundles with their requirements re-linked. Answers what was copied.
 ///
 /// # Errors
 ///
@@ -525,7 +551,9 @@ async fn copy_onto(
 pub(crate) async fn write_copied(
     context: &AssetsContext<'_>,
     copied: CopiedSchedule,
+    from_usages: &[(UsageId, Usage)],
 ) -> Result<ScheduleOutcome, ScheduleOutcome> {
+    let new_usages = copy_usages(context, &copied, from_usages).await?;
     let mut new_specs: Vec<(SpecId, SpecId)> = Vec::new();
     for (old, spec) in copied.specs {
         let id: SpecId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
@@ -541,11 +569,16 @@ pub(crate) async fn write_copied(
     for (old, requirement) in copied.requirements {
         let id: RequirementId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
         let specs = relinked(&requirement.specs, &new_specs);
+        let usages = requirement
+            .usages
+            .as_ref()
+            .map(|usages| relinked(usages, &new_usages));
         context
             .save_requirement(Change::Create {
                 id,
                 values: RequirementPatch::all(Requirement {
                     specs,
+                    usages,
                     ..requirement
                 }),
             })
@@ -572,6 +605,59 @@ pub(crate) async fn write_copied(
         specs: new_specs.len(),
         left_out: copied.left_out,
     })
+}
+
+/// The copied requirements' usages on the new vehicle: matched by name (its default for the
+/// default), or made there (#086). Old ID to new.
+async fn copy_usages(
+    context: &AssetsContext<'_>,
+    copied: &CopiedSchedule,
+    from_usages: &[(UsageId, Usage)],
+) -> Result<Vec<(UsageId, UsageId)>, ScheduleOutcome> {
+    let ticked: Vec<UsageId> = copied
+        .requirements
+        .iter()
+        .filter_map(|(_, requirement)| requirement.usages.as_ref())
+        .flatten()
+        .copied()
+        .collect();
+    let Some((_, first)) = copied.requirements.first() else {
+        return Ok(Vec::new());
+    };
+    let to = first.asset;
+    let to_usages = context
+        .database
+        .usages_of(to)
+        .await
+        .map_err(|error| failed("usages", &error))?;
+    let mut pairs = Vec::new();
+    for (old, found) in match_usages(&ticked, from_usages, &to_usages) {
+        if let Some(found) = found {
+            pairs.push((old, found));
+            continue;
+        }
+        let Some((_, usage)) = from_usages.iter().find(|(id, _)| *id == old) else {
+            continue;
+        };
+        let id: UsageId = context.new_id().map_err(|outcome| from_assets(&outcome))?;
+        let made = Usage {
+            asset: to,
+            default: false,
+            ..usage.clone()
+        };
+        context
+            .save(
+                &UsageWriter,
+                Change::Create {
+                    id,
+                    values: UsagePatch::all(made),
+                },
+            )
+            .await
+            .map_err(|outcome| from_assets(&outcome))?;
+        pairs.push((old, id));
+    }
+    Ok(pairs)
 }
 
 /// `old` IDs mapped to their new ones by `pairs` (any without one dropped).

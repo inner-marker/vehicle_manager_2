@@ -167,6 +167,19 @@ pub async fn start(
             {
                 tracing::error!(target: log_area::APP, %error, "can't make the default group; vehicles can't be added until it exists");
             }
+            // Every vehicle needs its default usage (#086): make any missing (every vehicle
+            // from before usages).
+            if let Some(device) = SERVER_DEVICE.get().copied()
+                && let Err(error) = crate::usages::ensure_default_usages(
+                    &database,
+                    device,
+                    health::current(),
+                    clock.as_ref(),
+                )
+                .await
+            {
+                tracing::error!(target: log_area::APP, %error, "can't make default usages; readiness will be missing for some vehicles");
+            }
             // The place data (#059): missing or broken data never stops the server.
             crate::places::load(paths.geodata_file.clone(), clock.now()).await;
             if let Some(server_device) = SERVER_DEVICE.get().copied() {

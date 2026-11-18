@@ -172,7 +172,7 @@ mod specs {
             before_records: None,
             warnings: None,
             specs: vec![test_id(OIL), test_id(FILTER)],
-            usages: vec![],
+            usages: None,
         }
     }
 
@@ -317,7 +317,7 @@ mod specs {
         };
         // A requirement keeps the usages it ticks; a template keeps the vehicle's usages.
         let mut oil = oil_change();
-        oil.usages = vec![test_id(70)];
+        oil.usages = Some(vec![test_id(70)]);
         RequirementWriter
             .create(
                 &mut connection,
@@ -332,7 +332,7 @@ mod specs {
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(stored.usages, vec![test_id(70)]);
+        assert_eq!(stored.usages, Some(vec![test_id(70)]));
         let template = ScheduleTemplate::from_vehicle(
             Label::parse("Pickup basics").unwrap(),
             &[],

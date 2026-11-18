@@ -899,6 +899,20 @@ pub(crate) async fn vehicle_fuel(asset: AssetId) -> ServerFnResult<domain::api::
     read!(reader => ::server::fuel::summary(&reader.assets(), asset).await, api::vehicle_fuel(asset))
 }
 
+/// A vehicle's readiness for each of its usages (`api::vehicle_readiness`, #086), in the
+/// device's zone, from the copy on a desktop that has one, offline too.
+///
+/// # Errors
+///
+/// As the server function.
+#[expect(dead_code, reason = "the Overview's card comes with step 6d")]
+pub(crate) async fn vehicle_readiness(
+    asset: AssetId,
+) -> ServerFnResult<domain::api::ReadinessOutcome> {
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::readiness::view(&reader.assets(), asset, &zone).await, api::vehicle_readiness(asset, zone.clone()))
+}
+
 /// The Templates screen (`api::list_templates`, #084): read from the copy on a desktop that
 /// has one, offline too. Saving and applying a template need the server.
 ///

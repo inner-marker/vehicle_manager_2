@@ -81,7 +81,7 @@ fn oil_change(rules: Vec<IntervalRule>) -> Requirement {
         before_records: None,
         warnings: None,
         specs: vec![],
-        usages: vec![],
+        usages: None,
     }
 }
 

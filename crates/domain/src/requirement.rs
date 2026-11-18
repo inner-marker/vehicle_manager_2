@@ -221,10 +221,11 @@ pub struct Requirement {
     /// reminders.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub specs: Vec<crate::spec::SpecId>,
-    /// The vehicle's usages it's needed for (#086); none listed means the default usage
-    /// (every requirement made before usages).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub usages: Vec<crate::usage::UsageId>,
+    /// The vehicle's usages it's needed for (#086): not set means the default usage (every
+    /// requirement made before usages); an empty list means none (it doesn't count for
+    /// readiness).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usages: Option<Vec<crate::usage::UsageId>>,
 }
 
 /// Where a requirement stands (worked out, never stored).
@@ -261,14 +262,12 @@ impl RequirementStatus {
 
 impl Requirement {
     /// Whether it's needed for usage `usage`, which is the vehicle's default if `default`:
-    /// ticked for it, or ticking none and it's the default (#086).
+    /// ticked for it, or (never set) it's the default (#086).
     #[must_use]
     pub fn needed_for(&self, usage: crate::usage::UsageId, default: bool) -> bool {
-        if self.usages.is_empty() {
-            default
-        } else {
-            self.usages.contains(&usage)
-        }
+        self.usages
+            .as_ref()
+            .map_or(default, |usages| usages.contains(&usage))
     }
 
     /// Where requirement `id` stands, from the finished tasks that did requirements (`done`):
@@ -332,8 +331,8 @@ record_patch! {
         warnings: Clearable<DueDefaults>,
         /// See [`Requirement::specs`] (the whole list).
         specs: Vec<crate::spec::SpecId>,
-        /// See [`Requirement::usages`] (the whole list).
-        usages: Vec<crate::usage::UsageId>,
+        /// See [`Requirement::usages`] (the whole list, or back to "the default").
+        usages: Clearable<Vec<crate::usage::UsageId>>,
     }
 }
 
@@ -353,7 +352,7 @@ impl RequirementPatch {
             before_records: Some(Clearable::from_option(requirement.before_records)),
             warnings: Some(Clearable::from_option(requirement.warnings)),
             specs: Some(requirement.specs),
-            usages: Some(requirement.usages),
+            usages: Some(Clearable::from_option(requirement.usages)),
         }
     }
 }
@@ -865,7 +864,7 @@ mod tests {
             before_records: None,
             warnings: None,
             specs: vec![],
-            usages: vec![],
+            usages: None,
         }
     }
 

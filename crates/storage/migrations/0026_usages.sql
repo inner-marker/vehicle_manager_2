@@ -6,7 +6,7 @@
 --   Each vehicle's default usage is made by the server, not here: its name and documents come
 --   from the vehicle's profile.
 -- - `requirements.usages`: the usages a requirement is needed for, a JSON array of their IDs
---   (as text). Empty for every existing requirement, which means the default usage.
+--   (as text); `[]` means none. NULL (every existing requirement) means the default usage.
 -- - `schedule_templates.usages`: a template's usages, with the IDs they had.
 
 CREATE TABLE usages (
@@ -21,6 +21,6 @@ CREATE TABLE usages (
 
 CREATE INDEX usages_by_asset ON usages (asset_id) WHERE deleted = 0;
 
-ALTER TABLE requirements ADD COLUMN usages TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE requirements ADD COLUMN usages TEXT;
 
 ALTER TABLE schedule_templates ADD COLUMN usages TEXT NOT NULL DEFAULT '[]';

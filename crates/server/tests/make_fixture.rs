@@ -225,7 +225,7 @@ mod make_fixture {
             before_records: None,
             warnings: None,
             specs: vec![],
-            usages: vec![],
+            usages: None,
         }
     }
 

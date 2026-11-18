@@ -14,9 +14,10 @@ use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
     DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, FuelOutcome,
-    Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
-    ReferencesOutcome, ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome,
-    SwitchModeOutcome, TemplatesOutcome, UserAdminOutcome,
+    Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome,
+    ReadinessOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
+    SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, TemplatesOutcome,
+    UserAdminOutcome,
 };
 use domain::secret::Secret;
 use domain::sync::{PullOutcome, PushOutcome};
@@ -1655,6 +1656,64 @@ pub(crate) async fn delete_spec(id: domain::spec::SpecId) -> ServerFnResult<Sche
     .await)
 }
 
+/// Adds a usage to its vehicle (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/add")]
+pub(crate) async fn add_usage(usage: domain::usage::Usage) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::add_usage(&context, usage).await
+    })
+    .await)
+}
+
+/// Changes a usage's name and the documents it needs (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/edit")]
+pub(crate) async fn edit_usage(
+    id: domain::usage::UsageId,
+    usage: domain::usage::Usage,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::edit_usage(&context, id, usage).await
+    })
+    .await)
+}
+
+/// Removes a usage (not the default), unticking it on requirements (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/delete")]
+pub(crate) async fn delete_usage(id: domain::usage::UsageId) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::delete_usage(&context, id).await
+    })
+    .await)
+}
+
+/// A vehicle's readiness for each of its usages, in the person's `zone` (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReadinessOutcome`] values.
+#[post("/api/v1/readiness")]
+pub(crate) async fn vehicle_readiness(
+    asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<ReadinessOutcome> {
+    Ok(server_side::with_readiness(async |context| {
+        ::server::readiness::view(&context, asset, &zone).await
+    })
+    .await)
+}
+
 /// The Templates screen (#084).
 ///
 /// # Errors
@@ -2351,6 +2410,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::FuelOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a readiness request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_readiness(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::ReadinessOutcome,
+    ) -> domain::api::ReadinessOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::ReadinessOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

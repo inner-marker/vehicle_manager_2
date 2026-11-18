@@ -267,6 +267,7 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
                 bundles,
                 specs,
                 may_configure,
+                ..
             }) => (requirements, bundles, specs, may_configure),
             _ => (Vec::new(), Vec::new(), Vec::new(), false),
         }

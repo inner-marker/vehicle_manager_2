@@ -42,6 +42,8 @@ fn from_schedule(outcome: ScheduleOutcome) -> TemplatesOutcome {
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
         | ScheduleOutcome::SavedSpec { .. }
+        | ScheduleOutcome::SavedUsage { .. }
+        | ScheduleOutcome::InvalidUsage { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::InvalidSpec { .. }
         | ScheduleOutcome::Unavailable => TemplatesOutcome::Unavailable,
@@ -171,8 +173,18 @@ async fn save_from(
         .meters_of(from)
         .await
         .map_err(|error| failed("meters", &error))?;
-    let template =
-        ScheduleTemplate::from_vehicle(name, &meters, &requirements, &bundles, &specs, &[]);
+    let template = ScheduleTemplate::from_vehicle(
+        name,
+        &meters,
+        &requirements,
+        &bundles,
+        &specs,
+        &context
+            .database
+            .usages_of(from)
+            .await
+            .map_err(|error| failed("usages", &error))?,
+    );
     let id: TemplateId = context
         .new_id()
         .map_err(|_| TemplatesOutcome::Unavailable)?;
@@ -214,7 +226,7 @@ async fn apply_to(
         .await
         .map_err(|error| failed("meters", &error))?;
     let copied = template.apply(&meters, to);
-    let outcome = crate::schedule::write_copied(context, copied)
+    let outcome = crate::schedule::write_copied(context, copied, &template.usages)
         .await
         .map_err(from_schedule)?;
     tracing::debug!(target: log_area::APP, template = %id, %to, ?outcome, "template applied");

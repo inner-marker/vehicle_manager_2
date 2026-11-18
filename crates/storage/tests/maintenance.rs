@@ -154,7 +154,7 @@ mod maintenance {
                 before_records: None,
                 warnings: None,
                 specs: vec![],
-                usages: vec![],
+                usages: None,
             };
             RequirementWriter
                 .create(

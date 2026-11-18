@@ -180,7 +180,7 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     assert_eq!(
         (
             count("SELECT count(*) FROM usages").await.unwrap(),
-            count("SELECT count(*) FROM requirements WHERE usages <> '[]'")
+            count("SELECT count(*) FROM requirements WHERE usages IS NOT NULL")
                 .await
                 .unwrap(),
             count("SELECT count(*) FROM schedule_templates WHERE usages <> '[]'")

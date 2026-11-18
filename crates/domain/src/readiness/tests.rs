@@ -20,7 +20,7 @@ fn usage(name: &str, default: bool, documents: &[&str]) -> Usage {
     }
 }
 
-fn requirement(name: &str, usages: Vec<UsageId>) -> Requirement {
+fn requirement(name: &str, usages: Option<Vec<UsageId>>) -> Requirement {
     Requirement {
         asset: test_id(1),
         name: Label::parse(name).unwrap(),
@@ -86,16 +86,19 @@ struct Truck {
 
 fn truck() -> Truck {
     let requirements = vec![
-        (test_id(20), requirement("Engine oil & filter", vec![])),
+        (test_id(20), requirement("Engine oil & filter", None)),
         (
             test_id(21),
-            requirement("Tire rotation", vec![test_id(TOWING)]),
+            requirement("Tire rotation", Some(vec![test_id(TOWING)])),
         ),
         (
             test_id(22),
-            requirement("Hitch inspection", vec![test_id(TOWING)]),
+            requirement("Hitch inspection", Some(vec![test_id(TOWING)])),
         ),
-        (test_id(23), requirement("Wipers", vec![test_id(DRIVABLE)])),
+        (
+            test_id(23),
+            requirement("Wipers", Some(vec![test_id(DRIVABLE)])),
+        ),
     ];
     let entry = |id: u32, name: &str, step| DueEntry {
         subject: DueSubject::Requirement {
@@ -264,11 +267,13 @@ fn a_due_step_gives_its_mark() {
 }
 
 #[test]
-fn a_requirement_ticking_none_is_the_defaults() {
-    let none = requirement("Oil", vec![]);
+fn a_requirement_never_set_is_the_defaults_and_none_is_none() {
+    let none = requirement("Oil", None);
     assert!(none.needed_for(test_id(DRIVABLE), true));
     assert!(!none.needed_for(test_id(TOWING), false));
-    let towing = requirement("Hitch", vec![test_id(TOWING)]);
+    let towing = requirement("Hitch", Some(vec![test_id(TOWING)]));
     assert!(!towing.needed_for(test_id(DRIVABLE), true));
     assert!(towing.needed_for(test_id(TOWING), false));
+    let nothing = requirement("Tire rotation", Some(vec![]));
+    assert!(!nothing.needed_for(test_id(DRIVABLE), true), "chosen: none");
 }

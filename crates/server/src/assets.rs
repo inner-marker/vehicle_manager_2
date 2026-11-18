@@ -178,6 +178,7 @@ async fn garage_view(
                 role,
                 plate: None,
                 due: None,
+                ready: None,
             })
         })
         .collect();
@@ -236,6 +237,10 @@ async fn fill_in_summaries(
             .await
             .map_err(|error| unavailable("due", &error))?;
         summary.due = due.most_urgent();
+        summary.ready =
+            crate::readiness::default_badge(database, summary.id, &due.entries, zone, now)
+                .await
+                .map_err(|error| unavailable("readiness", &error))?;
         summary.plate = current_plate(database, summary.id).await?;
         summary.standing = crate::lifecycle::standing(database, summary.id, summary.asset.status)
             .await
@@ -391,6 +396,7 @@ async fn add_asset(
             )
             .await?;
     }
+    crate::usages::make_default(context, id, &kind_profile.id).await?;
     tracing::info!(target: log_area::APP, user = %context.user.user, asset = %id, kind = kind_profile.id.as_str(), "vehicle added");
     Ok(AssetsOutcome::Added { id })
 }

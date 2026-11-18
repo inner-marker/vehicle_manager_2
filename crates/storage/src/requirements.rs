@@ -80,8 +80,8 @@ impl RecordWriter<Requirement> for RequirementWriter {
             &values.specs.clone().unwrap_or_default(),
             "requirements.specs",
         )?)
-        .bind(json_to_sql(
-            &values.usages.clone().unwrap_or_default(),
+        .bind(optional_json(
+            values.usages.clone().and_then(Clearable::into_option),
             "requirements.usages",
         )?)
         .bind(sequence)
@@ -102,6 +102,7 @@ impl RecordWriter<Requirement> for RequirementWriter {
         let before_records =
             clearable_json(patch.before_records.as_ref(), "requirements.before_records")?;
         let warnings = clearable_json(patch.warnings.as_ref(), "requirements.warnings")?;
+        let usages = clearable_json(patch.usages.as_ref(), "requirements.usages")?;
         sqlx::query(
             "UPDATE requirements SET
                  name = coalesce(?, name),
@@ -114,7 +115,7 @@ impl RecordWriter<Requirement> for RequirementWriter {
                  before_records = CASE WHEN ? THEN ? ELSE before_records END,
                  warnings = CASE WHEN ? THEN ? ELSE warnings END,
                  specs = coalesce(?, specs),
-                 usages = coalesce(?, usages),
+                 usages = CASE WHEN ? THEN ? ELSE usages END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -154,13 +155,8 @@ impl RecordWriter<Requirement> for RequirementWriter {
                 .map(|specs| json_to_sql(specs, "requirements.specs"))
                 .transpose()?,
         )
-        .bind(
-            patch
-                .usages
-                .as_ref()
-                .map(|usages| json_to_sql(usages, "requirements.usages"))
-                .transpose()?,
-        )
+        .bind(usages.0)
+        .bind(usages.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -260,7 +256,6 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
     let mode: String = row.try_get("mode")?;
     let applicability: String = row.try_get("applicability")?;
     let specs: String = row.try_get("specs")?;
-    let usages: String = row.try_get("usages")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?,
         Requirement {
@@ -284,7 +279,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
             )?,
             warnings: optional_from_json(row.try_get("warnings")?, "requirements.warnings")?,
             specs: json_from_sql(&specs, "requirements.specs")?,
-            usages: json_from_sql(&usages, "requirements.usages")?,
+            usages: optional_from_json(row.try_get("usages")?, "requirements.usages")?,
         },
     ))
 }

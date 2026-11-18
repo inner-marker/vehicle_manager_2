@@ -634,6 +634,7 @@ mod tests {
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
             due: None,
+            ready: None,
             standing: domain::lifecycle::Standing {
                 status,
                 ..domain::lifecycle::Standing::default()

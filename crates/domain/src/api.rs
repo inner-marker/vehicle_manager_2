@@ -484,6 +484,9 @@ pub struct AssetSummary {
     /// Its most urgent due step, if anything on it comes due (Phase 5, #082).
     #[serde(default)]
     pub due: Option<crate::due::DueStep>,
+    /// Its default usage's readiness: the usage's name and the answer (#086).
+    #[serde(default)]
+    pub ready: Option<(crate::label::Label, crate::readiness::Mark)>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -1224,6 +1227,21 @@ pub enum DueOutcome {
     Unavailable,
 }
 
+/// The answer to "is this vehicle ready to use?" (#086): each of its usages, the default first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ReadinessOutcome {
+    /// Readiness for each usage.
+    Readiness {
+        /// Them, the default first.
+        usages: Vec<crate::readiness::Readiness>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// A vehicle's fuel economy (#085): for its Fuel tab and its Overview.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FuelView {
@@ -1411,6 +1429,9 @@ pub enum ScheduleOutcome {
         /// Its specs, by name (#084).
         #[serde(default)]
         specs: Vec<(crate::spec::SpecId, crate::spec::Spec)>,
+        /// Its usages, the default first (#086).
+        #[serde(default)]
+        usages: Vec<(crate::usage::UsageId, crate::usage::Usage)>,
         /// The person may change it (a Maintainer or higher, in that mode).
         may_configure: bool,
     },
@@ -1428,6 +1449,11 @@ pub enum ScheduleOutcome {
     SavedSpec {
         /// Its ID.
         id: crate::spec::SpecId,
+    },
+    /// A usage was added or changed (#086).
+    SavedUsage {
+        /// Its ID.
+        id: crate::usage::UsageId,
     },
     /// A schedule was copied from another vehicle, or a template applied (#084).
     Copied {
@@ -1456,6 +1482,11 @@ pub enum ScheduleOutcome {
     InvalidSpec {
         /// Why.
         problem: crate::spec::SpecProblem,
+    },
+    /// The usage was refused (#086).
+    InvalidUsage {
+        /// Why.
+        problem: crate::usage::UsageProblem,
     },
     /// The server couldn't do it right now.
     Unavailable,

@@ -72,7 +72,7 @@ fn oil_change() -> Requirement {
         }),
         warnings: None,
         specs: vec![test_id(30)],
-        usages: vec![],
+        usages: None,
     }
 }
 

@@ -110,6 +110,7 @@ fn use_schedule(
                     bundles,
                     specs,
                     may_configure,
+                    ..
                 }) => {
                     tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), specs = specs.len(), "schedule loaded");
                     Ok(Schedule {
@@ -133,12 +134,14 @@ fn refusal(outcome: &ScheduleOutcome) -> MessageId {
     match outcome {
         ScheduleOutcome::Invalid { problem } => problem.message(),
         ScheduleOutcome::InvalidSpec { problem } => problem.message(),
+        ScheduleOutcome::InvalidUsage { problem } => problem.message(),
         ScheduleOutcome::NotFound => messages::VEHICLE_NOT_FOUND,
         ScheduleOutcome::NotAllowed => messages::VEHICLES_NOT_ALLOWED,
         ScheduleOutcome::Schedule { .. }
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
         | ScheduleOutcome::SavedSpec { .. }
+        | ScheduleOutcome::SavedUsage { .. }
         | ScheduleOutcome::Copied { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::Unavailable => messages::SOMETHING_WENT_WRONG,
@@ -924,7 +927,7 @@ fn requirement_from(
         before_records: None,
         warnings: None,
         specs: vec![],
-        usages: vec![],
+        usages: None,
     })
 }
 
@@ -1778,7 +1781,7 @@ mod tests {
             before_records: None,
             warnings: None,
             specs: vec![],
-            usages: vec![],
+            usages: None,
         };
         let done = DoneTask {
             requirement: test_id(40),

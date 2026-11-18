@@ -108,7 +108,7 @@ mod specs {
             before_records: None,
             warnings: None,
             specs,
-            usages: vec![],
+            usages: None,
         }
     }
 
