@@ -21,6 +21,7 @@ pub mod due;
 pub mod event;
 pub mod event_check;
 pub mod event_form;
+pub mod formula;
 pub mod fuel;
 pub mod garage;
 pub mod group;

@@ -1628,6 +1628,60 @@ usage-towable = Towable
 usage-usable = Usable
 usage-name-taken = This vehicle already has a usage with that name.
 usage-default-stays = The default usage can't be removed; rename it instead.
+formula-word-distance = distance
+formula-word-volume = volume
+formula-word-time = time
+formula-word-money = money
+# $unit (string): its parts, e.g. "distance² ÷ time".
+formula-dim-other = an unusual unit ({ $unit })
+formula-dim-number = a number
+formula-dim-distance = a distance
+formula-dim-volume = a volume
+formula-dim-time = a time
+formula-dim-money = money
+formula-dim-economy = fuel economy
+formula-dim-money-per-distance = money per distance
+formula-dim-money-per-volume = money per volume
+formula-dim-speed = a speed
+formula-empty = Type a formula.
+# $max (number): the most characters.
+formula-too-long = A formula can be at most { $max } characters.
+formula-unexpected-end = The formula stops too soon: something is missing at the end.
+# $found (string): what was found. $position (number): its character position.
+formula-unexpected = "{ $found }" doesn't fit there (character { $position }).
+# $position (number): the bracket's character position.
+formula-unclosed = The bracket at character { $position } is never closed.
+# $name (string): the name typed.
+formula-unknown-function = There's no function called "{ $name }".
+# $max (number): the most places.
+formula-bad-places = round takes a whole number of places, from 0 to { $max }.
+# $key (string): the key typed.
+formula-unknown-key = There's no value called "{ $key }" here.
+# $key (string): the key typed.
+formula-not-a-meter = "{ $key }" isn't a meter; this needs one of the vehicle's meters.
+# $key (string): the meter's key. $wanted (string): what it should measure.
+formula-wrong-meter = "{ $key }" doesn't measure { $wanted }.
+formula-hours-need-meter = Say which hour meter: last 50 h on engine-hours.
+# $expression (string): the sum, as written. $left, $right (string): what each side measures.
+formula-mismatch-plus = { $expression }: can't add { $left } to { $right }.
+# $expression (string): the difference, as written. $left, $right (string): what each side measures.
+formula-mismatch-minus = { $expression }: can't take { $right } from { $left }.
+# $function (string): the function's name.
+formula-mixed-values = Everything inside { $function } must measure the same thing.
+formula-nested-over = A function over past events can't go inside another one.
+# $found (string): what the formula gives. $wanted (string): what the field shows.
+formula-wrong-result = This gives { $found }, but the field shows { $wanted }.
+# $key (string): the value's key.
+formula-no-value-missing = No value: { $key } was left out.
+formula-no-value-no-earlier = No value: there's no earlier one to count from.
+formula-no-value-nothing-in-over = No value: none of those events has one.
+formula-no-value-divide-by-zero = No value: it divides by zero.
+formula-no-value-mixed-currencies = No value: it mixes currencies.
+formula-no-value-not-positive = No value: this mean needs every value above zero.
+formula-no-value-too-few = No value: stddev needs at least two values.
+formula-no-value-no-odometer = No value: this vehicle has no odometer to count back on.
+formula-no-value-not-finite = No value: the result is too big to show.
+formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
 usage-section = Usages
 usage-section-note = Each usage stands alone: what's ticked "Needed for" it, and the documents it needs. A High issue blocks every usage.
 usage-add = + Usage
