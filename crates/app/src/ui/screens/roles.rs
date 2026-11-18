@@ -333,6 +333,7 @@ mod tests {
                 role: Role::Admin,
                 plate: None,
                 due: None,
+                ready: None,
             }],
             can_add: true,
             can_manage_groups: true,

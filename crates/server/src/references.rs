@@ -296,6 +296,7 @@ async fn add_reference(
         before_records: None,
         warnings: None,
         specs: vec![],
+        usages: None,
     };
     check_compliance(&requirement, &[id])
         .map_err(|problem| ReferencesOutcome::InvalidRequirement { problem })?;

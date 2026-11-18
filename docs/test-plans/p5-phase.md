@@ -199,6 +199,47 @@
 
 **Milestone 5 also checks:** stretches, partials, each way a stretch is dropped, the averages' spans, the bands' edges, towed vehicles, drafts counting and corrections standing in for what they correct, and a property test that a dropped stretch never moves an average, all in the automated tests.
 
+## Milestone 6: Ready to use?
+
+**Intended behavior:**
+- **Usages:** every vehicle has a default usage, named for its kind: **Drivable** (car, truck, motorcycle), **Towable** (trailer), or **Usable** (equipment). Each usage lists the document types it needs; a road vehicle's default needs Registration and Insurance. Maintainers add more (Maintenance → Set up → **Usages**), rename them, and remove any but the default.
+- **Needed for:** each requirement ticks the usages it's needed for. One never changed counts for the default; unticking everything leaves it needed for none.
+- **Each usage stands alone:**
+  - A requirement needed for it is ✗ when overdue, ! when due soon or very soon, and ✓ otherwise.
+  - A needed document is ✗ when expired **or not on file**, ! when due soon, and ✓ otherwise.
+  - Every open or deferred **High** issue is ✗ for every usage.
+  - The answer is the worst of these.
+- **Ready to use?** on the Overview: a chip per usage (when there's more than one), the headline, every item with its mark, name, reason, and a link, and "Advice only: nothing stops anyone from using it." The **Garage** card shows the default usage's answer in words. Colour is never the only sign.
+- Copy schedule and templates bring the usages the requirements chose, matched by name. It all reads the same on the desktop, offline included.
+
+**Before you start:** use a new vehicle, so earlier steps' documents and issues don't get in the way. The household's due warnings are the built-in ones (60 / 30 / 14 days before a date).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 6.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open` with `schema_now` at least 26 (`0026_usages`); `default usages made` with `made` equal to the number of vehicles (on the first start after updating only); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 6.2 | **Mac browser**, `admin`: the **Garage** | Every active vehicle's card has a readiness chip beside any due chip: `Test truck` "✗ Not drivable" or "! Drivable" or "✓ Drivable", `Test trailer` a Towable one, any equipment a Usable one. Archived vehicles have none. Each chip has its symbol and words. |
+| [ ] | 6.3 | **Admin mode** → add a truck, `Ready truck` (its profile's odometer). Open its **Overview** | Under the squawks, **READY TO USE?**: no usage chips (only one usage); "✗ Not drivable: 2 things" in red; Registration "Not on file" and Insurance "Not on file", each with ✗; "Advice only: nothing stops anyone from using it." Its Garage card says "✗ Not drivable". |
+| [ ] | 6.4 | Tap **Insurance** in the card | The vehicle's **Documents** tab opens. |
+| [ ] | 6.5 | **Documents** → **+ Document**: Registration expiring in a year → **Save**; **+ Document**: Insurance expiring in 20 days → **Save**. Back to the **Overview** | "! Drivable: 1 thing due soon" in orange: Insurance (!) "by …" first, then Registration (✓) "by …". The Garage card says "! Drivable". |
+| [ ] | 6.6 | **Maintainer mode**: **Maintenance** → **Set up**, below the bundles | **USAGES** with **+ Usage**: "Drivable (default)", "Needs: Registration, Insurance", and **Edit**. |
+| [ ] | 6.7 | **Edit** on Drivable | The dialog has the name, **Documents it needs** (Title, Registration, Insurance; the last two ticked), **Save** and **Cancel**, and **no Remove**. Cancel. |
+| [ ] | 6.8 | **+ Usage**: Towing, tick only Registration → **Save**. Then **+ Usage** "towing" → **Save** | Towing is listed after Drivable: "Needs: Registration". The second is refused: "This vehicle already has a usage with that name." Cancel. |
+| [ ] | 6.9 | The **Overview** | Two chips, "! Drivable" (chosen) and "✓ Towing". Tap **Towing**: "✓ Towing", with Registration (✓) its only item. Tap **Drivable** to go back. The Garage card still shows Drivable. |
+| [ ] | 6.10 | **Set up** → **+ Requirement** | **Needed for** lists Drivable (ticked) and Towing (unticked), with "Overdue: not ready for the ticked usages. Due soon: a warning." |
+| [ ] | 6.11 | Name it Hitch inspection; **+ Calendar rule** every 1 month; **Last done before these records** two months ago. Under **Needed for**, tick **Towing** and untick **Drivable** → **Save** | Saved. Edit it again: Towing ticked, Drivable not. Cancel. |
+| [ ] | 6.12 | The **Overview** | "! Drivable" (unchanged: the hitch isn't needed for it) and "✗ Towing". On Towing: "✗ Not towing: 1 thing", Hitch inspection (✗) "was due …" first, then Registration (✓). Tapping Hitch inspection opens **Maintenance**. |
+| [ ] | 6.13 | **+ Requirement** Wiper blades, every 12 months, leaving **Needed for** alone (Drivable ticked), last done today → **Save**. The Overview on Drivable | Wiper blades is listed with ✓ under Drivable; it isn't on Towing's list. |
+| [ ] | 6.14 | **Usages** → **Edit** Drivable → rename it "Street legal" → **Save**; check the Overview and the Garage; then rename it back to Drivable | "Street legal (default)"; the chip "! Street legal" on the Overview and the Garage. Back to Drivable afterwards. |
+| [ ] | 6.15 | **Phone**, Sam (Driver, give them the role on `Ready truck` if needed): its **Overview**, then **+ Squawk**: "Brakes grinding", **High** → **Save**; the Overview again | Before: the same card as the Mac. After: both usages ✗. Drivable: "✗ Not drivable: 1 thing" (Insurance stays !), with "Brakes grinding" (✗) "High issue, open"; Towing: "✗ Not towing: 2 things", the issue and the hitch. Tapping it opens the squawk. The Garage card says "✗ Not drivable". Sam has no **Set up** tab. |
+| [ ] | 6.16 | **Mac**, **Admin mode**: add a truck, `Ready van`. **Maintainer mode**: its **Set up** → **Copy schedule from…** `Ready truck` | The van's **Usages**: "Drivable (default)" and "Towing" (made on the van, "Needs: Registration"). Its Hitch inspection is needed for its own Towing; its Wiper blades for Drivable. |
+| [ ] | 6.17 | `Ready truck` → **Set up** → **Save as template…** "Ready basics"; add a truck `Ready pickup`; **Templates** → **Apply to…** Ready pickup | The pickup gets Towing too, and the requirements tick it as on the truck. |
+| [ ] | 6.18 | `Ready truck` → **Usages** → **Edit** Towing → **Remove**. Then edit Hitch inspection | Towing is gone; the Overview has no chips again. Hitch inspection's **Needed for** has nothing ticked (needed for none, not the default), and it's not on Drivable's list. |
+| [ ] | 6.19 | **Desktop**, Sync now: the Garage and `Ready truck`'s Overview | The same chips, headline, and items as on the web. |
+| [ ] | 6.20 | **Desktop, Tailscale off** (wait for **OFFLINE**): the Overview; then **Set up** → **+ Usage** → Save | Ready to use? still shows, worked out from the copy. Saving a usage says the server can't be reached. Tailscale on. |
+| [ ] | 6.21 | **Phone**, Sam: the squawk from 6.15 → change it to **Low** → **Save**. The Overview | The issue is gone from every usage; "! Drivable: 1 thing due soon" again. |
+
+**Milestone 6 also checks:** each item's mark, the worst-first order, a usage needing nothing and needed for nothing, deferred High issues, never a second default, unknown usages refused, removing a usage leaving requirements needed for none, matching usages by name when copying, sign-offs and deferrals needing a Maintainer, and migration 0026 on the release fixtures, all in the automated tests.
+
 ## Results
 
 # Human Notes

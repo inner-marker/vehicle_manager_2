@@ -78,6 +78,20 @@ impl AssetsContext<'_> {
         permits_on_asset(&self.user.grants, self.user.mode, action, scope)
     }
 
+    /// A job's sign-offs and deferrals need the right to disposition squawks (#063, #086): a
+    /// Maintainer on the vehicle, in Maintainer mode or above.
+    fn check_dispositions(&self, event: &Event, scope: AssetScope) -> Result<(), EventsOutcome> {
+        let dispositions = event
+            .work
+            .as_ref()
+            .is_some_and(|work| !work.dispositions.is_empty());
+        if dispositions && !self.permits(AssetAction::DispositionSquawk, scope) {
+            tracing::debug!(target: log_area::APP, user = %self.user.user, "refused: signing off or deferring a squawk");
+            return Err(EventsOutcome::NotAllowed);
+        }
+        Ok(())
+    }
+
     /// Whether the person may change, finalize, or correct `event`.
     pub(crate) fn may_manage(&self, event: &Event, scope: AssetScope) -> bool {
         self.permits(AssetAction::ManageEvents, scope)
@@ -447,6 +461,7 @@ async fn add_event(
     let kind = input.kind;
     let now = context.clock.now();
     let mut event = input.into_draft(context.user.user, now);
+    context.check_dispositions(&event, scope)?;
     // A desktop's operation was made earlier than the server receives it.
     event.last_edited_at = context.origin.made_at(now);
     let warnings = context.checked(&mut event, scope, &[], false).await?;
@@ -504,6 +519,7 @@ async fn edit_event(
             event
         }
     };
+    context.check_dispositions(&event, scope)?;
     let warnings = context.checked(&mut event, scope, &[id], false).await?;
     let tasks = event.work.as_ref().map_or(0, |work| work.tasks.len());
     context
@@ -622,6 +638,7 @@ async fn correct_event(
     event.last_edited_at = context.origin.made_at(now);
     event.corrects = Some(original_id);
     event.correction_reason = Some(reason);
+    context.check_dispositions(&event, scope)?;
     check_correction(&original, original_id, &event).map_err(invalid)?;
     if context
         .database

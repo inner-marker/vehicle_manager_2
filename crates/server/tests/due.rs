@@ -157,6 +157,7 @@ mod due {
             }),
             warnings: None,
             specs: vec![],
+            usages: None,
         }
     }
 

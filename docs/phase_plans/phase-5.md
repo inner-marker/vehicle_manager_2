@@ -36,8 +36,8 @@
 | 2 | **What's due** | ✅ | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
 | 3 | **Due messages and snooze** | ✅ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected; the Garage's **fleet strip** and the **Due & squawks** screen (#083) | Snooze "1 week or 500 mi"; it returns at whichever comes first |
 | 4 | **Specs and service bundles** | ✅ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
-| 5 | **Fuel economy** | 🔨 | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
-| 6 | **Readiness** | ⬜ | **Operation types** in the profiles (**Normal use** on each ground profile; **Towing** on the truck); **needed for use** on requirements and documents; **"Ready to use?"** on the Overview, each item with ✓ or ✗ and its reason; the Garage badge; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; deferred High: not ready |
+| 5 | **Fuel economy** | ✅ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
+| 6 | **Readiness** | ☑️ | **Usages** per vehicle (#086): a default named for its kind (Drivable, Towable, Usable) needing its profile's documents, and more added by Maintainers; each requirement **needed for** chosen usages; **"Ready to use?"** on the Overview, each usage with every item's ✓, !, or ✗ and its reason; the Garage chip; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; an open or deferred High: not ready |
 | 7 | **Calculated fields and derived meters** | ⬜ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
 **Releases:** **`v0.5.0` at the end of Phase 5** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.3.0` had. The version follows the phase's number, since Phase 4 moved after the MVP (#041).
@@ -647,3 +647,93 @@
 **Open issues** (reviewed 2026-11-17): #26 (a fuel-up's saved location) is about logging, not economy; not now.
 
 **Not in this milestone:** readiness (milestone 6), formulas and derived meters (milestone 7), reports and exports (Phase 6).
+
+### Milestone 6 plan: readiness
+
+*Agreed 2026-11-18 · branch `milestone/p5-m6-readiness` · sketch: `docs/ui-sketches/p5m6-readiness-options.svg` · Decision #086*
+
+**Choices (the human, 2026-11-18):**
+- **Usages per vehicle**, made by Admins and Maintainers, in place of operation types in the profiles: groundwork for aviation's VFR, IFR, oceanic, and ETOPS; ground vehicles might have Local, Highway, Towing.
+- **The default usage** is named for the kind: Drivable, Towable, or Usable.
+- **Each usage stands alone**; overlap is ticking an item for several.
+- **One "needed for" switch** (per usage) for requirements, not a separate "safety-related" flag.
+- **Existing requirements** all count for the default usage.
+- **Documents:** the default usage needs the profile's registration and insurance (not title); existing vehicles too. **A needed document not on file** makes the vehicle not ready.
+- **Copying** keeps usages, matched by name.
+- **The sketch: 1A, 2A, 3A, 4A.**
+  - **1A:** the Overview's **Ready to use?**: usage chips (the default first), a headline ("✗ Not drivable: 2 things"), then every item with ✓, !, or ✗, its reason, and a link; "Advisory: from the records; it certifies nothing."
+  - **2A:** a chip on each Garage card for the default usage: "✗ Not drivable", "! Drivable", "✓ Towable".
+  - **3A:** a **Usages** section in Maintenance → Set up: each usage's name and the document types it needs; **+ Usage**.
+  - **4A:** **Needed for** ticks in the requirement dialog; a new requirement starts with the default usage ticked.
+
+**The rules, in `domain` (test-first):**
+- **A usage:** a vehicle's, with a name (a label), whether it's the default, and the document types it needs. One default per vehicle; names unique per vehicle (ignoring case).
+- **The profiles** name each kind's default usage and its needed document types.
+- **A requirement's usages:** the vehicle's, each once; **none listed** means the default usage (every existing requirement).
+- **Readiness for a usage** from the vehicle's due items (milestone 2), documents, and squawks:
+  - a requirement ticked for it: Overdue ✗; Due soon or Due very soon !; otherwise ✓ (not on the schedule: not listed);
+  - a document type it needs: the current one expired ✗, due soon !, current ✓; **none on file ✗**;
+  - each open or deferred **High** issue ✗ (every usage);
+  - the answer: ✗ if any ✗, else ! if any !, else ✓.
+- **Copying:** a requirement's usages move to the new vehicle's usages of the same name (ignoring case); missing ones are created.
+- **Dispositions:** a job's sign-offs and deferrals need `AssetAction::DispositionSquawk` on the vehicle.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **6.0** `docs:` | ☑️ | This plan; the sketch; decision #086; milestone 5 marked ✅. |
+| **6a** `feat(domain):` readiness | ☑️ | `domain::usage` (the record, its checks, the default from the profile); `Requirement::usages`; the readiness calculation; copying usages by name; the disposition check. Unit tests first (each mark, a missing document, High blocking every usage, a deferred High, standing alone, the default for existing requirements). |
+| **6b** `feat(storage):` migration 0026 | ☑️ | A `usages` table and `requirements.usages` (empty for every existing requirement, so the default). Each vehicle's default usage made at startup if it has none, and when a vehicle is added. Both reach the desktop's copy. The release fixtures migrate. |
+| **6c** `feat(server):` | ☑️ | Usages (Admins and Maintainers change them; everyone who sees the vehicle sees them); readiness for each of a vehicle's usages (the Overview); the default usage's answer on each Garage card; Copy schedule and templates with usages; sign-offs and deferrals checked directly. |
+| **6d** `feat(app):` the screens | ☑️ | **Ready to use?** on the Overview (row 1), the Garage chip (row 2), the Usages section (row 3), and **Needed for** (row 4). |
+| **6e** `docs:` | ☑️ | Milestone 6's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 6a notes (2026-11-18):**
+- **The profiles** each gained `default_usage` (Drivable, Towable, or Usable) and `usage_documents` (registration and insurance on cars, trucks, motorcycles, and trailers; none on generators and other equipment); every profile's version went up by one.
+- **`domain::usage`:** `Usage` (a vehicle, a name, whether it's the default, the document types it needs), `UsageId`, `UsagePatch`, and `check_usage` (a name of its own, ignoring case; each document type once; `UsageProblem`). `default_usage` makes a vehicle's from its kind's profile ("Usable" with none for a kind without one). `match_usages` maps a copied schedule's usages to the new vehicle's by name, the default to its default, and says which to create.
+- **`Requirement::usages`** (and its patch field), with `check_usages` and `Requirement::needed_for`: ticking none means the default usage, so every existing requirement counts for it with no change to its data.
+- **`domain::readiness`:** `readiness` for one usage from a vehicle's `VehicleRecords` (its requirements, what's due, its documents, its open and deferred High issues, and today). Each `ReadinessItem` has a `Mark` (✓, !, ✗) and an `ItemReason`: a requirement and where it stands, a needed document type's current document (the latest to expire among those not renewed; one that never expires counts as current) or **none on file**, or a High issue (deferred or not). Items run worst first; the answer is the worst mark.
+- **Templates** carry the vehicle's usages too (`ScheduleTemplate::usages`, read as none by templates saved before).
+- **Not here after all:** the disposition check. It's the server's (6c), where a job's permissions are already checked; there's nothing for `domain` to work out.
+- **Tests:** a usage's checks; each kind's default (title left out; a kind without a profile); matching usages by name and the default by being the default; the default usage counting requirements that tick none and needing its documents (one missing, one due soon); each usage standing alone; a High issue blocking a usage that needs nothing, deferred too; a renewed document giving way to its renewal; each due step's mark; `needed_for`.
+- **Tidying:** the fuel example in `domain::fuel`'s docs made its IDs with `test_support`, which only a full workspace build turns on; it now makes them with `Id::generate`.
+
+**Step 6b notes (2026-11-18):**
+- **`0026_usages.sql`:**
+  - `usages`: each vehicle's usages (a name, whether it's the default, and the document types it needs as JSON);
+  - `requirements.usages`: a JSON list, empty for every existing requirement, which means the default usage;
+  - `schedule_templates.usages`.
+- **Storage:** `storage::usages` (`UsageWriter`, `usage`, and `usages_of`, the default first, then by name). Once made, a usage's vehicle and whether it's the default don't change. The requirement and template writers store their usages.
+- **The desktop's copy:** `usages` joins the synced record tables.
+- **Moved to 6c:** making each vehicle's default usage (at startup for those without one, and when a vehicle is added). That's the server's, since its name and documents come from the vehicle's profile.
+- **Tidying:** the release fixtures' checks for migrations 0024 to 0026 moved into `phase_five_starts_empty`, keeping the meters' check under clippy's complexity limit.
+- **Tests:** a vehicle's usages (the default first), one renamed and needing nothing more while staying the default, one removed; a requirement's usages; a template's usages; the release fixtures migrating with no usages and no requirement or template listing any.
+
+**Step 6c notes (2026-11-18):**
+- **"Never chosen" and "none" are told apart:** `Requirement::usages` became an `Option`. Not set (every existing requirement) means the default usage; a list, even an empty one, is what was chosen. Without this, removing a requirement's only usage, or unticking every box, would have quietly made it count for the default. Migration 0026's `requirements.usages` became nullable (it hadn't merged, so it could still change), and the requirement's patch can set it back to "the default".
+- **Default usages (`server::usages`):** `ensure_default_usages` runs at startup after the default group and makes one for every vehicle without (every vehicle from before usages); adding a vehicle makes its own (`make_default`). (Moved here from 6b, since the name and documents come from the profile.)
+- **Usages:** `add_usage` (never a second default), `edit_usage` (name and documents; the vehicle and the default flag stay), and `delete_usage` (not the default, `UsageProblem::DefaultStays`; a requirement that chose it loses it, perhaps leaving it needed for none). Whoever may change the schedule; the schedule's answer lists them, the default first. A requirement's chosen usages are checked against the vehicle's (`RequirementProblem::BadUsages`), and editing can change them.
+- **Readiness (`server::readiness`):** `view` gives every usage's readiness for the Overview (`POST /api/v1/readiness`); the Garage puts the default usage's name and answer on each card (`AssetSummary::ready`), reusing the due items it already works out. High issues come from each squawk's current severity and status.
+- **Copying:** Copy schedule and applying a template make the usages the copied requirements chose on the new vehicle, matched by name (its default for the default) or made there, and re-link them. Templates save the vehicle's usages.
+- **Dispositions:** adding, editing, or correcting a job with sign-offs or deferrals needs `AssetAction::DispositionSquawk` (a Maintainer), checked directly. Logging a job already needs a Maintainer, so this can't be shown failing yet; it guards against that ever changing.
+- **Endpoints:** `/api/v1/usages/add`, `/edit`, `/delete`, and `POST /api/v1/readiness` (read from the copy on the desktop; no caller until 6d).
+- **Tests** (server, `tests/readiness.rs`): a new truck's default usage (Drivable, two documents) and nothing more to make at startup; not drivable with neither document on file, and with an open High issue; the Garage's chip; a vehicle Sam can't see; a Driver can't add a usage; never a second default; a name taken; an unknown usage refused; the default not removable; removing Towing leaving the hitch needed for none; Copy schedule making Towing on the van and re-linking it.
+
+**Step 6d notes (2026-11-18):**
+- **`ui::screens::readiness_view`**, all four rows of the sketch:
+  - **Ready to use?** (1A) replaces the Overview's placeholder: a chip per usage (the default first, shown when there's more than one), the chosen usage's headline ("✗ Not drivable: 2 things", "! Drivable: 1 thing due soon", "✓ Drivable"), then every item with ✓, !, or ✗, its name, why, and a link (Maintenance, Documents, or the issue), and that it's advice only.
+  - **The Garage chip** (2A): the default usage's answer in words beside the due chip; none on an archived vehicle.
+  - **Usages** (3A) in Maintenance → Set up, after the bundles: each usage with the documents it needs, the default marked; **+ Usage** and **Edit** open a dialog for the name and the document types (the kind's profile's, and any already chosen). **Remove** is in the dialog, never for the default.
+  - **Needed for** (4A) in the requirement dialog: a requirement never chosen shows the default ticked; the first change makes its own list, which can be empty.
+- **Colour is never alone:** each mark has its symbol and words; the colours are the existing OK, warning, and error ones.
+- **Gone:** the Overview's "arrives with what's due" note and its placeholder panel.
+- **Tests:** a usage's answer in words; the headline counting only what sets the answer.
+
+**API version:** stays at 2. Usages are schedule changes, which go to the server; the desktop gains no operations.
+
+**New dependencies:** none expected.
+
+**Open issues** (reviewed 2026-11-18): #27 (custom roles and permissions) would one day change who may sign off; not now.
+
+**Not in this milestone:** a person's currency (post-MVP, #051), aviation's usages and items (the aircraft phase), formulas and derived meters (milestone 7).

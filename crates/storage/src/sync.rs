@@ -29,7 +29,7 @@ use crate::convert::{id_from_sql, id_to_sql};
 use crate::database::{Database, latest_schema_version};
 
 /// The tables of records, each with its own `sequence` and `deleted`.
-pub const RECORD_TABLES: [&str; 20] = [
+pub const RECORD_TABLES: [&str; 21] = [
     "users",
     "role_grants",
     "preferences",
@@ -46,6 +46,7 @@ pub const RECORD_TABLES: [&str; 20] = [
     "bundles",
     "specs",
     "schedule_templates",
+    "usages",
     "license_plates",
     "asset_documents",
     "attachments",

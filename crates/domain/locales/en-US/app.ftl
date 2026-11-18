@@ -994,7 +994,6 @@ tab-setup = Setup
 # $milestone (number): the Phase 2 milestone that fills the tab.
 tab-coming = This tab fills in with milestone { $milestone }.
 panel-ready = Ready to use?
-panel-ready-coming = Arrives with what's due (Phase 5).
 panel-due = Coming up
 panel-due-none = Nothing comes due yet. Set up its schedule, or add documents with an expiry.
 panel-due-see-all = See all on Maintenance →
@@ -1624,6 +1623,44 @@ severity-low = Low
 severity-medium = Medium
 severity-high = High
 squawk-high-not-drivable = Not drivable
+usage-drivable = Drivable
+usage-towable = Towable
+usage-usable = Usable
+usage-name-taken = This vehicle already has a usage with that name.
+usage-default-stays = The default usage can't be removed; rename it instead.
+usage-section = Usages
+usage-section-note = Each usage stands alone: what's ticked "Needed for" it, and the documents it needs. A High issue blocks every usage.
+usage-add = + Usage
+usage-add-title = Add a usage
+usage-edit-title = Change usage
+usage-name = Name
+# $name (string): the default usage's name.
+usage-default-name = { $name } (default)
+usage-documents = Documents it needs
+usage-documents-note = Not on file, or expired: not ready. Due for renewal soon: a warning.
+# $documents (string): document type names, joined by commas.
+usage-needs = Needs: { $documents }
+usage-needs-nothing = Needs no documents
+usage-needed-for = Needed for
+usage-needed-for-note = Overdue: not ready for the ticked usages. Due soon: a warning.
+# $usage (string): the usage's name, in lower case.
+ready-not = Not { $usage }
+# $usage (string): the answer ("Not drivable"). $count (number): how many things block it.
+ready-blockers = { $usage }: { $count ->
+        [one] { $count } thing
+       *[other] { $count } things
+    }
+# $usage (string): the usage's name. $count (number): how many things are due soon.
+ready-warnings = { $usage }: { $count ->
+        [one] { $count } thing due soon
+       *[other] { $count } things due soon
+    }
+ready-document-current = On file and current
+ready-document-missing = Not on file
+ready-issue-open = High issue, open
+ready-issue-deferred = High issue, deferred
+ready-nothing = Nothing is needed for this usage yet.
+ready-advisory = Advice only: nothing stops anyone from using it.
 squawk-high-not-towable = Not towable
 squawk-high-out-of-service = Out of service
 squawk-status-open = Open

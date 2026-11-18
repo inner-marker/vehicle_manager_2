@@ -92,6 +92,8 @@ struct Schedule {
     bundles: Vec<(BundleId, Bundle)>,
     /// The vehicle's specs, by name (#084).
     specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
+    /// The vehicle's usages, the default first (#086).
+    usages: Vec<(domain::usage::UsageId, domain::usage::Usage)>,
     may_configure: bool,
 }
 
@@ -109,13 +111,16 @@ fn use_schedule(
                     requirements,
                     bundles,
                     specs,
+                    usages,
                     may_configure,
+                    ..
                 }) => {
                     tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), specs = specs.len(), "schedule loaded");
                     Ok(Schedule {
                         requirements,
                         bundles,
                         specs,
+                        usages,
                         may_configure,
                     })
                 }
@@ -133,12 +138,14 @@ fn refusal(outcome: &ScheduleOutcome) -> MessageId {
     match outcome {
         ScheduleOutcome::Invalid { problem } => problem.message(),
         ScheduleOutcome::InvalidSpec { problem } => problem.message(),
+        ScheduleOutcome::InvalidUsage { problem } => problem.message(),
         ScheduleOutcome::NotFound => messages::VEHICLE_NOT_FOUND,
         ScheduleOutcome::NotAllowed => messages::VEHICLES_NOT_ALLOWED,
         ScheduleOutcome::Schedule { .. }
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
         | ScheduleOutcome::SavedSpec { .. }
+        | ScheduleOutcome::SavedUsage { .. }
         | ScheduleOutcome::Copied { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::Unavailable => messages::SOMETHING_WENT_WRONG,
@@ -724,10 +731,12 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
             }
         }
         p { class: "muted-note", {tr(messages::SCHEDULE_REMOVE_NOTE)} }
+        // Its usages (3A, #086).
+        super::readiness_view::UsagesSection { vehicle: vehicle.clone(), usages: schedule.usages.clone(), reloads }
         match editing() {
             None => rsx! {},
-            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, specs: schedule.specs.clone(), reloads, on_close: close } },
-            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), specs: schedule.specs.clone(), reloads, on_close: close } },
+            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
+            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
             Some(Editing::NewBundle) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: None, reloads, on_close: close } },
             Some(Editing::Bundle(id, bundle)) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: Some((id, bundle)), reloads, on_close: close } },
             Some(Editing::RemoveRequirement(id, name)) => rsx! { RemoveDialog { target: Removal::Requirement(id), name, reloads, on_close: close } },
@@ -754,7 +763,7 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                     on_close: close,
                 }
             },
-            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), specs: schedule.specs.clone(), reloads, on_close: close } },
+            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
             Some(Editing::ShowReference(id)) => rsx! { ReferenceSheet { id, vehicle, on_close: close } },
         }
     }
@@ -924,6 +933,7 @@ fn requirement_from(
         before_records: None,
         warnings: None,
         specs: vec![],
+        usages: None,
     })
 }
 
@@ -954,9 +964,16 @@ fn RequirementDialog(
     /// The vehicle's specs, to tick the ones its job uses (#084).
     #[props(default)]
     specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
+    /// The vehicle's usages, to tick the ones it's needed for (#086).
+    #[props(default)]
+    usages: Vec<(domain::usage::UsageId, domain::usage::Usage)>,
     reloads: Signal<u32>,
     on_close: EventHandler<()>,
 ) -> Element {
+    let start_usages = existing
+        .as_ref()
+        .and_then(|(_, requirement)| requirement.usages.clone());
+    let needed_for = use_signal(move || start_usages);
     let start_specs = existing
         .as_ref()
         .map(|(_, requirement)| requirement.specs.clone())
@@ -1066,6 +1083,7 @@ fn RequirementDialog(
         let requirement = match requirement {
             Ok(requirement) => domain::requirement::Requirement {
                 specs: ticked(),
+                usages: needed_for(),
                 ..requirement
             },
             Err(message) => {
@@ -1141,6 +1159,10 @@ fn RequirementDialog(
                         }
                         p { class: "muted-note", {tr(messages::SPEC_CHECKLIST_NOTE)} }
                     }
+                }
+                // The usages it's needed for (4A, #086).
+                if !usages.is_empty() {
+                    super::readiness_view::NeededFor { usages, chosen: needed_for }
                 }
                 ComplianceChoices { compliance }
                 if compliance().mode == ComplianceMode::Recurring {
@@ -1777,6 +1799,7 @@ mod tests {
             before_records: None,
             warnings: None,
             specs: vec![],
+            usages: None,
         };
         let done = DoneTask {
             requirement: test_id(40),

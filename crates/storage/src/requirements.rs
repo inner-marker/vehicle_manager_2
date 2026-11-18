@@ -42,8 +42,8 @@ impl RecordWriter<Requirement> for RequirementWriter {
         sqlx::query(
             "INSERT INTO requirements (id, asset_id, name, notes, enabled, rules, reference_id,
                                        mode, applicability, before_records, warnings, specs,
-                                       sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                       usages, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -80,6 +80,10 @@ impl RecordWriter<Requirement> for RequirementWriter {
             &values.specs.clone().unwrap_or_default(),
             "requirements.specs",
         )?)
+        .bind(optional_json(
+            values.usages.clone().and_then(Clearable::into_option),
+            "requirements.usages",
+        )?)
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -98,6 +102,7 @@ impl RecordWriter<Requirement> for RequirementWriter {
         let before_records =
             clearable_json(patch.before_records.as_ref(), "requirements.before_records")?;
         let warnings = clearable_json(patch.warnings.as_ref(), "requirements.warnings")?;
+        let usages = clearable_json(patch.usages.as_ref(), "requirements.usages")?;
         sqlx::query(
             "UPDATE requirements SET
                  name = coalesce(?, name),
@@ -110,6 +115,7 @@ impl RecordWriter<Requirement> for RequirementWriter {
                  before_records = CASE WHEN ? THEN ? ELSE before_records END,
                  warnings = CASE WHEN ? THEN ? ELSE warnings END,
                  specs = coalesce(?, specs),
+                 usages = CASE WHEN ? THEN ? ELSE usages END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -149,6 +155,8 @@ impl RecordWriter<Requirement> for RequirementWriter {
                 .map(|specs| json_to_sql(specs, "requirements.specs"))
                 .transpose()?,
         )
+        .bind(usages.0)
+        .bind(usages.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -271,6 +279,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
             )?,
             warnings: optional_from_json(row.try_get("warnings")?, "requirements.warnings")?,
             specs: json_from_sql(&specs, "requirements.specs")?,
+            usages: optional_from_json(row.try_get("usages")?, "requirements.usages")?,
         },
     ))
 }

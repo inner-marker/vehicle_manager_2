@@ -179,6 +179,7 @@ mod tests {
             role: Role::Driver,
             plate: None,
             due: None,
+            ready: None,
         }
     }
 

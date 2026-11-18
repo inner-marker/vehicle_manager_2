@@ -249,6 +249,7 @@ mod maintenance {
             before_records: None,
             warnings: None,
             specs: vec![],
+            usages: None,
         }
     }
 
