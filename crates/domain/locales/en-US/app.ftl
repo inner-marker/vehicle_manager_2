@@ -1358,6 +1358,48 @@ template-not-found = That template is gone.
 template-save-as = Save as template…
 template-save-title = Save this schedule as a template
 template-from = From a template…
+fuel-dropped-missed = Not counted: an earlier fill-up wasn't logged
+fuel-dropped-reading = Not counted: the odometer wasn't read
+fuel-dropped-distance = Not counted: the odometer didn't move
+fuel-stretch = { $economy } over { $distance }
+fuel-car-said = car said { $economy }
+fuel-part-before = Before the first full fill-up: nothing to measure from yet
+fuel-part-starts = Economy starts here
+fuel-part-waiting = Partial: counts in the next full fill-up
+fuel-part-added = Partial: added into the next full fill-up's figure
+fuel-overview = { $latest } latest · last 5: { $last }
+fuel-none-yet = Fuel economy shows once there are two full fill-ups.
+fuel-last-five = Last 5
+fuel-year = 12 months
+fuel-all-time = All time
+fuel-stretches = { $count ->
+    [one] 1 stretch
+   *[other] { $count } stretches
+}
+fuel-chart = Economy by stretch
+fuel-show-chart = Show as a chart
+fuel-show-table = Show as a table
+fuel-chart-hint = Tap a dot for its details. A gap is a stretch that doesn't count.
+fuel-average-line = average { $value }
+fuel-table-ended = Ended
+fuel-table-fuel = Fuel
+fuel-table-figure = Economy
+fuel-highway = Highway
+fuel-towing = Towing
+fuel-hauling = Hauling
+fuel-towed = Towed vehicles
+fuel-band-city = Mostly city
+fuel-band-mixed = Mixed
+fuel-band-highway = Mostly highway
+fuel-band-none = None
+fuel-band-some = Some
+fuel-band-mostly = Mostly
+fuel-not-enough = not enough yet
+fuel-not-towing = Not towing
+fuel-another-vehicle = Another vehicle
+fuel-info-full = Filled full: the tank was filled until the pump stopped. Economy runs from one full fill-up to the next; a partial fill-up's fuel is added into the next full one, and it has no figure of its own.
+fuel-info-missed = Missed previous fill-up: a fill-up since the last one here wasn't logged. The stretch it ends can't be measured, so it's left out of the averages and shows as a gap.
+fuel-info-label = What this means
 
 ## Events: fuel-ups and readings (milestone 6)
 
@@ -1541,7 +1583,6 @@ timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.
 panel-see-timeline = See all on the Timeline ›
-panel-economy-later = Fuel economy arrives with Phase 5's reports.
 panel-last-activity = Last activity
 panel-no-activity = Nothing logged yet.
 panel-finalized = Finalized

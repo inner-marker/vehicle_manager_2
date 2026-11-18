@@ -1616,6 +1616,7 @@ fn per_unit(inputs: &Inputs, units: &Preferences) -> Option<String> {
 fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
     let (mut volume, mut price) = (inputs.volume, inputs.price);
     let (mut full, mut missed) = (inputs.filled_full, inputs.missed_previous);
+    let info = use_signal(|| None::<MessageId>);
     let volume_label = tr_with(
         messages::LOG_VOLUME,
         &[("unit", MessageArg::from(volume_abbr(units.volume)))],
@@ -1647,12 +1648,39 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
                     input { r#type: "checkbox", checked: full(), onchange: move |event| full.set(event.checked()) }
                     span { {tr(messages::LOG_FILLED_FULL)} }
                 }
+                InfoButton { which: messages::FUEL_INFO_FULL, open: info }
                 label { class: "switch",
                     input { r#type: "checkbox", checked: missed(), onchange: move |event| missed.set(event.checked()) }
                     span { {tr(messages::LOG_MISSED)} }
                 }
+                InfoButton { which: messages::FUEL_INFO_MISSED, open: info }
+            }
+            // What the box means (#085), under the row; its ⓘ again closes it.
+            if let Some(text) = info() {
+                p { class: "info-note", role: "note", {tr(text)} }
             }
             FormError { message: inputs.problem_at(Target::Fuel) }
+        }
+    }
+}
+
+/// An **ⓘ** that opens (or closes) explanation `which` (#085).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn InfoButton(which: MessageId, open: Signal<Option<MessageId>>) -> Element {
+    let mut open = open;
+    let shown = open() == Some(which);
+    rsx! {
+        button {
+            class: if shown { "info-button on" } else { "info-button" },
+            r#type: "button",
+            "aria-label": tr(messages::FUEL_INFO_LABEL),
+            "aria-expanded": shown,
+            onclick: move |_| open.set(if shown { None } else { Some(which) }),
+            "ⓘ"
         }
     }
 }

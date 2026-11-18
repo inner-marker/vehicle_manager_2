@@ -1224,6 +1224,32 @@ pub enum DueOutcome {
     Unavailable,
 }
 
+/// A vehicle's fuel economy (#085): for its Fuel tab and its Overview.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FuelView {
+    /// Its stretches, each fill-up's part, the averages, and the breakdowns.
+    pub summary: crate::fuel::FuelSummary,
+    /// The towed vehicles' names, for the breakdowns.
+    pub towed_names: Vec<(crate::asset::AssetId, String)>,
+    /// When its latest fill-up was.
+    pub last_fill: Option<crate::time::UnixMillis>,
+}
+
+/// The answer to "how is this vehicle's fuel economy?" (#085).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum FuelOutcome {
+    /// The figures.
+    Fuel {
+        /// Them (boxed: far larger than the other answers).
+        view: Box<FuelView>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// Something coming due on one of the person's vehicles, for Due & squawks (#083).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FleetDue {

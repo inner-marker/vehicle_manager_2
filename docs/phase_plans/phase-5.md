@@ -35,8 +35,8 @@
 | 1 | **Meters** | ✅ | **Percentage meters** (any meter; 0–100%, stored in hundredths of a percent). **Direction:** counts up or counts down. **Resettable** (either direction), with its reset value (e.g. 100% or 0); never a distance meter used for fuel economy. Readings checked per direction, with a **reset** explaining a jump; resets on the timeline. The meter form and reading inputs. A migration, and new operations for the desktop's outbox | Add **Oil life** to the truck, log 80%, 60%, see 70% refused, reset it to 100% |
 | 2 | **What's due** | ✅ | The calculation in `domain`: each rule's next due (meter, calendar, fixed date, and **"when a meter reaches X"**), whichever comes first; dates projected from recent use. **Three steps** (yellow at 20% of the interval left, orange at 10%, red at 5%) and **Overdue** (a darker red, with a chip), as household defaults that Maintainers and Admins can change per requirement. A job's **"Reset Oil life to 100%"**. The Maintenance tab, the Overview's time and distance to each service, and the Garage's urgency order and badges. Document expiries, with the renew flow | The oil change due by Oil life; the colours change as readings come in |
 | 3 | **Due messages and snooze** | ✅ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected; the Garage's **fleet strip** and the **Due & squawks** screen (#083) | Snooze "1 week or 500 mi"; it returns at whichever comes first |
-| 4 | **Specs and service bundles** | 🔨 | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
-| 5 | **Fuel economy** | ⬜ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
+| 4 | **Specs and service bundles** | ✅ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
+| 5 | **Fuel economy** | 🔨 | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
 | 6 | **Readiness** | ⬜ | **Operation types** in the profiles (**Normal use** on each ground profile; **Towing** on the truck); **needed for use** on requirements and documents; **"Ready to use?"** on the Overview, each item with ✓ or ✗ and its reason; the Garage badge; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; deferred High: not ready |
 | 7 | **Calculated fields and derived meters** | ⬜ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
@@ -568,3 +568,82 @@
 **Open issues** (reviewed 2026-11-17): none touch specs or templates.
 
 **Not in this milestone:** fuel economy (milestone 5), readiness (milestone 6), formulas and derived meters (milestone 7); factory schedules from reference data packs (post-MVP, #031).
+
+### Milestone 5 plan: fuel economy
+
+*Agreed 2026-11-17 · branch `milestone/p5-m5-fuel` · sketch: `docs/ui-sketches/p5m5-fuel-options.svg` · Decision #085*
+
+**Choices (the human, 2026-11-17):**
+- **Averages:** the last 5 stretches, the last 12 months, and all time.
+- **Conditions:** three bands each (highway: 30% or less, mixed, 70% or more; towing and hauling: none, under 50%, 50% or more), shares weighted by fuel.
+- **Towed vehicles:** a stretch counts for a vehicle if any fill in it names it.
+- **The Overview:** the latest stretch, the last-5 average, and the last fill-up.
+- **The sketch: 1A, 2A, 3A, 4A, 5A.**
+  - **1A:** three tiles at the top of the Fuel tab, each with its stretch count.
+  - **2A:** a line chart: a dot per stretch, a gap for each dropped one, the average as a hairline, only the latest labelled, details on hover or tap, and a table view. Drawn by the app, one series in the accent colour (its contrast checked: 7.1 on dark, 4.9 on light).
+  - **3A:** the breakdowns as small bars from zero, a group each, with the average and the stretch count.
+  - **4A:** each fuel-up in the list says how it counted ("24.9 mpg over 309 mi · car said 25.4", "counts in the next full fill-up", "not counted: an earlier fill-up wasn't logged"); **ⓘ** on **Filled full** and **Missed previous fill-up**.
+  - **5A:** the Overview's Fuel panel.
+
+**The rules, in `domain::fuel` (test-first):**
+- **The fuel odometer:** the vehicle's first distance meter that fuel-ups require.
+- **Fill-ups in order** of their time (counted events only: a corrected one by its correction).
+- **A stretch** from a full fill to the next full fill: distance from their readings, fuel the sum of every fill after the first up to and including the last.
+- **Dropped** (in no figure, a gap in the chart): a missed fill-up anywhere in it, a missing reading, or a distance of zero or less.
+- **Each fill's part:** it starts the first stretch, ends one (with its figure), is a partial waiting for the next full fill, or is in a dropped stretch (and why).
+- **Averages** as total distance over total fuel: the last 5 counted stretches, those ending in the last 12 months, and all.
+- **Bands:** a stretch's shares are its fills' (after the first) weighted by fuel; then the bands above, and by towed vehicle.
+- **The car's figure:** the reported economy on the fill that ends the stretch.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **5.0** `docs:` | ☑️ | This plan; the sketch; decision #085; milestone 4 marked ✅. |
+| **5a** `feat(domain):` fuel economy | ☑️ | `domain::fuel`: the fuel odometer, stretches, each fill's part, averages, bands, towed vehicles, and the car's figure. Unit and property tests first (partials, a missed fill-up, a missing reading, a correction, the first full fill, an average never using a dropped stretch). |
+| **5b** `feat(server):` | ☑️ | A vehicle's fuel summary (for the Fuel tab and the Overview), from its counted fuel-ups, for anyone whose role covers it. The desktop works it out from its copy, offline too. |
+| **5c** `feat(app):` the screens | ☑️ | The tiles (row 1), the chart with its details and table view (row 2), the breakdowns (row 3), each fuel-up's line and the **ⓘ** popovers (row 4), and the Overview's Fuel panel (row 5). |
+| **5d** `docs:` | ☑️ | Milestone 5's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 5a notes (2026-11-17):**
+- **`domain::fuel`:**
+  - `fuel_meter`: the vehicle's first distance meter that fuel-ups require.
+  - `Fill`: a fuel-up as economy needs it (`Fill::of` reads one from its event and the fuel odometer).
+  - `summarize` sorts the fills by time and walks them: a full fill starts a stretch, the next full fill ends it, and partials between add their fuel. Each `Stretch` has its distance, fuel, shares weighted by fuel, towed vehicles, the car's figure from the fill it ends at, and why it's dropped, if it is (`DropReason`: a missed fill-up in it, a missing reading at either end, or no distance).
+  - `FillPart` says what each fill did: before the first full fill, starts, a partial (in a stretch, or waiting for the next full fill), or ends a stretch.
+  - `Averages` (the last 5 counted stretches, those ending in the last 365 days, and all) and `Breakdowns` (`Band::highway` and `Band::load`, three bands each; and each towed vehicle, with "not towing" first) are totals over totals (`Average`), in meters per liter, rounded.
+- **Which fills:** the server passes the vehicle's counted fuel-ups (5b), so a correction stands in for what it corrects.
+- **Tests:** the fuel odometer; partials adding in, and each fill's part; order by time, not by list; a missed fill-up, a missing reading, and no distance each dropping a stretch; the three averages' spans; no fills, or one; shares weighted by fuel into bands, and a towed vehicle; the bands' edges; the car's figure; a fill read from a fuel-up; and a property test that a dropped stretch never moves an average.
+
+**Step 5b notes (2026-11-17):**
+- **`server::fuel::summary`:** a vehicle's fuel economy (`FuelView`: the summary, the towed vehicles' names, and when the latest fill-up was), for anyone whose role covers it; **Not found** otherwise.
+- **Which fuel-ups:** every one not deleted, **drafts included**. A fuel-up is a draft for its first day, and today's should count. A finalized correction stands in for what it corrects; a correction still in draft waits, and its original counts until then. (The plan said "counted events", which are finalized only; that would have left out every fuel-up from the last day.)
+- **Towed vehicles** the person can't see aren't named; the screen will say "another vehicle".
+- **Endpoint:** `POST /api/v1/fuel`. On the desktop, the data layer reads it from the copy, offline too; it has no caller until 5c.
+- **Tests** (server, `tests/fuel.rs`): a truck's five fuel-ups, logged by a Driver (so drafts): a partial added in (20 mpg), a stretch towing the camper (12 mpg), a missed fill-up dropped, the all-time average as distance over fuel (15 mpg), the camper named, the latest fill-up's time, and a vehicle Sam can't see.
+
+**Step 5c notes (2026-11-17):**
+- **The Fuel tab (`ui::screens::fuel_view`)** starts with the figures, then the fuel-ups as before:
+  - **1A:** three tiles (Last 5, 12 months, All time), each with its stretch count, "–" until there's one.
+  - **2A:** the chart, an SVG drawn by the app: gridlines and axis labels, a shaded slot for each dropped stretch, the all-time average as a hairline ("average 24.0"), the line in runs broken at each gap (a lone point is a dot), a dot per counted stretch (its figure on hover, its details under the chart on tap), and only the latest labelled. **Show as a table** lists every stretch, newest first: when it ended, its fuel, and its figure or why it doesn't count.
+  - **3A:** Highway, Towing, Hauling, and Towed vehicles, each band a bar from zero (scaled to the longest), with its figure and stretch count, or "not enough yet". A group with nothing in it isn't shown. A towed vehicle the person can't see is "Another vehicle".
+  - With fewer than two full fill-ups: "Fuel economy shows once there are two full fill-ups."
+- **4A:** each fuel-up in the Fuel tab's list adds how it counted ("20.0 mpg over 300.0 mi · car said 21.0", "Partial: added into the next full fill-up's figure", "Not counted: an earlier fill-up wasn't logged", …). The Timeline and Jobs lists don't fetch it.
+- **The fuel-up form:** an **ⓘ** beside **Filled full** and **Missed previous fill-up** (outside the checkbox, so tapping it doesn't tick it) opens its explanation under the row; tapping it again closes it.
+- **5A:** the Overview's Fuel panel shows "20.0 mpg latest · last 5: 20.0" above the latest fuel-ups, in place of "Fuel economy arrives with Phase 5's reports" (that text is gone). The panel's existing list of the latest fuel-ups already gives the last fill-up's date.
+- **The chart's colour** is the app's accent, one series (no legend); its contrast was checked by hand (7.1 on dark, 4.9 on light), since the palette checker needs Node, which isn't installed here.
+- **Tests:** each fill-up's line; the Overview's line; the line breaking at dropped stretches; the scale's room and floor.
+- **Tidying:** clippy's style findings (two clones it didn't need, a `BandRow` type for the breakdown rows, and float comparisons in a test done with a tolerance). The time zone hook is used through its own module, since its re-export is desktop-only.
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (5d).
+
+**Step 5d notes (2026-11-17):**
+- **The test plan:** milestone 5's section of `docs/test-plans/p5-phase.md`, 16 steps, run at the end of the phase (#081), on a new car with round numbers so every figure can be checked: a full fill, a partial, a full fill with the car's own figure (32.0 mpg), a towing stretch (30.0), a missed fill-up (a gap), and a stretch after it (33.0); the tiles, the line broken at the gap, the breakdowns, a dot's details and the table, the Overview, L/100 km, an edited draft, the desktop offline, and a trailer with no Fuel tab.
+- **Checked against the code while writing it:** the figures are shown to one decimal; the car's own figure is under the form's **More**.
+
+**Nothing new stored:** the figures come from the fuel-ups already recorded, so there's no migration, and the API stays at 2.
+
+**New dependencies:** none (the chart is drawn by the app, #080).
+
+**Open issues** (reviewed 2026-11-17): #26 (a fuel-up's saved location) is about logging, not economy; not now.
+
+**Not in this milestone:** readiness (milestone 6), formulas and derived meters (milestone 7), reports and exports (Phase 6).

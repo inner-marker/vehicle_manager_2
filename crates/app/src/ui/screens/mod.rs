@@ -10,6 +10,7 @@ mod documents;
 mod due_list;
 mod due_view;
 mod event_page;
+mod fuel_view;
 mod groups;
 mod job_page;
 mod life_input;

@@ -1859,6 +1859,84 @@ define_messages! {
     TEMPLATE_SAVE_TITLE => "template-save-title",
     /// Set up: start from a template.
     TEMPLATE_FROM => "template-from",
+    /// Fuel: a stretch not counted, a fill-up missed.
+    FUEL_DROPPED_MISSED => "fuel-dropped-missed",
+    /// Fuel: a stretch not counted, a reading missing.
+    FUEL_DROPPED_READING => "fuel-dropped-reading",
+    /// Fuel: a stretch not counted, no distance.
+    FUEL_DROPPED_DISTANCE => "fuel-dropped-distance",
+    /// Fuel: a stretch's figure and distance.
+    FUEL_STRETCH => "fuel-stretch",
+    /// Fuel: the car's own figure.
+    FUEL_CAR_SAID => "fuel-car-said",
+    /// Fuel: a fill-up before the first full one.
+    FUEL_PART_BEFORE => "fuel-part-before",
+    /// Fuel: the full fill-up economy starts from.
+    FUEL_PART_STARTS => "fuel-part-starts",
+    /// Fuel: a partial fill-up waiting.
+    FUEL_PART_WAITING => "fuel-part-waiting",
+    /// Fuel: a partial fill-up added in.
+    FUEL_PART_ADDED => "fuel-part-added",
+    /// The Overview: the latest figure and the last-5 average.
+    FUEL_OVERVIEW => "fuel-overview",
+    /// Fuel: no figures yet.
+    FUEL_NONE_YET => "fuel-none-yet",
+    /// Fuel: the last 5 stretches' tile.
+    FUEL_LAST_FIVE => "fuel-last-five",
+    /// Fuel: the last 12 months' tile.
+    FUEL_YEAR => "fuel-year",
+    /// Fuel: the all-time tile.
+    FUEL_ALL_TIME => "fuel-all-time",
+    /// Fuel: how many stretches.
+    FUEL_STRETCHES => "fuel-stretches",
+    /// Fuel: the chart's heading.
+    FUEL_CHART => "fuel-chart",
+    /// Fuel: back to the chart.
+    FUEL_SHOW_CHART => "fuel-show-chart",
+    /// Fuel: the chart as a table.
+    FUEL_SHOW_TABLE => "fuel-show-table",
+    /// Fuel: how to see a stretch's details.
+    FUEL_CHART_HINT => "fuel-chart-hint",
+    /// Fuel: the average line's label.
+    FUEL_AVERAGE_LINE => "fuel-average-line",
+    /// Fuel table: when the stretch ended.
+    FUEL_TABLE_ENDED => "fuel-table-ended",
+    /// Fuel table: its fuel.
+    FUEL_TABLE_FUEL => "fuel-table-fuel",
+    /// Fuel table: its figure.
+    FUEL_TABLE_FIGURE => "fuel-table-figure",
+    /// Fuel breakdowns: highway.
+    FUEL_HIGHWAY => "fuel-highway",
+    /// Fuel breakdowns: towing.
+    FUEL_TOWING => "fuel-towing",
+    /// Fuel breakdowns: hauling.
+    FUEL_HAULING => "fuel-hauling",
+    /// Fuel breakdowns: towed vehicles.
+    FUEL_TOWED => "fuel-towed",
+    /// Fuel: 30% highway or less.
+    FUEL_BAND_CITY => "fuel-band-city",
+    /// Fuel: between.
+    FUEL_BAND_MIXED => "fuel-band-mixed",
+    /// Fuel: 70% highway or more.
+    FUEL_BAND_HIGHWAY => "fuel-band-highway",
+    /// Fuel: none.
+    FUEL_BAND_NONE => "fuel-band-none",
+    /// Fuel: under half.
+    FUEL_BAND_SOME => "fuel-band-some",
+    /// Fuel: half or more.
+    FUEL_BAND_MOSTLY => "fuel-band-mostly",
+    /// Fuel: no stretches in a band.
+    FUEL_NOT_ENOUGH => "fuel-not-enough",
+    /// Fuel: stretches towing nothing.
+    FUEL_NOT_TOWING => "fuel-not-towing",
+    /// Fuel: a towed vehicle the person can't see.
+    FUEL_ANOTHER_VEHICLE => "fuel-another-vehicle",
+    /// The fuel-up form: what Filled full means.
+    FUEL_INFO_FULL => "fuel-info-full",
+    /// The fuel-up form: what Missed previous fill-up means.
+    FUEL_INFO_MISSED => "fuel-info-missed",
+    /// The fuel-up form: the ⓘ button's name.
+    FUEL_INFO_LABEL => "fuel-info-label",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.
@@ -2185,8 +2263,6 @@ define_messages! {
     PANEL_FUEL_NONE => "panel-fuel-none",
     /// Overview: open the Timeline.
     PANEL_SEE_TIMELINE => "panel-see-timeline",
-    /// Overview: economy comes later.
-    PANEL_ECONOMY_LATER => "panel-economy-later",
     /// Overview: the newest event.
     PANEL_LAST_ACTIVITY => "panel-last-activity",
     /// Overview: no events.

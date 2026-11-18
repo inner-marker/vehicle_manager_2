@@ -167,6 +167,38 @@
 
 **Milestone 4 also checks:** units and conversions, amounts' checks, what a job offers back, templates leaving a vehicle's past behind, copying with specs re-linked, who may change specs and templates, and migration 0025 on the release fixtures, all in the automated tests.
 
+## Milestone 5: fuel economy
+
+**Intended behavior:**
+- **A stretch** runs from one full fill-up to the next. Partial fill-ups add their fuel to the next full one and have no figure of their own. A stretch with a **Missed previous fill-up** in it (or a missing reading) counts in nothing, and the chart shows a gap.
+- **Averages** (Last 5, 12 months, All time) are total distance over total fuel, in your economy unit.
+- **Breakdowns** by highway, towing, and hauling (three bands each) and by towed vehicle.
+- Each fuel-up in the Fuel tab's list says how it counted. **ⓘ** beside **Filled full** and **Missed previous fill-up** explains them.
+- The Overview's Fuel panel shows the latest figure and the last-5 average. It all works the same on the desktop, offline included.
+
+**Before you start:** the household's units are miles, US gallons, and mpg (Settings → You). The numbers below assume them.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 5.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open`, `schema_now` at least 25 (no new migration this milestone); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 5.2 | **Mac browser**, Admin mode: add a car, `Fuel car` (its profile's odometer), and give Sam the Driver role on it if they don't have it. Open its **Fuel** tab | "Fuel economy shows once there are two full fill-ups." and no fuel-ups yet. |
+| [ ] | 5.3 | **Phone**, Sam: **+ Log** → **Fuel-up** for `Fuel car`: odometer 10,000, 12 gal. Tap the **ⓘ** beside **Filled full**, then tap it again | The explanation opens under the row ("Filled full: the tank was filled until the pump stopped …") and closes again; **Filled full** stays ticked. Save it. |
+| [ ] | 5.4 | Fuel-up: 10,150 mi, 5 gal, **Filled full** unticked → Save | Saved. |
+| [ ] | 5.5 | Fuel-up: 10,400 mi, 7.5 gal, full, and the car's own figure 33.0 mpg (under **More**) → Save | Saved. |
+| [ ] | 5.6 | **Fuel** tab | Tiles: **Last 5** 32.0 mpg, **12 months** 32.0 mpg, **All time** 32.0 mpg, each "1 stretch". The chart: one dot labelled 32.0, and the average line. The list: the 10,400 fuel-up "32.0 mpg over 400.0 mi · car said 33.0"; the 10,150 one "Partial: added into the next full fill-up's figure"; the 10,000 one "Economy starts here". |
+| [ ] | 5.7 | Fuel-up: 10,700 mi, 10 gal, full, towing 60 %, towed **Test trailer** (or any towable vehicle), highway 80 % → Save | The Fuel tab: two dots joined by a line (32.0, 30.0); All time 31.1 mpg (700 mi on 22.5 gal), "2 stretches". |
+| [ ] | 5.8 | Fuel-up: 11,000 mi, 8 gal, full, and **Missed previous fill-up** ticked (its **ⓘ** explains it) → Save | That fuel-up's line: "Not counted: an earlier fill-up wasn't logged". The chart shows a shaded gap after 30.0. The tiles don't change. |
+| [ ] | 5.9 | Fuel-up: 11,330 mi, 10 gal, full → Save | A new dot at 33.0 after the gap, not joined across it. All time **31.7 mpg**, "3 stretches" (1,030 mi on 32.5 gal); Last 5 the same. |
+| [ ] | 5.10 | The breakdowns under the chart | **Towing:** None 32.4 mpg · 2 stretches; Some "not enough yet"; Mostly 30.0 mpg · 1 stretch. **Towed vehicles:** Not towing 32.4 mpg; Test trailer 30.0 mpg. Bars start from zero. **Highway** shows a figure for each band with stretches in it. **Hauling:** None with a figure; Some and Mostly "not enough yet". |
+| [ ] | 5.11 | Tap the 30.0 dot; then **Show as a table**; then **Show as a chart** | Under the chart: the date and "30.0 mpg over 300.0 mi". The table lists all four stretches, newest first, the dropped one saying why. Back to the chart. |
+| [ ] | 5.12 | The car's **Overview** | The Fuel panel: "33.0 mpg latest · last 5: 31.7" above the latest fuel-ups. |
+| [ ] | 5.13 | **Settings** → **You** → fuel economy **L/100 km**; back to the Fuel tab | Every figure in L/100 km (33.0 mpg ≈ 7.1 L/100 km), and the chart's scale with it (higher is worse). Set it back afterwards. |
+| [ ] | 5.14 | Edit the 11,330 fuel-up (still a draft): 11 gal → Save | Its stretch is 30.0 mpg; All time 30.7 mpg (1,030 mi on 33.5 gal). |
+| [ ] | 5.15 | **Desktop**, Sync now: `Fuel car` → **Fuel**, then **Tailscale off** (wait for **OFFLINE**): a fuel-up at 11,630 mi, 10 gal, full | Online, the same figures as the web. Offline, the new fuel-up saves on the desktop and a new dot appears at 30.0 (worked out from the copy). Tailscale on, Sync now: the web agrees. |
+| [ ] | 5.16 | `Test trailer` (no fuel-ups) | No Fuel tab, and no Fuel panel on its Overview, as before. |
+
+**Milestone 5 also checks:** stretches, partials, each way a stretch is dropped, the averages' spans, the bands' edges, towed vehicles, drafts counting and corrections standing in for what they correct, and a property test that a dropped stretch never moves an average, all in the automated tests.
+
 ## Results
 
 # Human Notes
