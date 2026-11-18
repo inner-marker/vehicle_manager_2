@@ -33,8 +33,8 @@ impl RecordWriter<ScheduleTemplate> for TemplateWriter {
     ) -> Result<(), StorageError> {
         sqlx::query(
             "INSERT INTO schedule_templates (id, name, meters, requirements, bundles, specs,
-                                             sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                             usages, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(required(values.name.as_ref(), "name")?.as_str())
@@ -53,6 +53,10 @@ impl RecordWriter<ScheduleTemplate> for TemplateWriter {
         .bind(json_to_sql(
             values.specs.as_ref().unwrap_or(&Vec::new()),
             "schedule_templates.specs",
+        )?)
+        .bind(json_to_sql(
+            values.usages.as_ref().unwrap_or(&Vec::new()),
+            "schedule_templates.usages",
         )?)
         .bind(sequence)
         .execute(connection)
@@ -74,6 +78,7 @@ impl RecordWriter<ScheduleTemplate> for TemplateWriter {
                  requirements = coalesce(?, requirements),
                  bundles = coalesce(?, bundles),
                  specs = coalesce(?, specs),
+                 usages = coalesce(?, usages),
                  sequence = ?
              WHERE id = ?",
         )
@@ -85,6 +90,7 @@ impl RecordWriter<ScheduleTemplate> for TemplateWriter {
         )?)
         .bind(part(patch.bundles.as_ref(), "schedule_templates.bundles")?)
         .bind(part(patch.specs.as_ref(), "schedule_templates.specs")?)
+        .bind(part(patch.usages.as_ref(), "schedule_templates.usages")?)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -118,7 +124,7 @@ fn template_from_row(row: &SqliteRow) -> Result<(TemplateId, ScheduleTemplate), 
             requirements: json_from_sql(&text("requirements")?, "schedule_templates.requirements")?,
             bundles: json_from_sql(&text("bundles")?, "schedule_templates.bundles")?,
             specs: json_from_sql(&text("specs")?, "schedule_templates.specs")?,
-            usages: vec![],
+            usages: json_from_sql(&text("usages")?, "schedule_templates.usages")?,
         },
     ))
 }

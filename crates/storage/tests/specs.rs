@@ -251,4 +251,113 @@ mod specs {
             .unwrap();
         assert!(database.templates().await.unwrap().is_empty());
     }
+
+    #[tokio::test]
+    async fn a_vehicles_usages_are_kept_default_first() {
+        use domain::document::DocumentType;
+        use domain::usage::{Usage, UsagePatch};
+        use storage::usages::UsageWriter;
+        let (_temp, database, mut connection) = database().await;
+        let usage = |name: &str, default: bool, documents: Vec<DocumentType>| Usage {
+            asset: test_id(TRUCK),
+            name: Label::parse(name).unwrap(),
+            default,
+            documents,
+        };
+        let insurance = DocumentType::listed("document-insurance").unwrap();
+        let drivable = usage("Drivable", true, vec![insurance.clone()]);
+        let towing = usage("Towing", false, vec![]);
+        for (n, item, sequence) in [(71, &towing, 3), (70, &drivable, 4)] {
+            UsageWriter
+                .create(
+                    &mut connection,
+                    test_id(n),
+                    &UsagePatch::all(item.clone()),
+                    sequence,
+                )
+                .await
+                .unwrap();
+        }
+        assert_eq!(
+            database.usages_of(test_id(TRUCK)).await.unwrap(),
+            vec![(test_id(70), drivable.clone()), (test_id(71), towing)],
+            "the default first"
+        );
+        // Renamed, and needing nothing more; it stays the default.
+        let patch = UsagePatch {
+            name: Some(Label::parse("Road-ready").unwrap()),
+            documents: Some(vec![]),
+            default: Some(false),
+            ..UsagePatch::default()
+        };
+        UsageWriter
+            .update(&mut connection, test_id(70), &patch, 5)
+            .await
+            .unwrap();
+        let changed = database.usage(test_id(70)).await.unwrap().unwrap();
+        assert_eq!(changed.name.as_str(), "Road-ready");
+        assert!(changed.documents.is_empty());
+        assert!(changed.default, "fixed once made");
+        UsageWriter
+            .delete(&mut connection, test_id(71), 6)
+            .await
+            .unwrap();
+        assert_eq!(database.usages_of(test_id(TRUCK)).await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn requirements_and_templates_keep_their_usages() {
+        use domain::usage::Usage;
+        let (_temp, database, mut connection) = database().await;
+        let changed = Usage {
+            asset: test_id(TRUCK),
+            name: Label::parse("Road-ready").unwrap(),
+            default: true,
+            documents: vec![],
+        };
+        // A requirement keeps the usages it ticks; a template keeps the vehicle's usages.
+        let mut oil = oil_change();
+        oil.usages = vec![test_id(70)];
+        RequirementWriter
+            .create(
+                &mut connection,
+                test_id(OIL_CHANGE),
+                &RequirementPatch::all(oil),
+                7,
+            )
+            .await
+            .unwrap();
+        let stored = database
+            .requirement(test_id(OIL_CHANGE))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.usages, vec![test_id(70)]);
+        let template = ScheduleTemplate::from_vehicle(
+            Label::parse("Pickup basics").unwrap(),
+            &[],
+            &[(test_id(OIL_CHANGE), stored)],
+            &[],
+            &[],
+            &[(test_id(70), changed)],
+        );
+        TemplateWriter
+            .create(
+                &mut connection,
+                test_id(TEMPLATE),
+                &ScheduleTemplatePatch::all(template.clone()),
+                8,
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            database
+                .template(test_id(TEMPLATE))
+                .await
+                .unwrap()
+                .unwrap()
+                .usages,
+            template.usages
+        );
+    }
 }

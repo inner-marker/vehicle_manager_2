@@ -68,6 +68,7 @@ async fn every_release_fixture_migrates_to_the_latest_schema() {
         database.reference_documents().await.unwrap();
         erased_files_come_through(&database, &fixture).await;
         meters_come_through(&database, &fixture, before).await;
+        phase_five_starts_empty(&database, &fixture).await;
         let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
             .fetch_one(database.pool())
             .await
@@ -136,8 +137,8 @@ async fn rows_before(file: &Path) -> (i64, i64) {
 }
 
 /// Every meter and reading survived the rebuild of `meters` (migration 0022), with every
-/// meter counting up and not resettable, and no reading a reset; and migrations 0023's to
-/// 0025's columns and tables read as empty.
+/// meter counting up and not resettable, and no reading a reset; and migration 0023's columns
+/// read as empty.
 #[cfg(test)]
 async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, i64)) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -167,6 +168,29 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
             assert_eq!(document.warn_days, None, "{}", fixture.display());
         }
     }
+}
+
+/// Migrations 0024 to 0026's columns and tables read as empty: no snoozes or starting step, no
+/// specs, templates, or ticked specs, no part from a spec, and no usages.
+#[cfg(test)]
+async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
+    let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
+    // Migration 0026: no usages yet (the server makes the defaults), and no requirement or
+    // template lists any (so each requirement counts for the default).
+    assert_eq!(
+        (
+            count("SELECT count(*) FROM usages").await.unwrap(),
+            count("SELECT count(*) FROM requirements WHERE usages <> '[]'")
+                .await
+                .unwrap(),
+            count("SELECT count(*) FROM schedule_templates WHERE usages <> '[]'")
+                .await
+                .unwrap()
+        ),
+        (0, 0, 0),
+        "{}",
+        fixture.display()
+    );
     // Migration 0025: no specs or templates yet, no requirement ticks one, and no part came
     // from one.
     assert_eq!(

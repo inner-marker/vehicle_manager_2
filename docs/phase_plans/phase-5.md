@@ -684,7 +684,7 @@
 |---|---|---|
 | **6.0** `docs:` | ☑️ | This plan; the sketch; decision #086; milestone 5 marked ✅. |
 | **6a** `feat(domain):` readiness | ☑️ | `domain::usage` (the record, its checks, the default from the profile); `Requirement::usages`; the readiness calculation; copying usages by name; the disposition check. Unit tests first (each mark, a missing document, High blocking every usage, a deferred High, standing alone, the default for existing requirements). |
-| **6b** `feat(storage):` migration 0026 | ⬜ | A `usages` table and `requirements.usages` (empty for every existing requirement, so the default). Each vehicle's default usage made at startup if it has none, and when a vehicle is added. Both reach the desktop's copy. The release fixtures migrate. |
+| **6b** `feat(storage):` migration 0026 | ☑️ | A `usages` table and `requirements.usages` (empty for every existing requirement, so the default). Each vehicle's default usage made at startup if it has none, and when a vehicle is added. Both reach the desktop's copy. The release fixtures migrate. |
 | **6c** `feat(server):` | ⬜ | Usages (Admins and Maintainers change them; everyone who sees the vehicle sees them); readiness for each of a vehicle's usages (the Overview); the default usage's answer on each Garage card; Copy schedule and templates with usages; sign-offs and deferrals checked directly. |
 | **6d** `feat(app):` the screens | ⬜ | **Ready to use?** on the Overview (row 1), the Garage chip (row 2), the Usages section (row 3), and **Needed for** (row 4). |
 | **6e** `docs:` | ⬜ | Milestone 6's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
@@ -698,6 +698,17 @@
 - **Not here after all:** the disposition check. It's the server's (6c), where a job's permissions are already checked; there's nothing for `domain` to work out.
 - **Tests:** a usage's checks; each kind's default (title left out; a kind without a profile); matching usages by name and the default by being the default; the default usage counting requirements that tick none and needing its documents (one missing, one due soon); each usage standing alone; a High issue blocking a usage that needs nothing, deferred too; a renewed document giving way to its renewal; each due step's mark; `needed_for`.
 - **Tidying:** the fuel example in `domain::fuel`'s docs made its IDs with `test_support`, which only a full workspace build turns on; it now makes them with `Id::generate`.
+
+**Step 6b notes (2026-11-18):**
+- **`0026_usages.sql`:**
+  - `usages`: each vehicle's usages (a name, whether it's the default, and the document types it needs as JSON);
+  - `requirements.usages`: a JSON list, empty for every existing requirement, which means the default usage;
+  - `schedule_templates.usages`.
+- **Storage:** `storage::usages` (`UsageWriter`, `usage`, and `usages_of`, the default first, then by name). Once made, a usage's vehicle and whether it's the default don't change. The requirement and template writers store their usages.
+- **The desktop's copy:** `usages` joins the synced record tables.
+- **Moved to 6c:** making each vehicle's default usage (at startup for those without one, and when a vehicle is added). That's the server's, since its name and documents come from the vehicle's profile.
+- **Tidying:** the release fixtures' checks for migrations 0024 to 0026 moved into `phase_five_starts_empty`, keeping the meters' check under clippy's complexity limit.
+- **Tests:** a vehicle's usages (the default first), one renamed and needing nothing more while staying the default, one removed; a requirement's usages; a template's usages; the release fixtures migrating with no usages and no requirement or template listing any.
 
 **API version:** stays at 2. Usages are schedule changes, which go to the server; the desktop gains no operations.
 

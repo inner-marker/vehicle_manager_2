@@ -35,6 +35,7 @@ pub mod specs;
 pub mod squawks;
 pub mod sync;
 pub mod templates;
+pub mod usages;
 pub mod users;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
