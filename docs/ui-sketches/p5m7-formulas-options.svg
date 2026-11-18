@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="2084" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 5 · milestone 7 · Calculated fields and derived meters: layout options</text>
+<text x="24" y="64" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme. Formulas use stable keys, + − × ÷, parentheses, and functions (mean, median, geometric_mean, harmonic_mean, min, max, sum, count, round, abs, stddev).</text>
+<text x="24" y="82" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">Units are checked by dimension. Worked out when shown, never stored. The ƒ badge marks a worked-out value.</text>
+<text x="24" y="114" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · Adding a calculated field</text>
+<text x="24" y="134" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Setup → Custom fields → + Calculated field. Type freely, or insert from the two menus. Here: cost per mile, and average trip time.</text>
+<rect x="24" y="154" width="952" height="470" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="184" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1 · Typed formula, with Functions ▾ and Values ▾ menus</text>
+<text x="44" y="204" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Checked as you type; a preview from the latest event. Both menus insert at the cursor.</text>
+<text x="44" y="230" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Label</text>
+<rect x="44" y="236" width="200" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="54" y="255" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Cost per mile</text>
+<text x="264" y="230" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Shows as</text>
+<rect x="264" y="236" width="200" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="274" y="255" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Money per distance ▾</text>
+<text x="44" y="288" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Formula</text>
+<text x="100" y="288" font-size="11" fill="#4a8fe7" font-weight="600" text-anchor="start">ⓘ How to write one</text>
+<rect x="294" y="272" width="101" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="344.5" y="292" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Functions ▾</text>
+<rect x="396" y="272" width="80" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="436.0" y="292" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Values ▾</text>
+<rect x="44" y="306" width="420" height="64" rx="6" fill="#101318" stroke="#4a8fe7"/>
+<text x="54" y="328" font-size="12.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">round(cost ÷ distance-since-last(odometer), 2)</text>
+<text x="54" y="348" font-size="12.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace"></text>
+<text x="44" y="390" font-size="11.5" fill="#57ab5a" font-weight="600" text-anchor="start">✓  Money ÷ Distance = money per distance</text>
+<text x="44" y="416" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Over (for a function over past events):</text>
+<rect x="44" y="426" width="90.0" height="24" rx="12" fill="#1d2128" stroke="#444c58"/>
+<text x="89.0" y="442" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Cumulative</text>
+<rect x="140.0" y="426" width="110.39999999999999" height="24" rx="12" fill="#203047" stroke="#4a8fe7"/>
+<text x="195.2" y="442" font-size="11.5" fill="#4a8fe7" font-weight="600" text-anchor="middle">Last 5 events</text>
+<rect x="256.4" y="426" width="110.39999999999999" height="24" rx="12" fill="#1d2128" stroke="#444c58"/>
+<text x="311.59999999999997" y="442" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Last 3 months</text>
+<rect x="372.79999999999995" y="426" width="110.39999999999999" height="24" rx="12" fill="#1d2128" stroke="#444c58"/>
+<text x="427.99999999999994" y="442" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Last 1,000 mi</text>
+<text x="44" y="470" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Last X events, days, weeks, months, or mi / km (or h on an hour meter).</text>
+<text x="44" y="498" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Another field, as typed:</text>
+<rect x="44" y="506" width="420" height="30" rx="6" fill="#101318" stroke="#4a8fe7"/>
+<text x="54" y="526" font-size="12.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">mean(trip-time, last 3 months)</text>
+<text x="44" y="560" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">On the latest fuel-up (12 Nov):  $0.14 per mi</text>
+<text x="44" y="580" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">round($58.20 ÷ 410.3 mi, 2)</text>
+<text x="44" y="606" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Refused, with the reason: &quot;trip-time + volume: can&#x27;t add a time to a volume.&quot;</text>
+<rect x="500" y="230" width="216" height="330" rx="8" fill="#262b33" stroke="#444c58"/>
+<text x="512" y="252" font-size="10.5" fill="#9aa1ab" font-weight="600" text-anchor="start">FUNCTIONS</text>
+<text x="512" y="274" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Over values or past events</text>
+<text x="520" y="292" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">mean</text>
+<text x="520" y="311" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">median</text>
+<text x="520" y="330" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">geometric_mean</text>
+<text x="520" y="349" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">harmonic_mean</text>
+<text x="520" y="368" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">min</text>
+<text x="520" y="387" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">max</text>
+<text x="520" y="406" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">sum</text>
+<text x="520" y="425" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">count</text>
+<text x="520" y="444" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">stddev</text>
+<text x="512" y="469" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">On one value</text>
+<text x="520" y="487" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">round( , places)</text>
+<text x="520" y="506" font-size="12" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">abs</text>
+<text x="512" y="550" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="start">A past-events one asks Over.</text>
+<rect x="728" y="230" width="228" height="330" rx="8" fill="#262b33" stroke="#444c58"/>
+<text x="740" y="252" font-size="10.5" fill="#9aa1ab" font-weight="600" text-anchor="start">VALUES</text>
+<text x="740" y="274" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">This fuel-up</text>
+<text x="748" y="292" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">cost</text>
+<text x="748" y="311" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">volume</text>
+<text x="748" y="330" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">odometer</text>
+<text x="748" y="349" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">trip-time</text>
+<text x="740" y="374" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Since the last fuel-up</text>
+<text x="748" y="392" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">distance-since-last(</text>
+<text x="748" y="411" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">  odometer)</text>
+<text x="748" y="430" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">time-since-last</text>
+<text x="740" y="455" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Numbers with units</text>
+<text x="748" y="473" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">33 mi/h</text>
+<text x="748" y="492" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">1000 mi</text>
+<text x="740" y="550" font-size="10" fill="#9aa1ab" font-weight="400" text-anchor="start">Each by its stable key, labels beside.</text>
+<rect x="800" y="578" width="52" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="826.0" y="598" font-size="12.5" fill="#fff" font-weight="600" text-anchor="middle">Save</text>
+<rect x="860" y="578" width="66" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="893.0" y="598" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="24" y="664" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · Where calculated values show</text>
+<text x="24" y="684" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">A fuel-up with Cost per mile and Average trip time (last 5).</text>
+<rect x="24" y="704" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="734" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · On the form (live) and the event page</text>
+<text x="44" y="754" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Read-only rows under the fields, marked ƒ</text>
+<text x="44" y="780" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Cost</text>
+<rect x="44" y="786" width="190" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="54" y="805" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">$58.20</text>
+<text x="254" y="780" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Volume</text>
+<rect x="254" y="786" width="190" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="264" y="805" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">12.40 gal</text>
+<rect x="44" y="846" width="420" height="32" rx="6" fill="#171a20" stroke="#333a45"/>
+<rect x="56" y="854" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="66" y="867" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="84" y="867" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Cost per mile</text>
+<text x="452" y="867" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">$0.14 per mi</text>
+<rect x="44" y="886" width="420" height="32" rx="6" fill="#171a20" stroke="#333a45"/>
+<rect x="56" y="894" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="66" y="907" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="84" y="907" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Average trip time, last 5</text>
+<text x="452" y="907" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="end">1:12:30</text>
+<text x="44" y="938" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Changes as Cost and the odometer are typed.</text>
+<rect x="516" y="704" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="734" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · Only on the event&#x27;s page</text>
+<text x="536" y="754" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The form stays as it is</text>
+<text x="536" y="790" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Fuel-up · 12 Nov</text>
+<text x="536" y="818" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Volume</text>
+<text x="956" y="818" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">12.40 gal</text>
+<text x="536" y="846" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Cost</text>
+<text x="956" y="846" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">$58.20</text>
+<rect x="536" y="861" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="546" y="874" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="564" y="874" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Cost per mile</text>
+<text x="956" y="874" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">$0.14 per mi</text>
+<rect x="536" y="889" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="546" y="902" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="564" y="902" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Average trip time, last 5</text>
+<text x="956" y="902" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="end">1:12:30</text>
+<text x="24" y="994" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Adding a derived meter</text>
+<text x="24" y="1014" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Setup → Meters. Here: equivalent miles = odometer + idle hours × 33. Nobody types its readings.</text>
+<rect x="24" y="1034" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1064" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · &quot;Worked out from other meters&quot; in + Meter</text>
+<text x="44" y="1084" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">One dialog; the choice swaps readings for a formula</text>
+<text x="44" y="1110" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Name</text>
+<rect x="44" y="1116" width="200" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="54" y="1135" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Service miles</text>
+<text x="264" y="1110" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Unit</text>
+<rect x="264" y="1116" width="200" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="274" y="1135" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Miles ▾</text>
+<text x="44" y="1168" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Readings</text>
+<rect x="44" y="1179" width="14" height="14" rx="3" fill="#101318" stroke="#5b6470"/>
+<text x="66" y="1190" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Typed in events</text>
+<rect x="214" y="1179" width="14" height="14" rx="3" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="221" y="1190" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">✓</text>
+<text x="236" y="1190" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Worked out from other meters</text>
+<text x="44" y="1218" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Formula</text>
+<text x="100" y="1218" font-size="11" fill="#4a8fe7" font-weight="600" text-anchor="start">ⓘ How to write one</text>
+<rect x="44" y="1224" width="420" height="30" rx="6" fill="#101318" stroke="#4a8fe7"/>
+<text x="54" y="1244" font-size="12.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">odometer + idle-hours × 33 mi/h</text>
+<text x="44" y="1272" font-size="11.5" fill="#57ab5a" font-weight="600" text-anchor="start">✓  Distance + Time × distance per time = Distance</text>
+<text x="44" y="1296" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Now: 48,210 mi  (45,000 mi + 97.3 h × 33)</text>
+<text x="44" y="1318" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Interval rules can use it; it can&#x27;t be reset.</text>
+<rect x="334" y="1324" width="52" height="30" rx="6" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="360.0" y="1344" font-size="12.5" fill="#fff" font-weight="600" text-anchor="middle">Save</text>
+<rect x="394" y="1324" width="66" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="427.0" y="1344" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">Cancel</text>
+<rect x="516" y="1034" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="1064" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · Its own + Derived meter button</text>
+<text x="536" y="1084" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Its dialog: 3A&#x27;s name, unit, and formula, without the choice</text>
+<text x="536" y="1114" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">METERS</text>
+<rect x="726" y="1096" width="73" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="762.5" y="1116" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Meter</text>
+<rect x="816" y="1096" width="129" height="30" rx="6" fill="#262b33" stroke="#444c58"/>
+<text x="880.5" y="1116" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="middle">+ Derived meter</text>
+<rect x="536" y="1142" width="420" height="40" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="548" y="1159" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Odometer</text>
+<text x="548" y="1175" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">mi · typed</text>
+<rect x="536" y="1188" width="420" height="40" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="548" y="1205" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Idle hours</text>
+<text x="548" y="1221" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">h · typed</text>
+<rect x="536" y="1234" width="420" height="40" rx="6" fill="#1d2128" stroke="#333a45"/>
+<rect x="548" y="1240" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="558" y="1253" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="576" y="1251" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Service miles</text>
+<text x="548" y="1267" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">mi · odometer + idle-hours × 33 mi/h</text>
+<text x="24" y="1404" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">4 · A derived meter on the vehicle</text>
+<text x="24" y="1424" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">One layout: in the Overview&#x27;s meters and Setup, marked ƒ; never a reading field on a form.</text>
+<rect x="24" y="1444" width="952" height="170" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1474" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">4A · Beside the typed meters</text>
+<rect x="44" y="1500" width="290" height="90" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="58" y="1526" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Odometer</text>
+<text x="58" y="1556" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">45,000 mi</text>
+<text x="58" y="1578" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">read 12 Nov</text>
+<rect x="354" y="1500" width="290" height="90" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="368" y="1526" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Idle hours</text>
+<text x="368" y="1556" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">97.3 h</text>
+<text x="368" y="1578" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">read 12 Nov</text>
+<rect x="664" y="1500" width="290" height="90" rx="8" fill="#1d2128" stroke="#333a45"/>
+<rect x="678" y="1514" width="20" height="17" rx="4" fill="#203047" stroke="#4a8fe7"/>
+<text x="688" y="1527" font-size="14" fill="#79b8ff" font-weight="700" font-style="italic" font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">ƒ</text>
+<text x="706" y="1526" font-size="12.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Service miles</text>
+<text x="678" y="1556" font-size="20" fill="#e8eaed" font-weight="700" text-anchor="start">48,210 mi</text>
+<text x="678" y="1578" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">worked out from Odometer and Idle hours</text>
+<text x="24" y="1654" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">5 · Help with formulas</text>
+<text x="24" y="1674" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">One layout: &quot;ⓘ How to write one&quot; beside every formula box opens a short popup; &quot;Full guide&quot; opens the Help page.</text>
+<rect x="24" y="1694" width="952" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1724" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">5A · A short popup, then the full guide</text>
+<text x="44" y="1760" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Formula</text>
+<text x="100" y="1760" font-size="11" fill="#4a8fe7" font-weight="600" text-anchor="start">ⓘ How to write one</text>
+<rect x="44" y="1774" width="520" height="232" rx="8" fill="#262b33" stroke="#444c58"/>
+<text x="60" y="1798" font-size="13.5" fill="#e8eaed" font-weight="700" text-anchor="start">Writing a formula</text>
+<text x="548" y="1798" font-size="13" fill="#9aa1ab" font-weight="600" text-anchor="end">✕</text>
+<text x="60" y="1822" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Values by their key; numbers with a unit (33 mi/h).</text>
+<text x="60" y="1840" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">+ − × ÷ and ( ). Units must agree: miles + hours is refused.</text>
+<text x="60" y="1858" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">A function over past events takes an Over: last 5, last 3 months,</text>
+<text x="60" y="1876" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">last 1,000 mi, or cumulative.</text>
+<text x="60" y="1904" font-size="11" fill="#9aa1ab" font-weight="600" text-anchor="start">Examples</text>
+<text x="60" y="1924" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">cost ÷ distance-since-last(odometer)</text>
+<text x="60" y="1942" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">mean(trip-time, last 3 months)</text>
+<text x="60" y="1960" font-size="11.5" fill="#e8eaed" font-family="ui-monospace, Menlo, monospace">odometer + idle-hours × 33 mi/h</text>
+<text x="60" y="1994" font-size="12" fill="#4a8fe7" font-weight="600" text-anchor="start">Full guide →</text>
+<rect x="600" y="1774" width="356" height="232" rx="8" fill="#1d2128" stroke="#333a45"/>
+<text x="616" y="1798" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="start">Help → Formulas (its own page)</text>
+<text x="616" y="1824" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Every function, with an example each</text>
+<text x="616" y="1844" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Every Over, and how history is chosen</text>
+<text x="616" y="1864" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Units: which combine, and what they make</text>
+<text x="616" y="1884" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Since the last event</text>
+<text x="616" y="1904" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Derived meters, and rules that use them</text>
+<text x="616" y="1924" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">· Why a formula is refused, and the fix</text>
+<text x="616" y="1944" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<text x="616" y="1964" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">In the app, so it works offline too.</text>
+<text x="24" y="2054" font-size="13" fill="#1b1f24" font-weight="600" text-anchor="start">Chosen: 1 (combined), 2A, 3B, 4A; the ƒ badge everywhere a value is worked out; 5A help beside every formula box.</text>
+</svg>
