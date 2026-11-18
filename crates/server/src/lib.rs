@@ -15,6 +15,7 @@ pub mod devices;
 pub mod documents;
 pub mod due;
 pub mod events;
+pub mod fuel;
 pub mod groups;
 pub mod health;
 pub mod ids;

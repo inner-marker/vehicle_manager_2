@@ -13,8 +13,8 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, Handshake,
-    InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
+    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, FuelOutcome,
+    Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome,
     ReferencesOutcome, ScheduleOutcome, SessionState, SetupOutcome, SignInOutcome, SquawksOutcome,
     SwitchModeOutcome, TemplatesOutcome, UserAdminOutcome,
 };
@@ -643,6 +643,19 @@ pub(crate) async fn vehicle_due(
 ) -> ServerFnResult<DueOutcome> {
     Ok(
         server_side::with_due(async |context| ::server::due::list(&context, asset, &zone).await)
+            .await,
+    )
+}
+
+/// A vehicle's fuel economy (#085).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`FuelOutcome`] values.
+#[post("/api/v1/fuel")]
+pub(crate) async fn vehicle_fuel(asset: domain::asset::AssetId) -> ServerFnResult<FuelOutcome> {
+    Ok(
+        server_side::with_fuel(async |context| ::server::fuel::summary(&context, asset).await)
             .await,
     )
 }
@@ -2323,6 +2336,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::ScheduleOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a fuel economy request,
+    /// or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_fuel(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::FuelOutcome,
+    ) -> domain::api::FuelOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::FuelOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

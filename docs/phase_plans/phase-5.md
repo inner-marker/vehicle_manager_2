@@ -601,7 +601,7 @@
 |---|---|---|
 | **5.0** `docs:` | ☑️ | This plan; the sketch; decision #085; milestone 4 marked ✅. |
 | **5a** `feat(domain):` fuel economy | ☑️ | `domain::fuel`: the fuel odometer, stretches, each fill's part, averages, bands, towed vehicles, and the car's figure. Unit and property tests first (partials, a missed fill-up, a missing reading, a correction, the first full fill, an average never using a dropped stretch). |
-| **5b** `feat(server):` | ⬜ | A vehicle's fuel summary (for the Fuel tab and the Overview), from its counted fuel-ups, for anyone whose role covers it. The desktop works it out from its copy, offline too. |
+| **5b** `feat(server):` | ☑️ | A vehicle's fuel summary (for the Fuel tab and the Overview), from its counted fuel-ups, for anyone whose role covers it. The desktop works it out from its copy, offline too. |
 | **5c** `feat(app):` the screens | ⬜ | The tiles (row 1), the chart with its details and table view (row 2), the breakdowns (row 3), each fuel-up's line and the **ⓘ** popovers (row 4), and the Overview's Fuel panel (row 5). |
 | **5d** `docs:` | ⬜ | Milestone 5's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
@@ -614,6 +614,13 @@
   - `Averages` (the last 5 counted stretches, those ending in the last 365 days, and all) and `Breakdowns` (`Band::highway` and `Band::load`, three bands each; and each towed vehicle, with "not towing" first) are totals over totals (`Average`), in meters per liter, rounded.
 - **Which fills:** the server passes the vehicle's counted fuel-ups (5b), so a correction stands in for what it corrects.
 - **Tests:** the fuel odometer; partials adding in, and each fill's part; order by time, not by list; a missed fill-up, a missing reading, and no distance each dropping a stretch; the three averages' spans; no fills, or one; shares weighted by fuel into bands, and a towed vehicle; the bands' edges; the car's figure; a fill read from a fuel-up; and a property test that a dropped stretch never moves an average.
+
+**Step 5b notes (2026-11-17):**
+- **`server::fuel::summary`:** a vehicle's fuel economy (`FuelView`: the summary, the towed vehicles' names, and when the latest fill-up was), for anyone whose role covers it; **Not found** otherwise.
+- **Which fuel-ups:** every one not deleted, **drafts included**. A fuel-up is a draft for its first day, and today's should count. A finalized correction stands in for what it corrects; a correction still in draft waits, and its original counts until then. (The plan said "counted events", which are finalized only; that would have left out every fuel-up from the last day.)
+- **Towed vehicles** the person can't see aren't named; the screen will say "another vehicle".
+- **Endpoint:** `POST /api/v1/fuel`. On the desktop, the data layer reads it from the copy, offline too; it has no caller until 5c.
+- **Tests** (server, `tests/fuel.rs`): a truck's five fuel-ups, logged by a Driver (so drafts): a partial added in (20 mpg), a stretch towing the camper (12 mpg), a missed fill-up dropped, the all-time average as distance over fuel (15 mpg), the camper named, the latest fill-up's time, and a vehicle Sam can't see.
 
 **Nothing new stored:** the figures come from the fuel-ups already recorded, so there's no migration, and the API stays at 2.
 
