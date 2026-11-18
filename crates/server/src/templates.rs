@@ -171,7 +171,8 @@ async fn save_from(
         .meters_of(from)
         .await
         .map_err(|error| failed("meters", &error))?;
-    let template = ScheduleTemplate::from_vehicle(name, &meters, &requirements, &bundles, &specs);
+    let template =
+        ScheduleTemplate::from_vehicle(name, &meters, &requirements, &bundles, &specs, &[]);
     let id: TemplateId = context
         .new_id()
         .map_err(|_| TemplatesOutcome::Unavailable)?;

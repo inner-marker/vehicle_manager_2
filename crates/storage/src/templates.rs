@@ -118,6 +118,7 @@ fn template_from_row(row: &SqliteRow) -> Result<(TemplateId, ScheduleTemplate), 
             requirements: json_from_sql(&text("requirements")?, "schedule_templates.requirements")?,
             bundles: json_from_sql(&text("bundles")?, "schedule_templates.bundles")?,
             specs: json_from_sql(&text("specs")?, "schedule_templates.specs")?,
+            usages: vec![],
         },
     ))
 }

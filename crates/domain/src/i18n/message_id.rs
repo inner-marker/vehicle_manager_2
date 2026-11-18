@@ -1823,6 +1823,16 @@ define_messages! {
     SPEC_PART_NUMBER_SHOWN => "spec-part-number-shown",
     /// Specs: remove one.
     SPEC_REMOVE => "spec-remove",
+    /// Usages: a road vehicle's default (#086).
+    USAGE_DRIVABLE => "usage-drivable",
+    /// Usages: a trailer's default.
+    USAGE_TOWABLE => "usage-towable",
+    /// Usages: equipment's default, and a kind without a profile.
+    USAGE_USABLE => "usage-usable",
+    /// Usages: the name is taken.
+    USAGE_NAME_TAKEN => "usage-name-taken",
+    /// Usages: the default can't be removed.
+    USAGE_DEFAULT_STAYS => "usage-default-stays",
     /// A requirement: the specs its job uses.
     SPEC_CHECKLIST => "spec-checklist",
     /// A requirement: what ticking a spec does.

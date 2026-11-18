@@ -172,6 +172,7 @@ mod specs {
             before_records: None,
             warnings: None,
             specs: vec![test_id(OIL), test_id(FILTER)],
+            usages: vec![],
         }
     }
 
@@ -218,6 +219,7 @@ mod specs {
             &[(test_id(OIL_CHANGE), oil_change())],
             &[],
             &[(test_id(OIL), oil()), (test_id(FILTER), filter())],
+            &[],
         );
         TemplateWriter
             .create(

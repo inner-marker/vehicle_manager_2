@@ -18,11 +18,11 @@
 //!
 //! ```
 //! use domain::fuel::{Fill, summarize};
-//! use domain::test_support::test_id;
+//! use domain::id::Id;
 //! use domain::time::UnixMillis;
 //!
 //! let fill = |n: u32, km: i64, liters: i64, full: bool| Fill {
-//!     event: test_id(n),
+//!     event: Id::generate(UnixMillis::from_millis(i64::from(n)), [0; 10]).unwrap(),
 //!     at: UnixMillis::from_millis(i64::from(n) * 86_400_000),
 //!     reading: Some(km * 1_000),
 //!     volume_ml: liters * 1_000,

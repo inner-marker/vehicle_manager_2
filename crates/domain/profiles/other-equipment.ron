@@ -1,7 +1,7 @@
 // Other equipment (decision #030): anything else; add its meters by hand.
 (
     id: "other-equipment",
-    version: 2,
+    version: 3,
     name: "profile-other-equipment",
     event_kinds: [reading, maintenance, repair],
     sections: [],
@@ -11,6 +11,10 @@
     // What a High squawk means for this kind (#063).
     high_severity: "squawk-high-out-of-service",
     documents: [],
+    // Its default usage (#086): what "ready to use" means without saying more, and the
+    // document types it needs (a missing or expired one makes it not ready).
+    default_usage: "usage-usable",
+    usage_documents: [],
     meters: [],
     fields: [],
 )

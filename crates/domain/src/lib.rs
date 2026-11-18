@@ -43,6 +43,7 @@ pub mod plate;
 pub mod preferences;
 pub mod profile;
 pub mod quantity;
+pub mod readiness;
 pub mod reference;
 pub mod requirement;
 pub mod secret;
@@ -54,6 +55,7 @@ pub mod template;
 pub mod time;
 pub mod time_utils;
 pub mod timers;
+pub mod usage;
 pub mod user;
 
 #[cfg(any(test, feature = "test-support"))]

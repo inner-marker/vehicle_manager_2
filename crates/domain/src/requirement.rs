@@ -221,6 +221,10 @@ pub struct Requirement {
     /// reminders.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub specs: Vec<crate::spec::SpecId>,
+    /// The vehicle's usages it's needed for (#086); none listed means the default usage
+    /// (every requirement made before usages).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub usages: Vec<crate::usage::UsageId>,
 }
 
 /// Where a requirement stands (worked out, never stored).
@@ -256,6 +260,17 @@ impl RequirementStatus {
 }
 
 impl Requirement {
+    /// Whether it's needed for usage `usage`, which is the vehicle's default if `default`:
+    /// ticked for it, or ticking none and it's the default (#086).
+    #[must_use]
+    pub fn needed_for(&self, usage: crate::usage::UsageId, default: bool) -> bool {
+        if self.usages.is_empty() {
+            default
+        } else {
+            self.usages.contains(&usage)
+        }
+    }
+
     /// Where requirement `id` stands, from the finished tasks that did requirements (`done`):
     /// not applicable if so decided; a one-time one complied with by the first task that did
     /// it, or open (also while under review); a recurring one active (open while under
@@ -317,6 +332,8 @@ record_patch! {
         warnings: Clearable<DueDefaults>,
         /// See [`Requirement::specs`] (the whole list).
         specs: Vec<crate::spec::SpecId>,
+        /// See [`Requirement::usages`] (the whole list).
+        usages: Vec<crate::usage::UsageId>,
     }
 }
 
@@ -336,6 +353,7 @@ impl RequirementPatch {
             before_records: Some(Clearable::from_option(requirement.before_records)),
             warnings: Some(Clearable::from_option(requirement.warnings)),
             specs: Some(requirement.specs),
+            usages: Some(requirement.usages),
         }
     }
 }
@@ -422,6 +440,8 @@ pub enum RequirementProblem {
     BadSpecs,
     /// A template from a vehicle with no requirements (#084).
     NothingToSave,
+    /// Usages that aren't this vehicle's, or one twice (#086).
+    BadUsages,
 }
 
 impl RequirementProblem {
@@ -429,7 +449,7 @@ impl RequirementProblem {
     #[must_use]
     pub const fn message(self) -> MessageId {
         match self {
-            Self::UnknownMeter | Self::UnknownReference | Self::BadSpecs => {
+            Self::UnknownMeter | Self::UnknownReference | Self::BadSpecs | Self::BadUsages => {
                 messages::SOMETHING_WENT_WRONG
             }
             Self::BadInterval => messages::REQUIREMENT_BAD_INTERVAL,
@@ -574,6 +594,24 @@ pub fn check_specs(
     for (index, spec) in specs.iter().enumerate() {
         if !known.contains(spec) || specs[..index].contains(spec) {
             return Err(RequirementProblem::BadSpecs);
+        }
+    }
+    Ok(())
+}
+
+/// Checks a requirement's `usages` against its vehicle's (`known`): each the vehicle's, and
+/// each once (#086).
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadUsages`] otherwise.
+pub fn check_usages(
+    usages: &[crate::usage::UsageId],
+    known: &[crate::usage::UsageId],
+) -> Result<(), RequirementProblem> {
+    for (index, usage) in usages.iter().enumerate() {
+        if !known.contains(usage) || usages[..index].contains(usage) {
+            return Err(RequirementProblem::BadUsages);
         }
     }
     Ok(())
@@ -827,6 +865,7 @@ mod tests {
             before_records: None,
             warnings: None,
             specs: vec![],
+            usages: vec![],
         }
     }
 
@@ -1218,7 +1257,7 @@ mod tests {
     #[test]
     fn patches_set_every_field_and_survive_the_trip() {
         let patch = RequirementPatch::all(oil());
-        assert_eq!(patch.changed_fields().len(), 11);
+        assert_eq!(patch.changed_fields().len(), 12);
         let json = serde_json::to_string(&patch).unwrap();
         assert!(json.contains("\"rule\":\"calendar\""), "{json}");
         assert_eq!(

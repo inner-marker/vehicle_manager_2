@@ -683,11 +683,21 @@
 | Step | Status | What |
 |---|---|---|
 | **6.0** `docs:` | ☑️ | This plan; the sketch; decision #086; milestone 5 marked ✅. |
-| **6a** `feat(domain):` readiness | ⬜ | `domain::usage` (the record, its checks, the default from the profile); `Requirement::usages`; the readiness calculation; copying usages by name; the disposition check. Unit tests first (each mark, a missing document, High blocking every usage, a deferred High, standing alone, the default for existing requirements). |
+| **6a** `feat(domain):` readiness | ☑️ | `domain::usage` (the record, its checks, the default from the profile); `Requirement::usages`; the readiness calculation; copying usages by name; the disposition check. Unit tests first (each mark, a missing document, High blocking every usage, a deferred High, standing alone, the default for existing requirements). |
 | **6b** `feat(storage):` migration 0026 | ⬜ | A `usages` table and `requirements.usages` (empty for every existing requirement, so the default). Each vehicle's default usage made at startup if it has none, and when a vehicle is added. Both reach the desktop's copy. The release fixtures migrate. |
 | **6c** `feat(server):` | ⬜ | Usages (Admins and Maintainers change them; everyone who sees the vehicle sees them); readiness for each of a vehicle's usages (the Overview); the default usage's answer on each Garage card; Copy schedule and templates with usages; sign-offs and deferrals checked directly. |
 | **6d** `feat(app):` the screens | ⬜ | **Ready to use?** on the Overview (row 1), the Garage chip (row 2), the Usages section (row 3), and **Needed for** (row 4). |
 | **6e** `docs:` | ⬜ | Milestone 6's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 6a notes (2026-11-18):**
+- **The profiles** each gained `default_usage` (Drivable, Towable, or Usable) and `usage_documents` (registration and insurance on cars, trucks, motorcycles, and trailers; none on generators and other equipment); every profile's version went up by one.
+- **`domain::usage`:** `Usage` (a vehicle, a name, whether it's the default, the document types it needs), `UsageId`, `UsagePatch`, and `check_usage` (a name of its own, ignoring case; each document type once; `UsageProblem`). `default_usage` makes a vehicle's from its kind's profile ("Usable" with none for a kind without one). `match_usages` maps a copied schedule's usages to the new vehicle's by name, the default to its default, and says which to create.
+- **`Requirement::usages`** (and its patch field), with `check_usages` and `Requirement::needed_for`: ticking none means the default usage, so every existing requirement counts for it with no change to its data.
+- **`domain::readiness`:** `readiness` for one usage from a vehicle's `VehicleRecords` (its requirements, what's due, its documents, its open and deferred High issues, and today). Each `ReadinessItem` has a `Mark` (✓, !, ✗) and an `ItemReason`: a requirement and where it stands, a needed document type's current document (the latest to expire among those not renewed; one that never expires counts as current) or **none on file**, or a High issue (deferred or not). Items run worst first; the answer is the worst mark.
+- **Templates** carry the vehicle's usages too (`ScheduleTemplate::usages`, read as none by templates saved before).
+- **Not here after all:** the disposition check. It's the server's (6c), where a job's permissions are already checked; there's nothing for `domain` to work out.
+- **Tests:** a usage's checks; each kind's default (title left out; a kind without a profile); matching usages by name and the default by being the default; the default usage counting requirements that tick none and needing its documents (one missing, one due soon); each usage standing alone; a High issue blocking a usage that needs nothing, deferred too; a renewed document giving way to its renewal; each due step's mark; `needed_for`.
+- **Tidying:** the fuel example in `domain::fuel`'s docs made its IDs with `test_support`, which only a full workspace build turns on; it now makes them with `Id::generate`.
 
 **API version:** stays at 2. Usages are schedule changes, which go to the server; the desktop gains no operations.
 

@@ -963,6 +963,7 @@ mod tests {
                 before_records: None,
                 warnings: None,
                 specs: vec![],
+                usages: vec![],
             },
             last_done: None,
             status: domain::requirement::RequirementStatus::Active,

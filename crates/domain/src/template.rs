@@ -31,6 +31,9 @@ pub struct ScheduleTemplate {
     pub bundles: Vec<Bundle>,
     /// Its specs, with the IDs they had.
     pub specs: Vec<(SpecId, Spec)>,
+    /// The usages its requirements tick, with the IDs they had (#086).
+    #[serde(default)]
+    pub usages: Vec<(crate::usage::UsageId, crate::usage::Usage)>,
 }
 
 /// The ID of a template.
@@ -50,6 +53,8 @@ record_patch! {
         bundles: Vec<Bundle>,
         /// See [`ScheduleTemplate::specs`].
         specs: Vec<(SpecId, Spec)>,
+        /// See [`ScheduleTemplate::usages`].
+        usages: Vec<(crate::usage::UsageId, crate::usage::Usage)>,
     }
 }
 
@@ -63,6 +68,7 @@ impl ScheduleTemplatePatch {
             requirements: Some(template.requirements),
             bundles: Some(template.bundles),
             specs: Some(template.specs),
+            usages: Some(template.usages),
         }
     }
 }
@@ -86,7 +92,8 @@ pub struct TemplateCounts {
 impl ScheduleTemplate {
     /// A template named `name` from one vehicle's schedule: its requirements (each one's
     /// recall or bulletin, and when it was last done before the records, left behind: they're
-    /// that vehicle's), bundles, and specs, with the meters the requirements' rules use.
+    /// that vehicle's), bundles, specs, and usages, with the meters the requirements' rules
+    /// use.
     #[must_use]
     pub fn from_vehicle(
         name: Label,
@@ -94,6 +101,7 @@ impl ScheduleTemplate {
         requirements: &[(RequirementId, Requirement)],
         bundles: &[Bundle],
         specs: &[(SpecId, Spec)],
+        usages: &[(crate::usage::UsageId, crate::usage::Usage)],
     ) -> Self {
         let used = |meter: MeterId| {
             requirements.iter().any(|(_, requirement)| {
@@ -122,6 +130,7 @@ impl ScheduleTemplate {
                 .collect(),
             bundles: bundles.to_vec(),
             specs: specs.to_vec(),
+            usages: usages.to_vec(),
         }
     }
 

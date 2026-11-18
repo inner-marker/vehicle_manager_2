@@ -72,6 +72,7 @@ fn oil_change() -> Requirement {
         }),
         warnings: None,
         specs: vec![test_id(30)],
+        usages: vec![],
     }
 }
 
@@ -95,6 +96,7 @@ fn template() -> ScheduleTemplate {
         &[(test_id(20), oil_change())],
         &[service],
         &[(test_id(30), oil)],
+        &[],
     )
 }
 

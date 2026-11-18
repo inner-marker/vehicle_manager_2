@@ -271,6 +271,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
             )?,
             warnings: optional_from_json(row.try_get("warnings")?, "requirements.warnings")?,
             specs: json_from_sql(&specs, "requirements.specs")?,
+            usages: vec![],
         },
     ))
 }

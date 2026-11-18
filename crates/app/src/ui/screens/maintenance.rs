@@ -924,6 +924,7 @@ fn requirement_from(
         before_records: None,
         warnings: None,
         specs: vec![],
+        usages: vec![],
     })
 }
 
@@ -1777,6 +1778,7 @@ mod tests {
             before_records: None,
             warnings: None,
             specs: vec![],
+            usages: vec![],
         };
         let done = DoneTask {
             requirement: test_id(40),
