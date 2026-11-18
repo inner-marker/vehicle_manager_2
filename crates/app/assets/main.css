@@ -5181,3 +5181,184 @@ button.spec-row:focus-visible {
     width: auto;
     min-width: 10rem;
 }
+
+/* Fuel economy (phase-5.md milestone 5, #085; p5m5 sketch 1A, 2A, 3A, 4A, 5A). One series in
+   the accent colour; text in text colours; hairline, solid, recessive grid. */
+.fuel-economy {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.fuel-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.fuel-tile {
+    display: grid;
+    gap: 2px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.fuel-tile-label,
+.fuel-tile-sub {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.fuel-tile-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.fuel-chart-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fuel-chart {
+    width: 100%;
+    height: auto;
+    max-height: 260px;
+}
+
+.fuel-chart .chart-grid {
+    stroke: var(--border);
+    stroke-width: 1;
+}
+
+.fuel-chart .chart-axis {
+    fill: var(--text-muted);
+    font-size: 11px;
+}
+
+.fuel-chart .chart-gap {
+    fill: var(--surface-raised);
+}
+
+.fuel-chart .chart-average {
+    stroke: var(--text-muted);
+    stroke-width: 1;
+}
+
+.fuel-chart .chart-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.fuel-chart .chart-dot {
+    fill: var(--accent);
+    stroke: var(--bg);
+    stroke-width: 2;
+    cursor: pointer;
+}
+
+.fuel-chart .chart-label {
+    fill: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fuel-chart-detail {
+    margin: 0;
+}
+
+.fuel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.fuel-table th,
+.fuel-table td {
+    padding: 6px 8px;
+    border-top: 1px solid var(--border);
+    text-align: left;
+}
+
+.fuel-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.fuel-breakdowns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px 24px;
+}
+
+.fuel-group {
+    display: grid;
+    gap: 6px;
+}
+
+.fuel-band {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    align-items: center;
+    gap: 2px 10px;
+}
+
+.fuel-band-label {
+    font-size: 0.9rem;
+}
+
+.fuel-band-track {
+    height: 14px;
+}
+
+.fuel-band-bar {
+    display: block;
+    height: 14px;
+    border-radius: 0 4px 4px 0;
+    background: var(--accent);
+}
+
+.fuel-band-value {
+    grid-column: 2;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.timeline-economy {
+    color: var(--text-muted);
+}
+
+.fuel-overview {
+    margin: 0 0 6px;
+    font-weight: 600;
+}
+
+/* The fuel-up form's ⓘ and what it explains. */
+.info-button {
+    min-width: 32px;
+    min-height: 32px;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: 1.05rem;
+    cursor: pointer;
+}
+
+.info-button.on {
+    color: var(--text);
+}
+
+.info-note {
+    max-width: 60ch;
+    margin: 6px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+}

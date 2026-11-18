@@ -350,7 +350,10 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
                 Tab::Squawks => rsx! { SquawksTab { vehicle: view, squawks: squawks() } },
                 Tab::Setup => rsx! { Setup { view } },
                 Tab::Timeline => rsx! { Timeline { view, only: None } },
-                Tab::Fuel => rsx! { Timeline { view, only: Some(Shown::FuelUps) } },
+                Tab::Fuel => rsx! {
+                    super::fuel_view::FuelEconomy { asset: view.id }
+                    Timeline { view, only: Some(Shown::FuelUps) }
+                },
                 Tab::Maintenance => rsx! { MaintenanceTab { vehicle: view, start: maintenance_view } },
                 Tab::Documents => rsx! { DocumentsTab { vehicle: view } },
             }

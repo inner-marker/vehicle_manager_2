@@ -252,6 +252,8 @@ const fn filter_label(filter: Option<EventKind>) -> MessageId {
 #[component]
 pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
     let loaded = use_vehicle_events(view.id);
+    // The Fuel tab says how each fuel-up counted for economy (#085).
+    let economy = super::fuel_view::use_fuel_if(view.id, only == Some(Shown::FuelUps));
     let mut filter = use_signal(|| None::<EventKind>);
     let Some(answer) = loaded() else {
         return rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } };
@@ -297,7 +299,13 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
                 section { key: "{heading}", class: "timeline-month",
                     h3 { class: "section-heading", {heading.to_uppercase()} }
                     for row in rows {
-                        TimelineRow { key: "{row.view.id}", row, meters: view.meters.clone(), units: data.units }
+                        TimelineRow {
+                            key: "{row.view.id}",
+                            counted: economy().flatten().and_then(|fuel| super::fuel_view::fill_line(row.view.id, &fuel, &data.units)),
+                            row,
+                            meters: view.meters.clone(),
+                            units: data.units,
+                        }
                     }
                 }
             }
@@ -306,7 +314,14 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
 }
 
 #[component]
-fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> Element {
+fn TimelineRow(
+    row: Row,
+    meters: Vec<(MeterId, Meter)>,
+    units: Preferences,
+    /// How a fuel-up counted for economy, on the Fuel tab (#085).
+    #[props(default)]
+    counted: Option<String>,
+) -> Element {
     let event = &row.view.event;
     let icon = super::log_chooser::kind_icon(event.kind);
     let title = format!(
@@ -333,6 +348,9 @@ fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> E
             span { class: "timeline-text",
                 span { class: "timeline-title", {title} }
                 span { class: "timeline-numbers", {numbers(event, &meters, &units)} }
+                if let Some(counted) = counted {
+                    span { class: "timeline-numbers timeline-economy", {counted} }
+                }
             }
             span { class: "timeline-chips",
                 for (label, class) in chips {
@@ -365,6 +383,7 @@ pub(super) fn latest_readings(events: &[EventView], meter: MeterId) -> Option<(i
 #[component]
 pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> Element {
     let loaded = use_vehicle_events(view.id);
+    let economy = super::fuel_view::use_fuel_if(view.id, super::vehicle::has_fuel(&view.asset));
     let Some(Ok(data)) = loaded() else {
         return rsx! {};
     };
@@ -387,8 +406,11 @@ pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> 
                         FuelUpRow { key: "{fuel_up.id}", view: fuel_up, units }
                     }
                 }
+                // 5A (#085): the latest stretch's figure and the last-5 average.
+                if let Some(line) = economy().flatten().and_then(|fuel| super::fuel_view::overview_line(&fuel, &units)) {
+                    p { class: "fuel-overview", {line} }
+                }
                 button { class: "link-button", r#type: "button", onclick: move |_| on_timeline.call(()), {tr(messages::PANEL_SEE_TIMELINE)} }
-                p { class: "muted-note", {tr(messages::PANEL_ECONOMY_LATER)} }
             }
         }
         section { class: "vehicle-panel",

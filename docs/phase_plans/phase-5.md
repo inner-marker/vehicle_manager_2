@@ -602,8 +602,8 @@
 | **5.0** `docs:` | ☑️ | This plan; the sketch; decision #085; milestone 4 marked ✅. |
 | **5a** `feat(domain):` fuel economy | ☑️ | `domain::fuel`: the fuel odometer, stretches, each fill's part, averages, bands, towed vehicles, and the car's figure. Unit and property tests first (partials, a missed fill-up, a missing reading, a correction, the first full fill, an average never using a dropped stretch). |
 | **5b** `feat(server):` | ☑️ | A vehicle's fuel summary (for the Fuel tab and the Overview), from its counted fuel-ups, for anyone whose role covers it. The desktop works it out from its copy, offline too. |
-| **5c** `feat(app):` the screens | ⬜ | The tiles (row 1), the chart with its details and table view (row 2), the breakdowns (row 3), each fuel-up's line and the **ⓘ** popovers (row 4), and the Overview's Fuel panel (row 5). |
-| **5d** `docs:` | ⬜ | Milestone 5's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+| **5c** `feat(app):` the screens | ☑️ | The tiles (row 1), the chart with its details and table view (row 2), the breakdowns (row 3), each fuel-up's line and the **ⓘ** popovers (row 4), and the Overview's Fuel panel (row 5). |
+| **5d** `docs:` | ☑️ | Milestone 5's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **Step 5a notes (2026-11-17):**
 - **`domain::fuel`:**
@@ -621,6 +621,24 @@
 - **Towed vehicles** the person can't see aren't named; the screen will say "another vehicle".
 - **Endpoint:** `POST /api/v1/fuel`. On the desktop, the data layer reads it from the copy, offline too; it has no caller until 5c.
 - **Tests** (server, `tests/fuel.rs`): a truck's five fuel-ups, logged by a Driver (so drafts): a partial added in (20 mpg), a stretch towing the camper (12 mpg), a missed fill-up dropped, the all-time average as distance over fuel (15 mpg), the camper named, the latest fill-up's time, and a vehicle Sam can't see.
+
+**Step 5c notes (2026-11-17):**
+- **The Fuel tab (`ui::screens::fuel_view`)** starts with the figures, then the fuel-ups as before:
+  - **1A:** three tiles (Last 5, 12 months, All time), each with its stretch count, "–" until there's one.
+  - **2A:** the chart, an SVG drawn by the app: gridlines and axis labels, a shaded slot for each dropped stretch, the all-time average as a hairline ("average 24.0"), the line in runs broken at each gap (a lone point is a dot), a dot per counted stretch (its figure on hover, its details under the chart on tap), and only the latest labelled. **Show as a table** lists every stretch, newest first: when it ended, its fuel, and its figure or why it doesn't count.
+  - **3A:** Highway, Towing, Hauling, and Towed vehicles, each band a bar from zero (scaled to the longest), with its figure and stretch count, or "not enough yet". A group with nothing in it isn't shown. A towed vehicle the person can't see is "Another vehicle".
+  - With fewer than two full fill-ups: "Fuel economy shows once there are two full fill-ups."
+- **4A:** each fuel-up in the Fuel tab's list adds how it counted ("20.0 mpg over 300.0 mi · car said 21.0", "Partial: added into the next full fill-up's figure", "Not counted: an earlier fill-up wasn't logged", …). The Timeline and Jobs lists don't fetch it.
+- **The fuel-up form:** an **ⓘ** beside **Filled full** and **Missed previous fill-up** (outside the checkbox, so tapping it doesn't tick it) opens its explanation under the row; tapping it again closes it.
+- **5A:** the Overview's Fuel panel shows "20.0 mpg latest · last 5: 20.0" above the latest fuel-ups, in place of "Fuel economy arrives with Phase 5's reports" (that text is gone). The panel's existing list of the latest fuel-ups already gives the last fill-up's date.
+- **The chart's colour** is the app's accent, one series (no legend); its contrast was checked by hand (7.1 on dark, 4.9 on light), since the palette checker needs Node, which isn't installed here.
+- **Tests:** each fill-up's line; the Overview's line; the line breaking at dropped stretches; the scale's room and floor.
+- **Tidying:** clippy's style findings (two clones it didn't need, a `BandRow` type for the breakdown rows, and float comparisons in a test done with a tolerance). The time zone hook is used through its own module, since its re-export is desktop-only.
+- **Not seen running yet:** all of these screens. They're in the phase's test plan (5d).
+
+**Step 5d notes (2026-11-17):**
+- **The test plan:** milestone 5's section of `docs/test-plans/p5-phase.md`, 16 steps, run at the end of the phase (#081), on a new car with round numbers so every figure can be checked: a full fill, a partial, a full fill with the car's own figure (32.0 mpg), a towing stretch (30.0), a missed fill-up (a gap), and a stretch after it (33.0); the tiles, the line broken at the gap, the breakdowns, a dot's details and the table, the Overview, L/100 km, an edited draft, the desktop offline, and a trailer with no Fuel tab.
+- **Checked against the code while writing it:** the figures are shown to one decimal; the car's own figure is under the form's **More**.
 
 **Nothing new stored:** the figures come from the fuel-ups already recorded, so there's no migration, and the API stays at 2.
 

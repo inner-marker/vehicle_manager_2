@@ -895,7 +895,6 @@ pub(crate) async fn fleet_due() -> ServerFnResult<FleetOutcome> {
 /// # Errors
 ///
 /// As the server function.
-#[expect(dead_code, reason = "the Fuel tab's figures come with step 5c")]
 pub(crate) async fn vehicle_fuel(asset: AssetId) -> ServerFnResult<domain::api::FuelOutcome> {
     read!(reader => ::server::fuel::summary(&reader.assets(), asset).await, api::vehicle_fuel(asset))
 }
