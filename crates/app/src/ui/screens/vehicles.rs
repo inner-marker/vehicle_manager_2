@@ -408,6 +408,10 @@ fn VehicleCard(
                 if let Some(step) = item.due.filter(|step| *step > domain::due::DueStep::Ok) {
                     super::due_view::DueChip { step }
                 }
+                // Its default usage's answer (2A, #086).
+                if let Some((name, mark)) = item.ready.clone().filter(|_| !archived) {
+                    super::readiness_view::ReadyChip { name, mark }
+                }
             }
             if arranging {
                 div { class: "vehicle-card-arrange",

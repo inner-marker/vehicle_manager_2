@@ -686,7 +686,7 @@
 | **6a** `feat(domain):` readiness | ☑️ | `domain::usage` (the record, its checks, the default from the profile); `Requirement::usages`; the readiness calculation; copying usages by name; the disposition check. Unit tests first (each mark, a missing document, High blocking every usage, a deferred High, standing alone, the default for existing requirements). |
 | **6b** `feat(storage):` migration 0026 | ☑️ | A `usages` table and `requirements.usages` (empty for every existing requirement, so the default). Each vehicle's default usage made at startup if it has none, and when a vehicle is added. Both reach the desktop's copy. The release fixtures migrate. |
 | **6c** `feat(server):` | ☑️ | Usages (Admins and Maintainers change them; everyone who sees the vehicle sees them); readiness for each of a vehicle's usages (the Overview); the default usage's answer on each Garage card; Copy schedule and templates with usages; sign-offs and deferrals checked directly. |
-| **6d** `feat(app):` the screens | ⬜ | **Ready to use?** on the Overview (row 1), the Garage chip (row 2), the Usages section (row 3), and **Needed for** (row 4). |
+| **6d** `feat(app):` the screens | ☑️ | **Ready to use?** on the Overview (row 1), the Garage chip (row 2), the Usages section (row 3), and **Needed for** (row 4). |
 | **6e** `docs:` | ⬜ | Milestone 6's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
 **Step 6a notes (2026-11-18):**
@@ -719,6 +719,16 @@
 - **Dispositions:** adding, editing, or correcting a job with sign-offs or deferrals needs `AssetAction::DispositionSquawk` (a Maintainer), checked directly. Logging a job already needs a Maintainer, so this can't be shown failing yet; it guards against that ever changing.
 - **Endpoints:** `/api/v1/usages/add`, `/edit`, `/delete`, and `POST /api/v1/readiness` (read from the copy on the desktop; no caller until 6d).
 - **Tests** (server, `tests/readiness.rs`): a new truck's default usage (Drivable, two documents) and nothing more to make at startup; not drivable with neither document on file, and with an open High issue; the Garage's chip; a vehicle Sam can't see; a Driver can't add a usage; never a second default; a name taken; an unknown usage refused; the default not removable; removing Towing leaving the hitch needed for none; Copy schedule making Towing on the van and re-linking it.
+
+**Step 6d notes (2026-11-18):**
+- **`ui::screens::readiness_view`**, all four rows of the sketch:
+  - **Ready to use?** (1A) replaces the Overview's placeholder: a chip per usage (the default first, shown when there's more than one), the chosen usage's headline ("✗ Not drivable: 2 things", "! Drivable: 1 thing due soon", "✓ Drivable"), then every item with ✓, !, or ✗, its name, why, and a link (Maintenance, Documents, or the issue), and that it's advice only.
+  - **The Garage chip** (2A): the default usage's answer in words beside the due chip; none on an archived vehicle.
+  - **Usages** (3A) in Maintenance → Set up, after the bundles: each usage with the documents it needs, the default marked; **+ Usage** and **Edit** open a dialog for the name and the document types (the kind's profile's, and any already chosen). **Remove** is in the dialog, never for the default.
+  - **Needed for** (4A) in the requirement dialog: a requirement never chosen shows the default ticked; the first change makes its own list, which can be empty.
+- **Colour is never alone:** each mark has its symbol and words; the colours are the existing OK, warning, and error ones.
+- **Gone:** the Overview's "arrives with what's due" note and its placeholder panel.
+- **Tests:** a usage's answer in words; the headline counting only what sets the answer.
 
 **API version:** stays at 2. Usages are schedule changes, which go to the server; the desktop gains no operations.
 

@@ -905,7 +905,6 @@ pub(crate) async fn vehicle_fuel(asset: AssetId) -> ServerFnResult<domain::api::
 /// # Errors
 ///
 /// As the server function.
-#[expect(dead_code, reason = "the Overview's card comes with step 6d")]
 pub(crate) async fn vehicle_readiness(
     asset: AssetId,
 ) -> ServerFnResult<domain::api::ReadinessOutcome> {

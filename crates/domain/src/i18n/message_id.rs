@@ -1255,8 +1255,6 @@ define_messages! {
     TAB_COMING => "tab-coming",
     /// Overview panel: readiness.
     PANEL_READY => "panel-ready",
-    /// Overview panel: readiness, not built yet.
-    PANEL_READY_COMING => "panel-ready-coming",
     /// Overview panel: coming up (what's due, #082).
     PANEL_DUE => "panel-due",
     /// Overview: nothing comes due.
@@ -1833,6 +1831,50 @@ define_messages! {
     USAGE_NAME_TAKEN => "usage-name-taken",
     /// Usages: the default can't be removed.
     USAGE_DEFAULT_STAYS => "usage-default-stays",
+    /// Usages: Set up's section.
+    USAGE_SECTION => "usage-section",
+    /// Usages: what the section is for.
+    USAGE_SECTION_NOTE => "usage-section-note",
+    /// Usages: add one.
+    USAGE_ADD => "usage-add",
+    /// Usages: the dialog's title, adding.
+    USAGE_ADD_TITLE => "usage-add-title",
+    /// Usages: the dialog's title, changing.
+    USAGE_EDIT_TITLE => "usage-edit-title",
+    /// Usages: the name field.
+    USAGE_NAME => "usage-name",
+    /// Usages: the default's name, marked as the default.
+    USAGE_DEFAULT_NAME => "usage-default-name",
+    /// Usages: the document types needed, as a field.
+    USAGE_DOCUMENTS => "usage-documents",
+    /// Usages: what needing a document means.
+    USAGE_DOCUMENTS_NOTE => "usage-documents-note",
+    /// Usages: the documents one needs, listed.
+    USAGE_NEEDS => "usage-needs",
+    /// Usages: needs no documents.
+    USAGE_NEEDS_NOTHING => "usage-needs-nothing",
+    /// Usages: a requirement's "Needed for" field.
+    USAGE_NEEDED_FOR => "usage-needed-for",
+    /// Usages: what "Needed for" means.
+    USAGE_NEEDED_FOR_NOTE => "usage-needed-for-note",
+    /// Ready to use?: a usage that isn't ("Not drivable").
+    READY_NOT => "ready-not",
+    /// Ready to use?: the headline with things that block it.
+    READY_BLOCKERS => "ready-blockers",
+    /// Ready to use?: the headline with things due soon.
+    READY_WARNINGS => "ready-warnings",
+    /// Ready to use?: a document on file and current.
+    READY_DOCUMENT_CURRENT => "ready-document-current",
+    /// Ready to use?: a needed document not on file.
+    READY_DOCUMENT_MISSING => "ready-document-missing",
+    /// Ready to use?: an open High issue.
+    READY_ISSUE_OPEN => "ready-issue-open",
+    /// Ready to use?: a deferred High issue.
+    READY_ISSUE_DEFERRED => "ready-issue-deferred",
+    /// Ready to use?: nothing needed for the usage.
+    READY_NOTHING => "ready-nothing",
+    /// Ready to use?: it's advice, not a lock.
+    READY_ADVISORY => "ready-advisory",
     /// A requirement: the specs its job uses.
     SPEC_CHECKLIST => "spec-checklist",
     /// A requirement: what ticking a spec does.

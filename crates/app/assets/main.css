@@ -5362,3 +5362,71 @@ button.spec-row:focus-visible {
     border-radius: 8px;
     background: var(--surface-raised);
 }
+
+/* Ready to use? (Phase 5 milestone 6, #086): the mark's symbol and words always show with its colour. */
+.ready-ok {
+    --ready: #3fb950;
+}
+
+.ready-warn {
+    --ready: var(--warn);
+}
+
+.ready-no {
+    --ready: var(--error);
+}
+
+.status-chip.ready-chip {
+    border-color: var(--ready);
+    color: var(--ready);
+}
+
+.vehicle-card .ready-chip {
+    align-self: flex-start;
+}
+
+.ready-headline {
+    margin: 4px 0 8px;
+    color: var(--ready);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.ready-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.ready-items li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ready-mark {
+    width: 1.2em;
+    color: var(--ready);
+    font-weight: 700;
+    text-align: center;
+}
+
+.ready-item {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    min-height: 44px;
+    align-items: center;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.ready-item-reason {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}

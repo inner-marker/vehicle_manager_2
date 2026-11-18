@@ -462,7 +462,7 @@ fn Overview(
     rsx! {
         div { class: "vehicle-panels",
             SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
-            Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
+            super::readiness_view::ReadyCard { vehicle: view.clone() }
             super::due_view::ComingUp { view: view.clone() }
             section { class: "vehicle-panel vehicle-photos",
                 AttachmentStrip {
@@ -473,17 +473,6 @@ fn Overview(
                 }
             }
             OverviewPanels { view, on_timeline }
-        }
-    }
-}
-
-/// One Overview panel that fills later.
-#[component]
-fn Panel(title: MessageId, note: MessageId) -> Element {
-    rsx! {
-        section { class: "vehicle-panel",
-            h3 { class: "section-heading", {tr(title).to_uppercase()} }
-            p { class: "muted-note", {tr(note)} }
         }
     }
 }
