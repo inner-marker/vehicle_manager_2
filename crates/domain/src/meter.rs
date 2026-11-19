@@ -8,6 +8,11 @@
 //! it (e.g. a fuel-up requires the odometer). Readings themselves are recorded on events
 //! (milestone 6); their values arrive with `uom` then.
 //!
+//! **Keys and derived meters** (Phase 5 milestone 7, #087): every meter has a stable key from
+//! its name (`odometer`), which formulas use, and a **derived** meter has a formula over the
+//! vehicle's typed meters (`odometer + idle-hours × 33 mi/h`), worked out at every reading of
+//! one of them ([`crate::calculated`]); nobody types its readings, and it can't be reset.
+//!
 //! # Examples
 //!
 //! ```
@@ -22,6 +27,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset::{AssetId, optional_text};
 use crate::command::{Clearable, Patch, Record};
+use crate::custom_field::FieldKey;
+use crate::formula::Formula;
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::label::Label;
@@ -237,9 +244,22 @@ pub struct Meter {
     /// What a reset sets it to, in the stored unit; `None`: it can't be reset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reset_to: Option<i64>,
+    /// Its stable key for formulas (#087), from its name; fixed once the meter exists, and
+    /// different from every other key on the vehicle (fields' too).
+    pub key: FieldKey,
+    /// A derived meter's formula over the vehicle's typed meters; `None` for a typed meter.
+    /// Fixed as derived or typed once made.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formula: Option<Formula>,
 }
 
 impl Meter {
+    /// Whether it's worked out from other meters.
+    #[must_use]
+    pub const fn derived(&self) -> bool {
+        self.formula.is_some()
+    }
+
     /// Whether it can be reset.
     #[must_use]
     pub const fn resettable(&self) -> bool {
@@ -273,6 +293,8 @@ pub enum MeterError {
     ResettableFuelMeter,
     /// The direction can't change once the meter has a reading (checked by the server).
     DirectionFixed,
+    /// A derived meter that's resettable or required on events.
+    DerivedResettable,
 }
 
 impl MeterError {
@@ -286,6 +308,7 @@ impl MeterError {
             Self::NegativeReset => messages::METER_NEGATIVE_RESET,
             Self::ResettableFuelMeter => messages::METER_RESETTABLE_FUEL,
             Self::DirectionFixed => messages::METER_DIRECTION_FIXED,
+            Self::DerivedResettable => messages::METER_DERIVED_RESETTABLE,
         }
     }
 }
@@ -364,6 +387,12 @@ pub struct MeterPatch {
     /// See [`Meter::reset_to`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reset_to: Option<Clearable<i64>>,
+    /// See [`Meter::key`] (set when created).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<FieldKey>,
+    /// See [`Meter::formula`] (a derived meter's; never cleared).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formula: Option<Formula>,
 }
 
 impl MeterPatch {
@@ -380,12 +409,14 @@ impl MeterPatch {
             required_for: Some(meter.required_for),
             direction: Some(meter.direction),
             reset_to: Some(Clearable::from_option(meter.reset_to)),
+            key: Some(meter.key),
+            formula: meter.formula,
         }
     }
 }
 
 /// Every field name, in a fixed order.
-const METER_FIELDS: [&str; 9] = [
+const METER_FIELDS: [&str; 11] = [
     "asset",
     "name",
     "dimension",
@@ -395,6 +426,8 @@ const METER_FIELDS: [&str; 9] = [
     "required_for",
     "direction",
     "reset_to",
+    "key",
+    "formula",
 ];
 
 impl Patch for MeterPatch {
@@ -409,6 +442,8 @@ impl Patch for MeterPatch {
             self.required_for.is_some(),
             self.direction.is_some(),
             self.reset_to.is_some(),
+            self.key.is_some(),
+            self.formula.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
         METER_FIELDS
@@ -446,6 +481,12 @@ impl Patch for MeterPatch {
         }
         if !keep("reset_to") {
             self.reset_to = None;
+        }
+        if !keep("key") {
+            self.key = None;
+        }
+        if !keep("formula") {
+            self.formula = None;
         }
     }
 }
@@ -490,7 +531,10 @@ mod tests {
 
     #[test]
     fn a_create_sets_every_field_and_survives_the_trip() {
+        // A derived meter, so its formula is set too.
         let patch = MeterPatch::all(Meter {
+            key: FieldKey::parse("service-miles").unwrap(),
+            formula: Some(Formula::parse("odometer + 1 mi").unwrap()),
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,
@@ -508,6 +552,8 @@ mod tests {
 
     fn oil_life() -> Meter {
         Meter {
+            key: FieldKey::parse("oil-life").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Oil life").unwrap(),
             dimension: MeterDimension::Percentage,

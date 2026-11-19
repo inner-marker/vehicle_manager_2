@@ -258,6 +258,8 @@ mod tests {
 
     fn meter(dimension: MeterDimension, unit: MeterUnit) -> Meter {
         Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension,

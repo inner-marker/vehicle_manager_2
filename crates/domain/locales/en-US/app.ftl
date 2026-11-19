@@ -1064,6 +1064,7 @@ kind-distance = Distance
 kind-duration = Duration
 kind-volume = Volume
 kind-fuel-economy = Fuel economy
+kind-calculated = Calculated
 # $name (text): the vehicle's name.
 move-title = Move { $name }
 move-to = To
@@ -1628,6 +1629,125 @@ usage-towable = Towable
 usage-usable = Usable
 usage-name-taken = This vehicle already has a usage with that name.
 usage-default-stays = The default usage can't be removed; rename it instead.
+formula-word-distance = distance
+formula-word-volume = volume
+formula-word-time = time
+formula-word-money = money
+# $unit (string): its parts, e.g. "distance² ÷ time".
+formula-dim-other = an unusual unit ({ $unit })
+formula-dim-number = a number
+formula-dim-distance = a distance
+formula-dim-volume = a volume
+formula-dim-time = a time
+formula-dim-money = money
+formula-dim-economy = fuel economy
+formula-dim-money-per-distance = money per distance
+formula-dim-money-per-volume = money per volume
+formula-dim-speed = a speed
+formula-empty = Type a formula.
+# $max (number): the most characters.
+formula-too-long = A formula can be at most { $max } characters.
+formula-unexpected-end = The formula stops too soon: something is missing at the end.
+# $found (string): what was found. $position (number): its character position.
+formula-unexpected = "{ $found }" doesn't fit there (character { $position }).
+# $position (number): the bracket's character position.
+formula-unclosed = The bracket at character { $position } is never closed.
+# $name (string): the name typed.
+formula-unknown-function = There's no function called "{ $name }".
+# $max (number): the most places.
+formula-bad-places = round takes a whole number of places, from 0 to { $max }.
+# $key (string): the key typed.
+formula-unknown-key = There's no value called "{ $key }" here.
+# $key (string): the key typed.
+formula-not-a-meter = "{ $key }" isn't a meter; this needs one of the vehicle's meters.
+# $key (string): the meter's key. $wanted (string): what it should measure.
+formula-wrong-meter = "{ $key }" doesn't measure { $wanted }.
+formula-hours-need-meter = Say which hour meter: last 50 h on engine-hours.
+# $expression (string): the sum, as written. $left, $right (string): what each side measures.
+formula-mismatch-plus = { $expression }: can't add { $left } to { $right }.
+# $expression (string): the difference, as written. $left, $right (string): what each side measures.
+formula-mismatch-minus = { $expression }: can't take { $right } from { $left }.
+# $function (string): the function's name.
+formula-mixed-values = Everything inside { $function } must measure the same thing.
+formula-nested-over = A function over past events can't go inside another one.
+# $found (string): what the formula gives. $wanted (string): what the field shows.
+formula-wrong-result = This gives { $found }, but the field shows { $wanted }.
+# $key (string): the value's key.
+formula-no-value-missing = No value: { $key } was left out.
+formula-no-value-no-earlier = No value: there's no earlier one to count from.
+formula-no-value-nothing-in-over = No value: none of those events has one.
+formula-no-value-divide-by-zero = No value: it divides by zero.
+formula-no-value-mixed-currencies = No value: it mixes currencies.
+formula-no-value-not-positive = No value: this mean needs every value above zero.
+formula-no-value-too-few = No value: stddev needs at least two values.
+formula-no-value-no-odometer = No value: this vehicle has no odometer to count back on.
+formula-no-value-not-finite = No value: the result is too big to show.
+formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
+# $by (string): the calculated field or derived meter.
+formula-in-use = { $by } uses this in its formula, so it can't be removed, turned off, or taken off that kind of event. Change { $by } first.
+formula-worked-out = Worked out from a formula
+# $value (string): the value. $unit (string): the unit.
+formula-per = { $value } per { $unit }
+shows-number = Number
+shows-percent = Percentage
+shows-distance = Distance
+shows-duration = Time
+shows-volume = Volume
+shows-economy = Fuel economy
+shows-money = Money
+shows-money-per-distance = Money per distance
+shows-money-per-volume = Money per volume
+shows-speed = Speed
+# $what (string): what it gives, e.g. "money per distance".
+formula-check-ok = ✓ Gives { $what }
+formula-rows = Worked out
+formula-label = Formula
+formula-how-to = ⓘ How to write one
+formula-functions = Functions ▾
+formula-functions-over = Over listed values or past events
+formula-functions-listed = Over listed values
+formula-functions-one = On one value
+formula-values = Values ▾
+formula-values-note = Each by its key, which never changes when it's renamed.
+formula-values-event = This event
+formula-values-meters = Meters
+formula-values-since = Since the last one
+formula-values-numbers = Numbers with units
+formula-over = Over (for a function over past events)
+formula-over-cumulative = Cumulative
+formula-over-events = Last 5 events
+formula-over-months = Last 3 months
+formula-over-distance = Last 1,000 mi
+formula-over-note = Last X events, days, weeks, months, or mi or km; or last X h on an hour meter. Change the number as you like.
+formula-help-title = Writing a formula
+formula-help-values = Values by their key; numbers with a unit (33 mi/h).
+formula-help-operators = + − × ÷ and ( ). Units must agree: miles + hours is refused.
+formula-help-over = A function over past events takes an Over: last 5, last 3 months, last 1000 mi, or cumulative.
+formula-help-minus = Keys can have hyphens, so put spaces around a minus: a - b.
+formula-help-examples = Examples
+formula-help-guide = Full guide →
+# $kind (string): the kind of event, in lower case. $value (string): the value, or why there's none.
+formula-preview = On the latest { $kind }: { $value }
+formula-shows-as = Shows as
+formula-field-add-title = Add a calculated field
+formula-field-edit-title = Change calculated field
+formula-shown-on-note = It shows, worked out, on these kinds of events: never typed, never required.
+# $value (string): the value with its unit.
+formula-now = Now: { $value }
+formula-meter-add-title = Add a derived meter
+formula-meter-edit-title = Change derived meter
+formula-meter-note = Worked out at every reading of its meters. Interval rules can use it; nobody types its readings, and it can't be reset.
+formula-fill-in = Shows once the form is filled in.
+# $meters (string): the meters it's worked out from, by name.
+formula-derived-from = Worked out from { $meters }
+setup-add-calculated = + Calculated field
+setup-add-derived = + Derived meter
+# $key (string): the key typed.
+formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.
+# $key (string): the field's key.
+formula-calculated = "{ $key }" is worked out itself, so another formula can't use it.
+formula-not-in-derived = A derived meter uses only meters, numbers, + − × ÷, and functions of listed values: no round, past events, or since the last.
+meter-derived-resettable = A derived meter is worked out, so it can't be reset or required on events.
 usage-section = Usages
 usage-section-note = Each usage stands alone: what's ticked "Needed for" it, and the documents it needs. A High issue blocks every usage.
 usage-add = + Usage

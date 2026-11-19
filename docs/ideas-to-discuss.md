@@ -167,3 +167,13 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Calendar rules too:** "first at 3 years, then every 2 years" (e.g. a new car's first inspection).
   - **How it's shown:** "First at 100,000 mi, then every 50,000 mi"; and once the first is done, only the repeating part.
   - **Copying a schedule** (#031) onto a vehicle that's already past the first interval.
+
+### 22. Help pages in the app 🟡
+*Raised by the human, 2026-11-18, planning Phase 5 milestone 7 · Suggested phase: Phase 6 or later*
+
+- **Idea:** help pages inside the app, starting with formulas, in place of milestone 7's `docs/help/formulas.md` on GitHub.
+- **To discuss:**
+  - **Where:** a Help screen in the sidebar, and links from each ⓘ popup to its topic.
+  - **Written how:** in the app's messages (translated, offline on the desktop), or Markdown bundled into the app.
+  - **Which topics** after formulas: due soon and the warnings, fuel economy's stretches, readiness, roles.
+

@@ -37,6 +37,8 @@ fn from_assets(outcome: &AssetsOutcome) -> ReferencesOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => ReferencesOutcome::Unavailable,
     }
 }

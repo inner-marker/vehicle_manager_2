@@ -666,8 +666,38 @@ pub enum AssetsOutcome {
         /// Why.
         problem: crate::asset_form::Problem,
     },
+    /// A calculated field's or derived meter's formula was refused (#087).
+    InvalidFormula {
+        /// Why.
+        problem: crate::formula::FormulaError,
+    },
+    /// A formula uses this field or meter, so it can't be removed, turned off, or changed
+    /// that way.
+    InUse {
+        /// The calculated field's or derived meter's name.
+        by: String,
+    },
     /// The server couldn't do it right now.
     Unavailable,
+}
+
+/// A calculated field's value on an event (#087), or why it has none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CalculatedValue {
+    /// Which field.
+    pub field: crate::custom_field::CustomFieldId,
+    /// Its value, rounded as the person sees it, or why there's none.
+    pub value: Result<crate::formula::Quantity, crate::formula::NoValue>,
+}
+
+/// One kind of event's earlier values on a vehicle, for working calculated fields out on the
+/// log form as values are typed (#087).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FormulaHistory {
+    /// Which kind.
+    pub kind: crate::meter::EventKind,
+    /// Its events' values, oldest first.
+    pub earlier: Vec<crate::formula::Scope>,
 }
 
 /// One event as the app shows it.
@@ -687,6 +717,9 @@ pub struct EventView {
     pub logged_by_name: String,
     /// Who finalized it, by their display name (`None`: not yet, or the server did).
     pub finalized_by_name: Option<String>,
+    /// Its calculated fields' values (#087).
+    #[serde(default)]
+    pub calculated: Vec<CalculatedValue>,
 }
 
 /// A meter's latest reading that counts.
@@ -721,6 +754,9 @@ pub enum EventsOutcome {
         /// The person may keep a reading that doesn't fit, with a reason (the Admin, in Admin
         /// mode).
         may_override_readings: bool,
+        /// Earlier events' values, for each kind with a calculated field (#087).
+        #[serde(default)]
+        history: Vec<FormulaHistory>,
     },
     /// An event was saved (added, edited, or a correction made).
     Saved {

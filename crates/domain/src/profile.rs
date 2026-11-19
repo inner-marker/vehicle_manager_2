@@ -107,6 +107,8 @@ pub struct ProfileIdentifier {
 /// A meter a new asset starts with.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct ProfileMeter {
+    /// Its stable key for formulas (#087), e.g. `odometer`; never changed once shipped.
+    pub key: FieldKey,
     /// Its name (a message key).
     pub name: String,
     /// What it measures.
@@ -241,6 +243,8 @@ impl Profile {
                     required_for: meter.required_for.clone(),
                     direction: crate::meter::MeterDirection::Up,
                     reset_to: None,
+                    key: meter.key.clone(),
+                    formula: None,
                 })
             })
             .collect()

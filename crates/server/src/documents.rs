@@ -43,6 +43,8 @@ fn from_assets(outcome: &AssetsOutcome) -> DocumentsOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => DocumentsOutcome::Unavailable,
     }
 }

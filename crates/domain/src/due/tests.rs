@@ -25,6 +25,8 @@ fn on(date: &str) -> UnixMillis {
 
 fn meters() -> Vec<(MeterId, Meter)> {
     let meter = |name: &str, dimension, unit, direction, reset_to| Meter {
+        key: crate::custom_field::FieldKey::from_label(&Label::parse(name).unwrap(), &[]),
+        formula: None,
         asset: test_id(1),
         name: Label::parse(name).unwrap(),
         dimension,

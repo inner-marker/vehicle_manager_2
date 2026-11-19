@@ -63,6 +63,7 @@ pub(crate) fn field_unit(kind: &FieldKind, units: Preferences) -> Option<String>
         | FieldKind::Text
         | FieldKind::Date
         | FieldKind::YesNo
-        | FieldKind::Choice { .. } => None,
+        | FieldKind::Choice { .. }
+        | FieldKind::Calculated { .. } => None,
     }
 }

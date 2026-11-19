@@ -345,7 +345,8 @@ fn check_reading_set(
         let repeated = readings[..index]
             .iter()
             .any(|earlier| earlier.meter == reading.meter);
-        let Some(meter) = meter.filter(|_| !repeated) else {
+        // A derived meter is worked out, never typed (#087).
+        let Some(meter) = meter.filter(|meter| !repeated && !meter.derived()) else {
             return Err(EventProblem::UnknownMeter(reading.meter));
         };
         if reading.reset && !meter.resettable() {

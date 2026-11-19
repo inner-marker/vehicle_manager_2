@@ -1391,6 +1391,8 @@ define_messages! {
     KIND_VOLUME => "kind-volume",
     /// Custom field type: fuel economy.
     KIND_FUEL_ECONOMY => "kind-fuel-economy",
+    /// Custom field kind: worked out from a formula (#087).
+    KIND_CALCULATED => "kind-calculated",
     /// Dialog title: move a vehicle; takes `name` (text).
     MOVE_TITLE => "move-title",
     /// Form field: the group to move to.
@@ -1831,6 +1833,200 @@ define_messages! {
     USAGE_NAME_TAKEN => "usage-name-taken",
     /// Usages: the default can't be removed.
     USAGE_DEFAULT_STAYS => "usage-default-stays",
+    /// Formulas: the word for distance, in an unusual unit.
+    FORMULA_WORD_DISTANCE => "formula-word-distance",
+    /// Formulas: the word for volume.
+    FORMULA_WORD_VOLUME => "formula-word-volume",
+    /// Formulas: the word for time.
+    FORMULA_WORD_TIME => "formula-word-time",
+    /// Formulas: the word for money.
+    FORMULA_WORD_MONEY => "formula-word-money",
+    /// Formulas: an unusual unit, from its parts (`$unit`).
+    FORMULA_DIM_OTHER => "formula-dim-other",
+    /// Formulas: a plain number.
+    FORMULA_DIM_NUMBER => "formula-dim-number",
+    /// Formulas: a distance.
+    FORMULA_DIM_DISTANCE => "formula-dim-distance",
+    /// Formulas: a volume.
+    FORMULA_DIM_VOLUME => "formula-dim-volume",
+    /// Formulas: a time.
+    FORMULA_DIM_TIME => "formula-dim-time",
+    /// Formulas: money.
+    FORMULA_DIM_MONEY => "formula-dim-money",
+    /// Formulas: fuel economy.
+    FORMULA_DIM_ECONOMY => "formula-dim-economy",
+    /// Formulas: money per distance.
+    FORMULA_DIM_MONEY_PER_DISTANCE => "formula-dim-money-per-distance",
+    /// Formulas: money per volume.
+    FORMULA_DIM_MONEY_PER_VOLUME => "formula-dim-money-per-volume",
+    /// Formulas: a speed.
+    FORMULA_DIM_SPEED => "formula-dim-speed",
+    /// Formulas refused: nothing typed.
+    FORMULA_EMPTY => "formula-empty",
+    /// Formulas refused: too long (`$max`).
+    FORMULA_TOO_LONG => "formula-too-long",
+    /// Formulas refused: it stops too soon.
+    FORMULA_UNEXPECTED_END => "formula-unexpected-end",
+    /// Formulas refused: something out of place (`$found`, `$position`).
+    FORMULA_UNEXPECTED => "formula-unexpected",
+    /// Formulas refused: a bracket never closed (`$position`).
+    FORMULA_UNCLOSED => "formula-unclosed",
+    /// Formulas refused: no such function (`$name`).
+    FORMULA_UNKNOWN_FUNCTION => "formula-unknown-function",
+    /// Formulas refused: round's places (`$max`).
+    FORMULA_BAD_PLACES => "formula-bad-places",
+    /// Formulas refused: no such value (`$key`).
+    FORMULA_UNKNOWN_KEY => "formula-unknown-key",
+    /// Formulas refused: a meter is needed (`$key`).
+    FORMULA_NOT_A_METER => "formula-not-a-meter",
+    /// Formulas refused: the Over's meter measures the wrong thing (`$key`, `$wanted`).
+    FORMULA_WRONG_METER => "formula-wrong-meter",
+    /// Formulas refused: hours without a meter.
+    FORMULA_HOURS_NEED_METER => "formula-hours-need-meter",
+    /// Formulas refused: adding different things (`$expression`, `$left`, `$right`).
+    FORMULA_MISMATCH_PLUS => "formula-mismatch-plus",
+    /// Formulas refused: subtracting different things (`$expression`, `$left`, `$right`).
+    FORMULA_MISMATCH_MINUS => "formula-mismatch-minus",
+    /// Formulas refused: a function's values measure different things (`$function`).
+    FORMULA_MIXED_VALUES => "formula-mixed-values",
+    /// Formulas refused: a past-events function inside another.
+    FORMULA_NESTED_OVER => "formula-nested-over",
+    /// Formulas refused: the result isn't what the field shows (`$found`, `$wanted`).
+    FORMULA_WRONG_RESULT => "formula-wrong-result",
+    /// Formulas, no value: a value left out (`$key`).
+    FORMULA_NO_VALUE_MISSING => "formula-no-value-missing",
+    /// Formulas, no value: nothing earlier to count from.
+    FORMULA_NO_VALUE_NO_EARLIER => "formula-no-value-no-earlier",
+    /// Formulas, no value: nothing in the Over.
+    FORMULA_NO_VALUE_NOTHING_IN_OVER => "formula-no-value-nothing-in-over",
+    /// Formulas, no value: a division by zero.
+    FORMULA_NO_VALUE_DIVIDE_BY_ZERO => "formula-no-value-divide-by-zero",
+    /// Formulas, no value: different currencies.
+    FORMULA_NO_VALUE_MIXED_CURRENCIES => "formula-no-value-mixed-currencies",
+    /// Formulas, no value: a mean needing values above zero.
+    FORMULA_NO_VALUE_NOT_POSITIVE => "formula-no-value-not-positive",
+    /// Formulas, no value: stddev of one value.
+    FORMULA_NO_VALUE_TOO_FEW => "formula-no-value-too-few",
+    /// Formulas, no value: no odometer for an Over.
+    FORMULA_NO_VALUE_NO_ODOMETER => "formula-no-value-no-odometer",
+    /// Formulas, no value: too big.
+    FORMULA_NO_VALUE_NOT_FINITE => "formula-no-value-not-finite",
+    /// Formulas, no value: the formula no longer fits.
+    FORMULA_NO_VALUE_MISMATCH => "formula-no-value-mismatch",
+    /// Formulas: a field or meter a formula uses (`$by`) can't go.
+    FORMULA_IN_USE => "formula-in-use",
+    /// Formulas: the ƒ badge's words.
+    FORMULA_WORKED_OUT => "formula-worked-out",
+    /// Formulas: a value per a unit (`$value`, `$unit`).
+    FORMULA_PER => "formula-per",
+    /// Calculated fields: shows as a number.
+    SHOWS_NUMBER => "shows-number",
+    /// Calculated fields: shows as a percentage.
+    SHOWS_PERCENT => "shows-percent",
+    /// Calculated fields: shows as a distance.
+    SHOWS_DISTANCE => "shows-distance",
+    /// Calculated fields: shows as a time.
+    SHOWS_DURATION => "shows-duration",
+    /// Calculated fields: shows as a volume.
+    SHOWS_VOLUME => "shows-volume",
+    /// Calculated fields: shows as fuel economy.
+    SHOWS_ECONOMY => "shows-economy",
+    /// Calculated fields: shows as money.
+    SHOWS_MONEY => "shows-money",
+    /// Calculated fields: shows as money per distance.
+    SHOWS_MONEY_PER_DISTANCE => "shows-money-per-distance",
+    /// Calculated fields: shows as money per volume.
+    SHOWS_MONEY_PER_VOLUME => "shows-money-per-volume",
+    /// Calculated fields: shows as a speed.
+    SHOWS_SPEED => "shows-speed",
+    /// Formulas: the check passes (`$what`).
+    FORMULA_CHECK_OK => "formula-check-ok",
+    /// Formulas: the heading over calculated values.
+    FORMULA_ROWS => "formula-rows",
+    /// Formulas: the formula box's label.
+    FORMULA_LABEL => "formula-label",
+    /// Formulas: opens the short help.
+    FORMULA_HOW_TO => "formula-how-to",
+    /// Formulas: the functions menu.
+    FORMULA_FUNCTIONS => "formula-functions",
+    /// Formulas: functions over values or past events.
+    FORMULA_FUNCTIONS_OVER => "formula-functions-over",
+    /// Formulas: functions over listed values.
+    FORMULA_FUNCTIONS_LISTED => "formula-functions-listed",
+    /// Formulas: functions on one value.
+    FORMULA_FUNCTIONS_ONE => "formula-functions-one",
+    /// Formulas: the values menu.
+    FORMULA_VALUES => "formula-values",
+    /// Formulas: about keys.
+    FORMULA_VALUES_NOTE => "formula-values-note",
+    /// Formulas: this event's values.
+    FORMULA_VALUES_EVENT => "formula-values-event",
+    /// Formulas: meters.
+    FORMULA_VALUES_METERS => "formula-values-meters",
+    /// Formulas: since the last event.
+    FORMULA_VALUES_SINCE => "formula-values-since",
+    /// Formulas: numbers with units.
+    FORMULA_VALUES_NUMBERS => "formula-values-numbers",
+    /// Formulas: the Over picker.
+    FORMULA_OVER => "formula-over",
+    /// Formulas: Over all events.
+    FORMULA_OVER_CUMULATIVE => "formula-over-cumulative",
+    /// Formulas: Over the last 5 events.
+    FORMULA_OVER_EVENTS => "formula-over-events",
+    /// Formulas: Over the last 3 months.
+    FORMULA_OVER_MONTHS => "formula-over-months",
+    /// Formulas: Over the last 1,000 mi.
+    FORMULA_OVER_DISTANCE => "formula-over-distance",
+    /// Formulas: what Over can be.
+    FORMULA_OVER_NOTE => "formula-over-note",
+    /// Formulas: the help's title.
+    FORMULA_HELP_TITLE => "formula-help-title",
+    /// Formulas help: values.
+    FORMULA_HELP_VALUES => "formula-help-values",
+    /// Formulas help: operators and units.
+    FORMULA_HELP_OPERATORS => "formula-help-operators",
+    /// Formulas help: Over.
+    FORMULA_HELP_OVER => "formula-help-over",
+    /// Formulas help: spaces around a minus.
+    FORMULA_HELP_MINUS => "formula-help-minus",
+    /// Formulas help: examples.
+    FORMULA_HELP_EXAMPLES => "formula-help-examples",
+    /// Formulas help: the full guide.
+    FORMULA_HELP_GUIDE => "formula-help-guide",
+    /// Formulas: the preview (`$kind`, `$value`).
+    FORMULA_PREVIEW => "formula-preview",
+    /// Calculated fields: what it shows as.
+    FORMULA_SHOWS_AS => "formula-shows-as",
+    /// Calculated fields: adding.
+    FORMULA_FIELD_ADD_TITLE => "formula-field-add-title",
+    /// Calculated fields: changing.
+    FORMULA_FIELD_EDIT_TITLE => "formula-field-edit-title",
+    /// Calculated fields: where it shows.
+    FORMULA_SHOWN_ON_NOTE => "formula-shown-on-note",
+    /// Derived meters: its value now (`$value`).
+    FORMULA_NOW => "formula-now",
+    /// Derived meters: adding.
+    FORMULA_METER_ADD_TITLE => "formula-meter-add-title",
+    /// Derived meters: changing.
+    FORMULA_METER_EDIT_TITLE => "formula-meter-edit-title",
+    /// Derived meters: what they are.
+    FORMULA_METER_NOTE => "formula-meter-note",
+    /// Formulas: the log form isn't complete enough yet.
+    FORMULA_FILL_IN => "formula-fill-in",
+    /// Derived meters: what it's worked out from (`$meters`).
+    FORMULA_DERIVED_FROM => "formula-derived-from",
+    /// Setup: add a calculated field.
+    SETUP_ADD_CALCULATED => "setup-add-calculated",
+    /// Setup: add a derived meter.
+    SETUP_ADD_DERIVED => "setup-add-derived",
+    /// Formulas refused: not a derived meter's input (`$key`).
+    FORMULA_NOT_AN_INPUT => "formula-not-an-input",
+    /// Formulas refused: a calculated field used in a formula (`$key`).
+    FORMULA_CALCULATED => "formula-calculated",
+    /// Formulas refused: round, past events, or since the last in a derived meter.
+    FORMULA_NOT_IN_DERIVED => "formula-not-in-derived",
+    /// Meters refused: a derived meter can't be reset or required.
+    METER_DERIVED_RESETTABLE => "meter-derived-resettable",
     /// Usages: Set up's section.
     USAGE_SECTION => "usage-section",
     /// Usages: what the section is for.

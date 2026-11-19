@@ -37,8 +37,8 @@
 | 3 | **Due messages and snooze** | ✅ | Due-soon and overdue messages in Messages, worked out from the records (so they also work offline on the desktop); **snooze** by time, distance, or hours, whichever comes first; per-vehicle roles respected; the Garage's **fleet strip** and the **Due & squawks** screen (#083) | Snooze "1 week or 500 mi"; it returns at whichever comes first |
 | 4 | **Specs and service bundles** | ✅ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
 | 5 | **Fuel economy** | ✅ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
-| 6 | **Readiness** | ☑️ | **Usages** per vehicle (#086): a default named for its kind (Drivable, Towable, Usable) needing its profile's documents, and more added by Maintainers; each requirement **needed for** chosen usages; **"Ready to use?"** on the Overview, each usage with every item's ✓, !, or ✗ and its reason; the Garage chip; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; an open or deferred High: not ready |
-| 7 | **Calculated fields and derived meters** | ⬜ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
+| 6 | **Readiness** | ✅ | **Usages** per vehicle (#086): a default named for its kind (Drivable, Towable, Usable) needing its profile's documents, and more added by Maintainers; each requirement **needed for** chosen usages; **"Ready to use?"** on the Overview, each usage with every item's ✓, !, or ✗ and its reason; the Garage chip; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; an open or deferred High: not ready |
+| 7 | **Calculated fields and derived meters** | ☑️ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
 **Releases:** **`v0.5.0` at the end of Phase 5** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.3.0` had. The version follows the phase's number, since Phase 4 moved after the MVP (#041).
 
@@ -737,3 +737,106 @@
 **Open issues** (reviewed 2026-11-18): #27 (custom roles and permissions) would one day change who may sign off; not now.
 
 **Not in this milestone:** a person's currency (post-MVP, #051), aviation's usages and items (the aircraft phase), formulas and derived meters (milestone 7).
+
+### Milestone 7 plan: calculated fields and derived meters
+
+*Agreed 2026-11-18 · branch `milestone/p5-m7-formulas` · sketch: `docs/ui-sketches/p5m7-formulas-options.svg` · Decision #087*
+
+**Choices (the human, 2026-11-18):**
+- **Our own small formula language:** numbers (with units), `+ − × ÷`, parentheses, values by their stable key, and functions. **Meters get stable keys** too, like fields (#057).
+- **Functions:** `mean`, `median`, `geometric_mean`, `harmonic_mean`, `min`, `max`, `sum`, `count`, `stddev`, `round`, and `abs`. They work over **values listed in the formula** and over **past events**, with an **Over:** cumulative, or the last X events, days, weeks, months, or distance or hours.
+- **Units checked by dimension:** `+` and `−` need the same dimension; `×` and `÷` combine them; the result must match what the field shows. A formula that doesn't is refused when saved, with the reason.
+- **A calculated field** on an event uses that event's values (its fields, its readings, a fuel-up's volume and cost) and **since the last event of its kind** (`distance-since-last(odometer)`, `time-since-last`).
+- **A derived meter** gets a value **at every reading of one of its inputs**, from each input's latest reading. It's never stored, and nobody types a reading of it.
+- **The sketch: 1 (A and B combined), 2A, 3B, 4A, 5A**, and a stylized **ƒ badge** wherever a value is worked out.
+  - **1:** a typed formula box with **Functions ▾** and **Values ▾** menus that insert at the cursor; an **Over** picker for past-events functions; checked as you type ("✓ Money ÷ Distance = money per distance"); a preview from the latest event.
+  - **2A:** calculated values as read-only ƒ rows under the fields on the log form (changing as values are typed) and on the event's page.
+  - **3B:** **+ Derived meter** beside **+ Meter** in Setup, with its own dialog (name, unit, formula, its check, and its value now).
+  - **4A:** a derived meter beside the typed ones, on the Overview and in Setup, ƒ-marked, "worked out from …"; never a reading field on a form.
+  - **5A:** **ⓘ How to write one** beside every formula box: a short popup (the rules in four lines, three examples) and **Full guide →**, which opens `docs/help/formulas.md` (on GitHub, for now). An in-app guide comes later (idea 22).
+
+**The rules, in `domain` (test-first):**
+- **Writing:** a formula is text, kept as typed, and parsed whenever it's checked or used. Values are keys (`cost`, `trip-time`, `odometer`); numbers can carry a unit (`33 mi/h`, `1000 mi`, `5 gal`, `90 days`); `×` and `*`, `÷` and `/` are the same. A function takes values separated by commas, or one expression and an **Over** (`mean(trip-time, last 5)`, `sum(volume, last 3 months)`, `mean(cost ÷ volume, last 1000 mi)`, `max(trip-time, cumulative)`).
+- **Dimensions:** each value has powers of distance, volume, time, and money, or none (a plain number or a percentage). A field's kind gives its dimension; a fuel-up's cost is money in its currency (mixing currencies is refused). `round(x, places)` keeps x's dimension; `count` is a plain number; `geometric_mean` and the rest keep their values' dimension.
+- **What a calculated field shows:** a number (with its decimals), a percentage, a distance, a duration, a volume, fuel economy, money, money per distance, money per volume, or distance per time, each in the person's units.
+- **Over:** the past events of the same kind on the same vehicle, up to and including this one: the last N; those in the last N days, weeks, or months before it; those within the last N mi or km on the vehicle's main odometer, or N h on a named hour meter (`last 50 h on engine-hours`); or **cumulative** (all of them). The expression is worked out on each, and events where it has no value are left out.
+- **No value** ("—", with why) when something it needs is missing: a field left empty, no earlier event for "since the last", nothing in the Over, or a division by zero.
+- **Keys:** every meter gets a key from its name, unique on the vehicle and fixed once made (existing meters too). A field or meter that a formula uses can't be removed or turned off (it says which formula uses it).
+- **A derived meter:** its formula uses only the vehicle's typed meters (not resettable ones, and not other derived meters). It has the formula's dimension (distance, duration, or percentage) and a direction, and it can't be reset. Its values come at each moment one of its inputs was read, once every input has a reading. It works in interval rules, projections, and "last done" like any other meter, with its value at the job worked out the same way.
+
+**Steps:**
+
+| Step | Status | What |
+|---|---|---|
+| **7.0** `docs:` | ☑️ | This plan; the sketch; decision #087; idea 22 (an in-app guide); milestone 6 marked ✅. |
+| **7a** `feat(domain):` the formula language | ☑️ | `domain::formula`: the parser (keys, numbers with units, operators, parentheses, functions, Over), the dimension check against what the result shows, working it out (values from a lookup, past events from a list), the functions, and every refusal and "no value" in words. Unit tests first, and property tests (the dimension rules; a formula printed and read back is the same). |
+| **7b** `feat(domain):` fields and meters | ☑️ | `FieldKind::Calculated` (formula, what it shows); `Meter::key` and `Meter::formula`; keys from names; the values an event offers (its fields, readings, volume, cost, and since the last); a derived meter's readings for what's due; the "used by a formula" checks. Unit tests first. |
+| **7c** `feat(storage):` migration 0027 | ☑️ | `meters.key` (made from each existing meter's name, unique on its vehicle) and `meters.formula`. Calculated fields need no change (a field's kind is JSON). The desktop's copy runs the same migration; the release fixtures migrate. |
+| **7d** `feat(server):` | ☑️ | Saving calculated fields and derived meters (checked; Maintainers, as now); calculated values on each event the person sees (the event's page, the timeline); derived meters' values on the vehicle and in what's due (Maintenance, the Overview, the Garage, messages). The desktop does the same from its copy, offline too. |
+| **7e** `feat(app):` the screens | ☑️ | The calculated field dialog (row 1), ƒ rows on the log form and the event's page (row 2), **+ Derived meter** and its dialog (row 3), derived meters on the Overview and in Setup (row 4), the help popup (row 5), the ƒ badge; `docs/help/formulas.md`. |
+| **7f** `docs:` | ☑️ | Milestone 7's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
+
+**Step 7a notes (2026-11-18):**
+- **`domain::formula`:** `Formula::parse` keeps the text as typed (stored as that text) and reads it; `check` (with what each key is, `KeyInfo`) and `check_shows` (against `ShowsAs`) refuse what doesn't fit; `evaluate` works it out on an event (`Scope`, within a `Context`: earlier events of its kind, the main odometer's key, the zone, the person's units); `keys` lists what it uses (for "used by a formula"), and `uses_history` says if it needs earlier events.
+- **Reading:** a key may contain `-`, so a minus between keys needs spaces (or `−`). `/` inside a unit (`33 mi/h`) is the unit's, while `÷` is always a division, so `5 mi ÷ h` divides by a value keyed `h`. A number's unit is any of mi, km, m, h, min, s, days, weeks, gal, imp-gal, L, mL, qt, or `%`, alone or one over another.
+- **Dimensions:** powers of distance, volume, time, and money (`Dimension`); a percentage is a plain number that remembers it's a percentage (80% is 0.8, shown as 80 %) until it's multiplied or divided. Money keeps its currency, and mixing two gives no value.
+- **`round`** rounds as the value is shown in the person's units (miles, gallons, hours, mpg or L/100 km, money per mile), so `round(cost ÷ distance-since-last(odometer), 2)` is to the cent per mile. `in_units` gives any value as shown.
+- **Over** picks the past events of the kind up to and including this one; months are calendar months in the household's zone; distance spans count back on the main odometer, or `on` a named meter; an hour span must name its meter.
+- **`stddev`** is the sample standard deviation (at least two values); `geometric_mean` and `harmonic_mean` need every value above zero.
+- **Refusals and "no value"** each have a message: e.g. "trip-time + volume: can't add a time to a volume." and "No value: there's no earlier one to count from."
+- **Tests:** precedence, keys with hyphens, units, every refusal (with where), each Over, the keys used, the stored text; dimensions combining and refused; meters needed; nested Overs; the result against what's shown; refusals in words; cost per mile, rounded; each "no value"; every function; rounding in the person's units (L/100 km inverted); Over by events, days, weeks, months, miles, and kilometers, leaving out events without a value. Properties: dividing undoes multiplying, and a formula printed reads back the same.
+
+**Step 7b notes (2026-11-18):**
+- **`FieldKind::Calculated`** (a formula, and what it shows as): never required, never typed (a value given for one is refused), and its decimals checked like a number's. Formulas compare by their text, so fields and meters keep their equality.
+- **`Meter::key` and `Meter::formula`** (and their patch fields; both set when made). The profiles' meters gained keys (`odometer`, `run-hours`), each profile's version up by one. A reading of a derived meter is refused as for a meter that isn't the vehicle's.
+- **`domain::calculated`:**
+  - **Keys:** `new_key` makes one from a name, different from every field's and meter's key on the vehicle and from every word formulas use (`is_reserved`: functions, units, Over's words, and a fuel-up's values).
+  - **Checks:** `check_calculated` checks a calculated field's formula on each kind of event it's shown on: the event's numeric fields (not other calculated ones, `FormulaError::Calculated`), its meters (derived ones too), and a fuel-up's `volume`, `cost`, `highway`, `towing`, `hauling`, and `reported-economy`. `check_derived` refuses a derived meter that's resettable or required (`MeterError::DerivedResettable`), uses anything but typed meters that aren't reset (`FormulaError::NotAnInput`), uses `round`, past events, or "since the last" (`FormulaError::NotInDerived`), or doesn't measure what the meter does.
+  - **Values:** `scopes` gives each of a vehicle's events of one kind its values (fields, readings, derived meters at that moment, a fuel-up's) and since the one before; `calculate` works a calculated field out on one of them; `main_odometer` is the typed distance meter fuel-ups require.
+  - **Derived readings:** `derived_readings` gives a derived meter a reading at every moment one of its inputs was read, once each has one; `with_derived` adds them to the readings what's due counts from; `add_derived_to_done` adds each derived meter's value when a job was done (its own readings first, else the latest before it).
+  - **In use:** `used_by` names the calculated field or derived meter whose formula uses a key.
+- **Until 7c:** storage makes each meter's key from its name (the column comes with migration 0027), and the server gives a new meter a key from `new_key`. The log form leaves out derived meters and calculated fields (nothing to type); the field kind reads "Calculated" in Setup. The screens for them come in 7e.
+- **Tests:** keys never taken or reserved; a calculated field checked on each kind it's shown on, refused for an unknown value, the wrong result, or another calculated field; every derived-meter refusal; what's in use; derived readings at every input's reading (none until each input has one, none at another meter's); a job counting a derived meter from its own readings; each event's values and since the last; cost per mile and an average worked out, and none on the first; a calculated field never required, its decimals checked.
+
+**Step 7c notes (2026-11-19):**
+- **`0027_meter_keys.sql`:** `meters.key` (unique on its vehicle among meters that aren't deleted, so a removed meter's key can be used again) and `meters.formula` (a derived meter's, as typed). The meter writer stores both and an update can change the formula; reading parses the formula.
+- **Changed from the plan: existing meters' keys come from the server, not the migration.** A key is made from the meter's name, different from the vehicle's other meters' and fields' keys and from the words formulas use; SQL can't make that from any name reliably. So the column starts empty, and the server gives each older meter its key at startup (step 7d), saved like any change so desktops get it by syncing, as milestone 6's default usages were. Until then, a meter without a stored key reads with one made from its name.
+- **Calculated fields need no change:** a field's kind is already JSON.
+- **The desktop's copy** runs the same migration; meters already sync.
+- **Tests:** a derived meter's key and formula round-trip, a changed formula keeps its key, a key taken on the vehicle is refused until that meter is deleted, and a meter without a stored key reads with one from its name. The release fixtures migrate with no stored keys or formulas, each meter typed and keyed from its name.
+
+**Step 7d notes (2026-11-19):**
+- **Older meters' keys (`server::formulas::ensure_meter_keys`):** at startup, after the default usages, every meter without a stored key gets one from its name (`storage`'s `unkeyed_meters`), saved like any change so desktops get it by syncing.
+- **Saving (Maintainers, as before):**
+  - A meter form can carry a formula (`MeterForm::formula`): a derived meter, checked when added and when changed (`check_derived`). A typed meter stays typed.
+  - A calculated field is checked when added and when its formula, what it shows, its kinds, or on/off change (`check_calculated`). Its formula and what it shows can change, since it holds no values; other kinds stay fixed.
+  - Refusals come back as `AssetsOutcome::InvalidFormula`, with the reason in words.
+- **Kept while in use:** a meter or field a formula uses can't be removed, turned off, or taken off a kind it's shown on. A typed meter a derived one uses can't be made resettable. Each comes back as `AssetsOutcome::InUse`, naming the formula's field or meter ("Service miles uses this in its formula …").
+- **Keys:** a new meter's and field's keys come from `domain::calculated`, so they never match each other's or a word formulas use; a field's never matches a removed field's either (`new_key_among`).
+- **Values on events:** the events list and one event's page carry each calculated field's value (`EventView::calculated`), rounded in the person's units, or why there's none. Events a correction replaces don't count; months count in the event's own zone. The log form's context carries each kind's earlier values (`EventsOutcome::LogContext::history`), so the form can work them out as values are typed (7e).
+- **What's due** counts derived meters' readings (Maintenance, the Overview, the Garage, Due & squawks, and messages all read it there), a job's derived value included, and so does a snooze by meter.
+- **The desktop** does all of this from its copy, through the same server code.
+- **Tests** (server, `tests/formulas.rs`): a derived meter refused for `round`, an unknown key, or being required; what it uses kept from removal and from being made resettable; what's due coming up on Service miles from two readings; a typed reading of a derived meter refused; a calculated field refused for adding money to a volume; the odometer kept while cost per mile uses it; $0.15 a mile on the second fuel-up, none on the first, the same on the event's page; the log form's history; older meters given their keys once, and nothing more to do after.
+
+**Step 7e notes (2026-11-19):**
+- **`ui::screens::formula_view`**, every row of the sketch:
+  - **The ƒ badge** (a blue italic serif ƒ in a rounded square) on every worked-out value: calculated rows, derived meters in Setup and on the Overview.
+  - **The formula box** (row 1): typed, with **Functions ▾** (the statistics functions, `round`, `abs`) and **Values ▾** (this event's numeric fields and a fuel-up's values, meters, since the last one, numbers with units). Both insert at the cursor: a short script puts the text in place of the selection, with the text quoted as JSON so nothing in it can break out. The **Over** picker inserts `, cumulative`, `, last 5`, `, last 3 months`, or `, last 1000 mi`, and the numbers can then be changed. The check updates as you type ("✓ Gives money per distance", or the reason in words).
+  - **ⓘ How to write one** (row 5): a short popup (values, operators and units, Over, spaces around a minus; three examples) and **Full guide →** to `docs/help/formulas.md` on GitHub (`domain::formula::GUIDE_URL`).
+  - **+ Calculated field** (Setup → Custom fields): label, **Shows as** (and decimals for a number or percentage), the formula box, the kinds it's shown on, and a preview worked out on the latest event of the first kind ("On the latest fuel-up: $0.14 per mi").
+  - **+ Derived meter** (row 3B, Setup → Meters, its own dialog): name, what it measures (fixed once made), unit, precision, the formula box (typed meters that aren't reset, numbers, no past-events functions), and its value now from each input's latest reading.
+  - **ƒ rows** (row 2A): on the event's page, and on the log form as values are typed, worked out after the vehicle's earlier events of the kind; until the form is complete enough to build the event, "Shows once the form is filled in."
+  - **Derived meters on the Overview** (row 4A): the value worked out from its inputs' readings, and "Worked out from Odometer, Engine hours".
+- **Setup rows:** calculated fields and derived meters show their formula; each meter's key shows, as fields' do. Edit opens the right dialog.
+- **The log form's history** covers every kind of event the vehicle has (not only kinds with a calculated field yet), so a new calculated field's preview works before it's saved.
+- **`domain`:** `Logged` (an event, or one being typed) and `scope_of` give one event's values after the one before it; `check_calculated_formula` and `check_derived_formula` check a formula alone; `derived_now` gives a derived meter's value now.
+- **`docs/help/formulas.md`:** the full guide: writing, units, values, every function and Over, derived meters, no value, and in use.
+- **Tests:** values shown in each unit (money per mile, a time, a percentage, mpg and L/100 km, mph), the check line, no-value words, the insert script quoting what it inserts, and each "shows as" with its own option.
+
+**API version:** stays at 2. Migration 0027 changes the schema, so an older desktop is told to update before it syncs (#075, #076).
+
+**New dependencies:** none expected (units through `uom`, as with specs).
+
+**Open issues** (reviewed 2026-11-18): none touch formulas or meters; #27 (custom roles) would one day change who may write formulas.
+
+**Not in this milestone:** an in-app help guide (idea 22); formulas across vehicles, and in reports (Phase 6); a catalogue of ready-made fields (idea 16); copying derived meters and calculated fields with a schedule or template.

@@ -32,6 +32,8 @@ fn from_assets(outcome: &AssetsOutcome) -> SquawksOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => SquawksOutcome::Unavailable,
     }
 }

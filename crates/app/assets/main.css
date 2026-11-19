@@ -5430,3 +5430,185 @@ button.spec-row:focus-visible {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
+
+/* Calculated fields and derived meters (Phase 5 milestone 7, #087). */
+.fx-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4em;
+    height: 1.2em;
+    margin-right: 6px;
+    padding: 0 3px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 0.95em;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.formula-dialog .field-row {
+    flex-wrap: wrap;
+}
+
+.formula-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formula-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.formula-menus {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.formula-menu {
+    position: relative;
+}
+
+.formula-menu summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.formula-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.formula-menu-list {
+    position: absolute;
+    z-index: 20;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    max-height: 320px;
+    margin-top: 4px;
+    padding: 8px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+}
+
+.formula-menu-heading {
+    margin: 8px 0 2px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.formula-menu-item {
+    min-height: 32px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text);
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.formula-menu-item:hover,
+.formula-menu-item:focus-visible {
+    background: var(--surface);
+}
+
+.formula-input {
+    min-height: 4.5em;
+    resize: vertical;
+    font-family: ui-monospace, Menlo, monospace;
+}
+
+.formula-check {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.formula-check.ok {
+    color: #3fb950;
+}
+
+.formula-check.bad {
+    color: var(--error);
+}
+
+.formula-over {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formula-help {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    font-size: 0.9rem;
+}
+
+.formula-help p {
+    margin: 4px 0;
+}
+
+.formula-help-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.formula-preview {
+    margin: 0;
+    font-weight: 600;
+}
+
+.calculated-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.calculated-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 36px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+}
+
+.calculated-label {
+    flex: 1;
+    color: var(--text-muted);
+}
+
+.calculated-value {
+    font-weight: 600;
+}
+
+.calculated-none {
+    color: var(--text-muted);
+}
+
+.formula-menu-item.mono,
+.formula-help .mono,
+.setup-row-detail.mono {
+    font-family: ui-monospace, Menlo, monospace;
+}

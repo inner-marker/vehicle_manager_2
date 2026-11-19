@@ -1,7 +1,7 @@
 // Trailer (decision #030): no fuel, no meter by default (an odometer can be added).
 (
     id: "trailer",
-    version: 4,
+    version: 5,
     name: "profile-trailer",
     event_kinds: [reading, maintenance, repair],
     sections: [],

@@ -49,6 +49,8 @@ fn from_assets(outcome: &AssetsOutcome) -> ScheduleOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => ScheduleOutcome::Unavailable,
     }
 }

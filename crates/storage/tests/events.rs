@@ -109,6 +109,8 @@ mod events {
             ),
         ] {
             let meter = Meter {
+                key: FieldKey::from_label(&Label::parse(name).unwrap(), &[]),
+                formula: None,
                 asset: test_id(TRUCK),
                 name: Label::parse(name).unwrap(),
                 dimension,
@@ -466,6 +468,8 @@ mod events {
         let mut connection = connection(&database).await;
         // Oil life (hundredths of a percent), counting down and resettable to 100%.
         let oil_life = Meter {
+            key: FieldKey::parse("oil-life").unwrap(),
+            formula: None,
             asset: test_id(TRUCK),
             name: Label::parse("Oil life").unwrap(),
             dimension: MeterDimension::Percentage,

@@ -14,6 +14,7 @@ use dioxus::prelude::*;
 use domain::api::{AssetView, EventView, EventsOutcome, PreferencesOutcome};
 use domain::dates::{format_date, format_time, month_heading};
 use domain::event::{Event, EventId, EventStatus};
+use domain::event_check::PastReading;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::Preferences;
@@ -375,6 +376,53 @@ pub(super) fn latest_readings(events: &[EventView], meter: MeterId) -> Option<(i
         .max_by_key(|(_, view)| view.event.dates.start)
 }
 
+/// Each meter's latest value that counts: a typed meter's latest reading, or a derived
+/// meter's (#087) worked out from its inputs' readings; with the event it's from.
+fn latest_values<'a>(
+    events: &'a [EventView],
+    meters: &[(MeterId, Meter)],
+    meter: MeterId,
+) -> Option<(i64, &'a EventView)> {
+    let derived = meters
+        .iter()
+        .any(|(id, each)| *id == meter && each.derived());
+    if !derived {
+        return latest_readings(events, meter);
+    }
+    let mut readings: Vec<PastReading> = counting(events)
+        .flat_map(|view| {
+            view.event.readings.iter().map(move |reading| PastReading {
+                meter: reading.meter,
+                at: view.event.dates.start,
+                value: reading.value,
+                reset: reading.reset,
+            })
+        })
+        .collect();
+    readings.sort_by_key(|reading| (reading.at, reading.reset));
+    let latest = domain::calculated::derived_readings(meters, &readings)
+        .into_iter()
+        .filter(|reading| reading.meter == meter)
+        .max_by_key(|reading| reading.at)?;
+    let view = counting(events).find(|view| view.event.dates.start == latest.at)?;
+    Some((latest.value, view))
+}
+
+/// What a derived meter is worked out from: its inputs' names ("Odometer and Idle hours").
+fn derived_from(meter: &Meter, meters: &[(MeterId, Meter)]) -> Option<String> {
+    let formula = meter.formula.as_ref()?;
+    let used = formula.keys();
+    let names: Vec<String> = meters
+        .iter()
+        .filter(|(_, input)| used.contains(input.key.as_str()))
+        .map(|(_, input)| input.name.as_str().to_owned())
+        .collect();
+    Some(tr_with(
+        messages::FORMULA_DERIVED_FROM,
+        &[("meters", MessageArg::from(names.join(", ")))],
+    ))
+}
+
 /// Overview's Latest fuel-ups, Meters, and Last activity panels.
 #[expect(
     unused_qualifications,
@@ -432,7 +480,7 @@ pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> 
             }
             div { class: "meter-tiles",
                 for (meter_id, meter) in view.meters.iter() {
-                    MeterTile { key: "{meter_id}", meter: meter.clone(), latest: latest_readings(&events, *meter_id).map(|(value, view)| (value, view.clone())), units }
+                    MeterTile { key: "{meter_id}", meter: meter.clone(), latest: latest_values(&events, &view.meters, *meter_id).map(|(value, view)| (value, view.clone())), units, derived_from: derived_from(meter, &view.meters) }
                 }
             }
         }
@@ -475,7 +523,14 @@ fn FuelUpRow(view: EventView, units: Preferences) -> Element {
 }
 
 #[component]
-fn MeterTile(meter: Meter, latest: Option<(i64, EventView)>, units: Preferences) -> Element {
+fn MeterTile(
+    meter: Meter,
+    latest: Option<(i64, EventView)>,
+    units: Preferences,
+    /// A derived meter's inputs, in words (#087).
+    #[props(default)]
+    derived_from: Option<String>,
+) -> Element {
     let reading = latest.as_ref().map(|(value, view)| {
         let event = &view.event;
         let date = format_date(
@@ -505,15 +560,26 @@ fn MeterTile(meter: Meter, latest: Option<(i64, EventView)>, units: Preferences)
     });
     rsx! {
         div { class: "meter-tile",
-            span { class: "meter-name", {meter.name.as_str().to_owned()} }
-            match reading {
-                Some((value, when)) => rsx! {
+            span { class: "meter-name",
+                if derived_from.is_some() {
+                    super::formula_view::FxBadge {}
+                }
+                {meter.name.as_str().to_owned()}
+            }
+            match (reading, derived_from.clone()) {
+                (Some((value, _)), Some(from)) => rsx! {
+                    strong { class: "meter-reading", {value} }
+                    span { class: "meter-unit", {from} }
+                },
+                (Some((value, when)), None) => rsx! {
                     strong { class: "meter-reading", {value} }
                     span { class: "meter-unit", {when} }
                 },
-                None => rsx! { span { class: "meter-unit", {tr(messages::PANEL_NO_READINGS)} } },
+                (None, _) => rsx! { span { class: "meter-unit", {tr(messages::PANEL_NO_READINGS)} } },
             }
-            span { class: "meter-required", {super::vehicle::required_text(&meter)} }
+            if derived_from.is_none() {
+                span { class: "meter-required", {super::vehicle::required_text(&meter)} }
+            }
         }
     }
 }
@@ -537,6 +603,7 @@ mod tests {
     fn view(n: u32, kind: EventKind, days_before: i64, odometer: i64) -> EventView {
         let at = UnixMillis::from_millis(NOV_2 - days_before * DAY);
         EventView {
+            calculated: vec![],
             id: test_id(n),
             event: Event {
                 asset: test_id(1),
@@ -652,6 +719,8 @@ mod tests {
         let (value, latest) = latest_readings(&events, test_id(20)).unwrap();
         assert_eq!((value, latest.id), (52_644, test_id(10)));
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,
