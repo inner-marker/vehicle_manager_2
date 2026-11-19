@@ -220,6 +220,7 @@ mod events {
         assert_eq!(
             log_context(&sam_context, truck).await,
             EventsOutcome::LogContext {
+                history: vec![],
                 latest: vec![LatestReading {
                     meter: odometer,
                     at: NOW,
@@ -237,6 +238,7 @@ mod events {
     /// A percentage meter's form: `name`, counting `direction`, resettable to `reset_to`.
     fn percentage_form(name: &str, direction: MeterDirection, reset_to: Option<i64>) -> MeterForm {
         MeterForm {
+            formula: None,
             name: name.into(),
             dimension: MeterDimension::Percentage,
             unit: MeterUnit::Percent,

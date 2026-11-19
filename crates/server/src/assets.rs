@@ -18,7 +18,7 @@ use domain::api::{AssetSummary, AssetView, AssetsOutcome, GarageView, GroupSumma
 use domain::asset::{Asset, AssetId, AssetPatch};
 use domain::asset_form::{AssetForm, FieldForm, MeterForm, Problem, confirms_name};
 use domain::command::{Change, Clearable, Record};
-use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKey};
+use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKind};
 use domain::garage::{GarageOrderId, GarageOrderPatch, MAX_ORDER_LENGTH};
 use domain::group::GroupId;
 use domain::i18n::Translator;
@@ -402,7 +402,9 @@ async fn add_asset(
 }
 
 /// The preferences in effect for the person (for a new odometer's unit).
-async fn person_preferences(context: &AssetsContext<'_>) -> Result<Preferences, AssetsOutcome> {
+pub(crate) async fn person_preferences(
+    context: &AssetsContext<'_>,
+) -> Result<Preferences, AssetsOutcome> {
     let mine: PreferencesId = context.user.user.cast();
     let household: PreferencesId = context.database_id.cast();
     let database = context.database;
@@ -419,6 +421,43 @@ async fn person_preferences(context: &AssetsContext<'_>) -> Result<Preferences, 
 
 fn invalid(problem: Problem) -> AssetsOutcome {
     AssetsOutcome::Invalid { problem }
+}
+
+/// A derived meter's refusal as an answer.
+fn derived_refusal(error: domain::calculated::DerivedError) -> AssetsOutcome {
+    match error {
+        domain::calculated::DerivedError::Meter(error) => invalid(Problem::Meter(error)),
+        domain::calculated::DerivedError::Formula(problem) => {
+            AssetsOutcome::InvalidFormula { problem }
+        }
+    }
+}
+
+/// "In use": a formula (called `by`) uses the field or meter.
+fn in_use(by: &domain::label::Label) -> AssetsOutcome {
+    AssetsOutcome::InUse {
+        by: by.as_str().to_owned(),
+    }
+}
+
+impl AssetsContext<'_> {
+    /// Vehicle `asset`'s meters and custom fields.
+    async fn setup_of(
+        &self,
+        asset: AssetId,
+    ) -> Result<(Vec<(MeterId, Meter)>, Vec<(CustomFieldId, CustomField)>), AssetsOutcome> {
+        let meters = self
+            .database
+            .meters_of(asset)
+            .await
+            .map_err(|error| unavailable("meters", &error))?;
+        let fields = self
+            .database
+            .custom_fields_of(asset)
+            .await
+            .map_err(|error| unavailable("custom fields", &error))?;
+        Ok((meters, fields))
+    }
 }
 
 /// Changes a vehicle's details (not its kind or group) to `form`'s, including its lifecycle
@@ -606,20 +645,10 @@ async fn add_meter_to(
         .allowed(asset, AssetAction::ConfigureMaintenance)
         .await?;
     let parsed = form.parse().map_err(invalid)?;
-    let unavailable = |_| AssetsOutcome::Unavailable;
-    let meters = context
-        .database
-        .meters_of(asset)
-        .await
-        .map_err(unavailable)?;
-    let fields = context
-        .database
-        .custom_fields_of(asset)
-        .await
-        .map_err(unavailable)?;
+    let (meters, fields) = context.setup_of(asset).await?;
     let meter = Meter {
         key: domain::calculated::new_key(&parsed.name, &fields, &meters),
-        formula: None,
+        formula: form.formula.clone(),
         asset,
         name: parsed.name,
         dimension: parsed.dimension,
@@ -630,6 +659,7 @@ async fn add_meter_to(
         direction: parsed.direction,
         reset_to: parsed.reset_to,
     };
+    domain::calculated::check_derived(None, &meter, &meters).map_err(derived_refusal)?;
     let id: MeterId = context.new_id()?;
     context
         .save(
@@ -679,10 +709,19 @@ async fn edit_meter_settings(
             .then(|| Clearable::from_option(parsed.reset_to)),
         ..MeterPatch::default()
     };
+    // A derived meter's formula may change; a typed meter stays typed (#087).
+    let patch = MeterPatch {
+        formula: form
+            .formula
+            .clone()
+            .filter(|formula| current.derived() && current.formula.as_ref() != Some(formula)),
+        ..patch
+    };
     // Which way it counts is fixed once it has a reading: they'd no longer fit (#080).
     if patch.direction.is_some() && has_readings(context, &current, id).await? {
         return Err(invalid(Problem::Meter(MeterError::DirectionFixed)));
     }
+    check_meter_change(context, id, &current, &patch).await?;
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
         context
             .save(&MeterWriter, Change::Update { id, patch })
@@ -691,7 +730,42 @@ async fn edit_meter_settings(
     Ok(AssetsOutcome::Done)
 }
 
-/// Removes a meter.
+/// Checks a change to meter `id` (now `current`) against the formulas: a derived meter's new
+/// settings, and no typed meter a derived one uses made resettable.
+async fn check_meter_change(
+    context: &AssetsContext<'_>,
+    id: MeterId,
+    current: &Meter,
+    patch: &MeterPatch,
+) -> Result<(), AssetsOutcome> {
+    let (meters, _) = context.setup_of(current.asset).await?;
+    let changed = Meter {
+        required_for: patch
+            .required_for
+            .clone()
+            .unwrap_or_else(|| current.required_for.clone()),
+        reset_to: patch
+            .reset_to
+            .map_or(current.reset_to, Clearable::into_option),
+        formula: patch.formula.clone().or_else(|| current.formula.clone()),
+        ..current.clone()
+    };
+    domain::calculated::check_derived(Some(id), &changed, &meters).map_err(derived_refusal)?;
+    if changed.resettable() && !current.resettable() {
+        let derived_user = meters.iter().find(|(_, meter)| {
+            meter
+                .formula
+                .as_ref()
+                .is_some_and(|formula| formula.keys().contains(current.key.as_str()))
+        });
+        if let Some((_, user)) = derived_user {
+            return Err(in_use(&user.name));
+        }
+    }
+    Ok(())
+}
+
+/// Removes a meter (not one a formula uses).
 pub async fn delete_meter(context: &AssetsContext<'_>, id: MeterId) -> AssetsOutcome {
     either(remove_meter(context, id).await)
 }
@@ -700,7 +774,11 @@ async fn remove_meter(
     context: &AssetsContext<'_>,
     id: MeterId,
 ) -> Result<AssetsOutcome, AssetsOutcome> {
-    existing_meter(context, id).await?;
+    let meter = existing_meter(context, id).await?;
+    let (meters, fields) = context.setup_of(meter.asset).await?;
+    if let Some(by) = domain::calculated::used_by(&meter.key, &fields, &meters) {
+        return Err(in_use(by));
+    }
     context
         .save(&MeterWriter, Change::<Meter>::Delete { id })
         .await?;
@@ -756,21 +834,26 @@ async fn add_field_to(
         .await?;
     let parsed = form.parse().map_err(invalid)?;
     let label = parsed.label;
-    let taken = context
+    let (meters, fields) = context.setup_of(asset).await?;
+    // A field's key is never reused, even once it's removed.
+    let mut taken = context
         .database
         .field_keys_of(asset)
         .await
         .map_err(|error| unavailable("field keys", &error))?;
+    taken.extend(meters.iter().map(|(_, meter)| meter.key.clone()));
     let field = CustomField {
         asset,
         shown_on: parsed.shown_on,
-        key: FieldKey::from_label(&label, &taken),
+        key: domain::calculated::new_key_among(&label, taken),
         label,
         kind: form.kind.clone(),
         enabled: form.enabled,
         required_for: parsed.required_for,
         range: form.range,
     };
+    domain::calculated::check_calculated(&field, &fields, &meters)
+        .map_err(|problem| AssetsOutcome::InvalidFormula { problem })?;
     let id: CustomFieldId = context.new_id()?;
     context
         .save(
@@ -801,9 +884,14 @@ async fn edit_field_settings(
     form: &FieldForm,
 ) -> Result<AssetsOutcome, AssetsOutcome> {
     let current = existing_field(context, id).await?;
-    // What it holds is fixed: values depend on it.
+    // What it holds is fixed: values depend on it. A calculated field's formula and what it
+    // shows as may change: it holds no values (#087).
+    let kind = match (&current.kind, &form.kind) {
+        (FieldKind::Calculated { .. }, FieldKind::Calculated { .. }) => form.kind.clone(),
+        _ => current.kind.clone(),
+    };
     let checked = FieldForm {
-        kind: current.kind.clone(),
+        kind,
         ..form.clone()
     };
     let parsed = checked.parse().map_err(invalid)?;
@@ -813,8 +901,10 @@ async fn edit_field_settings(
         enabled: (checked.enabled != current.enabled).then_some(checked.enabled),
         required_for: (parsed.required_for != current.required_for).then_some(parsed.required_for),
         range: (checked.range != current.range).then(|| Clearable::from_option(checked.range)),
+        kind: (checked.kind != current.kind).then(|| checked.kind.clone()),
         ..CustomFieldPatch::default()
     };
+    check_field_change(context, &current, &checked).await?;
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
         context
             .save(&CustomFieldWriter, Change::Update { id, patch })
@@ -823,7 +913,39 @@ async fn edit_field_settings(
     Ok(AssetsOutcome::Done)
 }
 
-/// Removes a custom field.
+/// Checks a change to field `current` (to `form`'s settings) against the formulas: a
+/// calculated field's formula, and no field a formula uses turned off or moved off a kind.
+async fn check_field_change(
+    context: &AssetsContext<'_>,
+    current: &CustomField,
+    form: &FieldForm,
+) -> Result<(), AssetsOutcome> {
+    let (meters, fields) = context.setup_of(current.asset).await?;
+    let changed = CustomField {
+        kind: form.kind.clone(),
+        enabled: form.enabled,
+        shown_on: form.shown_on.clone(),
+        ..current.clone()
+    };
+    let others: Vec<(CustomFieldId, CustomField)> = fields
+        .iter()
+        .filter(|(_, field)| field.key != current.key)
+        .cloned()
+        .collect();
+    domain::calculated::check_calculated(&changed, &others, &meters)
+        .map_err(|problem| AssetsOutcome::InvalidFormula { problem })?;
+    let narrower = (current.enabled && !changed.enabled)
+        || current
+            .shown_on
+            .iter()
+            .any(|kind| !changed.shown_on.contains(kind));
+    if narrower && let Some(by) = domain::calculated::used_by(&current.key, &fields, &meters) {
+        return Err(in_use(by));
+    }
+    Ok(())
+}
+
+/// Removes a custom field (not one a formula uses).
 pub async fn delete_field(context: &AssetsContext<'_>, id: CustomFieldId) -> AssetsOutcome {
     either(remove_field(context, id).await)
 }
@@ -832,7 +954,11 @@ async fn remove_field(
     context: &AssetsContext<'_>,
     id: CustomFieldId,
 ) -> Result<AssetsOutcome, AssetsOutcome> {
-    existing_field(context, id).await?;
+    let field = existing_field(context, id).await?;
+    let (meters, fields) = context.setup_of(field.asset).await?;
+    if let Some(by) = domain::calculated::used_by(&field.key, &fields, &meters) {
+        return Err(in_use(by));
+    }
     context
         .save(&CustomFieldWriter, Change::<CustomField>::Delete { id })
         .await?;

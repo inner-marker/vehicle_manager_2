@@ -311,7 +311,7 @@ impl core::fmt::Display for Unit {
 
 /// A worked-out value, in base units: meters, liters, seconds, and a currency's whole units
 /// (a percentage as a fraction: 80% is 0.8).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Quantity {
     /// The number, in base units.
     pub value: f64,
@@ -322,6 +322,10 @@ pub struct Quantity {
     /// The currency of the money in it, if any.
     pub currency: Option<CurrencyCode>,
 }
+
+// Worked-out values are always finite (a formula that isn't has no value), so equality is
+// reflexive and `Eq` holds.
+impl Eq for Quantity {}
 
 impl Quantity {
     /// A plain number.

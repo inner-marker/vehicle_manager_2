@@ -1913,6 +1913,8 @@ define_messages! {
     FORMULA_NO_VALUE_NOT_FINITE => "formula-no-value-not-finite",
     /// Formulas, no value: the formula no longer fits.
     FORMULA_NO_VALUE_MISMATCH => "formula-no-value-mismatch",
+    /// Formulas: a field or meter a formula uses (`$by`) can't go.
+    FORMULA_IN_USE => "formula-in-use",
     /// Formulas refused: not a derived meter's input (`$key`).
     FORMULA_NOT_AN_INPUT => "formula-not-an-input",
     /// Formulas refused: a calculated field used in a formula (`$key`).

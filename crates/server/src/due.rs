@@ -128,18 +128,10 @@ pub(crate) async fn vehicle_due_in_full(
 ) -> Result<VehicleDue, StorageError> {
     let zone = usable(zone);
     let meters = database.meters_of(asset).await?;
-    let readings: Vec<PastReading> = database
-        .readings_of(asset)
-        .await?
-        .into_iter()
-        .map(|reading| PastReading {
-            meter: reading.meter,
-            at: reading.at,
-            value: reading.value,
-            reset: reading.reset,
-        })
-        .collect();
-    let done = database.done_tasks_of(asset).await?;
+    // Derived meters count like any other (#087).
+    let readings = crate::formulas::readings_with_derived(database, asset, &meters).await?;
+    let mut done = database.done_tasks_of(asset).await?;
+    domain::calculated::add_derived_to_done(&mut done, &meters, &readings);
     let added = database.requirements_added(asset).await?;
     let context = DueContext {
         now,
@@ -304,13 +296,14 @@ pub(crate) async fn snooze_meter_of(
     let Some(meter) = snooze_meter(&requirement, &meters) else {
         return Ok(None);
     };
-    Ok(database
-        .readings_of(asset)
-        .await?
-        .into_iter()
-        .filter(|reading| reading.meter == meter)
-        .max_by_key(|reading| (reading.at, reading.reset))
-        .map(|reading| (meter, reading.value)))
+    Ok(
+        crate::formulas::readings_with_derived(database, asset, &meters)
+            .await?
+            .into_iter()
+            .filter(|reading| reading.meter == meter)
+            .max_by_key(|reading| (reading.at, reading.reset))
+            .map(|reading| (meter, reading.value)),
+    )
 }
 
 /// Due & squawks (#083): what comes due (Coming up or more urgent) and the open or deferred

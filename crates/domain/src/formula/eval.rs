@@ -17,7 +17,7 @@ use crate::time::UnixMillis;
 const DAY_MILLIS: i64 = 86_400_000;
 
 /// One event's values, as formulas see them.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Scope {
     /// When it happened.
     pub at: UnixMillis,

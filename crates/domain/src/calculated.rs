@@ -84,10 +84,15 @@ pub fn new_key(
     fields: &[(CustomFieldId, CustomField)],
     meters: &[(MeterId, Meter)],
 ) -> FieldKey {
-    let mut taken = keys_on(fields, meters);
-    // Reserved words can't be keys: count each that a label could become as taken.
-    let mut candidate = FieldKey::from_label(label, &[]);
-    while is_reserved(candidate.as_str()) || taken.contains(&candidate) {
+    new_key_among(label, keys_on(fields, meters))
+}
+
+/// A key from `label`, different from each of `taken` and from every reserved word.
+#[must_use]
+pub fn new_key_among(label: &Label, mut taken: Vec<FieldKey>) -> FieldKey {
+    let mut candidate = FieldKey::from_label(label, &taken);
+    // Reserved words can't be keys: count each one the label becomes as taken.
+    while is_reserved(candidate.as_str()) {
         taken.push(candidate);
         candidate = FieldKey::from_label(label, &taken);
     }

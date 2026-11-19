@@ -49,6 +49,13 @@ fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
             | AssetsOutcome::Garage { .. },
         ) => None,
         Ok(AssetsOutcome::Invalid { problem }) => Some(tr(problem.message())),
+        Ok(AssetsOutcome::InvalidFormula { problem }) => {
+            Some(problem.describe(domain::i18n::Translator::english()))
+        }
+        Ok(AssetsOutcome::InUse { by }) => Some(tr_with(
+            messages::FORMULA_IN_USE,
+            &[("by", MessageArg::from(by.as_str()))],
+        )),
         Ok(AssetsOutcome::NotAllowed) => Some(tr(messages::VEHICLES_NOT_ALLOWED)),
         Ok(AssetsOutcome::NotFound) => Some(tr(messages::VEHICLE_NOT_FOUND)),
         Ok(AssetsOutcome::Unavailable) => Some(tr(messages::SOMETHING_WENT_WRONG)),
@@ -712,6 +719,7 @@ fn MeterDialog(
             }
         };
         let form = MeterForm {
+            formula: None,
             name: name(),
             dimension: dimension(),
             unit: unit(),

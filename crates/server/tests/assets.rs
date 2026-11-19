@@ -419,6 +419,7 @@ mod assets {
         let admin = in_admin(&jordan);
         let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
         let hours = MeterForm {
+            formula: None,
             name: "Engine hours".into(),
             dimension: MeterDimension::Duration,
             unit: MeterUnit::Hours,

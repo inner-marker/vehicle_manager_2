@@ -537,6 +537,7 @@ mod tests {
     fn view(n: u32, kind: EventKind, days_before: i64, odometer: i64) -> EventView {
         let at = UnixMillis::from_millis(NOV_2 - days_before * DAY);
         EventView {
+            calculated: vec![],
             id: test_id(n),
             event: Event {
                 asset: test_id(1),

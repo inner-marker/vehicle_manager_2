@@ -207,6 +207,10 @@ pub struct MeterForm {
     /// What a reset sets it to, in the stored unit; `None`: it can't be reset.
     #[serde(default)]
     pub reset_to: Option<i64>,
+    /// A derived meter's formula (#087); `None` for a typed meter. Derived or typed is fixed
+    /// once the meter exists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formula: Option<crate::formula::Formula>,
 }
 
 /// A meter form, checked.
@@ -426,6 +430,7 @@ mod tests {
     #[test]
     fn a_meter_form_is_checked_and_tidied() {
         let form = MeterForm {
+            formula: None,
             name: "Engine hours".into(),
             dimension: MeterDimension::Duration,
             unit: MeterUnit::Hours,
@@ -449,6 +454,7 @@ mod tests {
     #[test]
     fn a_meter_forms_reset_is_checked() {
         let oil_life = MeterForm {
+            formula: None,
             name: "Oil life".into(),
             dimension: MeterDimension::Percentage,
             unit: MeterUnit::Percent,

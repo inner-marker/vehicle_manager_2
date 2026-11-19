@@ -233,6 +233,7 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
     let EventsOutcome::LogContext {
         latest,
         may_override_readings: may_override,
+        ..
     } = data::event_log_context(asset)
         .await
         .map_err(|e| failed(&e))?

@@ -55,6 +55,8 @@ fn from_assets(outcome: &AssetsOutcome) -> EventsOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => EventsOutcome::Unavailable,
     }
 }
@@ -315,6 +317,20 @@ impl AssetsContext<'_> {
         Ok(name)
     }
 
+    /// Vehicle `asset`'s calculated fields and what they're worked out from, in the person's
+    /// units (#087); `None` if it has none.
+    async fn formulas(
+        &self,
+        asset: domain::asset::AssetId,
+    ) -> Result<Option<crate::formulas::Formulas>, EventsOutcome> {
+        let units = crate::assets::person_preferences(self)
+            .await
+            .map_err(|outcome| from_assets(&outcome))?;
+        crate::formulas::Formulas::load(self.database, asset, units)
+            .await
+            .map_err(|error| failed("formulas", &error))
+    }
+
     /// The person's view of one event.
     async fn view_of(
         &self,
@@ -338,6 +354,7 @@ impl AssetsContext<'_> {
             logged_by_name,
             finalized_by_name,
             event,
+            calculated: Vec::new(),
         })
     }
 }
@@ -378,6 +395,14 @@ async fn list_events(
                 .await?,
         );
     }
+    if let Some(formulas) = context.formulas(asset).await? {
+        let values = formulas.all_values();
+        for view in &mut views {
+            if let Some((_, calculated)) = values.iter().find(|(id, _)| *id == view.id) {
+                view.calculated.clone_from(calculated);
+            }
+        }
+    }
     Ok(EventsOutcome::Events { events: views })
 }
 
@@ -396,12 +421,15 @@ async fn view_event(
         .correction_of(id)
         .await
         .map_err(|error| failed("correction", &error))?;
+    let asset = event.asset;
+    let mut view = context
+        .view_of(id, event, scope, corrected_by, &mut Vec::new())
+        .await?;
+    if let Some(formulas) = context.formulas(asset).await? {
+        view.calculated = formulas.values_for(id, &view.event);
+    }
     Ok(EventsOutcome::Event {
-        view: Box::new(
-            context
-                .view_of(id, event, scope, corrected_by, &mut Vec::new())
-                .await?,
-        ),
+        view: Box::new(view),
     })
 }
 
@@ -434,9 +462,15 @@ async fn log_context_of(
             value: reading.value,
         })
         .collect();
+    let history = context
+        .formulas(asset)
+        .await?
+        .map(|formulas| formulas.history())
+        .unwrap_or_default();
     Ok(EventsOutcome::LogContext {
         latest,
         may_override_readings: context.permits(AssetAction::OverrideReadings, scope),
+        history,
     })
 }
 

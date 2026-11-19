@@ -336,16 +336,7 @@ pub async fn run_operation(context: &PushContext<'_>, operation: &Operation) -> 
         }
         OperationChange::DeleteSquawk { id } => ran_squawk(squawks::delete(&assets(), *id).await),
         OperationChange::SetGarageOrder { order } => {
-            match assets::set_order(&assets(), order.clone()).await {
-                AssetsOutcome::Done | AssetsOutcome::Added { .. } => Ran::Applied,
-                AssetsOutcome::Unavailable => Ran::Unavailable,
-                other @ (AssetsOutcome::Garage { .. }
-                | AssetsOutcome::Asset { .. }
-                | AssetsOutcome::MovePreview { .. }
-                | AssetsOutcome::NotFound
-                | AssetsOutcome::NotAllowed
-                | AssetsOutcome::Invalid { .. }) => Ran::Refused(Refusal::Assets(other)),
-            }
+            ran_assets(assets::set_order(&assets(), order.clone()).await)
         }
         OperationChange::SetMyPreferences { patch } => {
             let preferences = PreferencesContext {
@@ -446,6 +437,22 @@ fn ran_event(outcome: EventsOutcome) -> Ran {
         | EventsOutcome::NotFound
         | EventsOutcome::NotAllowed
         | EventsOutcome::Invalid { .. }) => Ran::Refused(Refusal::Events(other)),
+    }
+}
+
+/// What a vehicles answer means for an operation.
+fn ran_assets(outcome: AssetsOutcome) -> Ran {
+    match outcome {
+        AssetsOutcome::Done | AssetsOutcome::Added { .. } => Ran::Applied,
+        AssetsOutcome::Unavailable => Ran::Unavailable,
+        other @ (AssetsOutcome::Garage { .. }
+        | AssetsOutcome::Asset { .. }
+        | AssetsOutcome::MovePreview { .. }
+        | AssetsOutcome::NotFound
+        | AssetsOutcome::NotAllowed
+        | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }) => Ran::Refused(Refusal::Assets(other)),
     }
 }
 

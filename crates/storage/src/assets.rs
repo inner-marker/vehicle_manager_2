@@ -815,6 +815,26 @@ impl Database {
         .collect()
     }
 
+    /// The meters (not deleted) without a stored key yet, each with its vehicle: every meter
+    /// from before migration 0027 until the server gives it one.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn unkeyed_meters(&self) -> Result<Vec<(MeterId, AssetId)>, StorageError> {
+        sqlx::query("SELECT id, asset_id FROM meters WHERE key IS NULL AND deleted = 0 ORDER BY id")
+            .fetch_all(self.pool())
+            .await?
+            .iter()
+            .map(|row| {
+                Ok((
+                    id_from_sql(row.try_get::<&[u8], _>("id")?, "meters.id")?,
+                    id_from_sql(row.try_get::<&[u8], _>("asset_id")?, "meters.asset_id")?,
+                ))
+            })
+            .collect()
+    }
+
     /// One meter, if it exists and isn't deleted.
     ///
     /// # Errors

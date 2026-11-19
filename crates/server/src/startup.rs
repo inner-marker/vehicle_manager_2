@@ -180,6 +180,19 @@ pub async fn start(
             {
                 tracing::error!(target: log_area::APP, %error, "can't make default usages; readiness will be missing for some vehicles");
             }
+            // Every meter needs its key for formulas (#087): give any missing (every meter
+            // from before keys).
+            if let Some(device) = SERVER_DEVICE.get().copied()
+                && let Err(error) = crate::formulas::ensure_meter_keys(
+                    &database,
+                    device,
+                    health::current(),
+                    clock.as_ref(),
+                )
+                .await
+            {
+                tracing::error!(target: log_area::APP, %error, "can't give meters their keys; they're read with keys from their names");
+            }
             // The place data (#059): missing or broken data never stops the server.
             crate::places::load(paths.geodata_file.clone(), clock.now()).await;
             if let Some(server_device) = SERVER_DEVICE.get().copied() {

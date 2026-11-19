@@ -772,7 +772,7 @@
 | **7a** `feat(domain):` the formula language | ☑️ | `domain::formula`: the parser (keys, numbers with units, operators, parentheses, functions, Over), the dimension check against what the result shows, working it out (values from a lookup, past events from a list), the functions, and every refusal and "no value" in words. Unit tests first, and property tests (the dimension rules; a formula printed and read back is the same). |
 | **7b** `feat(domain):` fields and meters | ☑️ | `FieldKind::Calculated` (formula, what it shows); `Meter::key` and `Meter::formula`; keys from names; the values an event offers (its fields, readings, volume, cost, and since the last); a derived meter's readings for what's due; the "used by a formula" checks. Unit tests first. |
 | **7c** `feat(storage):` migration 0027 | ☑️ | `meters.key` (made from each existing meter's name, unique on its vehicle) and `meters.formula`. Calculated fields need no change (a field's kind is JSON). The desktop's copy runs the same migration; the release fixtures migrate. |
-| **7d** `feat(server):` | ⬜ | Saving calculated fields and derived meters (checked; Maintainers, as now); calculated values on each event the person sees (the event's page, the timeline); derived meters' values on the vehicle and in what's due (Maintenance, the Overview, the Garage, messages). The desktop does the same from its copy, offline too. |
+| **7d** `feat(server):` | ☑️ | Saving calculated fields and derived meters (checked; Maintainers, as now); calculated values on each event the person sees (the event's page, the timeline); derived meters' values on the vehicle and in what's due (Maintenance, the Overview, the Garage, messages). The desktop does the same from its copy, offline too. |
 | **7e** `feat(app):` the screens | ⬜ | The calculated field dialog (row 1), ƒ rows on the log form and the event's page (row 2), **+ Derived meter** and its dialog (row 3), derived meters on the Overview and in Setup (row 4), the help popup (row 5), the ƒ badge; `docs/help/formulas.md`. |
 | **7f** `docs:` | ⬜ | Milestone 7's section of the phase's test plan (`docs/test-plans/p5-phase.md`). |
 
@@ -804,6 +804,19 @@
 - **Calculated fields need no change:** a field's kind is already JSON.
 - **The desktop's copy** runs the same migration; meters already sync.
 - **Tests:** a derived meter's key and formula round-trip, a changed formula keeps its key, a key taken on the vehicle is refused until that meter is deleted, and a meter without a stored key reads with one from its name. The release fixtures migrate with no stored keys or formulas, each meter typed and keyed from its name.
+
+**Step 7d notes (2026-11-19):**
+- **Older meters' keys (`server::formulas::ensure_meter_keys`):** at startup, after the default usages, every meter without a stored key gets one from its name (`storage`'s `unkeyed_meters`), saved like any change so desktops get it by syncing.
+- **Saving (Maintainers, as before):**
+  - A meter form can carry a formula (`MeterForm::formula`): a derived meter, checked when added and when changed (`check_derived`). A typed meter stays typed.
+  - A calculated field is checked when added and when its formula, what it shows, its kinds, or on/off change (`check_calculated`). Its formula and what it shows can change, since it holds no values; other kinds stay fixed.
+  - Refusals come back as `AssetsOutcome::InvalidFormula`, with the reason in words.
+- **Kept while in use:** a meter or field a formula uses can't be removed, turned off, or taken off a kind it's shown on. A typed meter a derived one uses can't be made resettable. Each comes back as `AssetsOutcome::InUse`, naming the formula's field or meter ("Service miles uses this in its formula …").
+- **Keys:** a new meter's and field's keys come from `domain::calculated`, so they never match each other's or a word formulas use; a field's never matches a removed field's either (`new_key_among`).
+- **Values on events:** the events list and one event's page carry each calculated field's value (`EventView::calculated`), rounded in the person's units, or why there's none. Events a correction replaces don't count; months count in the event's own zone. The log form's context carries each kind's earlier values (`EventsOutcome::LogContext::history`), so the form can work them out as values are typed (7e).
+- **What's due** counts derived meters' readings (Maintenance, the Overview, the Garage, Due & squawks, and messages all read it there), a job's derived value included, and so does a snooze by meter.
+- **The desktop** does all of this from its copy, through the same server code.
+- **Tests** (server, `tests/formulas.rs`): a derived meter refused for `round`, an unknown key, or being required; what it uses kept from removal and from being made resettable; what's due coming up on Service miles from two readings; a typed reading of a derived meter refused; a calculated field refused for adding money to a volume; the odometer kept while cost per mile uses it; $0.15 a mile on the second fuel-up, none on the first, the same on the event's page; the log form's history; older meters given their keys once, and nothing more to do after.
 
 **API version:** stays at 2. Migration 0027 changes the schema, so an older desktop is told to update before it syncs (#075, #076).
 

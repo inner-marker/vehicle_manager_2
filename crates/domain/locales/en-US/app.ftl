@@ -1683,6 +1683,8 @@ formula-no-value-too-few = No value: stddev needs at least two values.
 formula-no-value-no-odometer = No value: this vehicle has no odometer to count back on.
 formula-no-value-not-finite = No value: the result is too big to show.
 formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
+# $by (string): the calculated field or derived meter.
+formula-in-use = { $by } uses this in its formula, so it can't be removed, turned off, or taken off that kind of event. Change { $by } first.
 # $key (string): the key typed.
 formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.
 # $key (string): the field's key.
