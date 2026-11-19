@@ -156,6 +156,14 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
         for (_, meter) in database.meters_of(asset).await.unwrap() {
             assert_eq!(meter.direction, MeterDirection::Up, "{}", fixture.display());
             assert_eq!(meter.reset_to, None, "{}", fixture.display());
+            // Migration 0027: typed, with a key from its name until the server stores one.
+            assert_eq!(meter.formula, None, "{}", fixture.display());
+            assert_eq!(
+                meter.key,
+                domain::custom_field::FieldKey::from_label(&meter.name, &[]),
+                "{}",
+                fixture.display()
+            );
         }
         let readings = database.readings_of(asset).await.unwrap();
         assert!(readings.iter().all(|reading| !reading.reset));
@@ -170,11 +178,21 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
     }
 }
 
-/// Migrations 0024 to 0026's columns and tables read as empty: no snoozes or starting step, no
-/// specs, templates, or ticked specs, no part from a spec, and no usages.
+/// Migrations 0024 to 0027's columns and tables read as empty: no snoozes or starting step, no
+/// specs, templates, or ticked specs, no part from a spec, no usages, and no meter keys or
+/// formulas.
 #[cfg(test)]
 async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
+    // Migration 0027: no meter has a stored key or a formula yet.
+    assert_eq!(
+        count("SELECT count(*) FROM meters WHERE key IS NOT NULL OR formula IS NOT NULL")
+            .await
+            .unwrap(),
+        0,
+        "{}",
+        fixture.display()
+    );
     // Migration 0026: no usages yet (the server makes the defaults), and no requirement or
     // template lists any (so each requirement counts for the default).
     assert_eq!(

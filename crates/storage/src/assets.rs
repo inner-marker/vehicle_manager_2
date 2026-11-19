@@ -6,6 +6,7 @@ use domain::asset::{Asset, AssetId, AssetPatch, Identifier, LifecycleStatus};
 use domain::custom_field::{
     CustomField, CustomFieldId, CustomFieldPatch, FieldKey, FieldKind, FieldRange,
 };
+use domain::formula::Formula;
 use domain::garage::{GarageOrder, GarageOrderId, GarageOrderPatch};
 use domain::group::{Group, GroupId, GroupPatch};
 use domain::id::Id;
@@ -305,8 +306,8 @@ impl RecordWriter<Meter> for MeterWriter {
     ) -> Result<(), StorageError> {
         sqlx::query(
             "INSERT INTO meters (id, asset_id, name, dimension, unit, precision, description,
-                                 required_for, direction, reset_to, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 required_for, direction, reset_to, key, formula, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -332,6 +333,13 @@ impl RecordWriter<Meter> for MeterWriter {
             values
                 .reset_to
                 .and_then(domain::command::Clearable::into_option),
+        )
+        .bind(values.key.as_ref().map(|key| key.as_str().to_owned()))
+        .bind(
+            values
+                .formula
+                .as_ref()
+                .map(|formula| formula.as_str().to_owned()),
         )
         .bind(sequence)
         .execute(connection)
@@ -364,6 +372,8 @@ impl RecordWriter<Meter> for MeterWriter {
                  required_for = coalesce(?, required_for),
                  direction = coalesce(?, direction),
                  reset_to = CASE WHEN ? THEN ? ELSE reset_to END,
+                 key = coalesce(?, key),
+                 formula = coalesce(?, formula),
                  sequence = ?
              WHERE id = ?",
         )
@@ -378,6 +388,13 @@ impl RecordWriter<Meter> for MeterWriter {
         .bind(optional_name(patch.direction.as_ref(), "direction")?)
         .bind(reset_to.0)
         .bind(reset_to.1)
+        .bind(patch.key.as_ref().map(|key| key.as_str().to_owned()))
+        .bind(
+            patch
+                .formula
+                .as_ref()
+                .map(|formula| formula.as_str().to_owned()),
+        )
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -406,13 +423,22 @@ fn meter_from_row(row: &SqliteRow) -> Result<(MeterId, Meter), StorageError> {
     let name = domain::label::Label::parse(&name).map_err(invalid("meters.name"))?;
     let precision: i64 = row.try_get("precision")?;
     let required_for: String = row.try_get("required_for")?;
+    let key: Option<String> = row.try_get("key")?;
+    let formula: Option<String> = row.try_get("formula")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "meters.id")?,
         Meter {
             asset: id_from_sql(row.try_get::<&[u8], _>("asset_id")?, "meters.asset_id")?,
-            // Until migration 0027 stores keys (step 7c): one made from the name.
-            key: FieldKey::from_label(&name, &[]),
-            formula: None,
+            // Until the server gives an older meter its key (at startup), one from its name.
+            key: match key {
+                Some(key) => FieldKey::parse(&key).map_err(invalid("meters.key"))?,
+                None => FieldKey::from_label(&name, &[]),
+            },
+            formula: formula
+                .as_deref()
+                .map(Formula::parse)
+                .transpose()
+                .map_err(invalid("meters.formula"))?,
             name,
             dimension: required_name(row.try_get("dimension")?, "meters.dimension")?,
             unit: required_name(row.try_get("unit")?, "meters.unit")?,
@@ -778,7 +804,7 @@ impl Database {
     pub async fn meters_of(&self, asset: AssetId) -> Result<Vec<(MeterId, Meter)>, StorageError> {
         sqlx::query(
             "SELECT id, asset_id, name, dimension, unit, precision, description, required_for,
-                    direction, reset_to
+                    direction, reset_to, key, formula
              FROM meters WHERE asset_id = ? AND deleted = 0 ORDER BY name",
         )
         .bind(id_to_sql(asset))
@@ -797,7 +823,7 @@ impl Database {
     pub async fn meter(&self, id: MeterId) -> Result<Option<Meter>, StorageError> {
         sqlx::query(
             "SELECT id, asset_id, name, dimension, unit, precision, description, required_for,
-                    direction, reset_to
+                    direction, reset_to, key, formula
              FROM meters WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))
