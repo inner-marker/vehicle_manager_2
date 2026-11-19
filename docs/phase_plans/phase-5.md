@@ -38,7 +38,7 @@
 | 4 | **Specs and service bundles** | ✅ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
 | 5 | **Fuel economy** | ✅ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
 | 6 | **Readiness** | ✅ | **Usages** per vehicle (#086): a default named for its kind (Drivable, Towable, Usable) needing its profile's documents, and more added by Maintainers; each requirement **needed for** chosen usages; **"Ready to use?"** on the Overview, each usage with every item's ✓, !, or ✗ and its reason; the Garage chip; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; an open or deferred High: not ready |
-| 7 | **Calculated fields and derived meters** | ☑️ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
+| 7 | **Calculated fields and derived meters** | ✅ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
 **Releases:** **`v0.5.0` at the end of Phase 5** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.3.0` had. The version follows the phase's number, since Phase 4 moved after the MVP (#041).
 
@@ -840,3 +840,41 @@
 **Open issues** (reviewed 2026-11-18): none touch formulas or meters; #27 (custom roles) would one day change who may write formulas.
 
 **Not in this milestone:** an in-app help guide (idea 22); formulas across vehicles, and in reports (Phase 6); a catalogue of ready-made fields (idea 16); copying derived meters and calculated fields with a schedule or template.
+
+---
+
+### The `v0.5.0` release plan
+*Approved 2026-11-19 · Branch: `release/v0.5.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #062, #079, #081*
+
+**Goal:** Phase 5 ends with **`v0.5.0`** tagged on `main`, and the main server on it. It's the household's first release that tells them what's due. Along the way: issue **#41** fixed, the release's **migration fixture**, an updated **README**, and the **regression pass** on the test server.
+
+**Phase 5's exit criteria** (above): milestones 1–7 are all ✅. Their checks are the phase's test plan, `docs/test-plans/p5-phase.md`, run whole on the test server as the regression pass (#081). "An app one API version behind still syncs" is left to the server's tests, as in `v0.3.0`.
+
+**Reviewed against** the open GitHub issues and the ideas list, 2026-11-19:
+- **#41 sqlx and RUSTSEC-2026-0459:** **now fixable.** sqlx 0.9.1's SQLite driver allows `libsqlite3-sys` up to 0.40, and the advisory is fixed from 0.39. Step R.a; **to close** with a comment once released (the human runs it).
+- **#44, #31, #29, #27, #26, #24, #15:** later phases; no effect.
+- **The ideas list:** no effect.
+
+**Questions for the human, and the answers** (2026-11-19, both as recommended):
+1. **Issue #41:** fixed **in the release**, as its own step, so the regression pass covers it.
+2. **The regression pass:** the whole Phase 5 plan, plus a short **Earlier releases** part (about 12 steps: `v0.3.0`'s main web paths, and the desktop's offline fuel-up and sync) and a table matching each exit criterion to its steps.
+
+**Choices from the plan** (no question needed):
+- **Desktop packages:** still not in this release; they come in Phase 6 (#079). The desktop app is built locally (`dx bundle`).
+- **The fixture** `crates/storage/tests/fixtures/v0.5.0.sqlite` is made by this release's code (schema 27), through the server's pipeline, with made-up records for what Phase 5 brought. `make_fixture.rs` gets a `v0.5.0` test beside the others.
+- **The version** goes to `0.5.0` (Phase 4 comes after the MVP, #041). The API version stays at 2. The changelog comes from `git cliff --tag v0.5.0`, and the third-party notices are remade (the dependency update changes them).
+
+**Steps:**
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| R.0 | ☑️ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
+| R.a | ⬜ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
+| R.b | ⬜ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
+| R.c | ⬜ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
+| R.d | ⬜ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
+| R.e | ⬜ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
+
+**Written so far**
+- **R.0:** this plan; milestone 7 marked ✅ (PR #61).
