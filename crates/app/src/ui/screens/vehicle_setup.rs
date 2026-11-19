@@ -39,7 +39,7 @@ use crate::ui::vehicles::{VehiclesContext, group_icon, refresh_garage, use_vehic
 use crate::ui::{tr, tr_with};
 
 /// What went wrong, if the answer isn't a success.
-fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
+pub(super) fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
     match result {
         Ok(
             AssetsOutcome::Done
@@ -135,7 +135,7 @@ const fn status_value(status: LifecycleStatus) -> &'static str {
 }
 
 /// A meter unit's `<option>` value, and back.
-const fn unit_value(unit: MeterUnit) -> &'static str {
+pub(super) const fn unit_value(unit: MeterUnit) -> &'static str {
     match unit {
         MeterUnit::Miles => "miles",
         MeterUnit::Kilometers => "kilometers",
@@ -424,7 +424,7 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn SaveButtons(busy: bool, on_close: EventHandler<()>) -> Element {
+pub(super) fn SaveButtons(busy: bool, on_close: EventHandler<()>) -> Element {
     rsx! {
         div { class: "form-buttons",
             button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
@@ -453,13 +453,18 @@ enum Editing<I, T> {
 #[component]
 fn MetersSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<MeterId, Meter>>);
+    // A derived meter's own dialog (3B, #087): `Some(None)` adds one.
+    let mut deriving = use_signal(|| None::<Option<(MeterId, Meter)>>);
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::PANEL_METERS,
                 if can {
-                    button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_METER)} }
+                    div { class: "setup-row-buttons",
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_METER)} }
+                        button { class: "secondary-button", onclick: move |_| deriving.set(Some(None)), {tr(messages::SETUP_ADD_DERIVED)} }
+                    }
                 }
             }
             if view.meters.is_empty() {
@@ -468,15 +473,29 @@ fn MetersSection(view: AssetView) -> Element {
             for (meter_id, meter) in view.meters.clone() {
                 div { key: "{meter_id}", class: "setup-row",
                     div { class: "setup-row-text",
-                        span { class: "setup-row-name", {meter.name.as_str().to_owned()} }
+                        span { class: "setup-row-name",
+                            if meter.derived() {
+                                super::formula_view::FxBadge {}
+                            }
+                            {meter.name.as_str().to_owned()}
+                        }
                         span { class: "setup-row-detail", {meter_summary(&meter)} }
-                        span { class: "setup-row-detail", {required_text(&meter)} }
+                        if let Some(formula) = &meter.formula {
+                            span { class: "setup-row-detail mono", {formula.as_str().to_owned()} }
+                        } else {
+                            span { class: "setup-row-detail", {required_text(&meter)} }
+                        }
+                        span { class: "setup-row-key mono", {meter.key.as_str().to_owned()} }
                     }
                     if can {
                         RowButtons {
                             on_edit: {
                                 let meter = meter.clone();
-                                move |()| editing.set(Some(Editing::Changing(meter_id, meter.clone())))
+                                move |()| if meter.derived() {
+                                    deriving.set(Some(Some((meter_id, meter.clone()))));
+                                } else {
+                                    editing.set(Some(Editing::Changing(meter_id, meter.clone())));
+                                }
                             },
                             on_remove: {
                                 let name = meter.name.as_str().to_owned();
@@ -499,6 +518,9 @@ fn MetersSection(view: AssetView) -> Element {
                 ConfirmRemove { target: Removal::Meter(id), name, on_close: move |()| editing.set(None) }
             },
         }
+        if let Some(current) = deriving() {
+            super::formula_view::DerivedMeterDialog { view, current, on_close: move |()| deriving.set(None) }
+        }
     }
 }
 
@@ -518,7 +540,7 @@ pub(super) fn RowButtons(on_edit: EventHandler<()>, on_remove: EventHandler<()>)
 }
 
 /// The units that can show a meter of `dimension`.
-fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
+pub(super) fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
     MeterUnit::ALL
         .into_iter()
         .filter(|unit| unit.fits(dimension))
@@ -886,7 +908,7 @@ fn field_required_text(field: &CustomField) -> String {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn KindChecks(
+pub(super) fn KindChecks(
     label: MessageId,
     kinds: Vec<EventKind>,
     chosen: Signal<Vec<EventKind>>,
@@ -926,14 +948,20 @@ fn KindChecks(
 #[component]
 fn FieldsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<CustomFieldId, CustomField>>);
+    // A calculated field's dialog (row 1, #087): `Some(None)` adds one.
+    let mut calculating = use_signal(|| None::<Option<(CustomFieldId, CustomField)>>);
     let units = crate::ui::units::use_units();
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
+    let calculated_kinds = kinds.clone();
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::SETUP_FIELDS,
                 if can {
-                    button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
+                    div { class: "setup-row-buttons",
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
+                        button { class: "secondary-button", onclick: move |_| calculating.set(Some(None)), {tr(messages::SETUP_ADD_CALCULATED)} }
+                    }
                 }
             }
             if view.fields.is_empty() {
@@ -943,20 +971,31 @@ fn FieldsSection(view: AssetView) -> Element {
                 div { key: "{field_id}", class: if field.enabled { "setup-row" } else { "setup-row off" },
                     div { class: "setup-row-text",
                         span { class: "setup-row-name",
+                            if field.calculated() {
+                                super::formula_view::FxBadge {}
+                            }
                             {field.label.as_str().to_owned()}
                             if !field.enabled {
                                 span { class: "badge", {tr(messages::FIELD_OFF)} }
                             }
                         }
                         span { class: "setup-row-detail", {field_summary(&field)} }
-                        span { class: "setup-row-detail", {field_required_text(&field)} }
+                        if let FieldKind::Calculated { formula, .. } = &field.kind {
+                            span { class: "setup-row-detail mono", {formula.as_str().to_owned()} }
+                        } else {
+                            span { class: "setup-row-detail", {field_required_text(&field)} }
+                        }
                         span { class: "setup-row-key mono", {field.key.as_str().to_owned()} }
                     }
                     if can {
                         RowButtons {
                             on_edit: {
                                 let field = field.clone();
-                                move |()| editing.set(Some(Editing::Changing(field_id, field.clone())))
+                                move |()| if field.calculated() {
+                                    calculating.set(Some(Some((field_id, field.clone()))));
+                                } else {
+                                    editing.set(Some(Editing::Changing(field_id, field.clone())));
+                                }
                             },
                             on_remove: {
                                 let name = field.label.as_str().to_owned();
@@ -978,6 +1017,9 @@ fn FieldsSection(view: AssetView) -> Element {
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
             },
+        }
+        if let Some(current) = calculating() {
+            super::formula_view::CalculatedFieldDialog { view, kinds: calculated_kinds, current, on_close: move |()| calculating.set(None) }
         }
     }
 }

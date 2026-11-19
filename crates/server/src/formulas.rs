@@ -130,8 +130,8 @@ pub(crate) struct Formulas {
 }
 
 impl Formulas {
-    /// Vehicle `asset`'s, for a person who sees values in `units`; `None` if it has no
-    /// calculated field.
+    /// Vehicle `asset`'s, for a person who sees values in `units`; `None` if `only_calculated`
+    /// and it has no calculated field.
     ///
     /// # Errors
     ///
@@ -140,9 +140,10 @@ impl Formulas {
         database: &Database,
         asset: AssetId,
         units: Preferences,
+        only_calculated: bool,
     ) -> Result<Option<Self>, StorageError> {
         let fields = database.custom_fields_of(asset).await?;
-        if !fields.iter().any(|(_, field)| field.calculated()) {
+        if only_calculated && !fields.iter().any(|(_, field)| field.calculated()) {
             return Ok(None);
         }
         let meters = database.meters_of(asset).await?;
@@ -255,15 +256,10 @@ impl Formulas {
         found
     }
 
-    /// Each kind with a calculated field, and its events' values, oldest first (for the log
-    /// form).
+    /// Each kind of event the vehicle has, and its events' values, oldest first (for the log
+    /// form, and a new calculated field's preview).
     pub(crate) fn history(&self) -> Vec<FormulaHistory> {
-        let mut kinds: Vec<EventKind> = self
-            .fields
-            .iter()
-            .filter(|(_, field)| field.calculated() && field.enabled)
-            .flat_map(|(_, field)| field.shown_on.iter().copied())
-            .collect();
+        let mut kinds: Vec<EventKind> = self.events.iter().map(|(_, event)| event.kind).collect();
         kinds.sort_unstable();
         kinds.dedup();
         kinds

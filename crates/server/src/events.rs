@@ -322,11 +322,12 @@ impl AssetsContext<'_> {
     async fn formulas(
         &self,
         asset: domain::asset::AssetId,
+        only_calculated: bool,
     ) -> Result<Option<crate::formulas::Formulas>, EventsOutcome> {
         let units = crate::assets::person_preferences(self)
             .await
             .map_err(|outcome| from_assets(&outcome))?;
-        crate::formulas::Formulas::load(self.database, asset, units)
+        crate::formulas::Formulas::load(self.database, asset, units, only_calculated)
             .await
             .map_err(|error| failed("formulas", &error))
     }
@@ -395,7 +396,7 @@ async fn list_events(
                 .await?,
         );
     }
-    if let Some(formulas) = context.formulas(asset).await? {
+    if let Some(formulas) = context.formulas(asset, true).await? {
         let values = formulas.all_values();
         for view in &mut views {
             if let Some((_, calculated)) = values.iter().find(|(id, _)| *id == view.id) {
@@ -425,7 +426,7 @@ async fn view_event(
     let mut view = context
         .view_of(id, event, scope, corrected_by, &mut Vec::new())
         .await?;
-    if let Some(formulas) = context.formulas(asset).await? {
+    if let Some(formulas) = context.formulas(asset, true).await? {
         view.calculated = formulas.values_for(id, &view.event);
     }
     Ok(EventsOutcome::Event {
@@ -463,7 +464,7 @@ async fn log_context_of(
         })
         .collect();
     let history = context
-        .formulas(asset)
+        .formulas(asset, false)
         .await?
         .map(|formulas| formulas.history())
         .unwrap_or_default();

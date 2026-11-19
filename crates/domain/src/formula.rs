@@ -61,6 +61,11 @@ pub use units::{Dimension, Quantity, ShowsAs, SimpleUnit, Unit, in_units};
 
 use crate::i18n::{MessageArg, MessageId, Translator, messages};
 
+/// The full guide to writing formulas (`docs/help/formulas.md`), until the app has help pages
+/// of its own (idea 22).
+pub const GUIDE_URL: &str =
+    "https://github.com/inner-marker/vehicle_manager_2/blob/dev/docs/help/formulas.md";
+
 /// A formula: its text, kept as typed, and what it reads as. Two formulas are the same when
 /// their text is (the text decides what it reads as).
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1915,6 +1915,110 @@ define_messages! {
     FORMULA_NO_VALUE_MISMATCH => "formula-no-value-mismatch",
     /// Formulas: a field or meter a formula uses (`$by`) can't go.
     FORMULA_IN_USE => "formula-in-use",
+    /// Formulas: the ƒ badge's words.
+    FORMULA_WORKED_OUT => "formula-worked-out",
+    /// Formulas: a value per a unit (`$value`, `$unit`).
+    FORMULA_PER => "formula-per",
+    /// Calculated fields: shows as a number.
+    SHOWS_NUMBER => "shows-number",
+    /// Calculated fields: shows as a percentage.
+    SHOWS_PERCENT => "shows-percent",
+    /// Calculated fields: shows as a distance.
+    SHOWS_DISTANCE => "shows-distance",
+    /// Calculated fields: shows as a time.
+    SHOWS_DURATION => "shows-duration",
+    /// Calculated fields: shows as a volume.
+    SHOWS_VOLUME => "shows-volume",
+    /// Calculated fields: shows as fuel economy.
+    SHOWS_ECONOMY => "shows-economy",
+    /// Calculated fields: shows as money.
+    SHOWS_MONEY => "shows-money",
+    /// Calculated fields: shows as money per distance.
+    SHOWS_MONEY_PER_DISTANCE => "shows-money-per-distance",
+    /// Calculated fields: shows as money per volume.
+    SHOWS_MONEY_PER_VOLUME => "shows-money-per-volume",
+    /// Calculated fields: shows as a speed.
+    SHOWS_SPEED => "shows-speed",
+    /// Formulas: the check passes (`$what`).
+    FORMULA_CHECK_OK => "formula-check-ok",
+    /// Formulas: the heading over calculated values.
+    FORMULA_ROWS => "formula-rows",
+    /// Formulas: the formula box's label.
+    FORMULA_LABEL => "formula-label",
+    /// Formulas: opens the short help.
+    FORMULA_HOW_TO => "formula-how-to",
+    /// Formulas: the functions menu.
+    FORMULA_FUNCTIONS => "formula-functions",
+    /// Formulas: functions over values or past events.
+    FORMULA_FUNCTIONS_OVER => "formula-functions-over",
+    /// Formulas: functions over listed values.
+    FORMULA_FUNCTIONS_LISTED => "formula-functions-listed",
+    /// Formulas: functions on one value.
+    FORMULA_FUNCTIONS_ONE => "formula-functions-one",
+    /// Formulas: the values menu.
+    FORMULA_VALUES => "formula-values",
+    /// Formulas: about keys.
+    FORMULA_VALUES_NOTE => "formula-values-note",
+    /// Formulas: this event's values.
+    FORMULA_VALUES_EVENT => "formula-values-event",
+    /// Formulas: meters.
+    FORMULA_VALUES_METERS => "formula-values-meters",
+    /// Formulas: since the last event.
+    FORMULA_VALUES_SINCE => "formula-values-since",
+    /// Formulas: numbers with units.
+    FORMULA_VALUES_NUMBERS => "formula-values-numbers",
+    /// Formulas: the Over picker.
+    FORMULA_OVER => "formula-over",
+    /// Formulas: Over all events.
+    FORMULA_OVER_CUMULATIVE => "formula-over-cumulative",
+    /// Formulas: Over the last 5 events.
+    FORMULA_OVER_EVENTS => "formula-over-events",
+    /// Formulas: Over the last 3 months.
+    FORMULA_OVER_MONTHS => "formula-over-months",
+    /// Formulas: Over the last 1,000 mi.
+    FORMULA_OVER_DISTANCE => "formula-over-distance",
+    /// Formulas: what Over can be.
+    FORMULA_OVER_NOTE => "formula-over-note",
+    /// Formulas: the help's title.
+    FORMULA_HELP_TITLE => "formula-help-title",
+    /// Formulas help: values.
+    FORMULA_HELP_VALUES => "formula-help-values",
+    /// Formulas help: operators and units.
+    FORMULA_HELP_OPERATORS => "formula-help-operators",
+    /// Formulas help: Over.
+    FORMULA_HELP_OVER => "formula-help-over",
+    /// Formulas help: spaces around a minus.
+    FORMULA_HELP_MINUS => "formula-help-minus",
+    /// Formulas help: examples.
+    FORMULA_HELP_EXAMPLES => "formula-help-examples",
+    /// Formulas help: the full guide.
+    FORMULA_HELP_GUIDE => "formula-help-guide",
+    /// Formulas: the preview (`$kind`, `$value`).
+    FORMULA_PREVIEW => "formula-preview",
+    /// Calculated fields: what it shows as.
+    FORMULA_SHOWS_AS => "formula-shows-as",
+    /// Calculated fields: adding.
+    FORMULA_FIELD_ADD_TITLE => "formula-field-add-title",
+    /// Calculated fields: changing.
+    FORMULA_FIELD_EDIT_TITLE => "formula-field-edit-title",
+    /// Calculated fields: where it shows.
+    FORMULA_SHOWN_ON_NOTE => "formula-shown-on-note",
+    /// Derived meters: its value now (`$value`).
+    FORMULA_NOW => "formula-now",
+    /// Derived meters: adding.
+    FORMULA_METER_ADD_TITLE => "formula-meter-add-title",
+    /// Derived meters: changing.
+    FORMULA_METER_EDIT_TITLE => "formula-meter-edit-title",
+    /// Derived meters: what they are.
+    FORMULA_METER_NOTE => "formula-meter-note",
+    /// Formulas: the log form isn't complete enough yet.
+    FORMULA_FILL_IN => "formula-fill-in",
+    /// Derived meters: what it's worked out from (`$meters`).
+    FORMULA_DERIVED_FROM => "formula-derived-from",
+    /// Setup: add a calculated field.
+    SETUP_ADD_CALCULATED => "setup-add-calculated",
+    /// Setup: add a derived meter.
+    SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).
     FORMULA_NOT_AN_INPUT => "formula-not-an-input",
     /// Formulas refused: a calculated field used in a formula (`$key`).

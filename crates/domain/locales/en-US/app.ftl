@@ -1685,6 +1685,63 @@ formula-no-value-not-finite = No value: the result is too big to show.
 formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
 # $by (string): the calculated field or derived meter.
 formula-in-use = { $by } uses this in its formula, so it can't be removed, turned off, or taken off that kind of event. Change { $by } first.
+formula-worked-out = Worked out from a formula
+# $value (string): the value. $unit (string): the unit.
+formula-per = { $value } per { $unit }
+shows-number = Number
+shows-percent = Percentage
+shows-distance = Distance
+shows-duration = Time
+shows-volume = Volume
+shows-economy = Fuel economy
+shows-money = Money
+shows-money-per-distance = Money per distance
+shows-money-per-volume = Money per volume
+shows-speed = Speed
+# $what (string): what it gives, e.g. "money per distance".
+formula-check-ok = ✓ Gives { $what }
+formula-rows = Worked out
+formula-label = Formula
+formula-how-to = ⓘ How to write one
+formula-functions = Functions ▾
+formula-functions-over = Over listed values or past events
+formula-functions-listed = Over listed values
+formula-functions-one = On one value
+formula-values = Values ▾
+formula-values-note = Each by its key, which never changes when it's renamed.
+formula-values-event = This event
+formula-values-meters = Meters
+formula-values-since = Since the last one
+formula-values-numbers = Numbers with units
+formula-over = Over (for a function over past events)
+formula-over-cumulative = Cumulative
+formula-over-events = Last 5 events
+formula-over-months = Last 3 months
+formula-over-distance = Last 1,000 mi
+formula-over-note = Last X events, days, weeks, months, or mi or km; or last X h on an hour meter. Change the number as you like.
+formula-help-title = Writing a formula
+formula-help-values = Values by their key; numbers with a unit (33 mi/h).
+formula-help-operators = + − × ÷ and ( ). Units must agree: miles + hours is refused.
+formula-help-over = A function over past events takes an Over: last 5, last 3 months, last 1000 mi, or cumulative.
+formula-help-minus = Keys can have hyphens, so put spaces around a minus: a - b.
+formula-help-examples = Examples
+formula-help-guide = Full guide →
+# $kind (string): the kind of event, in lower case. $value (string): the value, or why there's none.
+formula-preview = On the latest { $kind }: { $value }
+formula-shows-as = Shows as
+formula-field-add-title = Add a calculated field
+formula-field-edit-title = Change calculated field
+formula-shown-on-note = It shows, worked out, on these kinds of events: never typed, never required.
+# $value (string): the value with its unit.
+formula-now = Now: { $value }
+formula-meter-add-title = Add a derived meter
+formula-meter-edit-title = Change derived meter
+formula-meter-note = Worked out at every reading of its meters. Interval rules can use it; nobody types its readings, and it can't be reset.
+formula-fill-in = Shows once the form is filled in.
+# $meters (string): the meters it's worked out from, by name.
+formula-derived-from = Worked out from { $meters }
+setup-add-calculated = + Calculated field
+setup-add-derived = + Derived meter
 # $key (string): the key typed.
 formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.
 # $key (string): the field's key.

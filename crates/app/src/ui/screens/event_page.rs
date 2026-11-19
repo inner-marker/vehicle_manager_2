@@ -578,6 +578,8 @@ fn Details(view: EventView, vehicle: AssetView, units: Preferences) -> Element {
             Rows { heading: messages::LOG_FOLD_DRIVING, rows: driving_rows(event, &names) }
         }
         Rows { heading: messages::LOG_FOLD_MORE, rows: trip_rows(event, &vehicle, &units) }
+        // 2A (#087): its calculated fields, worked out.
+        super::formula_view::CalculatedRows { values: view.calculated.clone(), fields: vehicle.fields, units }
         Rows { heading: messages::LOG_FOLD_WHO, rows: who }
         Rows { heading: messages::EVENT_RECORD, rows: record }
     }

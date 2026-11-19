@@ -217,18 +217,26 @@ mod events {
             panic!("no list");
         };
         assert_eq!(events.len(), 2, "newest first");
+        let EventsOutcome::LogContext {
+            history,
+            latest,
+            may_override_readings,
+        } = log_context(&sam_context, truck).await
+        else {
+            panic!("no log context");
+        };
         assert_eq!(
-            log_context(&sam_context, truck).await,
-            EventsOutcome::LogContext {
-                history: vec![],
-                latest: vec![LatestReading {
-                    meter: odometer,
-                    at: NOW,
-                    value: 50_000 * MILE
-                }],
-                may_override_readings: false,
-            }
+            latest,
+            vec![LatestReading {
+                meter: odometer,
+                at: NOW,
+                value: 50_000 * MILE
+            }]
         );
+        assert!(!may_override_readings);
+        // Both fuel-ups' values, oldest first, for calculated fields (#087).
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].earlier.len(), 2);
         assert_eq!(
             list(&sam_context, test_id(777)).await,
             EventsOutcome::NotFound

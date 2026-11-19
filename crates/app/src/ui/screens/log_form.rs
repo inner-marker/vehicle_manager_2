@@ -31,7 +31,7 @@ use domain::dates::{format_date, utc_to_local};
 use domain::event::{
     ClashSide, Event, EventId, EventInput, EventLocation, EventProblem, ReadingClash, Requirement,
 };
-use domain::event_check::Warning;
+use domain::event_check::{PastReading, Warning};
 use domain::event_form::{NO, YES};
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::location::{CountryCode, SavedPlace, SavedPlaceId, TimeZone};
@@ -218,6 +218,8 @@ struct Loaded {
     specs: Vec<(SpecId, Spec)>,
     /// The person may change the schedule, so a changed part can update its spec.
     may_configure: bool,
+    /// Each kind's earlier values, for its calculated fields (#087).
+    history: Vec<domain::api::FormulaHistory>,
 }
 
 async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
@@ -233,7 +235,7 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
     let EventsOutcome::LogContext {
         latest,
         may_override_readings: may_override,
-        ..
+        history,
     } = data::event_log_context(asset)
         .await
         .map_err(|e| failed(&e))?
@@ -285,6 +287,7 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
         bundles,
         specs,
         may_configure,
+        history,
     })
 }
 
@@ -945,6 +948,8 @@ fn FormBody(
             if kind == EventKind::Fuel {
                 FuelPart { inputs, units }
             }
+            // 2A (#087): calculated fields, worked out as values are typed.
+            LiveCalculated { inputs, kind, data: data.clone() }
             if !job && let Mode::Edit(id) = mode {
                 AttachmentStrip {
                     asset,
@@ -1595,6 +1600,91 @@ fn FieldInput(
             }
             FormError { message: inputs.problem_at(Target::Field(id)) }
         }
+    }
+}
+
+/// 2A (#087): the calculated fields shown on `kind`, worked out from what's typed after the
+/// vehicle's earlier events; until the form is complete enough, a note.
+#[component]
+fn LiveCalculated(inputs: Inputs, kind: EventKind, data: Loaded) -> Element {
+    let view = &data.view;
+    let shown: Vec<(CustomFieldId, CustomField)> = view
+        .fields
+        .iter()
+        .filter(|(_, field)| field.calculated() && field.shown(kind))
+        .cloned()
+        .collect();
+    if shown.is_empty() {
+        return rsx! {};
+    }
+    let context = Context {
+        asset: view.id,
+        kind,
+        meters: &view.meters,
+        fields: &view.fields,
+        units: &data.units,
+        fallback_zone: &data.zone,
+        now: SystemClock.now(),
+    };
+    let Ok(input) = build(&inputs.typed(), &context) else {
+        return rsx! {
+            section { class: "event-section",
+                h3 { class: "section-heading", {tr(messages::FORMULA_ROWS).to_uppercase()} }
+                for (id, field) in shown {
+                    div { key: "{id}", class: "calculated-row",
+                        super::formula_view::FxBadge {}
+                        span { class: "calculated-label", {field.label.as_str().to_owned()} }
+                        span { class: "calculated-none", "—" }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::FORMULA_FILL_IN)} }
+            }
+        };
+    };
+    let readings: Vec<PastReading> = data
+        .latest
+        .iter()
+        .map(|reading| PastReading {
+            meter: reading.meter,
+            at: reading.at,
+            value: reading.value,
+            reset: false,
+        })
+        .collect();
+    let vehicle = domain::calculated::Vehicle {
+        fields: &view.fields,
+        meters: &view.meters,
+        readings: &readings,
+    };
+    // Earlier: those before it (an event being edited isn't its own earlier one).
+    let earlier: Vec<domain::formula::Scope> = data
+        .history
+        .iter()
+        .find(|each| each.kind == kind)
+        .map(|each| {
+            each.earlier
+                .iter()
+                .filter(|scope| scope.at < input.dates.start)
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+    let current = domain::calculated::scope_of(
+        domain::calculated::Logged::from(&input),
+        earlier.last(),
+        &vehicle,
+    );
+    let values = super::formula_view::live_values(
+        kind,
+        &current,
+        &earlier,
+        &view.fields,
+        &view.meters,
+        &input.dates.zone,
+        &data.units,
+    );
+    rsx! {
+        super::formula_view::CalculatedRows { values, fields: view.fields.clone(), units: data.units }
     }
 }
 

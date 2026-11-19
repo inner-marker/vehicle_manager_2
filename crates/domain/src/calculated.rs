@@ -18,7 +18,7 @@
 use std::collections::BTreeMap;
 
 use crate::custom_field::{CustomField, CustomFieldId, FieldKey, FieldKind};
-use crate::event::{Event, FieldData, Reading};
+use crate::event::{Event, EventInput, FieldData, FieldValue, FuelDetails, Reading};
 use crate::event_check::PastReading;
 use crate::formula::{
     Context, Dimension, Expr, Formula, FormulaError, KeyInfo, NoValue, Quantity, Scope, SimpleUnit,
@@ -28,6 +28,7 @@ use crate::location::TimeZone;
 use crate::meter::{EventKind, Meter, MeterDimension, MeterId};
 use crate::preferences::Preferences;
 use crate::requirement::DoneTask;
+use crate::time::UnixMillis;
 
 /// What a fuel-up adds for formulas, each with what it measures and whether it's a
 /// percentage.
@@ -217,6 +218,22 @@ pub fn check_calculated(
     let FieldKind::Calculated { formula, shows } = &field.kind else {
         return Ok(());
     };
+    check_calculated_formula(formula, *shows, &field.shown_on, fields, meters)
+}
+
+/// [`check_calculated`] for a calculated field's parts: its `formula`, what it `shows` as,
+/// and the kinds of events it's `shown_on`.
+///
+/// # Errors
+///
+/// As [`check_calculated`].
+pub fn check_calculated_formula(
+    formula: &Formula,
+    shows: crate::formula::ShowsAs,
+    shown_on: &[EventKind],
+    fields: &[(CustomFieldId, CustomField)],
+    meters: &[(MeterId, Meter)],
+) -> Result<(), FormulaError> {
     for key in formula.keys() {
         if fields
             .iter()
@@ -225,9 +242,9 @@ pub fn check_calculated(
             return Err(FormulaError::Calculated { key });
         }
     }
-    for kind in &field.shown_on {
+    for kind in shown_on {
         let keys = |key: &str| field_key_info(key, *kind, fields, meters);
-        formula.check_shows(&keys, *shows)?;
+        formula.check_shows(&keys, shows)?;
     }
     Ok(())
 }
@@ -285,14 +302,30 @@ pub fn check_derived(
             crate::meter::MeterError::DerivedResettable,
         ));
     }
+    check_derived_formula(id, formula, meter.dimension, meters).map_err(DerivedError::Formula)
+}
+
+/// [`check_derived`]'s check of a derived meter's `formula` alone, for a meter (`id`, if it
+/// exists already) measuring `dimension`.
+///
+/// # Errors
+///
+/// [`FormulaError`]: anything but its inputs, numbers, `+ − × ÷`, and functions of listed
+/// values, or not what the meter measures.
+pub fn check_derived_formula(
+    id: Option<MeterId>,
+    formula: &Formula,
+    dimension: MeterDimension,
+    meters: &[(MeterId, Meter)],
+) -> Result<(), FormulaError> {
     if !derived_only(formula.expr()) {
-        return Err(DerivedError::Formula(FormulaError::NotInDerived));
+        return Err(FormulaError::NotInDerived);
     }
     for key in formula.keys() {
         let is_input = inputs(id, meters).any(|(_, input)| input.key.as_str() == key);
         let is_meter = meters.iter().any(|(_, other)| other.key.as_str() == key);
         if is_meter && !is_input {
-            return Err(DerivedError::Formula(FormulaError::NotAnInput { key }));
+            return Err(FormulaError::NotAnInput { key });
         }
     }
     let keys = |key: &str| {
@@ -307,15 +340,15 @@ pub fn check_derived(
                 }
             })
     };
-    let checked = formula.check(&keys).map_err(DerivedError::Formula)?;
-    let (wanted, _) = meter_dimension(meter.dimension);
+    let checked = formula.check(&keys)?;
+    let (wanted, _) = meter_dimension(dimension);
     if checked.dimension == wanted {
         Ok(())
     } else {
-        Err(DerivedError::Formula(FormulaError::WrongResult {
+        Err(FormulaError::WrongResult {
             found: checked.dimension,
             wanted,
-        }))
+        })
     }
 }
 
@@ -404,7 +437,7 @@ fn derived_at(
     meters: &[(MeterId, Meter)],
     readings: &[PastReading],
     own: &[Reading],
-    at: crate::time::UnixMillis,
+    at: UnixMillis,
 ) -> Option<i64> {
     let formula = meter.formula.as_ref()?;
     let used = formula.keys();
@@ -432,6 +465,22 @@ fn derived_at(
     derive(meter, formula, values)
 }
 
+/// Derived meter `meter`'s value now: from each input's latest reading in `readings`.
+#[must_use]
+pub fn derived_now(
+    meter: &Meter,
+    meters: &[(MeterId, Meter)],
+    readings: &[PastReading],
+) -> Option<i64> {
+    derived_at(
+        meter,
+        meters,
+        readings,
+        &[],
+        UnixMillis::from_millis(i64::MAX),
+    )
+}
+
 /// Adds each derived meter's value when each task was done to its readings, so a rule on a
 /// derived meter counts from the job.
 pub fn add_derived_to_done(
@@ -456,8 +505,8 @@ pub fn add_derived_to_done(
 }
 
 /// A fuel-up's own values (`FUEL_VALUES`).
-fn fuel_values(event: &Event, values: &mut BTreeMap<String, Quantity>) {
-    let Some(fuel) = &event.fuel else {
+fn fuel_values(fuel: Option<&FuelDetails>, values: &mut BTreeMap<String, Quantity>) {
+    let Some(fuel) = fuel else {
         return;
     };
     let float = crate::quantity::float;
@@ -496,10 +545,46 @@ pub struct Vehicle<'a> {
     pub readings: &'a [PastReading],
 }
 
+/// What an event (or one being typed) gives formulas: when, its readings, its field values,
+/// and a fuel-up's details.
+#[derive(Debug, Clone, Copy)]
+pub struct Logged<'a> {
+    /// When it started.
+    pub at: UnixMillis,
+    /// Its readings.
+    pub readings: &'a [Reading],
+    /// Its field values.
+    pub fields: &'a [FieldValue],
+    /// A fuel-up's details.
+    pub fuel: Option<&'a FuelDetails>,
+}
+
+impl<'a> From<&'a Event> for Logged<'a> {
+    fn from(event: &'a Event) -> Self {
+        Self {
+            at: event.dates.start,
+            readings: &event.readings,
+            fields: &event.fields,
+            fuel: event.fuel.as_ref(),
+        }
+    }
+}
+
+impl<'a> From<&'a EventInput> for Logged<'a> {
+    fn from(input: &'a EventInput) -> Self {
+        Self {
+            at: input.dates.start,
+            readings: &input.readings,
+            fields: &input.fields,
+            fuel: input.fuel.as_ref(),
+        }
+    }
+}
+
 /// One event's own values: its fields, readings (derived meters' too), and a fuel-up's.
-fn own_values(event: &Event, vehicle: &Vehicle<'_>) -> BTreeMap<String, Quantity> {
+fn own_values(event: Logged<'_>, vehicle: &Vehicle<'_>) -> BTreeMap<String, Quantity> {
     let mut values = BTreeMap::new();
-    for value in &event.fields {
+    for value in event.fields {
         let Some((_, field)) = vehicle.fields.iter().find(|(id, _)| *id == value.field) else {
             continue;
         };
@@ -507,12 +592,21 @@ fn own_values(event: &Event, vehicle: &Vehicle<'_>) -> BTreeMap<String, Quantity
             values.insert(field.key.as_str().to_owned(), quantity);
         }
     }
-    let at = event.dates.start;
     for (id, meter) in vehicle.meters {
         let value = if meter.derived() {
-            derived_at(meter, vehicle.meters, vehicle.readings, &event.readings, at)
+            derived_at(
+                meter,
+                vehicle.meters,
+                vehicle.readings,
+                event.readings,
+                event.at,
+            )
         } else {
-            event.reading(*id)
+            event
+                .readings
+                .iter()
+                .find(|reading| reading.meter == *id)
+                .map(|reading| reading.value)
         };
         if let Some(value) = value {
             values.insert(
@@ -521,8 +615,44 @@ fn own_values(event: &Event, vehicle: &Vehicle<'_>) -> BTreeMap<String, Quantity
             );
         }
     }
-    fuel_values(event, &mut values);
+    fuel_values(event.fuel, &mut values);
     values
+}
+
+/// What formulas see on `event`, after `previous` (the one before it of its kind, if any):
+/// its values, and since that one.
+#[must_use]
+pub fn scope_of(event: Logged<'_>, previous: Option<&Scope>, vehicle: &Vehicle<'_>) -> Scope {
+    let values = own_values(event, vehicle);
+    let (since_last, time_since_last) = match previous {
+        Some(previous) => {
+            let since: BTreeMap<String, Quantity> = vehicle
+                .meters
+                .iter()
+                .filter_map(|(_, meter)| {
+                    let key = meter.key.as_str();
+                    let (now, before) = (values.get(key)?, previous.values.get(key)?);
+                    Some((
+                        key.to_owned(),
+                        Quantity {
+                            value: now.value - before.value,
+                            ..*now
+                        },
+                    ))
+                })
+                .collect();
+            let seconds = (event.at.as_millis() - previous.at.as_millis()) / 1_000;
+            let elapsed = Quantity::of(crate::quantity::float(seconds), Dimension::TIME);
+            (since, Some(elapsed))
+        }
+        None => (BTreeMap::new(), None),
+    };
+    Scope {
+        at: event.at,
+        values,
+        since_last,
+        time_since_last,
+    }
 }
 
 /// What formulas see on each of `events` (one vehicle's, of one kind, in time order): its
@@ -531,36 +661,8 @@ fn own_values(event: &Event, vehicle: &Vehicle<'_>) -> BTreeMap<String, Quantity
 pub fn scopes(events: &[&Event], vehicle: &Vehicle<'_>) -> Vec<Scope> {
     let mut found: Vec<Scope> = Vec::with_capacity(events.len());
     for event in events {
-        let values = own_values(event, vehicle);
-        let (since_last, time_since_last) = match found.last() {
-            Some(previous) => {
-                let since: BTreeMap<String, Quantity> = vehicle
-                    .meters
-                    .iter()
-                    .filter_map(|(_, meter)| {
-                        let key = meter.key.as_str();
-                        let (now, before) = (values.get(key)?, previous.values.get(key)?);
-                        Some((
-                            key.to_owned(),
-                            Quantity {
-                                value: now.value - before.value,
-                                ..*now
-                            },
-                        ))
-                    })
-                    .collect();
-                let seconds = (event.dates.start.as_millis() - previous.at.as_millis()) / 1_000;
-                let elapsed = Quantity::of(crate::quantity::float(seconds), Dimension::TIME);
-                (since, Some(elapsed))
-            }
-            None => (BTreeMap::new(), None),
-        };
-        found.push(Scope {
-            at: event.dates.start,
-            values,
-            since_last,
-            time_since_last,
-        });
+        let scope = scope_of(Logged::from(*event), found.last(), vehicle);
+        found.push(scope);
     }
     found
 }
