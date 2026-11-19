@@ -11,6 +11,8 @@ const CAR: u32 = 2;
 
 fn meter(asset: u32, name: &str, dimension: MeterDimension) -> Meter {
     Meter {
+        key: crate::custom_field::FieldKey::from_label(&Label::parse(name).unwrap(), &[]),
+        formula: None,
         asset: test_id(asset),
         name: Label::parse(name).unwrap(),
         dimension,

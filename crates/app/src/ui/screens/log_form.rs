@@ -723,8 +723,12 @@ fn FormBody(
     let open_meters: Vec<(MeterId, Meter)> = view
         .meters
         .iter()
-        .filter(|(id, _)| {
-            kind == EventKind::Reading || job || required.contains(&Requirement::Meter(*id))
+        // A derived meter is worked out, never typed (#087).
+        .filter(|(id, meter)| {
+            !meter.derived()
+                && (kind == EventKind::Reading
+                    || job
+                    || required.contains(&Requirement::Meter(*id)))
         })
         .cloned()
         .collect();
@@ -1580,6 +1584,8 @@ fn FieldInput(
                         FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Volume | FieldKind::FuelEconomy => rsx! {
                             input { class: "field-input", inputmode: "decimal", autocomplete: "off", value, oninput: set }
                         },
+                        // Worked out, never typed (#087); the form leaves these out.
+                        FieldKind::Calculated { .. } => rsx! {},
                     }
                 }
                 if required {
@@ -2057,13 +2063,19 @@ fn MoreFold(
     let meters: Vec<(MeterId, Meter)> = view
         .meters
         .iter()
-        .filter(|(id, _)| kind == EventKind::Fuel && !required.contains(&Requirement::Meter(*id)))
+        .filter(|(id, meter)| {
+            kind == EventKind::Fuel
+                && !meter.derived()
+                && !required.contains(&Requirement::Meter(*id))
+        })
         .cloned()
         .collect();
     let fields: Vec<(CustomFieldId, CustomField)> = view
         .fields
         .iter()
-        .filter(|(id, field)| field.shown(kind) && !required.contains(&Requirement::Field(*id)))
+        .filter(|(id, field)| {
+            field.shown(kind) && !field.calculated() && !required.contains(&Requirement::Field(*id))
+        })
         .cloned()
         .collect();
     if meters.is_empty() && fields.is_empty() && kind != EventKind::Fuel {

@@ -110,6 +110,8 @@ mod maintenance {
     /// and two squawks.
     async fn add_schedule_and_squawks(connection: &mut SqliteConnection) {
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(TRUCK),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,

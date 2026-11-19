@@ -187,6 +187,8 @@ mod assets {
     async fn meters_round_trip_and_clear_their_description() {
         let (_temp, database) = with_truck().await;
         let meter = Meter {
+            key: FieldKey::parse("engine-hours").unwrap(),
+            formula: None,
             asset: test_id(TRUCK),
             name: Label::parse("Engine hours").unwrap(),
             dimension: MeterDimension::Duration,

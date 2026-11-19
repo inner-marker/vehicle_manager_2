@@ -1064,6 +1064,7 @@ kind-distance = Distance
 kind-duration = Duration
 kind-volume = Volume
 kind-fuel-economy = Fuel economy
+kind-calculated = Calculated
 # $name (text): the vehicle's name.
 move-title = Move { $name }
 move-to = To
@@ -1682,6 +1683,12 @@ formula-no-value-too-few = No value: stddev needs at least two values.
 formula-no-value-no-odometer = No value: this vehicle has no odometer to count back on.
 formula-no-value-not-finite = No value: the result is too big to show.
 formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
+# $key (string): the key typed.
+formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.
+# $key (string): the field's key.
+formula-calculated = "{ $key }" is worked out itself, so another formula can't use it.
+formula-not-in-derived = A derived meter uses only meters, numbers, + − × ÷, and functions of listed values: no round, past events, or since the last.
+meter-derived-resettable = A derived meter is worked out, so it can't be reset or required on events.
 usage-section = Usages
 usage-section-note = Each usage stands alone: what's ticked "Needed for" it, and the documents it needs. A High issue blocks every usage.
 usage-add = + Usage

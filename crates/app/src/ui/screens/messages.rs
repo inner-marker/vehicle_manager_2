@@ -398,6 +398,8 @@ mod tests {
         use domain::meter::{Meter, MeterDimension, MeterDirection, MeterUnit};
         use domain::test_support::test_id;
         let odometer = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,

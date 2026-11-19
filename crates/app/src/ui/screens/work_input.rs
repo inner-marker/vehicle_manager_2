@@ -487,6 +487,8 @@ mod tests {
         vec![(
             test_id(20),
             Meter {
+                key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+                formula: None,
                 asset: test_id(10),
                 name: Label::parse("Odometer").unwrap(),
                 dimension: MeterDimension::Distance,

@@ -172,6 +172,8 @@ mod tests {
 
     fn meters() -> Vec<(MeterId, Meter)> {
         let oil_life = Meter {
+            key: crate::custom_field::FieldKey::parse("oil-life").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Oil life").unwrap(),
             dimension: MeterDimension::Percentage,
@@ -187,6 +189,8 @@ mod tests {
             (
                 test_id(ODOMETER),
                 Meter {
+                    key: crate::custom_field::FieldKey::parse("odometer").unwrap(),
+                    formula: None,
                     asset: test_id(1),
                     name: Label::parse("Odometer").unwrap(),
                     dimension: MeterDimension::Distance,

@@ -524,6 +524,8 @@ mod tests {
     #[test]
     fn meters_say_what_they_measure_and_need() {
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("engine-hours").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Engine hours").unwrap(),
             dimension: MeterDimension::Duration,

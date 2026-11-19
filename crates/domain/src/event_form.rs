@@ -111,6 +111,8 @@ pub fn parse_field(
         FieldKind::FuelEconomy => {
             FieldData::FuelEconomy(quantity(parse_economy(text, units.economy))?)
         }
+        // Worked out, never typed (#087).
+        FieldKind::Calculated { .. } => return Err(messages::EVENT_WRONG_VALUE),
     };
     Ok(Some(data))
 }

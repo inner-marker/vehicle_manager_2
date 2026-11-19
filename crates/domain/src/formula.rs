@@ -61,12 +61,27 @@ pub use units::{Dimension, Quantity, ShowsAs, SimpleUnit, Unit, in_units};
 
 use crate::i18n::{MessageArg, MessageId, Translator, messages};
 
-/// A formula: its text, kept as typed, and what it reads as.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// A formula: its text, kept as typed, and what it reads as. Two formulas are the same when
+/// their text is (the text decides what it reads as).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct Formula {
     text: String,
     expr: Expr,
+}
+
+impl PartialEq for Formula {
+    fn eq(&self, other: &Self) -> bool {
+        self.text == other.text
+    }
+}
+
+impl Eq for Formula {}
+
+impl core::hash::Hash for Formula {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.text.hash(state);
+    }
 }
 
 impl Formula {
@@ -281,6 +296,18 @@ pub enum FormulaError {
     },
     /// A past-events function inside another one's expression.
     NestedOver,
+    /// A value a derived meter can't use: anything but a typed meter that isn't reset.
+    NotAnInput {
+        /// The key.
+        key: String,
+    },
+    /// A calculated field used in a formula (it's worked out itself).
+    Calculated {
+        /// The key.
+        key: String,
+    },
+    /// In a derived meter: `round`, past events, or "since the last".
+    NotInDerived,
     /// It doesn't give what the field shows.
     WrongResult {
         /// What it gives.
@@ -310,6 +337,9 @@ impl FormulaError {
             Self::Mismatch { .. } => messages::FORMULA_MISMATCH_PLUS,
             Self::MixedValues { .. } => messages::FORMULA_MIXED_VALUES,
             Self::NestedOver => messages::FORMULA_NESTED_OVER,
+            Self::NotAnInput { .. } => messages::FORMULA_NOT_AN_INPUT,
+            Self::Calculated { .. } => messages::FORMULA_CALCULATED,
+            Self::NotInDerived => messages::FORMULA_NOT_IN_DERIVED,
             Self::WrongResult { .. } => messages::FORMULA_WRONG_RESULT,
         }
     }
@@ -326,7 +356,10 @@ impl FormulaError {
             Self::Unclosed { at } => vec![("position", position(at))],
             Self::UnknownFunction { name, .. } => vec![("name", text(name))],
             Self::BadPlaces => vec![("max", MessageArg::from(u32::from(ROUND_MAX_PLACES)))],
-            Self::UnknownKey { key } | Self::NotAMeter { key } => vec![("key", text(key))],
+            Self::UnknownKey { key }
+            | Self::NotAMeter { key }
+            | Self::NotAnInput { key }
+            | Self::Calculated { key } => vec![("key", text(key))],
             Self::WrongMeter { key, wanted } => vec![
                 ("key", text(key)),
                 ("wanted", wanted.describe(translator).into()),
@@ -354,7 +387,8 @@ impl FormulaError {
             | Self::TooLong
             | Self::UnexpectedEnd
             | Self::HoursNeedMeter
-            | Self::NestedOver => vec![(
+            | Self::NestedOver
+            | Self::NotInDerived => vec![(
                 "max",
                 MessageArg::from(i64::try_from(FORMULA_MAX_CHARS).unwrap_or(i64::MAX)),
             )],

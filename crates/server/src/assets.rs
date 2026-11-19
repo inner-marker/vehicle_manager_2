@@ -606,7 +606,20 @@ async fn add_meter_to(
         .allowed(asset, AssetAction::ConfigureMaintenance)
         .await?;
     let parsed = form.parse().map_err(invalid)?;
+    let unavailable = |_| AssetsOutcome::Unavailable;
+    let meters = context
+        .database
+        .meters_of(asset)
+        .await
+        .map_err(unavailable)?;
+    let fields = context
+        .database
+        .custom_fields_of(asset)
+        .await
+        .map_err(unavailable)?;
     let meter = Meter {
+        key: domain::calculated::new_key(&parsed.name, &fields, &meters),
+        formula: None,
         asset,
         name: parsed.name,
         dimension: parsed.dimension,

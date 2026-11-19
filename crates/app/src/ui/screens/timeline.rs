@@ -652,6 +652,8 @@ mod tests {
         let (value, latest) = latest_readings(&events, test_id(20)).unwrap();
         assert_eq!((value, latest.id), (52_644, test_id(10)));
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,

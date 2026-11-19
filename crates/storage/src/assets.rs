@@ -403,13 +403,17 @@ impl RecordWriter<Meter> for MeterWriter {
 
 fn meter_from_row(row: &SqliteRow) -> Result<(MeterId, Meter), StorageError> {
     let name: String = row.try_get("name")?;
+    let name = domain::label::Label::parse(&name).map_err(invalid("meters.name"))?;
     let precision: i64 = row.try_get("precision")?;
     let required_for: String = row.try_get("required_for")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "meters.id")?,
         Meter {
             asset: id_from_sql(row.try_get::<&[u8], _>("asset_id")?, "meters.asset_id")?,
-            name: domain::label::Label::parse(&name).map_err(invalid("meters.name"))?,
+            // Until migration 0027 stores keys (step 7c): one made from the name.
+            key: FieldKey::from_label(&name, &[]),
+            formula: None,
+            name,
             dimension: required_name(row.try_get("dimension")?, "meters.dimension")?,
             unit: required_name(row.try_get("unit")?, "meters.unit")?,
             precision: u8::try_from(precision).map_err(invalid("meters.precision"))?,

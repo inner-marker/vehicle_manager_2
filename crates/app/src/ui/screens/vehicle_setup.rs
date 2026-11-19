@@ -79,6 +79,7 @@ const fn kind_label(kind: &FieldKind) -> MessageId {
         FieldKind::Duration => messages::KIND_DURATION,
         FieldKind::Volume => messages::KIND_VOLUME,
         FieldKind::FuelEconomy => messages::KIND_FUEL_ECONOMY,
+        FieldKind::Calculated { .. } => messages::KIND_CALCULATED,
     }
 }
 
@@ -1024,7 +1025,11 @@ fn parse_range_end(
         FieldKind::Duration => quantity(parse_duration(text)),
         FieldKind::Volume => quantity(parse_volume(text, units.volume)),
         FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
-        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => Ok(None),
+        FieldKind::Text
+        | FieldKind::Date
+        | FieldKind::YesNo
+        | FieldKind::Choice { .. }
+        | FieldKind::Calculated { .. } => Ok(None),
     }
 }
 
@@ -1036,9 +1041,11 @@ fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
         FieldKind::Duration => show_duration(value),
         FieldKind::Volume => volume_value(value, units.volume),
         FieldKind::FuelEconomy => economy_value(value, units.economy),
-        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => {
-            String::new()
-        }
+        FieldKind::Text
+        | FieldKind::Date
+        | FieldKind::YesNo
+        | FieldKind::Choice { .. }
+        | FieldKind::Calculated { .. } => String::new(),
     }
 }
 
@@ -1591,6 +1598,8 @@ mod tests {
     #[test]
     fn a_meters_counting_is_typed_in_its_own_unit() {
         let oil_life = Meter {
+            key: domain::custom_field::FieldKey::parse("oil-life").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Oil life").unwrap(),
             dimension: MeterDimension::Percentage,

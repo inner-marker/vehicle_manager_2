@@ -32,6 +32,8 @@ fn now() -> UnixMillis {
 #[test]
 fn the_fuel_odometer_is_the_first_distance_meter_fuel_ups_need() {
     let meter = |name: &str, dimension, required: Vec<EventKind>| Meter {
+        key: crate::custom_field::FieldKey::from_label(&Label::parse(name).unwrap(), &[]),
+        formula: None,
         asset: test_id(1),
         name: Label::parse(name).unwrap(),
         dimension,

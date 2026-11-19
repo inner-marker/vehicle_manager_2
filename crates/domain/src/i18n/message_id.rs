@@ -1391,6 +1391,8 @@ define_messages! {
     KIND_VOLUME => "kind-volume",
     /// Custom field type: fuel economy.
     KIND_FUEL_ECONOMY => "kind-fuel-economy",
+    /// Custom field kind: worked out from a formula (#087).
+    KIND_CALCULATED => "kind-calculated",
     /// Dialog title: move a vehicle; takes `name` (text).
     MOVE_TITLE => "move-title",
     /// Form field: the group to move to.
@@ -1911,6 +1913,14 @@ define_messages! {
     FORMULA_NO_VALUE_NOT_FINITE => "formula-no-value-not-finite",
     /// Formulas, no value: the formula no longer fits.
     FORMULA_NO_VALUE_MISMATCH => "formula-no-value-mismatch",
+    /// Formulas refused: not a derived meter's input (`$key`).
+    FORMULA_NOT_AN_INPUT => "formula-not-an-input",
+    /// Formulas refused: a calculated field used in a formula (`$key`).
+    FORMULA_CALCULATED => "formula-calculated",
+    /// Formulas refused: round, past events, or since the last in a derived meter.
+    FORMULA_NOT_IN_DERIVED => "formula-not-in-derived",
+    /// Meters refused: a derived meter can't be reset or required.
+    METER_DERIVED_RESETTABLE => "meter-derived-resettable",
     /// Usages: Set up's section.
     USAGE_SECTION => "usage-section",
     /// Usages: what the section is for.

@@ -1707,6 +1707,11 @@ mod tests {
             (
                 test_id(n),
                 Meter {
+                    key: domain::custom_field::FieldKey::from_label(
+                        &Label::parse(name).unwrap(),
+                        &[],
+                    ),
+                    formula: None,
                     asset: test_id(10),
                     name: Label::parse(name).unwrap(),
                     dimension,
