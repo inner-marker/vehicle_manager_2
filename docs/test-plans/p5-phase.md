@@ -240,6 +240,43 @@
 
 **Milestone 6 also checks:** each item's mark, the worst-first order, a usage needing nothing and needed for nothing, deferred High issues, never a second default, unknown usages refused, removing a usage leaving requirements needed for none, matching usages by name when copying, sign-offs and deferrals needing a Maintainer, and migration 0026 on the release fixtures, all in the automated tests.
 
+## Milestone 7: calculated fields and derived meters
+
+**Intended behavior:**
+- **Keys:** every field and meter has a stable key for formulas, shown in Setup. Older meters get theirs at the server's first start after updating.
+- **A formula** uses values by key, numbers with units (`33 mi/h`), `+ − × ÷`, brackets, and functions: `mean`, `median`, `geometric_mean`, `harmonic_mean`, `min`, `max`, `sum`, `count`, `stddev`, `round`, `abs`. Functions work over listed values or over past events with an **Over** (`last 5`, `last 3 months`, `last 1000 mi`, `cumulative`). Units are checked: `trip-time + volume` is refused, with the reason.
+- **The formula box** has **Functions ▾** and **Values ▾** menus that insert at the cursor, an **Over** picker, a check as you type, and **ⓘ How to write one** (a short popup and **Full guide →**).
+- **A calculated field** (**+ Calculated field**) shows, worked out, on its events: on the event's page and on the log form as values are typed. It's never typed or required. It can use since the last event of its kind (`distance-since-last(odometer)`, `time-since-last`).
+- **A derived meter** (**+ Derived meter**) is worked out from typed meters that aren't reset, at every reading of one of them. It shows on the Overview, and what's due counts on it like any meter. Nobody types its readings.
+- **The ƒ badge** marks every worked-out value. A field or meter a formula uses can't be removed or turned off.
+- It all works the same on the desktop, offline included.
+
+**Before you start:** the household's units are miles, US gallons, and US dollars (Settings → You).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 7.1 | **NAS:** after updating, `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `database open` with `schema_now` at least 27 (`0027_meter_keys`); `meter keys given` with `made` equal to the number of meters (first start after updating only); `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 7.2 | **Mac browser**, Maintainer mode: `Test truck` → **Setup** | Under **Meters**: **+ Meter** and **+ Derived meter**; Odometer shows its key `odometer`. Under **Custom fields**: **+ Field** and **+ Calculated field**; Trip time shows `trip-time`. |
+| [ ] | 7.3 | **Admin mode** → add a truck, `Formula truck`. **Maintainer mode**: its **Setup** → **+ Meter**: Engine hours, Duration, Hours, 1 decimal → **Save** | The row shows the key `engine-hours`. |
+| [ ] | 7.4 | **+ Derived meter** → **ⓘ How to write one**; then **Full guide →**; then **✕** | "Writing a formula": four short lines (values, operators and units, Over, spaces around a minus) and three examples. **Full guide →** opens `docs/help/formulas.md` on GitHub in a new tab. **✕** closes the popup. |
+| [ ] | 7.5 | Name Service miles, Measures **Distance**, Unit **Miles**. Formula: `round(odometer, 0)` | Under the box, in red: "A derived meter uses only meters, numbers, + − × ÷, and functions of listed values: no round, past events, or since the last." |
+| [ ] | 7.6 | Clear the box. **Values ▾**: tap `odometer`; type `+ `; **Values ▾**: tap `engine-hours`; type `× 33 mi/h` → **Save** | **Values ▾** lists Engine hours and Odometer under Meters (not Service miles), then Numbers with units. Each tap puts the key where the cursor was. "✓ Gives a distance". Saved, the row shows the ƒ badge, `odometer + engine-hours × 33 mi/h`, and `service-miles`. |
+| [ ] | 7.7 | **+ Log** → **Reading**: Odometer 10,000, Engine hours 0 → Save. Then the **Overview** | The form has no Service miles field. The Meters panel: Service miles, with the ƒ badge, at 10,000 mi, "Worked out from Engine hours, Odometer". |
+| [ ] | 7.8 | A reading: Odometer 10,300, Engine hours 10 → Save | Service miles 10,630 mi (10,300 + 10 h × 33). |
+| [ ] | 7.9 | **Maintenance** → **Set up** → **+ Requirement** Service, **+ Meter rule** every 1,000 on **Service miles** → **Save**; the Schedule. Then a reading: Odometer 10,500, Engine hours 15 | First **OK**, "in 370 mi" (from 10,000 at the first reading). Then **Due very soon**, "in 5 mi" (10,995 mi). The Garage card shows the chip. |
+| [ ] | 7.10 | **Setup** → Engine hours → **Remove**. Then **Edit** Engine hours → can be reset → **Save** | Both refused: "Service miles uses this in its formula, so it can't be removed, turned off, or taken off that kind of event. Change Service miles first." |
+| [ ] | 7.11 | **+ Calculated field**: Label Cost per mile, **Shows as** Money per distance; formula `trip-time + volume` | "trip-time + volume: can't add a time to a volume." |
+| [ ] | 7.12 | Change it to `round(cost ÷ distance-since-last(odometer), 2)` (**Values ▾** lists `cost`, `volume`, and the others under This event, and `distance-since-last(odometer)` under Since the last one); Shown on **Fuel-up** → **Save** | "✓ Gives money per distance"; no preview yet (no fuel-ups). Saved, with the ƒ badge and its formula. |
+| [ ] | 7.13 | **Phone**, Sam: **+ Log** → **Fuel-up** for `Formula truck`. Before typing anything, look under the fields; then odometer 10,600, 10 gal, $35.00, Trip time 1:00 | **WORKED OUT**: "ƒ Cost per mile —" and "Shows once the form is filled in."; once filled in, "No value: there's no earlier one to count from." Save. |
+| [ ] | 7.14 | A fuel-up: odometer 11,000, 12 gal, Trip time 2:00, and type the price $40.00 last | As the price is typed, Cost per mile changes, ending at **$0.10 per mi** ($40 over 400 mi). Save. Its page: **WORKED OUT**, ƒ Cost per mile $0.10 per mi. |
+| [ ] | 7.15 | **Mac**: **+ Calculated field** Average trip time, **Shows as** Time; type `mean(trip-time` then the **Over** picker's **Cumulative**, then `)` | The box reads `mean(trip-time, cumulative)`; "✓ Gives a time"; "On the latest fuel-up: 1:30". Save. The latest fuel-up's page shows 1:30, the first 1:00. |
+| [ ] | 7.16 | Edit Average trip time: `cumulative` → `last 1` → **Save** | The latest fuel-up shows 2:00. |
+| [ ] | 7.17 | **Setup** → Trip time → **Remove**; then **Edit** Trip time → turn it off → **Save** | Both refused: "Average trip time uses this in its formula …". |
+| [ ] | 7.18 | **Settings** → **You** → distance **Kilometers**, volume **Liters**; back to the second fuel-up's page. Set them back afterwards | Cost per mile shows per km, about **$0.06 per km**. |
+| [ ] | 7.19 | **Desktop**, Sync now: `Formula truck` → Setup, the Overview, the fuel-ups' pages | The same keys, formulas, ƒ values, and Service miles. **Tailscale off** (wait for **OFFLINE**): a fuel-up at 11,300 mi, 8 gal, $30.00 shows Cost per mile live ($0.10 per mi) and saves; its page shows it; **+ Calculated field** → Save says the server can't be reached. Tailscale on, Sync now: the web agrees. |
+
+**Milestone 7 also checks:** the formula language (precedence, units, every function, each Over, every refusal and "no value"), keys never clashing or reserved, derived readings at every input's reading, a job counting a derived meter, values since the last event, the server's checks and "in use" refusals, older meters' keys, and migration 0027 on the release fixtures, all in the automated tests.
+
 ## Results
 
 # Human Notes
