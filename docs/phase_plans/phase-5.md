@@ -872,7 +872,7 @@
 | R.a | ☑️ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
 | R.b | ☑️ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
 | R.c | ☑️ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
-| R.d | ⬜ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
+| R.d | ☑️ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
 | R.e | ⬜ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
 | R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
 
@@ -893,3 +893,12 @@
 
   `migration_fixtures.rs` now tells fixtures apart by version. Those made before `v0.5.0` still have to come through with Phase 5's columns and tables empty. From `v0.5.0`, every meter has a stored key, Oil life counts down and resets to 100%, the formulas read back as typed, and the requirement's rule, steps, specs, and usages, the usages, specs, template, partial and missed fuel-ups, and the snooze all read back.
 - **R.c:** `README.md` for `v0.5.0`: the opening says what the app works out; the status is `v0.5.0` (Phase 5, with Phase 4 after the MVP); Messages mentions due messages and snoozing; and a new **What it works out for you** section covers what's due (the steps, Overdue, the Maintenance tab, the Overview, the Garage, Due & squawks), meters that count down and reset, specs, bundles, and templates, fuel economy, **Ready to use?**, and formulas, linking `docs/help/formulas.md`.
+- **R.d:** `docs/test-plans/p5-phase.md` gains **Earlier releases and the exit criteria**:
+  - 15 steps:
+    - E.1–E.9: `v0.3.0`'s web paths, with the version and the notices (SQLCipher's new copyright line, sqlx 0.9.1, `libsqlite3-sys` 0.40).
+    - E.10–E.12: the desktop. It opens the copy it already has (made by SQLCipher 4.10, now opened by 4.20, issue #41), logs offline with a photo, and keeps a refused change.
+    - E.13–E.14: two exit criteria no milestone's steps checked by hand (expired insurance, and a deferred High issue, deferred in a repair job).
+    - E.15: the nightly jobs.
+  - A table matching each exit criterion to its steps ("an app one API version behind" stays with the server's tests).
+  - **Also fixed:** step 1.1 expected only migration 0022, but the whole plan runs on one update. It now expects schema 27, the default usages, and the meter keys, and says steps 2.1–7.1 read the same log.
+  - The plan's opening says what the new part is for.

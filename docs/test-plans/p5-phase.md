@@ -2,7 +2,7 @@
 
 *`docs/phase_plans/phase-5.md` · decisions #080, #081 · built up milestone by milestone, run at the end of the phase*
 
-**How this plan works (#081):** each milestone adds its section here as its last step. Nothing is run until the end of Phase 5. Then the human runs the whole plan on the **test server**, before the `v0.5.0` release, as its regression pass, together with the phase's exit criteria. A failure is fixed on `dev`, and its section is run again.
+**How this plan works (#081):** each milestone adds its section here as its last step. Nothing is run until the end of Phase 5. Then the human runs the whole plan on the **test server**, before the `v0.5.0` release, as its regression pass. Its last part, **Earlier releases and the exit criteria**, checks `v0.2.0`'s and `v0.3.0`'s main paths and matches each exit criterion to its steps. A failure is fixed on `dev`, and its section is run again.
 
 ## Setup (for the whole run)
 
@@ -39,7 +39,7 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | 1.1 | **NAS:** `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `backed up before migrating`, then `database open` with `schema_before=21` and `schema_now=22`; `database integrity check passed`; no `ERROR` lines. |
+| [ ] | 1.1 | **NAS:** `sudo docker compose pull && sudo docker compose up -d`, then `sudo docker logs --since 5m vehiclemanager-test 2>&1` | `backed up before migrating`, then `database open` with `schema_now=27` (`schema_before` is what the test server had: 21 on `v0.3.0`); `default usages made` and `meter keys given`; `database integrity check passed`; no `ERROR` lines. **One update for the whole run:** steps 2.1–7.1 read this same log, and each one's "at least" holds at 27. |
 | [ ] | 1.2 | **Mac browser**, `admin`: `Test truck` → **Setup** → **Meters**; then its **Timeline** | The odometer as before ("Distance · miles · whole"), with no "counts down" or "resets". Every reading on the timeline as before, with no ↺. |
 | [ ] | 1.3 | **Maintainer mode** → **Setup** → **+ Meter**: name `Oil life`, **Measures: Percentage** (the unit becomes **%**), **Decimal places: whole**, **Counts: Down**, tick **Can be reset** → **Save** | "to [100] %" appears when ticked. Saved; Meters lists "Oil life · Percentage · % · whole · counts down · resets to 100 %". |
 | [ ] | 1.4 | Edit the **odometer**, tick **Can be reset** → **Save** | Refused: "A distance meter that fuel-ups need can't be reset: fuel economy needs its running total." The odometer is unchanged. |
@@ -276,6 +276,44 @@
 | [ ] | 7.19 | **Desktop**, Sync now: `Formula truck` → Setup, the Overview, the fuel-ups' pages | The same keys, formulas, ƒ values, and Service miles. **Tailscale off** (wait for **OFFLINE**): a fuel-up at 11,300 mi, 8 gal, $30.00 shows Cost per mile live ($0.10 per mi) and saves; its page shows it; **+ Calculated field** → Save says the server can't be reached. Tailscale on, Sync now: the web agrees. |
 
 **Milestone 7 also checks:** the formula language (precedence, units, every function, each Over, every refusal and "no value"), keys never clashing or reserved, derived readings at every input's reading, a job counting a derived meter, values since the last event, the server's checks and "in use" refusals, older meters' keys, and migration 0027 on the release fixtures, all in the automated tests.
+
+## Earlier releases and the exit criteria
+
+**Intended behavior:** what `v0.2.0` and `v0.3.0` brought still works on `v0.5.0`: signing in, everyday logging with photos, repairs and corrections, recalls, documents, send-outs, and the desktop's offline copy and sync. The desktop opens the encrypted copy it already has, though its SQLCipher is newer (4.20, from 4.10; issue #41). And each of Phase 5's exit criteria passes, by the steps in the table below.
+
+**When:** after the milestones' sections, on the same image and desktop build (once the release PR has merged into `dev`, so the version reads `0.5.0`).
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | E.1 | **Mac browser**, Diagnostics | **About**: App `0.5.0`, and the place data's version. **Run checks** passes. |
+| [ ] | E.2 | Diagnostics → About → **Licenses** → **Third-party notices** | The notices, scrolling: Lucide, pdf.js, SQLCipher ("Copyright (c) 2025, ZETETIC LLC"), OpenSSL, and the Rust crates (`sqlx 0.9.1`, `libsqlite3-sys 0.40.0` among them). **Close** closes it. |
+| [ ] | E.3 | Sign out, then sign in as `admin` with a wrong password, then the right one | "Wrong username or password."; then signed in, in **Driver** mode. |
+| [ ] | E.4 | **Phone**, Sam: **+** → **Fuel-up** for `Test truck` (odometer, fuel, price, **Use my location**) → **Save**; then **+ Add** → **Take photo** → **Add 1** | Saved, with the town filled in; the photo opens full screen. |
+| [ ] | E.5 | **Phone**, Sam: **+** → **Issue** on `Test truck`: `Regression rattle`, Low | Saved; on **Issues** as Open. |
+| [ ] | E.6 | **Mac browser**, Maintainer mode: `Test truck` → **+ Log** → **Repair**: a task, the odometer; **Sign off** `Regression rattle`; **Finish…** → **Finish and lock**. Then its page → **Correct…** → change the labor, a reason → **Save** | The issue is **Resolved**. The correction is a **Draft** marked **Correction**; the Timeline shows the original **Corrected**. |
+| [ ] | E.7 | **Maintenance** → **Set up** → **+ Recall or bulletin** → **+ A new one** → **Save**; **+ Add** → a PDF | The PDF opens in the viewer (pages, zoom). |
+| [ ] | E.8 | **Documents**: **+ Document** → Registration, with an expiry → **Save**; then **Renew…** | The new one **Current**, the old **Superseded**. |
+| [ ] | E.9 | **+ Log** → **Sent out** (a shop, due back tomorrow) → **Save**; then **Record return** | **Out for service** and its banner; after the return, no banner. |
+| [ ] | E.10 | **Desktop** (the copy from before this release, not a new sign-in): unlock with the PIN; Diagnostics | It opens with no new download: **About**: App `0.5.0`, Server `0.5.0`. **Offline copy**: Up to date. **Snapshots of this copy**: today's. (The copy SQLCipher 4.10 made opens in 4.20.) |
+| [ ] | E.11 | **Tailscale off** (wait for **OFFLINE**): **+ Log** → **Fuel-up** for `Test truck` → **Save**, then **+ Add** a photo. **Tailscale on**, Sync now; **phone** (reload) | **↑ 2 to send** while offline; after syncing, the fuel-up and its photo are on the phone. |
+| [ ] | E.12 | **Tailscale off**; **desktop:** a **reading** on `Test truck` 10 mi above its latest. **Phone**, Sam: a reading 50 mi above it. **Tailscale on**, Sync now | The desktop's reading is refused and kept in **Messages** ("Not saved: …"), to fix or discard. |
+| [ ] | E.13 | **Expired insurance** (exit criterion): **Mac**, Maintainer mode: `Ready truck` → **Documents** → edit the Insurance from step 6.5: expiry **yesterday** → **Save**; its **Overview** | "✗ Not drivable", with Insurance ✗ and why (expired). Set its expiry back to 20 days on afterwards: Insurance is ! again. |
+| [ ] | E.14 | **A deferred High** (exit criterion): **Phone**, Sam: **+ Squawk** on `Ready truck`, "Deferred check", **High**. **Mac**, Maintainer mode: **+ Log** → **Repair** on `Ready truck`, a task; under its issues, **Defer** "Deferred check" with a **Why** → **Finish…** → **Finish and lock**; the **Overview** | The issue is **Deferred**, and the vehicle is still "✗ Not drivable", with "Deferred check" (✗) "High issue, deferred". Afterwards, lower it to Low. |
+| [ ] | E.15 | **The next morning:** `ls -l data/snapshots/` and `sudo docker logs --since 24h vehiclemanager-test 2>&1 \| grep -E "nightly-snapshot\|file-check\|ERROR"` | A new snapshot from last night; both jobs ran; no `ERROR` lines you can't explain. |
+
+**The exit criteria** (`docs/phase_plans/phase-5.md`), and the steps that show each:
+
+| Exit criterion | Steps |
+|---|---|
+| **Oil life:** a counting-down percentage meter; the oil change due by distance, time, or Oil life 15%, whichever first; yellow, orange, red as readings come in; **Reset Oil life to 100%** moves it on | 1.3–1.9; 2.4–2.8 (the plan's steps use 5,000 mi, so the numbers come sooner); 2.12–2.13 |
+| **What's due:** the Maintenance tab and the Overview show time and distance, with projected dates; the Garage marks overdue vehicles, with an **Overdue** chip | 2.5–2.8; 3.2–3.3 |
+| **Messages:** due soon on the web, and on the desktop offline; "1 week or 500 mi" comes back at whichever first | 3.5–3.8, 3.10; 3.14 |
+| **Specs and bundles:** an oil change pre-fills from the Specs; a service signs off several tasks in one event, each one's clock reset | 4.6–4.8; 4.10–4.12 |
+| **Fuel economy:** a partial fill adds into the next full one; a missed fill-up leaves a gap; breakdowns by condition and towed vehicle | 5.4–5.6; 5.8–5.9; 5.10 |
+| **Readiness:** expired insurance, not ready; a deferred High still blocks; Towing adds its own items | E.13; E.14 (and 6.15, an open High); 6.8–6.12 |
+| **Calculated values:** a derived meter drives an interval rule; a calculated field on a fuel-up | 7.9; 7.12–7.14 |
+| **Sync:** each new kind of change offline on the desktop, synced | 1.15–1.16, 2.16, 3.14–3.15, 4.18, 5.15, 6.20, 7.19, E.11 |
+| **Sync:** an app one API version behind still syncs | The server's automated tests (an app one version behind syncs; two behind is told to update and keeps its outbox). Nothing to do by hand. |
 
 ## Results
 
