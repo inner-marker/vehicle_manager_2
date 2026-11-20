@@ -1,6 +1,6 @@
 # Phase 5: Maintenance intelligence (plan)
 
-*Agreed 2026-11-15 · Roadmap: `docs/plan.md` §9 Phase 5 · Open questions: settled (decision #080) · Builds on #031, #051, #057, #063*
+*Agreed 2026-11-15 · ✅ **Complete:** exit criteria met; released as `v0.5.0` on 2026-11-20 · Roadmap: `docs/plan.md` §9 Phase 5 · Open questions: settled (decision #080) · Builds on #031, #051, #057, #063*
 
 **Goal:** the app **tells the household what's due.** Every requirement knows when it's next due, by distance, hours, time, or a meter such as **Oil life remaining**. Warnings start early and grow more urgent. Messages arrive when something is due, and they can be snoozed. A job pre-fills the parts it uses, a scheduled service is signed off in one go, fuel economy is honest about partial and missed fill-ups, and each vehicle answers **"Ready to use?"** with its reasons.
 
@@ -41,6 +41,8 @@
 | 7 | **Calculated fields and derived meters** | ✅ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
 **Releases:** **`v0.5.0` at the end of Phase 5** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.3.0` had. The version follows the phase's number, since Phase 4 moved after the MVP (#041).
+
+**Phase 5 complete (2026-11-20):** `v0.5.0` is tagged on `main`, and the main and test servers run it. Its regression pass, the whole phase test plan (`docs/test-plans/archive/p5-phase.md`) with its Earlier releases part and the fix's steps F.1–F.2, passed every step, including the exit criteria.
 
 ---
 
@@ -868,14 +870,14 @@
 
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
-| R.0 | ☑️ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
-| R.a | ☑️ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
-| R.b | ☑️ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
-| R.c | ☑️ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
-| R.d | ☑️ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
-| R.d2 | ☑️ | `fix(app): a template is applied only with Apply` | From the regression pass (the human's first note): choosing a vehicle in **Apply to…** only selects it; **Apply** copies the template | none |
-| R.e | ☑️ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
-| R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
+| R.0 | ✅ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
+| R.a | ✅ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
+| R.b | ✅ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
+| R.c | ✅ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
+| R.d | ✅ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
+| R.d2 | ✅ | `fix(app): a template is applied only with Apply` | From the regression pass (the human's first note): choosing a vehicle in **Apply to…** only selects it; **Apply** copies the template | none |
+| R.e | ✅ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.f | ✅ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
 
 **Written so far**
 - **R.0:** this plan; milestone 7 marked ✅ (PR #61).
@@ -894,7 +896,7 @@
 
   `migration_fixtures.rs` now tells fixtures apart by version. Those made before `v0.5.0` still have to come through with Phase 5's columns and tables empty. From `v0.5.0`, every meter has a stored key, Oil life counts down and resets to 100%, the formulas read back as typed, and the requirement's rule, steps, specs, and usages, the usages, specs, template, partial and missed fuel-ups, and the snooze all read back.
 - **R.c:** `README.md` for `v0.5.0`: the opening says what the app works out; the status is `v0.5.0` (Phase 5, with Phase 4 after the MVP); Messages mentions due messages and snoozing; and a new **What it works out for you** section covers what's due (the steps, Overdue, the Maintenance tab, the Overview, the Garage, Due & squawks), meters that count down and reset, specs, bundles, and templates, fuel economy, **Ready to use?**, and formulas, linking `docs/help/formulas.md`.
-- **R.d:** `docs/test-plans/p5-phase.md` gains **Earlier releases and the exit criteria**:
+- **R.d:** `docs/test-plans/p5-phase.md` (now `docs/test-plans/archive/p5-phase.md`) gains **Earlier releases and the exit criteria**:
   - 15 steps:
     - E.1–E.9: `v0.3.0`'s web paths, with the version and the notices (SQLCipher's new copyright line, sqlx 0.9.1, `libsqlite3-sys` 0.40).
     - E.10–E.12: the desktop. It opens the copy it already has (made by SQLCipher 4.10, now opened by 4.20, issue #41), logs offline with a photo, and keeps a refused change.
@@ -905,3 +907,11 @@
   - The plan's opening says what the new part is for.
 - **R.d2** (from the regression pass, the human's first note; added to the release at the human's choice, 2026-11-19): on **Templates**, choosing a vehicle in **Apply to…** applied the template at once. Now the menu only selects the vehicle, and an **Apply** button beside it (off until one is chosen) copies the template; the menu then resets. A small component, `ApplyTemplate`, and the message `template-apply`. **No automated test:** the app has no component-rendering tests, and the server's apply is unchanged and tested. The test plan's new step **F.1** checks it on the test server. The human's second note became idea 23 (Phase 6).
 - **R.e:** the version is `0.5.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` gets its `## [0.5.0]` section from `git cliff --tag v0.5.0` (the human runs it). The preview: 28 features (four per milestone, three for milestone 5, and milestone 7's formula language), 1 fix (#41), 20 docs, and 2 tests since `v0.3.0`. Merges are skipped (decision #021). Accepted as they are: "Sqlx 0.9.1 …", capitalized by the changelog's formatting, and "Phase 3 complete", the `v0.3.0` release's closing commit, listed here because it came after that tag. The third-party notices were already current (`scripts/notices.sh --check`). The API version stays at 2.
+- **R.f** (the human, 2026-11-19 to 2026-11-20):
+  - the release PR into `dev` (#62), whose CI passed on every job, Windows's vendored-OpenSSL SQLCipher build included;
+  - the **regression pass**, the whole Phase 5 test plan on the test server with `:dev` and the desktop app bundled from `dev`: milestones 1–7, Earlier releases E.1–E.15, and the exit criteria. Every step passed. Two notes: the template confirmation (fixed as R.d2, then checked by F.1–F.2, both passed) and idea 23 (Phase 6);
+  - the PR from `dev` into `main` (#63), with a merge commit;
+  - the tag `v0.5.0` and the GitHub Release;
+  - the main and test servers on `0.5.0`;
+  - closing #41 (RUSTSEC-2026-0459), with a comment.
+  - **Found on the way:** `gh issue close` has no `--comment-file`, so the comment went on with `gh issue comment --body-file` before closing.

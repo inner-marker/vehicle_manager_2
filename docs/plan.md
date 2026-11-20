@@ -1852,7 +1852,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 *Phase 4 (Mobile) moved to post-MVP on 2026-10-29 (`docs/decisions.md` #041); later phases keep their numbers.*
 
 ### Phase 5: Maintenance intelligence.
-- *Phase plan: [`phase_plans/phase-5.md`](phase_plans/phase-5.md) (agreed 2026-11-15; seven milestones, then `v0.5.0`).*
+- *Phase plan: [`phase_plans/phase-5.md`](phase_plans/phase-5.md) · **Complete:** exit criteria met 2026-11-20; released as `v0.5.0`.*
 - **Counting-down, resettable, and percentage meters** (the human, 2026-11-15): any meter can be a percentage, a meter can count down, and a meter can be reset (in either direction), e.g. **Oil life remaining**. An interval rule can say "when Oil life reaches 15%", beside mileage and months (whichever comes first), and the oil change job can reset it to 100%.
 - **Derived meters** (answered 2026-11-15): meters worked out from others, e.g. idle hours as equivalent miles, usable in interval rules.
 - **Parts and fluid specs** (answered 2026-11-15): a **Specs** list per vehicle; requirements link to it, and a logged job's parts are pre-filled from it.
