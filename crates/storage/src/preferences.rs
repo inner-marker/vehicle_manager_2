@@ -1,7 +1,8 @@
 //! The `preferences` table: the household's preferences and each user's (#029, #048, #049).
 //!
 //! Values are stored as the same names they have in JSON (e.g. `kilometers`), so the table
-//! reads the same as the API. NULL means "not chosen".
+//! reads the same as the API; the household's due warnings, a small structure, as JSON text
+//! (#082). NULL means "not chosen".
 
 use domain::id::Id;
 use domain::preferences::{
@@ -30,6 +31,17 @@ impl ColumnChange {
         })
     }
 
+    /// A structured setting, stored as JSON text.
+    fn json<T: Serialize + Copy>(choice: Option<Choice<T>>) -> Self {
+        choice.map_or(Self::Unchanged, |choice| {
+            Self::Set(
+                choice
+                    .value()
+                    .and_then(|value| serde_json::to_string(&value).ok()),
+            )
+        })
+    }
+
     const fn is_change(&self) -> bool {
         matches!(self, Self::Set(_))
     }
@@ -43,7 +55,7 @@ impl ColumnChange {
 }
 
 /// Every setting's change, in column order.
-fn changes(patch: &PreferencesPatch) -> [ColumnChange; 11] {
+fn changes(patch: &PreferencesPatch) -> [ColumnChange; 13] {
     [
         ColumnChange::of(patch.distance),
         ColumnChange::of(patch.volume),
@@ -56,6 +68,8 @@ fn changes(patch: &PreferencesPatch) -> [ColumnChange; 11] {
         ColumnChange::of(patch.garage_sort),
         ColumnChange::of(patch.squawk_word),
         ColumnChange::of(patch.originals),
+        ColumnChange::json(patch.due_warnings),
+        ColumnChange::of(patch.due_messages_from),
     ]
 }
 
@@ -83,12 +97,15 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
             garage_sort,
             squawk_word,
             originals,
+            due_warnings,
+            due_messages_from,
         ] = changes(values);
         sqlx::query(
             "INSERT INTO preferences
                  (id, distance, volume, economy, pressure, date_format, currency, language,
-                  idle_sign_out, garage_sort, squawk_word, originals, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  idle_sign_out, garage_sort, squawk_word, originals, due_warnings,
+                  due_messages_from, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(distance.value())
@@ -102,6 +119,8 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
         .bind(garage_sort.value())
         .bind(squawk_word.value())
         .bind(originals.value())
+        .bind(due_warnings.value())
+        .bind(due_messages_from.value())
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -130,6 +149,8 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
                  garage_sort = CASE WHEN ? THEN ? ELSE garage_sort END,
                  squawk_word = CASE WHEN ? THEN ? ELSE squawk_word END,
                  originals   = CASE WHEN ? THEN ? ELSE originals END,
+                 due_warnings = CASE WHEN ? THEN ? ELSE due_warnings END,
+                 due_messages_from = CASE WHEN ? THEN ? ELSE due_messages_from END,
                  sequence = ?
              WHERE id = ?",
         );
@@ -172,6 +193,11 @@ fn choices_from_row(row: &SqliteRow) -> Result<PreferenceChoices, StorageError> 
         garage_sort: name_from_sql(row.try_get("garage_sort")?),
         squawk_word: name_from_sql(row.try_get("squawk_word")?),
         originals: name_from_sql(row.try_get("originals")?),
+        // A value this build can't read counts as "not chosen", like an unknown name.
+        due_warnings: row
+            .try_get::<Option<String>, _>("due_warnings")?
+            .and_then(|text| serde_json::from_str(&text).ok()),
+        due_messages_from: name_from_sql(row.try_get("due_messages_from")?),
     })
 }
 
@@ -187,7 +213,8 @@ impl Database {
     ) -> Result<PreferenceChoices, StorageError> {
         sqlx::query(
             "SELECT distance, volume, economy, pressure, date_format, currency, language,
-                    idle_sign_out, garage_sort, squawk_word, originals
+                    idle_sign_out, garage_sort, squawk_word, originals, due_warnings,
+                    due_messages_from
              FROM preferences WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

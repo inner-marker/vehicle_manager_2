@@ -29,42 +29,138 @@ use super::FormError;
 use super::attachments::{AttachmentStrip, photo_size_for};
 use super::log_form::MoneyInput;
 use super::squawks::{SeverityChip, use_squawk_sheet};
-use super::work_input::{Action, TypedDisposition, TypedPart, TypedTask, TypedWork, total_minor};
+use super::work_input::{
+    Action, TypedDisposition, TypedPart, TypedTask, TypedWork, prefilled_part, total_minor,
+};
 use crate::ui::{tr, tr_with};
+use domain::spec::{Spec, SpecAmount, SpecId, task_specs};
 
 /// A meter's unit, short.
 fn unit_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// The tasks for `bundle`'s requirements, in its order (those already in the list are left
-/// out).
+/// out), parts pre-filled from the vehicle's `specs`.
 pub(super) fn bundle_tasks(
     bundle: &Bundle,
     requirements: &[RequirementView],
     already: &[TypedTask],
+    specs: &[(SpecId, Spec)],
 ) -> Vec<TypedTask> {
     bundle
         .requirements
         .iter()
         .filter(|id| !already.iter().any(|task| task.requirement == Some(**id)))
         .filter_map(|id| requirements.iter().find(|view| view.id == *id))
-        .map(requirement_task)
+        .map(|view| requirement_task(view, specs))
         .collect()
 }
 
+/// The work a job starts with for **Log this service** (#084): a task for each of `bundle`'s
+/// requirements, parts pre-filled from `specs`, each one's resets ticked.
+pub(super) fn service_work(
+    bundle: &Bundle,
+    requirements: &[RequirementView],
+    specs: &[(SpecId, Spec)],
+    meters: &[(MeterId, Meter)],
+) -> TypedWork {
+    let mut work = TypedWork {
+        tasks: bundle_tasks(bundle, requirements, &[], specs),
+        ..TypedWork::default()
+    };
+    for view in requirements
+        .iter()
+        .filter(|view| bundle.requirements.contains(&view.id))
+    {
+        tick_resets(&mut work, view, meters);
+    }
+    work
+}
+
+/// The resettable meters `view`'s rules count on: a task for it offers to reset each (#082).
+pub(super) fn reset_meters(
+    view: &RequirementView,
+    meters: &[(MeterId, Meter)],
+) -> Vec<(MeterId, Meter)> {
+    meters
+        .iter()
+        .filter(|(id, meter)| {
+            meter.resettable()
+                && view.requirement.rules.iter().any(|rule| match rule {
+                    IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => {
+                        meter == id
+                    }
+                    IntervalRule::Calendar { .. } | IntervalRule::FixedDate { .. } => false,
+                })
+        })
+        .cloned()
+        .collect()
+}
+
+/// "↺ Reset Oil life to 100 %".
+fn reset_label(meter: &Meter) -> String {
+    let value = meter.reset_to.map_or_else(String::new, |value| {
+        format!(
+            "{} {}",
+            domain::quantity::show_reading(value, meter.unit, meter.precision),
+            tr(meter.unit.abbr())
+        )
+    });
+    tr_with(
+        messages::WORK_RESET_METER,
+        &[
+            ("meter", MessageArg::from(meter.name.as_str().to_owned())),
+            ("value", MessageArg::from(value)),
+        ],
+    )
+}
+
+/// Ticks the resets a task for `view` offers (ticked by default, #082).
+fn tick_resets(work: &mut TypedWork, view: &RequirementView, meters: &[(MeterId, Meter)]) {
+    for (id, _) in reset_meters(view, meters) {
+        if !work.resets.contains(&id) {
+            work.resets.push(id);
+        }
+    }
+}
+
 /// A new task doing `view`'s requirement, titled with its name.
-pub(super) fn requirement_task(view: &RequirementView) -> TypedTask {
+pub(super) fn requirement_task(view: &RequirementView, specs: &[(SpecId, Spec)]) -> TypedTask {
+    // The specs it ticks pre-fill its parts (#084); with none, an empty row to type in.
+    let mut parts: Vec<TypedPart> = task_specs(&view.requirement.specs, specs)
+        .parts
+        .iter()
+        .map(prefilled_part)
+        .collect();
+    if parts.is_empty() {
+        parts.push(TypedPart::default());
+    }
     TypedTask {
         title: view.requirement.name.as_str().to_owned(),
         requirement: Some(view.id),
-        parts: vec![TypedPart::default()],
+        parts,
         ..TypedTask::default()
     }
+}
+
+/// "Lug nut torque: 150 ft-lb (203 N·m)": the specs a task for `view` reminds of (#084).
+pub(super) fn reminder_lines(view: &RequirementView, specs: &[(SpecId, Spec)]) -> Vec<String> {
+    task_specs(&view.requirement.specs, specs)
+        .reminders
+        .iter()
+        .filter_map(|id| specs.iter().find(|(spec, _)| spec == id))
+        .map(|(_, spec)| {
+            let amount = spec.amount.map(SpecAmount::show_both).unwrap_or_default();
+            tr_with(
+                messages::SPEC_REMINDER,
+                &[
+                    ("name", MessageArg::from(spec.name.as_str())),
+                    ("amount", MessageArg::from(amount.as_str())),
+                ],
+            )
+        })
+        .collect()
 }
 
 /// Removes task `index`, and keeps the sign-offs naming the tasks after it right.
@@ -130,6 +226,8 @@ pub(super) fn WorkLog(
     vehicle: AssetView,
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// The vehicle's specs, to pre-fill parts and remind of (#084).
+    specs: Vec<(SpecId, Spec)>,
     squawks: Vec<SquawkView>,
     currency: CurrencyCode,
     work_problem: Option<String>,
@@ -169,9 +267,12 @@ pub(super) fn WorkLog(
     let asset = vehicle.asset.clone();
     let asset_id = vehicle.id;
     let meters = vehicle.meters;
+    let (menu_meters, bundle_meters, card_meters) =
+        (meters.clone(), meters.clone(), meters.clone());
     // Each menu's closure keeps its own copy.
     let for_menu = requirements.clone();
     let for_bundles = requirements.clone();
+    let (menu_specs, bundle_specs) = (specs.clone(), specs.clone());
     let menu_bundles = bundles.clone();
     rsx! {
         // Readings at the end.
@@ -208,6 +309,8 @@ pub(super) fn WorkLog(
                         index,
                         task,
                         requirements: requirements.clone(),
+                        meters: card_meters.clone(),
+                        specs: specs.clone(),
                         currency,
                         on_collapse: move |()| open.set(None),
                         photos: task_photos(editing, &typed, saved_tasks, index),
@@ -240,11 +343,14 @@ pub(super) fn WorkLog(
                             class: "field-input work-add",
                             onchange: {
                                 let for_menu = for_menu.clone();
+                                let menu_meters = menu_meters.clone();
+                                let menu_specs = menu_specs.clone();
                                 move |event: FormEvent| {
                                     let picked = for_menu.iter().find(|view| view.id.to_string() == event.value()).cloned();
                                     if let Some(view) = picked {
                                         let mut typed = work.write();
-                                        typed.tasks.push(requirement_task(&view));
+                                        typed.tasks.push(requirement_task(&view, &menu_specs));
+                                        tick_resets(&mut typed, &view, &menu_meters);
                                         open.set(Some(typed.tasks.len() - 1));
                                     }
                                 }
@@ -263,7 +369,10 @@ pub(super) fn WorkLog(
                             let picked = menu_bundles.iter().find(|(id, _)| id.to_string() == event.value()).map(|(_, bundle)| bundle.clone());
                             if let Some(bundle) = picked {
                                 let mut typed = work.write();
-                                let added = bundle_tasks(&bundle, &for_bundles, &typed.tasks);
+                                let added = bundle_tasks(&bundle, &for_bundles, &typed.tasks, &bundle_specs);
+                                for view in for_bundles.iter().filter(|view| added.iter().any(|task| task.requirement == Some(view.id))) {
+                                    tick_resets(&mut typed, view, &bundle_meters);
+                                }
                                 typed.tasks.extend(added);
                                 open.set(None);
                             }
@@ -428,6 +537,10 @@ fn TaskCard(
     index: usize,
     task: TypedTask,
     requirements: Vec<RequirementView>,
+    /// The vehicle's meters, for the resets a task offers.
+    meters: Vec<(MeterId, Meter)>,
+    /// The vehicle's specs, for the reminders a task shows (#084).
+    specs: Vec<(SpecId, Spec)>,
     currency: CurrencyCode,
     on_collapse: EventHandler<()>,
     photos: Option<AttachmentOwner>,
@@ -444,6 +557,22 @@ fn TaskCard(
         .requirement
         .and_then(|id| requirements.iter().find(|view| view.id == id))
         .cloned();
+    // Its torque, pressure, and length specs, as reminders (#084).
+    let reminders = requirement
+        .as_ref()
+        .map(|view| reminder_lines(view, &specs))
+        .unwrap_or_default();
+    // The resettable meters its requirement counts on, e.g. Oil life (#082).
+    let resets: Vec<(MeterId, Meter, bool)> = requirement
+        .as_ref()
+        .map(|view| reset_meters(view, &meters))
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(id, meter)| {
+            let ticked = work().resets.contains(&id);
+            (id, meter, ticked)
+        })
+        .collect();
     let fixed_date = requirement.as_ref().is_some_and(|view| {
         view.requirement
             .rules
@@ -543,6 +672,25 @@ fn TaskCard(
                         }
                     }
                 }
+            }
+            for (id, meter, ticked) in resets {
+                label { key: "{id}", class: "switch task-reset",
+                    input {
+                        r#type: "checkbox",
+                        checked: ticked,
+                        onchange: move |event| {
+                            let mut typed = work.write();
+                            typed.resets.retain(|have| *have != id);
+                            if event.checked() {
+                                typed.resets.push(id);
+                            }
+                        },
+                    }
+                    span { {reset_label(&meter)} }
+                }
+            }
+            for (number, line) in reminders.into_iter().enumerate() {
+                p { key: "reminder-{number}", class: "muted-note task-reminder", {line} }
             }
             if fixed_date {
                 label { class: "field",
@@ -812,9 +960,14 @@ mod tests {
                 reference: None,
                 mode: domain::requirement::ComplianceMode::Recurring,
                 applicability: domain::requirement::Applicability::Applies,
+                before_records: None,
+                warnings: None,
+                specs: vec![],
+                usages: None,
             },
             last_done: None,
             status: domain::requirement::RequirementStatus::Active,
+            due: None,
         }
     }
 
@@ -829,13 +982,76 @@ mod tests {
             name: Label::parse("5,000-mile service").unwrap(),
             requirements: vec![test_id(41), test_id(40)],
         };
-        let already = [requirement_task(&requirements[0])];
-        let added = bundle_tasks(&bundle, &requirements, &already);
+        let already = [requirement_task(&requirements[0], &[])];
+        let added = bundle_tasks(&bundle, &requirements, &already, &[]);
         assert_eq!(added.len(), 1);
         assert_eq!(
             (added[0].title.as_str(), added[0].requirement),
             ("Rotate tires", Some(test_id(41)))
         );
+    }
+
+    #[test]
+    fn a_task_is_pre_filled_from_its_requirements_specs() {
+        let spec =
+            |name: &str, amount: Option<(&str, domain::spec::SpecUnit)>, number: Option<&str>| {
+                Spec {
+                    asset: test_id(10),
+                    name: Label::parse(name).unwrap(),
+                    amount: amount.map(|(text, unit)| SpecAmount::parse(text, unit).unwrap()),
+                    detail: None,
+                    part_number: number.map(str::to_owned),
+                    notes: Notes::default(),
+                }
+            };
+        let specs = vec![
+            (
+                test_id(30),
+                spec(
+                    "Engine oil",
+                    Some(("5.5", domain::spec::SpecUnit::Quarts)),
+                    None,
+                ),
+            ),
+            (test_id(31), spec("Oil filter", None, Some("FL-500S"))),
+            (
+                test_id(32),
+                spec(
+                    "Drain plug torque",
+                    Some(("30", domain::spec::SpecUnit::FootPounds)),
+                    None,
+                ),
+            ),
+        ];
+        let mut oil = requirement(40, "Engine oil & filter");
+        oil.requirement.specs = vec![test_id(30), test_id(31), test_id(32)];
+        let task = requirement_task(&oil, &specs);
+        let parts: Vec<(&str, &str, &str, Option<SpecId>)> = task
+            .parts
+            .iter()
+            .map(|part| {
+                (
+                    part.description.as_str(),
+                    part.part_number.as_str(),
+                    part.quantity.as_str(),
+                    part.spec,
+                )
+            })
+            .collect();
+        assert_eq!(
+            parts,
+            vec![
+                ("Engine oil (qt)", "", "5.5", Some(test_id(30))),
+                ("Oil filter", "FL-500S", "1", Some(test_id(31))),
+            ]
+        );
+        assert_eq!(
+            reminder_lines(&oil, &specs),
+            ["Reminder: Drain plug torque 30 ft-lb (41 N·m)"]
+        );
+        // With no specs, one empty row to type in.
+        let bare = requirement_task(&requirement(41, "Rotate tires"), &specs);
+        assert_eq!(bare.parts, vec![TypedPart::default()]);
     }
 
     #[test]

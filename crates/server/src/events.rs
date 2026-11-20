@@ -27,7 +27,8 @@ use domain::event::{
     Reason, event_changes,
 };
 use domain::event_check::{
-    CheckContext, LocationRule, Warning, check, check_correction, check_finish, finalize, tidy,
+    CheckContext, LocationRule, PastReading, Warning, check, check_correction, check_finish,
+    finalize, tidy,
 };
 use domain::id::DeviceId;
 use domain::inbox::{Message, forgotten_job_message};
@@ -54,6 +55,8 @@ fn from_assets(outcome: &AssetsOutcome) -> EventsOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => EventsOutcome::Unavailable,
     }
 }
@@ -75,6 +78,20 @@ fn either(result: Result<EventsOutcome, EventsOutcome>) -> EventsOutcome {
 impl AssetsContext<'_> {
     fn permits(&self, action: AssetAction, scope: AssetScope) -> bool {
         permits_on_asset(&self.user.grants, self.user.mode, action, scope)
+    }
+
+    /// A job's sign-offs and deferrals need the right to disposition squawks (#063, #086): a
+    /// Maintainer on the vehicle, in Maintainer mode or above.
+    fn check_dispositions(&self, event: &Event, scope: AssetScope) -> Result<(), EventsOutcome> {
+        let dispositions = event
+            .work
+            .as_ref()
+            .is_some_and(|work| !work.dispositions.is_empty());
+        if dispositions && !self.permits(AssetAction::DispositionSquawk, scope) {
+            tracing::debug!(target: log_area::APP, user = %self.user.user, "refused: signing off or deferring a squawk");
+            return Err(EventsOutcome::NotAllowed);
+        }
+        Ok(())
     }
 
     /// Whether the person may change, finalize, or correct `event`.
@@ -200,7 +217,12 @@ impl AssetsContext<'_> {
             .map_err(|error| failed("readings", &error))?
             .into_iter()
             .filter(|reading| !leave_out.contains(&reading.event))
-            .map(|reading| (reading.meter, reading.at, reading.value))
+            .map(|reading| PastReading {
+                meter: reading.meter,
+                at: reading.at,
+                value: reading.value,
+                reset: reading.reset,
+            })
             .collect();
         let kinds = event_kinds(&asset.kind);
         // Only a job uses the schedule and squawks.
@@ -295,6 +317,21 @@ impl AssetsContext<'_> {
         Ok(name)
     }
 
+    /// Vehicle `asset`'s calculated fields and what they're worked out from, in the person's
+    /// units (#087); `None` if it has none.
+    async fn formulas(
+        &self,
+        asset: domain::asset::AssetId,
+        only_calculated: bool,
+    ) -> Result<Option<crate::formulas::Formulas>, EventsOutcome> {
+        let units = crate::assets::person_preferences(self)
+            .await
+            .map_err(|outcome| from_assets(&outcome))?;
+        crate::formulas::Formulas::load(self.database, asset, units, only_calculated)
+            .await
+            .map_err(|error| failed("formulas", &error))
+    }
+
     /// The person's view of one event.
     async fn view_of(
         &self,
@@ -318,6 +355,7 @@ impl AssetsContext<'_> {
             logged_by_name,
             finalized_by_name,
             event,
+            calculated: Vec::new(),
         })
     }
 }
@@ -358,6 +396,14 @@ async fn list_events(
                 .await?,
         );
     }
+    if let Some(formulas) = context.formulas(asset, true).await? {
+        let values = formulas.all_values();
+        for view in &mut views {
+            if let Some((_, calculated)) = values.iter().find(|(id, _)| *id == view.id) {
+                view.calculated.clone_from(calculated);
+            }
+        }
+    }
     Ok(EventsOutcome::Events { events: views })
 }
 
@@ -376,12 +422,15 @@ async fn view_event(
         .correction_of(id)
         .await
         .map_err(|error| failed("correction", &error))?;
+    let asset = event.asset;
+    let mut view = context
+        .view_of(id, event, scope, corrected_by, &mut Vec::new())
+        .await?;
+    if let Some(formulas) = context.formulas(asset, true).await? {
+        view.calculated = formulas.values_for(id, &view.event);
+    }
     Ok(EventsOutcome::Event {
-        view: Box::new(
-            context
-                .view_of(id, event, scope, corrected_by, &mut Vec::new())
-                .await?,
-        ),
+        view: Box::new(view),
     })
 }
 
@@ -414,9 +463,15 @@ async fn log_context_of(
             value: reading.value,
         })
         .collect();
+    let history = context
+        .formulas(asset, false)
+        .await?
+        .map(|formulas| formulas.history())
+        .unwrap_or_default();
     Ok(EventsOutcome::LogContext {
         latest,
         may_override_readings: context.permits(AssetAction::OverrideReadings, scope),
+        history,
     })
 }
 
@@ -441,6 +496,7 @@ async fn add_event(
     let kind = input.kind;
     let now = context.clock.now();
     let mut event = input.into_draft(context.user.user, now);
+    context.check_dispositions(&event, scope)?;
     // A desktop's operation was made earlier than the server receives it.
     event.last_edited_at = context.origin.made_at(now);
     let warnings = context.checked(&mut event, scope, &[], false).await?;
@@ -498,6 +554,7 @@ async fn edit_event(
             event
         }
     };
+    context.check_dispositions(&event, scope)?;
     let warnings = context.checked(&mut event, scope, &[id], false).await?;
     let tasks = event.work.as_ref().map_or(0, |work| work.tasks.len());
     context
@@ -616,6 +673,7 @@ async fn correct_event(
     event.last_edited_at = context.origin.made_at(now);
     event.corrects = Some(original_id);
     event.correction_reason = Some(reason);
+    context.check_dispositions(&event, scope)?;
     check_correction(&original, original_id, &event).map_err(invalid)?;
     if context
         .database

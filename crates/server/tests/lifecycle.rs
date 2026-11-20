@@ -221,8 +221,11 @@ mod lifecycle {
     }
 
     async fn overdue(database: &Database, user: &SignedIn, clock: &ManualClock) -> usize {
-        let InboxOutcome::Inbox { inbox } =
-            inbox_view(&messages_context(database, user, clock)).await
+        let InboxOutcome::Inbox { inbox } = inbox_view(
+            &messages_context(database, user, clock),
+            &TimeZone::parse("UTC").unwrap(),
+        )
+        .await
         else {
             panic!("no inbox");
         };
@@ -315,6 +318,7 @@ mod lifecycle {
             expires_on: None,
             plate: None,
             notes: Notes::default(),
+            warn_days: None,
         };
         assert_eq!(
             server::documents::add_document(&context(&database, &maintainer, &clock), document)
@@ -386,6 +390,10 @@ mod lifecycle {
             applicability: Applicability::NotApplicable {
                 reason: domain::event::Reason::parse("Built after the VIN range").unwrap(),
             },
+            before_records: None,
+            warnings: None,
+            specs: vec![],
+            usages: None,
         };
         assert!(matches!(
             server::schedule::add_requirement(context, requirement).await,
@@ -497,6 +505,7 @@ mod lifecycle {
         job.readings = vec![domain::event::Reading {
             meter: odometer,
             value: 80_000_000,
+            reset: false,
         }];
         job.work = Some(WorkDetails {
             tasks: vec![Task {
@@ -521,7 +530,7 @@ mod lifecycle {
             EventsOutcome::Done
         );
         let ScheduleOutcome::Schedule { requirements, .. } =
-            server::schedule::view(&shop, truck).await
+            server::schedule::view(&shop, truck, &TimeZone::parse("UTC").unwrap()).await
         else {
             panic!("no schedule");
         };

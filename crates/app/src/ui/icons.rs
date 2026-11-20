@@ -41,6 +41,8 @@ pub(crate) enum Icon {
     Groups,
     /// The Places screen (#060).
     Places,
+    /// The Templates screen (#084).
+    Templates,
 }
 
 impl Icon {
@@ -69,7 +71,8 @@ impl Icon {
             Self::Boathouse => include_str!("../../assets/icons/sailboat.svg"),
             Self::Storage => include_str!("../../assets/icons/package.svg"),
             Self::Warehouse => include_str!("../../assets/icons/container.svg"),
-            Self::Shop => include_str!("../../assets/icons/wrench.svg"),
+            // A shop group, and the Templates screen (#084).
+            Self::Shop | Self::Templates => include_str!("../../assets/icons/wrench.svg"),
             Self::Farm => include_str!("../../assets/icons/tractor.svg"),
             Self::House => include_str!("../../assets/icons/house.svg"),
             Self::Up => include_str!("../../assets/icons/chevron-up.svg"),

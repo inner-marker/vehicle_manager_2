@@ -1,10 +1,17 @@
 //! Meters and the kinds of events (plan §4 Meters, Required readings; decision #030).
 //!
 //! An asset tracks usage on any number of **meters**: an odometer, run hours, engine hours,
-//! and so on. A meter measures a **distance** or a **duration**, shown in its own unit with a
-//! number of decimal places. Each meter says which kinds of events **require** a reading of
+//! and so on. A meter measures a **distance**, a **duration**, or a **percentage** (Phase 5,
+//! decision #080), shown in its own unit with a number of decimal places. It **counts up** (an
+//! odometer) or **down** (a car's Oil life, 100% toward 0%), and may be **resettable** to a
+//! value (Oil life back to 100%); a reading can then be marked as a reset (`event::Reading`). Each meter says which kinds of events **require** a reading of
 //! it (e.g. a fuel-up requires the odometer). Readings themselves are recorded on events
 //! (milestone 6); their values arrive with `uom` then.
+//!
+//! **Keys and derived meters** (Phase 5 milestone 7, #087): every meter has a stable key from
+//! its name (`odometer`), which formulas use, and a **derived** meter has a formula over the
+//! vehicle's typed meters (`odometer + idle-hours × 33 mi/h`), worked out at every reading of
+//! one of them ([`crate::calculated`]); nobody types its readings, and it can't be reset.
 //!
 //! # Examples
 //!
@@ -20,6 +27,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset::{AssetId, optional_text};
 use crate::command::{Clearable, Patch, Record};
+use crate::custom_field::FieldKey;
+use crate::formula::Formula;
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
 use crate::label::Label;
@@ -117,6 +126,42 @@ pub enum MeterDimension {
     Distance,
     /// A duration (stored in seconds).
     Duration,
+    /// A percentage (stored in hundredths of a percent: 100% is 10,000).
+    Percentage,
+}
+
+/// Which way a meter's readings go between resets (decision #080).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MeterDirection {
+    /// Up, like an odometer (every meter made before Phase 5).
+    #[default]
+    Up,
+    /// Down, like a car's Oil life.
+    Down,
+}
+
+impl MeterDirection {
+    /// Both directions, in the order the form offers them.
+    pub const ALL: [Self; 2] = [Self::Up, Self::Down];
+
+    /// Whether `next` may follow `earlier` (equal always may: Oil life can sit at 0%).
+    #[must_use]
+    pub const fn allows(self, earlier: i64, next: i64) -> bool {
+        match self {
+            Self::Up => next >= earlier,
+            Self::Down => next <= earlier,
+        }
+    }
+
+    /// The direction's name.
+    #[must_use]
+    pub const fn label(self) -> MessageId {
+        match self {
+            Self::Up => messages::METER_COUNTS_UP,
+            Self::Down => messages::METER_COUNTS_DOWN,
+        }
+    }
 }
 
 /// The unit a meter is shown in, matching its gauge.
@@ -129,11 +174,13 @@ pub enum MeterUnit {
     Kilometers,
     /// Hours.
     Hours,
+    /// Percent.
+    Percent,
 }
 
 impl MeterUnit {
     /// Every unit, in order.
-    pub const ALL: [Self; 3] = [Self::Miles, Self::Kilometers, Self::Hours];
+    pub const ALL: [Self; 4] = [Self::Miles, Self::Kilometers, Self::Hours, Self::Percent];
 
     /// What the unit measures.
     #[must_use]
@@ -141,6 +188,7 @@ impl MeterUnit {
         match self {
             Self::Miles | Self::Kilometers => MeterDimension::Distance,
             Self::Hours => MeterDimension::Duration,
+            Self::Percent => MeterDimension::Percentage,
         }
     }
 
@@ -157,6 +205,18 @@ impl MeterUnit {
             Self::Miles => messages::UNIT_MILES,
             Self::Kilometers => messages::UNIT_KILOMETERS,
             Self::Hours => messages::UNIT_HOURS,
+            Self::Percent => messages::UNIT_PERCENT,
+        }
+    }
+
+    /// The unit's short name, after a number: "mi", "km", "h", "%".
+    #[must_use]
+    pub const fn abbr(self) -> MessageId {
+        match self {
+            Self::Miles => messages::UNIT_ABBR_MI,
+            Self::Kilometers => messages::UNIT_ABBR_KM,
+            Self::Hours => messages::UNIT_ABBR_H,
+            Self::Percent => messages::UNIT_ABBR_PERCENT,
         }
     }
 }
@@ -178,6 +238,43 @@ pub struct Meter {
     pub description: Option<String>,
     /// The kinds of events that require a reading of it.
     pub required_for: Vec<EventKind>,
+    /// Which way it counts; fixed once it has a reading (Phase 5, #080).
+    #[serde(default)]
+    pub direction: MeterDirection,
+    /// What a reset sets it to, in the stored unit; `None`: it can't be reset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset_to: Option<i64>,
+    /// Its stable key for formulas (#087), from its name; fixed once the meter exists, and
+    /// different from every other key on the vehicle (fields' too).
+    pub key: FieldKey,
+    /// A derived meter's formula over the vehicle's typed meters; `None` for a typed meter.
+    /// Fixed as derived or typed once made.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formula: Option<Formula>,
+}
+
+impl Meter {
+    /// Whether it's worked out from other meters.
+    #[must_use]
+    pub const fn derived(&self) -> bool {
+        self.formula.is_some()
+    }
+
+    /// Whether it can be reset.
+    #[must_use]
+    pub const fn resettable(&self) -> bool {
+        self.reset_to.is_some()
+    }
+}
+
+/// The reset value a new resettable meter starts with: 100% for a percentage counting down,
+/// otherwise zero.
+#[must_use]
+pub const fn default_reset(dimension: MeterDimension, direction: MeterDirection) -> i64 {
+    match (dimension, direction) {
+        (MeterDimension::Percentage, MeterDirection::Down) => 10_000,
+        _ => 0,
+    }
 }
 
 /// Why a meter's settings were refused.
@@ -190,6 +287,14 @@ pub enum MeterError {
     TooPrecise,
     /// The description is too long.
     DescriptionTooLong,
+    /// A negative reset value.
+    NegativeReset,
+    /// A distance meter fuel-ups require can't be reset: fuel economy needs its running total.
+    ResettableFuelMeter,
+    /// The direction can't change once the meter has a reading (checked by the server).
+    DirectionFixed,
+    /// A derived meter that's resettable or required on events.
+    DerivedResettable,
 }
 
 impl MeterError {
@@ -200,6 +305,10 @@ impl MeterError {
             Self::WrongUnit => messages::METER_WRONG_UNIT,
             Self::TooPrecise => messages::METER_TOO_PRECISE,
             Self::DescriptionTooLong => messages::ASSET_TEXT_TOO_LONG,
+            Self::NegativeReset => messages::METER_NEGATIVE_RESET,
+            Self::ResettableFuelMeter => messages::METER_RESETTABLE_FUEL,
+            Self::DirectionFixed => messages::METER_DIRECTION_FIXED,
+            Self::DerivedResettable => messages::METER_DERIVED_RESETTABLE,
         }
     }
 }
@@ -222,6 +331,30 @@ pub fn check_meter(
         return Err(MeterError::TooPrecise);
     }
     optional_text(description).map_err(|_| MeterError::DescriptionTooLong)
+}
+
+/// Checks a meter's reset value (`None`: not resettable) against what it measures and which
+/// events require it: never negative, and never on a distance meter that fuel-ups require
+/// (fuel economy needs its running total, #080).
+///
+/// # Errors
+///
+/// [`MeterError::NegativeReset`] or [`MeterError::ResettableFuelMeter`].
+pub fn check_reset(
+    dimension: MeterDimension,
+    required_for: &[EventKind],
+    reset_to: Option<i64>,
+) -> Result<(), MeterError> {
+    let Some(value) = reset_to else {
+        return Ok(());
+    };
+    if value < 0 {
+        return Err(MeterError::NegativeReset);
+    }
+    if dimension == MeterDimension::Distance && required_for.contains(&EventKind::Fuel) {
+        return Err(MeterError::ResettableFuelMeter);
+    }
+    Ok(())
 }
 
 /// The changeable fields of a [`Meter`]; `Some` means "change this".
@@ -248,6 +381,18 @@ pub struct MeterPatch {
     /// See [`Meter::required_for`] (the whole list is replaced).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_for: Option<Vec<EventKind>>,
+    /// See [`Meter::direction`] (fixed once the meter has a reading).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<MeterDirection>,
+    /// See [`Meter::reset_to`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset_to: Option<Clearable<i64>>,
+    /// See [`Meter::key`] (set when created).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<FieldKey>,
+    /// See [`Meter::formula`] (a derived meter's; never cleared).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formula: Option<Formula>,
 }
 
 impl MeterPatch {
@@ -262,12 +407,16 @@ impl MeterPatch {
             precision: Some(meter.precision),
             description: Some(Clearable::from_option(meter.description)),
             required_for: Some(meter.required_for),
+            direction: Some(meter.direction),
+            reset_to: Some(Clearable::from_option(meter.reset_to)),
+            key: Some(meter.key),
+            formula: meter.formula,
         }
     }
 }
 
 /// Every field name, in a fixed order.
-const METER_FIELDS: [&str; 7] = [
+const METER_FIELDS: [&str; 11] = [
     "asset",
     "name",
     "dimension",
@@ -275,6 +424,10 @@ const METER_FIELDS: [&str; 7] = [
     "precision",
     "description",
     "required_for",
+    "direction",
+    "reset_to",
+    "key",
+    "formula",
 ];
 
 impl Patch for MeterPatch {
@@ -287,6 +440,10 @@ impl Patch for MeterPatch {
             self.precision.is_some(),
             self.description.is_some(),
             self.required_for.is_some(),
+            self.direction.is_some(),
+            self.reset_to.is_some(),
+            self.key.is_some(),
+            self.formula.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
         METER_FIELDS
@@ -319,6 +476,18 @@ impl Patch for MeterPatch {
         if !keep("required_for") {
             self.required_for = None;
         }
+        if !keep("direction") {
+            self.direction = None;
+        }
+        if !keep("reset_to") {
+            self.reset_to = None;
+        }
+        if !keep("key") {
+            self.key = None;
+        }
+        if !keep("formula") {
+            self.formula = None;
+        }
     }
 }
 
@@ -337,7 +506,7 @@ mod tests {
         for unit in MeterUnit::ALL {
             let other = match unit.dimension() {
                 MeterDimension::Distance => MeterDimension::Duration,
-                MeterDimension::Duration => MeterDimension::Distance,
+                MeterDimension::Duration | MeterDimension::Percentage => MeterDimension::Distance,
             };
             assert!(unit.fits(unit.dimension()) && !unit.fits(other), "{unit:?}");
         }
@@ -362,7 +531,10 @@ mod tests {
 
     #[test]
     fn a_create_sets_every_field_and_survives_the_trip() {
+        // A derived meter, so its formula is set too.
         let patch = MeterPatch::all(Meter {
+            key: FieldKey::parse("service-miles").unwrap(),
+            formula: Some(Formula::parse("odometer + 1 mi").unwrap()),
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,
@@ -370,9 +542,84 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![EventKind::Fuel],
+            direction: MeterDirection::Up,
+            reset_to: None,
         });
         assert_eq!(patch.changed_fields(), METER_FIELDS.to_vec());
         let json = serde_json::to_string(&patch).unwrap();
         assert_eq!(serde_json::from_str::<MeterPatch>(&json).unwrap(), patch);
+    }
+
+    fn oil_life() -> Meter {
+        Meter {
+            key: FieldKey::parse("oil-life").unwrap(),
+            formula: None,
+            asset: test_id(1),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+        }
+    }
+
+    #[test]
+    fn a_meter_stored_before_phase_5_counts_up_and_cant_be_reset() {
+        let mut old = serde_json::to_value(oil_life()).unwrap();
+        let fields = old.as_object_mut().unwrap();
+        fields.remove("direction");
+        fields.remove("reset_to");
+        let meter: Meter = serde_json::from_value(old).unwrap();
+        assert_eq!(meter.direction, MeterDirection::Up);
+        assert!(!meter.resettable());
+        let mut plain = meter;
+        plain.reset_to = None;
+        let json = serde_json::to_string(&plain).unwrap();
+        assert!(!json.contains("reset_to"), "{json}");
+    }
+
+    #[test]
+    fn directions_allow_equal_readings_and_go_their_own_way() {
+        assert!(MeterDirection::Up.allows(10, 10) && MeterDirection::Up.allows(10, 11));
+        assert!(!MeterDirection::Up.allows(10, 9));
+        assert!(MeterDirection::Down.allows(0, 0) && MeterDirection::Down.allows(18, 5));
+        assert!(!MeterDirection::Down.allows(18, 62));
+    }
+
+    #[test]
+    fn resets_are_checked() {
+        let check =
+            |meter: &Meter| check_reset(meter.dimension, &meter.required_for, meter.reset_to);
+        assert_eq!(check(&oil_life()), Ok(()));
+        let mut negative = oil_life();
+        negative.reset_to = Some(-1);
+        assert_eq!(check(&negative), Err(MeterError::NegativeReset));
+        let mut odometer = oil_life();
+        odometer.dimension = MeterDimension::Distance;
+        odometer.unit = MeterUnit::Miles;
+        odometer.required_for = vec![EventKind::Fuel];
+        assert_eq!(check(&odometer), Err(MeterError::ResettableFuelMeter));
+        odometer.reset_to = None;
+        assert_eq!(check(&odometer), Ok(()), "not resettable: fine");
+        assert_eq!(
+            default_reset(MeterDimension::Percentage, MeterDirection::Down),
+            10_000
+        );
+        assert_eq!(
+            default_reset(MeterDimension::Duration, MeterDirection::Up),
+            0
+        );
+    }
+
+    #[test]
+    fn a_percentage_meter_uses_percent() {
+        assert!(MeterUnit::Percent.fits(MeterDimension::Percentage));
+        assert_eq!(
+            check_meter(MeterDimension::Percentage, MeterUnit::Hours, 0, ""),
+            Err(MeterError::WrongUnit)
+        );
     }
 }

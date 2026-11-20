@@ -1,7 +1,7 @@
 // Generator (decision #030): run hours, which a fuel-up requires.
 (
     id: "generator",
-    version: 2,
+    version: 4,
     name: "profile-generator",
     event_kinds: [fuel, reading, maintenance, repair],
     sections: [],
@@ -11,8 +11,12 @@
     // What a High squawk means for this kind (#063).
     high_severity: "squawk-high-out-of-service",
     documents: [],
+    // Its default usage (#086): what "ready to use" means without saying more, and the
+    // document types it needs (a missing or expired one makes it not ready).
+    default_usage: "usage-usable",
+    usage_documents: [],
     meters: [
-        (name: "meter-run-hours", dimension: duration, unit: Some(hours), precision: 1, required_for: [fuel]),
+        (key: "run-hours", name: "meter-run-hours", dimension: duration, unit: Some(hours), precision: 1, required_for: [fuel]),
     ],
     fields: [],
 )

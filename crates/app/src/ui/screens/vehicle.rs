@@ -14,8 +14,9 @@ use domain::api::{AssetView, AssetsOutcome};
 use domain::asset::{Asset, AssetId, Identifier, LifecycleStatus};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
-use domain::meter::{EventKind, Meter, MeterDimension};
+use domain::meter::{EventKind, Meter, MeterDimension, MeterDirection};
 use domain::profile::profile;
+use domain::quantity::show_reading;
 
 use super::attachments::AttachmentStrip;
 use super::documents::DocumentsTab;
@@ -185,18 +186,34 @@ pub(super) fn identifier_name(asset: &Asset, kind: &str) -> String {
         )
 }
 
-/// "Distance · miles · whole": what a meter measures, its unit, and its decimals.
+/// "Distance · miles · whole": what a meter measures, its unit, and its decimals; then, for
+/// the Phase 5 kinds, "counts down" and "resets to 100 %".
 pub(super) fn meter_summary(meter: &Meter) -> String {
     let dimension = match meter.dimension {
         MeterDimension::Distance => messages::DIMENSION_DISTANCE,
         MeterDimension::Duration => messages::DIMENSION_DURATION,
+        MeterDimension::Percentage => messages::DIMENSION_PERCENTAGE,
     };
-    format!(
-        "{} · {} · {}",
+    let mut parts = vec![
         tr(dimension),
         tr(meter.unit.label()).to_lowercase(),
-        tr(precision_label(meter.precision))
-    )
+        tr(precision_label(meter.precision)),
+    ];
+    if meter.direction == MeterDirection::Down {
+        parts.push(tr(messages::METER_SUMMARY_DOWN));
+    }
+    if let Some(value) = meter.reset_to {
+        let shown = format!(
+            "{} {}",
+            show_reading(value, meter.unit, meter.precision),
+            tr(meter.unit.abbr())
+        );
+        parts.push(tr_with(
+            messages::METER_SUMMARY_RESETS,
+            &[("value", MessageArg::from(shown))],
+        ));
+    }
+    parts.join(" · ")
 }
 
 /// A number of decimal places, in words.
@@ -333,7 +350,10 @@ fn VehicleScreen(id: AssetId, start: Tab, maintenance_view: MaintenanceView) -> 
                 Tab::Squawks => rsx! { SquawksTab { vehicle: view, squawks: squawks() } },
                 Tab::Setup => rsx! { Setup { view } },
                 Tab::Timeline => rsx! { Timeline { view, only: None } },
-                Tab::Fuel => rsx! { Timeline { view, only: Some(Shown::FuelUps) } },
+                Tab::Fuel => rsx! {
+                    super::fuel_view::FuelEconomy { asset: view.id }
+                    Timeline { view, only: Some(Shown::FuelUps) }
+                },
                 Tab::Maintenance => rsx! { MaintenanceTab { vehicle: view, start: maintenance_view } },
                 Tab::Documents => rsx! { DocumentsTab { vehicle: view } },
             }
@@ -442,8 +462,8 @@ fn Overview(
     rsx! {
         div { class: "vehicle-panels",
             SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
-            Panel { title: messages::PANEL_READY, note: messages::PANEL_READY_COMING }
-            Panel { title: messages::PANEL_DUE, note: messages::PANEL_DUE_COMING }
+            super::readiness_view::ReadyCard { vehicle: view.clone() }
+            super::due_view::ComingUp { view: view.clone() }
             section { class: "vehicle-panel vehicle-photos",
                 AttachmentStrip {
                     asset: view.id,
@@ -453,17 +473,6 @@ fn Overview(
                 }
             }
             OverviewPanels { view, on_timeline }
-        }
-    }
-}
-
-/// One Overview panel that fills later.
-#[component]
-fn Panel(title: MessageId, note: MessageId) -> Element {
-    rsx! {
-        section { class: "vehicle-panel",
-            h3 { class: "section-heading", {tr(title).to_uppercase()} }
-            p { class: "muted-note", {tr(note)} }
         }
     }
 }
@@ -515,6 +524,8 @@ mod tests {
     #[test]
     fn meters_say_what_they_measure_and_need() {
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("engine-hours").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Engine hours").unwrap(),
             dimension: MeterDimension::Duration,
@@ -522,8 +533,24 @@ mod tests {
             precision: 1,
             description: None,
             required_for: vec![EventKind::Maintenance, EventKind::Repair],
+            direction: MeterDirection::Up,
+            reset_to: None,
         };
         assert_eq!(meter_summary(&meter), "Duration · hours · tenths");
         assert_eq!(required_text(&meter), "Required for: Maintenance, Repair");
+        let oil_life = Meter {
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+            ..meter
+        };
+        assert_eq!(
+            meter_summary(&oil_life),
+            "Percentage · % · whole · counts down · resets to 100 %"
+        );
     }
 }

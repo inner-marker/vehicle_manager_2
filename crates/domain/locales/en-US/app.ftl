@@ -615,6 +615,11 @@ schedule-due-when = Due when, whichever comes first
 schedule-add-meter-rule = + Meter rule
 schedule-add-calendar-rule = + Calendar rule
 schedule-add-fixed-rule = + Fixed date
+schedule-add-reaches-rule = + When a meter reaches
+schedule-when-label = When
+schedule-reaches-label = reaches
+# $meter (text): the meter's name; $value (text): the mark with its unit, e.g. "15 %".
+schedule-reaches = when { $meter } reaches { $value }
 schedule-rules-hint = No rules: done when needed. A fixed date's first date is optional; each job gives the next.
 schedule-every-label = every
 schedule-calendar = Calendar
@@ -864,10 +869,64 @@ event-kind-reading = Reading
 event-kind-maintenance = Maintenance
 event-kind-repair = Repair
 unit-hours = hours
+due-ok = OK
+due-coming-up = Coming up
+due-soon = Due soon
+due-very-soon = Due very soon
+due-overdue = ⚠ Overdue
+due-bad-warnings = Each warning must come no earlier than the one before it: yellow, then orange, then red (at most 100%, or 730 days).
+requirement-bad-before-records = Check "Last done before these records": a date, and each meter's reading once, none below zero.
+sort-most-urgent = Most urgent
+# $amount (text): e.g. "310 mi".
+due-in = in { $amount }
+due-over-by = { $amount } over
+# $meter (text): e.g. "Oil life"; $amount (text): e.g. "80 %".
+due-to-go = { $meter }: { $amount } to go
+due-meter-over = { $meter }: { $amount } over
+# $date (text): a date as the person writes dates.
+due-by = by { $date }
+due-was = was due { $date }
+due-about = ~{ $date }
+due-or = or
+due-not-done-yet = Not done yet
+# $interval (text): e.g. "20 / 10 / 5"; $days (text): e.g. "60 / 30 / 14".
+due-warnings-text = { $interval }% left · { $days } days before a date
+due-before-records = Last done before these records (optional)
+due-before-date = Date
+due-warn-me = Warn me
+# $warnings (text): the household's warnings in words.
+due-household-default = Household default: { $warnings }
+# $days (text): e.g. "60 / 30 / 14".
+due-household-days = Household default: { $days } days before it expires
+due-change = Change
+due-use-household = Use the household's warnings
+due-percent-left = Of the interval left
+due-days-before = Before a date (a fixed date, an expiry)
+due-percent = %
+due-days = days
+# $meter (text): the meter, e.g. "Oil life"; $value (text): its reset value, e.g. "100 %".
+work-reset-meter = ↺ Reset { $meter } to { $value } at the end of the job
+setting-due-warnings = Due soon warnings
+setting-due-warnings-household = The household's Admin sets these for everyone.
+due-built-in = Use the built-in warnings (20 / 10 / 5% · 60 / 30 / 14 days)
+unit-percent = %
 label-empty = Enter a name.
 label-too-long = That's too long: at most 40 characters.
 meter-wrong-unit = That unit doesn't measure this meter (e.g. hours for a distance).
 meter-too-precise = A meter can show at most 2 decimal places.
+meter-negative-reset = A reset value can't be below zero.
+meter-resettable-fuel = A distance meter that fuel-ups need can't be reset: fuel economy needs its running total.
+meter-direction-fixed = Which way a meter counts can't change once it has a reading.
+meter-counts-up = Up
+meter-counts-down = Down
+meter-counts = Counts
+meter-counts-note = Down: e.g. Oil life, from 100% toward 0%. Fixed once the meter has a reading.
+meter-resettable = Can be reset
+meter-summary-down = counts down
+# $value (text): the reset value with its unit, e.g. "100 %".
+meter-summary-resets = resets to { $value }
+meter-reset-to = to
+meter-reset-note = A reading can then be marked ↺ Reset, e.g. when the oil is changed.
 field-too-many-decimals = A number can have at most 4 decimal places.
 field-bad-choices = A choice list needs 1 to 30 choices.
 field-bad-range = The range doesn't fit this field: its lowest value must not be above its highest, and only numbers have one.
@@ -899,7 +958,6 @@ vehicles-empty = No vehicles yet.
 vehicles-empty-admin = Use + Add vehicle to add the first one.
 vehicles-empty-group = No vehicles in this group yet.
 vehicles-group-menu = Show
-vehicles-card-coming = Readings and due items arrive later.
 vehicles-move-up = Move up
 vehicles-move-down = Move down
 add-vehicle-title = Add a vehicle
@@ -936,9 +994,9 @@ tab-setup = Setup
 # $milestone (number): the Phase 2 milestone that fills the tab.
 tab-coming = This tab fills in with milestone { $milestone }.
 panel-ready = Ready to use?
-panel-ready-coming = Arrives with what's due (Phase 5).
-panel-due = Coming due
-panel-due-coming = Next services (Phase 5).
+panel-due = Coming up
+panel-due-none = Nothing comes due yet. Set up its schedule, or add documents with an expiry.
+panel-due-see-all = See all on Maintenance →
 panel-squawks = Open { $squawks }
 panel-fuel = Latest fuel-ups
 panel-meters = Meters
@@ -951,6 +1009,7 @@ precision-1 = tenths
 precision-2 = hundredths
 dimension-distance = Distance
 dimension-duration = Duration
+dimension-percentage = Percentage
 setup-details = Details
 setup-edit-details = Edit details
 setup-no-description = No description.
@@ -1005,6 +1064,7 @@ kind-distance = Distance
 kind-duration = Duration
 kind-volume = Volume
 kind-fuel-economy = Fuel economy
+kind-calculated = Calculated
 # $name (text): the vehicle's name.
 move-title = Move { $name }
 move-to = To
@@ -1223,6 +1283,124 @@ unit-abbr-mpg-uk = mpg (UK)
 unit-abbr-km-per-l = km/L
 unit-abbr-l-per-100-km = L/100 km
 unit-abbr-h = h
+unit-abbr-percent = %
+unit-abbr-qt = qt
+unit-abbr-fl-oz = fl oz
+unit-abbr-ml = mL
+unit-abbr-ft-lb = ft-lb
+unit-abbr-in-lb = in-lb
+unit-abbr-n-m = N·m
+unit-abbr-psi = psi
+unit-abbr-kpa = kPa
+unit-abbr-bar = bar
+unit-abbr-in = in
+unit-abbr-mm = mm
+spec-kind-volume = Volume
+spec-kind-torque = Torque
+spec-kind-pressure = Pressure
+spec-kind-length = Length or gap
+spec-bad-detail = The detail can be up to 100 characters.
+spec-bad-part-number = The part number can be up to 40 characters.
+spec-bad-amount = The amount must be more than zero.
+template-nothing-to-save = This vehicle has no requirements to save as a template yet.
+spec-reminder = Reminder: { $name } { $amount }
+spec-update-title = Update the specs too?
+spec-update-note = The job records what was used either way.
+spec-update-save = Save job
+spec-update-back = Back
+spec-update-none = none
+maintenance-specs = Specs
+spec-add = + Spec
+spec-add-title = New spec
+spec-none-yet = No specs yet: the oil it takes, its filter's part number, tire pressures.
+spec-name = Name
+spec-kind = Kind
+spec-kind-none = None (a part number only)
+spec-amount = Amount
+spec-unit = Unit
+spec-detail = Detail
+spec-part-number = Part number
+spec-part-number-shown = Part { $number }
+spec-remove = Remove
+spec-checklist = Specs its job uses
+spec-checklist-note = Ticked specs pre-fill a task's parts; torque, pressure, and length show on the task as reminders.
+schedule-log-service = Log this service
+nav-templates = Templates
+templates-intro = A template is a vehicle's requirements, bundles, and specs, saved under a name. Applying one copies it: later changes to the template don't reach the vehicle.
+templates-none = No templates yet. Save one from a vehicle's Maintenance → Set up.
+template-counts = { $requirements ->
+    [one] 1 requirement
+   *[other] { $requirements } requirements
+} · { $bundles ->
+    [one] 1 bundle
+   *[other] { $bundles } bundles
+} · { $specs ->
+    [one] 1 spec
+   *[other] { $specs } specs
+}
+template-applied = Copied { $requirements ->
+    [one] 1 requirement
+   *[other] { $requirements } requirements
+}, { $bundles ->
+    [one] 1 bundle
+   *[other] { $bundles } bundles
+}, and { $specs ->
+    [one] 1 spec
+   *[other] { $specs } specs
+} onto { $vehicle }.
+template-left-out = Left out (no matching meter): { $list }.
+template-apply-to = Apply to…
+template-apply = Apply
+template-rename = Rename
+template-name = Name
+template-remove-title = Remove the template { $name }?
+template-remove-note = Vehicles it was applied to keep their copy.
+template-not-found = That template is gone.
+template-save-as = Save as template…
+template-save-title = Save this schedule as a template
+template-from = From a template…
+fuel-dropped-missed = Not counted: an earlier fill-up wasn't logged
+fuel-dropped-reading = Not counted: the odometer wasn't read
+fuel-dropped-distance = Not counted: the odometer didn't move
+fuel-stretch = { $economy } over { $distance }
+fuel-car-said = car said { $economy }
+fuel-part-before = Before the first full fill-up: nothing to measure from yet
+fuel-part-starts = Economy starts here
+fuel-part-waiting = Partial: counts in the next full fill-up
+fuel-part-added = Partial: added into the next full fill-up's figure
+fuel-overview = { $latest } latest · last 5: { $last }
+fuel-none-yet = Fuel economy shows once there are two full fill-ups.
+fuel-last-five = Last 5
+fuel-year = 12 months
+fuel-all-time = All time
+fuel-stretches = { $count ->
+    [one] 1 stretch
+   *[other] { $count } stretches
+}
+fuel-chart = Economy by stretch
+fuel-show-chart = Show as a chart
+fuel-show-table = Show as a table
+fuel-chart-hint = Tap a dot for its details. A gap is a stretch that doesn't count.
+fuel-average-line = average { $value }
+fuel-table-ended = Ended
+fuel-table-fuel = Fuel
+fuel-table-figure = Economy
+fuel-highway = Highway
+fuel-towing = Towing
+fuel-hauling = Hauling
+fuel-towed = Towed vehicles
+fuel-band-city = Mostly city
+fuel-band-mixed = Mixed
+fuel-band-highway = Mostly highway
+fuel-band-none = None
+fuel-band-some = Some
+fuel-band-mostly = Mostly
+fuel-not-enough = not enough yet
+fuel-not-towing = Not towing
+fuel-another-vehicle = Another vehicle
+fuel-info-full = Filled full: the tank was filled until the pump stopped. Economy runs from one full fill-up to the next; a partial fill-up's fuel is added into the next full one, and it has no figure of its own.
+fuel-info-missed = Missed previous fill-up: a fill-up since the last one here wasn't logged. The stretch it ends can't be measured, so it's left out of the averages and shows as a gap.
+fuel-info-label = What this means
 
 ## Events: fuel-ups and readings (milestone 6)
 
@@ -1328,6 +1506,12 @@ screen-correct-event = Correct event
 event-not-found = There's no such event, or you can't see it.
 log-clash-below = Lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-clash-above = Higher than { $value } { $unit } on { $date }. Check it, or correct that event.
+log-reset = ↺ Reset
+# $name (text): the meter; $from: its last reading; $to: the new one as typed; $unit: e.g. "%".
+log-reset-done = { $name } was reset: { $from } → { $to } { $unit }.
+log-it-was-a-reset = ↺ It was a reset
+log-clash-above-earlier = This meter counts down: higher than { $value } { $unit } on { $date }. Check it, or correct that event.
+log-clash-below-later = This meter counts down: lower than { $value } { $unit } on { $date }. Check it, or correct that event.
 log-correct-note = A correction replaces this event's values; the original stays, linked to it.
 log-correct-reason = Why? (required)
 event-status-draft = Draft · locks in { $when }
@@ -1400,7 +1584,6 @@ timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.
 panel-see-timeline = See all on the Timeline ›
-panel-economy-later = Fuel economy arrives with Phase 5's reports.
 panel-last-activity = Last activity
 panel-no-activity = Nothing logged yet.
 panel-finalized = Finalized
@@ -1442,6 +1625,163 @@ severity-low = Low
 severity-medium = Medium
 severity-high = High
 squawk-high-not-drivable = Not drivable
+usage-drivable = Drivable
+usage-towable = Towable
+usage-usable = Usable
+usage-name-taken = This vehicle already has a usage with that name.
+usage-default-stays = The default usage can't be removed; rename it instead.
+formula-word-distance = distance
+formula-word-volume = volume
+formula-word-time = time
+formula-word-money = money
+# $unit (string): its parts, e.g. "distance² ÷ time".
+formula-dim-other = an unusual unit ({ $unit })
+formula-dim-number = a number
+formula-dim-distance = a distance
+formula-dim-volume = a volume
+formula-dim-time = a time
+formula-dim-money = money
+formula-dim-economy = fuel economy
+formula-dim-money-per-distance = money per distance
+formula-dim-money-per-volume = money per volume
+formula-dim-speed = a speed
+formula-empty = Type a formula.
+# $max (number): the most characters.
+formula-too-long = A formula can be at most { $max } characters.
+formula-unexpected-end = The formula stops too soon: something is missing at the end.
+# $found (string): what was found. $position (number): its character position.
+formula-unexpected = "{ $found }" doesn't fit there (character { $position }).
+# $position (number): the bracket's character position.
+formula-unclosed = The bracket at character { $position } is never closed.
+# $name (string): the name typed.
+formula-unknown-function = There's no function called "{ $name }".
+# $max (number): the most places.
+formula-bad-places = round takes a whole number of places, from 0 to { $max }.
+# $key (string): the key typed.
+formula-unknown-key = There's no value called "{ $key }" here.
+# $key (string): the key typed.
+formula-not-a-meter = "{ $key }" isn't a meter; this needs one of the vehicle's meters.
+# $key (string): the meter's key. $wanted (string): what it should measure.
+formula-wrong-meter = "{ $key }" doesn't measure { $wanted }.
+formula-hours-need-meter = Say which hour meter: last 50 h on engine-hours.
+# $expression (string): the sum, as written. $left, $right (string): what each side measures.
+formula-mismatch-plus = { $expression }: can't add { $left } to { $right }.
+# $expression (string): the difference, as written. $left, $right (string): what each side measures.
+formula-mismatch-minus = { $expression }: can't take { $right } from { $left }.
+# $function (string): the function's name.
+formula-mixed-values = Everything inside { $function } must measure the same thing.
+formula-nested-over = A function over past events can't go inside another one.
+# $found (string): what the formula gives. $wanted (string): what the field shows.
+formula-wrong-result = This gives { $found }, but the field shows { $wanted }.
+# $key (string): the value's key.
+formula-no-value-missing = No value: { $key } was left out.
+formula-no-value-no-earlier = No value: there's no earlier one to count from.
+formula-no-value-nothing-in-over = No value: none of those events has one.
+formula-no-value-divide-by-zero = No value: it divides by zero.
+formula-no-value-mixed-currencies = No value: it mixes currencies.
+formula-no-value-not-positive = No value: this mean needs every value above zero.
+formula-no-value-too-few = No value: stddev needs at least two values.
+formula-no-value-no-odometer = No value: this vehicle has no odometer to count back on.
+formula-no-value-not-finite = No value: the result is too big to show.
+formula-no-value-mismatch = No value: the formula no longer fits its values; check it in Setup.
+# $by (string): the calculated field or derived meter.
+formula-in-use = { $by } uses this in its formula, so it can't be removed, turned off, or taken off that kind of event. Change { $by } first.
+formula-worked-out = Worked out from a formula
+# $value (string): the value. $unit (string): the unit.
+formula-per = { $value } per { $unit }
+shows-number = Number
+shows-percent = Percentage
+shows-distance = Distance
+shows-duration = Time
+shows-volume = Volume
+shows-economy = Fuel economy
+shows-money = Money
+shows-money-per-distance = Money per distance
+shows-money-per-volume = Money per volume
+shows-speed = Speed
+# $what (string): what it gives, e.g. "money per distance".
+formula-check-ok = ✓ Gives { $what }
+formula-rows = Worked out
+formula-label = Formula
+formula-how-to = ⓘ How to write one
+formula-functions = Functions ▾
+formula-functions-over = Over listed values or past events
+formula-functions-listed = Over listed values
+formula-functions-one = On one value
+formula-values = Values ▾
+formula-values-note = Each by its key, which never changes when it's renamed.
+formula-values-event = This event
+formula-values-meters = Meters
+formula-values-since = Since the last one
+formula-values-numbers = Numbers with units
+formula-over = Over (for a function over past events)
+formula-over-cumulative = Cumulative
+formula-over-events = Last 5 events
+formula-over-months = Last 3 months
+formula-over-distance = Last 1,000 mi
+formula-over-note = Last X events, days, weeks, months, or mi or km; or last X h on an hour meter. Change the number as you like.
+formula-help-title = Writing a formula
+formula-help-values = Values by their key; numbers with a unit (33 mi/h).
+formula-help-operators = + − × ÷ and ( ). Units must agree: miles + hours is refused.
+formula-help-over = A function over past events takes an Over: last 5, last 3 months, last 1000 mi, or cumulative.
+formula-help-minus = Keys can have hyphens, so put spaces around a minus: a - b.
+formula-help-examples = Examples
+formula-help-guide = Full guide →
+# $kind (string): the kind of event, in lower case. $value (string): the value, or why there's none.
+formula-preview = On the latest { $kind }: { $value }
+formula-shows-as = Shows as
+formula-field-add-title = Add a calculated field
+formula-field-edit-title = Change calculated field
+formula-shown-on-note = It shows, worked out, on these kinds of events: never typed, never required.
+# $value (string): the value with its unit.
+formula-now = Now: { $value }
+formula-meter-add-title = Add a derived meter
+formula-meter-edit-title = Change derived meter
+formula-meter-note = Worked out at every reading of its meters. Interval rules can use it; nobody types its readings, and it can't be reset.
+formula-fill-in = Shows once the form is filled in.
+# $meters (string): the meters it's worked out from, by name.
+formula-derived-from = Worked out from { $meters }
+setup-add-calculated = + Calculated field
+setup-add-derived = + Derived meter
+# $key (string): the key typed.
+formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.
+# $key (string): the field's key.
+formula-calculated = "{ $key }" is worked out itself, so another formula can't use it.
+formula-not-in-derived = A derived meter uses only meters, numbers, + − × ÷, and functions of listed values: no round, past events, or since the last.
+meter-derived-resettable = A derived meter is worked out, so it can't be reset or required on events.
+usage-section = Usages
+usage-section-note = Each usage stands alone: what's ticked "Needed for" it, and the documents it needs. A High issue blocks every usage.
+usage-add = + Usage
+usage-add-title = Add a usage
+usage-edit-title = Change usage
+usage-name = Name
+# $name (string): the default usage's name.
+usage-default-name = { $name } (default)
+usage-documents = Documents it needs
+usage-documents-note = Not on file, or expired: not ready. Due for renewal soon: a warning.
+# $documents (string): document type names, joined by commas.
+usage-needs = Needs: { $documents }
+usage-needs-nothing = Needs no documents
+usage-needed-for = Needed for
+usage-needed-for-note = Overdue: not ready for the ticked usages. Due soon: a warning.
+# $usage (string): the usage's name, in lower case.
+ready-not = Not { $usage }
+# $usage (string): the answer ("Not drivable"). $count (number): how many things block it.
+ready-blockers = { $usage }: { $count ->
+        [one] { $count } thing
+       *[other] { $count } things
+    }
+# $usage (string): the usage's name. $count (number): how many things are due soon.
+ready-warnings = { $usage }: { $count ->
+        [one] { $count } thing due soon
+       *[other] { $count } things due soon
+    }
+ready-document-current = On file and current
+ready-document-missing = Not on file
+ready-issue-open = High issue, open
+ready-issue-deferred = High issue, deferred
+ready-nothing = Nothing is needed for this usage yet.
+ready-advisory = Advice only: nothing stops anyone from using it.
 squawk-high-not-towable = Not towable
 squawk-high-out-of-service = Out of service
 squawk-status-open = Open
@@ -1469,7 +1809,8 @@ schedule-not-empty = This vehicle already has requirements. Copying a schedule i
 event-bad-part = Each part needs a description (up to 100 characters), a part number of up to 40, and a quantity above zero.
 event-bad-next-due = A next due date goes only on a task whose requirement has a fixed-date rule, and must be a date.
 event-no-end-readings = This task resets from the end readings, but there aren't any. Add them, or reset from the start.
-event-end-below-start = The end reading is lower than the start one. Check them.
+event-end-below-start = The end reading goes the wrong way from the start one. Check them.
+event-not-resettable = This meter can't be reset. Untick Reset, or make the meter resettable in Setup.
 event-finish-jobs-only = Only maintenance and repairs are finished; fuel-ups and readings are finalized.
 
 ## Attachments (milestone 8)
@@ -1671,6 +2012,45 @@ inbox-clock-ahead-body = { $minutes ->
    *[other] { $device } ({ $person }) sent changes with its clock { $minutes } minutes ahead of the server's.
 } Its changes wait on that computer until its date and time are set right.
 inbox-open-send-out = Open the send-out
+inbox-due-coming-up = Coming up
+inbox-due-soon = Due soon
+inbox-due-very-soon = Due very soon
+inbox-due-overdue = ⚠ Overdue
+inbox-due-body = { $vehicle }: { $item }, { $left }.
+inbox-open-maintenance = Open on Maintenance
+inbox-open-documents = Open Documents
+messages-bad-snooze = That snooze can't be used. Choose days, or an amount more than zero.
+inbox-due-row = { $vehicle }: { $item }
+snooze = Snooze
+snooze-day = 1 day
+snooze-week = 1 week
+snooze-month = 1 month
+snooze-either = { $time } or { $amount }
+snooze-custom = Custom…
+snooze-days = Days
+snooze-or-meter = or { $meter } ({ $unit })
+snooze-hint = Leave either empty; whichever comes first.
+messages-snoozed-until = Snoozed until { $when }
+messages-wake = Wake now
+messages-filter-snoozed = Snoozed ({ $count })
+due-filter-all = All
+due-filter-overdue = Overdue
+due-filter-soon = Due soon
+due-filter-squawks = { $Squawks }
+due-list-squawks = Open { $squawks }
+due-list-nothing = Nothing coming due, and no open { $squawks }.
+fleet-label = Across your vehicles
+fleet-overdue = ⚠ Overdue
+fleet-due-soon = Due soon
+fleet-squawks = Open { $squawks }
+fleet-synced = Synced
+fleet-waiting = { $count ->
+    [one] change waiting to send
+   *[other] changes waiting to send
+}
+fleet-offline = Offline
+setting-due-messages = Messages about what's due start at
+setting-due-messages-note = Overdue always sends one. Each person can snooze or dismiss their own.
 log-acquired-detail = When and how it was bought
 log-sent-out-detail = Off to a shop, and when it's due back
 log-returned-detail = Back from the shop, and what it cost

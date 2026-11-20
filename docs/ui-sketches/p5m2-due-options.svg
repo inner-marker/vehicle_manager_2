@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1576" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 5 · milestone 2 · What&#x27;s due: layout options</text>
+<text x="24" y="64" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme. Yellow &quot;Coming up&quot; at 20% left (60 days for dates), orange &quot;Due soon&quot; 10% (30), red &quot;Due very soon&quot; 5% (14), &quot;⚠ Overdue&quot; darker red.</text>
+<text x="24" y="100" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · The Maintenance tab&#x27;s Schedule cards</text>
+<text x="24" y="120" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Each requirement: its step, what&#x27;s left, and the projected date (~ is an estimate).</text>
+<rect x="24" y="140" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1A · A chip and a coloured edge</text>
+<text x="44" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Today&#x27;s cards, with the step on the left edge</text>
+<rect x="44" y="206" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<rect x="44" y="206" width="5" height="58" rx="2" fill="#e5534b" stroke="#e5534b"/>
+<text x="60" y="226" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Engine oil &amp; filter</text>
+<rect x="346.2" y="214" width="105.8" height="20" rx="10" fill="#3a1d1d" stroke="#e5534b"/>
+<text x="399.09999999999997" y="228" font-size="11" fill="#e5534b" font-weight="600" text-anchor="middle">Due very soon</text>
+<text x="60" y="244" font-size="12" fill="#e5534b" font-weight="400" text-anchor="start">in 310 mi or Oil life 9% · ~19 Nov</text>
+<text x="60" y="258" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 7,500 mi or 12 months or Oil life 15%</text>
+<rect x="44" y="270" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<rect x="44" y="270" width="5" height="58" rx="2" fill="#e3b341" stroke="#e3b341"/>
+<text x="60" y="290" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Tire rotation</text>
+<rect x="372.6" y="278" width="79.4" height="20" rx="10" fill="#3a3314" stroke="#e3b341"/>
+<text x="412.3" y="292" font-size="11" fill="#e3b341" font-weight="600" text-anchor="middle">Coming up</text>
+<text x="60" y="308" font-size="12" fill="#e3b341" font-weight="400" text-anchor="start">in 1,200 mi · ~3 Jan</text>
+<text x="60" y="322" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 6,000 mi</text>
+<rect x="44" y="334" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<rect x="44" y="334" width="5" height="58" rx="2" fill="#ff6b6b" stroke="#ff6b6b"/>
+<text x="60" y="354" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Registration</text>
+<rect x="372.6" y="342" width="79.4" height="20" rx="10" fill="#4a1014" stroke="#ff6b6b"/>
+<text x="412.3" y="356" font-size="11" fill="#ff6b6b" font-weight="600" text-anchor="middle">⚠ Overdue</text>
+<text x="60" y="372" font-size="12" fill="#ff6b6b" font-weight="400" text-anchor="start">was due 2 Nov (14 days ago)</text>
+<text x="60" y="386" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Next due on a date</text>
+<rect x="44" y="398" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<rect x="44" y="398" width="5" height="58" rx="2" fill="#57ab5a" stroke="#57ab5a"/>
+<text x="60" y="418" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Brake fluid</text>
+<rect x="418.8" y="406" width="33.2" height="20" rx="10" fill="#1d2128" stroke="#57ab5a"/>
+<text x="435.40000000000003" y="420" font-size="11" fill="#57ab5a" font-weight="600" text-anchor="middle">OK</text>
+<text x="60" y="436" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">by Jun 2027</text>
+<text x="60" y="450" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Every 24 months</text>
+<rect x="516" y="140" width="460" height="330" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="170" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">1B · A bar of the interval used</text>
+<text x="536" y="190" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">How much of each interval has gone</text>
+<rect x="536" y="206" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="226" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Engine oil &amp; filter</text>
+<text x="944" y="226" font-size="11.5" fill="#e5534b" font-weight="600" text-anchor="end">Due very soon</text>
+<rect x="552" y="234" width="388" height="8" rx="4" fill="#101318" stroke="#333a45"/>
+<rect x="552" y="234" width="372.47999999999996" height="8" rx="4" fill="#e5534b" stroke="#e5534b"/>
+<text x="552" y="258" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">in 310 mi or Oil life 9% · ~19 Nov</text>
+<rect x="536" y="270" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="290" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Tire rotation</text>
+<text x="944" y="290" font-size="11.5" fill="#e3b341" font-weight="600" text-anchor="end">Coming up</text>
+<rect x="552" y="298" width="388" height="8" rx="4" fill="#101318" stroke="#333a45"/>
+<rect x="552" y="298" width="318.15999999999997" height="8" rx="4" fill="#e3b341" stroke="#e3b341"/>
+<text x="552" y="322" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">in 1,200 mi · ~3 Jan</text>
+<rect x="536" y="334" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="354" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Registration</text>
+<text x="944" y="354" font-size="11.5" fill="#ff6b6b" font-weight="600" text-anchor="end">⚠ Overdue</text>
+<rect x="552" y="362" width="388" height="8" rx="4" fill="#101318" stroke="#333a45"/>
+<rect x="552" y="362" width="388.0" height="8" rx="4" fill="#ff6b6b" stroke="#ff6b6b"/>
+<text x="552" y="386" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">was due 2 Nov (14 days ago)</text>
+<rect x="536" y="398" width="420" height="58" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="552" y="418" font-size="13" fill="#e8eaed" font-weight="600" text-anchor="start">Brake fluid</text>
+<text x="944" y="418" font-size="11.5" fill="#57ab5a" font-weight="600" text-anchor="end">OK</text>
+<rect x="552" y="426" width="388" height="8" rx="4" fill="#101318" stroke="#333a45"/>
+<rect x="552" y="426" width="116.39999999999999" height="8" rx="4" fill="#57ab5a" stroke="#57ab5a"/>
+<text x="552" y="450" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">by Jun 2027</text>
+<text x="24" y="510" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · The Overview&#x27;s &quot;Coming up&quot; (the 5 most urgent, documents too)</text>
+<text x="24" y="530" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Under &quot;Ready to use?&quot; later (milestone 6); above the fuel-ups.</text>
+<rect x="24" y="550" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="580" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2A · A list, most urgent first</text>
+<text x="44" y="600" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Name, what&#x27;s left, its chip</text>
+<text x="44" y="630" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Registration</text>
+<text x="300" y="630" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">since 2 Nov</text>
+<rect x="384.6" y="616" width="79.4" height="20" rx="10" fill="#4a1014" stroke="#ff6b6b"/>
+<text x="424.3" y="630" font-size="11" fill="#ff6b6b" font-weight="600" text-anchor="middle">⚠ Overdue</text>
+<text x="44" y="660" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Engine oil &amp; filter</text>
+<text x="300" y="660" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">310 mi · ~19 Nov</text>
+<rect x="358.2" y="646" width="105.8" height="20" rx="10" fill="#3a1d1d" stroke="#e5534b"/>
+<text x="411.09999999999997" y="660" font-size="11" fill="#e5534b" font-weight="600" text-anchor="middle">Due very soon</text>
+<text x="44" y="690" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Insurance</text>
+<text x="300" y="690" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">by 12 Dec</text>
+<rect x="391.2" y="676" width="72.8" height="20" rx="10" fill="#3d2614" stroke="#f0883e"/>
+<text x="427.59999999999997" y="690" font-size="11" fill="#f0883e" font-weight="600" text-anchor="middle">Due soon</text>
+<text x="44" y="720" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Tire rotation</text>
+<text x="300" y="720" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">1,200 mi · ~3 Jan</text>
+<rect x="384.6" y="706" width="79.4" height="20" rx="10" fill="#3a3314" stroke="#e3b341"/>
+<text x="424.3" y="720" font-size="11" fill="#e3b341" font-weight="600" text-anchor="middle">Coming up</text>
+<text x="44" y="750" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Brake fluid</text>
+<text x="300" y="750" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="end">by Jun 2027</text>
+<rect x="430.8" y="736" width="33.2" height="20" rx="10" fill="#1d2128" stroke="#57ab5a"/>
+<text x="447.40000000000003" y="750" font-size="11" fill="#57ab5a" font-weight="600" text-anchor="middle">OK</text>
+<text x="44" y="782" font-size="12" fill="#4a8fe7" font-weight="400" text-anchor="start">See all on Maintenance →</text>
+<rect x="516" y="550" width="460" height="250" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="580" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">2B · Tiles</text>
+<text x="536" y="600" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The 3 most urgent large; the rest as a line</text>
+<rect x="536" y="616" width="132" height="96" rx="8" fill="#4a1014" stroke="#ff6b6b"/>
+<text x="546" y="638" font-size="11" fill="#ff6b6b" font-weight="700" text-anchor="start">⚠ Overdue</text>
+<text x="546" y="662" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Registration</text>
+<text x="546" y="682" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">since 2 Nov</text>
+<rect x="680" y="616" width="132" height="96" rx="8" fill="#3a1d1d" stroke="#e5534b"/>
+<text x="690" y="638" font-size="11" fill="#e5534b" font-weight="700" text-anchor="start">Due very soon</text>
+<text x="690" y="662" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Engine oil &amp; filte</text>
+<text x="690" y="682" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">310 mi · ~19 Nov</text>
+<rect x="824" y="616" width="132" height="96" rx="8" fill="#3d2614" stroke="#f0883e"/>
+<text x="834" y="638" font-size="11" fill="#f0883e" font-weight="700" text-anchor="start">Due soon</text>
+<text x="834" y="662" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Insurance</text>
+<text x="834" y="682" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">by 12 Dec</text>
+<text x="536" y="740" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Also: Tire rotation (1,200 mi) · Brake fluid (Jun 2027)</text>
+<text x="536" y="764" font-size="12" fill="#4a8fe7" font-weight="400" text-anchor="start">See all on Maintenance →</text>
+<text x="24" y="840" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · The Garage card&#x27;s badge, and &quot;Most urgent&quot; order (the new default)</text>
+<text x="24" y="860" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">The card shows its vehicle&#x27;s most urgent step; nothing when all is OK.</text>
+<rect x="24" y="880" width="460" height="236" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="910" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3A · A chip in the card&#x27;s corner</text>
+<text x="44" y="930" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<rect x="44" y="940" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="964" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Test truck · 84,210 mi</text>
+<rect x="372.6" y="949" width="79.4" height="20" rx="10" fill="#4a1014" stroke="#ff6b6b"/>
+<text x="412.3" y="963" font-size="11" fill="#ff6b6b" font-weight="600" text-anchor="middle">⚠ Overdue</text>
+<rect x="44" y="986" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1010" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Outback · 52,644 mi</text>
+<rect x="346.2" y="995" width="105.8" height="20" rx="10" fill="#3a1d1d" stroke="#e5534b"/>
+<text x="399.09999999999997" y="1009" font-size="11" fill="#e5534b" font-weight="600" text-anchor="middle">Due very soon</text>
+<rect x="44" y="1032" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<text x="56" y="1056" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Trailer</text>
+<rect x="372.6" y="1041" width="79.4" height="20" rx="10" fill="#3a3314" stroke="#e3b341"/>
+<text x="412.3" y="1055" font-size="11" fill="#e3b341" font-weight="600" text-anchor="middle">Coming up</text>
+<text x="44" y="1098" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Sort: Most urgent ▾  (also Newest activity, Name, My order)</text>
+<rect x="516" y="880" width="460" height="236" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="910" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">3B · A dot and a line under the name</text>
+<text x="536" y="930" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start"></text>
+<rect x="536" y="940" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<circle cx="552" cy="959" r="5" fill="#ff6b6b"/>
+<text x="566" y="957" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Test truck</text>
+<text x="566" y="971" font-size="10.5" fill="#ff6b6b" font-weight="400" text-anchor="start">Overdue · Registration since 2 Nov</text>
+<rect x="536" y="986" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<circle cx="552" cy="1005" r="5" fill="#e5534b"/>
+<text x="566" y="1003" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Outback</text>
+<text x="566" y="1017" font-size="10.5" fill="#e5534b" font-weight="400" text-anchor="start">Due very soon · Oil change in 310 mi</text>
+<rect x="536" y="1032" width="420" height="38" rx="6" fill="#1d2128" stroke="#333a45"/>
+<circle cx="552" cy="1051" r="5" fill="#e3b341"/>
+<text x="566" y="1049" font-size="12.5" fill="#e8eaed" font-weight="600" text-anchor="start">Trailer</text>
+<text x="566" y="1063" font-size="10.5" fill="#e3b341" font-weight="400" text-anchor="start">Coming up · Bearings ~3 Jan</text>
+<text x="536" y="1098" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Sort: Most urgent ▾</text>
+<text x="24" y="1156" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">4 · Setting up a requirement, and a job&#x27;s reset</text>
+<text x="24" y="1176" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">&quot;Last done before these records&quot; (optional), its warnings, and the oil change&#x27;s ↺ Reset on the task.</text>
+<rect x="24" y="1196" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="44" y="1226" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">4A · Warnings folded: &quot;Household default&quot;</text>
+<text x="44" y="1246" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Change opens three steps</text>
+<text x="44" y="1274" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Last done before these records (optional)</text>
+<text x="44" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Date</text>
+<rect x="44" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="54" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">2026-08-02</text>
+<text x="189" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Odometer (mi)</text>
+<rect x="189" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="199" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">48,900</text>
+<text x="334" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Oil life (%)</text>
+<rect x="334" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="344" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">100</text>
+<text x="44" y="1366" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Warn me</text>
+<text x="44" y="1388" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">Household default: 20% / 10% / 5% left</text>
+<text x="374" y="1388" font-size="12" fill="#4a8fe7" font-weight="400" text-anchor="start">Change</text>
+<rect x="44" y="1408" width="420" height="1" rx="0" fill="#333a45" stroke="#333a45"/>
+<text x="44" y="1436" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">In a job: the task for Engine oil &amp; filter</text>
+<rect x="44" y="1449" width="14" height="14" rx="3" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="51" y="1460" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">✓</text>
+<text x="66" y="1460" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">↺ Reset Oil life to 100%</text>
+<text x="66" y="1478" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Adds a reset reading at the job&#x27;s end.</text>
+<rect x="516" y="1196" width="460" height="320" rx="12" fill="#14171c" stroke="#14171c"/>
+<text x="536" y="1226" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">4B · Warnings always shown</text>
+<text x="536" y="1246" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Three fields, empty = household default</text>
+<text x="536" y="1274" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Last done before these records (optional)</text>
+<text x="536" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Date</text>
+<rect x="536" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="546" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">2026-08-02</text>
+<text x="681" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Odometer (mi)</text>
+<rect x="681" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="691" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">48,900</text>
+<text x="826" y="1296" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Oil life (%)</text>
+<rect x="826" y="1302" width="130" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="836" y="1321" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">100</text>
+<text x="536" y="1366" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">Warn at (% of the interval left)</text>
+<text x="536" y="1380" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Yellow</text>
+<rect x="536" y="1386" width="90" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="546" y="1405" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">20</text>
+<text x="641" y="1380" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Orange</text>
+<rect x="641" y="1386" width="90" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="651" y="1405" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">10</text>
+<text x="746" y="1380" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Red</text>
+<rect x="746" y="1386" width="90" height="28" rx="6" fill="#101318" stroke="#333a45"/>
+<text x="756" y="1405" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">5</text>
+<text x="536" y="1436" font-size="12" fill="#e8eaed" font-weight="600" text-anchor="start">In a job: the task for Engine oil &amp; filter</text>
+<rect x="536" y="1449" width="14" height="14" rx="3" fill="#4a8fe7" stroke="#4a8fe7"/>
+<text x="543" y="1460" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">✓</text>
+<text x="558" y="1460" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">↺ Reset Oil life to 100%</text>
+<text x="558" y="1478" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">Adds a reset reading at the job&#x27;s end.</text>
+<text x="24" y="1546" font-size="13" fill="#1b1f24" font-weight="600" text-anchor="start">Recommended: 1A, 2A, 3A, 4A (text with every colour; the least to read at a glance).</text>
+</svg>

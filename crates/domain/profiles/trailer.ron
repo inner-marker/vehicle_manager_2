@@ -1,7 +1,7 @@
 // Trailer (decision #030): no fuel, no meter by default (an odometer can be added).
 (
     id: "trailer",
-    version: 3,
+    version: 5,
     name: "profile-trailer",
     event_kinds: [reading, maintenance, repair],
     sections: [],
@@ -12,6 +12,10 @@
     // What a High squawk means for this kind (#063).
     high_severity: "squawk-high-not-towable",
     documents: ["document-title", "document-registration", "document-insurance"],
+    // Its default usage (#086): what "ready to use" means without saying more, and the
+    // document types it needs (a missing or expired one makes it not ready).
+    default_usage: "usage-towable",
+    usage_documents: ["document-registration", "document-insurance"],
     meters: [],
     fields: [],
 )

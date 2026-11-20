@@ -14,6 +14,7 @@ use dioxus::prelude::*;
 use domain::api::{AssetView, EventView, EventsOutcome, PreferencesOutcome};
 use domain::dates::{format_date, format_time, month_heading};
 use domain::event::{Event, EventId, EventStatus};
+use domain::event_check::PastReading;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::Preferences;
@@ -138,11 +139,12 @@ pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Ro
 
 /// A meter's short unit name.
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
+}
+
+/// " ↺" after a reading that was a reset (phase-5.md milestone 1), otherwise nothing.
+pub(super) const fn reset_mark(reset: bool) -> &'static str {
+    if reset { " ↺" } else { "" }
 }
 
 /// "52,644 mi · 18.004 gal · 62.27 USD": the readings, then a fuel-up's volume and cost.
@@ -160,9 +162,10 @@ pub(super) fn numbers(event: &Event, meters: &[(MeterId, Meter)], units: &Prefer
             .filter_map(|reading| {
                 let (_, meter) = meters.iter().find(|(id, _)| *id == reading.meter)?;
                 Some(format!(
-                    "{} {}",
+                    "{} {}{}",
                     show_reading(reading.value, meter.unit, meter.precision),
-                    meter_abbr(meter.unit)
+                    meter_abbr(meter.unit),
+                    reset_mark(reading.reset)
                 ))
             })
             .collect::<Vec<_>>(),
@@ -250,6 +253,8 @@ const fn filter_label(filter: Option<EventKind>) -> MessageId {
 #[component]
 pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
     let loaded = use_vehicle_events(view.id);
+    // The Fuel tab says how each fuel-up counted for economy (#085).
+    let economy = super::fuel_view::use_fuel_if(view.id, only == Some(Shown::FuelUps));
     let mut filter = use_signal(|| None::<EventKind>);
     let Some(answer) = loaded() else {
         return rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } };
@@ -295,7 +300,13 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
                 section { key: "{heading}", class: "timeline-month",
                     h3 { class: "section-heading", {heading.to_uppercase()} }
                     for row in rows {
-                        TimelineRow { key: "{row.view.id}", row, meters: view.meters.clone(), units: data.units }
+                        TimelineRow {
+                            key: "{row.view.id}",
+                            counted: economy().flatten().and_then(|fuel| super::fuel_view::fill_line(row.view.id, &fuel, &data.units)),
+                            row,
+                            meters: view.meters.clone(),
+                            units: data.units,
+                        }
                     }
                 }
             }
@@ -304,7 +315,14 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
 }
 
 #[component]
-fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> Element {
+fn TimelineRow(
+    row: Row,
+    meters: Vec<(MeterId, Meter)>,
+    units: Preferences,
+    /// How a fuel-up counted for economy, on the Fuel tab (#085).
+    #[props(default)]
+    counted: Option<String>,
+) -> Element {
     let event = &row.view.event;
     let icon = super::log_chooser::kind_icon(event.kind);
     let title = format!(
@@ -331,6 +349,9 @@ fn TimelineRow(row: Row, meters: Vec<(MeterId, Meter)>, units: Preferences) -> E
             span { class: "timeline-text",
                 span { class: "timeline-title", {title} }
                 span { class: "timeline-numbers", {numbers(event, &meters, &units)} }
+                if let Some(counted) = counted {
+                    span { class: "timeline-numbers timeline-economy", {counted} }
+                }
             }
             span { class: "timeline-chips",
                 for (label, class) in chips {
@@ -355,6 +376,53 @@ pub(super) fn latest_readings(events: &[EventView], meter: MeterId) -> Option<(i
         .max_by_key(|(_, view)| view.event.dates.start)
 }
 
+/// Each meter's latest value that counts: a typed meter's latest reading, or a derived
+/// meter's (#087) worked out from its inputs' readings; with the event it's from.
+fn latest_values<'a>(
+    events: &'a [EventView],
+    meters: &[(MeterId, Meter)],
+    meter: MeterId,
+) -> Option<(i64, &'a EventView)> {
+    let derived = meters
+        .iter()
+        .any(|(id, each)| *id == meter && each.derived());
+    if !derived {
+        return latest_readings(events, meter);
+    }
+    let mut readings: Vec<PastReading> = counting(events)
+        .flat_map(|view| {
+            view.event.readings.iter().map(move |reading| PastReading {
+                meter: reading.meter,
+                at: view.event.dates.start,
+                value: reading.value,
+                reset: reading.reset,
+            })
+        })
+        .collect();
+    readings.sort_by_key(|reading| (reading.at, reading.reset));
+    let latest = domain::calculated::derived_readings(meters, &readings)
+        .into_iter()
+        .filter(|reading| reading.meter == meter)
+        .max_by_key(|reading| reading.at)?;
+    let view = counting(events).find(|view| view.event.dates.start == latest.at)?;
+    Some((latest.value, view))
+}
+
+/// What a derived meter is worked out from: its inputs' names ("Odometer and Idle hours").
+fn derived_from(meter: &Meter, meters: &[(MeterId, Meter)]) -> Option<String> {
+    let formula = meter.formula.as_ref()?;
+    let used = formula.keys();
+    let names: Vec<String> = meters
+        .iter()
+        .filter(|(_, input)| used.contains(input.key.as_str()))
+        .map(|(_, input)| input.name.as_str().to_owned())
+        .collect();
+    Some(tr_with(
+        messages::FORMULA_DERIVED_FROM,
+        &[("meters", MessageArg::from(names.join(", ")))],
+    ))
+}
+
 /// Overview's Latest fuel-ups, Meters, and Last activity panels.
 #[expect(
     unused_qualifications,
@@ -363,6 +431,7 @@ pub(super) fn latest_readings(events: &[EventView], meter: MeterId) -> Option<(i
 #[component]
 pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> Element {
     let loaded = use_vehicle_events(view.id);
+    let economy = super::fuel_view::use_fuel_if(view.id, super::vehicle::has_fuel(&view.asset));
     let Some(Ok(data)) = loaded() else {
         return rsx! {};
     };
@@ -385,8 +454,11 @@ pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> 
                         FuelUpRow { key: "{fuel_up.id}", view: fuel_up, units }
                     }
                 }
+                // 5A (#085): the latest stretch's figure and the last-5 average.
+                if let Some(line) = economy().flatten().and_then(|fuel| super::fuel_view::overview_line(&fuel, &units)) {
+                    p { class: "fuel-overview", {line} }
+                }
                 button { class: "link-button", r#type: "button", onclick: move |_| on_timeline.call(()), {tr(messages::PANEL_SEE_TIMELINE)} }
-                p { class: "muted-note", {tr(messages::PANEL_ECONOMY_LATER)} }
             }
         }
         section { class: "vehicle-panel",
@@ -408,7 +480,7 @@ pub(super) fn OverviewPanels(view: AssetView, on_timeline: EventHandler<()>) -> 
             }
             div { class: "meter-tiles",
                 for (meter_id, meter) in view.meters.iter() {
-                    MeterTile { key: "{meter_id}", meter: meter.clone(), latest: latest_readings(&events, *meter_id).map(|(value, view)| (value, view.clone())), units }
+                    MeterTile { key: "{meter_id}", meter: meter.clone(), latest: latest_values(&events, &view.meters, *meter_id).map(|(value, view)| (value, view.clone())), units, derived_from: derived_from(meter, &view.meters) }
                 }
             }
         }
@@ -451,7 +523,14 @@ fn FuelUpRow(view: EventView, units: Preferences) -> Element {
 }
 
 #[component]
-fn MeterTile(meter: Meter, latest: Option<(i64, EventView)>, units: Preferences) -> Element {
+fn MeterTile(
+    meter: Meter,
+    latest: Option<(i64, EventView)>,
+    units: Preferences,
+    /// A derived meter's inputs, in words (#087).
+    #[props(default)]
+    derived_from: Option<String>,
+) -> Element {
     let reading = latest.as_ref().map(|(value, view)| {
         let event = &view.event;
         let date = format_date(
@@ -481,15 +560,26 @@ fn MeterTile(meter: Meter, latest: Option<(i64, EventView)>, units: Preferences)
     });
     rsx! {
         div { class: "meter-tile",
-            span { class: "meter-name", {meter.name.as_str().to_owned()} }
-            match reading {
-                Some((value, when)) => rsx! {
+            span { class: "meter-name",
+                if derived_from.is_some() {
+                    super::formula_view::FxBadge {}
+                }
+                {meter.name.as_str().to_owned()}
+            }
+            match (reading, derived_from.clone()) {
+                (Some((value, _)), Some(from)) => rsx! {
+                    strong { class: "meter-reading", {value} }
+                    span { class: "meter-unit", {from} }
+                },
+                (Some((value, when)), None) => rsx! {
                     strong { class: "meter-reading", {value} }
                     span { class: "meter-unit", {when} }
                 },
-                None => rsx! { span { class: "meter-unit", {tr(messages::PANEL_NO_READINGS)} } },
+                (None, _) => rsx! { span { class: "meter-unit", {tr(messages::PANEL_NO_READINGS)} } },
             }
-            span { class: "meter-required", {super::vehicle::required_text(&meter)} }
+            if derived_from.is_none() {
+                span { class: "meter-required", {super::vehicle::required_text(&meter)} }
+            }
         }
     }
 }
@@ -513,6 +603,7 @@ mod tests {
     fn view(n: u32, kind: EventKind, days_before: i64, odometer: i64) -> EventView {
         let at = UnixMillis::from_millis(NOV_2 - days_before * DAY);
         EventView {
+            calculated: vec![],
             id: test_id(n),
             event: Event {
                 asset: test_id(1),
@@ -532,6 +623,7 @@ mod tests {
                 readings: vec![Reading {
                     meter: test_id(20),
                     value: odometer,
+                    reset: false,
                 }],
                 skipped: vec![],
                 fields: vec![],
@@ -627,6 +719,8 @@ mod tests {
         let (value, latest) = latest_readings(&events, test_id(20)).unwrap();
         assert_eq!((value, latest.id), (52_644, test_id(10)));
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(1),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,
@@ -634,6 +728,8 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         let meters = vec![(test_id(20), meter)];
         assert_eq!(

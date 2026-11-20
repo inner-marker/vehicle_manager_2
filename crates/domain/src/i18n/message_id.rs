@@ -1017,6 +1017,74 @@ define_messages! {
     EVENT_KIND_REPAIR => "event-kind-repair",
     /// Meter unit: hours.
     UNIT_HOURS => "unit-hours",
+    /// What's due: not near yet.
+    DUE_OK => "due-ok",
+    /// What's due: yellow.
+    DUE_COMING_UP => "due-coming-up",
+    /// What's due: orange.
+    DUE_SOON => "due-soon",
+    /// What's due: red.
+    DUE_VERY_SOON => "due-very-soon",
+    /// What's due: past it.
+    DUE_OVERDUE => "due-overdue",
+    /// Due warnings that don't make sense.
+    DUE_BAD_WARNINGS => "due-bad-warnings",
+    /// "Last done before these records" that doesn't make sense.
+    REQUIREMENT_BAD_BEFORE_RECORDS => "requirement-bad-before-records",
+    /// Garage sort: the most urgent first.
+    SORT_MOST_URGENT => "sort-most-urgent",
+    /// What's left on a meter rule; takes `amount` ("310 mi").
+    DUE_IN => "due-in",
+    /// How far past a meter rule; takes `amount`.
+    DUE_OVER_BY => "due-over-by",
+    /// What's left on another meter; takes `meter` and `amount`.
+    DUE_TO_GO => "due-to-go",
+    /// How far past on another meter; takes `meter` and `amount`.
+    DUE_METER_OVER => "due-meter-over",
+    /// A date still to come; takes `date`.
+    DUE_BY => "due-by",
+    /// A date gone by; takes `date`.
+    DUE_WAS => "due-was",
+    /// A projected date, an estimate; takes `date`.
+    DUE_ABOUT => "due-about",
+    /// Between two rules' "what's left".
+    DUE_OR => "due-or",
+    /// Never done, and no "last done before these records".
+    DUE_NOT_DONE_YET => "due-not-done-yet",
+    /// Warnings in words; takes `interval` ("20 / 10 / 5") and `days` ("60 / 30 / 14").
+    DUE_WARNINGS_TEXT => "due-warnings-text",
+    /// Requirement dialog: "Last done before these records".
+    DUE_BEFORE_RECORDS => "due-before-records",
+    /// Requirement dialog: that date.
+    DUE_BEFORE_DATE => "due-before-date",
+    /// The warnings' label.
+    DUE_WARN_ME => "due-warn-me",
+    /// The household's warnings, folded; takes `warnings`.
+    DUE_HOUSEHOLD_DEFAULT => "due-household-default",
+    /// The household's day warnings, folded; takes `days` ("60 / 30 / 14").
+    DUE_HOUSEHOLD_DAYS => "due-household-days",
+    /// Open the warnings to change them.
+    DUE_CHANGE => "due-change",
+    /// Back to the household's warnings.
+    DUE_USE_HOUSEHOLD => "due-use-household",
+    /// The interval steps' label.
+    DUE_PERCENT_LEFT => "due-percent-left",
+    /// The day steps' label.
+    DUE_DAYS_BEFORE => "due-days-before",
+    /// After a percentage step.
+    DUE_PERCENT => "due-percent",
+    /// After a day step.
+    DUE_DAYS => "due-days",
+    /// A job's task: reset a meter at the end; takes `meter` and `value` ("100 %").
+    WORK_RESET_METER => "work-reset-meter",
+    /// Settings: when things come due.
+    SETTING_DUE_WARNINGS => "setting-due-warnings",
+    /// Settings, You tab: the household's Admin sets them.
+    SETTING_DUE_WARNINGS_HOUSEHOLD => "setting-due-warnings-household",
+    /// Settings: back to the built-in warnings.
+    DUE_BUILT_IN => "due-built-in",
+    /// Meter unit: percent.
+    UNIT_PERCENT => "unit-percent",
     /// A label with nothing in it.
     LABEL_EMPTY => "label-empty",
     /// A label longer than the limit.
@@ -1025,6 +1093,30 @@ define_messages! {
     METER_WRONG_UNIT => "meter-wrong-unit",
     /// Too many decimal places on a meter.
     METER_TOO_PRECISE => "meter-too-precise",
+    /// A meter's reset value below zero.
+    METER_NEGATIVE_RESET => "meter-negative-reset",
+    /// A resettable distance meter that fuel-ups require.
+    METER_RESETTABLE_FUEL => "meter-resettable-fuel",
+    /// A meter's direction changed after it has readings.
+    METER_DIRECTION_FIXED => "meter-direction-fixed",
+    /// A meter's direction: counts up.
+    METER_COUNTS_UP => "meter-counts-up",
+    /// A meter's direction: counts down.
+    METER_COUNTS_DOWN => "meter-counts-down",
+    /// Meter dialog: which way it counts.
+    METER_COUNTS => "meter-counts",
+    /// Meter dialog: a note on counting down.
+    METER_COUNTS_NOTE => "meter-counts-note",
+    /// Meter dialog: the meter can be reset.
+    METER_RESETTABLE => "meter-resettable",
+    /// Meter dialog: before the reset value ("to 100 %").
+    METER_RESET_TO => "meter-reset-to",
+    /// Meter dialog: a note on resetting.
+    METER_RESET_NOTE => "meter-reset-note",
+    /// A meter's summary: it counts down.
+    METER_SUMMARY_DOWN => "meter-summary-down",
+    /// A meter's summary: what a reset sets it to; takes `value` ("100 %").
+    METER_SUMMARY_RESETS => "meter-summary-resets",
     /// Too many decimal places on a number field.
     FIELD_TOO_MANY_DECIMALS => "field-too-many-decimals",
     /// A choice list with no choices or too many.
@@ -1069,8 +1161,6 @@ define_messages! {
     VEHICLES_EMPTY_GROUP => "vehicles-empty-group",
     /// The phone's group menu label.
     VEHICLES_GROUP_MENU => "vehicles-group-menu",
-    /// A card's note until readings arrive.
-    VEHICLES_CARD_COMING => "vehicles-card-coming",
     /// Arranging: move a vehicle up.
     VEHICLES_MOVE_UP => "vehicles-move-up",
     /// Arranging: move a vehicle down.
@@ -1165,12 +1255,12 @@ define_messages! {
     TAB_COMING => "tab-coming",
     /// Overview panel: readiness.
     PANEL_READY => "panel-ready",
-    /// Overview panel: readiness, not built yet.
-    PANEL_READY_COMING => "panel-ready-coming",
-    /// Overview panel: coming due.
+    /// Overview panel: coming up (what's due, #082).
     PANEL_DUE => "panel-due",
-    /// Overview panel: coming due, not built yet.
-    PANEL_DUE_COMING => "panel-due-coming",
+    /// Overview: nothing comes due.
+    PANEL_DUE_NONE => "panel-due-none",
+    /// Overview: to the Maintenance tab.
+    PANEL_DUE_SEE_ALL => "panel-due-see-all",
     /// Overview panel: open squawks.
     PANEL_SQUAWKS => "panel-squawks",
     /// Overview panel: latest fuel-ups.
@@ -1193,6 +1283,8 @@ define_messages! {
     DIMENSION_DISTANCE => "dimension-distance",
     /// What a meter measures: duration.
     DIMENSION_DURATION => "dimension-duration",
+    /// What a meter measures: a percentage.
+    DIMENSION_PERCENTAGE => "dimension-percentage",
     /// Setup section: the vehicle's details.
     SETUP_DETAILS => "setup-details",
     /// Setup: open the details form.
@@ -1299,6 +1391,8 @@ define_messages! {
     KIND_VOLUME => "kind-volume",
     /// Custom field type: fuel economy.
     KIND_FUEL_ECONOMY => "kind-fuel-economy",
+    /// Custom field kind: worked out from a formula (#087).
+    KIND_CALCULATED => "kind-calculated",
     /// Dialog title: move a vehicle; takes `name` (text).
     MOVE_TITLE => "move-title",
     /// Form field: the group to move to.
@@ -1651,6 +1745,448 @@ define_messages! {
     UNIT_ABBR_L_PER_100_KM => "unit-abbr-l-per-100-km",
     /// Unit abbreviation: hours.
     UNIT_ABBR_H => "unit-abbr-h",
+    /// Short unit: percent.
+    UNIT_ABBR_PERCENT => "unit-abbr-percent",
+    /// Units: US liquid quarts.
+    UNIT_ABBR_QT => "unit-abbr-qt",
+    /// Units: US fluid ounces.
+    UNIT_ABBR_FL_OZ => "unit-abbr-fl-oz",
+    /// Units: milliliters.
+    UNIT_ABBR_ML => "unit-abbr-ml",
+    /// Units: foot-pounds.
+    UNIT_ABBR_FT_LB => "unit-abbr-ft-lb",
+    /// Units: inch-pounds.
+    UNIT_ABBR_IN_LB => "unit-abbr-in-lb",
+    /// Units: newton-meters.
+    UNIT_ABBR_N_M => "unit-abbr-n-m",
+    /// Units: pounds per square inch.
+    UNIT_ABBR_PSI => "unit-abbr-psi",
+    /// Units: kilopascals.
+    UNIT_ABBR_KPA => "unit-abbr-kpa",
+    /// Units: bar.
+    UNIT_ABBR_BAR => "unit-abbr-bar",
+    /// Units: inches.
+    UNIT_ABBR_IN => "unit-abbr-in",
+    /// Units: millimeters.
+    UNIT_ABBR_MM => "unit-abbr-mm",
+    /// Specs: a volume.
+    SPEC_KIND_VOLUME => "spec-kind-volume",
+    /// Specs: a torque.
+    SPEC_KIND_TORQUE => "spec-kind-torque",
+    /// Specs: a pressure.
+    SPEC_KIND_PRESSURE => "spec-kind-pressure",
+    /// Specs: a length or gap.
+    SPEC_KIND_LENGTH => "spec-kind-length",
+    /// Specs: the detail is too long.
+    SPEC_BAD_DETAIL => "spec-bad-detail",
+    /// Specs: the part number is too long.
+    SPEC_BAD_PART_NUMBER => "spec-bad-part-number",
+    /// Specs: the amount isn't above zero.
+    SPEC_BAD_AMOUNT => "spec-bad-amount",
+    /// Templates: the vehicle has no requirements to save.
+    TEMPLATE_NOTHING_TO_SAVE => "template-nothing-to-save",
+    /// A job's task: a spec to remember (torque, pressure, length).
+    SPEC_REMINDER => "spec-reminder",
+    /// A job: the specs its parts now differ from.
+    SPEC_UPDATE_TITLE => "spec-update-title",
+    /// A job: the job records what was used either way.
+    SPEC_UPDATE_NOTE => "spec-update-note",
+    /// A job: save it, and the ticked specs.
+    SPEC_UPDATE_SAVE => "spec-update-save",
+    /// A job: back to the form.
+    SPEC_UPDATE_BACK => "spec-update-back",
+    /// A spec's part number or amount that was empty.
+    SPEC_UPDATE_NONE => "spec-update-none",
+    /// The Maintenance tab: the specs view.
+    MAINTENANCE_SPECS => "maintenance-specs",
+    /// Specs: add one.
+    SPEC_ADD => "spec-add",
+    /// Specs: the new spec dialog's title.
+    SPEC_ADD_TITLE => "spec-add-title",
+    /// Specs: none yet.
+    SPEC_NONE_YET => "spec-none-yet",
+    /// Specs: the name field.
+    SPEC_NAME => "spec-name",
+    /// Specs: the kind of amount.
+    SPEC_KIND => "spec-kind",
+    /// Specs: no amount (a part number only).
+    SPEC_KIND_NONE => "spec-kind-none",
+    /// Specs: the amount field.
+    SPEC_AMOUNT => "spec-amount",
+    /// Specs: the unit field.
+    SPEC_UNIT => "spec-unit",
+    /// Specs: the detail field.
+    SPEC_DETAIL => "spec-detail",
+    /// Specs: the part number field.
+    SPEC_PART_NUMBER => "spec-part-number",
+    /// Specs: a part number, shown.
+    SPEC_PART_NUMBER_SHOWN => "spec-part-number-shown",
+    /// Specs: remove one.
+    SPEC_REMOVE => "spec-remove",
+    /// Usages: a road vehicle's default (#086).
+    USAGE_DRIVABLE => "usage-drivable",
+    /// Usages: a trailer's default.
+    USAGE_TOWABLE => "usage-towable",
+    /// Usages: equipment's default, and a kind without a profile.
+    USAGE_USABLE => "usage-usable",
+    /// Usages: the name is taken.
+    USAGE_NAME_TAKEN => "usage-name-taken",
+    /// Usages: the default can't be removed.
+    USAGE_DEFAULT_STAYS => "usage-default-stays",
+    /// Formulas: the word for distance, in an unusual unit.
+    FORMULA_WORD_DISTANCE => "formula-word-distance",
+    /// Formulas: the word for volume.
+    FORMULA_WORD_VOLUME => "formula-word-volume",
+    /// Formulas: the word for time.
+    FORMULA_WORD_TIME => "formula-word-time",
+    /// Formulas: the word for money.
+    FORMULA_WORD_MONEY => "formula-word-money",
+    /// Formulas: an unusual unit, from its parts (`$unit`).
+    FORMULA_DIM_OTHER => "formula-dim-other",
+    /// Formulas: a plain number.
+    FORMULA_DIM_NUMBER => "formula-dim-number",
+    /// Formulas: a distance.
+    FORMULA_DIM_DISTANCE => "formula-dim-distance",
+    /// Formulas: a volume.
+    FORMULA_DIM_VOLUME => "formula-dim-volume",
+    /// Formulas: a time.
+    FORMULA_DIM_TIME => "formula-dim-time",
+    /// Formulas: money.
+    FORMULA_DIM_MONEY => "formula-dim-money",
+    /// Formulas: fuel economy.
+    FORMULA_DIM_ECONOMY => "formula-dim-economy",
+    /// Formulas: money per distance.
+    FORMULA_DIM_MONEY_PER_DISTANCE => "formula-dim-money-per-distance",
+    /// Formulas: money per volume.
+    FORMULA_DIM_MONEY_PER_VOLUME => "formula-dim-money-per-volume",
+    /// Formulas: a speed.
+    FORMULA_DIM_SPEED => "formula-dim-speed",
+    /// Formulas refused: nothing typed.
+    FORMULA_EMPTY => "formula-empty",
+    /// Formulas refused: too long (`$max`).
+    FORMULA_TOO_LONG => "formula-too-long",
+    /// Formulas refused: it stops too soon.
+    FORMULA_UNEXPECTED_END => "formula-unexpected-end",
+    /// Formulas refused: something out of place (`$found`, `$position`).
+    FORMULA_UNEXPECTED => "formula-unexpected",
+    /// Formulas refused: a bracket never closed (`$position`).
+    FORMULA_UNCLOSED => "formula-unclosed",
+    /// Formulas refused: no such function (`$name`).
+    FORMULA_UNKNOWN_FUNCTION => "formula-unknown-function",
+    /// Formulas refused: round's places (`$max`).
+    FORMULA_BAD_PLACES => "formula-bad-places",
+    /// Formulas refused: no such value (`$key`).
+    FORMULA_UNKNOWN_KEY => "formula-unknown-key",
+    /// Formulas refused: a meter is needed (`$key`).
+    FORMULA_NOT_A_METER => "formula-not-a-meter",
+    /// Formulas refused: the Over's meter measures the wrong thing (`$key`, `$wanted`).
+    FORMULA_WRONG_METER => "formula-wrong-meter",
+    /// Formulas refused: hours without a meter.
+    FORMULA_HOURS_NEED_METER => "formula-hours-need-meter",
+    /// Formulas refused: adding different things (`$expression`, `$left`, `$right`).
+    FORMULA_MISMATCH_PLUS => "formula-mismatch-plus",
+    /// Formulas refused: subtracting different things (`$expression`, `$left`, `$right`).
+    FORMULA_MISMATCH_MINUS => "formula-mismatch-minus",
+    /// Formulas refused: a function's values measure different things (`$function`).
+    FORMULA_MIXED_VALUES => "formula-mixed-values",
+    /// Formulas refused: a past-events function inside another.
+    FORMULA_NESTED_OVER => "formula-nested-over",
+    /// Formulas refused: the result isn't what the field shows (`$found`, `$wanted`).
+    FORMULA_WRONG_RESULT => "formula-wrong-result",
+    /// Formulas, no value: a value left out (`$key`).
+    FORMULA_NO_VALUE_MISSING => "formula-no-value-missing",
+    /// Formulas, no value: nothing earlier to count from.
+    FORMULA_NO_VALUE_NO_EARLIER => "formula-no-value-no-earlier",
+    /// Formulas, no value: nothing in the Over.
+    FORMULA_NO_VALUE_NOTHING_IN_OVER => "formula-no-value-nothing-in-over",
+    /// Formulas, no value: a division by zero.
+    FORMULA_NO_VALUE_DIVIDE_BY_ZERO => "formula-no-value-divide-by-zero",
+    /// Formulas, no value: different currencies.
+    FORMULA_NO_VALUE_MIXED_CURRENCIES => "formula-no-value-mixed-currencies",
+    /// Formulas, no value: a mean needing values above zero.
+    FORMULA_NO_VALUE_NOT_POSITIVE => "formula-no-value-not-positive",
+    /// Formulas, no value: stddev of one value.
+    FORMULA_NO_VALUE_TOO_FEW => "formula-no-value-too-few",
+    /// Formulas, no value: no odometer for an Over.
+    FORMULA_NO_VALUE_NO_ODOMETER => "formula-no-value-no-odometer",
+    /// Formulas, no value: too big.
+    FORMULA_NO_VALUE_NOT_FINITE => "formula-no-value-not-finite",
+    /// Formulas, no value: the formula no longer fits.
+    FORMULA_NO_VALUE_MISMATCH => "formula-no-value-mismatch",
+    /// Formulas: a field or meter a formula uses (`$by`) can't go.
+    FORMULA_IN_USE => "formula-in-use",
+    /// Formulas: the ƒ badge's words.
+    FORMULA_WORKED_OUT => "formula-worked-out",
+    /// Formulas: a value per a unit (`$value`, `$unit`).
+    FORMULA_PER => "formula-per",
+    /// Calculated fields: shows as a number.
+    SHOWS_NUMBER => "shows-number",
+    /// Calculated fields: shows as a percentage.
+    SHOWS_PERCENT => "shows-percent",
+    /// Calculated fields: shows as a distance.
+    SHOWS_DISTANCE => "shows-distance",
+    /// Calculated fields: shows as a time.
+    SHOWS_DURATION => "shows-duration",
+    /// Calculated fields: shows as a volume.
+    SHOWS_VOLUME => "shows-volume",
+    /// Calculated fields: shows as fuel economy.
+    SHOWS_ECONOMY => "shows-economy",
+    /// Calculated fields: shows as money.
+    SHOWS_MONEY => "shows-money",
+    /// Calculated fields: shows as money per distance.
+    SHOWS_MONEY_PER_DISTANCE => "shows-money-per-distance",
+    /// Calculated fields: shows as money per volume.
+    SHOWS_MONEY_PER_VOLUME => "shows-money-per-volume",
+    /// Calculated fields: shows as a speed.
+    SHOWS_SPEED => "shows-speed",
+    /// Formulas: the check passes (`$what`).
+    FORMULA_CHECK_OK => "formula-check-ok",
+    /// Formulas: the heading over calculated values.
+    FORMULA_ROWS => "formula-rows",
+    /// Formulas: the formula box's label.
+    FORMULA_LABEL => "formula-label",
+    /// Formulas: opens the short help.
+    FORMULA_HOW_TO => "formula-how-to",
+    /// Formulas: the functions menu.
+    FORMULA_FUNCTIONS => "formula-functions",
+    /// Formulas: functions over values or past events.
+    FORMULA_FUNCTIONS_OVER => "formula-functions-over",
+    /// Formulas: functions over listed values.
+    FORMULA_FUNCTIONS_LISTED => "formula-functions-listed",
+    /// Formulas: functions on one value.
+    FORMULA_FUNCTIONS_ONE => "formula-functions-one",
+    /// Formulas: the values menu.
+    FORMULA_VALUES => "formula-values",
+    /// Formulas: about keys.
+    FORMULA_VALUES_NOTE => "formula-values-note",
+    /// Formulas: this event's values.
+    FORMULA_VALUES_EVENT => "formula-values-event",
+    /// Formulas: meters.
+    FORMULA_VALUES_METERS => "formula-values-meters",
+    /// Formulas: since the last event.
+    FORMULA_VALUES_SINCE => "formula-values-since",
+    /// Formulas: numbers with units.
+    FORMULA_VALUES_NUMBERS => "formula-values-numbers",
+    /// Formulas: the Over picker.
+    FORMULA_OVER => "formula-over",
+    /// Formulas: Over all events.
+    FORMULA_OVER_CUMULATIVE => "formula-over-cumulative",
+    /// Formulas: Over the last 5 events.
+    FORMULA_OVER_EVENTS => "formula-over-events",
+    /// Formulas: Over the last 3 months.
+    FORMULA_OVER_MONTHS => "formula-over-months",
+    /// Formulas: Over the last 1,000 mi.
+    FORMULA_OVER_DISTANCE => "formula-over-distance",
+    /// Formulas: what Over can be.
+    FORMULA_OVER_NOTE => "formula-over-note",
+    /// Formulas: the help's title.
+    FORMULA_HELP_TITLE => "formula-help-title",
+    /// Formulas help: values.
+    FORMULA_HELP_VALUES => "formula-help-values",
+    /// Formulas help: operators and units.
+    FORMULA_HELP_OPERATORS => "formula-help-operators",
+    /// Formulas help: Over.
+    FORMULA_HELP_OVER => "formula-help-over",
+    /// Formulas help: spaces around a minus.
+    FORMULA_HELP_MINUS => "formula-help-minus",
+    /// Formulas help: examples.
+    FORMULA_HELP_EXAMPLES => "formula-help-examples",
+    /// Formulas help: the full guide.
+    FORMULA_HELP_GUIDE => "formula-help-guide",
+    /// Formulas: the preview (`$kind`, `$value`).
+    FORMULA_PREVIEW => "formula-preview",
+    /// Calculated fields: what it shows as.
+    FORMULA_SHOWS_AS => "formula-shows-as",
+    /// Calculated fields: adding.
+    FORMULA_FIELD_ADD_TITLE => "formula-field-add-title",
+    /// Calculated fields: changing.
+    FORMULA_FIELD_EDIT_TITLE => "formula-field-edit-title",
+    /// Calculated fields: where it shows.
+    FORMULA_SHOWN_ON_NOTE => "formula-shown-on-note",
+    /// Derived meters: its value now (`$value`).
+    FORMULA_NOW => "formula-now",
+    /// Derived meters: adding.
+    FORMULA_METER_ADD_TITLE => "formula-meter-add-title",
+    /// Derived meters: changing.
+    FORMULA_METER_EDIT_TITLE => "formula-meter-edit-title",
+    /// Derived meters: what they are.
+    FORMULA_METER_NOTE => "formula-meter-note",
+    /// Formulas: the log form isn't complete enough yet.
+    FORMULA_FILL_IN => "formula-fill-in",
+    /// Derived meters: what it's worked out from (`$meters`).
+    FORMULA_DERIVED_FROM => "formula-derived-from",
+    /// Setup: add a calculated field.
+    SETUP_ADD_CALCULATED => "setup-add-calculated",
+    /// Setup: add a derived meter.
+    SETUP_ADD_DERIVED => "setup-add-derived",
+    /// Formulas refused: not a derived meter's input (`$key`).
+    FORMULA_NOT_AN_INPUT => "formula-not-an-input",
+    /// Formulas refused: a calculated field used in a formula (`$key`).
+    FORMULA_CALCULATED => "formula-calculated",
+    /// Formulas refused: round, past events, or since the last in a derived meter.
+    FORMULA_NOT_IN_DERIVED => "formula-not-in-derived",
+    /// Meters refused: a derived meter can't be reset or required.
+    METER_DERIVED_RESETTABLE => "meter-derived-resettable",
+    /// Usages: Set up's section.
+    USAGE_SECTION => "usage-section",
+    /// Usages: what the section is for.
+    USAGE_SECTION_NOTE => "usage-section-note",
+    /// Usages: add one.
+    USAGE_ADD => "usage-add",
+    /// Usages: the dialog's title, adding.
+    USAGE_ADD_TITLE => "usage-add-title",
+    /// Usages: the dialog's title, changing.
+    USAGE_EDIT_TITLE => "usage-edit-title",
+    /// Usages: the name field.
+    USAGE_NAME => "usage-name",
+    /// Usages: the default's name, marked as the default.
+    USAGE_DEFAULT_NAME => "usage-default-name",
+    /// Usages: the document types needed, as a field.
+    USAGE_DOCUMENTS => "usage-documents",
+    /// Usages: what needing a document means.
+    USAGE_DOCUMENTS_NOTE => "usage-documents-note",
+    /// Usages: the documents one needs, listed.
+    USAGE_NEEDS => "usage-needs",
+    /// Usages: needs no documents.
+    USAGE_NEEDS_NOTHING => "usage-needs-nothing",
+    /// Usages: a requirement's "Needed for" field.
+    USAGE_NEEDED_FOR => "usage-needed-for",
+    /// Usages: what "Needed for" means.
+    USAGE_NEEDED_FOR_NOTE => "usage-needed-for-note",
+    /// Ready to use?: a usage that isn't ("Not drivable").
+    READY_NOT => "ready-not",
+    /// Ready to use?: the headline with things that block it.
+    READY_BLOCKERS => "ready-blockers",
+    /// Ready to use?: the headline with things due soon.
+    READY_WARNINGS => "ready-warnings",
+    /// Ready to use?: a document on file and current.
+    READY_DOCUMENT_CURRENT => "ready-document-current",
+    /// Ready to use?: a needed document not on file.
+    READY_DOCUMENT_MISSING => "ready-document-missing",
+    /// Ready to use?: an open High issue.
+    READY_ISSUE_OPEN => "ready-issue-open",
+    /// Ready to use?: a deferred High issue.
+    READY_ISSUE_DEFERRED => "ready-issue-deferred",
+    /// Ready to use?: nothing needed for the usage.
+    READY_NOTHING => "ready-nothing",
+    /// Ready to use?: it's advice, not a lock.
+    READY_ADVISORY => "ready-advisory",
+    /// A requirement: the specs its job uses.
+    SPEC_CHECKLIST => "spec-checklist",
+    /// A requirement: what ticking a spec does.
+    SPEC_CHECKLIST_NOTE => "spec-checklist-note",
+    /// A bundle: start a job with its tasks.
+    SCHEDULE_LOG_SERVICE => "schedule-log-service",
+    /// Navigation: the Templates screen.
+    NAV_TEMPLATES => "nav-templates",
+    /// Templates: what they are.
+    TEMPLATES_INTRO => "templates-intro",
+    /// Templates: none yet.
+    TEMPLATES_NONE => "templates-none",
+    /// Templates: what one holds.
+    TEMPLATE_COUNTS => "template-counts",
+    /// Templates: what applying one did.
+    TEMPLATE_APPLIED => "template-applied",
+    /// Templates: meter rules left out.
+    TEMPLATE_LEFT_OUT => "template-left-out",
+    /// Templates: apply one to a vehicle.
+    TEMPLATE_APPLY_TO => "template-apply-to",
+    /// Templates: apply it to the vehicle chosen.
+    TEMPLATE_APPLY => "template-apply",
+    /// Templates: rename one.
+    TEMPLATE_RENAME => "template-rename",
+    /// Templates: the name field.
+    TEMPLATE_NAME => "template-name",
+    /// Templates: removing one.
+    TEMPLATE_REMOVE_TITLE => "template-remove-title",
+    /// Templates: what removing one leaves.
+    TEMPLATE_REMOVE_NOTE => "template-remove-note",
+    /// Templates: it's gone.
+    TEMPLATE_NOT_FOUND => "template-not-found",
+    /// Set up: save the schedule as a template.
+    TEMPLATE_SAVE_AS => "template-save-as",
+    /// Set up: the save-as-template dialog's title.
+    TEMPLATE_SAVE_TITLE => "template-save-title",
+    /// Set up: start from a template.
+    TEMPLATE_FROM => "template-from",
+    /// Fuel: a stretch not counted, a fill-up missed.
+    FUEL_DROPPED_MISSED => "fuel-dropped-missed",
+    /// Fuel: a stretch not counted, a reading missing.
+    FUEL_DROPPED_READING => "fuel-dropped-reading",
+    /// Fuel: a stretch not counted, no distance.
+    FUEL_DROPPED_DISTANCE => "fuel-dropped-distance",
+    /// Fuel: a stretch's figure and distance.
+    FUEL_STRETCH => "fuel-stretch",
+    /// Fuel: the car's own figure.
+    FUEL_CAR_SAID => "fuel-car-said",
+    /// Fuel: a fill-up before the first full one.
+    FUEL_PART_BEFORE => "fuel-part-before",
+    /// Fuel: the full fill-up economy starts from.
+    FUEL_PART_STARTS => "fuel-part-starts",
+    /// Fuel: a partial fill-up waiting.
+    FUEL_PART_WAITING => "fuel-part-waiting",
+    /// Fuel: a partial fill-up added in.
+    FUEL_PART_ADDED => "fuel-part-added",
+    /// The Overview: the latest figure and the last-5 average.
+    FUEL_OVERVIEW => "fuel-overview",
+    /// Fuel: no figures yet.
+    FUEL_NONE_YET => "fuel-none-yet",
+    /// Fuel: the last 5 stretches' tile.
+    FUEL_LAST_FIVE => "fuel-last-five",
+    /// Fuel: the last 12 months' tile.
+    FUEL_YEAR => "fuel-year",
+    /// Fuel: the all-time tile.
+    FUEL_ALL_TIME => "fuel-all-time",
+    /// Fuel: how many stretches.
+    FUEL_STRETCHES => "fuel-stretches",
+    /// Fuel: the chart's heading.
+    FUEL_CHART => "fuel-chart",
+    /// Fuel: back to the chart.
+    FUEL_SHOW_CHART => "fuel-show-chart",
+    /// Fuel: the chart as a table.
+    FUEL_SHOW_TABLE => "fuel-show-table",
+    /// Fuel: how to see a stretch's details.
+    FUEL_CHART_HINT => "fuel-chart-hint",
+    /// Fuel: the average line's label.
+    FUEL_AVERAGE_LINE => "fuel-average-line",
+    /// Fuel table: when the stretch ended.
+    FUEL_TABLE_ENDED => "fuel-table-ended",
+    /// Fuel table: its fuel.
+    FUEL_TABLE_FUEL => "fuel-table-fuel",
+    /// Fuel table: its figure.
+    FUEL_TABLE_FIGURE => "fuel-table-figure",
+    /// Fuel breakdowns: highway.
+    FUEL_HIGHWAY => "fuel-highway",
+    /// Fuel breakdowns: towing.
+    FUEL_TOWING => "fuel-towing",
+    /// Fuel breakdowns: hauling.
+    FUEL_HAULING => "fuel-hauling",
+    /// Fuel breakdowns: towed vehicles.
+    FUEL_TOWED => "fuel-towed",
+    /// Fuel: 30% highway or less.
+    FUEL_BAND_CITY => "fuel-band-city",
+    /// Fuel: between.
+    FUEL_BAND_MIXED => "fuel-band-mixed",
+    /// Fuel: 70% highway or more.
+    FUEL_BAND_HIGHWAY => "fuel-band-highway",
+    /// Fuel: none.
+    FUEL_BAND_NONE => "fuel-band-none",
+    /// Fuel: under half.
+    FUEL_BAND_SOME => "fuel-band-some",
+    /// Fuel: half or more.
+    FUEL_BAND_MOSTLY => "fuel-band-mostly",
+    /// Fuel: no stretches in a band.
+    FUEL_NOT_ENOUGH => "fuel-not-enough",
+    /// Fuel: stretches towing nothing.
+    FUEL_NOT_TOWING => "fuel-not-towing",
+    /// Fuel: a towed vehicle the person can't see.
+    FUEL_ANOTHER_VEHICLE => "fuel-another-vehicle",
+    /// The fuel-up form: what Filled full means.
+    FUEL_INFO_FULL => "fuel-info-full",
+    /// The fuel-up form: what Missed previous fill-up means.
+    FUEL_INFO_MISSED => "fuel-info-missed",
+    /// The fuel-up form: the ⓘ button's name.
+    FUEL_INFO_LABEL => "fuel-info-label",
     /// Event: a reason is needed (skip, override, correction).
     EVENT_REASON_EMPTY => "event-reason-empty",
     /// Event: a reason over 500 characters.
@@ -1833,6 +2369,18 @@ define_messages! {
     LOG_CLASH_BELOW => "log-clash-below",
     /// Log form: a reading above the one after.
     LOG_CLASH_ABOVE => "log-clash-above",
+    /// Log form: the tick marking a reading as a reset.
+    LOG_RESET => "log-reset",
+    /// Log form: under a reset reading; takes `name`, `from`, `to`, and `unit`.
+    LOG_RESET_DONE => "log-reset-done",
+    /// Log form: the button on a refused reading of a resettable meter.
+    LOG_IT_WAS_A_RESET => "log-it-was-a-reset",
+    /// A reading higher than an earlier one on a meter counting down; takes `value`, `unit`,
+    /// and `date`.
+    LOG_CLASH_ABOVE_EARLIER => "log-clash-above-earlier",
+    /// A reading lower than a later one on a meter counting down; takes `value`, `unit`, and
+    /// `date`.
+    LOG_CLASH_BELOW_LATER => "log-clash-below-later",
     /// Correct form: what correcting does.
     LOG_CORRECT_NOTE => "log-correct-note",
     /// Correct form: the reason.
@@ -1965,8 +2513,6 @@ define_messages! {
     PANEL_FUEL_NONE => "panel-fuel-none",
     /// Overview: open the Timeline.
     PANEL_SEE_TIMELINE => "panel-see-timeline",
-    /// Overview: economy comes later.
-    PANEL_ECONOMY_LATER => "panel-economy-later",
     /// Overview: the newest event.
     PANEL_LAST_ACTIVITY => "panel-last-activity",
     /// Overview: no events.
@@ -2027,6 +2573,8 @@ define_messages! {
     EVENT_NO_END_READINGS => "event-no-end-readings",
     /// Maintenance: an end reading below the start.
     EVENT_END_BELOW_START => "event-end-below-start",
+    /// A reading marked as a reset on a meter that can't be reset.
+    EVENT_NOT_RESETTABLE => "event-not-resettable",
     /// Maintenance: Finish on a fuel-up or reading, or Finalize now on a job.
     EVENT_FINISH_JOBS_ONLY => "event-finish-jobs-only",
     /// Squawk: changing or removing one that a job has already dealt with.
@@ -2200,6 +2748,14 @@ define_messages! {
     SCHEDULE_ADD_CALENDAR_RULE => "schedule-add-calendar-rule",
     /// Requirement dialog: add a fixed date.
     SCHEDULE_ADD_FIXED_RULE => "schedule-add-fixed-rule",
+    /// Requirement dialog: add a "when a meter reaches" rule.
+    SCHEDULE_ADD_REACHES_RULE => "schedule-add-reaches-rule",
+    /// Requirement dialog: before the meter of a "reaches" rule.
+    SCHEDULE_WHEN_LABEL => "schedule-when-label",
+    /// Requirement dialog: between the meter and the mark of a "reaches" rule.
+    SCHEDULE_REACHES_LABEL => "schedule-reaches-label",
+    /// A "reaches" rule in words; takes `meter` and `value` ("15 %").
+    SCHEDULE_REACHES => "schedule-reaches",
     /// Requirement dialog: about the rules.
     SCHEDULE_RULES_HINT => "schedule-rules-hint",
     /// A rule's inputs: every.
@@ -2748,6 +3304,78 @@ define_messages! {
     INBOX_CLOCK_AHEAD_BODY => "inbox-clock-ahead-body",
     /// Messages: open the send-out.
     INBOX_OPEN_SEND_OUT => "inbox-open-send-out",
+    /// Messages: something on a vehicle is coming up (#083).
+    INBOX_DUE_COMING_UP => "inbox-due-coming-up",
+    /// Messages: something on a vehicle is due soon.
+    INBOX_DUE_SOON => "inbox-due-soon",
+    /// Messages: something on a vehicle is due very soon.
+    INBOX_DUE_VERY_SOON => "inbox-due-very-soon",
+    /// Messages: something on a vehicle is overdue.
+    INBOX_DUE_OVERDUE => "inbox-due-overdue",
+    /// Messages: what comes due, on which vehicle, and what's left (text).
+    INBOX_DUE_BODY => "inbox-due-body",
+    /// Messages: open the vehicle's Maintenance tab.
+    INBOX_OPEN_MAINTENANCE => "inbox-open-maintenance",
+    /// Messages: open the vehicle's Documents tab.
+    INBOX_OPEN_DOCUMENTS => "inbox-open-documents",
+    /// Messages: a snooze that can't be used.
+    MESSAGES_BAD_SNOOZE => "messages-bad-snooze",
+    /// Messages: a due message's row and title, "Outback: Engine oil & filter".
+    INBOX_DUE_ROW => "inbox-due-row",
+    /// Messages: the snooze button and its menu.
+    SNOOZE => "snooze",
+    /// Snooze: for a day.
+    SNOOZE_DAY => "snooze-day",
+    /// Snooze: for a week.
+    SNOOZE_WEEK => "snooze-week",
+    /// Snooze: for a month.
+    SNOOZE_MONTH => "snooze-month",
+    /// Snooze: a time or an amount, whichever comes first.
+    SNOOZE_EITHER => "snooze-either",
+    /// Snooze: choose days and an amount.
+    SNOOZE_CUSTOM => "snooze-custom",
+    /// Snooze: the days field.
+    SNOOZE_DAYS => "snooze-days",
+    /// Snooze: the amount field, named by its meter.
+    SNOOZE_OR_METER => "snooze-or-meter",
+    /// Snooze: how the two fields work together.
+    SNOOZE_HINT => "snooze-hint",
+    /// Messages: when a snoozed message wakes.
+    MESSAGES_SNOOZED_UNTIL => "messages-snoozed-until",
+    /// Messages: bring a snoozed message back now.
+    MESSAGES_WAKE => "messages-wake",
+    /// Messages: the filter for snoozed messages, with how many.
+    MESSAGES_FILTER_SNOOZED => "messages-filter-snoozed",
+    /// Due & squawks: the filter for everything.
+    DUE_FILTER_ALL => "due-filter-all",
+    /// Due & squawks: the filter for overdue items.
+    DUE_FILTER_OVERDUE => "due-filter-overdue",
+    /// Due & squawks: the filter for items due soon or very soon.
+    DUE_FILTER_SOON => "due-filter-soon",
+    /// Due & squawks: the filter for open squawks (the household's word).
+    DUE_FILTER_SQUAWKS => "due-filter-squawks",
+    /// Due & squawks: the squawks' heading.
+    DUE_LIST_SQUAWKS => "due-list-squawks",
+    /// Due & squawks: nothing to show.
+    DUE_LIST_NOTHING => "due-list-nothing",
+    /// The fleet strip's name, for screen readers.
+    FLEET_LABEL => "fleet-label",
+    /// The fleet strip: overdue items.
+    FLEET_OVERDUE => "fleet-overdue",
+    /// The fleet strip: items due soon or very soon.
+    FLEET_DUE_SOON => "fleet-due-soon",
+    /// The fleet strip: open squawks (the household's word).
+    FLEET_SQUAWKS => "fleet-squawks",
+    /// The fleet strip: nothing waiting to be sent.
+    FLEET_SYNCED => "fleet-synced",
+    /// The fleet strip: changes waiting to be sent.
+    FLEET_WAITING => "fleet-waiting",
+    /// The fleet strip: the desktop is offline.
+    FLEET_OFFLINE => "fleet-offline",
+    /// Settings: when what's due starts sending messages.
+    SETTING_DUE_MESSAGES => "setting-due-messages",
+    /// Settings: what the starting step means.
+    SETTING_DUE_MESSAGES_NOTE => "setting-due-messages-note",
     /// Log: what an acquisition records.
     LOG_ACQUIRED_DETAIL => "log-acquired-detail",
     /// Log: what a send-out records.

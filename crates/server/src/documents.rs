@@ -43,6 +43,8 @@ fn from_assets(outcome: &AssetsOutcome) -> DocumentsOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => DocumentsOutcome::Unavailable,
     }
 }
@@ -180,6 +182,7 @@ fn document_from(
         added_at: now,
         added_by: context.user.user,
         received_at: now,
+        warn_days: input.warn_days,
     }
 }
 
@@ -313,6 +316,7 @@ fn document_changes(current: &AssetDocument, next: &AssetDocument) -> AssetDocum
         expires_on: changed(current.expires_on.as_ref(), next.expires_on.as_ref()),
         plate: changed(current.plate.as_ref(), next.plate.as_ref()),
         notes: (current.notes != next.notes).then(|| next.notes.clone()),
+        warn_days: changed(current.warn_days.as_ref(), next.warn_days.as_ref()),
         ..AssetDocumentPatch::default()
     }
 }

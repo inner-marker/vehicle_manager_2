@@ -43,6 +43,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetId;
 use crate::command::{Clearable, Record, record_patch};
+use crate::due::{DueDefaults, LastDoneBefore};
 use crate::event::{EventId, Reading, Reason};
 use crate::i18n::{MessageId, messages};
 use crate::id::Id;
@@ -119,10 +120,34 @@ pub enum IntervalRule {
         /// The first due date, `2026-11-30`, if known when the requirement is set up.
         first: Option<String>,
     },
+    /// When `meter` reaches `at` (in its stored unit), e.g. Oil life down to 15% (Phase 5,
+    /// #082): from above for a meter counting down, from below for one counting up.
+    Reaches {
+        /// Which meter.
+        meter: MeterId,
+        /// The mark, zero or more.
+        at: i64,
+    },
 }
 
-/// How a requirement is complied with (plan §3, layer 2). More modes join in Phase 5
-/// (an initial deadline then recurring, and recurring until a terminating action).
+impl IntervalRule {
+    /// The same rule on `meter` instead (a rule on no meter is unchanged).
+    #[must_use]
+    pub fn on_meter(&self, meter: MeterId) -> Self {
+        match self {
+            Self::Meter { every, .. } => Self::Meter {
+                meter,
+                every: *every,
+            },
+            Self::Reaches { at, .. } => Self::Reaches { meter, at: *at },
+            other @ (Self::Calendar { .. } | Self::FixedDate { .. }) => other.clone(),
+        }
+    }
+}
+
+/// How a requirement is complied with (plan §3, layer 2). The airworthiness modes (an
+/// initial deadline then recurring, and recurring until a terminating action) wait for the
+/// aircraft phase (#082).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ComplianceMode {
@@ -186,6 +211,21 @@ pub struct Requirement {
     /// Whether it applies to this vehicle.
     #[serde(default)]
     pub applicability: Applicability,
+    /// When it was last done before the household's records began, to count from (#082).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub before_records: Option<LastDoneBefore>,
+    /// Its own warnings, instead of the household's (#082).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warnings: Option<DueDefaults>,
+    /// The vehicle's specs its job uses, in order (#084): they pre-fill a task's parts and
+    /// reminders.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub specs: Vec<crate::spec::SpecId>,
+    /// The vehicle's usages it's needed for (#086): not set means the default usage (every
+    /// requirement made before usages); an empty list means none (it doesn't count for
+    /// readiness).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usages: Option<Vec<crate::usage::UsageId>>,
 }
 
 /// Where a requirement stands (worked out, never stored).
@@ -221,6 +261,15 @@ impl RequirementStatus {
 }
 
 impl Requirement {
+    /// Whether it's needed for usage `usage`, which is the vehicle's default if `default`:
+    /// ticked for it, or (never set) it's the default (#086).
+    #[must_use]
+    pub fn needed_for(&self, usage: crate::usage::UsageId, default: bool) -> bool {
+        self.usages
+            .as_ref()
+            .map_or(default, |usages| usages.contains(&usage))
+    }
+
     /// Where requirement `id` stands, from the finished tasks that did requirements (`done`):
     /// not applicable if so decided; a one-time one complied with by the first task that did
     /// it, or open (also while under review); a recurring one active (open while under
@@ -276,6 +325,14 @@ record_patch! {
         mode: ComplianceMode,
         /// See [`Requirement::applicability`].
         applicability: Applicability,
+        /// See [`Requirement::before_records`].
+        before_records: Clearable<LastDoneBefore>,
+        /// See [`Requirement::warnings`].
+        warnings: Clearable<DueDefaults>,
+        /// See [`Requirement::specs`] (the whole list).
+        specs: Vec<crate::spec::SpecId>,
+        /// See [`Requirement::usages`] (the whole list, or back to "the default").
+        usages: Clearable<Vec<crate::usage::UsageId>>,
     }
 }
 
@@ -292,6 +349,10 @@ impl RequirementPatch {
             reference: Some(Clearable::from_option(requirement.reference)),
             mode: Some(requirement.mode),
             applicability: Some(requirement.applicability),
+            before_records: Some(Clearable::from_option(requirement.before_records)),
+            warnings: Some(Clearable::from_option(requirement.warnings)),
+            specs: Some(requirement.specs),
+            usages: Some(Clearable::from_option(requirement.usages)),
         }
     }
 }
@@ -368,6 +429,18 @@ pub enum RequirementProblem {
     OneTimeWithRules,
     /// A link to a reference document that doesn't exist.
     UnknownReference,
+    /// Its own warnings don't make sense (a step earlier than the one before it, or past 100%
+    /// or the most days; #082).
+    BadWarnings,
+    /// "Last done before these records" that isn't a date, names a meter twice or one that
+    /// isn't this vehicle's, or has a negative reading (#082).
+    BadBeforeRecords,
+    /// Specs that aren't this vehicle's, or one twice (#084).
+    BadSpecs,
+    /// A template from a vehicle with no requirements (#084).
+    NothingToSave,
+    /// Usages that aren't this vehicle's, or one twice (#086).
+    BadUsages,
 }
 
 impl RequirementProblem {
@@ -375,7 +448,9 @@ impl RequirementProblem {
     #[must_use]
     pub const fn message(self) -> MessageId {
         match self {
-            Self::UnknownMeter | Self::UnknownReference => messages::SOMETHING_WENT_WRONG,
+            Self::UnknownMeter | Self::UnknownReference | Self::BadSpecs | Self::BadUsages => {
+                messages::SOMETHING_WENT_WRONG
+            }
             Self::BadInterval => messages::REQUIREMENT_BAD_INTERVAL,
             Self::BadCalendar => messages::REQUIREMENT_BAD_CALENDAR,
             Self::BadDate => messages::DATE_BAD_DATE,
@@ -384,7 +459,10 @@ impl RequirementProblem {
             Self::BadBundleItem => messages::BUNDLE_BAD_ITEM,
             Self::InUse => messages::REQUIREMENT_IN_USE,
             Self::ScheduleNotEmpty => messages::SCHEDULE_NOT_EMPTY,
+            Self::NothingToSave => messages::TEMPLATE_NOTHING_TO_SAVE,
             Self::OneTimeWithRules => messages::REQUIREMENT_ONE_TIME_WITH_RULES,
+            Self::BadWarnings => messages::DUE_BAD_WARNINGS,
+            Self::BadBeforeRecords => messages::REQUIREMENT_BAD_BEFORE_RECORDS,
         }
     }
 }
@@ -405,7 +483,10 @@ pub fn check_rules(
 ) -> Result<(), RequirementProblem> {
     for (index, rule) in rules.iter().enumerate() {
         let same_kind = rules[..index].iter().any(|earlier| match (earlier, rule) {
-            (IntervalRule::Meter { meter: a, .. }, IntervalRule::Meter { meter: b, .. }) => a == b,
+            (IntervalRule::Meter { meter: a, .. }, IntervalRule::Meter { meter: b, .. })
+            | (IntervalRule::Reaches { meter: a, .. }, IntervalRule::Reaches { meter: b, .. }) => {
+                a == b
+            }
             (IntervalRule::Calendar { .. }, IntervalRule::Calendar { .. })
             | (IntervalRule::FixedDate { .. }, IntervalRule::FixedDate { .. }) => true,
             _ => false,
@@ -432,6 +513,46 @@ pub fn check_rules(
                     civil(first)?;
                 }
             }
+            IntervalRule::Reaches { meter, at } => {
+                if !meters.iter().any(|(id, _)| id == meter) {
+                    return Err(RequirementProblem::UnknownMeter);
+                }
+                if *at < 0 {
+                    return Err(RequirementProblem::BadInterval);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Checks a requirement's due settings (#082): its own warnings make sense, and "last done
+/// before these records" is a date with readings of the vehicle's `meters`, each once, none
+/// negative.
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadWarnings`] or [`RequirementProblem::BadBeforeRecords`].
+pub fn check_due_settings(
+    requirement: &Requirement,
+    meters: &[(MeterId, Meter)],
+) -> Result<(), RequirementProblem> {
+    if requirement
+        .warnings
+        .is_some_and(|warnings| !warnings.valid())
+    {
+        return Err(RequirementProblem::BadWarnings);
+    }
+    if let Some(before) = &requirement.before_records {
+        civil(&before.on).map_err(|_| RequirementProblem::BadBeforeRecords)?;
+        for (index, reading) in before.readings.iter().enumerate() {
+            let known = meters.iter().any(|(id, _)| *id == reading.meter);
+            let repeated = before.readings[..index]
+                .iter()
+                .any(|earlier| earlier.meter == reading.meter);
+            if !known || repeated || reading.value < 0 {
+                return Err(RequirementProblem::BadBeforeRecords);
+            }
         }
     }
     Ok(())
@@ -455,6 +576,42 @@ pub fn check_compliance(
         .is_some_and(|reference| !references.contains(&reference))
     {
         return Err(RequirementProblem::UnknownReference);
+    }
+    Ok(())
+}
+
+/// Checks a requirement's `specs` against its vehicle's (`known`): each the vehicle's, and
+/// each once (#084).
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadSpecs`] otherwise.
+pub fn check_specs(
+    specs: &[crate::spec::SpecId],
+    known: &[crate::spec::SpecId],
+) -> Result<(), RequirementProblem> {
+    for (index, spec) in specs.iter().enumerate() {
+        if !known.contains(spec) || specs[..index].contains(spec) {
+            return Err(RequirementProblem::BadSpecs);
+        }
+    }
+    Ok(())
+}
+
+/// Checks a requirement's `usages` against its vehicle's (`known`): each the vehicle's, and
+/// each once (#086).
+///
+/// # Errors
+///
+/// [`RequirementProblem::BadUsages`] otherwise.
+pub fn check_usages(
+    usages: &[crate::usage::UsageId],
+    known: &[crate::usage::UsageId],
+) -> Result<(), RequirementProblem> {
+    for (index, usage) in usages.iter().enumerate() {
+        if !known.contains(usage) || usages[..index].contains(usage) {
+            return Err(RequirementProblem::BadUsages);
+        }
     }
     Ok(())
 }
@@ -535,25 +692,29 @@ pub fn last_done(requirement: RequirementId, done: &[DoneTask]) -> Option<&DoneT
 }
 
 /// A schedule copied onto another vehicle: the requirements (with the IDs they had, so the
-/// bundles' items can be mapped to their new ones), the bundles, and the meter rules left out
-/// because the new vehicle has no matching meter.
+/// bundles' items and the requirements' specs can be mapped to their new ones), the bundles,
+/// the specs, and the meter rules left out because the new vehicle has no matching meter.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopiedSchedule {
     /// Each requirement, with its ID on the vehicle it came from.
     pub requirements: Vec<(RequirementId, Requirement)>,
     /// Each bundle, still naming the requirements by their old IDs.
     pub bundles: Vec<Bundle>,
+    /// Each spec, with its ID on the vehicle it came from (the requirements still name
+    /// these, #084).
+    pub specs: Vec<(crate::spec::SpecId, crate::spec::Spec)>,
     /// "Engine oil & filter: Engine hours": a requirement and a meter it couldn't keep.
     pub left_out: Vec<(Label, Label)>,
 }
 
-/// Copies `requirements` and `bundles` onto `to_asset` (#031): copies, never links. A meter
-/// rule moves to the new vehicle's meter with the same name (ignoring case) and dimension;
-/// with none, it's left out and listed.
+/// Copies `requirements`, `bundles`, and `specs` onto `to_asset` (#031, #084): copies, never
+/// links. A meter rule moves to the new vehicle's meter with the same name (ignoring case)
+/// and dimension; with none, it's left out and listed.
 #[must_use]
 pub fn copy_schedule(
     requirements: &[(RequirementId, Requirement)],
     bundles: &[Bundle],
+    specs: &[(crate::spec::SpecId, crate::spec::Spec)],
     from_meters: &[(MeterId, Meter)],
     to_meters: &[(MeterId, Meter)],
     to_asset: AssetId,
@@ -582,11 +743,8 @@ pub fn copy_schedule(
                 .rules
                 .iter()
                 .filter_map(|rule| match rule {
-                    IntervalRule::Meter { meter, every } => {
-                        let moved = matching(*meter).map(|to| IntervalRule::Meter {
-                            meter: to,
-                            every: *every,
-                        });
+                    IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => {
+                        let moved = matching(*meter).map(|to| rule.on_meter(to));
                         if moved.is_none() {
                             left_out.extend(
                                 meter_name(*meter).map(|name| (requirement.name.clone(), name)),
@@ -604,6 +762,8 @@ pub fn copy_schedule(
                 Requirement {
                     asset: to_asset,
                     rules,
+                    // When it was last done before the records is the other vehicle's.
+                    before_records: None,
                     ..requirement.clone()
                 },
             )
@@ -616,6 +776,18 @@ pub fn copy_schedule(
             .map(|bundle| Bundle {
                 asset: to_asset,
                 ..bundle.clone()
+            })
+            .collect(),
+        specs: specs
+            .iter()
+            .map(|(id, spec)| {
+                (
+                    *id,
+                    crate::spec::Spec {
+                        asset: to_asset,
+                        ..spec.clone()
+                    },
+                )
             })
             .collect(),
         left_out,
@@ -636,6 +808,8 @@ mod tests {
 
     fn meter(name: &str, dimension: MeterDimension) -> Meter {
         Meter {
+            key: crate::custom_field::FieldKey::from_label(&Label::parse(name).unwrap(), &[]),
+            formula: None,
             asset: test_id(1),
             name: Label::parse(name).unwrap(),
             dimension,
@@ -647,6 +821,8 @@ mod tests {
             precision: 0,
             description: None,
             required_for: vec![EventKind::Fuel],
+            direction: crate::meter::MeterDirection::Up,
+            reset_to: None,
         }
     }
 
@@ -687,7 +863,104 @@ mod tests {
             reference: None,
             mode: ComplianceMode::Recurring,
             applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
+            specs: vec![],
+            usages: None,
         }
+    }
+
+    #[test]
+    fn due_settings_are_checked() {
+        let meters = meters();
+        let reading = |meter: u32, value: i64| Reading {
+            meter: test_id(meter),
+            value,
+            reset: false,
+        };
+        let with = |on: &str, readings: Vec<Reading>| Requirement {
+            before_records: Some(LastDoneBefore {
+                on: on.into(),
+                readings,
+            }),
+            ..oil()
+        };
+        assert_eq!(check_due_settings(&oil(), &meters), Ok(()), "none set");
+        assert_eq!(
+            check_due_settings(&with("2026-08-02", vec![reading(ODOMETER, 5)]), &meters),
+            Ok(())
+        );
+        for bad in [
+            with("August", vec![]),
+            with("2026-08-02", vec![reading(99, 5)]),
+            with(
+                "2026-08-02",
+                vec![reading(ODOMETER, 5), reading(ODOMETER, 6)],
+            ),
+            with("2026-08-02", vec![reading(ODOMETER, -1)]),
+        ] {
+            assert_eq!(
+                check_due_settings(&bad, &meters),
+                Err(RequirementProblem::BadBeforeRecords)
+            );
+        }
+        let backwards = Requirement {
+            warnings: Some(DueDefaults {
+                interval: crate::due::IntervalSteps {
+                    coming_up: 5,
+                    due_soon: 10,
+                    very_soon: 1,
+                },
+                days: crate::due::DaySteps::default(),
+            }),
+            ..oil()
+        };
+        assert_eq!(
+            check_due_settings(&backwards, &meters),
+            Err(RequirementProblem::BadWarnings)
+        );
+    }
+
+    #[test]
+    fn a_reaches_rule_names_a_meter_once_and_a_mark_of_zero_or_more() {
+        let meters = meters();
+        let reaches = |meter: u32, at: i64| IntervalRule::Reaches {
+            meter: test_id(meter),
+            at,
+        };
+        assert_eq!(check_rules(&[reaches(HOURS, 0)], &meters), Ok(()));
+        assert_eq!(
+            check_rules(&[reaches(99, 1_500)], &meters),
+            Err(RequirementProblem::UnknownMeter)
+        );
+        assert_eq!(
+            check_rules(&[reaches(HOURS, -1)], &meters),
+            Err(RequirementProblem::BadInterval)
+        );
+        assert_eq!(
+            check_rules(&[reaches(HOURS, 10), reaches(HOURS, 20)], &meters),
+            Err(RequirementProblem::RepeatedRule)
+        );
+        // Beside an "every" rule on the same meter, whichever comes first.
+        let every = IntervalRule::Meter {
+            meter: test_id(HOURS),
+            every: 900_000,
+        };
+        assert_eq!(
+            check_rules(&[every.clone(), reaches(HOURS, 10)], &meters),
+            Ok(())
+        );
+        assert_eq!(
+            reaches(HOURS, 10).on_meter(test_id(ODOMETER)),
+            reaches(ODOMETER, 10)
+        );
+        assert_eq!(
+            every.on_meter(test_id(ODOMETER)),
+            IntervalRule::Meter {
+                meter: test_id(ODOMETER),
+                every: 900_000
+            }
+        );
     }
 
     #[test]
@@ -911,16 +1184,32 @@ mod tests {
     fn copying_a_schedule_moves_meter_rules_by_name_and_lists_what_it_left_out() {
         // The new vehicle has an odometer ("ODOMETER", another ID) but no engine hours.
         let to_meters = vec![(test_id(50), meter("ODOMETER", MeterDimension::Distance))];
-        let requirements = vec![(test_id(40), oil())];
+        // When it was last done before the records is this vehicle's own past.
+        let done_before = Requirement {
+            before_records: Some(LastDoneBefore {
+                on: "2026-08-02".into(),
+                readings: vec![],
+            }),
+            ..oil()
+        };
+        let requirements = vec![(test_id(40), done_before)];
         let bundles = vec![Bundle {
             asset: test_id(1),
             name: Label::parse("10,000-mile service").unwrap(),
             requirements: vec![test_id(40)],
         }];
-        let copied = copy_schedule(&requirements, &bundles, &meters(), &to_meters, test_id(2));
+        let copied = copy_schedule(
+            &requirements,
+            &bundles,
+            &[],
+            &meters(),
+            &to_meters,
+            test_id(2),
+        );
         let (old_id, copy) = &copied.requirements[0];
         assert_eq!(*old_id, test_id(40));
         assert_eq!(copy.asset, test_id(2));
+        assert_eq!(copy.before_records, None, "not copied");
         assert_eq!(
             copy.rules,
             vec![
@@ -952,9 +1241,24 @@ mod tests {
     }
 
     #[test]
+    fn a_requirements_specs_are_the_vehicles_each_once() {
+        let known = [test_id(30), test_id(31)];
+        assert_eq!(check_specs(&[], &known), Ok(()));
+        assert_eq!(check_specs(&[test_id(31), test_id(30)], &known), Ok(()));
+        assert_eq!(
+            check_specs(&[test_id(30), test_id(30)], &known),
+            Err(RequirementProblem::BadSpecs)
+        );
+        assert_eq!(
+            check_specs(&[test_id(99)], &known),
+            Err(RequirementProblem::BadSpecs)
+        );
+    }
+
+    #[test]
     fn patches_set_every_field_and_survive_the_trip() {
         let patch = RequirementPatch::all(oil());
-        assert_eq!(patch.changed_fields().len(), 8);
+        assert_eq!(patch.changed_fields().len(), 12);
         let json = serde_json::to_string(&patch).unwrap();
         assert!(json.contains("\"rule\":\"calendar\""), "{json}");
         assert_eq!(

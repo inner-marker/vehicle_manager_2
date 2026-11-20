@@ -15,12 +15,18 @@
 //! too), then sent; online the form waits for the server's answer, offline it waits in the
 //! outbox. Everything else, and the web, asks the server.
 //!
-//! Messages, Users, Devices, place lookup, and files stay with the server for now.
+//! **Messages** (#083) ask the server first, so its own (a failed snapshot, an unhealthy
+//! server) show; a desktop that can't reach it works out the inbox from its copy instead, so
+//! what's due still shows offline. Marking a message (read, dismissed, snoozed) needs the
+//! server: there's no operation for it yet.
+//!
+//! Users, Devices, place lookup, and files stay with the server for now.
 
 use dioxus::prelude::*;
 use domain::api::{
-    AssetsOutcome, AttachmentsOutcome, DocumentsOutcome, EventsOutcome, PlacesOutcome,
-    PreferencesOutcome, ReferencesOutcome, ScheduleOutcome, SquawkInput, SquawksOutcome,
+    AssetsOutcome, AttachmentsOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome,
+    InboxOutcome, MarkMessage, PlacesOutcome, PreferencesOutcome, ReferencesOutcome,
+    ScheduleOutcome, SquawkInput, SquawksOutcome,
 };
 use domain::asset::AssetId;
 use domain::attachment::AttachmentOwner;
@@ -241,6 +247,20 @@ mod local {
 
         pub(super) fn places(&self) -> PlacesContext<'_> {
             self.places_from(Origin::Online)
+        }
+
+        /// The message center on the copy: what's due, forgotten jobs, and overdue returns
+        /// (the server's own messages need the server).
+        pub(super) fn messages(&self) -> ::server::messages::MessagesContext<'_> {
+            ::server::messages::MessagesContext {
+                database: &self.database,
+                database_id: self.database_id,
+                user: &self.user,
+                health: Health::Healthy,
+                problem: None,
+                clock: &SystemClock,
+                timers: domain::timers::Timers::NORMAL,
+            }
         }
 
         /// For a change from `origin` (an operation, applied to the copy).
@@ -811,13 +831,95 @@ pub(crate) async fn get_places() -> ServerFnResult<PlacesOutcome> {
     read!(reader => ::server::places::list(&reader.places()).await, api::get_places())
 }
 
-/// The Garage (`api::get_garage`).
+/// The Garage (`api::get_garage`), with each vehicle's due step in the device's zone.
 ///
 /// # Errors
 ///
 /// As the server function.
 pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
-    read!(reader => ::server::assets::garage(&reader.assets()).await, api::get_garage())
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::assets::garage(&reader.assets(), &zone).await, api::get_garage(zone.clone()))
+}
+
+/// What comes due on one vehicle (`api::vehicle_due`), in the device's zone.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn vehicle_due(asset: AssetId) -> ServerFnResult<DueOutcome> {
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::due::list(&reader.assets(), asset, &zone).await, api::vehicle_due(asset, zone.clone()))
+}
+
+/// The person's messages (`api::get_messages`), in the device's zone: the server's answer, or
+/// on a desktop that can't reach it, its copy's (#083).
+///
+/// # Errors
+///
+/// As the server function, when there's no copy to fall back on.
+pub(crate) async fn get_messages() -> ServerFnResult<InboxOutcome> {
+    let zone = crate::ui::device_zone().await;
+    let answer = api::get_messages(zone.clone()).await;
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    if answer.is_err()
+        && let Some(reader) = local::Reader::new().await
+    {
+        return Ok(::server::messages::view(&reader.messages(), &zone).await);
+    }
+    answer
+}
+
+/// Marks a message (`api::mark_message`), in the device's zone. Always the server's: there's
+/// no operation for marks yet.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnResult<InboxOutcome> {
+    api::mark_message(key, action, crate::ui::device_zone().await).await
+}
+
+/// Due & squawks (`api::fleet_due`), in the device's zone (#083).
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn fleet_due() -> ServerFnResult<FleetOutcome> {
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::due::fleet(&reader.assets(), &zone).await, api::fleet_due(zone.clone()))
+}
+
+/// A vehicle's fuel economy (`api::vehicle_fuel`, #085), from the copy on a desktop that has
+/// one, offline too.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn vehicle_fuel(asset: AssetId) -> ServerFnResult<domain::api::FuelOutcome> {
+    read!(reader => ::server::fuel::summary(&reader.assets(), asset).await, api::vehicle_fuel(asset))
+}
+
+/// A vehicle's readiness for each of its usages (`api::vehicle_readiness`, #086), in the
+/// device's zone, from the copy on a desktop that has one, offline too.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn vehicle_readiness(
+    asset: AssetId,
+) -> ServerFnResult<domain::api::ReadinessOutcome> {
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::readiness::view(&reader.assets(), asset, &zone).await, api::vehicle_readiness(asset, zone.clone()))
+}
+
+/// The Templates screen (`api::list_templates`, #084): read from the copy on a desktop that
+/// has one, offline too. Saving and applying a template need the server.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOutcome> {
+    read!(reader => ::server::templates::list(&reader.assets()).await, api::list_templates())
 }
 
 /// One vehicle's page (`api::vehicle_page`).
@@ -923,5 +1025,6 @@ pub(crate) async fn reference(id: ReferenceDocumentId) -> ServerFnResult<Referen
 ///
 /// As the server function.
 pub(crate) async fn vehicle_schedule(asset: AssetId) -> ServerFnResult<ScheduleOutcome> {
-    read!(reader => ::server::schedule::view(&reader.assets(), asset).await, api::vehicle_schedule(asset))
+    let zone = crate::ui::device_zone().await;
+    read!(reader => ::server::schedule::view(&reader.assets(), asset, &zone).await, api::vehicle_schedule(asset, zone.clone()))
 }

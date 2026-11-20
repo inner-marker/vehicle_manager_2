@@ -170,13 +170,19 @@ pub struct EventLocation {
     pub missing_reason: Option<Reason>,
 }
 
-/// One meter's reading on an event, in the stored unit (meters or seconds).
+/// One meter's reading on an event, in the stored unit (meters, seconds, or hundredths of a
+/// percent).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Reading {
     /// Which meter.
     pub meter: MeterId,
     /// Its value (raw, before any later meter adjustment).
     pub value: i64,
+    /// The meter was reset here: this is its new start, and readings before it don't bind
+    /// it (a resettable meter only; Phase 5, #080). Left out when false, as older apps
+    /// expect.
+    #[serde(default, skip_serializing_if = "core::ops::Not::not")]
+    pub reset: bool,
 }
 
 /// Something required that wasn't given.
@@ -286,6 +292,10 @@ pub struct Part {
     pub quantity_milli: i64,
     /// The price of one, in the event's currency's minor unit, if known.
     pub unit_price_minor: Option<i64>,
+    /// The vehicle spec it was pre-filled from, if any (#084): saving the job can then tell
+    /// whether the spec should change too.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spec: Option<crate::spec::SpecId>,
 }
 
 impl Part {
@@ -664,10 +674,14 @@ impl Event {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ClashSide {
-    /// Lower than the reading before it.
+    /// Lower than the reading before it (a meter counting up).
     BelowEarlier,
-    /// Higher than the reading after it.
+    /// Higher than the reading after it (a meter counting up).
     AboveLater,
+    /// Higher than the reading before it (a meter counting down).
+    AboveEarlier,
+    /// Lower than the reading after it (a meter counting down).
+    BelowLater,
 }
 
 /// The reading a new one doesn't fit with, so the form can say which ("lower than 52,310 mi on
@@ -702,6 +716,8 @@ pub enum EventProblem {
     ReadingOutOfOrder(ReadingClash),
     /// A reading for a meter that isn't this vehicle's.
     UnknownMeter(MeterId),
+    /// A reading marked as a reset, for a meter that can't be reset.
+    NotResettable(MeterId),
     /// A value for a field that isn't this vehicle's (or isn't on this kind of event, or is off).
     UnknownField(CustomFieldId),
     /// A value of the wrong type for its field, or a choice that isn't one of its options.
@@ -743,7 +759,8 @@ pub enum EventProblem {
     BadNextDue,
     /// A task resetting from the end readings when there are none for its meters.
     NoEndReadings,
-    /// An end reading lower than the start one (the meter in question).
+    /// An end reading that goes the wrong way from the start one: lower, or higher for a
+    /// meter counting down, and not a reset (the meter in question).
     EndBelowStart(MeterId),
     /// A signed-off squawk naming a task that isn't in the list.
     UnknownTask,
@@ -780,6 +797,7 @@ impl EventProblem {
             Self::LocationRequired => messages::EVENT_LOCATION_REQUIRED,
             Self::Required(_) => messages::EVENT_REQUIRED,
             Self::ReadingOutOfOrder(_) => messages::EVENT_READING_OUT_OF_ORDER,
+            Self::NotResettable(_) => messages::EVENT_NOT_RESETTABLE,
             Self::UnknownMeter(_)
             | Self::UnknownField(_)
             | Self::FuelDetails

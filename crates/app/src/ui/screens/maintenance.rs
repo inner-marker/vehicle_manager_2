@@ -31,6 +31,7 @@ use domain::requirement::{
 };
 
 use super::compliance::{ComplianceChoices, TypedCompliance, chip_date, is_settled, status_chip};
+use super::due_view::{DueChip, DueSettings, TypedDueSettings, left_text, step_class};
 use super::problem_from_error;
 use super::references::{
     ReferenceDialog, ReferenceLine, ReferencePicker, ReferenceSheet, short_name,
@@ -50,6 +51,8 @@ use crate::ui::{tr, tr_with};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum MaintenanceView {
     Schedule,
+    /// The vehicle's specs (#084).
+    Specs,
     Jobs,
     SetUp,
 }
@@ -59,6 +62,7 @@ impl MaintenanceView {
     pub(super) const fn slug(self) -> &'static str {
         match self {
             Self::Schedule => "maintenance",
+            Self::Specs => "specs",
             Self::Jobs => "jobs",
             Self::SetUp => "set-up",
         }
@@ -66,7 +70,7 @@ impl MaintenanceView {
 
     /// The view an address names, if it's one of the Maintenance tab's.
     pub(super) fn from_slug(slug: &str) -> Option<Self> {
-        [Self::Schedule, Self::Jobs, Self::SetUp]
+        [Self::Schedule, Self::Specs, Self::Jobs, Self::SetUp]
             .into_iter()
             .find(|view| view.slug() == slug)
     }
@@ -74,6 +78,7 @@ impl MaintenanceView {
     const fn label(self) -> MessageId {
         match self {
             Self::Schedule => messages::MAINTENANCE_SCHEDULE,
+            Self::Specs => messages::MAINTENANCE_SPECS,
             Self::Jobs => messages::MAINTENANCE_JOBS,
             Self::SetUp => messages::MAINTENANCE_SET_UP,
         }
@@ -85,6 +90,10 @@ impl MaintenanceView {
 struct Schedule {
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// The vehicle's specs, by name (#084).
+    specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
+    /// The vehicle's usages, the default first (#086).
+    usages: Vec<(domain::usage::UsageId, domain::usage::Usage)>,
     may_configure: bool,
 }
 
@@ -101,12 +110,17 @@ fn use_schedule(
                 Ok(ScheduleOutcome::Schedule {
                     requirements,
                     bundles,
+                    specs,
+                    usages,
                     may_configure,
+                    ..
                 }) => {
-                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), "schedule loaded");
+                    tracing::debug!(target: log_area::UI, %asset, requirements = requirements.len(), specs = specs.len(), "schedule loaded");
                     Ok(Schedule {
                         requirements,
                         bundles,
+                        specs,
+                        usages,
                         may_configure,
                     })
                 }
@@ -123,11 +137,15 @@ fn use_schedule(
 fn refusal(outcome: &ScheduleOutcome) -> MessageId {
     match outcome {
         ScheduleOutcome::Invalid { problem } => problem.message(),
+        ScheduleOutcome::InvalidSpec { problem } => problem.message(),
+        ScheduleOutcome::InvalidUsage { problem } => problem.message(),
         ScheduleOutcome::NotFound => messages::VEHICLE_NOT_FOUND,
         ScheduleOutcome::NotAllowed => messages::VEHICLES_NOT_ALLOWED,
         ScheduleOutcome::Schedule { .. }
         | ScheduleOutcome::SavedRequirement { .. }
         | ScheduleOutcome::SavedBundle { .. }
+        | ScheduleOutcome::SavedSpec { .. }
+        | ScheduleOutcome::SavedUsage { .. }
         | ScheduleOutcome::Copied { .. }
         | ScheduleOutcome::Done
         | ScheduleOutcome::Unavailable => messages::SOMETHING_WENT_WRONG,
@@ -147,6 +165,7 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
     use_effect(use_reactive!(|start| view.set(start)));
     let views: Vec<MaintenanceView> = [
         MaintenanceView::Schedule,
+        MaintenanceView::Specs,
         MaintenanceView::Jobs,
         MaintenanceView::SetUp,
     ]
@@ -179,6 +198,9 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
                 (MaintenanceView::Schedule, Some(Ok(loaded))) => rsx! {
                     ScheduleView { vehicle, schedule: loaded, reloads, on_set_up: move |()| view.set(MaintenanceView::SetUp) }
                 },
+                (MaintenanceView::Specs, Some(Ok(loaded))) => rsx! {
+                    super::specs_view::SpecsView { vehicle, specs: loaded.specs, may_configure: loaded.may_configure, reloads }
+                },
                 (MaintenanceView::SetUp, Some(Ok(loaded))) => rsx! {
                     SetUpView { vehicle, schedule: loaded, reloads }
                 },
@@ -191,11 +213,7 @@ pub(super) fn MaintenanceTab(vehicle: AssetView, start: MaintenanceView) -> Elem
 
 /// A meter's short unit name.
 fn unit_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// A date (`2026-11-30`) in the person's format.
@@ -262,6 +280,22 @@ fn rules_text(
                     count
                 });
             }
+            IntervalRule::Reaches { meter, at } => {
+                if let Some((_, meter)) = meters.iter().find(|(id, _)| id == meter) {
+                    let value = format!(
+                        "{} {}",
+                        show_reading(*at, meter.unit, meter.precision),
+                        unit_abbr(meter.unit)
+                    );
+                    periodic.push(tr_with(
+                        messages::SCHEDULE_REACHES,
+                        &[
+                            ("meter", MessageArg::from(meter.name.as_str().to_owned())),
+                            ("value", MessageArg::from(value)),
+                        ],
+                    ));
+                }
+            }
             IntervalRule::FixedDate { first } => {
                 fixed = Some(match next.or(first.as_deref()) {
                     Some(date) => tr_with(
@@ -308,7 +342,7 @@ fn last_done_text(
     let date =
         format_date(done.at, zone, units.date_format, Translator::english()).unwrap_or_default();
     let ruled = requirement.rules.iter().find_map(|rule| match rule {
-        IntervalRule::Meter { meter, .. } => Some(*meter),
+        IntervalRule::Meter { meter, .. } | IntervalRule::Reaches { meter, .. } => Some(*meter),
         IntervalRule::Calendar { .. } | IntervalRule::FixedDate { .. } => None,
     });
     let reading = ruled
@@ -436,6 +470,15 @@ fn ScheduleView(
                             span { class: "schedule-card-when",
                                 {tr_with(messages::SCHEDULE_BUNDLE_COUNT, &[("count", MessageArg::from(i64::try_from(bundle.requirements.len()).unwrap_or(i64::MAX)))])}
                             }
+                            // A job with its tasks, parts pre-filled (5A, #084); not once the
+                            // vehicle's disposal is finalized (#067).
+                            if schedule.may_configure && vehicle.standing.takes_new_records {
+                                Link {
+                                    class: "primary-button log-service",
+                                    to: Route::LogService { asset_id: vehicle.id.to_string(), bundle_id: id.to_string() },
+                                    {tr(messages::SCHEDULE_LOG_SERVICE)}
+                                }
+                            }
                         }
                     }
                 }
@@ -520,14 +563,31 @@ fn ScheduleCard(view: RequirementView, vehicle: AssetView, refs: Vec<ReferenceVi
         Some((tr(messages::SCHEDULE_OFF), "status-chip muted"))
     };
     let reference = view.requirement.reference;
+    // What's due (1A, #082): the step's colour on the card's edge, its chip, what's left.
+    let step = view.due.as_ref().map(|due| due.step);
+    let card_class = step.map_or("schedule-card".to_owned(), |step| {
+        format!("schedule-card {}", step_class(step))
+    });
+    let left = view.due.as_ref().map(|due| {
+        (
+            step_class(due.step),
+            left_text(due, &vehicle.meters, &units()),
+        )
+    });
     rsx! {
-        section { class: "schedule-card",
+        section { class: card_class,
             div { class: "schedule-card-text",
                 span { class: "schedule-card-name",
                     {view.requirement.name.as_str().to_owned()}
                     if let Some((text, class)) = chip {
                         span { class, {text} }
                     }
+                    if let Some(step) = step {
+                        DueChip { step }
+                    }
+                }
+                if let Some((class, text)) = left {
+                    span { class: "due-left {class}", {text} }
                 }
                 span { class: "schedule-card-rules", {detail_line(&view, &vehicle.meters, &refs, &units())} }
                 if reference.is_some() {
@@ -563,6 +623,8 @@ enum Editing {
     RemoveRequirement(RequirementId, String),
     RemoveBundle(BundleId, String),
     Copy,
+    /// **Save as template…** (#084).
+    SaveTemplate,
     /// **+ Recall or bulletin**: new, or one already recorded (1B).
     PickReference,
     NewReference,
@@ -602,6 +664,9 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                 div { class: "setup-row-buttons",
                     if schedule.requirements.is_empty() {
                         button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Copy)), {tr(messages::SCHEDULE_COPY_FROM)} }
+                        Link { class: "secondary-button", to: Route::Templates {}, {tr(messages::TEMPLATE_FROM)} }
+                    } else {
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::SaveTemplate)), {tr(messages::TEMPLATE_SAVE_AS)} }
                     }
                     button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::NewRequirement)), {tr(messages::SCHEDULE_ADD_REQUIREMENT)} }
                     // Nothing new once the vehicle's disposal is finalized (#067).
@@ -666,15 +731,18 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
             }
         }
         p { class: "muted-note", {tr(messages::SCHEDULE_REMOVE_NOTE)} }
+        // Its usages (3A, #086).
+        super::readiness_view::UsagesSection { vehicle: vehicle.clone(), usages: schedule.usages.clone(), reloads }
         match editing() {
             None => rsx! {},
-            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, reloads, on_close: close } },
-            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), reloads, on_close: close } },
+            Some(Editing::NewRequirement) => rsx! { RequirementDialog { vehicle, existing: None, specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
+            Some(Editing::Requirement(id, requirement)) => rsx! { RequirementDialog { vehicle, existing: Some((id, requirement)), specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
             Some(Editing::NewBundle) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: None, reloads, on_close: close } },
             Some(Editing::Bundle(id, bundle)) => rsx! { BundleDialog { vehicle, requirements: schedule.requirements.clone(), existing: Some((id, bundle)), reloads, on_close: close } },
             Some(Editing::RemoveRequirement(id, name)) => rsx! { RemoveDialog { target: Removal::Requirement(id), name, reloads, on_close: close } },
             Some(Editing::RemoveBundle(id, name)) => rsx! { RemoveDialog { target: Removal::Bundle(id), name, reloads, on_close: close } },
             Some(Editing::Copy) => rsx! { CopyDialog { vehicle, reloads, on_close: close } },
+            Some(Editing::SaveTemplate) => rsx! { super::templates::SaveTemplateDialog { asset: vehicle.id, on_close: close } },
             Some(Editing::PickReference) => rsx! {
                 ReferencePicker {
                     known: refs,
@@ -695,7 +763,7 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
                     on_close: close,
                 }
             },
-            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), reloads, on_close: close } },
+            Some(Editing::LinkReference(view)) => rsx! { RequirementDialog { vehicle, existing: None, link: Some(*view), specs: schedule.specs.clone(), usages: schedule.usages.clone(), reloads, on_close: close } },
             Some(Editing::ShowReference(id)) => rsx! { ReferenceSheet { id, vehicle, on_close: close } },
         }
     }
@@ -717,6 +785,11 @@ enum TypedRule {
     },
     FixedDate {
         first: String,
+    },
+    /// "When Oil life reaches [15] %" (#082).
+    Reaches {
+        meter: MeterId,
+        at: String,
     },
 }
 
@@ -743,6 +816,14 @@ impl TypedRule {
             },
             IntervalRule::FixedDate { first } => Self::FixedDate {
                 first: first.clone().unwrap_or_default(),
+            },
+            IntervalRule::Reaches { meter, at } => Self::Reaches {
+                meter: *meter,
+                at: meters
+                    .iter()
+                    .find(|(id, _)| id == meter)
+                    .map(|(_, found)| reading_value(*at, found.unit, found.precision))
+                    .unwrap_or_default(),
             },
         }
     }
@@ -784,6 +865,15 @@ fn rules_from(
             TypedRule::FixedDate { first } => Ok(IntervalRule::FixedDate {
                 first: Some(first.trim().to_owned()).filter(|date| !date.is_empty()),
             }),
+            TypedRule::Reaches { meter, at } => {
+                let (_, found) = meters
+                    .iter()
+                    .find(|(id, _)| id == meter)
+                    .ok_or(messages::SOMETHING_WENT_WRONG)?;
+                let at = parse_reading(at, found.unit, found.precision)
+                    .map_err(domain::quantity::QuantityError::message)?;
+                Ok(IntervalRule::Reaches { meter: *meter, at })
+            }
         })
         .collect::<Result<Vec<_>, MessageId>>()?;
     check_rules(&rules, meters).map_err(domain::requirement::RequirementProblem::message)?;
@@ -797,6 +887,24 @@ struct TypedRequirement {
     notes: String,
     enabled: bool,
     rules: Vec<TypedRule>,
+}
+
+/// `requirement` with what's typed for "last done before these records" and its warnings
+/// (#082); a one-time one keeps neither, having no intervals.
+fn with_due_settings(
+    requirement: Requirement,
+    settings: &TypedDueSettings,
+    meters: &[(MeterId, Meter)],
+) -> Result<Requirement, MessageId> {
+    if requirement.mode == ComplianceMode::OneTime {
+        return Ok(requirement);
+    }
+    let (before_records, warnings) = settings.parse(meters)?;
+    Ok(Requirement {
+        before_records,
+        warnings,
+        ..requirement
+    })
 }
 
 /// The requirement to save, or the problem with what's typed: a one-time one keeps no
@@ -822,7 +930,23 @@ fn requirement_from(
         reference,
         mode: compliance.mode,
         applicability: compliance.applicability()?,
+        before_records: None,
+        warnings: None,
+        specs: vec![],
+        usages: None,
     })
+}
+
+/// "Engine oil · 5.5 qt", "Oil filter · FL-500S": a spec in the checklist.
+fn spec_choice(spec: &domain::spec::Spec) -> String {
+    let what = spec
+        .amount
+        .map(domain::spec::SpecAmount::show)
+        .or_else(|| spec.part_number.clone());
+    what.map_or_else(
+        || spec.name.as_str().to_owned(),
+        |what| format!("{} · {what}", spec.name.as_str()),
+    )
 }
 
 /// Add or change a requirement: its name, notes, whether it's in use, and its rules.
@@ -837,9 +961,24 @@ fn RequirementDialog(
     /// A new requirement for this recall or bulletin (from **+ Recall or bulletin**).
     #[props(default)]
     link: Option<ReferenceView>,
+    /// The vehicle's specs, to tick the ones its job uses (#084).
+    #[props(default)]
+    specs: Vec<(domain::spec::SpecId, domain::spec::Spec)>,
+    /// The vehicle's usages, to tick the ones it's needed for (#086).
+    #[props(default)]
+    usages: Vec<(domain::usage::UsageId, domain::usage::Usage)>,
     reloads: Signal<u32>,
     on_close: EventHandler<()>,
 ) -> Element {
+    let start_usages = existing
+        .as_ref()
+        .and_then(|(_, requirement)| requirement.usages.clone());
+    let needed_for = use_signal(move || start_usages);
+    let start_specs = existing
+        .as_ref()
+        .map(|(_, requirement)| requirement.specs.clone())
+        .unwrap_or_default();
+    let mut ticked = use_signal(move || start_specs);
     let meters = vehicle.meters.clone();
     let start = existing.clone();
     let start_link = link.clone();
@@ -900,6 +1039,37 @@ fn RequirementDialog(
     let has_fixed = rules
         .iter()
         .any(|rule| matches!(rule, TypedRule::FixedDate { .. }));
+    // A "reaches" rule suits a resettable meter (Oil life) best; any meter without one will do.
+    let reaches_meter = vehicle
+        .meters
+        .iter()
+        .filter(|(id, _)| {
+            !rules
+                .iter()
+                .any(|rule| matches!(rule, TypedRule::Reaches { meter: used, .. } if used == id))
+        })
+        .max_by_key(|(_, meter)| meter.resettable())
+        .map(|(id, _)| *id);
+    // "Last done before these records" and the warnings (4A, #082), for the meters the rules
+    // count on.
+    let due_settings = use_signal(|| {
+        TypedDueSettings::of(
+            existing.as_ref().map(|(_, requirement)| requirement),
+            &vehicle.meters,
+        )
+    });
+    let ruled: Vec<(MeterId, Meter)> = vehicle
+        .meters
+        .iter()
+        .filter(|(id, _)| {
+            rules.iter().any(|rule| match rule {
+                TypedRule::Meter { meter, .. } | TypedRule::Reaches { meter, .. } => meter == id,
+                TypedRule::Calendar { .. } | TypedRule::FixedDate { .. } => false,
+            })
+        })
+        .cloned()
+        .collect();
+    let household = use_units()().due_warnings;
     let save_meters = vehicle.meters.clone();
     let asset = vehicle.id;
     let editing_id = existing.as_ref().map(|(id, _)| *id);
@@ -908,14 +1078,19 @@ fn RequirementDialog(
         if busy() {
             return;
         }
-        let requirement =
-            match requirement_from(&typed(), &compliance(), reference, asset, &save_meters) {
-                Ok(requirement) => requirement,
-                Err(message) => {
-                    problem.set(Some(message));
-                    return;
-                }
-            };
+        let requirement = requirement_from(&typed(), &compliance(), reference, asset, &save_meters)
+            .and_then(|requirement| with_due_settings(requirement, &due_settings(), &save_meters));
+        let requirement = match requirement {
+            Ok(requirement) => domain::requirement::Requirement {
+                specs: ticked(),
+                usages: needed_for(),
+                ..requirement
+            },
+            Err(message) => {
+                problem.set(Some(message));
+                return;
+            }
+        };
         busy.set(true);
         spawn(async move {
             let result = match editing_id {
@@ -962,6 +1137,33 @@ fn RequirementDialog(
                     input { r#type: "checkbox", checked: typed().enabled, onchange: move |event| typed.write().enabled = event.checked() }
                     span { {tr(messages::SCHEDULE_IN_USE)} }
                 }
+                // The specs its job uses (2A, #084): ticked ones pre-fill a task's parts.
+                if !specs.is_empty() {
+                    fieldset { class: "spec-checklist",
+                        legend { class: "field-label", {tr(messages::SPEC_CHECKLIST)} }
+                        for (id, spec) in specs.iter().cloned() {
+                            label { key: "{id}", class: "switch",
+                                input {
+                                    r#type: "checkbox",
+                                    checked: ticked().contains(&id),
+                                    onchange: move |event| {
+                                        let mut list = ticked.write();
+                                        list.retain(|have| *have != id);
+                                        if event.checked() {
+                                            list.push(id);
+                                        }
+                                    },
+                                }
+                                span { {spec_choice(&spec)} }
+                            }
+                        }
+                        p { class: "muted-note", {tr(messages::SPEC_CHECKLIST_NOTE)} }
+                    }
+                }
+                // The usages it's needed for (4A, #086).
+                if !usages.is_empty() {
+                    super::readiness_view::NeededFor { usages, chosen: needed_for }
+                }
                 ComplianceChoices { compliance }
                 if compliance().mode == ComplianceMode::Recurring {
                 h3 { class: "section-heading", {tr(messages::SCHEDULE_DUE_WHEN).to_uppercase()} }
@@ -996,8 +1198,15 @@ fn RequirementDialog(
                             {tr(messages::SCHEDULE_ADD_FIXED_RULE)}
                         }
                     }
+                    if let Some(meter) = reaches_meter {
+                        button { class: "secondary-button", r#type: "button",
+                            onclick: move |_| typed.write().rules.push(TypedRule::Reaches { meter, at: String::new() }),
+                            {tr(messages::SCHEDULE_ADD_REACHES_RULE)}
+                        }
+                    }
                 }
                 p { class: "muted-note", {tr(messages::SCHEDULE_RULES_HINT)} }
+                DueSettings { settings: due_settings, meters: ruled, household }
                 }
                 if let Some(message) = problem() {
                     p { class: "form-error", role: "alert", {tr(message)} }
@@ -1098,6 +1307,38 @@ fn RuleInputs(
                             span { {tr(messages::SCHEDULE_END_OF_MONTH)} }
                         }
                     }
+                }
+            }
+        }
+        TypedRule::Reaches { meter, at } => {
+            let unit = meters
+                .iter()
+                .find(|(id, _)| *id == meter)
+                .map(|(_, found)| unit_abbr(found.unit))
+                .unwrap_or_default();
+            let at_now = at.clone();
+            rsx! {
+                div { class: "rule-inputs",
+                    span { class: "rule-kind", {tr(messages::SCHEDULE_WHEN_LABEL)} }
+                    select {
+                        class: "field-input",
+                        onchange: move |event| {
+                            if let Ok(chosen) = event.value().parse() {
+                                set(TypedRule::Reaches { meter: chosen, at: at_now.clone() });
+                            }
+                        },
+                        for (id, found) in meters {
+                            option { key: "{id}", value: "{id}", selected: id == meter, {found.name.as_str().to_owned()} }
+                        }
+                    }
+                    span { {tr(messages::SCHEDULE_REACHES_LABEL)} }
+                    input {
+                        class: "field-input rule-number",
+                        inputmode: "decimal",
+                        value: at,
+                        oninput: move |event| set(TypedRule::Reaches { meter, at: event.value() }),
+                    }
+                    span { {unit} }
                 }
             }
         }
@@ -1319,7 +1560,7 @@ async fn preview(from: AssetId, to: &AssetView) -> Result<Preview, MessageId> {
         .map(|view| (view.id, view.requirement))
         .collect();
     let bundles: Vec<Bundle> = bundles.into_iter().map(|(_, bundle)| bundle).collect();
-    let copied = copy_schedule(&listed, &bundles, &source.meters, &to.meters, to.id);
+    let copied = copy_schedule(&listed, &bundles, &[], &source.meters, &to.meters, to.id);
     Ok(Preview {
         requirements: copied.requirements.len(),
         bundles: copied.bundles.len(),
@@ -1466,6 +1707,11 @@ mod tests {
             (
                 test_id(n),
                 Meter {
+                    key: domain::custom_field::FieldKey::from_label(
+                        &Label::parse(name).unwrap(),
+                        &[],
+                    ),
+                    formula: None,
                     asset: test_id(10),
                     name: Label::parse(name).unwrap(),
                     dimension,
@@ -1473,6 +1719,8 @@ mod tests {
                     precision,
                     description: None,
                     required_for: vec![EventKind::Maintenance],
+                    direction: domain::meter::MeterDirection::Up,
+                    reset_to: None,
                 },
             )
         })
@@ -1553,6 +1801,10 @@ mod tests {
             reference: None,
             mode: ComplianceMode::Recurring,
             applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
+            specs: vec![],
+            usages: None,
         };
         let done = DoneTask {
             requirement: test_id(40),
@@ -1562,10 +1814,12 @@ mod tests {
                 domain::event::Reading {
                     meter: test_id(20),
                     value: 52_644 * MILE / 1000,
+                    reset: false,
                 },
                 domain::event::Reading {
                     meter: test_id(21),
                     value: 4_446_000,
+                    reset: false,
                 },
             ],
             next_due: None,
@@ -1656,6 +1910,24 @@ mod tests {
                 every: "100.0".into()
             }
         );
+    }
+
+    #[test]
+    fn a_reaches_rule_types_back_and_saves_again() {
+        // "When engine hours reach 250.0": typed back the same, and saved again.
+        let reaches = IntervalRule::Reaches {
+            meter: test_id(21),
+            at: 900_000,
+        };
+        let typed = TypedRule::from_rule(&reaches, &meters());
+        assert_eq!(
+            typed,
+            TypedRule::Reaches {
+                meter: test_id(21),
+                at: "250.0".into()
+            }
+        );
+        assert_eq!(rules_from(&[typed], &meters()), Ok(vec![reaches]));
     }
 
     #[test]

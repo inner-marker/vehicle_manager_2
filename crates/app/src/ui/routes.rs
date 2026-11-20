@@ -4,9 +4,9 @@ use dioxus::prelude::*;
 use domain::i18n::{MessageId, messages};
 
 use super::screens::{
-    AllVehicles, CorrectEvent, Diagnostics, Due, EditEvent, EventDetail, GroupVehicles, Groups,
-    LogEvent, LogForm, Messages, NotFound, Places, RepairSquawk, Reports, Settings, SquawkDetail,
-    Timeline, Users, VehicleDetail, VehicleTab,
+    AllVehicles, CorrectEvent, Diagnostics, Due, DueList, EditEvent, EventDetail, GroupVehicles,
+    Groups, LogEvent, LogForm, LogService, Messages, NotFound, Places, RepairSquawk, Reports,
+    Settings, SquawkDetail, Templates, Timeline, Users, VehicleDetail, VehicleTab,
 };
 use super::shell::Shell;
 
@@ -20,6 +20,9 @@ pub(crate) enum Route {
         AllVehicles {},
         #[route("/due")]
         Due {},
+        // Due & squawks with one filter, from the Garage's fleet strip (#083).
+        #[route("/due/:filter")]
+        DueList { filter: String },
         #[route("/messages")]
         Messages {},
         #[route("/timeline")]
@@ -40,6 +43,9 @@ pub(crate) enum Route {
         VehicleTab { asset_id: String, tab: String },
         #[route("/vehicles/:asset_id/log/:kind")]
         LogForm { asset_id: String, kind: String },
+        // A maintenance job from a bundle (**Log this service**, #084).
+        #[route("/vehicles/:asset_id/service/:bundle_id")]
+        LogService { asset_id: String, bundle_id: String },
         // One event, and changing or correcting it (step 6h).
         #[route("/events/:event_id")]
         EventDetail { event_id: String },
@@ -61,6 +67,9 @@ pub(crate) enum Route {
         // Each person's saved places (#060).
         #[route("/places")]
         Places {},
+        // The household's schedule templates (#084).
+        #[route("/templates")]
+        Templates {},
         #[route("/settings")]
         Settings {},
         #[route("/diagnostics")]
@@ -77,12 +86,14 @@ impl Route {
         match self {
             Self::AllVehicles {} => messages::NAV_ALL_VEHICLES,
             Self::GroupVehicles { .. } => messages::NAV_VEHICLES,
-            Self::Due {} => messages::NAV_DUE_AND_SQUAWKS,
+            Self::Due {} | Self::DueList { .. } => messages::NAV_DUE_AND_SQUAWKS,
             Self::Messages {} => messages::NAV_MESSAGES,
             Self::Timeline {} => messages::NAV_TIMELINE,
             Self::Reports {} => messages::NAV_REPORTS,
             Self::VehicleDetail { .. } | Self::VehicleTab { .. } => messages::SCREEN_VEHICLE_DETAIL,
-            Self::LogEvent {} | Self::LogForm { .. } => messages::SCREEN_LOG_EVENT,
+            Self::LogEvent {} | Self::LogForm { .. } | Self::LogService { .. } => {
+                messages::SCREEN_LOG_EVENT
+            }
             Self::EventDetail { .. } => messages::SCREEN_EVENT,
             Self::EditEvent { .. } => messages::SCREEN_EDIT_EVENT,
             Self::CorrectEvent { .. } => messages::SCREEN_CORRECT_EVENT,
@@ -91,6 +102,7 @@ impl Route {
             Self::Users {} => messages::NAV_USERS,
             Self::Groups {} => messages::NAV_GROUPS,
             Self::Places {} => messages::NAV_PLACES,
+            Self::Templates {} => messages::NAV_TEMPLATES,
             Self::Settings {} => messages::NAV_SETTINGS,
             Self::Diagnostics {} => messages::NAV_DIAGNOSTICS,
             Self::NotFound { .. } => messages::SCREEN_NOT_FOUND,
@@ -111,6 +123,9 @@ mod tests {
                 group_id: "0192f3a4".to_owned(),
             },
             Route::Due {},
+            Route::DueList {
+                filter: "overdue".to_owned(),
+            },
             Route::Messages {},
             Route::Timeline {},
             Route::Reports {},
@@ -125,6 +140,10 @@ mod tests {
             Route::LogForm {
                 asset_id: "0192f3a4".to_owned(),
                 kind: "fuel".to_owned(),
+            },
+            Route::LogService {
+                asset_id: "0192f3a4".to_owned(),
+                bundle_id: "0192f3a7".to_owned(),
             },
             Route::EventDetail {
                 event_id: "0192f3a5".to_owned(),
@@ -143,6 +162,7 @@ mod tests {
             },
             Route::Groups {},
             Route::Places {},
+            Route::Templates {},
             Route::Settings {},
             Route::Diagnostics {},
         ]

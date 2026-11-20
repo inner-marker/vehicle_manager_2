@@ -1,5 +1,5 @@
 //! Placeholder screens: each shows "Coming soon" under the top-bar title until its
-//! phase builds it (Garage and the vehicle screens in Phase 2, Due in Phase 5, ...).
+//! phase builds it (Garage and the vehicle screens in Phase 2, Due & squawks in Phase 5, ...).
 
 use dioxus::prelude::*;
 use domain::i18n::messages;
@@ -13,12 +13,6 @@ fn ComingSoon() -> Element {
     rsx! {
         p { class: "placeholder", {tr(messages::PLACEHOLDER_COMING_SOON)} }
     }
-}
-
-/// What's due and open squawks (Phase 5).
-#[component]
-pub(crate) fn Due() -> Element {
-    rsx! { ComingSoon {} }
 }
 
 /// Every event, newest first (Phase 2).

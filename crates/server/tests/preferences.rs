@@ -166,6 +166,8 @@ mod preferences {
                 garage_sort: None,
                 squawk_word: None,
                 originals: None,
+                due_warnings: None,
+                due_messages_from: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
@@ -244,6 +246,110 @@ mod preferences {
             let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
             assert_eq!(sams.effective.squawk_word, chosen);
         }
+    }
+
+    #[tokio::test]
+    async fn when_things_come_due_is_the_households_alone() {
+        let (_temp, database, mut jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let earlier = domain::due::DueDefaults {
+            interval: domain::due::IntervalSteps {
+                coming_up: 30,
+                due_soon: 15,
+                very_soon: 5,
+            },
+            days: domain::due::DaySteps {
+                coming_up: 90,
+                due_soon: 45,
+                very_soon: 21,
+            },
+        };
+        let warnings = |choice| PreferencesPatch {
+            due_warnings: Some(choice),
+            ..PreferencesPatch::default()
+        };
+        assert_eq!(
+            set_mine(
+                &context(&database, &sam, &clock),
+                warnings(Choice::Set(earlier))
+            )
+            .await,
+            PreferencesOutcome::NotAllowed,
+            "a person can't choose their own"
+        );
+        let view = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            view.effective.due_warnings,
+            domain::due::DueDefaults::default()
+        );
+
+        jordan.mode = ActiveMode::Admin;
+        let admin = context(&database, &jordan, &clock);
+        let backwards = domain::due::DueDefaults {
+            interval: domain::due::IntervalSteps {
+                coming_up: 5,
+                due_soon: 10,
+                very_soon: 20,
+            },
+            ..earlier
+        };
+        assert_eq!(
+            set_household(&admin, warnings(Choice::Set(backwards))).await,
+            PreferencesOutcome::BadDueWarnings
+        );
+        unwrap_view(set_household(&admin, warnings(Choice::Set(earlier))).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(sams.effective.due_warnings, earlier, "everyone's");
+        unwrap_view(set_household(&admin, warnings(Choice::Default)).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            sams.effective.due_warnings,
+            domain::due::DueDefaults::default()
+        );
+    }
+
+    #[tokio::test]
+    async fn when_due_messages_start_is_the_households_alone() {
+        use domain::due::DueStep;
+        let (_temp, database, mut jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let starting = |choice| PreferencesPatch {
+            due_messages_from: Some(choice),
+            ..PreferencesPatch::default()
+        };
+        assert_eq!(
+            set_mine(
+                &context(&database, &sam, &clock),
+                starting(Choice::Set(DueStep::ComingUp))
+            )
+            .await,
+            PreferencesOutcome::NotAllowed,
+            "a person can't choose their own"
+        );
+
+        jordan.mode = ActiveMode::Admin;
+        let admin = context(&database, &jordan, &clock);
+        for step in [DueStep::Ok, DueStep::Overdue] {
+            assert_eq!(
+                set_household(&admin, starting(Choice::Set(step))).await,
+                PreferencesOutcome::BadDueWarnings,
+                "{step:?}"
+            );
+        }
+        unwrap_view(set_household(&admin, starting(Choice::Set(DueStep::ComingUp))).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            sams.effective.due_messages_from,
+            DueStep::ComingUp,
+            "everyone's"
+        );
+        unwrap_view(set_household(&admin, starting(Choice::Default)).await);
+        let sams = unwrap_view(preferences_view(&context(&database, &sam, &clock)).await);
+        assert_eq!(
+            sams.effective.due_messages_from,
+            DueStep::DueSoon,
+            "the default"
+        );
     }
 
     #[tokio::test]

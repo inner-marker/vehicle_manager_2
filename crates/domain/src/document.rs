@@ -117,6 +117,9 @@ pub struct AssetDocument {
     pub added_by: UserId,
     /// When the server first received it.
     pub received_at: UnixMillis,
+    /// How early its expiry warns, instead of the household's days (#082).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warn_days: Option<crate::due::DaySteps>,
 }
 
 record_patch! {
@@ -149,6 +152,8 @@ record_patch! {
         added_by: UserId,
         /// See [`AssetDocument::received_at`] (set when added).
         received_at: UnixMillis,
+        /// See [`AssetDocument::warn_days`].
+        warn_days: Clearable<crate::due::DaySteps>,
     }
 }
 
@@ -170,6 +175,7 @@ impl AssetDocumentPatch {
             added_at: Some(document.added_at),
             added_by: Some(document.added_by),
             received_at: Some(document.received_at),
+            warn_days: Some(Clearable::from_option(document.warn_days)),
         }
     }
 }
@@ -255,6 +261,7 @@ pub fn renewal_of(
         added_at,
         added_by,
         received_at: added_at,
+        warn_days: None,
     }
 }
 
@@ -322,6 +329,9 @@ pub fn check(
     {
         return Err(DocumentProblem::ExpiresBeforeIssued);
     }
+    if document.warn_days.is_some_and(|days| !days.valid()) {
+        return Err(DocumentProblem::BadWarnDays);
+    }
     if let Some(previous) = document.supersedes {
         let Some((_, renewed)) = documents.iter().find(|(other, _)| *other == previous) else {
             return Err(DocumentProblem::RenewsUnknown);
@@ -374,6 +384,9 @@ pub enum DocumentProblem {
     UnknownPlate,
     /// Removing a document a later one renews (remove the latest first).
     Renewed,
+    /// Its own warning days don't make sense (a step earlier than the one before it, or past
+    /// the most days; #082).
+    BadWarnDays,
 }
 
 impl DocumentProblem {
@@ -391,6 +404,7 @@ impl DocumentProblem {
             Self::PlateNotRegistration => messages::DOCUMENT_PLATE_NOT_REGISTRATION,
             Self::UnknownPlate => messages::DOCUMENT_UNKNOWN_PLATE,
             Self::Renewed => messages::DOCUMENT_RENEWED,
+            Self::BadWarnDays => messages::DUE_BAD_WARNINGS,
         }
     }
 }
@@ -417,6 +431,7 @@ mod tests {
             added_at: UnixMillis::from_millis(0),
             added_by: test_id(5),
             received_at: UnixMillis::from_millis(0),
+            warn_days: None,
         }
     }
 
@@ -579,6 +594,6 @@ mod tests {
             serde_json::from_str::<AssetDocument>(&json).unwrap(),
             document
         );
-        assert_eq!(AssetDocumentPatch::all(document).changed_fields().len(), 13);
+        assert_eq!(AssetDocumentPatch::all(document).changed_fields().len(), 14);
     }
 }

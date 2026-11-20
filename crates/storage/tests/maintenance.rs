@@ -7,6 +7,7 @@ mod maintenance {
     use domain::asset::{Asset, AssetKind, AssetName, AssetPatch, LifecycleStatus};
     use domain::command::{Clearable, Patch};
     use domain::dates::EventDates;
+    use domain::due::{DaySteps, DueDefaults, IntervalSteps, LastDoneBefore};
     use domain::event::{
         Event, EventLocation, EventPatch, EventSource, EventStatus, Finalizer, Part, Reading,
         ReadingSet, Reason, Task, WorkDetails,
@@ -109,6 +110,8 @@ mod maintenance {
     /// and two squawks.
     async fn add_schedule_and_squawks(connection: &mut SqliteConnection) {
         let meter = Meter {
+            key: domain::custom_field::FieldKey::parse("odometer").unwrap(),
+            formula: None,
             asset: test_id(TRUCK),
             name: Label::parse("Odometer").unwrap(),
             dimension: MeterDimension::Distance,
@@ -116,6 +119,8 @@ mod maintenance {
             precision: 0,
             description: None,
             required_for: vec![EventKind::Maintenance],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         MeterWriter
             .create(connection, test_id(ODOMETER), &MeterPatch::all(meter), 4)
@@ -148,6 +153,10 @@ mod maintenance {
                 reference: None,
                 mode: domain::requirement::ComplianceMode::Recurring,
                 applicability: domain::requirement::Applicability::Applies,
+                before_records: None,
+                warnings: None,
+                specs: vec![],
+                usages: None,
             };
             RequirementWriter
                 .create(
@@ -189,6 +198,7 @@ mod maintenance {
         Reading {
             meter: test_id(ODOMETER),
             value,
+            reset: false,
         }
     }
 
@@ -209,26 +219,34 @@ mod maintenance {
         }
     }
 
-    /// An oil change `days` after `NOW`, at `odometer` meters, with every part of its work
-    /// filled in: two tasks (one with parts, reset from the end readings), and both squawks
-    /// dispositioned.
-    fn oil_change(days: i64, odometer: i64) -> Event {
-        let mut oil = task("Engine oil & filter", Some(OIL));
-        oil.notes = Notes::parse("5W-30 **synthetic**").unwrap();
-        oil.parts = vec![
+    /// The oil change's parts: a filter with its price, and the oil (from its spec).
+    fn oil_parts() -> Vec<Part> {
+        vec![
             Part {
                 description: "Oil filter".into(),
                 part_number: Some("FL-500S".into()),
                 quantity_milli: 1_000,
                 unit_price_minor: Some(1_299),
+                spec: None,
             },
             Part {
                 description: "Engine oil".into(),
                 part_number: None,
                 quantity_milli: 5_500,
                 unit_price_minor: None,
+                // Pre-filled from the truck's oil spec (#084).
+                spec: Some(test_id(77)),
             },
-        ];
+        ]
+    }
+
+    /// An oil change `days` after `NOW`, at `odometer` meters, with every part of its work
+    /// filled in: two tasks (one with parts, reset from the end readings), and both squawks
+    /// dispositioned.
+    fn oil_change(days: i64, odometer: i64) -> Event {
+        let mut oil = task("Engine oil & filter", Some(OIL));
+        oil.notes = Notes::parse("5W-30 **synthetic**").unwrap();
+        oil.parts = oil_parts();
         oil.labor_seconds = Some(1_800);
         oil.labor_cost_minor = Some(4_500);
         oil.resets_from = ReadingSet::End;
@@ -409,6 +427,7 @@ mod maintenance {
             event: test_id(event),
             at: at(days),
             value,
+            reset: false,
         };
         assert_eq!(
             database.readings_of(test_id(TRUCK)).await.unwrap(),
@@ -547,6 +566,54 @@ mod maintenance {
             .unwrap();
         assert_eq!(database.squawk(test_id(62)).await.unwrap(), None);
         assert_eq!(database.squawks_of(test_id(TRUCK)).await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_requirement_keeps_when_it_was_last_done_before_and_its_own_warnings() {
+        let (_temp, database) = database().await;
+        let mut connection = database.pool().acquire().await.unwrap();
+        let before = LastDoneBefore {
+            on: "2026-08-02".into(),
+            readings: vec![Reading {
+                meter: test_id(ODOMETER),
+                value: 78_695_000,
+                reset: false,
+            }],
+        };
+        let warnings = DueDefaults {
+            interval: IntervalSteps {
+                coming_up: 30,
+                due_soon: 15,
+                very_soon: 5,
+            },
+            days: DaySteps::default(),
+        };
+        let patch = RequirementPatch {
+            before_records: Some(Clearable::Set(before.clone())),
+            warnings: Some(Clearable::Set(warnings)),
+            ..RequirementPatch::default()
+        };
+        RequirementWriter
+            .update(&mut connection, test_id(OIL), &patch, 7)
+            .await
+            .unwrap();
+        let oil = database.requirement(test_id(OIL)).await.unwrap().unwrap();
+        assert_eq!(oil.before_records, Some(before));
+        assert_eq!(oil.warnings, Some(warnings));
+        assert_eq!(oil.name.as_str(), "Engine oil & filter", "unchanged");
+
+        // Back to the household's warnings, and no date before the records.
+        let cleared = RequirementPatch {
+            before_records: Some(Clearable::Clear),
+            warnings: Some(Clearable::Clear),
+            ..RequirementPatch::default()
+        };
+        RequirementWriter
+            .update(&mut connection, test_id(OIL), &cleared, 8)
+            .await
+            .unwrap();
+        let oil = database.requirement(test_id(OIL)).await.unwrap().unwrap();
+        assert_eq!((oil.before_records, oil.warnings), (None, None));
     }
 
     #[tokio::test]

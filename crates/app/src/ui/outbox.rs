@@ -266,6 +266,37 @@ pub(crate) fn alert_count() -> usize {
     0
 }
 
+/// What the fleet strip's sync tile says (#083).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(
+    not(all(feature = "desktop", not(target_arch = "wasm32"))),
+    expect(dead_code, reason = "only the desktop has a sync tile")
+)]
+pub(crate) enum SyncTile {
+    /// The desktop can't reach its server.
+    Offline,
+    /// This many changes wait to be sent (0: synced).
+    Waiting(u64),
+}
+
+/// The fleet strip's sync tile: none on the web; on the desktop, offline or how many changes
+/// wait. Reactive.
+#[cfg_attr(
+    all(feature = "desktop", not(target_arch = "wasm32")),
+    expect(clippy::unnecessary_wraps, reason = "the web has no tile")
+)]
+pub(crate) fn sync_tile() -> Option<SyncTile> {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        if super::offline::is_offline_now() {
+            return Some(SyncTile::Offline);
+        }
+        Some(SyncTile::Waiting(crate::local_copy::OUTBOX().waiting))
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    None
+}
+
 /// Whether the file `hash` was added on this computer and isn't uploaded yet (sketch 2A).
 /// Always false on the web.
 #[cfg_attr(

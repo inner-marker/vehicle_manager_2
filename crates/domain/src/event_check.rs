@@ -8,9 +8,12 @@
 //!   reason is needed, and the event is flagged.
 //! - **Required readings and fields:** each must be given, or skipped with a reason.
 //! - **Readings fit their neighbours in time:** not lower than the meter's reading before this
-//!   event's date, nor higher than the one after it, so a back-dated entry that fits is fine
-//!   for anyone. One that doesn't fit is refused, except that the Admin in Admin mode may keep
-//!   it with a reason (the event is flagged).
+//!   event's date, nor higher than the one after it (the mirror image for a meter counting
+//!   down; equal is always fine), so a back-dated entry that fits is fine for anyone. A
+//!   **reset** (Phase 5, #080) starts afresh: a reset reading has no "before", and a reading
+//!   has no "after" beyond the next reset. Only a resettable meter's reading can be a reset.
+//!   One that doesn't fit is refused, except that the Admin in Admin mode may keep it with a
+//!   reason (the event is flagged).
 //! - **Custom fields:** each value matches its field's type; a value outside the field's range
 //!   is a warning, never a refusal.
 //! - **Fuel-ups:** more than zero, sensible amounts and percentages, and never towing itself.
@@ -32,7 +35,7 @@ use crate::event::{
     Skipped,
 };
 use crate::lifecycle::{self, LifecycleRecord};
-use crate::meter::{EventKind, Meter, MeterId};
+use crate::meter::{EventKind, Meter, MeterDirection, MeterId};
 use crate::requirement::{Requirement as VehicleRequirement, RequirementId};
 use crate::squawk::SquawkId;
 use crate::time::UnixMillis;
@@ -56,8 +59,8 @@ pub struct CheckContext<'a> {
     /// The vehicle's custom fields.
     pub fields: &'a [(CustomFieldId, CustomField)],
     /// Every other event's readings that count (not this event, nor an original that has been
-    /// corrected): meter, when, value.
-    pub history: &'a [(MeterId, UnixMillis, i64)],
+    /// corrected).
+    pub history: &'a [PastReading],
     /// Whether events need a place.
     pub location_rule: LocationRule,
     /// Whether the person may keep a reading that doesn't fit (the Admin, in Admin mode).
@@ -89,35 +92,52 @@ pub enum Warning {
     },
 }
 
+/// A reading already recorded, as the checks see it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PastReading {
+    /// Which meter.
+    pub meter: MeterId,
+    /// When (its event's start, or a job's end for its end readings).
+    pub at: UnixMillis,
+    /// Its value, in the meter's stored unit.
+    pub value: i64,
+    /// Whether it was a reset.
+    pub reset: bool,
+}
+
 /// One neighbouring reading: when, and its value.
 pub type Neighbour = (UnixMillis, i64);
 
-/// The readings either side of `at` for `meter`: the latest at or before it, and the earliest
-/// after it.
+/// The readings either side of `at` for `meter` that bind a new reading there: the latest at
+/// or before it, and the earliest after it. At the same moment, a reset counts as coming
+/// after the readings without one. A reading after `at` that is a reset doesn't bind (the
+/// meter started afresh there), so then there's no "after".
 #[must_use]
 pub fn neighbours(
-    history: &[(MeterId, UnixMillis, i64)],
+    history: &[PastReading],
     meter: MeterId,
     at: UnixMillis,
 ) -> (Option<Neighbour>, Option<Neighbour>) {
-    let of_meter = history.iter().filter(|(id, _, _)| *id == meter);
+    let of_meter = history.iter().filter(|past| past.meter == meter);
     let before = of_meter
         .clone()
-        .filter(|(_, when, _)| *when <= at)
-        .max_by_key(|(_, when, _)| *when)
-        .map(|(_, when, value)| (*when, *value));
+        .filter(|past| past.at <= at)
+        .max_by_key(|past| (past.at, past.reset))
+        .map(|past| (past.at, past.value));
     let after = of_meter
-        .filter(|(_, when, _)| *when > at)
-        .min_by_key(|(_, when, _)| *when)
-        .map(|(_, when, value)| (*when, *value));
+        .filter(|past| past.at > at)
+        .min_by_key(|past| (past.at, past.reset))
+        .filter(|past| !past.reset)
+        .map(|past| (past.at, past.value));
     (before, after)
 }
 
-/// How `value` clashes with its neighbours for `meter`, if it does: below the one before, or
-/// above the one after.
+/// How `value` clashes with its neighbours for `meter`, counting `direction`, if it does:
+/// against the one before, or the one after.
 #[must_use]
 pub fn clash(
     meter: MeterId,
+    direction: MeterDirection,
     value: i64,
     before: Option<Neighbour>,
     after: Option<Neighbour>,
@@ -128,17 +148,27 @@ pub fn clash(
         at,
         value: other,
     };
+    let (early, late) = match direction {
+        MeterDirection::Up => (ClashSide::BelowEarlier, ClashSide::AboveLater),
+        MeterDirection::Down => (ClashSide::AboveEarlier, ClashSide::BelowLater),
+    };
     match (before, after) {
-        (Some(earlier), _) if value < earlier.1 => Some(clash(ClashSide::BelowEarlier, earlier)),
-        (_, Some(later)) if value > later.1 => Some(clash(ClashSide::AboveLater, later)),
+        (Some(earlier), _) if !direction.allows(earlier.1, value) => Some(clash(early, earlier)),
+        (_, Some(later)) if !direction.allows(value, later.1) => Some(clash(late, later)),
         _ => None,
     }
 }
 
-/// Whether `value` fits between its neighbours (either may be missing).
+/// Whether `value` fits between its neighbours, counting `direction` (either may be missing).
 #[must_use]
-pub fn reading_fits(value: i64, before: Option<i64>, after: Option<i64>) -> bool {
-    before.is_none_or(|before| value >= before) && after.is_none_or(|after| value <= after)
+pub fn reading_fits(
+    direction: MeterDirection,
+    value: i64,
+    before: Option<i64>,
+    after: Option<i64>,
+) -> bool {
+    before.is_none_or(|before| direction.allows(before, value))
+        && after.is_none_or(|after| direction.allows(value, after))
 }
 
 /// Checks a whole event. Returns the warnings, or the first problem.
@@ -307,15 +337,26 @@ fn check_reading_set(
 ) -> Result<Vec<Warning>, EventProblem> {
     let mut warnings = Vec::new();
     for (index, reading) in readings.iter().enumerate() {
-        let known = context.meters.iter().any(|(id, _)| *id == reading.meter);
+        let meter = context
+            .meters
+            .iter()
+            .find(|(id, _)| *id == reading.meter)
+            .map(|(_, meter)| meter);
         let repeated = readings[..index]
             .iter()
             .any(|earlier| earlier.meter == reading.meter);
-        if !known || repeated {
+        // A derived meter is worked out, never typed (#087).
+        let Some(meter) = meter.filter(|meter| !repeated && !meter.derived()) else {
             return Err(EventProblem::UnknownMeter(reading.meter));
+        };
+        if reading.reset && !meter.resettable() {
+            return Err(EventProblem::NotResettable(reading.meter));
         }
         let (before, after) = neighbours(context.history, reading.meter, at);
-        let Some(clash) = clash(reading.meter, reading.value, before, after) else {
+        // A reset starts afresh: nothing before it binds it.
+        let before = before.filter(|_| !reading.reset);
+        let Some(clash) = clash(reading.meter, meter.direction, reading.value, before, after)
+        else {
             continue;
         };
         if context.may_override_readings && event.reading_override.is_some() {

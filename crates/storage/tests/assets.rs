@@ -184,9 +184,89 @@ mod assets {
     }
 
     #[tokio::test]
+    async fn meters_keep_their_keys_and_formulas() {
+        let (_temp, database) = with_truck().await;
+        let typed = |key: &str, name: &str| Meter {
+            key: FieldKey::parse(key).unwrap(),
+            formula: None,
+            asset: test_id(TRUCK),
+            name: Label::parse(name).unwrap(),
+            dimension: MeterDimension::Distance,
+            unit: MeterUnit::Miles,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
+        };
+        let derived = Meter {
+            formula: Some(
+                domain::formula::Formula::parse("odometer + idle-hours × 33 mi/h").unwrap(),
+            ),
+            ..typed("service-miles", "Service miles")
+        };
+        let mut connection = database.pool().acquire().await.unwrap();
+        for (n, meter) in [(30, typed("odometer", "Odometer")), (31, derived.clone())] {
+            MeterWriter
+                .create(&mut connection, test_id(n), &MeterPatch::all(meter), 3)
+                .await
+                .unwrap();
+        }
+        assert_eq!(database.meter(test_id(31)).await.unwrap(), Some(derived));
+
+        // A formula changed keeps its key.
+        let patch = MeterPatch {
+            formula: Some(domain::formula::Formula::parse("odometer + 1 mi").unwrap()),
+            ..MeterPatch::default()
+        };
+        MeterWriter
+            .update(&mut connection, test_id(31), &patch, 4)
+            .await
+            .unwrap();
+        let changed = database.meter(test_id(31)).await.unwrap().unwrap();
+        assert_eq!(changed.formula.unwrap().as_str(), "odometer + 1 mi");
+        assert_eq!(changed.key.as_str(), "service-miles");
+
+        // A key is the vehicle's own among its meters, until one is deleted.
+        let again = MeterWriter
+            .create(
+                &mut connection,
+                test_id(32),
+                &MeterPatch::all(typed("odometer", "Second odometer")),
+                5,
+            )
+            .await;
+        assert!(again.is_err(), "the key is taken");
+        MeterWriter
+            .delete(&mut connection, test_id(30), 6)
+            .await
+            .unwrap();
+        MeterWriter
+            .create(
+                &mut connection,
+                test_id(32),
+                &MeterPatch::all(typed("odometer", "Second odometer")),
+                7,
+            )
+            .await
+            .unwrap();
+
+        // A meter from before keys reads with one made from its name.
+        sqlx::query("UPDATE meters SET key = NULL WHERE id = ?")
+            .bind(storage::convert::id_to_sql(test_id::<Meter>(32)))
+            .execute(&mut *connection)
+            .await
+            .unwrap();
+        let older = database.meter(test_id(32)).await.unwrap().unwrap();
+        assert_eq!(older.key.as_str(), "second-odometer");
+    }
+
+    #[tokio::test]
     async fn meters_round_trip_and_clear_their_description() {
         let (_temp, database) = with_truck().await;
         let meter = Meter {
+            key: FieldKey::parse("engine-hours").unwrap(),
+            formula: None,
             asset: test_id(TRUCK),
             name: Label::parse("Engine hours").unwrap(),
             dimension: MeterDimension::Duration,
@@ -194,6 +274,8 @@ mod assets {
             precision: 1,
             description: Some("Oil pressure switch".into()),
             required_for: vec![EventKind::Maintenance, EventKind::Fuel],
+            direction: domain::meter::MeterDirection::Up,
+            reset_to: None,
         };
         let mut connection = database.pool().acquire().await.unwrap();
         MeterWriter
@@ -223,6 +305,35 @@ mod assets {
         assert_eq!(updated.description, None);
         assert!(updated.required_for.is_empty());
         assert_eq!(updated.name, meter.name, "unchanged");
+
+        // Made resettable, counting down; then not resettable again.
+        let patch = MeterPatch {
+            direction: Some(domain::meter::MeterDirection::Down),
+            reset_to: Some(Clearable::Set(36_000)),
+            ..MeterPatch::default()
+        };
+        MeterWriter
+            .update(&mut connection, test_id(20), &patch, 5)
+            .await
+            .unwrap();
+        let (_, updated) = database.meters_of(test_id(TRUCK)).await.unwrap().remove(0);
+        assert_eq!(updated.direction, domain::meter::MeterDirection::Down);
+        assert_eq!(updated.reset_to, Some(36_000));
+        let patch = MeterPatch {
+            reset_to: Some(Clearable::Clear),
+            ..MeterPatch::default()
+        };
+        MeterWriter
+            .update(&mut connection, test_id(20), &patch, 6)
+            .await
+            .unwrap();
+        let (_, updated) = database.meters_of(test_id(TRUCK)).await.unwrap().remove(0);
+        assert_eq!(updated.reset_to, None);
+        assert_eq!(
+            updated.direction,
+            domain::meter::MeterDirection::Down,
+            "kept"
+        );
     }
 
     #[tokio::test]

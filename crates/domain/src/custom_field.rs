@@ -65,6 +65,13 @@ pub enum FieldKind {
     Volume,
     /// Fuel economy (stored in meters per liter, shown in the person's economy unit).
     FuelEconomy,
+    /// Worked out from a formula when shown, never typed or stored (#087).
+    Calculated {
+        /// The formula.
+        formula: crate::formula::Formula,
+        /// What it shows its value as.
+        shows: crate::formula::ShowsAs,
+    },
 }
 
 impl FieldKind {
@@ -129,8 +136,8 @@ impl FieldRange {
     }
 }
 
-/// A field's stable key, e.g. `trip-ev-distance`: 1–40 lowercase letters, digits, and `-`
-/// (#057). Formulas, reports, and voice refer to fields by key, so renaming a label never
+/// A field's or meter's stable key, e.g. `trip-ev-distance`: 1–40 lowercase letters,
+/// digits, and `-` (#057, #087). Formulas, reports, and voice refer to fields by key, so renaming a label never
 /// breaks them. Built-in fields get theirs from data; others from their label.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
@@ -238,7 +245,13 @@ impl CustomField {
     /// Whether an event of `kind` must give this field (or skip it with a reason).
     #[must_use]
     pub fn required_on(&self, kind: EventKind) -> bool {
-        self.shown(kind) && self.required_for.contains(&kind)
+        self.shown(kind) && self.required_for.contains(&kind) && !self.calculated()
+    }
+
+    /// Whether it's worked out from a formula (never typed).
+    #[must_use]
+    pub const fn calculated(&self) -> bool {
+        matches!(self.kind, FieldKind::Calculated { .. })
     }
 
     /// Whether events of `kind` show this field (it's on, and shown on that kind).
@@ -286,9 +299,18 @@ impl CustomFieldError {
 ///
 /// [`CustomFieldError`] for the first problem found.
 pub fn check_field(kind: &FieldKind, range: Option<FieldRange>) -> Result<(), CustomFieldError> {
-    if let FieldKind::Number { decimals } = kind
-        && *decimals > MAX_DECIMALS
+    let decimals = if let FieldKind::Number { decimals }
+    | FieldKind::Calculated {
+        shows:
+            crate::formula::ShowsAs::Number { decimals } | crate::formula::ShowsAs::Percent { decimals },
+        ..
+    } = kind
     {
+        *decimals
+    } else {
+        0
+    };
+    if decimals > MAX_DECIMALS {
         return Err(CustomFieldError::TooManyDecimals);
     }
     if let FieldKind::Choice { options } = kind

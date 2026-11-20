@@ -6,7 +6,7 @@ from Conventional Commit messages by [git-cliff](https://git-cliff.org); don't e
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-11-15
+## [0.5.0] - 2026-11-20
 
 ### Features
 
@@ -43,6 +43,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **app:** Protective mode keeps the desktop copy safe from a damaged server ([851f062](https://github.com/inner-marker/vehicle_manager_2/commit/851f062164aa37e19ed090345e870658c56829c6))
 - **app:** What the desktop shows while protecting its copy ([1651454](https://github.com/inner-marker/vehicle_manager_2/commit/16514543cf1674372b76524a82e09cf965f930e6))
 - Third-party notices ([ae6eeb7](https://github.com/inner-marker/vehicle_manager_2/commit/ae6eeb79b8973cbde24ea0e35e2241addaa37f51))
+- **domain:** Percentage, counting-down, and resettable meters ([d684da1](https://github.com/inner-marker/vehicle_manager_2/commit/d684da1101fb99864dcad36bc6e79c186d3b54d7))
+- **storage:** Migration 0022, meter direction, reset value, and resets on readings ([7010505](https://github.com/inner-marker/vehicle_manager_2/commit/7010505b326e838dec15a1a2118a773aa5e6ccd5))
+- **server:** Meter direction and reset value, checked when set up and edited ([3a97c50](https://github.com/inner-marker/vehicle_manager_2/commit/3a97c50bb8b9ef5bff973feced848be485334b19))
+- **app:** Percentage, counting-down, and resettable meters on screen ([42b965c](https://github.com/inner-marker/vehicle_manager_2/commit/42b965cc4d4becb8aaf65072da8d86310f12f1b6))
+- **domain:** What is due, with steps, projection, and the reaches rule ([1f4e289](https://github.com/inner-marker/vehicle_manager_2/commit/1f4e289d7aa335a5d5d5db262132e4d9cf5ba43b))
+- **storage:** Migration 0023, last done before, warnings, and the household defaults ([f857199](https://github.com/inner-marker/vehicle_manager_2/commit/f857199d50bcacaed11d5f3907de04ae69e8eff0))
+- **server:** What is due, on the Maintenance tab, the Overview, and the Garage ([832bd5b](https://github.com/inner-marker/vehicle_manager_2/commit/832bd5b14ea40cb27b735498691cfd207f862b2f))
+- **app:** What is due on screen, with warnings, and the job reset ([96d19ab](https://github.com/inner-marker/vehicle_manager_2/commit/96d19abd7b8fe7bbd6a747ce2b81f0a266662802))
+- **domain:** Due messages, snooze on the mark, and the fleet counts ([e5e652a](https://github.com/inner-marker/vehicle_manager_2/commit/e5e652a829f62e739a8316e330c9ce400a4cebb3))
+- **storage:** Migration 0024, snoozes on message marks and when due messages start ([53ee552](https://github.com/inner-marker/vehicle_manager_2/commit/53ee5528de14a85b1614cdedde06d5189613cfa7))
+- **server:** Due messages in the inbox, snooze and wake, the fleet counts, and Due and squawks ([1dff13c](https://github.com/inner-marker/vehicle_manager_2/commit/1dff13c1955f934edad5edc5656d94aa5cf0b732))
+- **app:** Due messages with snooze, the fleet strip, Due and squawks, and when messages start ([c20a2e7](https://github.com/inner-marker/vehicle_manager_2/commit/c20a2e70ed50b0c16826a61dead66cc84d0c300c))
+- **domain:** Specs with typed amounts, pre-filled parts, and schedule templates ([9aebd34](https://github.com/inner-marker/vehicle_manager_2/commit/9aebd3467f48b374352ec4e0f84045062b1938c1))
+- **storage:** Migration 0025, specs, requirements ticking them, a part spec, and schedule templates ([7aafcaf](https://github.com/inner-marker/vehicle_manager_2/commit/7aafcafbdb9789f77c4655d68f9c3d5846ca36ca))
+- **server:** Specs on the schedule, templates saved and applied as copies, and Copy schedule with specs ([b531e4c](https://github.com/inner-marker/vehicle_manager_2/commit/b531e4c92d4593060448f363e4cea28b06e97e9b))
+- **app:** Specs view and dialog, pre-filled parts and reminders, update the spec, log this service, and templates ([8c367e6](https://github.com/inner-marker/vehicle_manager_2/commit/8c367e66e4f74dd4398e4e886cd9390a8a295eb3))
+- **domain:** Fuel economy, stretches from full fill to full fill, averages, and breakdowns ([b002c1b](https://github.com/inner-marker/vehicle_manager_2/commit/b002c1b6c13fd66c3b4cddbe1d3cd7bd6059115c))
+- **server:** Fuel economy for a vehicle, from its fuel-ups, drafts included ([ca87a14](https://github.com/inner-marker/vehicle_manager_2/commit/ca87a140fd250107498f5b4d761081974299e173))
+- **app:** Fuel economy tiles, chart, breakdowns, how each fuel-up counted, and the info notes ([3d318f3](https://github.com/inner-marker/vehicle_manager_2/commit/3d318f3e9e3950004fba8b36b82ee35085a4df9a))
+- **domain:** Usages per vehicle, requirements needed for them, and readiness ([01bd4b5](https://github.com/inner-marker/vehicle_manager_2/commit/01bd4b56709644b709d10ad7eaddbbf833be8952))
+- **storage:** Migration 0026, usages per vehicle and the usages requirements and templates list ([f30d611](https://github.com/inner-marker/vehicle_manager_2/commit/f30d611b5e9ad6b85bb8f12aa9d38c7436443bd7))
+- **server:** Default usages, usages kept and removed, readiness per usage, the Garage chip, and dispositions checked ([5469a38](https://github.com/inner-marker/vehicle_manager_2/commit/5469a3803c8ee2fef9e7e436d1210e21796d8c75))
+- **app:** Ready to use? on the Overview, the Garage chip, the Usages section, and Needed for ([60f7c45](https://github.com/inner-marker/vehicle_manager_2/commit/60f7c458806d04348e37bbee500a4c37e73b45ea))
+- **domain:** The formula language, with units checked by dimension, statistics functions, and Over past events ([f18a06b](https://github.com/inner-marker/vehicle_manager_2/commit/f18a06bb80c95b0ce0f23f7d45a67c7f618e648b))
+- **domain:** Calculated fields, meter keys, derived meters and their readings, and the values formulas use ([ccf9fca](https://github.com/inner-marker/vehicle_manager_2/commit/ccf9fca891f1af590b9c32ae5726bcfba34863a1))
+- **storage:** Migration 0027, meter keys and derived meters formulas ([9d6abec](https://github.com/inner-marker/vehicle_manager_2/commit/9d6abecf0f53a64e21c72f8ffb4138f0d7b24c98))
+- **server:** Calculated fields and derived meters saved and checked, kept while in use, values on events, and derived meters in what is due ([12fd7bb](https://github.com/inner-marker/vehicle_manager_2/commit/12fd7bba8dafa999eb8a461fbdc528f68b459a9c))
+- **app:** Calculated fields and derived meters on screen, the formula box with its menus and help, and the full guide ([5ab1c7c](https://github.com/inner-marker/vehicle_manager_2/commit/5ab1c7c3a816b998fe47461bdc1b8d2767ffd7ea))
 
 ### Fixes
 
@@ -52,6 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **storage:** A deleted vehicle counts with its whole history in a page check ([873698e](https://github.com/inner-marker/vehicle_manager_2/commit/873698e424468e5d38c29fe970a82648f3a778bf))
 - **app:** Snapshot times show seconds, so two in one minute differ ([c72b9c5](https://github.com/inner-marker/vehicle_manager_2/commit/c72b9c555f56b5bc997bee472dc86f95511f5f86))
 - **app:** A rebuild always shows its passwords, and unsent files can be sent later ([5716544](https://github.com/inner-marker/vehicle_manager_2/commit/571654436650cf9a0330e6253da80c066ffc030b))
+- **deps:** Sqlx 0.9.1 and libsqlite3-sys 0.40 ([bf60ece](https://github.com/inner-marker/vehicle_manager_2/commit/bf60ecec06558a5c060100138a7404dda1e4d995))
+- **app:** A template is applied only with Apply ([8e161d1](https://github.com/inner-marker/vehicle_manager_2/commit/8e161d1bf141d4c9241d5cfa2f3479e3bc78a1ad))
 
 ### Documentation
 
@@ -85,10 +115,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The v0.3.0 release plan ([345d67a](https://github.com/inner-marker/vehicle_manager_2/commit/345d67aa236daf8361cbcfb31f410486ac05bf0d))
 - README for v0.3.0 ([3bc4481](https://github.com/inner-marker/vehicle_manager_2/commit/3bc4481d503ab0d1e52f7852ac0bd5d58dcc9ff5))
 - V0.3.0 regression checklist ([fb9de0e](https://github.com/inner-marker/vehicle_manager_2/commit/fb9de0e52a58b6d0a3124c2c141d200142a77d99))
+- Phase 3 complete ([6b277e2](https://github.com/inner-marker/vehicle_manager_2/commit/6b277e26ffb7dadc58336c2068debce74651a5ca))
+- The Phase 5 plan ([ae4796f](https://github.com/inner-marker/vehicle_manager_2/commit/ae4796fa0e4df4b1e9c1597a37e772f5a6ba02a3))
+- Phase 5 milestone 2 plan (what is due) ([3588312](https://github.com/inner-marker/vehicle_manager_2/commit/3588312af8a153108d0aaa4616fd7f87b7f7b654))
+- Phase 5 milestone 1 plan (meters) ([7f95b13](https://github.com/inner-marker/vehicle_manager_2/commit/7f95b13a55d710af2d66fce42510a70a182684cf))
+- One cumulative test plan per phase (decision #081), with milestone 1 section ([33d391e](https://github.com/inner-marker/vehicle_manager_2/commit/33d391e0e8bf225b252d4d37f2f44c10d3305c67))
+- Decision 082, what is due ([50f773c](https://github.com/inner-marker/vehicle_manager_2/commit/50f773cc7ed3a8ec3486db0cae96602067a044a7))
+- Milestone 2 section of the Phase 5 test plan; meters name themselves in what is left ([0692763](https://github.com/inner-marker/vehicle_manager_2/commit/06927637ad9e9950eea5a9f03f4d35bedf60ee5a))
+- Milestone 3 plan, due messages and snooze, with its sketch and decision 083 ([e9cc38a](https://github.com/inner-marker/vehicle_manager_2/commit/e9cc38af5a8989223cd685ece6f725559266fb5e))
+- Milestone 3 section of the Phase 5 test plan ([bdc73c0](https://github.com/inner-marker/vehicle_manager_2/commit/bdc73c063641dd5b622f32ce2996d939f7f2b1da))
+- Milestone 4 plan, specs and service bundles, with its sketch and decision 084 ([f450b6b](https://github.com/inner-marker/vehicle_manager_2/commit/f450b6b5a58e92d89b73fcef991b9399d61eb284))
+- Milestone 4 section of the Phase 5 test plan ([feb1342](https://github.com/inner-marker/vehicle_manager_2/commit/feb1342416d9e1db5d66048b3e3349de26dabba4))
+- Milestone 5 plan, fuel economy, with its sketch and decision 085 ([0ee6dfb](https://github.com/inner-marker/vehicle_manager_2/commit/0ee6dfb773bf96bd01ceddd2ec22a3bb6acc67b6))
+- Milestone 5 section of the Phase 5 test plan ([dbc1d4e](https://github.com/inner-marker/vehicle_manager_2/commit/dbc1d4ed85e2e4cd46171fe0cdf82f8ad72955c9))
+- Milestone 6 plan, readiness with usages per vehicle, with its sketch and decision 086 ([25ca923](https://github.com/inner-marker/vehicle_manager_2/commit/25ca923ab663aab2b4924bca754efb2fecf2c8be))
+- Milestone 6 section of the Phase 5 test plan ([a2493ff](https://github.com/inner-marker/vehicle_manager_2/commit/a2493ffe692d5b492249ccbf489069a0cff4d8ca))
+- Milestone 7 plan, calculated fields and derived meters, with its sketch, decision 087, and idea 22 ([6649c59](https://github.com/inner-marker/vehicle_manager_2/commit/6649c598395eaa66d39ba4156b54051812bfa9a6))
+- Milestone 7 section of the Phase 5 test plan ([7ca8746](https://github.com/inner-marker/vehicle_manager_2/commit/7ca8746526e94630895d0353422d49ebd2a18474))
+- The v0.5.0 release plan ([02c9ec3](https://github.com/inner-marker/vehicle_manager_2/commit/02c9ec3f2a177fa638b425486d4e88369d603029))
+- README for v0.5.0 ([de92b25](https://github.com/inner-marker/vehicle_manager_2/commit/de92b251c42d2ae3bb8f20b1b99a28e3816dbac4))
+- The v0.5.0 regression additions ([8c92970](https://github.com/inner-marker/vehicle_manager_2/commit/8c929700803357b38aac891ec1b2e11c0dcede97))
 
 ### Tests
 
 - **storage:** The v0.3.0 migration fixture ([83ffe4f](https://github.com/inner-marker/vehicle_manager_2/commit/83ffe4fb253d3fdf1a03b1f1ebf670c4cfed65cc))
+- **storage:** Close the files database at the end of each local_files test ([0c8f16c](https://github.com/inner-marker/vehicle_manager_2/commit/0c8f16c7f3c1b3a4734706ccf959a8a5198e3dd2))
+- **storage:** The v0.5.0 migration fixture ([6cd56f2](https://github.com/inner-marker/vehicle_manager_2/commit/6cd56f2b55190e8d1d9b9eff0d64cb9a75930a89))
 
 ### Build
 
@@ -105,6 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ignore RUSTSEC-2026-0459 until sqlx allows the fixed libsqlite3-sys (issue 41) ([7808f9c](https://github.com/inner-marker/vehicle_manager_2/commit/7808f9cfc124752333a636e151ad0291d63c9002))
 - Remove personal information from tests, docs, and the fixture ([1145d53](https://github.com/inner-marker/vehicle_manager_2/commit/1145d53abeb4cd209016875c0bfb79b2510e6bc8))
 - Release v0.3.0 ([9cbd847](https://github.com/inner-marker/vehicle_manager_2/commit/9cbd847fc4d4a9e9336b527dfad5cdcac609f902))
+- Release v0.3.0 ([a09fd02](https://github.com/inner-marker/vehicle_manager_2/commit/a09fd029b34aa1b752140ed68004bf71fcd7976d))
 
 ## [0.2.0] - 2026-11-08
 
@@ -324,7 +377,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow read-only gh pr commands for agents (decision 4) ([4588c56](https://github.com/inner-marker/vehicle_manager_2/commit/4588c56594e6553150ee11f623ccdadf7e5bd2ce))
 - Release v0.1.0 ([358dced](https://github.com/inner-marker/vehicle_manager_2/commit/358dced0b3e927cb77f7a44b02b57988d92bee3e))
 
-[0.3.0]: https://github.com/inner-marker/vehicle_manager_2/compare/v0.2.0..v0.3.0
+[0.5.0]: https://github.com/inner-marker/vehicle_manager_2/compare/v0.2.0..v0.5.0
 [0.2.0]: https://github.com/inner-marker/vehicle_manager_2/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/inner-marker/vehicle_manager_2/tree/v0.1.0
 

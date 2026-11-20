@@ -34,6 +34,9 @@ pub(crate) mod protective;
 pub(crate) mod recent_servers;
 pub(crate) mod routes;
 mod screens;
+
+/// The device's time zone, for the data layer's "what's due" (#082).
+pub(crate) use screens::device_zone;
 mod shell;
 pub(crate) mod theme;
 pub(crate) mod units;

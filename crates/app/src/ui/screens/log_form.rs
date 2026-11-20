@@ -31,7 +31,7 @@ use domain::dates::{format_date, utc_to_local};
 use domain::event::{
     ClashSide, Event, EventId, EventInput, EventLocation, EventProblem, ReadingClash, Requirement,
 };
-use domain::event_check::Warning;
+use domain::event_check::{PastReading, Warning};
 use domain::event_form::{NO, YES};
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::location::{CountryCode, SavedPlace, SavedPlaceId, TimeZone};
@@ -39,7 +39,9 @@ use domain::log_area;
 use domain::meter::{EventKind, Meter, MeterId, MeterUnit};
 use domain::preferences::{CurrencyCode, Preferences};
 use domain::profile::{Section, profile};
-use domain::quantity::{duration_as_typed, parse_money, parse_volume, show_reading, unit_price};
+use domain::quantity::{
+    duration_as_typed, parse_money, parse_volume, reading_value, show_reading, unit_price,
+};
 use domain::requirement::{Bundle, BundleId};
 use domain::squawk::SquawkId;
 use domain::time::Clock;
@@ -52,7 +54,7 @@ use super::log_input::{Context, Target, Typed, build, required_items, typed_from
 use super::squawks::use_vehicle_squawks;
 use super::vehicle_setup::event_from_value;
 use super::work_input::{Action, FinishCheck, TypedDisposition, TypedWork, total_minor};
-use super::work_log::{WorkLog, job_squawk_ids, job_squawks};
+use super::work_log::{WorkLog, job_squawk_ids, job_squawks, service_work};
 use super::{FormError, problem_from_error};
 use crate::api;
 use crate::data;
@@ -62,6 +64,7 @@ use crate::ui::routes::Route;
 use crate::ui::units::{economy_abbr, field_unit, volume_abbr};
 use crate::ui::vehicles::use_vehicles;
 use crate::ui::{tr, tr_with};
+use domain::spec::{Spec, SpecId, SpecUpdate, spec_updates};
 
 /// The browser's own time zone, for an event with no place data.
 pub(super) const ZONE_SCRIPT: &str =
@@ -88,8 +91,20 @@ pub(crate) fn LogForm(asset_id: String, kind: String) -> Element {
             let original = crate::ui::outbox::reopened_new_event(asset, kind).map(|input| {
                 input.into_draft(asset.cast(), domain::time::UnixMillis::from_millis(0))
             });
-            rsx! { LogScreen { asset, kind, mode: Mode::New, original, prefill: None } }
+            rsx! { LogScreen { asset, kind, mode: Mode::New, original, prefill: None, service: None } }
         }
+        _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
+    }
+}
+
+/// `/vehicles/:asset_id/service/:bundle_id` (**Log this service**, #084): a new maintenance
+/// job with a task for each of the bundle's requirements, parts pre-filled from the specs.
+#[component]
+pub(crate) fn LogService(asset_id: String, bundle_id: String) -> Element {
+    match (asset_id.parse::<AssetId>(), bundle_id.parse::<BundleId>()) {
+        (Ok(asset), Ok(bundle)) => rsx! {
+            LogScreen { asset, kind: EventKind::Maintenance, mode: Mode::New, original: None, prefill: None, service: Some(bundle) }
+        },
         _ => rsx! { p { class: "placeholder", {tr(messages::VEHICLE_NOT_FOUND)} } },
     }
 }
@@ -116,7 +131,7 @@ pub(crate) fn RepairSquawk(squawk_id: String) -> Element {
         None => rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } },
         Some(Err(problem)) => rsx! { p { class: "placeholder", role: "alert", {tr(problem)} } },
         Some(Ok(view)) => rsx! {
-            LogScreen { asset: view.squawk.asset, kind: EventKind::Repair, mode: Mode::New, original: None, prefill: Some(view) }
+            LogScreen { asset: view.squawk.asset, kind: EventKind::Repair, mode: Mode::New, original: None, prefill: Some(view), service: None }
         },
     }
 }
@@ -181,7 +196,7 @@ fn ExistingForm(event_id: String, correct: bool) -> Element {
                 changes.keep_only(&domain::event::EventPatch::EDITABLE);
                 event.apply(changes);
             }
-            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None } }
+            rsx! { LogScreen { asset: event.asset, kind: event.kind, mode, original: Some(event), prefill: None, service: None } }
         }
     }
 }
@@ -199,6 +214,12 @@ struct Loaded {
     /// A job's schedule: the vehicle's requirements and bundles (for its tasks).
     requirements: Vec<RequirementView>,
     bundles: Vec<(BundleId, Bundle)>,
+    /// Its specs (#084), to pre-fill parts and remind of.
+    specs: Vec<(SpecId, Spec)>,
+    /// The person may change the schedule, so a changed part can update its spec.
+    may_configure: bool,
+    /// Each kind's earlier values, for its calculated fields (#087).
+    history: Vec<domain::api::FormulaHistory>,
 }
 
 async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
@@ -214,6 +235,7 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
     let EventsOutcome::LogContext {
         latest,
         may_override_readings: may_override,
+        history,
     } = data::event_log_context(asset)
         .await
         .map_err(|e| failed(&e))?
@@ -239,16 +261,18 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
         .and_then(|zone| TimeZone::parse(&zone).ok())
         .filter(domain::dates::is_known_zone)
         .unwrap_or_else(TimeZone::utc);
-    let (requirements, bundles) = if kind.finalizes_by_itself() {
-        (Vec::new(), Vec::new())
+    let (requirements, bundles, specs, may_configure) = if kind.finalizes_by_itself() {
+        (Vec::new(), Vec::new(), Vec::new(), false)
     } else {
         match data::vehicle_schedule(asset).await {
             Ok(ScheduleOutcome::Schedule {
                 requirements,
                 bundles,
+                specs,
+                may_configure,
                 ..
-            }) => (requirements, bundles),
-            _ => (Vec::new(), Vec::new()),
+            }) => (requirements, bundles, specs, may_configure),
+            _ => (Vec::new(), Vec::new(), Vec::new(), false),
         }
     };
     Ok(Loaded {
@@ -261,6 +285,9 @@ async fn load(asset: AssetId, kind: EventKind) -> Result<Loaded, MessageId> {
         units,
         requirements,
         bundles,
+        specs,
+        may_configure,
+        history,
     })
 }
 
@@ -293,6 +320,8 @@ fn LogScreen(
     mode: Mode,
     original: Option<Event>,
     prefill: Option<SquawkView>,
+    /// A bundle to start the job with (**Log this service**, #084).
+    service: Option<BundleId>,
 ) -> Element {
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
     let auth = crate::ui::auth::use_auth();
@@ -339,6 +368,19 @@ fn LogScreen(
                     typed_from(event, &data.view.meters, &data.view.fields, &data.units)
                 }
                 (None, Some(squawk)) => repair_start(squawk),
+                (None, None) if service.is_some() => {
+                    let bundle = data
+                        .bundles
+                        .iter()
+                        .find(|(id, _)| Some(*id) == service)
+                        .map(|(_, bundle)| bundle);
+                    Typed {
+                        work: bundle.map_or_else(TypedWork::default, |bundle| {
+                            service_work(bundle, &data.requirements, &data.specs, &data.view.meters)
+                        }),
+                        ..Typed::default()
+                    }
+                }
                 // A return ends the send-out the vehicle is on.
                 (None, None) => Typed {
                     life: TypedLife {
@@ -375,6 +417,11 @@ fn LogScreen(
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Inputs {
     readings: Signal<Vec<(MeterId, String)>>,
+    /// The meters whose reading is a reset.
+    resets: Signal<Vec<MeterId>>,
+    /// A resettable meter whose reading the server refused for going the wrong way: it
+    /// offers "↺ It was a reset" (sketch 3A).
+    reset_offer: Signal<Option<MeterId>>,
     fields: Signal<Vec<(CustomFieldId, String)>>,
     skipped: Signal<Vec<(Requirement, String)>>,
     volume: Signal<String>,
@@ -408,6 +455,7 @@ impl Inputs {
     fn typed(self) -> Typed {
         Typed {
             readings: (self.readings)(),
+            resets: (self.resets)(),
             fields: (self.fields)(),
             skipped: (self.skipped)(),
             volume: (self.volume)(),
@@ -470,6 +518,8 @@ fn use_inputs(start: &Typed) -> Inputs {
     let start = start.clone();
     Inputs {
         readings: use_signal(|| start.readings.clone()),
+        resets: use_signal(|| start.resets.clone()),
+        reset_offer: use_signal(|| None),
         fields: use_signal(|| start.fields.clone()),
         skipped: use_signal(|| start.skipped.clone()),
         volume: use_signal(|| start.volume.clone()),
@@ -604,6 +654,8 @@ fn clash_text(
     let id = match clash.side {
         ClashSide::BelowEarlier => messages::LOG_CLASH_BELOW,
         ClashSide::AboveLater => messages::LOG_CLASH_ABOVE,
+        ClashSide::AboveEarlier => messages::LOG_CLASH_ABOVE_EARLIER,
+        ClashSide::BelowLater => messages::LOG_CLASH_BELOW_LATER,
     };
     tr_with(
         id,
@@ -675,8 +727,12 @@ fn FormBody(
     let open_meters: Vec<(MeterId, Meter)> = view
         .meters
         .iter()
-        .filter(|(id, _)| {
-            kind == EventKind::Reading || job || required.contains(&Requirement::Meter(*id))
+        // A derived meter is worked out, never typed (#087).
+        .filter(|(id, meter)| {
+            !meter.derived()
+                && (kind == EventKind::Reading
+                    || job
+                    || required.contains(&Requirement::Meter(*id)))
         })
         .cloned()
         .collect();
@@ -689,6 +745,13 @@ fn FormBody(
     let (meters, fields, fallback) = (view.meters.clone(), view.fields.clone(), data.zone.clone());
     let may_override = data.may_override;
     let squawks_left_out = leave_out.clone();
+    // "Update the spec too?" (#084): asked when a job's pre-filled part differs from its spec
+    // and the person may change the schedule; the answer, until the save it was asked for.
+    let specs = data.specs.clone();
+    let may_update_specs = job && data.may_configure;
+    let mut asking = use_signal(|| None::<(bool, Vec<SpecUpdate>)>);
+    let mut answered = use_signal(|| None::<Vec<SpecUpdate>>);
+    let dialog_specs = specs.clone();
     // Save draft (`false`), or save and Finish (`true`, a job).
     let submit = Callback::new(move |finish: bool| {
         let context = Context {
@@ -721,6 +784,21 @@ fn FormBody(
                 return;
             }
         };
+        let updates = if may_update_specs {
+            spec_updates(&job_parts(&input), &specs)
+        } else {
+            Vec::new()
+        };
+        let to_update = if updates.is_empty() {
+            Vec::new()
+        } else if let Some(chosen) = answered() {
+            answered.set(None);
+            chosen
+        } else {
+            asking.set(Some((finish, updates)));
+            return;
+        };
+        let spec_list = specs.clone();
         let zone = input.dates.zone.clone();
         let names = (meters.clone(), fields.clone());
         let removed_tasks = typed.work.removed_tasks.clone();
@@ -728,6 +806,9 @@ fn FormBody(
         spawn(async move {
             // Boxed: on the desktop a save runs the server's code on the copy (a large future).
             let result = Box::pin(send(mode, input, reason(), removed_tasks)).await;
+            if matches!(result, Ok(EventsOutcome::Saved { .. })) {
+                update_specs(&to_update, &spec_list).await;
+            }
             busy.set(false);
             match result {
                 Ok(EventsOutcome::Saved { id, .. }) if finish => {
@@ -771,10 +852,16 @@ fn FormBody(
                     }
                 }
                 Ok(EventsOutcome::Invalid { problem: refused }) => {
-                    if let EventProblem::ReadingOutOfOrder(clash) = refused
-                        && may_override
-                    {
-                        show_override.set(Some(clash.meter));
+                    if let EventProblem::ReadingOutOfOrder(clash) = refused {
+                        if may_override {
+                            show_override.set(Some(clash.meter));
+                        }
+                        let resettable = names
+                            .0
+                            .iter()
+                            .any(|(id, meter)| *id == clash.meter && meter.resettable());
+                        let mut offer = inputs.reset_offer;
+                        offer.set(resettable.then_some(clash.meter));
                     }
                     problem.set(Some(refusal(refused, mode, &names.0, &units, &zone)));
                 }
@@ -861,6 +948,8 @@ fn FormBody(
             if kind == EventKind::Fuel {
                 FuelPart { inputs, units }
             }
+            // 2A (#087): calculated fields, worked out as values are typed.
+            LiveCalculated { inputs, kind, data: data.clone() }
             if !job && let Mode::Edit(id) = mode {
                 AttachmentStrip {
                     asset,
@@ -879,6 +968,7 @@ fn FormBody(
                     vehicle: view.clone(),
                     requirements: data.requirements.clone(),
                     bundles: data.bundles.clone(),
+                    specs: data.specs.clone(),
                     squawks: shown_squawks,
                     currency,
                     work_problem: work_problem(Target::Work),
@@ -930,6 +1020,19 @@ fn FormBody(
         if finishing() {
             FinishDialog { checks, busy: busy(), on_finish: move |()| submit.call(true), on_close: move |()| finishing.set(false) }
         }
+        if let Some((finish, updates)) = asking() {
+            SpecUpdateDialog {
+                updates,
+                specs: dialog_specs,
+                busy: busy(),
+                on_save: move |chosen: Vec<SpecUpdate>| {
+                    asking.set(None);
+                    answered.set(Some(chosen));
+                    submit.call(finish);
+                },
+                on_close: move |()| asking.set(None),
+            }
+        }
         if confirming() {
             DisposeDialog {
                 vehicle: vehicle_name,
@@ -942,6 +1045,134 @@ fn FormBody(
             }
         }
     }
+}
+
+/// Every part of a job's tasks.
+fn job_parts(input: &EventInput) -> Vec<domain::event::Part> {
+    input
+        .work
+        .as_ref()
+        .map(|work| {
+            work.tasks
+                .iter()
+                .flat_map(|task| task.parts.iter().cloned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Brings the chosen specs in line with what the job used (#084). The job is saved either
+/// way, so a spec that can't be changed now (offline, say) is only logged.
+async fn update_specs(updates: &[SpecUpdate], specs: &[(SpecId, Spec)]) {
+    for update in updates {
+        let Some((_, spec)) = specs.iter().find(|(id, _)| *id == update.spec) else {
+            continue;
+        };
+        match api::edit_spec(update.spec, update.applied(spec)).await {
+            Ok(ScheduleOutcome::SavedSpec { id }) => {
+                tracing::debug!(target: log_area::UI, spec = %id, "spec updated from the job");
+            }
+            other => {
+                tracing::warn!(target: log_area::UI, spec = %update.spec, ?other, "spec not updated from the job");
+            }
+        }
+    }
+}
+
+/// "Update the specs too?" (#084; sketch 3A): each spec a job's part now differs from, with
+/// what it was and what the job used, ticked; **Save job** saves it and the ticked specs.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn SpecUpdateDialog(
+    updates: Vec<SpecUpdate>,
+    specs: Vec<(SpecId, Spec)>,
+    busy: bool,
+    on_save: EventHandler<Vec<SpecUpdate>>,
+    on_close: EventHandler<()>,
+) -> Element {
+    let count = updates.len();
+    let mut ticked = use_signal(move || vec![true; count]);
+    let lines: Vec<String> = updates
+        .iter()
+        .map(|update| spec_change_line(update, &specs))
+        .collect();
+    let chosen = updates;
+    rsx! {
+        div { class: "dialog-scrim", onclick: move |_| on_close.call(()),
+            div {
+                class: "dialog",
+                role: "dialog",
+                "aria-modal": "true",
+                onclick: move |event| event.stop_propagation(),
+                h2 { class: "dialog-title", {tr(messages::SPEC_UPDATE_TITLE)} }
+                for (index, line) in lines.into_iter().enumerate() {
+                    label { key: "{index}", class: "switch",
+                        input {
+                            r#type: "checkbox",
+                            checked: ticked().get(index).copied().unwrap_or(false),
+                            onchange: move |event| {
+                                if let Some(tick) = ticked.write().get_mut(index) {
+                                    *tick = event.checked();
+                                }
+                            },
+                        }
+                        span { {line} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::SPEC_UPDATE_NOTE)} }
+                div { class: "form-buttons",
+                    button {
+                        class: "primary-button",
+                        r#type: "button",
+                        disabled: busy,
+                        onclick: move |_| {
+                            let picks = ticked();
+                            let picked = chosen
+                                .iter()
+                                .zip(picks)
+                                .filter(|(_, tick)| *tick)
+                                .map(|(update, _)| update.clone())
+                                .collect();
+                            on_save.call(picked);
+                        },
+                        {tr(messages::SPEC_UPDATE_SAVE)}
+                    }
+                    button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()),
+                        {tr(messages::SPEC_UPDATE_BACK)}
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// "Oil filter: FL-500S → FL-910S", "Engine oil: 5.5 qt → 6 qt".
+fn spec_change_line(update: &SpecUpdate, specs: &[(SpecId, Spec)]) -> String {
+    let spec = specs
+        .iter()
+        .find(|(id, _)| *id == update.spec)
+        .map(|(_, spec)| spec);
+    let none = tr(messages::SPEC_UPDATE_NONE);
+    let mut changes = Vec::new();
+    if let Some(number) = &update.part_number {
+        let was = spec
+            .and_then(|spec| spec.part_number.clone())
+            .unwrap_or_else(|| none.clone());
+        changes.push(format!(
+            "{was} → {}",
+            number.clone().unwrap_or_else(|| none.clone())
+        ));
+    }
+    if let Some(amount) = update.amount {
+        let was = spec
+            .and_then(|spec| spec.amount)
+            .map_or_else(|| none.clone(), domain::spec::SpecAmount::show);
+        changes.push(format!("{was} → {}", amount.show()));
+    }
+    format!("{}: {}", update.name.as_str(), changes.join(", "))
 }
 
 /// Finish's checks, as far as the form can tell (the server checks everything again): the
@@ -1069,11 +1300,7 @@ fn SavedNotice(event: EventId, warnings: Vec<String>) -> Element {
 
 /// A meter's unit, short: "mi", "km", "h".
 fn meter_abbr(unit: MeterUnit) -> String {
-    tr(match unit {
-        MeterUnit::Miles => messages::UNIT_ABBR_MI,
-        MeterUnit::Kilometers => messages::UNIT_ABBR_KM,
-        MeterUnit::Hours => messages::UNIT_ABBR_H,
-    })
+    tr(unit.abbr())
 }
 
 /// "last 52,310 · 1 Mar 2026".
@@ -1129,6 +1356,7 @@ fn MeterInput(
 ) -> Element {
     let item = Requirement::Meter(id);
     let label = format!("{} ({})", meter.name.as_str(), meter_abbr(meter.unit));
+    let resetting = (inputs.resets)().contains(&id);
     rsx! {
         div { class: "log-item",
             Heading { text: meter.name.as_str().to_owned(), required }
@@ -1148,6 +1376,26 @@ fn MeterInput(
                         if let Some(latest) = latest {
                             span { class: "reading-hint", {latest_text(&meter, latest, &zone, &units)} }
                         }
+                        if meter.resettable() {
+                            ResetTick { inputs, id, meter: meter.clone() }
+                        }
+                    }
+                }
+                if resetting && let Some(latest) = latest {
+                    p { class: "reset-done", {reset_text(&meter, latest.value, &text_of(&(inputs.readings)(), &id))} }
+                }
+                if (inputs.reset_offer)() == Some(id) && !resetting {
+                    button {
+                        class: "secondary-button",
+                        r#type: "button",
+                        onclick: move |_| {
+                            let mut resets = inputs.resets;
+                            resets.write().push(id);
+                            let (mut offer, mut problem) = (inputs.reset_offer, inputs.problem);
+                            offer.set(None);
+                            problem.set(None);
+                        },
+                        {tr(messages::LOG_IT_WAS_A_RESET)}
                     }
                 }
                 if required {
@@ -1158,6 +1406,54 @@ fn MeterInput(
             if show_override {
                 OverrideBox { inputs }
             }
+        }
+    }
+}
+
+/// "Oil life was reset: 18% → 100%." under a reading marked as a reset.
+fn reset_text(meter: &Meter, from: i64, to: &str) -> String {
+    tr_with(
+        messages::LOG_RESET_DONE,
+        &[
+            ("name", MessageArg::from(meter.name.as_str().to_owned())),
+            (
+                "from",
+                MessageArg::from(show_reading(from, meter.unit, meter.precision)),
+            ),
+            ("to", MessageArg::from(to.trim().to_owned())),
+            ("unit", MessageArg::from(meter_abbr(meter.unit))),
+        ],
+    )
+}
+
+/// "↺ Reset" beside a resettable meter's reading (sketch 2A): ticking it fills the meter's
+/// reset value, which stays editable.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ResetTick(inputs: Inputs, id: MeterId, meter: Meter) -> Element {
+    let ticked = (inputs.resets)().contains(&id);
+    rsx! {
+        label { class: "switch reset-tick",
+            input {
+                r#type: "checkbox",
+                checked: ticked,
+                onchange: move |event| {
+                    let mut resets = inputs.resets;
+                    resets.write().retain(|have| *have != id);
+                    if event.checked() {
+                        resets.write().push(id);
+                        if let Some(value) = meter.reset_to {
+                            set_text(inputs.readings, &id, reading_value(value, meter.unit, meter.precision));
+                        }
+                        let mut offer = inputs.reset_offer;
+                        offer.set(None);
+                    }
+                },
+            }
+            span { {tr(messages::LOG_RESET)} }
         }
     }
 }
@@ -1294,6 +1590,8 @@ fn FieldInput(
                         FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Volume | FieldKind::FuelEconomy => rsx! {
                             input { class: "field-input", inputmode: "decimal", autocomplete: "off", value, oninput: set }
                         },
+                        // Worked out, never typed (#087); the form leaves these out.
+                        FieldKind::Calculated { .. } => rsx! {},
                     }
                 }
                 if required {
@@ -1302,6 +1600,91 @@ fn FieldInput(
             }
             FormError { message: inputs.problem_at(Target::Field(id)) }
         }
+    }
+}
+
+/// 2A (#087): the calculated fields shown on `kind`, worked out from what's typed after the
+/// vehicle's earlier events; until the form is complete enough, a note.
+#[component]
+fn LiveCalculated(inputs: Inputs, kind: EventKind, data: Loaded) -> Element {
+    let view = &data.view;
+    let shown: Vec<(CustomFieldId, CustomField)> = view
+        .fields
+        .iter()
+        .filter(|(_, field)| field.calculated() && field.shown(kind))
+        .cloned()
+        .collect();
+    if shown.is_empty() {
+        return rsx! {};
+    }
+    let context = Context {
+        asset: view.id,
+        kind,
+        meters: &view.meters,
+        fields: &view.fields,
+        units: &data.units,
+        fallback_zone: &data.zone,
+        now: SystemClock.now(),
+    };
+    let Ok(input) = build(&inputs.typed(), &context) else {
+        return rsx! {
+            section { class: "event-section",
+                h3 { class: "section-heading", {tr(messages::FORMULA_ROWS).to_uppercase()} }
+                for (id, field) in shown {
+                    div { key: "{id}", class: "calculated-row",
+                        super::formula_view::FxBadge {}
+                        span { class: "calculated-label", {field.label.as_str().to_owned()} }
+                        span { class: "calculated-none", "—" }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::FORMULA_FILL_IN)} }
+            }
+        };
+    };
+    let readings: Vec<PastReading> = data
+        .latest
+        .iter()
+        .map(|reading| PastReading {
+            meter: reading.meter,
+            at: reading.at,
+            value: reading.value,
+            reset: false,
+        })
+        .collect();
+    let vehicle = domain::calculated::Vehicle {
+        fields: &view.fields,
+        meters: &view.meters,
+        readings: &readings,
+    };
+    // Earlier: those before it (an event being edited isn't its own earlier one).
+    let earlier: Vec<domain::formula::Scope> = data
+        .history
+        .iter()
+        .find(|each| each.kind == kind)
+        .map(|each| {
+            each.earlier
+                .iter()
+                .filter(|scope| scope.at < input.dates.start)
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+    let current = domain::calculated::scope_of(
+        domain::calculated::Logged::from(&input),
+        earlier.last(),
+        &vehicle,
+    );
+    let values = super::formula_view::live_values(
+        kind,
+        &current,
+        &earlier,
+        &view.fields,
+        &view.meters,
+        &input.dates.zone,
+        &data.units,
+    );
+    rsx! {
+        super::formula_view::CalculatedRows { values, fields: view.fields.clone(), units: data.units }
     }
 }
 
@@ -1331,6 +1714,7 @@ fn per_unit(inputs: &Inputs, units: &Preferences) -> Option<String> {
 fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
     let (mut volume, mut price) = (inputs.volume, inputs.price);
     let (mut full, mut missed) = (inputs.filled_full, inputs.missed_previous);
+    let info = use_signal(|| None::<MessageId>);
     let volume_label = tr_with(
         messages::LOG_VOLUME,
         &[("unit", MessageArg::from(volume_abbr(units.volume)))],
@@ -1362,12 +1746,39 @@ fn FuelPart(inputs: Inputs, units: Preferences) -> Element {
                     input { r#type: "checkbox", checked: full(), onchange: move |event| full.set(event.checked()) }
                     span { {tr(messages::LOG_FILLED_FULL)} }
                 }
+                InfoButton { which: messages::FUEL_INFO_FULL, open: info }
                 label { class: "switch",
                     input { r#type: "checkbox", checked: missed(), onchange: move |event| missed.set(event.checked()) }
                     span { {tr(messages::LOG_MISSED)} }
                 }
+                InfoButton { which: messages::FUEL_INFO_MISSED, open: info }
+            }
+            // What the box means (#085), under the row; its ⓘ again closes it.
+            if let Some(text) = info() {
+                p { class: "info-note", role: "note", {tr(text)} }
             }
             FormError { message: inputs.problem_at(Target::Fuel) }
+        }
+    }
+}
+
+/// An **ⓘ** that opens (or closes) explanation `which` (#085).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn InfoButton(which: MessageId, open: Signal<Option<MessageId>>) -> Element {
+    let mut open = open;
+    let shown = open() == Some(which);
+    rsx! {
+        button {
+            class: if shown { "info-button on" } else { "info-button" },
+            r#type: "button",
+            "aria-label": tr(messages::FUEL_INFO_LABEL),
+            "aria-expanded": shown,
+            onclick: move |_| open.set(if shown { None } else { Some(which) }),
+            "ⓘ"
         }
     }
 }
@@ -1743,13 +2154,19 @@ fn MoreFold(
     let meters: Vec<(MeterId, Meter)> = view
         .meters
         .iter()
-        .filter(|(id, _)| kind == EventKind::Fuel && !required.contains(&Requirement::Meter(*id)))
+        .filter(|(id, meter)| {
+            kind == EventKind::Fuel
+                && !meter.derived()
+                && !required.contains(&Requirement::Meter(*id))
+        })
         .cloned()
         .collect();
     let fields: Vec<(CustomFieldId, CustomField)> = view
         .fields
         .iter()
-        .filter(|(id, field)| field.shown(kind) && !required.contains(&Requirement::Field(*id)))
+        .filter(|(id, field)| {
+            field.shown(kind) && !field.calculated() && !required.contains(&Requirement::Field(*id))
+        })
         .cloned()
         .collect();
     if meters.is_empty() && fields.is_empty() && kind != EventKind::Fuel {

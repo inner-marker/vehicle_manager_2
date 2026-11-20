@@ -61,6 +61,11 @@ pub struct Profile {
     pub high_severity: String,
     /// The official documents expected (message keys; documents arrive in milestone 8).
     pub documents: Vec<String>,
+    /// Its default usage's name (a message key, #086): "Drivable", "Towable", "Usable".
+    pub default_usage: String,
+    /// The document types its default usage needs (message keys, #086): registration and
+    /// insurance on a road vehicle; none on equipment.
+    pub usage_documents: Vec<String>,
     /// The meters a new asset starts with.
     pub meters: Vec<ProfileMeter>,
     /// The custom fields a new asset starts with.
@@ -102,6 +107,8 @@ pub struct ProfileIdentifier {
 /// A meter a new asset starts with.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct ProfileMeter {
+    /// Its stable key for formulas (#087), e.g. `odometer`; never changed once shipped.
+    pub key: FieldKey,
     /// Its name (a message key).
     pub name: String,
     /// What it measures.
@@ -234,6 +241,10 @@ impl Profile {
                     precision: meter.precision,
                     description: None,
                     required_for: meter.required_for.clone(),
+                    direction: crate::meter::MeterDirection::Up,
+                    reset_to: None,
+                    key: meter.key.clone(),
+                    formula: None,
                 })
             })
             .collect()
@@ -334,17 +345,22 @@ mod tests {
     fn every_name_is_a_message_in_the_catalog() {
         let english = Translator::english();
         for profile in all() {
-            let keys = [&profile.name, &profile.high_severity]
-                .into_iter()
-                .chain(
-                    profile
-                        .identifiers
-                        .iter()
-                        .map(|identifier| &identifier.name),
-                )
-                .chain(&profile.documents)
-                .chain(profile.meters.iter().map(|meter| &meter.name))
-                .chain(profile.fields.iter().map(|field| &field.label));
+            let keys = [
+                &profile.name,
+                &profile.high_severity,
+                &profile.default_usage,
+            ]
+            .into_iter()
+            .chain(
+                profile
+                    .identifiers
+                    .iter()
+                    .map(|identifier| &identifier.name),
+            )
+            .chain(&profile.documents)
+            .chain(&profile.usage_documents)
+            .chain(profile.meters.iter().map(|meter| &meter.name))
+            .chain(profile.fields.iter().map(|field| &field.label));
             for key in keys {
                 assert!(english.has_key(key), "{}: {key}", profile.id.as_str());
                 assert!(

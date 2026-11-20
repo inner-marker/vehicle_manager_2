@@ -1,7 +1,7 @@
 // Truck (decision #030): a car's setup, plus towing and hauling.
 (
     id: "truck",
-    version: 3,
+    version: 5,
     name: "profile-truck",
     event_kinds: [fuel, reading, maintenance, repair],
     sections: [r#fuel-economy, r#towing-hauling],
@@ -12,8 +12,12 @@
     // What a High squawk means for this kind (#063).
     high_severity: "squawk-high-not-drivable",
     documents: ["document-title", "document-registration", "document-insurance"],
+    // Its default usage (#086): what "ready to use" means without saying more, and the
+    // document types it needs (a missing or expired one makes it not ready).
+    default_usage: "usage-drivable",
+    usage_documents: ["document-registration", "document-insurance"],
     meters: [
-        (name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
+        (key: "odometer", name: "meter-odometer", dimension: distance, unit: None, precision: 0, required_for: [fuel]),
     ],
     fields: [
         (key: "trip-time", label: "field-trip-time", shown_on: [fuel], kind: {"type": "duration"}, enabled: true, range: None),

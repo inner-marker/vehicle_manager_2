@@ -73,6 +73,19 @@ impl Record for GarageOrder {
 /// Sorts `assets` (one group's, or any list) by `sort`, using `order` for a custom sort.
 pub fn sort_assets(assets: &mut [AssetSummary], sort: GarageSort, order: &[AssetId]) {
     match sort {
+        // The most urgent first; equally urgent ones by name.
+        GarageSort::MostUrgent => assets.sort_by(|a, b| {
+            b.due
+                .cmp(&a.due)
+                .then_with(|| {
+                    a.asset
+                        .name
+                        .as_str()
+                        .to_lowercase()
+                        .cmp(&b.asset.name.as_str().to_lowercase())
+                })
+                .then(b.id.cmp(&a.id))
+        }),
         // Newest first: a later UUIDv7 was made later.
         GarageSort::NewestActivity => assets.sort_by_key(|item| core::cmp::Reverse(item.id)),
         GarageSort::Name => assets.sort_by(|a, b| {
@@ -165,6 +178,8 @@ mod tests {
             },
             role: Role::Driver,
             plate: None,
+            due: None,
+            ready: None,
         }
     }
 
@@ -185,6 +200,17 @@ mod tests {
         let mut assets = three();
         sort_assets(&mut assets, GarageSort::NewestActivity, &[]);
         assert_eq!(names(&assets), vec!["Generator", "Truck", "civic"]);
+    }
+
+    #[test]
+    fn most_urgent_comes_first_then_by_name() {
+        let mut assets = three();
+        assets[0].due = Some(crate::due::DueStep::ComingUp);
+        assets[1].due = Some(crate::due::DueStep::Overdue);
+        assets.push(summary(4, "Boat"));
+        sort_assets(&mut assets, GarageSort::MostUrgent, &[]);
+        assert_eq!(names(&assets), vec!["Truck", "civic", "Boat", "Generator"]);
+        assert_eq!(GarageSort::default(), GarageSort::MostUrgent, "#040");
     }
 
     #[test]

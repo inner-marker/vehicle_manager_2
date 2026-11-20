@@ -14,12 +14,16 @@ use domain::custom_field::{CustomField, CustomFieldId, FieldKind, FieldRange, MA
 use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::label::Label;
-use domain::meter::{EventKind, MAX_PRECISION, Meter, MeterDimension, MeterId, MeterUnit};
+use domain::meter::{
+    EventKind, MAX_PRECISION, Meter, MeterDimension, MeterDirection, MeterId, MeterUnit,
+    default_reset,
+};
 use domain::preferences::Preferences;
 use domain::profile::profile;
 use domain::quantity::{
     QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
-    parse_duration, parse_economy, parse_volume, show_duration, volume_value,
+    parse_duration, parse_economy, parse_reading, parse_volume, reading_value, show_duration,
+    volume_value,
 };
 
 use super::users::role_label;
@@ -35,7 +39,7 @@ use crate::ui::vehicles::{VehiclesContext, group_icon, refresh_garage, use_vehic
 use crate::ui::{tr, tr_with};
 
 /// What went wrong, if the answer isn't a success.
-fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
+pub(super) fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
     match result {
         Ok(
             AssetsOutcome::Done
@@ -45,6 +49,13 @@ fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
             | AssetsOutcome::Garage { .. },
         ) => None,
         Ok(AssetsOutcome::Invalid { problem }) => Some(tr(problem.message())),
+        Ok(AssetsOutcome::InvalidFormula { problem }) => {
+            Some(problem.describe(domain::i18n::Translator::english()))
+        }
+        Ok(AssetsOutcome::InUse { by }) => Some(tr_with(
+            messages::FORMULA_IN_USE,
+            &[("by", MessageArg::from(by.as_str()))],
+        )),
         Ok(AssetsOutcome::NotAllowed) => Some(tr(messages::VEHICLES_NOT_ALLOWED)),
         Ok(AssetsOutcome::NotFound) => Some(tr(messages::VEHICLE_NOT_FOUND)),
         Ok(AssetsOutcome::Unavailable) => Some(tr(messages::SOMETHING_WENT_WRONG)),
@@ -75,6 +86,7 @@ const fn kind_label(kind: &FieldKind) -> MessageId {
         FieldKind::Duration => messages::KIND_DURATION,
         FieldKind::Volume => messages::KIND_VOLUME,
         FieldKind::FuelEconomy => messages::KIND_FUEL_ECONOMY,
+        FieldKind::Calculated { .. } => messages::KIND_CALCULATED,
     }
 }
 
@@ -123,11 +135,12 @@ const fn status_value(status: LifecycleStatus) -> &'static str {
 }
 
 /// A meter unit's `<option>` value, and back.
-const fn unit_value(unit: MeterUnit) -> &'static str {
+pub(super) const fn unit_value(unit: MeterUnit) -> &'static str {
     match unit {
         MeterUnit::Miles => "miles",
         MeterUnit::Kilometers => "kilometers",
         MeterUnit::Hours => "hours",
+        MeterUnit::Percent => "percent",
     }
 }
 
@@ -411,7 +424,7 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn SaveButtons(busy: bool, on_close: EventHandler<()>) -> Element {
+pub(super) fn SaveButtons(busy: bool, on_close: EventHandler<()>) -> Element {
     rsx! {
         div { class: "form-buttons",
             button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
@@ -440,13 +453,18 @@ enum Editing<I, T> {
 #[component]
 fn MetersSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<MeterId, Meter>>);
+    // A derived meter's own dialog (3B, #087): `Some(None)` adds one.
+    let mut deriving = use_signal(|| None::<Option<(MeterId, Meter)>>);
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::PANEL_METERS,
                 if can {
-                    button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_METER)} }
+                    div { class: "setup-row-buttons",
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_METER)} }
+                        button { class: "secondary-button", onclick: move |_| deriving.set(Some(None)), {tr(messages::SETUP_ADD_DERIVED)} }
+                    }
                 }
             }
             if view.meters.is_empty() {
@@ -455,15 +473,29 @@ fn MetersSection(view: AssetView) -> Element {
             for (meter_id, meter) in view.meters.clone() {
                 div { key: "{meter_id}", class: "setup-row",
                     div { class: "setup-row-text",
-                        span { class: "setup-row-name", {meter.name.as_str().to_owned()} }
+                        span { class: "setup-row-name",
+                            if meter.derived() {
+                                super::formula_view::FxBadge {}
+                            }
+                            {meter.name.as_str().to_owned()}
+                        }
                         span { class: "setup-row-detail", {meter_summary(&meter)} }
-                        span { class: "setup-row-detail", {required_text(&meter)} }
+                        if let Some(formula) = &meter.formula {
+                            span { class: "setup-row-detail mono", {formula.as_str().to_owned()} }
+                        } else {
+                            span { class: "setup-row-detail", {required_text(&meter)} }
+                        }
+                        span { class: "setup-row-key mono", {meter.key.as_str().to_owned()} }
                     }
                     if can {
                         RowButtons {
                             on_edit: {
                                 let meter = meter.clone();
-                                move |()| editing.set(Some(Editing::Changing(meter_id, meter.clone())))
+                                move |()| if meter.derived() {
+                                    deriving.set(Some(Some((meter_id, meter.clone()))));
+                                } else {
+                                    editing.set(Some(Editing::Changing(meter_id, meter.clone())));
+                                }
                             },
                             on_remove: {
                                 let name = meter.name.as_str().to_owned();
@@ -486,6 +518,9 @@ fn MetersSection(view: AssetView) -> Element {
                 ConfirmRemove { target: Removal::Meter(id), name, on_close: move |()| editing.set(None) }
             },
         }
+        if let Some(current) = deriving() {
+            super::formula_view::DerivedMeterDialog { view, current, on_close: move |()| deriving.set(None) }
+        }
     }
 }
 
@@ -505,15 +540,149 @@ pub(super) fn RowButtons(on_edit: EventHandler<()>, on_remove: EventHandler<()>)
 }
 
 /// The units that can show a meter of `dimension`.
-fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
+pub(super) fn units_for(dimension: MeterDimension) -> Vec<MeterUnit> {
     MeterUnit::ALL
         .into_iter()
         .filter(|unit| unit.fits(dimension))
         .collect()
 }
 
-/// Add a meter, or change one (its name, unit, decimals, description, and which kinds of
-/// event require it).
+/// A meter's measure as an `<option>` value, and back.
+const fn dimension_value(dimension: MeterDimension) -> &'static str {
+    match dimension {
+        MeterDimension::Distance => "distance",
+        MeterDimension::Duration => "duration",
+        MeterDimension::Percentage => "percentage",
+    }
+}
+
+/// What a meter measures, by its `<option>` value.
+fn dimension_of(value: &str) -> MeterDimension {
+    [
+        MeterDimension::Distance,
+        MeterDimension::Duration,
+        MeterDimension::Percentage,
+    ]
+    .into_iter()
+    .find(|dimension| dimension_value(*dimension) == value)
+    .unwrap_or(MeterDimension::Distance)
+}
+
+/// How a meter counts and resets, as typed in its dialog (sketch 1A, phase-5.md).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TypedCounting {
+    /// Up or down.
+    direction: MeterDirection,
+    /// "Can be reset" ticked.
+    resettable: bool,
+    /// The reset value, in the meter's unit, as typed.
+    reset_text: String,
+}
+
+impl TypedCounting {
+    /// `meter`'s, or a new meter's (counting up, not resettable).
+    fn of(meter: Option<&Meter>) -> Self {
+        Self {
+            direction: meter.map_or(MeterDirection::Up, |meter| meter.direction),
+            resettable: meter.is_some_and(Meter::resettable),
+            reset_text: meter
+                .and_then(|meter| {
+                    let value = meter.reset_to?;
+                    Some(reading_value(value, meter.unit, meter.precision))
+                })
+                .unwrap_or_default(),
+        }
+    }
+
+    /// The reset value, in the stored unit (`None`: not resettable).
+    ///
+    /// # Errors
+    ///
+    /// [`QuantityError`] if the typed value isn't one.
+    fn reset_to(&self, unit: MeterUnit, precision: u8) -> Result<Option<i64>, QuantityError> {
+        if !self.resettable {
+            return Ok(None);
+        }
+        parse_reading(&self.reset_text, unit, precision).map(Some)
+    }
+}
+
+/// "Counts: Up / Down" and "Can be reset to [100] %": the meter dialog's Phase 5 rows.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn CountingChoices(
+    counting: Signal<TypedCounting>,
+    dimension: MeterDimension,
+    unit: MeterUnit,
+    precision: u8,
+    adding: bool,
+) -> Element {
+    let mut counting = counting;
+    let current = counting();
+    let default_text =
+        move |direction| reading_value(default_reset(dimension, direction), unit, precision);
+    rsx! {
+        div { class: "field",
+            span { class: "field-label", {tr(messages::METER_COUNTS)} }
+            div { class: "segmented", role: "radiogroup",
+                for direction in MeterDirection::ALL {
+                    button {
+                        key: "{direction:?}",
+                        class: if direction == current.direction { "segment on" } else { "segment" },
+                        r#type: "button",
+                        role: "radio",
+                        "aria-checked": direction == current.direction,
+                        onclick: move |_| {
+                            let mut typed = counting.write();
+                            // A reset value left at the old default follows the direction.
+                            if typed.resettable && typed.reset_text == default_text(typed.direction) {
+                                typed.reset_text = default_text(direction);
+                            }
+                            typed.direction = direction;
+                        },
+                        {tr(direction.label())}
+                    }
+                }
+            }
+            span { class: "muted-note", {tr(if adding { messages::METER_COUNTS_NOTE } else { messages::METER_DIRECTION_FIXED })} }
+        }
+        div { class: "field",
+            label { class: "switch",
+                input {
+                    r#type: "checkbox",
+                    checked: current.resettable,
+                    onchange: move |event| {
+                        let mut typed = counting.write();
+                        typed.resettable = event.checked();
+                        if typed.resettable && typed.reset_text.trim().is_empty() {
+                            typed.reset_text = default_text(typed.direction);
+                        }
+                    },
+                }
+                span { {tr(messages::METER_RESETTABLE)} }
+            }
+            if current.resettable {
+                label { class: "reset-to",
+                    span { {tr(messages::METER_RESET_TO)} }
+                    input {
+                        class: "field-input reset-value",
+                        inputmode: "decimal",
+                        value: "{current.reset_text}",
+                        oninput: move |event| counting.write().reset_text = event.value(),
+                    }
+                    span { {tr(unit.abbr())} }
+                }
+                span { class: "muted-note", {tr(messages::METER_RESET_NOTE)} }
+            }
+        }
+    }
+}
+
+/// Add a meter, or change one (its name, unit, decimals, description, which kinds of event
+/// require it, which way it counts, and whether it can be reset).
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -560,15 +729,27 @@ fn MeterDialog(
             .map(|meter| meter.required_for.clone())
             .unwrap_or_default()
     });
+    let counting = use_signal(|| TypedCounting::of(existing.as_ref()));
     let submit = move |event: FormEvent| {
         event.prevent_default();
+        let typed = counting();
+        let reset_to = match typed.reset_to(unit(), precision()) {
+            Ok(value) => value,
+            Err(problem) => {
+                error.set(Some(tr(problem.message())));
+                return;
+            }
+        };
         let form = MeterForm {
+            formula: None,
             name: name(),
             dimension: dimension(),
             unit: unit(),
             precision: precision(),
             description: description(),
             required_for: required_for(),
+            direction: typed.direction,
+            reset_to,
         };
         busy.set(true);
         spawn(async move {
@@ -597,7 +778,7 @@ fn MeterDialog(
                             class: "field-input",
                             disabled: !adding,
                             onchange: move |event| {
-                                let chosen = if event.value() == "duration" { MeterDimension::Duration } else { MeterDimension::Distance };
+                                let chosen = dimension_of(&event.value());
                                 dimension.set(chosen);
                                 if !unit().fits(chosen) {
                                     unit.set(units_for(chosen)[0]);
@@ -605,6 +786,7 @@ fn MeterDialog(
                             },
                             option { value: "distance", selected: dimension() == MeterDimension::Distance, {tr(messages::DIMENSION_DISTANCE)} }
                             option { value: "duration", selected: dimension() == MeterDimension::Duration, {tr(messages::DIMENSION_DURATION)} }
+                            option { value: "percentage", selected: dimension() == MeterDimension::Percentage, {tr(messages::DIMENSION_PERCENTAGE)} }
                         }
                     }
                     label { class: "field",
@@ -632,6 +814,7 @@ fn MeterDialog(
                         }
                     }
                 }
+                CountingChoices { counting, dimension: dimension(), unit: unit(), precision: precision(), adding }
                 Field { label: messages::FIELD_METER_DESCRIPTION, value: description }
                 KindChecks { label: messages::METER_REQUIRED_LABEL, kinds, chosen: required_for, note: messages::METER_REQUIRED_NOTE }
                 if !adding {
@@ -725,7 +908,7 @@ fn field_required_text(field: &CustomField) -> String {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn KindChecks(
+pub(super) fn KindChecks(
     label: MessageId,
     kinds: Vec<EventKind>,
     chosen: Signal<Vec<EventKind>>,
@@ -765,14 +948,20 @@ fn KindChecks(
 #[component]
 fn FieldsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| None::<Editing<CustomFieldId, CustomField>>);
+    // A calculated field's dialog (row 1, #087): `Some(None)` adds one.
+    let mut calculating = use_signal(|| None::<Option<(CustomFieldId, CustomField)>>);
     let units = crate::ui::units::use_units();
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
+    let calculated_kinds = kinds.clone();
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::SETUP_FIELDS,
                 if can {
-                    button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
+                    div { class: "setup-row-buttons",
+                        button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
+                        button { class: "secondary-button", onclick: move |_| calculating.set(Some(None)), {tr(messages::SETUP_ADD_CALCULATED)} }
+                    }
                 }
             }
             if view.fields.is_empty() {
@@ -782,20 +971,31 @@ fn FieldsSection(view: AssetView) -> Element {
                 div { key: "{field_id}", class: if field.enabled { "setup-row" } else { "setup-row off" },
                     div { class: "setup-row-text",
                         span { class: "setup-row-name",
+                            if field.calculated() {
+                                super::formula_view::FxBadge {}
+                            }
                             {field.label.as_str().to_owned()}
                             if !field.enabled {
                                 span { class: "badge", {tr(messages::FIELD_OFF)} }
                             }
                         }
                         span { class: "setup-row-detail", {field_summary(&field)} }
-                        span { class: "setup-row-detail", {field_required_text(&field)} }
+                        if let FieldKind::Calculated { formula, .. } = &field.kind {
+                            span { class: "setup-row-detail mono", {formula.as_str().to_owned()} }
+                        } else {
+                            span { class: "setup-row-detail", {field_required_text(&field)} }
+                        }
                         span { class: "setup-row-key mono", {field.key.as_str().to_owned()} }
                     }
                     if can {
                         RowButtons {
                             on_edit: {
                                 let field = field.clone();
-                                move |()| editing.set(Some(Editing::Changing(field_id, field.clone())))
+                                move |()| if field.calculated() {
+                                    calculating.set(Some(Some((field_id, field.clone()))));
+                                } else {
+                                    editing.set(Some(Editing::Changing(field_id, field.clone())));
+                                }
                             },
                             on_remove: {
                                 let name = field.label.as_str().to_owned();
@@ -817,6 +1017,9 @@ fn FieldsSection(view: AssetView) -> Element {
             Some(Editing::Removing(id, name)) => rsx! {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
             },
+        }
+        if let Some(current) = calculating() {
+            super::formula_view::CalculatedFieldDialog { view, kinds: calculated_kinds, current, on_close: move |()| calculating.set(None) }
         }
     }
 }
@@ -872,7 +1075,11 @@ fn parse_range_end(
         FieldKind::Duration => quantity(parse_duration(text)),
         FieldKind::Volume => quantity(parse_volume(text, units.volume)),
         FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
-        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => Ok(None),
+        FieldKind::Text
+        | FieldKind::Date
+        | FieldKind::YesNo
+        | FieldKind::Choice { .. }
+        | FieldKind::Calculated { .. } => Ok(None),
     }
 }
 
@@ -884,9 +1091,11 @@ fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
         FieldKind::Duration => show_duration(value),
         FieldKind::Volume => volume_value(value, units.volume),
         FieldKind::FuelEconomy => economy_value(value, units.economy),
-        FieldKind::Text | FieldKind::Date | FieldKind::YesNo | FieldKind::Choice { .. } => {
-            String::new()
-        }
+        FieldKind::Text
+        | FieldKind::Date
+        | FieldKind::YesNo
+        | FieldKind::Choice { .. }
+        | FieldKind::Calculated { .. } => String::new(),
     }
 }
 
@@ -1434,6 +1643,54 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
 mod tests {
     use super::*;
     use domain::preferences::{DistanceUnit, EconomyUnit, VolumeUnit};
+    use domain::test_support::test_id;
+
+    #[test]
+    fn a_meters_counting_is_typed_in_its_own_unit() {
+        let oil_life = Meter {
+            key: domain::custom_field::FieldKey::parse("oil-life").unwrap(),
+            formula: None,
+            asset: test_id(1),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        let typed = TypedCounting::of(Some(&oil_life));
+        assert_eq!(
+            typed,
+            TypedCounting {
+                direction: MeterDirection::Down,
+                resettable: true,
+                reset_text: "100".into(),
+            }
+        );
+        assert_eq!(typed.reset_to(MeterUnit::Percent, 0), Ok(Some(10_000)));
+        let off = TypedCounting {
+            resettable: false,
+            reset_text: "junk".into(),
+            ..typed
+        };
+        assert_eq!(off.reset_to(MeterUnit::Percent, 0), Ok(None), "not checked");
+        let bad = TypedCounting {
+            reset_text: "99.5".into(),
+            ..typed
+        };
+        assert_eq!(
+            bad.reset_to(MeterUnit::Percent, 0),
+            Err(QuantityError::TooPrecise)
+        );
+        let new = TypedCounting::of(None);
+        assert_eq!((new.direction, new.resettable), (MeterDirection::Up, false));
+        assert_eq!(
+            dimension_of(dimension_value(MeterDimension::Percentage)),
+            MeterDimension::Percentage
+        );
+    }
 
     #[test]
     fn range_ends_are_typed_with_the_fields_decimals() {

@@ -203,6 +203,7 @@ mod attachments {
             readings: vec![Reading {
                 meter: odometer,
                 value: 80_000 * MILE,
+                reset: false,
             }],
             skipped: vec![],
             fields: vec![],

@@ -167,3 +167,23 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Calendar rules too:** "first at 3 years, then every 2 years" (e.g. a new car's first inspection).
   - **How it's shown:** "First at 100,000 mi, then every 50,000 mi"; and once the first is done, only the repeating part.
   - **Copying a schedule** (#031) onto a vehicle that's already past the first interval.
+
+### 22. Help pages in the app 🟡
+*Raised by the human, 2026-11-18, planning Phase 5 milestone 7 · Suggested phase: Phase 6 or later*
+
+- **Idea:** help pages inside the app, starting with formulas, in place of milestone 7's `docs/help/formulas.md` on GitHub.
+- **To discuss:**
+  - **Where:** a Help screen in the sidebar, and links from each ⓘ popup to its topic.
+  - **Written how:** in the app's messages (translated, offline on the desktop), or Markdown bundled into the app.
+  - **Which topics** after formulas: due soon and the warnings, fuel economy's stretches, readiness, roles.
+
+
+### 23. Documents needed by kind of vehicle, and custom vehicle types 🟡
+*Raised by the human, 2026-11-19, in the Phase 5 test run · Suggested phase: Phase 6 (polish)*
+
+- **Idea:** an Admin chooses which document types each kind of vehicle needs (a track-only car needs no registration or insurance). Going further: **custom vehicle types**, made by the Admin, each saying which of the app's rules apply to it.
+- **What there is today:** each vehicle's profile (car, truck, trailer, …) sets the documents its default usage needs, and each vehicle's **usages** (decision #086) can change them, one vehicle at a time. So a track car's **Drivable** can already need nothing.
+- **To discuss:**
+  - **Household defaults per kind:** a setting that changes what new vehicles of a kind start with, or one that also follows existing vehicles.
+  - **Custom types:** built on the data-driven profiles (#030): which meters, fields, documents, and usages a type starts with, and which rules (fuel economy, readiness, documents) apply to it.
+  - **How they relate to templates** (#084), which already copy a schedule, specs, and usages.

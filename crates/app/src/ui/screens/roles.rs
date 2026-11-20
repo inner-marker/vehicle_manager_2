@@ -332,11 +332,14 @@ mod tests {
                 },
                 role: Role::Admin,
                 plate: None,
+                due: None,
+                ready: None,
             }],
             can_add: true,
             can_manage_groups: true,
             sort: GarageSort::NewestActivity,
             order: vec![],
+            fleet: domain::due::FleetCounts::default(),
         }
     }
 

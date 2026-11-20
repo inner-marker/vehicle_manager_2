@@ -18,8 +18,8 @@ use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
 use crate::convert::{
-    clearable, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name, required,
-    required_name,
+    clearable, clearable_json, id_from_sql, id_to_sql, invalid, json_from_sql, json_to_sql, name,
+    optional_from_json, optional_json, required, required_name,
 };
 use crate::{Database, StorageError};
 
@@ -41,8 +41,9 @@ impl RecordWriter<Requirement> for RequirementWriter {
     ) -> Result<(), StorageError> {
         sqlx::query(
             "INSERT INTO requirements (id, asset_id, name, notes, enabled, rules, reference_id,
-                                       mode, applicability, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                       mode, applicability, before_records, warnings, specs,
+                                       usages, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.asset, "asset_id")?))
@@ -64,6 +65,25 @@ impl RecordWriter<Requirement> for RequirementWriter {
             &values.applicability.clone().unwrap_or_default(),
             "requirements.applicability",
         )?)
+        .bind(optional_json(
+            values
+                .before_records
+                .clone()
+                .and_then(Clearable::into_option),
+            "requirements.before_records",
+        )?)
+        .bind(optional_json(
+            values.warnings.and_then(Clearable::into_option),
+            "requirements.warnings",
+        )?)
+        .bind(json_to_sql(
+            &values.specs.clone().unwrap_or_default(),
+            "requirements.specs",
+        )?)
+        .bind(optional_json(
+            values.usages.clone().and_then(Clearable::into_option),
+            "requirements.usages",
+        )?)
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -79,6 +99,10 @@ impl RecordWriter<Requirement> for RequirementWriter {
     ) -> Result<(), StorageError> {
         // The vehicle is fixed once made.
         let reference = clearable(patch.reference.as_ref(), id_to_sql);
+        let before_records =
+            clearable_json(patch.before_records.as_ref(), "requirements.before_records")?;
+        let warnings = clearable_json(patch.warnings.as_ref(), "requirements.warnings")?;
+        let usages = clearable_json(patch.usages.as_ref(), "requirements.usages")?;
         sqlx::query(
             "UPDATE requirements SET
                  name = coalesce(?, name),
@@ -88,6 +112,10 @@ impl RecordWriter<Requirement> for RequirementWriter {
                  reference_id = CASE WHEN ? THEN ? ELSE reference_id END,
                  mode = coalesce(?, mode),
                  applicability = coalesce(?, applicability),
+                 before_records = CASE WHEN ? THEN ? ELSE before_records END,
+                 warnings = CASE WHEN ? THEN ? ELSE warnings END,
+                 specs = coalesce(?, specs),
+                 usages = CASE WHEN ? THEN ? ELSE usages END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -116,6 +144,19 @@ impl RecordWriter<Requirement> for RequirementWriter {
                 .map(|applicability| json_to_sql(applicability, "requirements.applicability"))
                 .transpose()?,
         )
+        .bind(before_records.0)
+        .bind(before_records.1)
+        .bind(warnings.0)
+        .bind(warnings.1)
+        .bind(
+            patch
+                .specs
+                .as_ref()
+                .map(|specs| json_to_sql(specs, "requirements.specs"))
+                .transpose()?,
+        )
+        .bind(usages.0)
+        .bind(usages.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -214,6 +255,7 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
     let rules: String = row.try_get("rules")?;
     let mode: String = row.try_get("mode")?;
     let applicability: String = row.try_get("applicability")?;
+    let specs: String = row.try_get("specs")?;
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?,
         Requirement {
@@ -231,6 +273,13 @@ fn requirement_from_row(row: &SqliteRow) -> Result<(RequirementId, Requirement),
                 .transpose()?,
             mode: required_name(mode, "requirements.mode")?,
             applicability: json_from_sql(&applicability, "requirements.applicability")?,
+            before_records: optional_from_json(
+                row.try_get("before_records")?,
+                "requirements.before_records",
+            )?,
+            warnings: optional_from_json(row.try_get("warnings")?, "requirements.warnings")?,
+            specs: json_from_sql(&specs, "requirements.specs")?,
+            usages: optional_from_json(row.try_get("usages")?, "requirements.usages")?,
         },
     ))
 }
@@ -343,6 +392,35 @@ impl Database {
         .await?
         .iter()
         .map(bundle_from_row)
+        .collect()
+    }
+
+    /// When each of one vehicle's requirements was added: the clock of its `asset` field,
+    /// which is set once, when it's made, and never changes (#043). For a calendar rule never
+    /// done (#082).
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails or a stored value is invalid.
+    pub async fn requirements_added(
+        &self,
+        asset: AssetId,
+    ) -> Result<Vec<(RequirementId, domain::time::UnixMillis)>, StorageError> {
+        sqlx::query(
+            "SELECT r.id, c.hlc FROM requirements r
+             JOIN field_clocks c ON c.entity = 'requirement' AND c.record_id = r.id
+                                AND c.field = 'asset'
+             WHERE r.asset_id = ? AND r.deleted = 0",
+        )
+        .bind(id_to_sql(asset))
+        .fetch_all(self.pool())
+        .await?
+        .iter()
+        .map(|row| {
+            let id = id_from_sql(row.try_get::<&[u8], _>("id")?, "requirements.id")?;
+            let hlc = crate::convert::hlc_from_sql(row.try_get("hlc")?, "field_clocks.hlc")?;
+            Ok((id, hlc.physical()))
+        })
         .collect()
     }
 

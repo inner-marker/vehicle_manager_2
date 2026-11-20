@@ -1,10 +1,10 @@
 # Vehicle Manager
 
-A self-hosted record of a household's vehicles and equipment: fuel-ups and meter readings, maintenance and repairs, issues, the maintenance schedule, recalls and bulletins, registrations, insurance, license plates, photos and PDFs, and each vehicle's life from purchase to sale. It runs on a home server (a Synology NAS) and is used from a browser on a phone or a computer, or from the desktop app, which keeps its own encrypted copy and works offline. Everyone in the household signs in with their own account and sees only what their role allows.
+A self-hosted record of a household's vehicles and equipment: fuel-ups and meter readings, maintenance and repairs, issues, the maintenance schedule, recalls and bulletins, registrations, insurance, license plates, photos and PDFs, and each vehicle's life from purchase to sale. It works out what's due and when, fuel economy, and whether each vehicle is ready to use. It runs on a home server (a Synology NAS) and is used from a browser on a phone or a computer, or from the desktop app, which keeps its own encrypted copy and works offline. Everyone in the household signs in with their own account and sees only what their role allows.
 
 *"Vehicle Manager" is a working name.*
 
-**Status: `v0.3.0`**, the end of Phase 3 of the roadmap ([`docs/plan.md`](docs/plan.md) §9). The server and the web app are in everyday use. The **desktop app** (macOS, Windows, Linux) keeps an encrypted copy of the household's records, works offline, and syncs when the server is back; it's built from source for now (published packages come in Phase 6). The mobile apps come after the MVP.
+**Status: `v0.5.0`**, the end of Phase 5 of the roadmap ([`docs/plan.md`](docs/plan.md) §9; Phase 4 comes after the MVP). The server and the web app are in everyday use, and now tell the household **what's due**. The **desktop app** (macOS, Windows, Linux) keeps an encrypted copy of the household's records, works offline, and syncs when the server is back; it's built from source for now (published packages come in Phase 6). The mobile apps come after the MVP.
 
 ## Getting started (for the household)
 
@@ -14,8 +14,17 @@ Your Admin gives you the app's address (a `https://….ts.net` address on the ho
 2. **The Garage** lists the vehicles you can see. Tap one for its page: its **Overview**, **Issues**, **Timeline**, **Maintenance**, **Fuel**, and **Documents**.
 3. **+ Log** (the **+** button on a phone) records something: a **fuel-up**, a **reading** (just the odometer or hours), or an **issue** ("the brake light is out"). What it offers depends on your role. A fuel-up or reading can be changed for 24 hours, then it locks; after that, a mistake is fixed with **Correct**.
 4. **Modes:** the chip at the top right shows your mode. You start in **Driver** mode (fuel-ups, readings, issues). If you're a Maintainer, switch to **Maintainer** mode for jobs, the schedule, and documents. The household's Admin also has **Admin** mode (users, groups, vehicles), which asks for the password and ends after 15 idle minutes.
-5. **Messages** (the inbox) shows what needs attention: a job left as a draft, a vehicle not back from the shop.
+5. **Messages** (the inbox) shows what needs attention: a service coming due or overdue, a job left as a draft, a vehicle not back from the shop. A due message can be **snoozed** for a time, a distance, or hours, whichever comes first.
 6. **Settings** has your units (miles or kilometers, gallons or liters), date format, and currency, and when you're signed out after being idle.
+
+### What it works out for you
+
+- **What's due:** each service in a vehicle's schedule knows when it's next due, by distance, hours, time, a date, or a meter reaching a mark (say, **Oil life** at 15%), whichever comes first, with dates projected from recent use. It turns yellow, then orange, then red as it nears, and **Overdue** after. The **Maintenance** tab and the **Overview** show it, the Garage marks it (and can sort by **Most urgent**), and **Due & squawks** lists it across vehicles.
+- **Meters** can be percentages, count up or down, and be **reset** (Oil life back to 100% at an oil change).
+- **Specs and bundles:** a vehicle's **Specs** (its oil and filter, say) fill in a job's parts. A service of several tasks is signed off in one go, and each task's clock restarts. A schedule can be saved as a **template** and copied to another vehicle.
+- **Fuel economy** (the **Fuel** tab): worked out from one full fill to the next, with partial fills added in. A missed fill-up leaves a gap rather than a wrong figure. A chart, averages, and breakdowns by driving condition and by towed vehicle.
+- **Ready to use?** (on the **Overview**): for each use of a vehicle (Drivable, Towing, …), whether it's ready, and why not: an expired document, a service overdue, or an open High issue.
+- **Formulas:** a **calculated field** (cost per mile on a fuel-up) and a **derived meter** (service miles from the odometer and engine hours) are worked out, never typed, and marked **ƒ**. How to write them: [`docs/help/formulas.md`](docs/help/formulas.md).
 
 ### The desktop app
 

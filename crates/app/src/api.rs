@@ -13,9 +13,11 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetsOutcome, AttachmentsOutcome, ChangePasswordOutcome, CheckSetupCodeOutcome,
-    DevicesOutcome, DocumentsOutcome, EventsOutcome, Handshake, InboxOutcome, MarkMessage,
-    PlacesOutcome, Pong, PreferencesOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome,
-    SessionState, SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, UserAdminOutcome,
+    DevicesOutcome, DocumentsOutcome, DueOutcome, EventsOutcome, FleetOutcome, FuelOutcome,
+    Handshake, InboxOutcome, MarkMessage, PlacesOutcome, Pong, PreferencesOutcome,
+    ReadinessOutcome, RecoveryOutcome, ReferencesOutcome, ScheduleOutcome, SessionState,
+    SetupOutcome, SignInOutcome, SquawksOutcome, SwitchModeOutcome, TemplatesOutcome,
+    UserAdminOutcome,
 };
 use domain::secret::Secret;
 use domain::sync::{PullOutcome, PushOutcome};
@@ -581,40 +583,93 @@ pub(crate) async fn set_household_preferences(
     .await)
 }
 
-/// The signed-in person's messages: what they can see in their mode, unread first (#050).
+/// The signed-in person's messages: what they can see in their mode, unread first (#050), with
+/// what's due in their `zone` (#083).
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; otherwise only transport errors.
-#[get("/api/v1/messages")]
-pub(crate) async fn get_messages() -> ServerFnResult<InboxOutcome> {
-    Ok(server_side::with_messages(async |context| ::server::messages::view(&context).await).await)
+#[post("/api/v1/messages")]
+pub(crate) async fn get_messages(zone: domain::location::TimeZone) -> ServerFnResult<InboxOutcome> {
+    Ok(
+        server_side::with_messages(async |context| ::server::messages::view(&context, &zone).await)
+            .await,
+    )
 }
 
-/// Marks one of the signed-in person's messages read, or dismisses it.
+/// Marks one of the signed-in person's messages read, dismisses it, snoozes it, or wakes it
+/// (#083), in their `zone`.
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; refusals are [`InboxOutcome`] values.
 #[post("/api/v1/messages/mark")]
-pub(crate) async fn mark_message(key: String, action: MarkMessage) -> ServerFnResult<InboxOutcome> {
+pub(crate) async fn mark_message(
+    key: String,
+    action: MarkMessage,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<InboxOutcome> {
     let Some(key) = domain::inbox::MessageKey::parse(&key) else {
         return Ok(InboxOutcome::NotFound);
     };
     Ok(server_side::with_messages(async |context| {
-        ::server::messages::mark(&context, key, action).await
+        ::server::messages::mark(&context, &zone, key, action).await
     })
     .await)
 }
 
-/// The Garage: the groups and vehicles the signed-in person can see (#052).
+/// The Garage: the groups and vehicles the signed-in person can see (#052), each with its most
+/// urgent due step in the person's `zone` (#082).
 ///
 /// # Errors
 ///
 /// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
-#[get("/api/v1/assets")]
-pub(crate) async fn get_garage() -> ServerFnResult<AssetsOutcome> {
-    Ok(server_side::with_assets(async |context| ::server::assets::garage(&context).await).await)
+#[post("/api/v1/assets/garage")]
+pub(crate) async fn get_garage(zone: domain::location::TimeZone) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| ::server::assets::garage(&context, &zone).await)
+            .await,
+    )
+}
+
+/// What comes due on one vehicle, most urgent first, in the person's `zone` (#082).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`DueOutcome`] values.
+#[post("/api/v1/due")]
+pub(crate) async fn vehicle_due(
+    asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<DueOutcome> {
+    Ok(
+        server_side::with_due(async |context| ::server::due::list(&context, asset, &zone).await)
+            .await,
+    )
+}
+
+/// A vehicle's fuel economy (#085).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`FuelOutcome`] values.
+#[post("/api/v1/fuel")]
+pub(crate) async fn vehicle_fuel(asset: domain::asset::AssetId) -> ServerFnResult<FuelOutcome> {
+    Ok(
+        server_side::with_fuel(async |context| ::server::fuel::summary(&context, asset).await)
+            .await,
+    )
+}
+
+/// Due & squawks: what comes due and the open squawks across the person's vehicles, in their
+/// `zone` (#083).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/due/fleet")]
+pub(crate) async fn fleet_due(zone: domain::location::TimeZone) -> ServerFnResult<FleetOutcome> {
+    Ok(server_side::with_fleet(async |context| ::server::due::fleet(&context, &zone).await).await)
 }
 
 /// One vehicle's page: details, meters, custom fields, and what the person may do.
@@ -1434,8 +1489,8 @@ pub(crate) async fn remove_reference(
     .await)
 }
 
-/// One vehicle's maintenance schedule: its requirements (each with when it was last done) and
-/// bundles.
+/// One vehicle's maintenance schedule: its requirements (each with when it was last done, and
+/// when it comes due in the person's `zone`) and bundles.
 ///
 /// # Errors
 ///
@@ -1443,11 +1498,12 @@ pub(crate) async fn remove_reference(
 #[post("/api/v1/requirements")]
 pub(crate) async fn vehicle_schedule(
     asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
 ) -> ServerFnResult<ScheduleOutcome> {
-    Ok(
-        server_side::with_schedule(async |context| ::server::schedule::view(&context, asset).await)
-            .await,
-    )
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::view(&context, asset, &zone).await
+    })
+    .await)
 }
 
 /// Adds a requirement.
@@ -1556,6 +1612,184 @@ pub(crate) async fn copy_schedule(
         ::server::schedule::copy(&context, from, to).await
     })
     .await)
+}
+
+/// Adds a spec to its vehicle (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/add")]
+pub(crate) async fn add_spec(spec: domain::spec::Spec) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::add_spec(&context, spec).await
+    })
+    .await)
+}
+
+/// Changes a spec, from its dialog or after a job (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/edit")]
+pub(crate) async fn edit_spec(
+    id: domain::spec::SpecId,
+    spec: domain::spec::Spec,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::edit_spec(&context, id, spec).await
+    })
+    .await)
+}
+
+/// Removes a spec, unticking it on its vehicle's requirements (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/specs/delete")]
+pub(crate) async fn delete_spec(id: domain::spec::SpecId) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::schedule::delete_spec(&context, id).await
+    })
+    .await)
+}
+
+/// Adds a usage to its vehicle (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/add")]
+pub(crate) async fn add_usage(usage: domain::usage::Usage) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::add_usage(&context, usage).await
+    })
+    .await)
+}
+
+/// Changes a usage's name and the documents it needs (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/edit")]
+pub(crate) async fn edit_usage(
+    id: domain::usage::UsageId,
+    usage: domain::usage::Usage,
+) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::edit_usage(&context, id, usage).await
+    })
+    .await)
+}
+
+/// Removes a usage (not the default), unticking it on requirements (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ScheduleOutcome`] values.
+#[post("/api/v1/usages/delete")]
+pub(crate) async fn delete_usage(id: domain::usage::UsageId) -> ServerFnResult<ScheduleOutcome> {
+    Ok(server_side::with_schedule(async |context| {
+        ::server::usages::delete_usage(&context, id).await
+    })
+    .await)
+}
+
+/// A vehicle's readiness for each of its usages, in the person's `zone` (#086).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`ReadinessOutcome`] values.
+#[post("/api/v1/readiness")]
+pub(crate) async fn vehicle_readiness(
+    asset: domain::asset::AssetId,
+    zone: domain::location::TimeZone,
+) -> ServerFnResult<ReadinessOutcome> {
+    Ok(server_side::with_readiness(async |context| {
+        ::server::readiness::view(&context, asset, &zone).await
+    })
+    .await)
+}
+
+/// The Templates screen (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/templates")]
+pub(crate) async fn list_templates() -> ServerFnResult<TemplatesOutcome> {
+    Ok(
+        server_side::with_templates(async |context| ::server::templates::list(&context).await)
+            .await,
+    )
+}
+
+/// Saves a vehicle's schedule as a template named `name` (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/save")]
+pub(crate) async fn save_template(
+    from: domain::asset::AssetId,
+    name: domain::label::Label,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::save(&context, from, name).await
+    })
+    .await)
+}
+
+/// Applies a template to a vehicle with no schedule yet (#084).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/apply")]
+pub(crate) async fn apply_template(
+    id: domain::template::TemplateId,
+    to: domain::asset::AssetId,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::apply(&context, id, to).await
+    })
+    .await)
+}
+
+/// Renames a template (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/rename")]
+pub(crate) async fn rename_template(
+    id: domain::template::TemplateId,
+    name: domain::label::Label,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(server_side::with_templates(async |context| {
+        ::server::templates::rename(&context, id, name).await
+    })
+    .await)
+}
+
+/// Removes a template (the household's Admin).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`TemplatesOutcome`] values.
+#[post("/api/v1/templates/delete")]
+pub(crate) async fn delete_template(
+    id: domain::template::TemplateId,
+) -> ServerFnResult<TemplatesOutcome> {
+    Ok(
+        server_side::with_templates(async |context| {
+            ::server::templates::delete(&context, id).await
+        })
+        .await,
+    )
 }
 
 /// Everyone, for the Users screen (Admin mode only).
@@ -2161,6 +2395,81 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::ScheduleOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a fuel economy request,
+    /// or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_fuel(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::FuelOutcome,
+    ) -> domain::api::FuelOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::FuelOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a readiness request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_readiness(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::ReadinessOutcome,
+    ) -> domain::api::ReadinessOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::ReadinessOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a templates request, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_templates(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::TemplatesOutcome,
+    ) -> domain::api::TemplatesOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::TemplatesOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a "what's due" request,
+    /// or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_due(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::DueOutcome,
+    ) -> domain::api::DueOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::DueOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for Due & squawks, or
+    /// answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_fleet(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::FleetOutcome,
+    ) -> domain::api::FleetOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::FleetOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

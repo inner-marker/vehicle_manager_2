@@ -88,7 +88,14 @@ pub(crate) fn Shell() -> Element {
             vehicle_name(vehicles, asset_id)
                 .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
         }
+        // A service from a bundle (#084): "Maintenance · Truck".
+        Route::LogService { asset_id, .. } => {
+            let kind = domain::meter::EventKind::Maintenance.label();
+            vehicle_name(vehicles, asset_id)
+                .map_or_else(|| tr(kind), |name| format!("{} · {name}", tr(kind)))
+        }
         Route::Due {}
+        | Route::DueList { .. }
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}
@@ -101,6 +108,7 @@ pub(crate) fn Shell() -> Element {
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
+        | Route::Templates {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => tr(route.title()),
@@ -109,9 +117,11 @@ pub(crate) fn Shell() -> Element {
     let here = match &route {
         Route::VehicleDetail { asset_id }
         | Route::VehicleTab { asset_id, .. }
-        | Route::LogForm { asset_id, .. } => asset_id.parse().ok(),
+        | Route::LogForm { asset_id, .. }
+        | Route::LogService { asset_id, .. } => asset_id.parse().ok(),
         Route::AllVehicles {}
         | Route::Due {}
+        | Route::DueList { .. }
         | Route::Messages {}
         | Route::Timeline {}
         | Route::Reports {}
@@ -125,6 +135,7 @@ pub(crate) fn Shell() -> Element {
         | Route::Users {}
         | Route::Groups {}
         | Route::Places {}
+        | Route::Templates {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => None,

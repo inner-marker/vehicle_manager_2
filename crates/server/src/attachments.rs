@@ -404,6 +404,8 @@ fn from_assets(outcome: &AssetsOutcome) -> AttachmentsOutcome {
         | AssetsOutcome::MovePreview { .. }
         | AssetsOutcome::Done
         | AssetsOutcome::Invalid { .. }
+        | AssetsOutcome::InvalidFormula { .. }
+        | AssetsOutcome::InUse { .. }
         | AssetsOutcome::Unavailable => AttachmentsOutcome::Unavailable,
     }
 }

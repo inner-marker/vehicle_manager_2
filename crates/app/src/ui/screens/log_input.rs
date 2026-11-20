@@ -69,7 +69,9 @@ impl Target {
         match problem {
             EventProblem::Required(item) => Self::of(item),
             EventProblem::ReadingOutOfOrder(clash) => Self::Meter(clash.meter),
-            EventProblem::UnknownMeter(meter) => Self::Meter(meter),
+            EventProblem::UnknownMeter(meter) | EventProblem::NotResettable(meter) => {
+                Self::Meter(meter)
+            }
             EventProblem::EndBelowStart(meter) => Self::EndReading(meter),
             EventProblem::UnknownField(field) | EventProblem::WrongValue(field) => {
                 Self::Field(field)
@@ -117,6 +119,8 @@ pub(super) type Problem = (Target, MessageId);
 pub(super) struct Typed {
     /// Each meter's reading as typed.
     pub readings: Vec<(MeterId, String)>,
+    /// The meters whose reading is a reset (↺ Reset ticked; phase-5.md milestone 1).
+    pub resets: Vec<MeterId>,
     /// Each custom field's value as typed.
     pub fields: Vec<(CustomFieldId, String)>,
     /// The required items being skipped, with their reasons as typed.
@@ -285,7 +289,11 @@ fn readings(typed: &Typed, context: &Context<'_>) -> Result<Vec<Reading>, Proble
         }
         let value = parse_reading(text, meter.unit, meter.precision)
             .map_err(quantity(Target::Meter(*id)))?;
-        readings.push(Reading { meter: *id, value });
+        readings.push(Reading {
+            meter: *id,
+            value,
+            reset: typed.resets.contains(id),
+        });
     }
     Ok(readings)
 }
@@ -438,6 +446,12 @@ pub(super) fn typed_from(
             ))
         })
         .collect();
+    let resets = event
+        .readings
+        .iter()
+        .filter(|reading| reading.reset)
+        .map(|reading| reading.meter)
+        .collect();
     let values = event
         .fields
         .iter()
@@ -452,6 +466,7 @@ pub(super) fn typed_from(
         |get: fn(&Place) -> &str| place.map(|place| get(place).to_owned()).unwrap_or_default();
     Typed {
         readings,
+        resets,
         fields: values,
         skipped: event
             .skipped
@@ -566,21 +581,72 @@ mod tests {
     use super::*;
 
     const ODOMETER: u32 = 20;
+    const OIL_LIFE: u32 = 13;
     const TRIP: u32 = 30;
 
     fn meters() -> Vec<(MeterId, Meter)> {
-        vec![(
-            test_id(ODOMETER),
-            Meter {
-                asset: test_id(1),
-                name: Label::parse("Odometer").unwrap(),
-                dimension: MeterDimension::Distance,
-                unit: MeterUnit::Miles,
-                precision: 0,
-                description: None,
-                required_for: vec![EventKind::Fuel],
-            },
-        )]
+        let oil_life = Meter {
+            key: FieldKey::parse("oil-life").unwrap(),
+            formula: None,
+            asset: test_id(1),
+            name: Label::parse("Oil life").unwrap(),
+            dimension: MeterDimension::Percentage,
+            unit: MeterUnit::Percent,
+            precision: 0,
+            description: None,
+            required_for: vec![],
+            direction: domain::meter::MeterDirection::Down,
+            reset_to: Some(10_000),
+        };
+        vec![
+            (test_id(OIL_LIFE), oil_life),
+            (
+                test_id(ODOMETER),
+                Meter {
+                    key: FieldKey::parse("odometer").unwrap(),
+                    formula: None,
+                    asset: test_id(1),
+                    name: Label::parse("Odometer").unwrap(),
+                    dimension: MeterDimension::Distance,
+                    unit: MeterUnit::Miles,
+                    precision: 0,
+                    description: None,
+                    required_for: vec![EventKind::Fuel],
+                    direction: domain::meter::MeterDirection::Up,
+                    reset_to: None,
+                },
+            ),
+        ]
+    }
+
+    #[test]
+    fn a_reading_ticked_as_a_reset_is_one_and_comes_back_ticked() {
+        let mut oil_changed = typed();
+        oil_changed.readings.push((test_id(OIL_LIFE), "100".into()));
+        oil_changed.resets = vec![test_id(OIL_LIFE)];
+        let first = built(&oil_changed).unwrap();
+        let oil = |input: &EventInput| {
+            input
+                .readings
+                .iter()
+                .find(|reading| reading.meter == test_id(OIL_LIFE))
+                .copied()
+                .unwrap()
+        };
+        assert_eq!((oil(&first).value, oil(&first).reset), (10_000, true));
+        assert!(!first.readings[0].reset, "the odometer isn't");
+
+        let units = Preferences {
+            distance: DistanceUnit::Miles,
+            volume: VolumeUnit::UsGallons,
+            ..Preferences::default()
+        };
+        let event = first
+            .clone()
+            .into_draft(test_id(5), UnixMillis::from_millis(1_700_000_000_000));
+        let again = typed_from(&event, &meters(), &fields(), &units);
+        assert_eq!(again.resets, vec![test_id(OIL_LIFE)]);
+        assert_eq!(built(&again).unwrap(), first);
     }
 
     fn fields() -> Vec<(CustomFieldId, CustomField)> {

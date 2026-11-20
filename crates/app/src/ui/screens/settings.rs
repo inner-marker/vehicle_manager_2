@@ -10,6 +10,7 @@
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
 use domain::api::{PreferencesOutcome, PreferencesView};
+use domain::due::DueStep;
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::preferences::{
@@ -18,6 +19,7 @@ use domain::preferences::{
 };
 use domain::timers::Timers;
 
+use super::due_view::{StepInputs, TypedWarnings, warnings_text};
 use crate::api;
 use crate::data;
 use crate::ui::auth::{AuthState, use_auth};
@@ -291,6 +293,8 @@ pub(crate) fn Settings() -> Element {
                 CurrencyRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 LanguageRow {}
                 SquawkWordRow { view: current, household_tab: shown == Tab::Household, on_save: save }
+                DueWarningsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
+                DueMessagesRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 if may_keep_originals {
                     OriginalsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
                 }
@@ -328,6 +332,7 @@ fn apply(
         Ok(PreferencesOutcome::NotAllowed) => {
             error.set(Some(tr(messages::SETTINGS_HOUSEHOLD_ADMIN_ONLY)));
         }
+        Ok(PreferencesOutcome::BadDueWarnings) => error.set(Some(tr(messages::DUE_BAD_WARNINGS))),
         Ok(PreferencesOutcome::Unavailable) => error.set(Some(tr(messages::SOMETHING_WENT_WRONG))),
         Err(failure) => error.set(Some(tr(problem_from_error(&failure).message()))),
     }
@@ -574,6 +579,117 @@ fn SquawkWordRow(
                 }
             } else {
                 span { class: "setting-value", {name(current)} }
+                p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
+            }
+        }
+    }
+}
+
+/// When things come due (#082): the household's Admin sets the steps on the Household tab;
+/// everyone sees them in words.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn DueWarningsRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let current = view.effective.due_warnings;
+    let typed = TypedWarnings::of(&current);
+    let interval = use_signal(|| typed.interval.clone());
+    let days = use_signal(|| typed.days.clone());
+    let mut problem = use_signal(|| None::<MessageId>);
+    let patch = |choice| PreferencesPatch {
+        due_warnings: Some(choice),
+        ..PreferencesPatch::default()
+    };
+    rsx! {
+        div { class: "setting-row due-warnings-row",
+            span { class: "setting-label", {tr(messages::SETTING_DUE_WARNINGS)} }
+            if household_tab {
+                StepInputs { label: messages::DUE_PERCENT_LEFT, values: interval, unit: messages::DUE_PERCENT }
+                StepInputs { label: messages::DUE_DAYS_BEFORE, values: days, unit: messages::DUE_DAYS }
+                if let Some(message) = problem() {
+                    p { class: "form-error", role: "alert", {tr(message)} }
+                }
+                div { class: "check-row",
+                    button {
+                        class: "secondary-button",
+                        r#type: "button",
+                        onclick: move |_| {
+                            let typed = TypedWarnings { interval: interval(), days: days() };
+                            match typed.parse() {
+                                Ok(warnings) => {
+                                    problem.set(None);
+                                    on_save.call(patch(Choice::Set(warnings)));
+                                }
+                                Err(message) => problem.set(Some(message)),
+                            }
+                        },
+                        {tr(messages::ACTION_SAVE)}
+                    }
+                    button {
+                        class: "link-button",
+                        r#type: "button",
+                        onclick: move |_| on_save.call(patch(Choice::Default)),
+                        {tr(messages::DUE_BUILT_IN)}
+                    }
+                }
+            } else {
+                span { class: "setting-value", {warnings_text(&current)} }
+                p { class: "muted-note", {tr(messages::SETTING_DUE_WARNINGS_HOUSEHOLD)} }
+            }
+        }
+    }
+}
+
+/// The steps due messages may start at (#083), in order.
+const DUE_MESSAGE_STARTS: [DueStep; 3] =
+    [DueStep::ComingUp, DueStep::DueSoon, DueStep::DueVerySoon];
+
+/// When what's due starts sending messages (#083; sketch `p5m3-messages-options.svg`, 4A): the
+/// household's Admin chooses on the Household tab; everyone sees it in words.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn DueMessagesRow(
+    view: PreferencesView,
+    household_tab: bool,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    let current = view.effective.due_messages_from;
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_DUE_MESSAGES)} }
+            if household_tab {
+                select {
+                    class: "role-select",
+                    // The value is the step's index in DUE_MESSAGE_STARTS.
+                    onchange: move |event| {
+                        let picked = event
+                            .value()
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|index| DUE_MESSAGE_STARTS.get(index).copied());
+                        if let Some(step) = picked {
+                            on_save.call(PreferencesPatch {
+                                due_messages_from: Some(Choice::Set(step)),
+                                ..PreferencesPatch::default()
+                            });
+                        }
+                    },
+                    for (index, step) in DUE_MESSAGE_STARTS.into_iter().enumerate() {
+                        option { key: "{index}", value: "{index}", selected: step == current, {tr(step.label())} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::SETTING_DUE_MESSAGES_NOTE)} }
+            } else {
+                span { class: "setting-value", {tr(current.label())} }
                 p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
             }
         }

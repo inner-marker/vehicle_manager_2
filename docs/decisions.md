@@ -936,3 +936,118 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
   - **Third-party notices:** `cargo-about` (a tool, MIT or Apache-2.0) writes the Rust crates' notices from their license data (the same data `cargo deny` checks), and `scripts/notices.sh` puts them in `crates/app/assets/THIRD-PARTY-NOTICES.txt` after Lucide's, pdf.js's, SQLCipher's, and OpenSSL's notices from their own license files. (The file sits with the app's assets so the app can bundle it.) The file is **committed**, remade at each release (like `CHANGELOG.md`), and the Main gate fails if it's out of date. The server image carries it, and Diagnostics has a **Licenses** link that shows it.
 - **Why:** the human, 2026-11-14, choosing the recommended options. The desktop app is used by the household's Admin for now, who builds it locally; packages bring signing and per-system testing that can wait. The embedded icons, pdf.js, and the crates ask for their notices to go with every copy, which the image and the web app already are; a committed file is reviewed like any change, and the check keeps it current.
 - **Limits, accepted:** a new dependency in the notices needs `cargo about generate` run again before the Main gate passes; the desktop's local bundles carry the notices only through the app's Licenses link until packages exist.
+
+### 080. Phase 5: new meter kinds, three due steps, snooze by time or distance, specs that pre-fill parts, honest fuel stretches, and strict readiness
+*Decided: 2026-11-15 · Phase plan: phase-5.md · Plan §3 Meters, Fuel-ups & fuel economy, Recurring maintenance, Readiness; §10 Phase 5 open questions · Builds on #031, #051, #057, #063*
+
+- **Decision:**
+  - **Meters:** any meter can be a **percentage**. A meter **counts up or down**, and can be **resettable** in either direction, with a reset value (e.g. **Oil life remaining**, back to 100%). It can't be resettable if it's a distance meter used for fuel economy. A counting-down meter's readings must go down; a reset explains a jump either way. An interval rule can be **"when a meter reaches X"**, beside the others (whichever comes first), and the job that does the work offers **"Reset … to 100%"**. **Derived meters** (worked out from other meters) come in Phase 5 too.
+  - **Due soon:** three steps, as fractions of each rule's interval: **yellow at 20% left, orange at 10%, red at 5%**. **Overdue** is a darker red with an **Overdue** chip, so colour is never the only sign. These are household defaults; Maintainers and Admins can change them per requirement.
+  - **Snooze:** by time and by distance or hours, **whichever comes first** ("1 week or 500 mi").
+  - **Specs:** a simple list per vehicle (no inventory). Requirements link to specs; a logged task's parts are **pre-filled** from them and stay editable, so the job records what was actually used, and changing one asks whether to update the spec.
+  - **Fuel economy:** a **stretch** runs from one full fill to the next. Partial fills in between add their fuel to it and have no figure of their own. **"Missed previous fill-up"** drops its stretch from averages, and charts show a gap. **Filled full** and **Missed previous fill-up** each have an **ⓘ** that explains them.
+  - **Readiness:** one **Normal use** operation type per ground profile (the truck adds **Towing**). Needed for use: registration and insurance current, **no open High issue (a deferred one still blocks)**, and nothing safety-related overdue. Items in their due-soon steps are warnings.
+- **Why:** the human, 2026-11-15. The recommended options, with these changes:
+  - due soon in three steps, with a darker red for overdue;
+  - derived meters in this phase;
+  - resettable meters in either direction;
+  - **ⓘ** explanations on the fuel-up's two choices;
+  - parts pre-filled from specs;
+  - counting-down and percentage meters added ("many modern cars have Oil life remaining as a percentage").
+- **Limits, accepted:** fractions of the interval warn very early on long intervals and very late on short ones; per-requirement changes are the answer. A partial fill has no figure until the next full fill. Formulas are worked out when shown, so a calculated field can't be searched or sorted on the server.
+
+### 081. Manual test plans: one cumulative plan per phase, run at its end; a milestone's own plan is optional
+*Decided: 2026-11-16 · Plan §9 Manual testing by the human · AGENTS.md "Manual test plans" · Phase plan: phase-5.md (from milestone 1) · Changes the practice of Phases 1–3*
+
+- **Decision:**
+  - **One test plan per phase,** `docs/test-plans/p<phase>-phase.md`, built up as the phase goes: each milestone's last step adds its section (what it changed, and the steps that check it). Nothing is run then.
+  - **Required at the end of the phase:** the human runs the whole plan on the test server before the release, as its regression pass, with the phase's exit criteria and the earlier releases' main paths.
+  - **A milestone's own plan is optional:** when the human asks, or when the agent thinks something risky needs a person before it merges (and says why).
+- **Why:** the human, 2026-11-16: "test plans will be optional for milestones, required for end of phase only. Cumulative test plan for end of phase." Through Phase 3, every milestone had a plan run before it merged, which took much of each milestone's time. The automated tests now cover most of what those plans checked.
+- **Limits, accepted:** a problem only a person can see (a screen's layout, the desktop offline, the NAS) may sit on `dev` until the end of the phase, and several may surface together. The household isn't affected: the main server runs only release tags (#070), and a release comes after the phase's plan has been run.
+
+### 082. What's due: counted from "last done before these records", projected from 90 days, dates warned 60/30/14 days ahead; the airworthiness modes wait for the aircraft phase
+*Decided: 2026-11-16 · Phase plan: phase-5.md milestone 2 · Sketch: `docs/ui-sketches/p5m2-due-options.svg` (1A, 2A, 3A, 4A) · Builds on #031, #040, #080*
+
+- **Decision:**
+  - **Never done:** a requirement can say when it was **last done before these records** (a date and the readings then), and its first due counts from that. Without it, it shows **Not done yet** and counts from the vehicle's first reading of that meter (or, for months, the day it was added).
+  - **Projected dates** for meter rules come from the meter's average use over its **last 90 days** of readings (at least two, 7 or more days apart), then over all its readings, then none (only what's left). They're shown as estimates ("~3 Jan").
+  - **Steps:** **Coming up** (yellow), **Due soon** (orange), **Due very soon** (red), and **⚠ Overdue** (a darker red), always with their words. An interval rule warns at 20 / 10 / 5% of its interval left (#080). A date without an interval (a fixed next date, a document's expiry) warns **60 / 30 / 14 days** ahead. Both are household defaults, set in **Admin mode → Settings → Household**, and Maintainers can change them per requirement and per document.
+  - **A rule "when a meter reaches X"** (Oil life 15%) joins the others, whichever comes first, with its steps measured over the span from the meter's reset value to X. A job's task for it offers **↺ Reset … to 100%**, ticked, which adds a reset reading at the job's end.
+  - **Where it shows:** the Maintenance tab's cards (step, chip, what's left); the Overview's **Coming up**, the 5 most urgent items, documents included; and a badge on each Garage card, with **Most urgent** the Garage's default sort (#040). The fleet strip comes with milestone 3's messages.
+  - **Moved to the aircraft phase:** the "initial deadline, then recurring" and "recurring until a terminating action" compliance modes, and supersession. Ground vehicles' recalls are one-time, which exists.
+- **Why:** the human, 2026-11-16, choosing the recommended options throughout. Red is called **Due very soon** so that orange and red differ in words, not only in colour.
+- **Limits, accepted:** a projected date is an estimate, and a vehicle used in bursts (a trailer, a summer car) may see it move. A requirement set up without "last done before" can warn too early or too late until its first job is logged.
+
+### 083. Due messages: from Due soon (a household choice), one per cycle plus one for Overdue, snoozed per person by time or a meter; the fleet strip and Due & squawks
+*Decided: 2026-11-16 · Phase plan: phase-5.md milestone 3 · Sketch: `docs/ui-sketches/p5m3-messages-options.svg` (1A, 2A, 3A, 4A) · Builds on #040, #050, #080, #082*
+
+- **Decision:**
+  - **Due messages** are worked out from the records, like every other message (#050), so the desktop makes them offline from its own copy. They start at **Due soon** by default. The Admin can make that **Coming up** or **Due very soon** on the Household tab, beside the due warnings. Overdue always sends one.
+  - **One message per cycle, and one for Overdue:** an item's message lasts from its last sign-off (or its document) to its next, showing the step it's at now. Going **⚠ Overdue** replaces it with a message of its own, so it comes back unread even if the first was dismissed or snoozed. Signing it off starts a new cycle.
+  - **Who:** anyone with a role on the vehicle, as for its Maintenance tab. Coming up is **Info**; Due soon, Due very soon, and Overdue are **Warnings**, without the banner, which stays for server problems.
+  - **Snooze is per person**, kept on their read and dismissed mark: a time, a value on the item's counting-up meter, or both, whichever comes first ("1 week or 500 mi"). A **Snooze ▾** menu offers 1 day, 1 week, 1 month, a meter amount fitted to the item (500 mi, 10 h), the two together, and **Custom…**. Items with only dates offer time only. Messages has a **Snoozed** filter with **Wake now**.
+  - **The Garage's fleet strip:** four tiles, **⚠ Overdue**, **Due soon** (Due soon and Due very soon), **Open squawks**, and, on the desktop app, **Synced**. Each opens **Due & squawks**.
+  - **Due & squawks**, the sidebar's screen, is built now: every due item the person can see across their vehicles, most urgent first, then the open squawks, with filters matching the strip.
+- **Why:** the human, 2026-11-16, choosing the recommended options throughout. A separate Overdue message is what makes "Overdue breaks through" work without a snooze that watches steps.
+- **Limits, accepted:** a snooze lives on one person's mark, so it doesn't hide the message from anyone else. Moving from Due soon to Due very soon doesn't make the message unread again. Snooze by meter needs a counting-up meter; Oil life items snooze by time, or by the odometer if a rule uses it.
+
+### 084. Specs: typed amounts kept as entered, linked from requirements, pre-filling a job's parts; household templates on their own screen; "Log this service" on a bundle
+*Decided: 2026-11-17 · Phase plan: phase-5.md milestone 4 · Sketch: `docs/ui-sketches/p5m4-specs-options.svg` (1A, 2A, 3A, 4B, 5A) · Builds on #031, #032, #080*
+
+- **Decision:**
+  - **A spec** (a vehicle's own list, #080) has a name, an optional **amount in a unit of its own kind**, a detail ("5W-30 full synthetic"), a part number, and a note. The kinds: **volume** (qt, L, US and imperial gal, fl oz), **torque** (ft-lb, in-lb, N·m), **pressure** (psi, kPa, bar), and **length** (in, mm). A spec can also be just a name and a part number.
+  - **Shown as entered, with the other system beside it:** "5.5 qt (5.2 L)", "150 ft-lb (203 N·m)". The manual's number stays exact.
+  - **Requirements tick the specs their job uses.** A task added for the requirement gets a **part** for each volume spec and each spec with a part number but no amount (the quantity is the amount, the unit in its text: "Engine oil 5W-30 (qt)", 5.5). Torque, pressure, and length specs show on the task as **reminders**.
+  - **"Update the spec too?"** Saving a job whose pre-filled part differs from its spec (part number or quantity) asks once, in a short dialog, each change ticked. The job always records what was used.
+  - **Templates** (#031): a Maintainer saves a vehicle's requirements, bundles, and specs as a named household template, and applies one to a vehicle they maintain. Applying **copies**; meters are matched by name and kind, as Copy schedule does. They live on a **Templates** screen under Manage; the Admin can rename or delete them.
+  - **Log this service:** each bundle card on the Schedule starts a maintenance job with a task for each of its requirements, parts pre-filled. Signing off a bundle in one event, each clock reset, already works (Phase 2).
+- **Why:** the human, 2026-11-17: typed values with units over free text, all four kinds; the recommended layouts except templates on a screen of their own.
+- **Limits, accepted:** a spec's amount converts for show only; it isn't checked against what a job used. A template's meter rules need meters of the same name and kind on the vehicle; any that don't match are left out and listed, as with Copy schedule.
+
+### 085. Fuel economy: stretches from full fill to full fill, averages as distance over fuel, three bands per condition, and a line chart with gaps
+*Decided: 2026-11-17 · Phase plan: phase-5.md milestone 5 · Sketch: `docs/ui-sketches/p5m5-fuel-options.svg` (1A, 2A, 3A, 4A, 5A) · Builds on #033, #080*
+
+- **Decision:**
+  - **A stretch** runs from one full fill to the next on the vehicle's fuel odometer (its first distance meter that fuel-ups require). Its figure is that distance over all the fuel bought after the first fill, up to and including the last: partial fills add in and have no figure of their own (#080).
+  - **Dropped:** a stretch with a **Missed previous fill-up** in it, or a missing reading, counts in no figure, and the chart shows a gap.
+  - **Averages:** the last 5 stretches, the last 12 months, and all time, each as total distance over total fuel (never an average of figures). In each person's economy unit.
+  - **Breakdowns:** a stretch's highway, towing, and hauling shares are its fills' shares weighted by fuel. Highway: mostly city (30% or less), mixed, mostly highway (70% or more). Towing and hauling: none, some (under 50%), mostly (50% or more). By towed vehicle: a stretch counts for a vehicle if any of its fills names it; "Not towing" is the stretches that name none.
+  - **The car's own figure** (#033) shows beside the app's for the stretch it ends.
+  - **The screens:** the Fuel tab starts with three tiles (last 5, 12 months, all time), then a line chart (a dot per stretch, gaps for dropped ones, the average as a hairline, details on hover or tap, and a table view), then the breakdowns as small bars from zero. Each fuel-up in the list says how it counted. **Filled full** and **Missed previous fill-up** get an **ⓘ** on the form. The Overview's Fuel panel shows the latest stretch, the last-5 average, and the last fill-up.
+- **Why:** the human, 2026-11-17, choosing the recommended options throughout. Totals over totals keep a short stretch from weighing as much as a long one.
+- **Limits, accepted:** one wrong reading or volume makes one wrong stretch, which shows plainly in the chart and the list; nothing is hidden as an outlier. A partial fill before the first full one counts in nothing.
+
+### 086. Readiness: usages per vehicle, each standing alone; requirements tick the usages they're needed for; documents by type, missing ones blocking; High issues block every usage
+*Decided: 2026-11-18 · Phase plan: phase-5.md milestone 6 · Sketch: `docs/ui-sketches/p5m6-readiness-options.svg` (1A, 2A, 3A, 4A) · Builds on #051, #063, #080 · Replaces #080's "operation types in the profiles"*
+
+- **Decision:**
+  - **Usages per vehicle** ("ready for what?", #051's operation types): every vehicle has a **default usage** named for its kind (**Drivable** for a car, truck, or motorcycle; **Towable** for a trailer; **Usable** for a generator or other equipment; aircraft later **Airworthy**). Admins and Maintainers add more per vehicle (e.g. Local, Highway, Towing; for aircraft later VFR, IFR, oceanic, ETOPS). **Each usage stands alone:** it lists exactly what it needs, and an item needed for several is ticked for each.
+  - **One "needed for" idea:** a requirement ticks the usages it's needed for (no separate "safety-related" flag). A new requirement starts with the default usage ticked. **Every existing requirement counts for its vehicle's default usage.** A requirement can also be needed for **none** (unticked everywhere: it then doesn't count for readiness), which is told apart from never having chosen.
+  - **Documents by type:** each usage lists the document types it needs. The default usage starts with the profile's **registration and insurance** (cars, trucks, motorcycles, trailers; title never expires, so it isn't listed; generators and equipment need none). Existing vehicles get the same.
+  - **Readiness for a usage:** **✗ not ready** if a requirement ticked for it is overdue, a document type it needs is expired **or not on file** ("Insurance: none on file"), or there's an open or deferred **High** issue (#063; High blocks every usage). **! a warning** if something is due soon. **✓ ready** otherwise. Every item shows its reason and a link. **Advisory:** it sums up the records and certifies nothing.
+  - **Copying:** Copy schedule and templates keep a requirement's usages, matched by name and added to the vehicle if it lacks them.
+  - **Signing off and deferring an issue** needs the Maintainer role on the vehicle (or higher), checked directly.
+  - **The screens:** the Overview's **Ready to use?** with usage chips and every item (1A); a worded chip on each Garage card for the default usage (2A); a **Usages** section in Maintenance → Set up (3A); **Needed for** ticks in the requirement dialog (4A).
+- **Why:** the human, 2026-11-18: usages are the vehicle's, made by Admins and Maintainers, and lay the groundwork for aviation's VFR, IFR, oceanic, and ETOPS; each stands alone (they may overlap by ticking); all existing schedules count for the default usage; a needed document that isn't on file blocks, since the profile expects it.
+- **Limits, accepted:** every existing requirement counting for the default usage may make vehicles "not ready" for something minor that's overdue (a tire rotation) until a Maintainer unticks it. Readiness is computed from the records, so a wrong or missing record gives a wrong answer, plainly shown with its reason.
+
+### 087. Formulas: our own small language with units checked by dimension; calculated fields per event, with history; derived meters at every input reading
+*Decided: 2026-11-18 · Phase plan: phase-5.md milestone 7 · Sketch: `docs/ui-sketches/p5m7-formulas-options.svg` (1 combined, 2A, 3B, 4A, 5A) · Builds on #057, #080 · Refines #057's calculated fields*
+
+- **Decision:**
+  - **The language is our own,** in `domain`: numbers with units, `+ − × ÷`, parentheses, values by stable key, and the functions `mean`, `median`, `geometric_mean`, `harmonic_mean`, `min`, `max`, `sum`, `count`, `stddev`, `round`, and `abs`. **Meters get stable keys** too, from their names. Formulas are kept as typed and worked out when shown, never stored as values.
+  - **Units are checked by dimension** (distance, volume, time, money, or none): `+` and `−` need the same one, `×` and `÷` combine them, and the result must match what the field shows (e.g. money per distance). Anything else is refused when saved, with the reason in words.
+  - **Calculated fields** use their event's own values (fields, readings, a fuel-up's volume and cost) and **since the last event of its kind** (`distance-since-last(odometer)`, `time-since-last`). The functions also work **over past events** with an **Over**: cumulative, or the last X events, days, weeks, months, mi/km, or hours on a named meter.
+  - **Derived meters** are worked out from the vehicle's typed meters **at every reading of one of their inputs**, from each input's latest reading, and work in interval rules like any meter. They can't be reset or typed.
+  - **The screens:** a typed formula box with **Functions ▾** and **Values ▾** menus and an **Over** picker, checked as you type, with a preview (1, the two options combined); ƒ rows on the log form (live) and the event's page (2A); **+ Derived meter** with its own dialog (3B); derived meters beside typed ones (4A); **ⓘ How to write one** beside every formula box, a short popup with **Full guide →** to `docs/help/formulas.md` (5A). A stylized **ƒ badge** marks every worked-out value.
+- **Why:** the human, 2026-11-18: a small language of our own (no extra syntax or dependency, errors in our words, works offline), with common statistics, including over a field's history; typing with menus to help rather than menus alone; help that's short at hand, with a fuller guide (in the app later, idea 22).
+- **Limits, accepted:** formulas are per vehicle and aren't copied with a schedule or template yet. A derived meter's inputs can't be resettable or derived themselves. The full guide is on GitHub, in English, until idea 22.
+
+
+### 088. SQLCipher's sources come from `sqlcipher-src`, whose SQLite and libtomcrypt licenses are allowed for it alone
+*Decided: 2026-11-19 · Phase plan: phase-5.md, the `v0.5.0` release plan (R.a) · Builds on #079 · Closes GitHub issue #41's blocker*
+
+- **Decision:** the desktop app's SQLCipher build moves to `libsqlite3-sys` 0.40 (with sqlx 0.9.1), which fixes RUSTSEC-2026-0459. From 0.39, `libsqlite3-sys` takes SQLCipher's C sources from a separate crate, **`sqlcipher-src`** (MIT), which declares the licenses of what it carries: SQLCipher (BSD-3-Clause), SQLite (public domain, `blessing`), and libtomcrypt (public domain or `WTFPL`). `deny.toml` allows `blessing` and `WTFPL` **for `sqlcipher-src` only** (a `[[licenses.exceptions]]` entry); every other crate still needs the allow list. The advisory's ignore is removed. The third-party notices read SQLCipher's license from `sqlcipher-src`.
+- **Why:** the human, 2026-11-19. These are the same SQLite sources the app already shipped (before, inside `libsqlite3-sys`, declared MIT). libtomcrypt is only compiled for targets without a system crypto library; `libsqlite3-sys` 0.40 never compiles it for ours (macOS uses CommonCrypto, Windows and Linux OpenSSL).
+- **Limits, accepted:** a new crate in the desktop's build, published by one person outside the rusqlite project, though it's what `libsqlite3-sys`'s own SQLCipher feature uses. It's a build dependency, so `cargo-about` doesn't list it among the Rust crates; its SQLCipher license is in the notices' own section.

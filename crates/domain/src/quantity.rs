@@ -67,7 +67,7 @@ impl QuantityError {
 const MAX_STORED: f64 = 1e15;
 
 /// A typed decimal: commas and spaces ignored, never negative. Also its number of decimals.
-fn number(text: &str) -> Result<(f64, usize), QuantityError> {
+pub(crate) fn number(text: &str) -> Result<(f64, usize), QuantityError> {
     let cleaned: String = text
         .chars()
         .filter(|c| *c != ',' && !c.is_whitespace())
@@ -93,7 +93,7 @@ fn number(text: &str) -> Result<(f64, usize), QuantityError> {
 }
 
 /// `value` rounded to the nearest whole number, for storing.
-fn whole(value: f64) -> Result<i64, QuantityError> {
+pub(crate) fn whole(value: f64) -> Result<i64, QuantityError> {
     let rounded = value.round();
     if !rounded.is_finite() || rounded.abs() > MAX_STORED {
         return Err(QuantityError::TooLarge);
@@ -106,7 +106,7 @@ fn whole(value: f64) -> Result<i64, QuantityError> {
 }
 
 /// A stored whole number as `f64` (exact: stored values stay within ±1e15).
-fn float(stored: i64) -> f64 {
+pub(crate) fn float(stored: i64) -> f64 {
     #[expect(
         clippy::cast_precision_loss,
         reason = "stored values stay within ±1e15, below 2^53, so the conversion is exact"
@@ -116,7 +116,7 @@ fn float(stored: i64) -> f64 {
 }
 
 /// A number with `decimals` places.
-fn fixed(value: f64, decimals: usize) -> String {
+pub(crate) fn fixed(value: f64, decimals: usize) -> String {
     format!("{value:.decimals$}")
 }
 
@@ -333,7 +333,7 @@ pub fn show_duration(seconds: i64) -> String {
 // --- Meter readings --------------------------------------------------------------------------
 
 /// A reading typed in a meter's `unit`, with at most `precision` decimals, as the stored raw
-/// value (meters, or seconds for hours).
+/// value (meters, seconds for hours, or hundredths of a percent).
 ///
 /// # Errors
 ///
@@ -347,6 +347,7 @@ pub fn parse_reading(text: &str, unit: MeterUnit, precision: u8) -> Result<i64, 
         MeterUnit::Miles => Length::new::<mile>(value).get::<meter>(),
         MeterUnit::Kilometers => Length::new::<kilometer>(value).get::<meter>(),
         MeterUnit::Hours => Time::new::<hour>(value).get::<second>(),
+        MeterUnit::Percent => value * 100.0,
     })
 }
 
@@ -359,6 +360,7 @@ pub fn reading_value(raw: i64, unit: MeterUnit, precision: u8) -> String {
         MeterUnit::Miles => Length::new::<meter>(value).get::<mile>(),
         MeterUnit::Kilometers => Length::new::<meter>(value).get::<kilometer>(),
         MeterUnit::Hours => Time::new::<second>(value).get::<hour>(),
+        MeterUnit::Percent => value / 100.0,
     };
     fixed(shown, usize::from(precision))
 }
@@ -633,6 +635,15 @@ mod tests {
         );
         assert_eq!(reading_value(84_184_785, MeterUnit::Miles, 0), "52310");
         assert_eq!(reading_value(4_444_200, MeterUnit::Hours, 1), "1234.5");
+        // Percentages are stored in hundredths of a percent, and may pass 100.
+        assert_eq!(parse_reading("62", MeterUnit::Percent, 0), Ok(6_200));
+        assert_eq!(parse_reading("112.5", MeterUnit::Percent, 1), Ok(11_250));
+        assert_eq!(
+            parse_reading("62.5", MeterUnit::Percent, 0),
+            Err(QuantityError::TooPrecise)
+        );
+        assert_eq!(reading_value(6_200, MeterUnit::Percent, 0), "62");
+        assert_eq!(reading_value(1_825, MeterUnit::Percent, 2), "18.25");
     }
 
     #[test]
@@ -653,7 +664,7 @@ mod tests {
         #[test]
         fn a_reading_shown_and_typed_again_is_the_same(
             raw in 0i64..10_000_000_000,
-            unit in prop_oneof![Just(MeterUnit::Miles), Just(MeterUnit::Kilometers), Just(MeterUnit::Hours)],
+            unit in prop_oneof![Just(MeterUnit::Miles), Just(MeterUnit::Kilometers), Just(MeterUnit::Hours), Just(MeterUnit::Percent)],
             precision in 0u8..=2,
         ) {
             // A reading typed in the meter's unit survives being shown and typed again.

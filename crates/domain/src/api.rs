@@ -446,6 +446,9 @@ pub enum PreferencesOutcome {
     },
     /// Household defaults need the household's Admin in Admin mode.
     NotAllowed,
+    /// Due warnings that don't make sense (a step earlier than the one before it, or past
+    /// 100% or the most days).
+    BadDueWarnings,
     /// The server couldn't do it right now.
     Unavailable,
 }
@@ -478,6 +481,12 @@ pub struct AssetSummary {
     /// (milestone 9, #067).
     #[serde(default)]
     pub standing: crate::lifecycle::Standing,
+    /// Its most urgent due step, if anything on it comes due (Phase 5, #082).
+    #[serde(default)]
+    pub due: Option<crate::due::DueStep>,
+    /// Its default usage's readiness: the usage's name and the answer (#086).
+    #[serde(default)]
+    pub ready: Option<(crate::label::Label, crate::readiness::Mark)>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -496,6 +505,9 @@ pub struct GarageView {
     pub sort: crate::preferences::GarageSort,
     /// Their custom order, for the Custom sort.
     pub order: Vec<crate::asset::AssetId>,
+    /// The fleet strip's counts, over the vehicles the Garage shows (#083).
+    #[serde(default)]
+    pub fleet: crate::due::FleetCounts,
 }
 
 /// One vehicle's page.
@@ -654,8 +666,38 @@ pub enum AssetsOutcome {
         /// Why.
         problem: crate::asset_form::Problem,
     },
+    /// A calculated field's or derived meter's formula was refused (#087).
+    InvalidFormula {
+        /// Why.
+        problem: crate::formula::FormulaError,
+    },
+    /// A formula uses this field or meter, so it can't be removed, turned off, or changed
+    /// that way.
+    InUse {
+        /// The calculated field's or derived meter's name.
+        by: String,
+    },
     /// The server couldn't do it right now.
     Unavailable,
+}
+
+/// A calculated field's value on an event (#087), or why it has none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CalculatedValue {
+    /// Which field.
+    pub field: crate::custom_field::CustomFieldId,
+    /// Its value, rounded as the person sees it, or why there's none.
+    pub value: Result<crate::formula::Quantity, crate::formula::NoValue>,
+}
+
+/// One kind of event's earlier values on a vehicle, for working calculated fields out on the
+/// log form as values are typed (#087).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FormulaHistory {
+    /// Which kind.
+    pub kind: crate::meter::EventKind,
+    /// Its events' values, oldest first.
+    pub earlier: Vec<crate::formula::Scope>,
 }
 
 /// One event as the app shows it.
@@ -675,6 +717,9 @@ pub struct EventView {
     pub logged_by_name: String,
     /// Who finalized it, by their display name (`None`: not yet, or the server did).
     pub finalized_by_name: Option<String>,
+    /// Its calculated fields' values (#087).
+    #[serde(default)]
+    pub calculated: Vec<CalculatedValue>,
 }
 
 /// A meter's latest reading that counts.
@@ -709,6 +754,9 @@ pub enum EventsOutcome {
         /// The person may keep a reading that doesn't fit, with a reason (the Admin, in Admin
         /// mode).
         may_override_readings: bool,
+        /// Earlier events' values, for each kind with a calculated field (#087).
+        #[serde(default)]
+        history: Vec<FormulaHistory>,
     },
     /// An event was saved (added, edited, or a correction made).
     Saved {
@@ -1062,6 +1110,9 @@ pub struct DocumentInput {
     pub plate: Option<crate::plate::LicensePlateId>,
     /// Notes.
     pub notes: crate::notes::Notes,
+    /// How early its expiry warns, instead of the household's days (#082).
+    #[serde(default)]
+    pub warn_days: Option<crate::due::DaySteps>,
 }
 
 /// A license plate as typed in.
@@ -1163,6 +1214,143 @@ pub struct RequirementView {
     pub last_done: Option<crate::requirement::DoneTask>,
     /// Where it stands (open, complied, active, not applicable).
     pub status: crate::requirement::RequirementStatus,
+    /// When it comes due, if it's on the schedule with a rule that can be worked out (#082).
+    #[serde(default)]
+    pub due: Option<crate::due::Due>,
+}
+
+/// What a due item is about, with what the screens need to name it.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum DueSubject {
+    /// A requirement on the schedule.
+    Requirement {
+        /// Its ID.
+        id: crate::requirement::RequirementId,
+        /// Its name.
+        name: crate::label::Label,
+    },
+    /// An official document with an expiry.
+    Document {
+        /// Its ID.
+        id: crate::document::AssetDocumentId,
+        /// What kind (named by the screens, #066).
+        doc_type: crate::document::DocumentType,
+    },
+}
+
+/// One thing that comes due on a vehicle, and where it stands.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DueEntry {
+    /// What it is.
+    pub subject: DueSubject,
+    /// Where it stands.
+    pub due: crate::due::Due,
+}
+
+/// The answer to "what's due on this vehicle?" (#082).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum DueOutcome {
+    /// Everything that comes due, most urgent first.
+    Due {
+        /// The entries.
+        entries: Vec<DueEntry>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// The answer to "is this vehicle ready to use?" (#086): each of its usages, the default first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ReadinessOutcome {
+    /// Readiness for each usage.
+    Readiness {
+        /// Them, the default first.
+        usages: Vec<crate::readiness::Readiness>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// A vehicle's fuel economy (#085): for its Fuel tab and its Overview.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FuelView {
+    /// Its stretches, each fill-up's part, the averages, and the breakdowns.
+    pub summary: crate::fuel::FuelSummary,
+    /// The towed vehicles' names, for the breakdowns.
+    pub towed_names: Vec<(crate::asset::AssetId, String)>,
+    /// When its latest fill-up was.
+    pub last_fill: Option<crate::time::UnixMillis>,
+}
+
+/// The answer to "how is this vehicle's fuel economy?" (#085).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum FuelOutcome {
+    /// The figures.
+    Fuel {
+        /// Them (boxed: far larger than the other answers).
+        view: Box<FuelView>,
+    },
+    /// No such vehicle, or not one the person can see.
+    NotFound,
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// Something coming due on one of the person's vehicles, for Due & squawks (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetDue {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name.
+    pub vehicle: String,
+    /// What comes due, and where it stands.
+    pub entry: DueEntry,
+    /// The vehicle's meters its rules count on, for what's left.
+    #[serde(default)]
+    pub meters: Vec<(crate::meter::MeterId, crate::meter::Meter)>,
+}
+
+/// An open or deferred squawk on one of the person's vehicles, for Due & squawks (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetSquawk {
+    /// The vehicle.
+    pub asset: crate::asset::AssetId,
+    /// Its name.
+    pub vehicle: String,
+    /// The squawk.
+    pub view: SquawkView,
+}
+
+/// Due & squawks: across the vehicles the Garage shows the person (#083).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FleetView {
+    /// What comes due (Coming up or more urgent), most urgent first, then by vehicle.
+    pub due: Vec<FleetDue>,
+    /// Open and deferred squawks: the most severe first, then the oldest.
+    pub squawks: Vec<FleetSquawk>,
+    /// The fleet strip's counts.
+    pub counts: crate::due::FleetCounts,
+}
+
+/// The answer to "what's due, and what's open, across my vehicles?" (#083).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum FleetOutcome {
+    /// The list.
+    Fleet {
+        /// It.
+        view: FleetView,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
 }
 
 /// A reference document as typed in (everything but who added it and when).
@@ -1274,6 +1462,12 @@ pub enum ScheduleOutcome {
         requirements: Vec<RequirementView>,
         /// Its bundles, by name.
         bundles: Vec<(crate::requirement::BundleId, crate::requirement::Bundle)>,
+        /// Its specs, by name (#084).
+        #[serde(default)]
+        specs: Vec<(crate::spec::SpecId, crate::spec::Spec)>,
+        /// Its usages, the default first (#086).
+        #[serde(default)]
+        usages: Vec<(crate::usage::UsageId, crate::usage::Usage)>,
         /// The person may change it (a Maintainer or higher, in that mode).
         may_configure: bool,
     },
@@ -1287,12 +1481,25 @@ pub enum ScheduleOutcome {
         /// Its ID.
         id: crate::requirement::BundleId,
     },
-    /// A schedule was copied from another vehicle.
+    /// A spec was added or changed (#084).
+    SavedSpec {
+        /// Its ID.
+        id: crate::spec::SpecId,
+    },
+    /// A usage was added or changed (#086).
+    SavedUsage {
+        /// Its ID.
+        id: crate::usage::UsageId,
+    },
+    /// A schedule was copied from another vehicle, or a template applied (#084).
     Copied {
         /// How many requirements were copied.
         requirements: usize,
         /// How many bundles were copied.
         bundles: usize,
+        /// How many specs were copied.
+        #[serde(default)]
+        specs: usize,
         /// Meter rules left out, as "requirement: meter" (no matching meter).
         left_out: Vec<(crate::label::Label, crate::label::Label)>,
     },
@@ -1303,6 +1510,79 @@ pub enum ScheduleOutcome {
     /// The person's roles or mode don't allow it.
     NotAllowed,
     /// The requirement or bundle was refused.
+    Invalid {
+        /// Why.
+        problem: crate::requirement::RequirementProblem,
+    },
+    /// The spec was refused (#084).
+    InvalidSpec {
+        /// Why.
+        problem: crate::spec::SpecProblem,
+    },
+    /// The usage was refused (#086).
+    InvalidUsage {
+        /// Why.
+        problem: crate::usage::UsageProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// A household template as listed (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemplateSummary {
+    /// Its ID.
+    pub id: crate::template::TemplateId,
+    /// Its name.
+    pub name: crate::label::Label,
+    /// What it holds.
+    pub counts: crate::template::TemplateCounts,
+}
+
+/// The Templates screen (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemplatesView {
+    /// The household's templates, by name.
+    pub templates: Vec<TemplateSummary>,
+    /// The vehicles the person may apply one to (they may change its schedule, and it has
+    /// none yet), by name.
+    pub apply_to: Vec<(crate::asset::AssetId, String)>,
+    /// The person may rename and remove templates (the household's Admin, in Admin mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a templates request (#084).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum TemplatesOutcome {
+    /// The Templates screen.
+    Templates {
+        /// It.
+        view: TemplatesView,
+    },
+    /// A template was saved or renamed.
+    Saved {
+        /// Its ID.
+        id: crate::template::TemplateId,
+    },
+    /// A template was applied (as a copied schedule).
+    Applied {
+        /// How many requirements were copied.
+        requirements: usize,
+        /// How many bundles were copied.
+        bundles: usize,
+        /// How many specs were copied.
+        specs: usize,
+        /// Meter rules left out, as "requirement: meter" (no matching meter).
+        left_out: Vec<(crate::label::Label, crate::label::Label)>,
+    },
+    /// Done.
+    Done,
+    /// There's no such template or vehicle (or the person can't see it).
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused: the vehicle already has a schedule, or the vehicle has nothing to save.
     Invalid {
         /// Why.
         problem: crate::requirement::RequirementProblem,
@@ -1319,6 +1599,14 @@ pub enum MarkMessage {
     Read,
     /// Put it away (it's also marked read).
     Dismiss,
+    /// Hide a due message until a time or its meter passes, whichever comes first (#083; it's
+    /// also marked read).
+    Snooze {
+        /// For how long.
+        request: crate::inbox::SnoozeRequest,
+    },
+    /// Bring a snoozed message back now.
+    Wake,
 }
 
 /// The answer to a message center request.
@@ -1332,6 +1620,9 @@ pub enum InboxOutcome {
     },
     /// There's no message with that key for this person (gone, or not theirs to see).
     NotFound,
+    /// That snooze can't be used: only due messages snooze, for 1 to 366 days and/or an
+    /// amount more than zero on an item with a meter that counts up (#083).
+    BadSnooze,
     /// The server couldn't do it right now (e.g. it's refusing changes).
     Unavailable,
 }
