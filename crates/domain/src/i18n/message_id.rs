@@ -2091,6 +2091,8 @@ define_messages! {
     TEMPLATE_LEFT_OUT => "template-left-out",
     /// Templates: apply one to a vehicle.
     TEMPLATE_APPLY_TO => "template-apply-to",
+    /// Templates: apply it to the vehicle chosen.
+    TEMPLATE_APPLY => "template-apply",
     /// Templates: rename one.
     TEMPLATE_RENAME => "template-rename",
     /// Templates: the name field.

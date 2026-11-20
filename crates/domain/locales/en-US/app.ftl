@@ -1350,6 +1350,7 @@ template-applied = Copied { $requirements ->
 } onto { $vehicle }.
 template-left-out = Left out (no matching meter): { $list }.
 template-apply-to = Apply to…
+template-apply = Apply
 template-rename = Rename
 template-name = Name
 template-remove-title = Remove the template { $name }?

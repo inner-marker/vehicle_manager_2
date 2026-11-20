@@ -2,7 +2,8 @@
 //! `docs/ui-sketches/p5m4-specs-options.svg`, 4B): the household's named schedules.
 //!
 //! Each template shows what it holds and **Apply to…**, listing the vehicles the person may
-//! give it to (they may change its schedule, and it has none yet). Applying copies it: later
+//! give it to (they may change its schedule, and it has none yet); choosing one only selects
+//! it, and **Apply** beside it copies the template ([`ApplyTemplate`]). Applying copies it: later
 //! changes to the template don't reach the vehicle, and meter rules without a matching meter
 //! are left out and listed. New templates come from a vehicle's **Set up** (**Save as
 //! template…**, [`SaveTemplateDialog`]). The household's Admin, in Admin mode, renames and
@@ -93,6 +94,59 @@ enum Open {
     Remove(TemplateSummary),
 }
 
+/// **Apply to…** and **Apply** for one template: choosing a vehicle only selects it; **Apply**
+/// (off until one is chosen) copies the template onto it.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ApplyTemplate(
+    template: TemplateId,
+    choices: Vec<(AssetId, String)>,
+    on_apply: EventHandler<(TemplateId, AssetId, String)>,
+) -> Element {
+    let mut chosen = use_signal(|| None::<(AssetId, String)>);
+    let listed = choices.clone();
+    rsx! {
+        select {
+            class: "field-input template-apply",
+            "aria-label": tr(messages::TEMPLATE_APPLY_TO),
+            onchange: {
+                move |event: FormEvent| {
+                    chosen
+                        .set(
+                            choices
+                                .iter()
+                                .find(|(asset, _)| asset.to_string() == event.value())
+                                .cloned(),
+                        );
+                }
+            },
+            option { value: "", selected: chosen().is_none(), {tr(messages::TEMPLATE_APPLY_TO)} }
+            for (asset, name) in listed {
+                option {
+                    key: "{asset}",
+                    value: "{asset}",
+                    selected: chosen().is_some_and(|(each, _)| each == asset),
+                    {name}
+                }
+            }
+        }
+        button {
+            class: "secondary-button",
+            disabled: chosen().is_none(),
+            onclick: move |_| {
+                if let Some((asset, name)) = chosen() {
+                    chosen.set(None);
+                    on_apply.call((template, asset, name));
+                }
+            },
+            {tr(messages::TEMPLATE_APPLY)}
+        }
+    }
+}
+
 /// `/templates`.
 #[expect(
     unused_qualifications,
@@ -154,26 +208,10 @@ pub(crate) fn Templates() -> Element {
                     }
                     div { class: "setup-row-buttons",
                         if !apply_to.is_empty() {
-                            select {
-                                class: "field-input template-apply",
-                                "aria-label": tr(messages::TEMPLATE_APPLY_TO),
-                                onchange: {
-                                    let choices = apply_to.clone();
-                                    let id = template.id;
-                                    move |event: FormEvent| {
-                                        let picked = choices
-                                            .iter()
-                                            .find(|(asset, _)| asset.to_string() == event.value())
-                                            .cloned();
-                                        if let Some((asset, name)) = picked {
-                                            apply((id, asset, name));
-                                        }
-                                    }
-                                },
-                                option { value: "", selected: true, {tr(messages::TEMPLATE_APPLY_TO)} }
-                                for (asset, name) in apply_to.clone() {
-                                    option { key: "{asset}", value: "{asset}", {name} }
-                                }
+                            ApplyTemplate {
+                                template: template.id,
+                                choices: apply_to.clone(),
+                                on_apply: apply,
                             }
                         }
                         if view.may_manage {
