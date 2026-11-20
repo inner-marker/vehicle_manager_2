@@ -1,0 +1,82 @@
+# Phase 6: Polish (plan)
+
+*Agreed 2026-11-20 · Roadmap: `docs/plan.md` §9 Phase 6 · Open questions: settled (decision #089) · Builds on #041, #071, #072, #081*
+
+**Goal:** the app is **ready for everyday use by anyone in the household, on any computer.** The rough edges found in earlier test runs are fixed, logging is quicker, costs and history can be reported and printed, data can be exported and brought back, one computer can use the app with no server at all, and signed desktop packages are published with each release.
+
+**Who it's for:** the web app and the desktop app alike. New kinds of change work offline on the desktop and sync, as before (#071, #072).
+
+**Not in Phase 6:** encryption on the server, and the web sign-in's idle and absolute limits (#65) (Phase 7); the phone apps and voice logging (post-MVP, #041); digital signatures (on hold, sub-plan 01).
+
+**Exit criteria:**
+- **Each milestone's "You can check"** works on the web and the desktop, and each new kind of change works offline on the desktop and syncs.
+- **Logging:** a fuel-up is saved with its receipt photo in one go; a dealer's job gets its labor cost from the dealer's rate.
+- **Vehicles:** a custom "Track car" type needs no registration or insurance; a timing belt is due first at 100,000 mi, then every 50,000 mi.
+- **People:** a custom role limits what its holder can do; a person's new username works at the next sign-in; a password can be reset by email when email is set up, and everything still works without it.
+- **Reports:** a vehicle's costs per year and per mile, fuel trends, and its service history printed.
+- **Import and export:** an exported vehicle imports back the same; a CSV opens in a spreadsheet.
+- **Standalone:** a standalone Mac keeps its records through an update, and moves onto a server with none lost.
+- **Packages:** the macOS and Windows packages install from the GitHub Release; the Mac one opens with no Gatekeeper warning.
+- **Sync:** an app one API version behind still syncs.
+
+**How this file works:** the same as `phase-5.md` (decision #021).
+- One branch and **one PR into `dev` per milestone** (`milestone/p6-mN-<slug>`), merged with a merge commit.
+- Each **step** is one Conventional Commit. Steps are planned in detail, and approved, when their milestone starts.
+- Screens get **SVG layout options** in `docs/ui-sketches/` before they're built (#040).
+- **One cumulative test plan for the phase** (#081): each milestone's last step adds its section to `docs/test-plans/p6-phase.md`. The whole plan is run at the end of the phase, on the test server (#062) with the web and desktop apps, as `v0.6.0`'s regression pass.
+- `cargo clean` at each step's end, once its checks have run.
+- Status: ⬜ not started · 📝 planning · 🔨 in progress · ☑️ committed on the milestone branch · ✅ in `dev`.
+
+---
+
+## Milestones
+
+| # | Milestone | Status | What it delivers | You can check |
+|---|---|---|---|---|
+| 1 | **Fixes and Settings** | ⬜ | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
+| 2 | **Faster logging** | ⬜ | **Photos and documents added before the first save.** **Multi-page document capture** on the web (pages joined into one PDF). **Pinch to zoom** in the photo viewer on a phone. **Save a new place while logging** (#26). **Labor rates:** one for the household, overridden by a shop's own; typed labor time fills in its cost, which can still be changed (#089). **A main photo for each vehicle** (#24), on the Garage and the Overview | A fuel-up with its receipt photo in one go; a dealer job's cost from its rate |
+| 3 | **Vehicles and schedules** | ⬜ | **Documents needed by kind of vehicle, and custom vehicle types** (idea 23). **Pinned vehicles** at the top of the Garage (idea 15). **A catalogue of ready-made fields and sets** (idea 16). **Chained intervals**, e.g. first at 100,000 mi, then every 50,000 mi (idea 21) | A "Track car" type needing no registration; a timing belt's chained rule |
+| 4 | **People and security** | ⬜ | **Change a person's display name and username** (#44). **Custom roles** (#27), from their own sub-plan, written first (#071). **Optional email:** SMTP setup and password reset by email (idea 13, sub-plan 03, once confirmed); email notifications come later. Sub-plan 04's **Phase 6 items:** password or PIN to enter Admin mode, rate limits across the API, growing sign-in delays kept in the database, the fail2ban log format, and the guide for running on the internet (#29's code items) | A "Chauffeur" role; repeated wrong sign-ins slowed; a reset email |
+| 5 | **Reports** | ⬜ | **Cost per vehicle per year**, **cost per mile**, **fuel trends**, and a **printable service history** (a page or a PDF) (#089) | A truck's 2026 costs; its history printed |
+| 6 | **Import and export** | ⬜ | **One versioned JSON format** (idea 4) for full backups and per-vehicle exports, which can be imported back; **CSV exports** of lists (fuel-ups, jobs, costs) for spreadsheets (#089) | Export a vehicle and import it on the test server; open a CSV in Numbers |
+| 7 | **Standalone mode** | ⬜ | The desktop app runs **with no server**, the server's own code inside it. A snapshot **each day it's used and before each update**, keeping 7, and **Export backup…** to any folder (#089). **Moving to a server** later, with milestone 6's format | Use the Mac with no NAS; move its records onto the test server |
+| 8 | **Help in the app** | ⬜ | **Help pages** (idea 22), starting with formulas (in place of `docs/help/formulas.md`); **ⓘ popups** with a short summary, linking to the full page | ⓘ on Filled full opens the fuel economy page |
+| 9 | **Desktop packages and signing** | ⬜ | The **Release workflow publishes** macOS, Windows, and Linux packages. **macOS signed and notarized** (Apple's developer program); **Windows signed** once its certificate is bought, and unsigned until then (#089) | A downloaded Mac package opens with no warning |
+
+**Releases:** **`v0.6.0` at the end of Phase 6** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.5.0` had. It's the **first release with desktop packages**.
+
+---
+
+## Why this order
+
+- **1 first:** every later milestone adds settings, so Settings gets its new layout before they do.
+- **2–4** change records and screens, each with its own migrations; done early, the later milestones read settled records.
+- **5 and 6** read every kind of record, so they follow 2–4.
+- **6 before 7:** moving a standalone computer onto a server uses the export format.
+- **8 near the end:** the help describes finished features.
+- **9 last:** it needs only the Release workflow, and leaves time for the Windows certificate.
+
+## To decide when each milestone is planned
+
+- **Milestone 1:** the Settings layout (SVG options); how the no-network check works on each platform.
+- **Milestone 2:** how multi-page capture orders and joins its pages; where a vehicle's main photo is chosen; where labor rates are set (Settings and the shop's place).
+- **Milestone 3:** whether a kind's or custom type's settings follow existing vehicles or only new ones; which fields and sets the catalogue starts with; what a chained interval counts from.
+- **Milestone 4:** the custom roles sub-plan and its questions; confirming sub-plan 03 (email); the rate limits' values.
+- **Milestone 5:** each report's layout (SVG options); PDFs made by the server, or the browser's print.
+- **Milestone 6:** the format's schema and versioning; what an import does with records already there.
+- **Milestone 7:** how the desktop runs the server's code; how moving to a server works.
+- **Milestone 8:** help written as the app's messages (translated) or as bundled Markdown; which topics after formulas.
+- **Milestone 9:** the package formats (`.dmg`, `.msi`, AppImage or `.deb`); where the signing secrets are kept.
+- **API version:** new operations raise it once per milestone that adds them. The server keeps accepting the one before (#072).
+- **Open issues** are reviewed with each milestone's plan (AGENTS.md).
+
+## Reviewed against
+
+- **Proposed for Phase 6:** ideas 4 (milestone 6), 13 (milestone 4), 15, 16, 21, 23 (milestone 3), 22 (milestone 8); issues #24, #26 (milestone 2), #27, #44, #29's Phase 6 code items (milestone 4); sub-plan 03 (milestone 4, once confirmed), sub-plan 04's Phase 6 items (milestone 4).
+- **No effect now:** ideas 2, 7, 11, 19; idea 10 (built in Phase 3; the size bug is in milestone 1); idea 12 and sub-plan 01 (on hold); idea 14 and sub-plan 02 (post-MVP, they need the phones); issues #15 (post-MVP), #31 and #65 (Phase 7).
+
+---
+
+## Step details
+
+*Each milestone's steps are planned here when it starts.*
