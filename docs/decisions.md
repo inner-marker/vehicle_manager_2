@@ -1051,3 +1051,17 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Decision:** the desktop app's SQLCipher build moves to `libsqlite3-sys` 0.40 (with sqlx 0.9.1), which fixes RUSTSEC-2026-0459. From 0.39, `libsqlite3-sys` takes SQLCipher's C sources from a separate crate, **`sqlcipher-src`** (MIT), which declares the licenses of what it carries: SQLCipher (BSD-3-Clause), SQLite (public domain, `blessing`), and libtomcrypt (public domain or `WTFPL`). `deny.toml` allows `blessing` and `WTFPL` **for `sqlcipher-src` only** (a `[[licenses.exceptions]]` entry); every other crate still needs the allow list. The advisory's ignore is removed. The third-party notices read SQLCipher's license from `sqlcipher-src`.
 - **Why:** the human, 2026-11-19. These are the same SQLite sources the app already shipped (before, inside `libsqlite3-sys`, declared MIT). libtomcrypt is only compiled for targets without a system crypto library; `libsqlite3-sys` 0.40 never compiles it for ours (macOS uses CommonCrypto, Windows and Linux OpenSSL).
 - **Limits, accepted:** a new crate in the desktop's build, published by one person outside the rusqlite project, though it's what `libsqlite3-sys`'s own SQLCipher feature uses. It's a build dependency, so `cargo-about` doesn't list it among the Rust crates; its SQLCipher license is in the notices' own section.
+
+### 089. Phase 6: labor rates per household and shop, signed desktop packages, a JSON archive and CSV, four reports, standalone mode with daily snapshots, and optional email
+*Decided: 2026-11-20 · Phase plan: phase-6.md · Plan §10 Phase 6 open questions · Builds on #041, #071, #072*
+
+- **Decision:**
+  - **Labor rates:** one rate for the household (Maintainers and Admins set it), which a **shop** (the "done by" performer, e.g. a dealer) can override with its own. Typed labor time fills in the cost, which can still be changed. A job keeps the cost it was saved with, so a later rate change never touches old jobs.
+  - **Desktop signing:** desktop packages are published from Phase 6's release, and **signed on macOS and Windows**: macOS through Apple's developer program (notarized), Windows once its code-signing certificate is bought; until then the Windows package ships unsigned. Linux is unsigned.
+  - **Import and export:** **one versioned JSON format** (idea 4) for full backups and per-vehicle exports, which can be imported back; **CSV** exports of lists (fuel-ups, jobs, costs) for spreadsheets, export only.
+  - **Reports:** cost per vehicle per year, cost per mile, fuel trends, and a printable service history.
+  - **Standalone mode** stays in Phase 6. Its backups: a snapshot **each day the app is used and before each update**, keeping 7, in the app's data folder, and **Export backup…** copies one to any folder.
+  - **Placed in Phase 6** at the same time: ideas 13 (optional email and password reset, with sub-plan 03 once confirmed), 15, 16, 21, 22, and 23, and issues #24, #26, #27, and #44.
+- **Why:** the human, 2026-11-20, as recommended, except signing: **both platforms**, not accepting the warnings. The human has an Apple developer account; the Windows certificate comes later.
+- **Limits, accepted:** the yearly cost of both signing programs; until the Windows certificate is bought, SmartScreen warns on Windows.
+

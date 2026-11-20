@@ -1861,6 +1861,7 @@ Each phase has open questions in section 10 that must be resolved before work on
 - What's due (including **official document expirations** with lead times and a renew flow; the initial-deadline and terminating-action modes and supersession moved to the aircraft phase, #082), service bundles, due-soon and overdue messages in the message center (with snooze), squawk sign-off/deferral enforcement, fuel economy statistics (missed fill-up handling, per-condition and per-towed-vehicle breakdowns).
 
 ### Phase 6: Polish.
+- *Phase plan: [`phase_plans/phase-6.md`](phase_plans/phase-6.md) (agreed 2026-11-20; nine milestones, then `v0.6.0`).*
 - **Phase 6: Polish.** Import/export, reports (pairing moved to Phase 3, #072)
 - **multi-page document capture in the web UI**
 - **standalone mode** (single device, no server, local backups, upgrade path to a server).
@@ -1974,11 +1975,13 @@ Minimum Viable Product is v1.0.0, which includes Phases 1–7. Later phases are 
 
 ### Phase 6: Polish
 
-- **Labor rates:** whose rate it is: one for the household, one per Maintainer, or one per shop (the "done by" performer, e.g. a dealer's hourly rate), and whether a rate can change over time (old jobs keep the rate they used).
-- **Desktop signing** (moved from Phase 4, #041): sign desktop builds (macOS Gatekeeper, Windows SmartScreen), or accept the warnings for personal use? Needed by the first release with desktop packages.
-- **Import/export formats:** CSV, JSON, or both; full backup vs. per-vehicle export.
-- **Reports and cost views:** which reports matter most (cost per mile, cost per vehicle per year, fuel trends)?
-- **Standalone mode backups:** default snapshot frequency and export location.
+*Answered by the human, 2026-11-20 (`docs/decisions.md` #089; `phase_plans/phase-6.md`).*
+
+- ~~**Labor rates:** whose rate it is: one for the household, one per Maintainer, or one per shop (the "done by" performer, e.g. a dealer's hourly rate), and whether a rate can change over time (old jobs keep the rate they used).~~ *Settled: one for the household, overridden by a shop's own; a job keeps the cost it was saved with.*
+- ~~**Desktop signing** (moved from Phase 4, #041): sign desktop builds (macOS Gatekeeper, Windows SmartScreen), or accept the warnings for personal use? Needed by the first release with desktop packages.~~ *Settled: sign both; Windows once its certificate is bought.*
+- ~~**Import/export formats:** CSV, JSON, or both; full backup vs. per-vehicle export.~~ *Settled: one versioned JSON format for full backups and per-vehicle exports (importable), and CSV exports of lists.*
+- ~~**Reports and cost views:** which reports matter most (cost per mile, cost per vehicle per year, fuel trends)?~~ *Settled: all three, and a printable service history.*
+- ~~**Standalone mode backups:** default snapshot frequency and export location.~~ *Settled: daily when used and before each update, keeping 7, in the app's data folder; Export backup… to any folder.*
 
 ### Post-MVP
 

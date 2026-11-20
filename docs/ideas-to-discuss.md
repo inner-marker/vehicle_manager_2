@@ -27,7 +27,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 *Decided 2026-11-04: `docs/decisions.md` #065 (files on disk in `data/files/`, each named by its SHA-256; the database holds the records).*
 
 ### 4. One canonical interchange format, defined early 🟡
-*Suggested phase: Phase 2*
+*Suggested phase: Phase 2 · **Placed:** Phase 6 milestone 6 (#089: one versioned JSON format, and CSV exports)*
 
 - A single versioned, documented data format used for **backups, full-archive exports, the next-owner transfer package, imports, and test fixtures,** instead of inventing one per feature.
 - Unlocks **importers from other apps** (spreadsheets, other maintenance apps) as a later feature.
@@ -99,7 +99,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - Its "Related" line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
 
 ### 13. Optional email and email password reset 🔵
-*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing; not yet placed in the roadmap)*
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing) · **Placed:** Phase 6 milestone 4, the SMTP setup and the reset (#089); the sub-plan is confirmed when that milestone is planned*
 
 - **The plan:** email stays **optional** (the app works fully without it), any SMTP provider (Gmail with an app password as the reference), configured by environment variables or Docker secrets; an email reset link (token stored only as a hash, about 30 minutes, one use, the same generic answer for everyone, rate-limited, other sessions ended); a per-person email on/off switch and a "send test email" button; later, email notifications for maintenance due, with per-person preferences.
 - **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
@@ -127,13 +127,13 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - Its own open questions (§14): push-to-talk, model size, keeping audio clips, squawk severity, and more.
 
 ### 15. Pin vehicles to the top of the Garage 🟡
-*Raised by the human, 2026-11-01, choosing the Garage layout (#056) · Suggested phase: undecided (not now)*
+*Raised by the human, 2026-11-01, choosing the Garage layout (#056) · Suggested phase: undecided (not now) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - Pinned vehicles stay at the top of their group whatever the sort (Newest activity, Name, Custom).
 - **To discuss:** per person or for everyone; pinning across groups (a "Pinned" section at the top) or within each group; how it shows on the card.
 
 ### 16. A catalogue of ready-made fields and sets 🟡
-*Raised by the human, 2026-11-01 (e.g. the F-150 PowerBoost's trip computer: trip miles, time, EV miles, MPG) · Suggested phase: Phase 5, with calculated fields (#057)*
+*Raised by the human, 2026-11-01 (e.g. the F-150 PowerBoost's trip computer: trip miles, time, EV miles, MPG) · Suggested phase: Phase 5, with calculated fields (#057) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** built-in field definitions in data (RON, like the profiles), each with a fixed key, type, and unit, offered from **+ Add field** with one tap: trip distance, trip time, trip EV distance, trip fuel economy, average speed, trip fuel used, EV share, idle time, and so on. **Sets** add several at once (e.g. "Trip computer (hybrid)"). Profiles would pick their defaults from the catalogue.
 - **To discuss:** which fields and sets; whether catalogue fields can be edited or only turned off; vehicles with Trip A and Trip B (a set added twice with a suffix?); how it relates to the vehicle-reported fuel economy column (#030).
@@ -159,7 +159,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 *Decided 2026-11-03: `docs/decisions.md` #062 (a test server beside the main server on the NAS; main runs `:dev` without test timers; separate session cookies; migrations freeze in `dev`).*
 
 ### 21. Chained meter intervals: a first interval, then a different one 🟡
-*Raised by the human, 2026-11-03, after milestone 7's checkpoint test · Suggested phase: Phase 5 (what's due), with the interval rules (milestone 7, choice 4)*
+*Raised by the human, 2026-11-03, after milestone 7's checkpoint test · Suggested phase: Phase 5 (what's due), with the interval rules (milestone 7, choice 4) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** a meter rule with a first interval and a different one after it, e.g. "Replace after the first 100,000 miles, then every 50,000 miles thereafter" (timing belts, some transmission fluids, a new engine's first oil change).
 - **To discuss:**
@@ -169,7 +169,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Copying a schedule** (#031) onto a vehicle that's already past the first interval.
 
 ### 22. Help pages in the app 🟡
-*Raised by the human, 2026-11-18, planning Phase 5 milestone 7 · Suggested phase: Phase 6 or later*
+*Raised by the human, 2026-11-18, planning Phase 5 milestone 7 · Suggested phase: Phase 6 or later · **Placed:** Phase 6 milestone 8 (#089)*
 
 - **Idea:** help pages inside the app, starting with formulas, in place of milestone 7's `docs/help/formulas.md` on GitHub.
 - **To discuss:**
@@ -179,7 +179,7 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 
 
 ### 23. Documents needed by kind of vehicle, and custom vehicle types 🟡
-*Raised by the human, 2026-11-19, in the Phase 5 test run · Suggested phase: Phase 6 (polish)*
+*Raised by the human, 2026-11-19, in the Phase 5 test run · Suggested phase: Phase 6 (polish) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** an Admin chooses which document types each kind of vehicle needs (a track-only car needs no registration or insurance). Going further: **custom vehicle types**, made by the Admin, each saying which of the app's rules apply to it.
 - **What there is today:** each vehicle's profile (car, truck, trailer, …) sets the documents its default usage needs, and each vehicle's **usages** (decision #086) can change them, one vehicle at a time. So a track car's **Drivable** can already need nothing.
