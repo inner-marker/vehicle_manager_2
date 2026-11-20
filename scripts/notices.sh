@@ -36,7 +36,7 @@ for package in json.load(sys.stdin)["packages"]:
 ' "$1"
 }
 
-sqlite_dir=$(dir_of libsqlite3-sys)
+sqlcipher_dir=$(dir_of sqlcipher-src)
 openssl_dir=$(dir_of openssl-src)
 
 section() {
@@ -69,7 +69,7 @@ trap 'rm -f "$tmp"' EXIT
     done
 
     section "SQLCipher (the desktop app's encrypted database)"
-    file "SQLCipher: BSD 3-Clause License" "$sqlite_dir/sqlcipher/LICENSE"
+    file "SQLCipher: BSD 3-Clause License" "$sqlcipher_dir/sqlcipher/LICENSE-sqlcipher"
 
     section "OpenSSL (built into the desktop app on Windows)"
     file "OpenSSL: Apache License 2.0" "$openssl_dir/openssl/LICENSE.txt"

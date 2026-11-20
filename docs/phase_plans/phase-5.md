@@ -869,7 +869,7 @@
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
 | R.0 | ☑️ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
-| R.a | ⬜ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
+| R.a | ☑️ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
 | R.b | ⬜ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
 | R.c | ⬜ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
 | R.d | ⬜ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
@@ -878,3 +878,7 @@
 
 **Written so far**
 - **R.0:** this plan; milestone 7 marked ✅ (PR #61).
+- **R.a:** sqlx 0.9.1 (workspace) and `libsqlite3-sys` 0.40 (storage's `sqlcipher` feature, both targets' builds), so the desktop's SQLite is 3.54.1 inside SQLCipher 4.20, which fixes **RUSTSEC-2026-0459**. `deny.toml`'s ignore for it is gone (`ignore = []`).
+  - **Changed from the plan, a new crate:** from 0.39, `libsqlite3-sys` takes SQLCipher's sources from **`sqlcipher-src`**, which declares SQLite's `blessing` and libtomcrypt's `WTFPL` licenses. `cargo deny` refused both. The human chose to allow them **for that crate only** (decision #088). libtomcrypt isn't compiled for any target we build.
+  - **The notices:** `scripts/notices.sh` reads SQLCipher's license from `sqlcipher-src` (its copyright line changed), and the file is remade (sqlx's and `libsqlite3-sys`'s versions).
+  - **SQLCipher 4.20** (from 4.10) opens copies 4.10 made: the same 4.x format and defaults; the regression pass's desktop steps open an existing copy, which shows it on a real one.
