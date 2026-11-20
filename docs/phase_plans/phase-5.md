@@ -870,7 +870,7 @@
 |---|---|---|---|---|
 | R.0 | ☑️ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
 | R.a | ☑️ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
-| R.b | ⬜ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
+| R.b | ☑️ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
 | R.c | ⬜ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
 | R.d | ⬜ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
 | R.e | ⬜ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
@@ -882,3 +882,13 @@
   - **Changed from the plan, a new crate:** from 0.39, `libsqlite3-sys` takes SQLCipher's sources from **`sqlcipher-src`**, which declares SQLite's `blessing` and libtomcrypt's `WTFPL` licenses. `cargo deny` refused both. The human chose to allow them **for that crate only** (decision #088). libtomcrypt isn't compiled for any target we build.
   - **The notices:** `scripts/notices.sh` reads SQLCipher's license from `sqlcipher-src` (its copyright line changed), and the file is remade (sqlx's and `libsqlite3-sys`'s versions).
   - **SQLCipher 4.20** (from 4.10) opens copies 4.10 made: the same 4.x format and defaults; the regression pass's desktop steps open an existing copy, which shows it on a real one.
+- **R.b:** `make_fixture.rs` gains `write_the_v0_5_0_fixture` (ignored, like the others), with `v0.3.0`'s records and then Phase 5's, all through the server:
+  - **meters:** Oil life (a percentage counting down, resetting to 100%), engine hours, and **Service miles** (`odometer + engine-hours × 33 mi/h`);
+  - **a calculated field,** Cost per mile on fuel-ups;
+  - **the schedule:** two specs; an oil change due when Oil life reaches 15% or at 7,500 mi, with its own warning steps and both specs; **Towing** beside the default usage, and a hitch inspection needed for it; the template **Pickup basics**;
+  - **Sam's events:** a partial fill and a full one (Oil life 80% and 60%, engine hours), Oil life reset to 100%, and a fill after a missed one, far enough on that the first oil change is due soon;
+  - **Sam's due message,** snoozed for "1 week or 500 mi".
+
+  The result is `crates/storage/tests/fixtures/v0.5.0.sqlite`: schema 27, 4 meters (all keyed), 4 requirements, 2 usages, 2 specs, 1 template, 5 fuel-ups (1 partial, 1 after a missed one), 1 reset reading, 1 snoozed mark, the users `jordan` and `sam`, `integrity_check` ok, and no personal data. The writer moves its clock past the nightly file check (9 days on) before Phase 5's changes, since the server refuses a change timed before the last one.
+
+  `migration_fixtures.rs` now tells fixtures apart by version. Those made before `v0.5.0` still have to come through with Phase 5's columns and tables empty. From `v0.5.0`, every meter has a stored key, Oil life counts down and resets to 100%, the formulas read back as typed, and the requirement's rule, steps, specs, and usages, the usages, specs, template, partial and missed fuel-ups, and the snooze all read back.

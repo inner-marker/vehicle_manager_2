@@ -5,11 +5,15 @@
 //! temporary folder, opens it, and checks it reaches the latest schema with its ID intact, its
 //! vehicles, events, and other records still readable, and the database sound. From `v0.3.0`,
 //! Phase 3's records too: the erased files' audit record. And every meter and reading comes
-//! through the rebuild of `meters` (migration 0022), counting up and not reset.
+//! through the rebuild of `meters` (migration 0022). Fixtures from before Phase 5 come through
+//! with its columns and tables empty (each meter counting up, not reset, and unkeyed); from
+//! `v0.5.0`, Phase 5's records come through readable.
 
 use std::path::Path;
 
+use domain::custom_field::FieldKind;
 use domain::meter::MeterDirection;
+use domain::requirement::IntervalRule;
 use domain::test_support::test_id;
 use domain::time::UnixMillis;
 use storage::database::{MIGRATOR, database_file_name};
@@ -68,7 +72,7 @@ async fn every_release_fixture_migrates_to_the_latest_schema() {
         database.reference_documents().await.unwrap();
         erased_files_come_through(&database, &fixture).await;
         meters_come_through(&database, &fixture, before).await;
-        phase_five_starts_empty(&database, &fixture).await;
+        phase_five_comes_through(&database, &fixture).await;
         let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
             .fetch_one(database.pool())
             .await
@@ -136,9 +140,32 @@ async fn rows_before(file: &Path) -> (i64, i64) {
     counts
 }
 
-/// Every meter and reading survived the rebuild of `meters` (migration 0022), with every
-/// meter counting up and not resettable, and no reading a reset; and migration 0023's columns
-/// read as empty.
+/// Phase 5's columns and tables: empty in a fixture made before it, its records readable from
+/// `v0.5.0`.
+#[cfg(test)]
+async fn phase_five_comes_through(database: &Database, fixture: &Path) {
+    if made_before_phase_five(fixture) {
+        older_meters_come_through(database, fixture).await;
+        phase_five_starts_empty(database, fixture).await;
+    } else {
+        phase_five_meters_come_through(database, fixture).await;
+        phase_five_records_come_through(database, fixture).await;
+    }
+}
+
+/// Whether `fixture` (`v<major>.<minor>.<patch>.sqlite`) was made before Phase 5 (`v0.5.0`).
+#[cfg(test)]
+fn made_before_phase_five(fixture: &Path) -> bool {
+    let stem = fixture.file_stem().and_then(|stem| stem.to_str()).unwrap();
+    let version: Vec<u32> = stem
+        .trim_start_matches('v')
+        .split('.')
+        .map(|part| part.parse().unwrap())
+        .collect();
+    version < vec![0, 5, 0]
+}
+
+/// Every meter and reading survived the rebuild of `meters` (migration 0022).
 #[cfg(test)]
 async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, i64)) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -152,6 +179,12 @@ async fn meters_come_through(database: &Database, fixture: &Path, before: (i64, 
         fixture.display()
     );
     assert!(before.0 > 0, "{} has no meters", fixture.display());
+}
+
+/// Before Phase 5: every meter counting up and not resettable, and no reading a reset; and
+/// migration 0023's columns read as empty.
+#[cfg(test)]
+async fn older_meters_come_through(database: &Database, fixture: &Path) {
     for (asset, _) in database.assets().await.unwrap() {
         for (_, meter) in database.meters_of(asset).await.unwrap() {
             assert_eq!(meter.direction, MeterDirection::Up, "{}", fixture.display());
@@ -242,4 +275,142 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
         "{}",
         fixture.display()
     );
+}
+
+/// From `v0.5.0`: every meter has its stored key; Oil life counts down and resets to 100%,
+/// with one reset reading; Service miles keeps its formula; and Cost per mile keeps its own.
+#[cfg(test)]
+async fn phase_five_meters_come_through(database: &Database, fixture: &Path) {
+    let unkeyed: i64 = sqlx::query_scalar("SELECT count(*) FROM meters WHERE key IS NULL")
+        .fetch_one(database.pool())
+        .await
+        .unwrap();
+    assert_eq!(unkeyed, 0, "{}", fixture.display());
+    for (asset, _) in database.assets().await.unwrap() {
+        let meters = database.meters_of(asset).await.unwrap();
+        let meter = |key: &str| {
+            meters
+                .iter()
+                .find(|(_, meter)| meter.key.as_str() == key)
+                .map_or_else(
+                    || panic!("{}: no {key}", fixture.display()),
+                    |(_, meter)| meter.clone(),
+                )
+        };
+        let oil = meter("oil-life");
+        assert_eq!(
+            (oil.direction, oil.reset_to),
+            (MeterDirection::Down, Some(10_000)),
+            "{}",
+            fixture.display()
+        );
+        assert_eq!(
+            meter("service-miles")
+                .formula
+                .map(|formula| formula.as_str().to_owned()),
+            Some("odometer + engine-hours × 33 mi/h".to_owned()),
+            "{}",
+            fixture.display()
+        );
+        let readings = database.readings_of(asset).await.unwrap();
+        assert_eq!(
+            readings.iter().filter(|reading| reading.reset).count(),
+            1,
+            "{}",
+            fixture.display()
+        );
+        let fields = database.custom_fields_of(asset).await.unwrap();
+        let calculated: Vec<_> = fields
+            .iter()
+            .filter_map(|(_, field)| {
+                if let FieldKind::Calculated { formula, .. } = &field.kind {
+                    Some(formula.as_str().to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(
+            calculated,
+            vec!["round(cost ÷ distance-since-last(odometer), 2)".to_owned()],
+            "{}",
+            fixture.display()
+        );
+    }
+}
+
+/// From `v0.5.0`: the oil change by Oil life (its rule, warning steps, and specs), the hitch
+/// inspection needed for Towing, the default usage and Towing, the specs and template, the
+/// partial and missed fuel-ups, and Sam's snoozed due message.
+#[cfg(test)]
+async fn phase_five_records_come_through(database: &Database, fixture: &Path) {
+    for (asset, _) in database.assets().await.unwrap() {
+        let requirements = database.requirements_of(asset).await.unwrap();
+        assert!(
+            requirements.iter().any(|(_, requirement)| {
+                requirement.warnings.is_some()
+                    && requirement.specs.len() == 2
+                    && requirement
+                        .rules
+                        .iter()
+                        .any(|rule| matches!(rule, IntervalRule::Reaches { at: 1_500, .. }))
+            }),
+            "{}: the oil change by Oil life",
+            fixture.display()
+        );
+        let usages = database.usages_of(asset).await.unwrap();
+        assert_eq!(usages.len(), 2, "{}", fixture.display());
+        assert_eq!(
+            usages.iter().filter(|(_, usage)| usage.default).count(),
+            1,
+            "{}",
+            fixture.display()
+        );
+        assert!(
+            requirements.iter().any(|(_, requirement)| requirement
+                .usages
+                .as_ref()
+                .is_some_and(|ids| ids.len() == 1)),
+            "{}: the hitch inspection",
+            fixture.display()
+        );
+        assert_eq!(
+            database.specs_of(asset).await.unwrap().len(),
+            2,
+            "{}",
+            fixture.display()
+        );
+        let fuel: Vec<_> = database
+            .events_of(asset)
+            .await
+            .unwrap()
+            .into_iter()
+            .filter_map(|(_, event)| event.fuel)
+            .collect();
+        assert!(
+            fuel.iter().any(|fill| !fill.filled_full),
+            "{}",
+            fixture.display()
+        );
+        assert!(
+            fuel.iter().any(|fill| fill.missed_previous),
+            "{}",
+            fixture.display()
+        );
+    }
+    assert_eq!(
+        database.templates().await.unwrap().len(),
+        1,
+        "{}",
+        fixture.display()
+    );
+    let mut snoozed = 0;
+    for user in database.users().await.unwrap() {
+        let marks = database.message_marks_of(user.id).await.unwrap();
+        snoozed += marks
+            .iter()
+            .filter(|(_, mark)| mark.snooze.is_some())
+            .count();
+    }
+    assert_eq!(snoozed, 1, "{}", fixture.display());
 }
