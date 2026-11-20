@@ -1,12 +1,17 @@
 //! Writes each release's migration fixture (`crates/storage/tests/fixtures/v<version>.sqlite`),
 //! a small database made by that release through the server's own pipeline, with a few made-up
-//! records and no personal data (the fixtures README; the release plans in `phase-2.md` and
-//! `phase-3.md`).
+//! records and no personal data (the fixtures README; the release plans in `phase-2.md`,
+//! `phase-3.md`, and `phase-5.md`).
 //!
 //! - **`v0.2.0`:** a truck and every kind of record Phase 2 brought.
 //! - **`v0.3.0`:** the same, plus what Phase 3 brought: a paired desktop, changes it pushed
 //!   (a fuel-up with two photos), one photo removed from it, and that photo's files erased by
 //!   the nightly file check, leaving their audit record.
+//! - **`v0.5.0`:** the same, plus what Phase 5 brought: Oil life (a percentage counting down,
+//!   reset to 100%), engine hours, a derived meter, a calculated field, specs, a requirement
+//!   due when Oil life reaches 15% with its own warning steps and specs, a second usage and a
+//!   requirement needed for it, a template, partial and missed fuel-ups, and a snoozed due
+//!   message.
 //!
 //! Run once, at the release: `cargo test -p server --test make_fixture -- --ignored`. Each
 //! refuses to overwrite a fixture that's already there: once committed, a fixture is never
@@ -22,26 +27,30 @@ mod make_fixture {
     use crate::common::{NOW, setup};
     use domain::access::ActiveMode;
     use domain::api::{
-        AssetsOutcome, AttachmentInput, DocumentInput, EventsOutcome, PlateInput, ReferenceInput,
-        ReferenceLink, ReferencesOutcome, ScheduleOutcome, SquawkInput, SquawksOutcome,
-        UploadOutcome, UploadPurpose,
+        AssetsOutcome, AttachmentInput, DocumentInput, EventsOutcome, InboxOutcome, MarkMessage,
+        PlateInput, ReferenceInput, ReferenceLink, ReferencesOutcome, ScheduleOutcome, SquawkInput,
+        SquawksOutcome, TemplatesOutcome, UploadOutcome, UploadPurpose,
     };
     use domain::asset::AssetId;
-    use domain::asset_form::AssetForm;
+    use domain::asset_form::{AssetForm, FieldForm, MeterForm};
     use domain::attachment::{AttachmentOwner, Content, FileName};
+    use domain::custom_field::FieldKind;
     use domain::dates::{CalendarDate, EventDates};
     use domain::device::DeviceName;
     use domain::device_signature::public_key_of;
     use domain::document::{DocumentType, REGISTRATION};
+    use domain::due::{DaySteps, DueDefaults, IntervalSteps};
     use domain::event::{
         EventId, EventInput, EventLocation, EventSource, FuelDetails, Part, Reading, ReadingSet,
         Task, WorkDetails,
     };
+    use domain::formula::{Formula, ShowsAs};
     use domain::hlc::Hlc;
+    use domain::inbox::{MessageKind, SnoozeRequest};
     use domain::label::Label;
     use domain::lifecycle::{LifecycleDetails, Money, Party, SendOut};
     use domain::location::{LocationSource, Place, TimeZone};
-    use domain::meter::{EventKind, MeterId};
+    use domain::meter::{EventKind, MeterDimension, MeterDirection, MeterId, MeterUnit};
     use domain::notes::Notes;
     use domain::operation::{Operation, OperationChange};
     use domain::plate::{Authority, PlateNumber};
@@ -50,12 +59,16 @@ mod make_fixture {
     use domain::requirement::{
         Applicability, CalendarUnit, ComplianceMode, IntervalRule, Requirement,
     };
+    use domain::spec::{Spec, SpecAmount, SpecId, SpecUnit};
     use domain::squawk::{Severity, SquawkText};
     use domain::sync::{OperationAnswer, PushOutcome};
     use domain::test_support::{ManualClock, test_id};
     use domain::time::UnixMillis;
+    use domain::usage::Usage;
     use lopdf::{Document, Object, dictionary};
-    use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
+    use server::assets::{
+        AssetsContext, add as add_vehicle, add_field, add_meter, view as vehicle_page,
+    };
     use server::attachments::{UploadContext, add as add_attachment, upload};
     use server::events::{add, finish};
     use server::groups::ensure_default_group;
@@ -621,6 +634,258 @@ mod make_fixture {
         server::jobs::run_due_jobs(&jobs, later).await;
     }
 
+    fn meter_form(
+        name: &str,
+        dimension: MeterDimension,
+        unit: MeterUnit,
+        direction: MeterDirection,
+        reset_to: Option<i64>,
+        formula: Option<&str>,
+    ) -> MeterForm {
+        MeterForm {
+            name: name.into(),
+            dimension,
+            unit,
+            precision: 0,
+            description: String::new(),
+            required_for: vec![],
+            direction,
+            reset_to,
+            formula: formula.map(|text| Formula::parse(text).unwrap()),
+        }
+    }
+
+    /// Adds `form` to `truck`, and gives its ID.
+    async fn added_meter(shop: &AssetsContext<'_>, truck: AssetId, form: &MeterForm) -> MeterId {
+        assert_eq!(add_meter(shop, truck, form).await, AssetsOutcome::Done);
+        shop.database
+            .meters_of(truck)
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|(_, meter)| meter.name.as_str() == form.name)
+            .unwrap()
+            .0
+    }
+
+    async fn added_spec(shop: &AssetsContext<'_>, spec: Spec) -> SpecId {
+        let ScheduleOutcome::SavedSpec { id } = server::schedule::add_spec(shop, spec).await else {
+            panic!("the spec wasn't added");
+        };
+        id
+    }
+
+    fn spec(truck: AssetId, name: &str, amount: Option<SpecAmount>, number: Option<&str>) -> Spec {
+        Spec {
+            asset: truck,
+            name: Label::parse(name).unwrap(),
+            amount,
+            detail: None,
+            part_number: number.map(str::to_owned),
+            notes: Notes::default(),
+        }
+    }
+
+    /// Phase 5's meters: Oil life (a percentage counting down, reset to 100%), engine hours,
+    /// and Service miles worked out from them; and Cost per mile on fuel-ups.
+    async fn phase_five_meters(shop: &AssetsContext<'_>, truck: AssetId) -> (MeterId, MeterId) {
+        let oil = meter_form(
+            "Oil life",
+            MeterDimension::Percentage,
+            MeterUnit::Percent,
+            MeterDirection::Down,
+            Some(10_000),
+            None,
+        );
+        let oil = added_meter(shop, truck, &oil).await;
+        let hours = meter_form(
+            "Engine hours",
+            MeterDimension::Duration,
+            MeterUnit::Hours,
+            MeterDirection::Up,
+            None,
+            None,
+        );
+        let hours = added_meter(shop, truck, &hours).await;
+        let service = meter_form(
+            "Service miles",
+            MeterDimension::Distance,
+            MeterUnit::Miles,
+            MeterDirection::Up,
+            None,
+            Some("odometer + engine-hours × 33 mi/h"),
+        );
+        added_meter(shop, truck, &service).await;
+        let cost_per_mile = FieldForm {
+            shown_on: vec![EventKind::Fuel],
+            label: "Cost per mile".into(),
+            kind: FieldKind::Calculated {
+                formula: Formula::parse("round(cost ÷ distance-since-last(odometer), 2)").unwrap(),
+                shows: ShowsAs::MoneyPerDistance,
+            },
+            enabled: true,
+            required_for: vec![],
+            range: None,
+        };
+        assert_eq!(
+            add_field(shop, truck, &cost_per_mile).await,
+            AssetsOutcome::Done
+        );
+        (oil, hours)
+    }
+
+    /// Phase 5's schedule: specs; an oil change by Oil life (15%) or 7,500 mi, with its own
+    /// warning steps and specs; Towing, and a hitch inspection needed for it; and a template.
+    async fn phase_five_schedule(
+        shop: &AssetsContext<'_>,
+        truck: AssetId,
+        odometer: MeterId,
+        oil: MeterId,
+    ) {
+        let quarts = SpecAmount::parse("5.5", SpecUnit::Quarts).unwrap();
+        let engine_oil = added_spec(shop, spec(truck, "Engine oil", Some(quarts), None)).await;
+        let filter = added_spec(shop, spec(truck, "Oil filter", None, Some("FL-500S"))).await;
+        let by_oil_life = Requirement {
+            name: Label::parse("Oil change by oil life").unwrap(),
+            rules: vec![
+                IntervalRule::Reaches {
+                    meter: oil,
+                    at: 1_500,
+                },
+                IntervalRule::Meter {
+                    meter: odometer,
+                    every: 7_500 * MILE,
+                },
+            ],
+            warnings: Some(DueDefaults {
+                interval: IntervalSteps {
+                    coming_up: 25,
+                    due_soon: 15,
+                    very_soon: 5,
+                },
+                days: DaySteps::default(),
+            }),
+            specs: vec![engine_oil, filter],
+            ..oil_change(truck, odometer)
+        };
+        let saved = server::schedule::add_requirement(shop, by_oil_life).await;
+        assert!(
+            matches!(saved, ScheduleOutcome::SavedRequirement { .. }),
+            "{saved:?}"
+        );
+        let towing = Usage {
+            asset: truck,
+            name: Label::parse("Towing").unwrap(),
+            default: false,
+            documents: vec![],
+        };
+        let ScheduleOutcome::SavedUsage { id: towing } =
+            server::usages::add_usage(shop, towing).await
+        else {
+            panic!("Towing wasn't added");
+        };
+        let hitch = Requirement {
+            name: Label::parse("Hitch inspection").unwrap(),
+            rules: vec![IntervalRule::Calendar {
+                every: 12,
+                unit: CalendarUnit::Months,
+                end_of_month: false,
+            }],
+            usages: Some(vec![towing]),
+            ..oil_change(truck, odometer)
+        };
+        let saved = server::schedule::add_requirement(shop, hitch).await;
+        assert!(
+            matches!(saved, ScheduleOutcome::SavedRequirement { .. }),
+            "{saved:?}"
+        );
+        let saved =
+            server::templates::save(shop, truck, Label::parse("Pickup basics").unwrap()).await;
+        assert!(matches!(saved, TemplatesOutcome::Saved { .. }), "{saved:?}");
+    }
+
+    fn fuel(full: bool, missed: bool, volume_ml: i64, cost_minor: i64) -> FuelDetails {
+        FuelDetails {
+            volume_ml,
+            cost_minor: Some(cost_minor),
+            currency: CurrencyCode::USD,
+            filled_full: full,
+            missed_previous: missed,
+            highway_pct: 70,
+            towing_pct: 0,
+            hauling_pct: 0,
+            towed: vec![],
+            reported_economy: None,
+        }
+    }
+
+    /// Sam's Phase 5 events: a partial fill, then a full one (Oil life 80% and 60%, engine
+    /// hours), Oil life reset to 100%, and a fill after a missed one, far enough on that the
+    /// oil change is due soon.
+    async fn phase_five_events(
+        driver: &AssetsContext<'_>,
+        truck: AssetId,
+        odometer: MeterId,
+        (oil, hours): (MeterId, MeterId),
+    ) {
+        let reading = |meter: MeterId, value: i64, reset: bool| Reading {
+            meter,
+            value,
+            reset,
+        };
+        let mut partial = event(truck, odometer, EventKind::Fuel, 6, 52_500);
+        partial.fuel = Some(fuel(false, false, 30_000, 10_500));
+        partial.readings.push(reading(oil, 8_000, false));
+        partial.readings.push(reading(hours, 360_000, false));
+        saved(&add(driver, partial).await);
+        let mut full = event(truck, odometer, EventKind::Fuel, 7, 52_700);
+        full.fuel = Some(fuel(true, false, 40_000, 14_000));
+        full.readings.push(reading(oil, 6_000, false));
+        full.readings.push(reading(hours, 374_400, false));
+        saved(&add(driver, full).await);
+        let mut reset = event(truck, odometer, EventKind::Reading, 8, 52_750);
+        reset.readings.push(reading(oil, 10_000, true));
+        saved(&add(driver, reset).await);
+        let mut after_missed = event(truck, odometer, EventKind::Fuel, 20, 56_700);
+        after_missed.fuel = Some(fuel(true, true, 60_000, 21_000));
+        saved(&add(driver, after_missed).await);
+    }
+
+    /// Sam snoozes the oil change's due message for "1 week or 500 mi".
+    async fn snoozed_message(database: &Database, sam: &SignedIn, clock: &ManualClock) {
+        let messages = server::messages::MessagesContext {
+            database,
+            database_id: test_id(900),
+            user: sam,
+            health: Health::Healthy,
+            problem: None,
+            clock,
+            timers: domain::timers::Timers::NORMAL,
+        };
+        let zone = TimeZone::parse("America/New_York").unwrap();
+        let InboxOutcome::Inbox { inbox } = server::messages::view(&messages, &zone).await else {
+            panic!("no inbox");
+        };
+        let key = inbox
+            .items
+            .iter()
+            .find(|item| matches!(item.message.kind, MessageKind::Due(_)))
+            .expect("a due message")
+            .message
+            .key
+            .clone();
+        let request = SnoozeRequest {
+            days: Some(7),
+            amount: Some(500 * MILE),
+        };
+        let outcome =
+            server::messages::mark(&messages, &zone, key, MarkMessage::Snooze { request }).await;
+        let InboxOutcome::Inbox { inbox } = outcome else {
+            panic!("not snoozed: {outcome:?}");
+        };
+        assert_eq!(inbox.snoozed.len(), 1);
+    }
+
     /// The fixture for `version` at `crates/storage/tests/fixtures/`, refusing one already there.
     fn fixture_path(version: &str) -> std::path::PathBuf {
         let target = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -685,6 +950,38 @@ mod make_fixture {
             odometer,
         ))
         .await;
+        write_to(database, &target).await;
+    }
+    #[tokio::test]
+    #[ignore = "writes the v0.5.0 migration fixture; run once at the release"]
+    async fn write_the_v0_5_0_fixture() {
+        let target = fixture_path("0.5.0");
+        let (temp, database, jordan, sam) = setup().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let clock = ManualClock::new(NOW);
+        let admin = in_mode(&jordan, ActiveMode::Admin);
+        let (truck, odometer) = truck(&database, &admin, &clock).await;
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        let driver = context(&database, &sam, &clock);
+        everyday(&shop, &driver, truck, odometer).await;
+        papers(&shop, &database, &store, &maintainer, truck).await;
+        recall_and_send_out(&shop, truck, odometer).await;
+        Box::pin(desktop_changes(
+            &database,
+            &store,
+            &temp.path().join("snapshots"),
+            truck,
+            odometer,
+        ))
+        .await;
+        // After the nightly file check, which ran 9 days on (the changes' clock can't go back).
+        clock.set(at(10));
+        let meters = phase_five_meters(&shop, truck).await;
+        phase_five_schedule(&shop, truck, odometer, meters.0).await;
+        phase_five_events(&driver, truck, odometer, meters).await;
+        clock.set(at(20));
+        snoozed_message(&database, &sam, &clock).await;
         write_to(database, &target).await;
     }
 }

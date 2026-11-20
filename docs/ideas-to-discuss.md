@@ -177,3 +177,13 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Written how:** in the app's messages (translated, offline on the desktop), or Markdown bundled into the app.
   - **Which topics** after formulas: due soon and the warnings, fuel economy's stretches, readiness, roles.
 
+
+### 23. Documents needed by kind of vehicle, and custom vehicle types 🟡
+*Raised by the human, 2026-11-19, in the Phase 5 test run · Suggested phase: Phase 6 (polish)*
+
+- **Idea:** an Admin chooses which document types each kind of vehicle needs (a track-only car needs no registration or insurance). Going further: **custom vehicle types**, made by the Admin, each saying which of the app's rules apply to it.
+- **What there is today:** each vehicle's profile (car, truck, trailer, …) sets the documents its default usage needs, and each vehicle's **usages** (decision #086) can change them, one vehicle at a time. So a track car's **Drivable** can already need nothing.
+- **To discuss:**
+  - **Household defaults per kind:** a setting that changes what new vehicles of a kind start with, or one that also follows existing vehicles.
+  - **Custom types:** built on the data-driven profiles (#030): which meters, fields, documents, and usages a type starts with, and which rules (fuel economy, readiness, documents) apply to it.
+  - **How they relate to templates** (#084), which already copy a schedule, specs, and usages.

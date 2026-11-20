@@ -38,7 +38,7 @@
 | 4 | **Specs and service bundles** | ✅ | The vehicle's **Specs** list (a name, a value with units or a part number, a note); requirements link to specs; a logged task's **parts pre-filled** from them (editable; "update the spec too?"); **bundled sign-off** (one event, each task's clock reset); named household **templates**, copied onto a vehicle (#031) | The oil change pre-fills oil and filter; the 10k service signs off three tasks |
 | 5 | **Fuel economy** | ✅ | **Stretches** from one full fill to the next, with partials added in; a missed fill-up drops its stretch; **ⓘ** on **Filled full** and **Missed previous fill-up**; averages, a chart with gaps (drawn by the app, no chart library), breakdowns by condition and towed vehicle; the Overview's latest figures; the vehicle-reported figure beside the app's (#033) | Partial and missed fills behave as the ⓘ says |
 | 6 | **Readiness** | ✅ | **Usages** per vehicle (#086): a default named for its kind (Drivable, Towable, Usable) needing its profile's documents, and more added by Maintainers; each requirement **needed for** chosen usages; **"Ready to use?"** on the Overview, each usage with every item's ✓, !, or ✗ and its reason; the Garage chip; who may sign off or defer an issue, enforced (#063) | Expired insurance: not ready; an open or deferred High: not ready |
-| 7 | **Calculated fields and derived meters** | ☑️ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
+| 7 | **Calculated fields and derived meters** | ✅ | **Formulas** over built-in and custom fields by their stable keys, unit-aware, worked out when shown and never stored (#057). **Derived meters** worked out from other meters (e.g. odometer + idle hours × 33), usable in interval rules; a percentage can be derived too | A derived meter drives a rule; a calculated field on a fuel-up |
 
 **Releases:** **`v0.5.0` at the end of Phase 5** (`docs/releasing.md`), with a migration fixture and a regression pass, as `v0.3.0` had. The version follows the phase's number, since Phase 4 moved after the MVP (#041).
 
@@ -840,3 +840,68 @@
 **Open issues** (reviewed 2026-11-18): none touch formulas or meters; #27 (custom roles) would one day change who may write formulas.
 
 **Not in this milestone:** an in-app help guide (idea 22); formulas across vehicles, and in reports (Phase 6); a catalogue of ready-made fields (idea 16); copying derived meters and calculated fields with a schedule or template.
+
+---
+
+### The `v0.5.0` release plan
+*Approved 2026-11-19 · Branch: `release/v0.5.0` (from `dev`) · `docs/releasing.md` · Decisions #021, #062, #079, #081*
+
+**Goal:** Phase 5 ends with **`v0.5.0`** tagged on `main`, and the main server on it. It's the household's first release that tells them what's due. Along the way: issue **#41** fixed, the release's **migration fixture**, an updated **README**, and the **regression pass** on the test server.
+
+**Phase 5's exit criteria** (above): milestones 1–7 are all ✅. Their checks are the phase's test plan, `docs/test-plans/p5-phase.md`, run whole on the test server as the regression pass (#081). "An app one API version behind still syncs" is left to the server's tests, as in `v0.3.0`.
+
+**Reviewed against** the open GitHub issues and the ideas list, 2026-11-19:
+- **#41 sqlx and RUSTSEC-2026-0459:** **now fixable.** sqlx 0.9.1's SQLite driver allows `libsqlite3-sys` up to 0.40, and the advisory is fixed from 0.39. Step R.a; **to close** with a comment once released (the human runs it).
+- **#44, #31, #29, #27, #26, #24, #15:** later phases; no effect.
+- **The ideas list:** no effect.
+
+**Questions for the human, and the answers** (2026-11-19, both as recommended):
+1. **Issue #41:** fixed **in the release**, as its own step, so the regression pass covers it.
+2. **The regression pass:** the whole Phase 5 plan, plus a short **Earlier releases** part (about 12 steps: `v0.3.0`'s main web paths, and the desktop's offline fuel-up and sync) and a table matching each exit criterion to its steps.
+
+**Choices from the plan** (no question needed):
+- **Desktop packages:** still not in this release; they come in Phase 6 (#079). The desktop app is built locally (`dx bundle`).
+- **The fixture** `crates/storage/tests/fixtures/v0.5.0.sqlite` is made by this release's code (schema 27), through the server's pipeline, with made-up records for what Phase 5 brought. `make_fixture.rs` gets a `v0.5.0` test beside the others.
+- **The version** goes to `0.5.0` (Phase 4 comes after the MVP, #041). The API version stays at 2. The changelog comes from `git cliff --tag v0.5.0`, and the third-party notices are remade (the dependency update changes them).
+
+**Steps:**
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| R.0 | ☑️ | `docs: the v0.5.0 release plan` | This plan; milestone 7 marked ✅ | none |
+| R.a | ☑️ | `fix(deps): sqlx 0.9.1 and libsqlite3-sys 0.40` | sqlx 0.9.1; storage's SQLCipher `libsqlite3-sys` 0.40 (both features); the `RUSTSEC-2026-0459` ignore removed from `deny.toml`; the full checks, SQLCipher's included (Windows's vendored OpenSSL is checked by CI on the PR) | updates only |
+| R.b | ☑️ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
+| R.c | ☑️ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
+| R.d | ☑️ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
+| R.d2 | ☑️ | `fix(app): a template is applied only with Apply` | From the regression pass (the human's first note): choosing a vehicle in **Apply to…** only selects it; **Apply** copies the template | none |
+| R.e | ☑️ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
+
+**Written so far**
+- **R.0:** this plan; milestone 7 marked ✅ (PR #61).
+- **R.a:** sqlx 0.9.1 (workspace) and `libsqlite3-sys` 0.40 (storage's `sqlcipher` feature, both targets' builds), so the desktop's SQLite is 3.54.1 inside SQLCipher 4.20, which fixes **RUSTSEC-2026-0459**. `deny.toml`'s ignore for it is gone (`ignore = []`).
+  - **Changed from the plan, a new crate:** from 0.39, `libsqlite3-sys` takes SQLCipher's sources from **`sqlcipher-src`**, which declares SQLite's `blessing` and libtomcrypt's `WTFPL` licenses. `cargo deny` refused both. The human chose to allow them **for that crate only** (decision #088). libtomcrypt isn't compiled for any target we build.
+  - **The notices:** `scripts/notices.sh` reads SQLCipher's license from `sqlcipher-src` (its copyright line changed), and the file is remade (sqlx's and `libsqlite3-sys`'s versions).
+  - **SQLCipher 4.20** (from 4.10) opens copies 4.10 made: the same 4.x format and defaults; the regression pass's desktop steps open an existing copy, which shows it on a real one.
+- **R.b:** `make_fixture.rs` gains `write_the_v0_5_0_fixture` (ignored, like the others), with `v0.3.0`'s records and then Phase 5's, all through the server:
+  - **meters:** Oil life (a percentage counting down, resetting to 100%), engine hours, and **Service miles** (`odometer + engine-hours × 33 mi/h`);
+  - **a calculated field,** Cost per mile on fuel-ups;
+  - **the schedule:** two specs; an oil change due when Oil life reaches 15% or at 7,500 mi, with its own warning steps and both specs; **Towing** beside the default usage, and a hitch inspection needed for it; the template **Pickup basics**;
+  - **Sam's events:** a partial fill and a full one (Oil life 80% and 60%, engine hours), Oil life reset to 100%, and a fill after a missed one, far enough on that the first oil change is due soon;
+  - **Sam's due message,** snoozed for "1 week or 500 mi".
+
+  The result is `crates/storage/tests/fixtures/v0.5.0.sqlite`: schema 27, 4 meters (all keyed), 4 requirements, 2 usages, 2 specs, 1 template, 5 fuel-ups (1 partial, 1 after a missed one), 1 reset reading, 1 snoozed mark, the users `jordan` and `sam`, `integrity_check` ok, and no personal data. The writer moves its clock past the nightly file check (9 days on) before Phase 5's changes, since the server refuses a change timed before the last one.
+
+  `migration_fixtures.rs` now tells fixtures apart by version. Those made before `v0.5.0` still have to come through with Phase 5's columns and tables empty. From `v0.5.0`, every meter has a stored key, Oil life counts down and resets to 100%, the formulas read back as typed, and the requirement's rule, steps, specs, and usages, the usages, specs, template, partial and missed fuel-ups, and the snooze all read back.
+- **R.c:** `README.md` for `v0.5.0`: the opening says what the app works out; the status is `v0.5.0` (Phase 5, with Phase 4 after the MVP); Messages mentions due messages and snoozing; and a new **What it works out for you** section covers what's due (the steps, Overdue, the Maintenance tab, the Overview, the Garage, Due & squawks), meters that count down and reset, specs, bundles, and templates, fuel economy, **Ready to use?**, and formulas, linking `docs/help/formulas.md`.
+- **R.d:** `docs/test-plans/p5-phase.md` gains **Earlier releases and the exit criteria**:
+  - 15 steps:
+    - E.1–E.9: `v0.3.0`'s web paths, with the version and the notices (SQLCipher's new copyright line, sqlx 0.9.1, `libsqlite3-sys` 0.40).
+    - E.10–E.12: the desktop. It opens the copy it already has (made by SQLCipher 4.10, now opened by 4.20, issue #41), logs offline with a photo, and keeps a refused change.
+    - E.13–E.14: two exit criteria no milestone's steps checked by hand (expired insurance, and a deferred High issue, deferred in a repair job).
+    - E.15: the nightly jobs.
+  - A table matching each exit criterion to its steps ("an app one API version behind" stays with the server's tests).
+  - **Also fixed:** step 1.1 expected only migration 0022, but the whole plan runs on one update. It now expects schema 27, the default usages, and the meter keys, and says steps 2.1–7.1 read the same log.
+  - The plan's opening says what the new part is for.
+- **R.d2** (from the regression pass, the human's first note; added to the release at the human's choice, 2026-11-19): on **Templates**, choosing a vehicle in **Apply to…** applied the template at once. Now the menu only selects the vehicle, and an **Apply** button beside it (off until one is chosen) copies the template; the menu then resets. A small component, `ApplyTemplate`, and the message `template-apply`. **No automated test:** the app has no component-rendering tests, and the server's apply is unchanged and tested. The test plan's new step **F.1** checks it on the test server. The human's second note became idea 23 (Phase 6).
+- **R.e:** the version is `0.5.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` gets its `## [0.5.0]` section from `git cliff --tag v0.5.0` (the human runs it). The preview: 28 features (four per milestone, three for milestone 5, and milestone 7's formula language), 1 fix (#41), 20 docs, and 2 tests since `v0.3.0`. Merges are skipped (decision #021). Accepted as they are: "Sqlx 0.9.1 …", capitalized by the changelog's formatting, and "Phase 3 complete", the `v0.3.0` release's closing commit, listed here because it came after that tag. The third-party notices were already current (`scripts/notices.sh --check`). The API version stays at 2.

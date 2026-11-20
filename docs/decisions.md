@@ -1044,3 +1044,10 @@ Settled decisions. **Don't re-open a recorded decision.** If one seems wrong, ra
 - **Why:** the human, 2026-11-18: a small language of our own (no extra syntax or dependency, errors in our words, works offline), with common statistics, including over a field's history; typing with menus to help rather than menus alone; help that's short at hand, with a fuller guide (in the app later, idea 22).
 - **Limits, accepted:** formulas are per vehicle and aren't copied with a schedule or template yet. A derived meter's inputs can't be resettable or derived themselves. The full guide is on GitHub, in English, until idea 22.
 
+
+### 088. SQLCipher's sources come from `sqlcipher-src`, whose SQLite and libtomcrypt licenses are allowed for it alone
+*Decided: 2026-11-19 · Phase plan: phase-5.md, the `v0.5.0` release plan (R.a) · Builds on #079 · Closes GitHub issue #41's blocker*
+
+- **Decision:** the desktop app's SQLCipher build moves to `libsqlite3-sys` 0.40 (with sqlx 0.9.1), which fixes RUSTSEC-2026-0459. From 0.39, `libsqlite3-sys` takes SQLCipher's C sources from a separate crate, **`sqlcipher-src`** (MIT), which declares the licenses of what it carries: SQLCipher (BSD-3-Clause), SQLite (public domain, `blessing`), and libtomcrypt (public domain or `WTFPL`). `deny.toml` allows `blessing` and `WTFPL` **for `sqlcipher-src` only** (a `[[licenses.exceptions]]` entry); every other crate still needs the allow list. The advisory's ignore is removed. The third-party notices read SQLCipher's license from `sqlcipher-src`.
+- **Why:** the human, 2026-11-19. These are the same SQLite sources the app already shipped (before, inside `libsqlite3-sys`, declared MIT). libtomcrypt is only compiled for targets without a system crypto library; `libsqlite3-sys` 0.40 never compiles it for ours (macOS uses CommonCrypto, Windows and Linux OpenSSL).
+- **Limits, accepted:** a new crate in the desktop's build, published by one person outside the rusqlite project, though it's what `libsqlite3-sys`'s own SQLCipher feature uses. It's a build dependency, so `cargo-about` doesn't list it among the Rust crates; its SQLCipher license is in the notices' own section.

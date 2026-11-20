@@ -21,10 +21,10 @@ tracing.workspace = true
 # uses, so this only picks its build. Off unless the `sqlcipher` feature is on: the server keeps
 # plain SQLite (until Phase 7, #071).
 [target.'cfg(not(windows))'.dependencies]
-libsqlite3-sys = { version = "0.37.0", default-features = false, optional = true, features = ["bundled-sqlcipher"] }
+libsqlite3-sys = { version = "0.40.0", default-features = false, optional = true, features = ["bundled-sqlcipher"] }
 
 [target.'cfg(windows)'.dependencies]
-libsqlite3-sys = { version = "0.37.0", default-features = false, optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
+libsqlite3-sys = { version = "0.40.0", default-features = false, optional = true, features = ["bundled-sqlcipher-vendored-openssl"] }
 
 [features]
 # The desktop app's build: SQLite with SQLCipher, so `Database::open_local` can encrypt.
