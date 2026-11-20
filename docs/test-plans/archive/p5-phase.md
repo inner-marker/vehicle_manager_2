@@ -305,8 +305,8 @@
 
 | Done | # | Step | Expected result |
 |---|---|---|---|
-| [ ] | F.1 | **Mac browser**, Maintainer mode: add a vehicle with no schedule (or use one). **Templates** → a template's **Apply to…** → choose that vehicle | Nothing is copied yet: no "Copied …" line, and the vehicle's **Set up** still has no requirements. **Apply** is now on (it was off until a vehicle was chosen). |
-| [ ] | F.2 | **Apply** | "Copied … onto …", and the vehicle has the template's requirements. The menu goes back to **Apply to…**, and that vehicle is no longer offered. |
+| [x] | F.1 | **Mac browser**, Maintainer mode: add a vehicle with no schedule (or use one). **Templates** → a template's **Apply to…** → choose that vehicle | Nothing is copied yet: no "Copied …" line, and the vehicle's **Set up** still has no requirements. **Apply** is now on (it was off until a vehicle was chosen). |
+| [x] | F.2 | **Apply** | "Copied … onto …", and the vehicle has the template's requirements. The menu goes back to **Apply to…**, and that vehicle is no longer offered. |
 
 **The exit criteria** (`docs/phase_plans/phase-5.md`), and the steps that show each:
 
@@ -328,7 +328,7 @@
 
 - **Every step passed** (milestones 1–7, Earlier releases E.1–E.15, and the exit criteria by the table above).
 - **Feedback** (Human Notes below), reviewed 2026-11-19:
-  - **Applying a template needs a confirmation step:** choose the vehicle, then **Apply**. To fix soon (the human).
+  - **Applying a template needs a confirmation step:** choose the vehicle, then **Apply**. To fix soon (the human). Fixed in the release (step R.d2), and checked by F.1–F.2 on the test server with `:dev` (both passed, 2026-11-20).
   - **Which documents each kind of vehicle needs, and custom vehicle types:** for the polish phase, as idea 23 in `docs/ideas-to-discuss.md`. Part of it works today: each vehicle's usages (milestone 6) choose the documents they need, so a track-only car's **Drivable** can need neither registration nor insurance.
 
 # Human Notes
