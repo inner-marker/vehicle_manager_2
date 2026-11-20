@@ -873,7 +873,8 @@
 | R.b | ☑️ | `test(storage): the v0.5.0 migration fixture` | `v0.3.0`'s records plus Oil life (counting down, with a reset), a "reaches 15%" rule and its warning steps, a snoozed due message, specs and a template, full, partial, and missed fuel-ups, a usage, a derived meter, and a calculated field; `migration_fixtures.rs` checks them | none |
 | R.c | ☑️ | `docs: README for v0.5.0` | The status (Phase 5) and what's new: what's due, messages and snooze, specs and bundles, fuel economy, readiness, and formulas (`docs/help/formulas.md`) | none |
 | R.d | ☑️ | `docs: the v0.5.0 regression additions` | Question 2, in `docs/test-plans/p5-phase.md` | none |
-| R.e | ⬜ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
+| R.d2 | ☑️ | `fix(app): a template is applied only with Apply` | From the regression pass (the human's first note): choosing a vehicle in **Apply to…** only selects it; **Apply** copies the template | none |
+| R.e | ☑️ | `chore: release v0.5.0` | The version, `Cargo.lock`, the third-party notices, and `CHANGELOG.md` (the human runs `git cliff`) | none |
 | R.f | ⬜ | (the human) | The PR into `dev`; the regression pass; the PR from `dev` into `main`; the tag; the Release workflow; the main and test servers on `0.5.0`; closing #41 | — |
 
 **Written so far**
@@ -902,3 +903,5 @@
   - A table matching each exit criterion to its steps ("an app one API version behind" stays with the server's tests).
   - **Also fixed:** step 1.1 expected only migration 0022, but the whole plan runs on one update. It now expects schema 27, the default usages, and the meter keys, and says steps 2.1–7.1 read the same log.
   - The plan's opening says what the new part is for.
+- **R.d2** (from the regression pass, the human's first note; added to the release at the human's choice, 2026-11-19): on **Templates**, choosing a vehicle in **Apply to…** applied the template at once. Now the menu only selects the vehicle, and an **Apply** button beside it (off until one is chosen) copies the template; the menu then resets. A small component, `ApplyTemplate`, and the message `template-apply`. **No automated test:** the app has no component-rendering tests, and the server's apply is unchanged and tested. The test plan's new step **F.1** checks it on the test server. The human's second note became idea 23 (Phase 6).
+- **R.e:** the version is `0.5.0` (root `Cargo.toml`; `Cargo.lock` follows), and `CHANGELOG.md` gets its `## [0.5.0]` section from `git cliff --tag v0.5.0` (the human runs it). The preview: 28 features (four per milestone, three for milestone 5, and milestone 7's formula language), 1 fix (#41), 20 docs, and 2 tests since `v0.3.0`. Merges are skipped (decision #021). Accepted as they are: "Sqlx 0.9.1 …", capitalized by the changelog's formatting, and "Phase 3 complete", the `v0.3.0` release's closing commit, listed here because it came after that tag. The third-party notices were already current (`scripts/notices.sh --check`). The API version stays at 2.
