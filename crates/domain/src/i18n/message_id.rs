@@ -697,8 +697,6 @@ define_messages! {
     REBUILD_CODE => "rebuild-code",
     /// 3B field.
     REBUILD_PASSWORD => "rebuild-password",
-    /// 3B field.
-    REBUILD_TYPE => "rebuild-type",
     /// 3B's button.
     REBUILD_BUTTON => "rebuild-button",
     /// 3B busy.
@@ -1415,8 +1413,6 @@ define_messages! {
     DELETE_TITLE => "delete-title",
     /// Delete dialog: when to delete.
     DELETE_TEXT => "delete-text",
-    /// Delete dialog: type the name; takes `name` (text).
-    DELETE_TYPE => "delete-type",
     /// Button: delete the vehicle.
     DELETE_DELETE => "delete-delete",
     /// Button while deleting.
@@ -3602,4 +3598,6 @@ define_messages! {
     SETTINGS_SECTION_HOUSEHOLD => "settings-section-household",
     /// Settings, on a narrow window: back to the list of sections.
     SETTINGS_BACK => "settings-back",
+    /// Type-to-confirm: above the text to type (deleting a vehicle, REBUILD).
+    CONFIRM_TYPE => "confirm-type",
 }

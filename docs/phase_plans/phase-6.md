@@ -103,7 +103,7 @@
 |---|---|---|---|---|
 | 1a | ☑️ | `docs: Phase 6 milestone 1 plan (fixes and Settings)` | This plan and the sketch | none |
 | 1b | ☑️ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
-| 1c | ⬜ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
+| 1c | ☑️ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
 | 1d | ⬜ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
 | 1e | ⬜ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
 | 1f | ⬜ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
@@ -122,3 +122,8 @@
   - **The last section** is remembered on the device (`ui/device_memory.rs`, local storage, as the + Log chooser keeps its last vehicle; only the section's name, nothing secret, #071). The timeline's page size (1g) will use it too.
   - **Narrow windows** (under 640 px): the column becomes a list of sections with ›; a section opens on its own with **← Settings** above it.
   - **Messages:** seven new (the section names and ← Settings); "THIS DEVICE" and "SIGN-IN" are now "This device" and "Sign-in" (the column's headings are uppercased by the stylesheet).
+- **1c:** one component, `TypeToConfirm` (`screens/account.rs`), for both places that ask for typed confirmation: **deleting a vehicle** and **REBUILD**.
+  - It shows **"To confirm, type:"**, then the exact text in a monospace chip, outlined and tinted in the warning colour (spaces shown as they are; a long name wraps; a tap selects all of it), then a monospace box to type in. The chip sits inside the box's label, so a screen reader reads it with the box.
+  - The checks are unchanged: a vehicle's name ignores case and spaces at either end (`confirms_name`); REBUILD is exact (now the constant `REBUILD_WORD`).
+  - **Messages:** `delete-type` and `rebuild-type` are replaced by one, `confirm-type`.
+  - Any later typed confirmation uses the same component.

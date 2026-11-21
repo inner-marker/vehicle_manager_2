@@ -329,6 +329,7 @@ settings-section-appearance = Appearance
 settings-section-lock = Lock and PIN
 settings-section-household = Defaults for everyone
 settings-back = ← Settings
+confirm-type = To confirm, type:
 pin-not-digits = Use digits only.
 pin-too-short = Use at least 6 digits.
 pin-too-long = Use 12 digits or fewer.
@@ -491,7 +492,6 @@ rebuild-what-devices = Other computers pair again; people's own settings and sav
 rebuild-what-photos = Photos this computer never opened are left out
 rebuild-code = The server's setup code (from its log)
 rebuild-password = Your password (from now on)
-rebuild-type = Type REBUILD to confirm
 rebuild-button = Rebuild
 rebuild-busy = Rebuilding…
 rebuild-next = Next
@@ -1087,7 +1087,6 @@ move-no-other-group = There's no other group yet. The household's Admin adds gro
 delete-title = Delete { $name }?
 delete-text = Only for a vehicle added by mistake: its records go with it. To keep its history, set its status to Retired or Disposed instead.
 # $name (text): the vehicle's name.
-delete-type = Type { $name } to confirm.
 delete-delete = Delete
 delete-deleting = Deleting…
 

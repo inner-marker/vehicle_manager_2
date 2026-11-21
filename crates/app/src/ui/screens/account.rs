@@ -82,6 +82,41 @@ pub(crate) fn Field(
     }
 }
 
+/// Type-to-confirm (phase-6.md 1c, `p6m1-settings-options.svg` part 4): "To confirm, type:",
+/// then the exact text in a monospace, highlighted chip (spaces and case shown as they are),
+/// then the box to type it in. The chip is inside the label, so it's read out with the box.
+// rsx! expands event handlers to fully qualified `dioxus_elements::events::on*` calls,
+// and the prelude glob also imports those functions, so rustc flags the macro's own
+// paths. Not fixable in our code (explicit imports would depend on Dioxus internals).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(crate) fn TypeToConfirm(
+    expected: String,
+    value: Signal<String>,
+    #[props(default)] autofocus: bool,
+) -> Element {
+    let mut value = value;
+    rsx! {
+        label { class: "field",
+            span { class: "field-label", {tr(messages::CONFIRM_TYPE)} }
+            code { class: "confirm-text", {expected} }
+            input {
+                class: "field-input mono",
+                r#type: "text",
+                autocomplete: "off",
+                autocapitalize: "off",
+                autofocus,
+                spellcheck: "false",
+                value: value(),
+                oninput: move |event| value.set(event.value()),
+            }
+        }
+    }
+}
+
 /// A form error, above the button.
 #[component]
 pub(crate) fn FormError(message: Option<String>) -> Element {

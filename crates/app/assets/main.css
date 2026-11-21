@@ -599,6 +599,24 @@ html {
     letter-spacing: 0.05em;
 }
 
+/* Type-to-confirm: the exact text to type, in a highlighted chip (phase-6.md 1c). */
+.confirm-text {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 3px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+    color: var(--text);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
 .form-error {
     margin: 0;
     padding: 8px 12px;
