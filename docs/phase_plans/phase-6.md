@@ -104,7 +104,7 @@
 | 1a | ☑️ | `docs: Phase 6 milestone 1 plan (fixes and Settings)` | This plan and the sketch | none |
 | 1b | ☑️ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
 | 1c | ☑️ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
-| 1d | ⬜ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
+| 1d | ☑️ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
 | 1e | ⬜ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
 | 1f | ⬜ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
 | 1g | ⬜ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
@@ -127,3 +127,8 @@
   - The checks are unchanged: a vehicle's name ignores case and spaces at either end (`confirms_name`); REBUILD is exact (now the constant `REBUILD_WORD`).
   - **Messages:** `delete-type` and `rebuild-type` are replaced by one, `confirm-type`.
   - Any later typed confirmation uses the same component.
+- **1d:** **🔒 Lock now** locks a desktop with a PIN at once, the same way "Lock after" does when it sits idle (`lock::lock_now`: the key, the token, and the copy's key leave memory, and the lock shows).
+  - **The account menu:** between Change password and Sign out. Whether it shows (`lock::has_lock`) is checked as the menu opens, since it reads the keychain.
+  - **Settings → Lock and PIN:** a row between Lock after and Change PIN, with "Locks at once, as Lock after does."
+  - Not on the web, or on a desktop without a PIN.
+  - **Messages:** two new, `lock-now` and `lock-now-note`.

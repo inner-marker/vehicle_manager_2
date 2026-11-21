@@ -3600,4 +3600,8 @@ define_messages! {
     SETTINGS_BACK => "settings-back",
     /// Type-to-confirm: above the text to type (deleting a vehicle, REBUILD).
     CONFIRM_TYPE => "confirm-type",
+    /// The account menu and Settings → Lock and PIN: lock this desktop at once.
+    LOCK_NOW => "lock-now",
+    /// Settings → Lock and PIN, beside Lock now.
+    LOCK_NOW_NOTE => "lock-now-note",
 }

@@ -211,7 +211,7 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
     }
 }
 
-/// The account chip: the user's name; change password; sign out.
+/// The account chip: the user's name; change password; Lock now (a desktop with a PIN); sign out.
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -220,6 +220,8 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
 pub(crate) fn AccountChip() -> Element {
     let state = use_auth();
     let mut menu_open = use_signal(|| false);
+    // Lock now shows on a desktop with a PIN; checked as the menu opens (it reads the keychain).
+    let mut can_lock = use_signal(|| false);
     let mut password_dialog = use_signal(|| false);
     // Changes on this computer not yet sent: signing out asks first (phase-3.md 5e, 3B).
     let mut unsent_check = use_signal(|| false);
@@ -244,7 +246,12 @@ pub(crate) fn AccountChip() -> Element {
                 class: "chip",
                 "aria-label": tr(messages::ACCOUNT_MENU_LABEL),
                 "aria-expanded": menu_open(),
-                onclick: move |_| menu_open.toggle(),
+                onclick: move |_| {
+                    if !menu_open() {
+                        can_lock.set(super::lock::has_lock());
+                    }
+                    menu_open.toggle();
+                },
                 span { class: "chip-name-full", {session.display_name.clone()} }
                 span { class: "chip-name-short", {initial} }
                 span { class: "chip-caret", "▾" }
@@ -262,6 +269,18 @@ pub(crate) fn AccountChip() -> Element {
                         },
                         span { class: "menu-check" }
                         span { {tr(messages::ACCOUNT_CHANGE_PASSWORD)} }
+                    }
+                    if can_lock() {
+                        button {
+                            class: "menu-item",
+                            role: "menuitem",
+                            onclick: move |_| {
+                                menu_open.set(false);
+                                super::lock::lock_now();
+                            },
+                            span { class: "menu-check", "🔒" }
+                            span { {tr(messages::LOCK_NOW)} }
+                        }
                     }
                     button { class: "menu-item", role: "menuitem", onclick: sign_out_now,
                         span { class: "menu-check" }

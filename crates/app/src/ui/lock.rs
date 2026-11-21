@@ -11,7 +11,8 @@
 //!   sealed sign-in; after 5 wrong PINs only the password works, after 10 wrong tries the
 //!   desktop signs out and forgets it.
 //!
-//! [`LockSettings`] adds **Lock after** and **Change PIN** to Settings → This device (3e).
+//! [`LockSettings`] adds **Lock after**, **Lock now** (phase-6.md 1d), and **Change PIN** to
+//! Settings → Lock and PIN (3e). The account menu has **Lock now** too.
 //!
 //! Unlocking runs Argon2 (about 0.3 s) on a blocking thread, so the window stays responsive.
 //! The web app has no lock: [`LockGate`] just shows the app there.
@@ -462,6 +463,28 @@ mod desktop {
         }
     }
 
+    /// **Lock now**: locks at once, as "Lock after" does when the desktop sits idle.
+    #[expect(
+        unused_qualifications,
+        reason = "false positive in rsx! event-handler expansion"
+    )]
+    #[component]
+    pub(super) fn LockNowRow() -> Element {
+        rsx! {
+            div { class: "setting-row",
+                span { class: "setting-label", {tr(messages::LOCK_NOW)} }
+                button {
+                    class: "secondary-button",
+                    r#type: "button",
+                    onclick: move |_| super::lock_now(),
+                    "🔒 "
+                    {tr(messages::LOCK_NOW)}
+                }
+                span { class: "muted-note", {tr(messages::LOCK_NOW_NOTE)} }
+            }
+        }
+    }
+
     /// What changing the PIN came to.
     enum Changed {
         Done,
@@ -794,14 +817,15 @@ mod desktop {
     }
 }
 
-/// Settings → This device (phase-3.md 3e, option 3A): **Lock after** and **Change PIN**, on a
-/// desktop with a sealed sign-in. Nothing on the web.
+/// Settings → Lock and PIN (phase-3.md 3e, option 3A): **Lock after**, **Lock now**, and
+/// **Change PIN**, on a desktop with a sealed sign-in. Nothing on the web.
 #[component]
 pub(crate) fn LockSettings() -> Element {
     #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
     if crate::pairing::has_sealed_sign_in() {
         return rsx! {
             desktop::LockAfterRow {}
+            desktop::LockNowRow {}
             desktop::ChangePinRow {}
         };
     }
