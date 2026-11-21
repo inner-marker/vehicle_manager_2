@@ -33,7 +33,7 @@
 
 | # | Milestone | Status | What it delivers | You can check |
 |---|---|---|---|---|
-| 1 | **Fixes and Settings** | ⬜ | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
+| 1 | **Fixes and Settings** | 🔨 | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
 | 2 | **Faster logging** | ⬜ | **Photos and documents added before the first save.** **Multi-page document capture** on the web (pages joined into one PDF). **Pinch to zoom** in the photo viewer on a phone. **Save a new place while logging** (#26). **Labor rates:** one for the household, overridden by a shop's own; typed labor time fills in its cost, which can still be changed (#089). **A main photo for each vehicle** (#24), on the Garage and the Overview | A fuel-up with its receipt photo in one go; a dealer job's cost from its rate |
 | 3 | **Vehicles and schedules** | ⬜ | **Documents needed by kind of vehicle, and custom vehicle types** (idea 23). **Pinned vehicles** at the top of the Garage (idea 15). **A catalogue of ready-made fields and sets** (idea 16). **Chained intervals**, e.g. first at 100,000 mi, then every 50,000 mi (idea 21) | A "Track car" type needing no registration; a timing belt's chained rule |
 | 4 | **People and security** | ⬜ | **Change a person's display name and username** (#44). **Custom roles** (#27), from their own sub-plan, written first (#071). **Optional email:** SMTP setup and password reset by email (idea 13, sub-plan 03, once confirmed); email notifications come later. Sub-plan 04's **Phase 6 items:** password or PIN to enter Admin mode, rate limits across the API, growing sign-in delays kept in the database, the fail2ban log format, and the guide for running on the internet (#29's code items) | A "Chauffeur" role; repeated wrong sign-ins slowed; a reset email |
@@ -80,3 +80,37 @@
 ## Step details
 
 *Each milestone's steps are planned here when it starts.*
+
+### Milestone 1: Fixes and Settings
+
+*Planned 2026-11-21 · Branch `milestone/p6-m1-fixes-settings` · Sketch: `docs/ui-sketches/p6m1-settings-options.svg`*
+
+**Reviewed against:** no new issues since the phase plan; the ideas and sub-plans have no effect on this milestone.
+
+**What the code shows:**
+- **Settings** is one page under three tabs (You, Devices, Household in Admin mode). You has 12 rows in one list, then This device (theme, keep on top, lock and PIN).
+- **Type-to-confirm** is in two places: deleting a vehicle (`delete-type`) and **REBUILD**. The text to type is inside the sentence, in plain type.
+- **The lock:** `lock_now()` exists (the idle watcher calls it), but no menu offers it.
+- **The window's size:** saved as the inner size and restored with `with_inner_size`, which looks right. The bug was seen only under `dx serve`, which may restore its own window state while developing; a bundled build is checked first.
+- **The wait:** the desktop waits up to `SESSION_WAIT` (8 s) for the session check before opening its copy.
+- **The timeline** loads all of a vehicle's events (the Overview and Fuel tab need them too) and draws every row. Paging only draws a page at a time; no server or API change.
+
+**The human's choices (2026-11-21):**
+- **Settings: option 1,** a column of sections down the left; on a narrow window, a list that opens each section, with ‹ Settings to go back. Sections: **You** (Units and formats; Vehicles and messages; Photos; Sign-in), **This device** (Appearance and window; Lock and PIN), **Devices**, and **Household** (Defaults for everyone, Admin mode only).
+- **Timeline page size:** a 50 / 100 / 250 menu on the timeline, remembered on the device (100 by default). No migration or API change.
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 1a | ☑️ | `docs: Phase 6 milestone 1 plan (fixes and Settings)` | This plan and the sketch | none |
+| 1b | ⬜ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
+| 1c | ⬜ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
+| 1d | ⬜ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
+| 1e | ⬜ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
+| 1f | ⬜ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
+| 1g | ⬜ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
+| 1h | ⬜ | `docs: milestone 1 section of the Phase 6 test plan` | `docs/test-plans/p6-phase.md` begins, with the second-monitor check (`p3m1-groundwork.md` step 10) | none |
+
+**Risks:** 1f's answer differs by operating system (so it can be left off per platform); 1e may be a `dx serve` quirk.
+
+**Written so far**
+- **1a:** this plan; the sketch `p6m1-settings-options.svg` (three options; option 1 chosen; also the confirm chip, Lock now in the account menu, and the paging bar).
