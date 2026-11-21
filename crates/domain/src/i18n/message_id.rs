@@ -3604,4 +3604,16 @@ define_messages! {
     LOCK_NOW => "lock-now",
     /// Settings → Lock and PIN, beside Lock now.
     LOCK_NOW_NOTE => "lock-now-note",
+    /// The timeline's paging bar: which records this page shows. $first, $last, $total (text).
+    TIMELINE_RANGE => "timeline-range",
+    /// The paging bar: the newer page.
+    TIMELINE_NEWER => "timeline-newer",
+    /// The paging bar: the older page.
+    TIMELINE_OLDER => "timeline-older",
+    /// The paging bar: the page size menu's label.
+    TIMELINE_PER_PAGE => "timeline-per-page",
+    /// The paging bar: the date to jump to.
+    TIMELINE_JUMP => "timeline-jump",
+    /// The paging bar, for screen readers.
+    TIMELINE_PAGES => "timeline-pages",
 }

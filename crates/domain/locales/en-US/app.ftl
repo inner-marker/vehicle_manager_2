@@ -1588,6 +1588,13 @@ timeline-all = All
 timeline-fuel-ups = Fuel-ups
 timeline-readings = Readings
 timeline-empty = Nothing logged yet. Use + Log to add a fuel-up or reading.
+# $first, $last, $total (text, thousands already grouped): "Records 101–200 of 1,342".
+timeline-range = Records { $first }–{ $last } of { $total }
+timeline-newer = ‹ Newer
+timeline-older = Older ›
+timeline-per-page = Per page
+timeline-jump = Jump to
+timeline-pages = Pages
 timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.

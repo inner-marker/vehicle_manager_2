@@ -3234,6 +3234,34 @@ body:has(.log-form) .fab {
     padding-bottom: 80px;
 }
 
+.page-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.page-range {
+    margin-right: auto;
+    color: var(--text-muted);
+}
+
+.page-bar .choice-chip:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.page-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.page-control .field-input {
+    width: auto;
+}
+
 .timeline-month {
     display: flex;
     flex-direction: column;

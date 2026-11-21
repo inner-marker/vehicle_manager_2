@@ -107,7 +107,7 @@
 | 1d | ☑️ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
 | 1e | ☑️ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
 | 1f | ☑️ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
-| 1g | ⬜ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
+| 1g | ☑️ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
 | 1h | ⬜ | `docs: milestone 1 section of the Phase 6 test plan` | `docs/test-plans/p6-phase.md` begins, with the second-monitor check (`p3m1-groundwork.md` step 10) | none |
 
 **Risks:** 1f's answer differs by operating system (so it can be left off per platform); 1e may be a `dx serve` quirk.
@@ -143,3 +143,9 @@
   - **Changed from the plan:** a route to the server alone isn't enough, because Tailscale's tunnel keeps its routes with Wi-Fi off. So "no network" is: **no route to the internet** (a public IPv4 or IPv6 address), **and** the server can't be reached without it (its name can't be looked up within 1 s, it has no route, or its only addresses are Tailscale ones: 100.64.0.0/10, `fd7a:115c:a1e0::/48`).
   - **Waits as before:** Wi-Fi on but the server down or Tailscale off; Tailscale with an exit node; a server on a home network with no internet.
   - **Tests:** reading the server address (ports, IPv6, bad ones), Tailscale addresses, the verdict in each case, and a route to loopback. Only the asking itself is desktop-only, so CI's Build job now also runs `cargo test -p app --lib network_route` on macOS, Windows, and Linux (`main-gate.yml`). Turning Wi-Fi off is in the test plan (1h).
+- **1g:** the Timeline, the Fuel tab, and the Maintenance tab's Jobs page (`timeline.rs`); no server or API change.
+  - **A record** is an event that counts, with the originals it corrected beneath it, so a correction is never split across pages. A month's heading shows again at the top of a page that starts partway through it.
+  - **The bar**, above and below the list once there are more than 50 records: "Records 101–200 of 1,342", ‹ Newer and Older › (greyed out at either end). Above the list it also has **Per page** (50 / 100 / 250; 100 by default, remembered on the device with `device_memory`, key `timelinePageSize`) and **Jump to** a date, which opens the page with the first record on or before it (before every record: the last page). The bar below the list scrolls back up to the top one.
+  - **Starts at the newest page** when the filter, the page size, the vehicle, or the tab changes.
+  - **Pure and tested:** the records (`entries`) and their months (`by_month`), the page (`page_at`, kept in range), the remembered size (`page_size_from`, only an offered one), Jump to (`page_for_date`), and grouping thousands.
+  - **Messages:** six new (`timeline-range`, `-newer`, `-older`, `-per-page`, `-jump`, `-pages`).
