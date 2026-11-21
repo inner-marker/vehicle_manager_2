@@ -318,10 +318,17 @@ settings-you-help = Follow the household default, or choose your own. Changes sa
 settings-household-help = For everyone who hasn't chosen their own.
 settings-household-admin-only = Switch to Admin mode to change the household defaults.
 settings-use-household = Use household default
-settings-this-device = THIS DEVICE
+settings-this-device = This device
 settings-theme = Theme
 settings-keep-on-top = Keep window on top
 settings-keep-on-top-note = Above other windows, on this computer
+settings-section-units = Units and formats
+settings-section-vehicles = Vehicles and messages
+settings-section-photos = Photos
+settings-section-appearance = Appearance
+settings-section-lock = Lock and PIN
+settings-section-household = Defaults for everyone
+settings-back = ← Settings
 pin-not-digits = Use digits only.
 pin-too-short = Use at least 6 digits.
 pin-too-long = Use 12 digits or fewer.
@@ -752,7 +759,7 @@ language-english-us = English (US)
 
 ## Idle sign-out and Admin timeout (decision #049)
 
-settings-sign-in = SIGN-IN
+settings-sign-in = Sign-in
 setting-idle-sign-out = Sign out when idle
 idle-sign-out-one-hour = After 1 hour
 idle-sign-out-four-hours = After 4 hours

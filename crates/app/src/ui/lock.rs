@@ -808,6 +808,19 @@ pub(crate) fn LockSettings() -> Element {
     rsx! {}
 }
 
+/// Whether this device has a lock: a desktop with a PIN. Settings shows **Lock and PIN**,
+/// and the account menu **Lock now**, only then.
+pub(crate) fn has_lock() -> bool {
+    #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
+    {
+        crate::pairing::has_sealed_sign_in()
+    }
+    #[cfg(not(all(feature = "desktop", not(target_arch = "wasm32"))))]
+    {
+        false
+    }
+}
+
 /// On the sign-in card: "Signed out after too many wrong tries", once. Nothing on the web.
 #[component]
 pub(crate) fn LockSignedOutNotice() -> Element {

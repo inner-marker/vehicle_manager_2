@@ -102,7 +102,7 @@
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
 | 1a | ☑️ | `docs: Phase 6 milestone 1 plan (fixes and Settings)` | This plan and the sketch | none |
-| 1b | ⬜ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
+| 1b | ☑️ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
 | 1c | ⬜ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
 | 1d | ⬜ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
 | 1e | ⬜ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
@@ -114,3 +114,11 @@
 
 **Written so far**
 - **1a:** this plan; the sketch `p6m1-settings-options.svg` (three options; option 1 chosen; also the confirm chip, Lock now in the account menu, and the paging bar).
+- **1b:** Settings is a column of sections (`settings.rs`, option 1):
+  - **You:** Units and formats (distance, volume, economy, pressure, date format, currency, language); Vehicles and messages (the squawk word, due warnings, when due messages start); Photos (keeping originals, in a Maintainer's mode or above); Sign-in (sign out when idle).
+  - **This device:** Appearance (theme, and keep on top on a desktop); Lock and PIN (only on a desktop with a PIN, `lock::has_lock`); Devices.
+  - **Household:** Defaults for everyone, for the household Admin in Admin mode, with every household row under the same four headings.
+  - Each row is unchanged and saves as before. Which sections show, and which opens, are pure and tested (`Offered`): a section remembered but not offered now (Household after leaving Admin mode) opens Units instead.
+  - **The last section** is remembered on the device (`ui/device_memory.rs`, local storage, as the + Log chooser keeps its last vehicle; only the section's name, nothing secret, #071). The timeline's page size (1g) will use it too.
+  - **Narrow windows** (under 640 px): the column becomes a list of sections with ›; a section opens on its own with **← Settings** above it.
+  - **Messages:** seven new (the section names and ← Settings); "THIS DEVICE" and "SIGN-IN" are now "This device" and "Sign-in" (the column's headings are uppercased by the stylesheet).

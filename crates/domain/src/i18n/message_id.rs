@@ -3588,4 +3588,18 @@ define_messages! {
     SCHEDULE_HIDDEN => "schedule-hidden",
     /// Work log: a task for a recall or bulletin.
     WORK_FROM_RECALL => "work-from-recall",
+    /// Settings: the units, formats, and language section.
+    SETTINGS_SECTION_UNITS => "settings-section-units",
+    /// Settings: the squawk word, due warnings, and due messages section.
+    SETTINGS_SECTION_VEHICLES => "settings-section-vehicles",
+    /// Settings: the photos section (keeping originals).
+    SETTINGS_SECTION_PHOTOS => "settings-section-photos",
+    /// Settings: the theme and window section.
+    SETTINGS_SECTION_APPEARANCE => "settings-section-appearance",
+    /// Settings: the lock and PIN section (a desktop with a PIN).
+    SETTINGS_SECTION_LOCK => "settings-section-lock",
+    /// Settings: the household defaults section (Admin mode).
+    SETTINGS_SECTION_HOUSEHOLD => "settings-section-household",
+    /// Settings, on a narrow window: back to the list of sections.
+    SETTINGS_BACK => "settings-back",
 }
