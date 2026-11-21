@@ -796,7 +796,8 @@ pub fn open_offline_now() {
 }
 
 /// Asks `request` (the session check) for up to `crate::client::SESSION_WAIT`. With the copy
-/// open, [`CONNECTING`] says when that ends, and [`open_offline_now`] ends it sooner.
+/// open, [`CONNECTING`] says when that ends, and [`open_offline_now`] ends it sooner. With no
+/// network at all, it doesn't ask: the server counts as unreachable at once (phase-6.md 1f).
 ///
 /// # Errors
 ///
@@ -804,6 +805,11 @@ pub fn open_offline_now() {
 pub async fn check_session<T>(
     request: impl Future<Output = Result<T, ServerFnError>>,
 ) -> Result<T, ServerFnError> {
+    if crate::network_route::has_no_network(server()).await {
+        return Err(ServerFnError::Request(
+            dioxus_fullstack::RequestError::Timeout("this computer has no network".into()),
+        ));
+    }
     let wait = crate::client::SESSION_WAIT;
     if current().is_none() {
         return crate::client::within(wait, request).await;

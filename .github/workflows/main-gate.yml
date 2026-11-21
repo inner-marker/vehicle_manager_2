@@ -60,6 +60,8 @@ jobs:
         with:
           cache-key: build
       - run: cargo build --workspace
+      # The desktop's route check (phase-6.md 1f), on each system.
+      - run: cargo test -p app --lib network_route
 
   web:
     name: Web (WASM) build
