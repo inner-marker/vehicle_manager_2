@@ -1615,6 +1615,10 @@ scan-first-page = 📷 First page
 scan-next-page = 📷 Next page
 scan-page-hint = or choose photos of the pages
 scan-working = Working…
+log-save-place = ☆ Save as a place…
+place-save-here-title = Save as a place
+# $where (text): "44.0462, -123.0220 · Springfield, OR".
+place-save-here-at = Here: { $where }
 # $count (number): how many pages the PDF will have.
 scan-make-pdf = { $count ->
     [one] Make PDF (1 page)

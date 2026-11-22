@@ -3646,4 +3646,10 @@ define_messages! {
     SCAN_WORKING => "scan-working",
     /// Join the pages. $count (number).
     SCAN_MAKE_PDF => "scan-make-pdf",
+    /// Under Where on a log form: save the point as one of your places (#26).
+    LOG_SAVE_PLACE => "log-save-place",
+    /// The Save as a place dialog's title.
+    PLACE_SAVE_HERE_TITLE => "place-save-here-title",
+    /// Where the new place is. $where (text): the point, and the town found there.
+    PLACE_SAVE_HERE_AT => "place-save-here-at",
 }

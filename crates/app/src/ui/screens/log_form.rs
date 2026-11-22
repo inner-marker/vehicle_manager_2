@@ -1909,8 +1909,20 @@ fn WhereRows(
     });
     let mut no_place = inputs.no_place_reason;
     let error = use_signal(|| None::<String>);
+    // ☆ Save as a place… (#26, phase-6.md 2e).
+    let mut saving_place = use_signal(|| false);
     let place = super::log_input::place(&inputs.typed()).ok().flatten();
     let saved = (picker.located)().and_then(|located| located.saved);
+    let offer_saving =
+        super::places::offers_saving((picker.coordinates)().is_some(), saved.is_some());
+    let save_here = rsx! {
+        if offer_saving {
+            button { class: "link-button", r#type: "button", onclick: move |_| saving_place.set(true), {tr(messages::LOG_SAVE_PLACE)} }
+        }
+        if saving_place() {
+            super::places::SaveHere { picker, on_close: move |()| saving_place.set(false) }
+        }
+    };
     if let (Some(place), false) = (&place, changing()) {
         let title = saved.map_or_else(
             || place.city.as_str().to_owned(),
@@ -1924,6 +1936,7 @@ fn WhereRows(
                 }
                 button { class: "link-button", r#type: "button", onclick: move |_| changing.set(true), {tr(messages::LOG_CHANGE)} }
             }
+            {save_here}
             FormError { message: inputs.problem_at(Target::Where) }
         };
     }
@@ -1964,6 +1977,7 @@ fn WhereRows(
             }
             button { class: "link-button", r#type: "button", onclick: move |_| no_place.set(Some(String::new())), {tr(messages::LOG_NO_PLACE)} }
         }
+        {save_here}
         FormError { message: inputs.problem_at(Target::Where) }
     }
 }
