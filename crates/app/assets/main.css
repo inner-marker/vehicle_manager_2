@@ -4389,6 +4389,33 @@ body:has(.photo-viewer) {
     border-radius: 6px;
 }
 
+/* Phase 6 2d: the photo's frame handles pinch, pan, and double-tap itself (the page doesn't
+   zoom); a zoomed photo stays within the frame. */
+.photo-zoom {
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+    touch-action: none;
+    cursor: zoom-in;
+}
+
+.photo-zoom.zoomed {
+    cursor: grab;
+}
+
+.photo-zoom img {
+    display: block;
+    transform-origin: center;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* The steps stay above a zoomed photo. */
+.photo-viewer-step {
+    z-index: 1;
+}
+
 /* 1A (phase-3.md 6e): offline, a photo whose full size isn't here: its thumbnail, enlarged,
    with a note under it. */
 .photo-viewer-preview {

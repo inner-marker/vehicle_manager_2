@@ -30,6 +30,7 @@ pub(crate) mod nav;
 pub(crate) mod offline;
 pub(crate) mod outbox;
 pub(crate) mod pdfs;
+mod photo_zoom;
 pub(crate) mod photos;
 pub(crate) mod protective;
 pub(crate) mod recent_servers;

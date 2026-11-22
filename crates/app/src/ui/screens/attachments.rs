@@ -1228,7 +1228,20 @@ fn Viewer(
                         button { class: "photo-viewer-step photo-viewer-previous", r#type: "button", "aria-label": tr(messages::ATTACHMENT_PREVIOUS), onclick: move |_| on_index.call(previous), "‹" }
                     }
                     match url() {
-                        Some(src) if mime == FileType::Jpeg.mime() => rsx! { img { src: "{src}", alt: "{name}" } },
+                        Some(src) if mime == FileType::Jpeg.mime() => {
+                            // Pinch to zoom (phase-6.md 2d): a frame per photo, so each starts at 1×.
+                            let frame = crate::ui::photo_zoom::frame_id(id);
+                            let mounted = frame.clone();
+                            rsx! {
+                                div {
+                                    key: "{frame}",
+                                    id: "{frame}",
+                                    class: "photo-zoom",
+                                    onmounted: move |_| crate::ui::photo_zoom::start(&mounted),
+                                    img { src: "{src}", alt: "{name}", draggable: "false" }
+                                }
+                            }
+                        }
                         Some(_) if pdf_state().failed => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_PDF_CANT_SHOW)} } },
                         Some(src) => rsx! {
                             PdfPages {
