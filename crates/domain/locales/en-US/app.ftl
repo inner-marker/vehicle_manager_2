@@ -1595,6 +1595,7 @@ timeline-older = Older ›
 timeline-per-page = Per page
 timeline-jump = Jump to
 timeline-pages = Pages
+attachment-added-on-save = Added when you save. ✕ removes one first.
 timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.

@@ -6,6 +6,8 @@
 //! - **+ Add** opens a sheet: **Take photo** or **Choose photos**, the **size** (Small, Medium,
 //!   or Large; the default follows the kind of event, #036), and **Keep the original** for
 //!   Maintainers and Admins when the household allows it.
+//! - **On a record not saved yet** ([`HeldStrip`], phase-6.md 2b), files upload as they're
+//!   added and are tied to the record when it's saved.
 //! - **Tapping one opens it** full screen ([`Viewer`]): its details (when, where, camera, size,
 //!   who added it), Download, Original, and Remove; ‹ › (or the arrow keys) for the next one.
 
@@ -184,6 +186,98 @@ pub(crate) fn AttachmentStrip(
     }
 }
 
+/// The strip on a record that isn't saved yet (phase-6.md 2b; sketch part 1): what was added
+/// so far, each with ✕, and + Add. The files are uploaded as they're added and held in `held`
+/// until the record is saved ([`attach_held`]). Keep the original is offered to whoever may
+/// keep originals on this vehicle's own photos.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(crate) fn HeldStrip(
+    asset: AssetId,
+    held: Signal<Vec<Held>>,
+    heading: MessageId,
+    default_size: PhotoSize,
+) -> Element {
+    let mut adding = use_signal(|| false);
+    let mut may_keep_originals = use_signal(|| false);
+    use_effect(use_reactive!(|asset| {
+        spawn(async move {
+            let found = load(asset, AttachmentOwner::Vehicle).await;
+            may_keep_originals.set(found.is_ok_and(|found| found.may_keep_originals));
+        });
+    }));
+    let tiles: Vec<(usize, String, Option<String>, Option<u32>)> = held
+        .read()
+        .iter()
+        .enumerate()
+        .map(|(index, file)| {
+            let pages = match file.content {
+                Content::Document { pages } => Some(pages),
+                Content::Photo { .. } => None,
+            };
+            (
+                index,
+                file.name.as_str().to_owned(),
+                file.preview.clone(),
+                pages,
+            )
+        })
+        .collect();
+    rsx! {
+        section { class: "attachment-strip",
+            h3 { class: "section-heading", {tr(heading).to_uppercase()} }
+            div { class: "attachment-tiles",
+                for (index, name, preview, pages) in tiles {
+                    div { key: "{index}-{name}", class: "attachment-held",
+                        div {
+                            class: if pages.is_some() { "attachment-tile attachment-tile-pdf" } else { "attachment-tile" },
+                            title: "{name}",
+                            if let Some(src) = preview {
+                                img { src: "{src}", alt: "" }
+                            }
+                            if let Some(pages) = pages {
+                                span { class: "attachment-tile-badge", {tr_with(messages::ATTACHMENT_PDF_PAGES, &[("count", MessageArg::from(i64::from(pages)))])} }
+                            }
+                        }
+                        button {
+                            class: "attachment-held-remove",
+                            r#type: "button",
+                            "aria-label": tr_with(messages::ATTACHMENT_UNPICK, &[("name", MessageArg::from(name.as_str()))]),
+                            onclick: move |_| {
+                                let mut files = held.write();
+                                if index < files.len() {
+                                    files.remove(index);
+                                }
+                            },
+                            "✕"
+                        }
+                    }
+                }
+                button {
+                    class: "attachment-add",
+                    r#type: "button",
+                    onclick: move |_| adding.set(true),
+                    {tr(messages::ATTACHMENT_ADD)}
+                }
+            }
+            p { class: "muted-note", {tr(messages::ATTACHMENT_ADDED_ON_SAVE)} }
+        }
+        if adding() {
+            AddSheet {
+                asset,
+                owner: AttachmentOwner::Vehicle,
+                default_size,
+                may_keep_originals: may_keep_originals(),
+                on_close: move |_| adding.set(false),
+                hold: Some(held),
+            }
+        }
+    }
+}
+
 /// One thumbnail (a photo's, or a PDF's first page, or a page tile).
 #[expect(
     unused_qualifications,
@@ -273,15 +367,77 @@ async fn send(purpose: UploadPurpose, bytes: Vec<u8>) -> Result<UploadedFile, Me
     }
 }
 
-/// Everything about adding one photo: read its metadata, shrink it, upload it (and its original
-/// and metadata if kept), then add it to `owner`.
-async fn add_photo(
+/// A file uploaded for a record that isn't saved yet (phase-6.md 2b): tied to the record when
+/// it's saved ([`attach_held`]), or dropped. Uploaded files nothing points to are left for the
+/// server's file check, as after any upload that isn't added.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct Held {
+    name: FileName,
+    file: domain::attachment::StoredFile,
+    thumbnail: Option<domain::attachment::StoredFile>,
+    content: Content,
+    /// A `data:` URL to show it by before it's saved (the shrunk photo, or a PDF's first page).
+    preview: Option<String>,
+}
+
+impl Held {
+    /// What adds it to `owner` of vehicle `asset`.
+    fn input(self, asset: AssetId, owner: AttachmentOwner) -> AttachmentInput {
+        AttachmentInput {
+            asset,
+            owner,
+            name: self.name,
+            file: self.file,
+            thumbnail: self.thumbnail,
+            content: self.content,
+        }
+    }
+}
+
+/// What ties `held` to `owner` once it's saved, in the order they were added.
+pub(crate) fn held_inputs(
     asset: AssetId,
     owner: AttachmentOwner,
+    held: Vec<Held>,
+) -> Vec<AttachmentInput> {
+    held.into_iter()
+        .map(|file| file.input(asset, owner))
+        .collect()
+}
+
+/// Ties `held` to `owner` (a record just saved). Offline on the desktop, each goes into the
+/// outbox after the record. Returns how many couldn't be added (logged; they can be added again
+/// on the record's page).
+pub(crate) async fn attach_held(asset: AssetId, owner: AttachmentOwner, held: Vec<Held>) -> usize {
+    let mut failed = 0;
+    for input in held_inputs(asset, owner, held) {
+        if let Err(problem) = attach(input).await {
+            tracing::warn!(target: log_area::UI, ?problem, "a file added before saving couldn't be tied to the record");
+            failed += 1;
+        }
+    }
+    failed
+}
+
+/// Adds an attachment from files already uploaded.
+async fn attach(input: AttachmentInput) -> Result<(), MessageId> {
+    match data::add_attachment(input).await {
+        Ok(AttachmentsOutcome::Saved { id }) => {
+            tracing::debug!(target: log_area::UI, attachment = %id, "attachment added");
+            Ok(())
+        }
+        Ok(other) => Err(refusal(&other)),
+        Err(error) => Err(problem_from_error(&error).message()),
+    }
+}
+
+/// Everything about preparing one photo: read its metadata, shrink it, upload it (and its
+/// original and metadata if kept).
+async fn prepare_photo(
     file: dioxus::html::FileData,
     size: PhotoSize,
     keep_original: bool,
-) -> Result<(), MessageId> {
+) -> Result<Held, MessageId> {
     let name = FileName::from_upload(&file.name())
         .map_err(domain::attachment::AttachmentProblem::message)?;
     let bytes = file
@@ -296,11 +452,12 @@ async fn add_photo(
     let shrunk = shrink(&bytes, &mime, size.long_edge(), read.local_time.as_deref()).await;
     let mut metadata = read.metadata;
     metadata.taken_at = metadata.taken_at.or(shrunk.taken_at);
-    let photo = send(
-        UploadPurpose::Photo { size },
-        shrunk.jpeg.unwrap_or_else(|| bytes.clone()),
-    )
-    .await?;
+    let (sent, sent_mime) = match shrunk.jpeg {
+        Some(jpeg) => (jpeg, "image/jpeg".to_owned()),
+        None => (bytes.clone(), mime),
+    };
+    let preview = Some(files::data_url(&sent_mime, &sent));
+    let photo = send(UploadPurpose::Photo { size }, sent).await?;
     let original = if keep_original {
         let kept = send(UploadPurpose::Original, bytes).await?;
         kept.file_type.map(|file_type| Original {
@@ -318,9 +475,7 @@ async fn add_photo(
             .map(|uploaded| uploaded.file);
     }
     let (width, height) = photo.pixels.unwrap_or((0, 0));
-    let input = AttachmentInput {
-        asset,
-        owner,
+    Ok(Held {
         name,
         file: photo.file,
         thumbnail: photo.thumbnail,
@@ -331,24 +486,13 @@ async fn add_photo(
             metadata,
             original,
         },
-    };
-    match data::add_attachment(input).await {
-        Ok(AttachmentsOutcome::Saved { id }) => {
-            tracing::debug!(target: log_area::UI, attachment = %id, "photo added");
-            Ok(())
-        }
-        Ok(other) => Err(refusal(&other)),
-        Err(error) => Err(problem_from_error(&error).message()),
-    }
+        preview,
+    })
 }
 
-/// Everything about adding one PDF: upload it (the server checks it and counts its pages),
-/// draw and upload its first page as the thumbnail, then add it to `owner`.
-async fn add_pdf(
-    asset: AssetId,
-    owner: AttachmentOwner,
-    file: dioxus::html::FileData,
-) -> Result<(), MessageId> {
+/// Everything about preparing one PDF: upload it (the server checks it and counts its pages),
+/// and draw and upload its first page as the thumbnail.
+async fn prepare_pdf(file: dioxus::html::FileData) -> Result<Held, MessageId> {
     let name = FileName::from_upload(&file.name())
         .map_err(domain::attachment::AttachmentProblem::message)?;
     // Refused here before sending 60 MB for the server to refuse.
@@ -360,9 +504,12 @@ async fn add_pdf(
         .await
         .map_err(|_| messages::ATTACHMENT_UNREADABLE)?
         .to_vec();
-    let thumbnail = first_page_thumbnail(&bytes).await;
+    let first_page = first_page_thumbnail(&bytes).await;
+    let preview = first_page
+        .as_ref()
+        .map(|jpeg| files::data_url(FileType::Jpeg.mime(), jpeg));
     let uploaded = send(UploadPurpose::Document, bytes).await?;
-    let thumbnail = match thumbnail {
+    let thumbnail = match first_page {
         // A thumbnail that doesn't upload isn't worth losing the PDF over: it shows a page tile.
         Some(jpeg) => send(UploadPurpose::DocumentThumbnail, jpeg)
             .await
@@ -370,24 +517,15 @@ async fn add_pdf(
             .map(|uploaded| uploaded.file),
         None => None,
     };
-    let input = AttachmentInput {
-        asset,
-        owner,
+    Ok(Held {
         name,
         file: uploaded.file,
         thumbnail,
         content: Content::Document {
             pages: uploaded.pages.unwrap_or(1),
         },
-    };
-    match data::add_attachment(input).await {
-        Ok(AttachmentsOutcome::Saved { id }) => {
-            tracing::debug!(target: log_area::UI, attachment = %id, "PDF added");
-            Ok(())
-        }
-        Ok(other) => Err(refusal(&other)),
-        Err(error) => Err(problem_from_error(&error).message()),
-    }
+        preview,
+    })
 }
 
 /// How big each size is, for the picker.
@@ -411,6 +549,9 @@ fn AddSheet(
     default_size: PhotoSize,
     may_keep_originals: bool,
     on_close: EventHandler<bool>,
+    /// A record not saved yet: files are uploaded and held here, not added to `owner`.
+    #[props(default)]
+    hold: Option<Signal<Vec<Held>>>,
 ) -> Element {
     let mut size = use_signal(|| default_size);
     let mut keep_original = use_signal(|| false);
@@ -440,17 +581,23 @@ fn AddSheet(
             for (index, (file, pdf)) in files.into_iter().enumerate() {
                 progress.set(Some((index + 1, count)));
                 let name = file.name();
-                let added = if pdf {
-                    add_pdf(asset, owner, file.clone()).await
+                let prepared = if pdf {
+                    prepare_pdf(file.clone()).await
                 } else {
-                    add_photo(
-                        asset,
-                        owner,
+                    prepare_photo(
                         file.clone(),
                         size(),
                         keep_original() && !crate::ui::offline::is_offline_now(),
                     )
                     .await
+                };
+                let added = match (prepared, hold) {
+                    (Ok(prepared), Some(mut hold)) => {
+                        hold.write().push(prepared);
+                        Ok(())
+                    }
+                    (Ok(prepared), None) => attach(prepared.input(asset, owner)).await,
+                    (Err(problem), _) => Err(problem),
                 };
                 match added {
                     Ok(()) => added_any.set(true),
@@ -960,5 +1107,40 @@ mod tests {
         assert_eq!(bytes_text(350 * 1024), "350 KB");
         assert_eq!(bytes_text(1024 * 1024), "1.0 MB");
         assert_eq!(bytes_text(2_621_440), "2.5 MB");
+    }
+
+    #[test]
+    fn held_files_are_tied_to_the_saved_record_in_the_order_added() {
+        use domain::attachment::{FileHash, StoredFile};
+        use domain::test_support::test_id;
+        let held = |byte: u8, name: &str, pages: u32| Held {
+            name: FileName::from_upload(name).unwrap(),
+            file: StoredFile {
+                hash: FileHash::from_bytes([byte; 32]),
+                bytes: 1000,
+            },
+            thumbnail: None,
+            content: Content::Document { pages },
+            preview: None,
+        };
+        let asset: AssetId = test_id(1);
+        let owner = AttachmentOwner::Event {
+            event: test_id(2),
+            task: None,
+        };
+        let inputs = held_inputs(
+            asset,
+            owner,
+            vec![held(1, "receipt.pdf", 1), held(2, "invoice.pdf", 3)],
+        );
+        let names: Vec<&str> = inputs.iter().map(|input| input.name.as_str()).collect();
+        assert_eq!(names, vec!["receipt.pdf", "invoice.pdf"]);
+        assert!(
+            inputs
+                .iter()
+                .all(|input| input.asset == asset && input.owner == owner)
+        );
+        assert_eq!(inputs[1].content, Content::Document { pages: 3 });
+        assert!(held_inputs(asset, owner, Vec::new()).is_empty());
     }
 }

@@ -182,7 +182,7 @@
 | Step | Status | Commit title | Contents | New dependencies |
 |---|---|---|---|---|
 | 2a | ☑️ | `docs: Phase 6 milestone 2 plan (faster logging)` | This plan and the sketch; milestone 1 marked done | none |
-| 2b | ⬜ | `feat(app): photos and documents before the first save` | A new fuel-up, reading, maintenance, or repair gets the strip (sketch part 1). Files upload as they're added and are tied to the record when it's saved; ✕ or Cancel drops them. Offline on the desktop, they go into the outbox after the record. The pure part (which files to tie, in order) tested | none |
+| 2b | ☑️ | `feat(app): photos and documents before the first save` | A new fuel-up, reading, maintenance, or repair gets the strip (sketch part 1). Files upload as they're added and are tied to the record when it's saved; ✕ or Cancel drops them. Offline on the desktop, they go into the outbox after the record. The pure part (which files to tie, in order) tested | none |
 | 2c | ⬜ | `feat: scan pages into one document` | **+ Add → Scan pages** on the web (sketch part 2): each shot a page, ‹ › to move one, ✕ to drop it, **Make PDF**. A new operation joins uploaded photos into one PDF (server, and the desktop's copy offline); API version 3. Tests: the PDF has the pages in order, its page count, size limits, and refusing a file that isn't a photo | none (`lopdf` already used) |
 | 2d | ⬜ | `feat(app): pinch to zoom a photo` | The viewer's own gestures (sketch part 6): pinch and pan, double-tap; on a computer, the trackpad's pinch, Ctrl + scroll, double-click. ‹ › and swiping only when not zoomed; zoom resets on the next photo. The zoom's limits and panning bounds pure and tested | none |
 | 2e | ⬜ | `feat(app): save a place while logging` (#26) | **☆ Save as a place…** under Where on every log form (sketch part 3): name (from the place found), radius, then added to your places, online or offline. Hidden once the record matches a saved place | none |
@@ -197,3 +197,10 @@
 
 **Written so far**
 - **2a:** this plan; the sketch `p6m2-faster-logging-options.svg` (photos before the first save, scanning pages, saving a place, labor rates and the job's cost, the main photo with two Garage card options (A chosen), and pinch to zoom); milestone 1 marked done.
+- **2b:** a new fuel-up or reading has the photo strip under the form, and a new maintenance or repair has its job photos where "Save the job first" used to be (`HeldStrip`, `attachments.rs`).
+  - **+ Add** is the same sheet (Take photo, Choose photos, Choose PDF, the size). Each file is prepared and uploaded as it's added, as before, but **held** instead of added; its tile shows from what was uploaded (the shrunk photo, or the PDF's first page), with **✕** to drop it.
+  - **On Save,** the held files are tied to the new record, in the order added (`attach_held`), before Finish (a finished job takes no more). Offline on the desktop each goes into the outbox after the record. One that can't be added is logged, and can be added again on the record's page. Cancel, or leaving, drops them; their uploads are left for the server's file check, as after any upload that isn't added.
+  - **Keep the original** is offered to whoever may keep originals on the vehicle's own photos (asked of the vehicle, since the record doesn't exist yet); others add originals after saving.
+  - Corrections still add photos after saving, as before.
+  - **Tested:** the held files become the record's attachments in order (`held_inputs`).
+  - **Messages:** one new, `attachment-added-on-save`.

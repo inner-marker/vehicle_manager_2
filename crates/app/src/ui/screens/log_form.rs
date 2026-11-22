@@ -46,7 +46,7 @@ use domain::requirement::{Bundle, BundleId};
 use domain::squawk::SquawkId;
 use domain::time::Clock;
 
-use super::attachments::{AttachmentStrip, photo_size_for};
+use super::attachments::{AttachmentStrip, Held, HeldStrip, attach_held, photo_size_for};
 use super::life_input::TypedLife;
 use super::life_part::{DisposeDialog, LifePart};
 use super::log_chooser::use_log_chooser;
@@ -720,6 +720,8 @@ fn FormBody(
     let job = !kind.finalizes_by_itself();
     let all_squawks = use_vehicle_squawks(asset);
     let mut finishing = use_signal(|| false);
+    // Photos and documents added before the first save (phase-6.md 2b), tied to it once saved.
+    let mut held = use_signal(Vec::<Held>::new);
     // A disposal asks first (#067).
     let mut confirming = use_signal(|| false);
     let required = required_items(kind, &view.meters, &view.fields);
@@ -806,6 +808,18 @@ fn FormBody(
         spawn(async move {
             // Boxed: on the desktop a save runs the server's code on the copy (a large future).
             let result = Box::pin(send(mode, input, reason(), removed_tasks)).await;
+            // Before finishing: a finished job takes no more attachments.
+            if mode == Mode::New
+                && let Ok(EventsOutcome::Saved { id, .. }) = &result
+            {
+                let files = held();
+                held.set(Vec::new());
+                let owner = AttachmentOwner::Event {
+                    event: *id,
+                    task: None,
+                };
+                attach_held(asset, owner, files).await;
+            }
             if matches!(result, Ok(EventsOutcome::Saved { .. })) {
                 update_specs(&to_update, &spec_list).await;
             }
@@ -958,6 +972,14 @@ fn FormBody(
                     default_size: photo_size_for(&view.asset.kind, kind),
                 }
             }
+            if !job && mode == Mode::New {
+                HeldStrip {
+                    asset,
+                    held,
+                    heading: messages::ATTACHMENT_PHOTOS,
+                    default_size: photo_size_for(&view.asset.kind, kind),
+                }
+            }
             if job {
                 div { class: "log-item",
                     CurrencyPick { inputs, home: units.currency }
@@ -975,6 +997,7 @@ fn FormBody(
                     squawk_problem: work_problem(Target::Squawks),
                     end_problem,
                     editing: if let Mode::Edit(id) = mode { Some(id) } else { None },
+                    held: (mode == Mode::New).then_some(held),
                     saved_tasks: start.work.tasks.len(),
                     start_readings: (inputs.readings)(),
                 }

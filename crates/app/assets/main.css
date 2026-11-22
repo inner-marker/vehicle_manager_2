@@ -4208,6 +4208,31 @@ a.squawk-history-job {
     font-weight: 700;
 }
 
+/* Phase 6 2b: a file added to a record not saved yet, with ✕ in its corner to drop it. */
+.attachment-held {
+    position: relative;
+}
+
+.attachment-held .attachment-tile {
+    cursor: default;
+}
+
+.attachment-held-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.75rem;
+    line-height: 22px;
+    cursor: pointer;
+}
+
 /* The vehicle's photos panel shows only when the strip does (an Admin, or photos to see). */
 .vehicle-photos:not(:has(.attachment-strip)) {
     display: none;

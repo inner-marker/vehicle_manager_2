@@ -3616,4 +3616,6 @@ define_messages! {
     TIMELINE_JUMP => "timeline-jump",
     /// The paging bar, for screen readers.
     TIMELINE_PAGES => "timeline-pages",
+    /// Under the photos added to a record that isn't saved yet.
+    ATTACHMENT_ADDED_ON_SAVE => "attachment-added-on-save",
 }

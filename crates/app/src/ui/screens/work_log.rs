@@ -26,7 +26,7 @@ use domain::requirement::{Bundle, BundleId, IntervalRule};
 use domain::squawk::{CountedDisposition, Severity, SquawkId, status};
 
 use super::FormError;
-use super::attachments::{AttachmentStrip, photo_size_for};
+use super::attachments::{AttachmentStrip, Held, HeldStrip, photo_size_for};
 use super::log_form::MoneyInput;
 use super::squawks::{SeverityChip, use_squawk_sheet};
 use super::work_input::{
@@ -234,6 +234,8 @@ pub(super) fn WorkLog(
     squawk_problem: Option<String>,
     end_problem: Option<(MeterId, String)>,
     editing: Option<EventId>,
+    /// A new job's photos and documents, held until it's saved (phase-6.md 2b).
+    held: Option<Signal<Vec<Held>>>,
     saved_tasks: usize,
     start_readings: Vec<(MeterId, String)>,
 ) -> Element {
@@ -407,7 +409,17 @@ pub(super) fn WorkLog(
                         default_size: photo_size,
                     }
                 },
-                None => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_SAVE_FIRST)} } },
+                None => match held {
+                    Some(held) => rsx! {
+                        HeldStrip {
+                            asset: vehicle.id,
+                            held,
+                            heading: messages::ATTACHMENT_JOB_PHOTOS,
+                            default_size: photo_size,
+                        }
+                    },
+                    None => rsx! { p { class: "muted-note", {tr(messages::ATTACHMENT_SAVE_FIRST)} } },
+                },
             }
         }
         // Squawks.
