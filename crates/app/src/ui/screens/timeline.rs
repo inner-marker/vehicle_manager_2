@@ -6,13 +6,16 @@
 //! corrected original stays, dimmed, beneath its correction:** only the correction's values
 //! count. The Fuel tab is the same list, fuel-ups only (fuel economy arrives in Phase 5); the
 //! Maintenance tab's Jobs view is maintenance and repairs only, drafts first (step 7g).
+//! **Each list pages** (phase-6.md 1g): 100 records a page by default (50, 100, or 250,
+//! remembered on this device), with ‹ Newer, Older ›, and Jump to a date. A correction and
+//! the originals beneath it are one record, so they're never split across pages.
 //!
 //! **Overview** gains three panels: the latest fuel-ups, each meter's latest reading, and the
 //! last activity.
 
 use dioxus::prelude::*;
 use domain::api::{AssetView, EventView, EventsOutcome, PreferencesOutcome};
-use domain::dates::{format_date, format_time, month_heading};
+use domain::dates::{format_date, format_time, month_heading, utc_to_local};
 use domain::event::{Event, EventId, EventStatus};
 use domain::event_check::PastReading;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
@@ -88,31 +91,51 @@ impl Shown {
     }
 }
 
-/// The events `shown`, newest first, grouped by month: each event that counts, then beneath it
-/// whatever it corrects (and what that corrected, in turn). For jobs, the drafts come first,
-/// under "In progress".
-pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Row>)> {
+/// One record in a list: an event that counts, with the originals it corrected beneath it
+/// (they stay together on a page).
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct Entry {
+    /// Its month's heading, or "In progress" for a draft job.
+    heading: String,
+    /// Its local date (`2026-11-02`), for Jump to; empty for a draft job.
+    date: String,
+    /// Whether it's a draft job, listed first.
+    draft: bool,
+    rows: Vec<Row>,
+}
+
+/// The records `shown`, newest first: each event that counts, then beneath it whatever it
+/// corrects (and what that corrected, in turn). For jobs, the drafts come first.
+pub(super) fn entries(events: &[EventView], shown: Shown) -> Vec<Entry> {
     let by_id = |id: EventId| events.iter().find(|view| view.id == id);
     let drafts_first = shown == Shown::Jobs;
-    let mut months: Vec<((i16, i8), String, Vec<Row>)> = Vec::new();
-    let mut drafts: Vec<Row> = Vec::new();
+    let mut drafts: Vec<Entry> = Vec::new();
+    let mut dated: Vec<Entry> = Vec::new();
     // `events` comes newest first; originals that were corrected show under their correction.
     for view in events.iter().filter(|view| view.corrected_by.is_none()) {
         if !shown.shows(view.event.kind) {
             continue;
         }
         if drafts_first && view.event.status == EventStatus::Draft {
-            drafts.push(Row {
-                view: view.clone(),
-                corrected: false,
+            drafts.push(Entry {
+                heading: tr(messages::TIMELINE_IN_PROGRESS),
+                date: String::new(),
+                draft: true,
+                rows: vec![Row {
+                    view: view.clone(),
+                    corrected: false,
+                }],
             });
             continue;
         }
         let zone = &view.event.dates.zone;
-        let Ok((heading, key)) = month_heading(view.event.dates.start, zone, Translator::english())
+        let Ok((heading, _)) = month_heading(view.event.dates.start, zone, Translator::english())
         else {
             continue;
         };
+        let date = utc_to_local(view.event.dates.start, zone)
+            .map(|(date, _)| date)
+            .unwrap_or_default();
         let mut rows = vec![Row {
             view: view.clone(),
             corrected: false,
@@ -125,16 +148,111 @@ pub(super) fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Ro
             });
             next = original.event.corrects;
         }
-        match months.iter_mut().find(|(have, _, _)| *have == key) {
-            Some((_, _, list)) => list.extend(rows),
-            None => months.push((key, heading, rows)),
+        dated.push(Entry {
+            heading,
+            date,
+            draft: false,
+            rows,
+        });
+    }
+    drafts.extend(dated);
+    drafts
+}
+
+/// `entries` grouped under their headings, in order (a month's records together).
+pub(super) fn by_month(entries: &[Entry]) -> Vec<(String, Vec<Row>)> {
+    let mut months: Vec<(String, Vec<Row>)> = Vec::new();
+    for entry in entries {
+        match months
+            .iter_mut()
+            .find(|(heading, _)| *heading == entry.heading)
+        {
+            Some((_, rows)) => rows.extend(entry.rows.iter().cloned()),
+            None => months.push((entry.heading.clone(), entry.rows.clone())),
         }
     }
-    let in_progress = (!drafts.is_empty()).then(|| (tr(messages::TIMELINE_IN_PROGRESS), drafts));
-    in_progress
-        .into_iter()
-        .chain(months.into_iter().map(|(_, heading, rows)| (heading, rows)))
-        .collect()
+    months
+}
+
+// --- Paging ------------------------------------------------------------------------------
+
+/// The page sizes offered (phase-6.md 1g).
+pub(super) const PAGE_SIZES: [usize; 3] = [50, 100, 250];
+
+/// The page size until one is chosen on this device.
+pub(super) const PAGE_SIZE: usize = 100;
+
+/// The device-memory key for the chosen page size.
+const PAGE_SIZE_KEY: &str = "timelinePageSize";
+
+/// One page of a list: which records it holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Page {
+    /// Its number, from 0 (the newest).
+    number: usize,
+    /// The last page's number.
+    last: usize,
+    /// The first record on it (from 0), and one past its last.
+    start: usize,
+    end: usize,
+    /// How many records in all.
+    total: usize,
+}
+
+impl Page {
+    const fn has_newer(self) -> bool {
+        self.number > 0
+    }
+
+    const fn has_older(self) -> bool {
+        self.number < self.last
+    }
+}
+
+/// Page `wanted` of `total` records, `size` a page; past the end, the last page.
+pub(super) fn page_at(total: usize, size: usize, wanted: usize) -> Page {
+    let size = size.max(1);
+    let last = total.saturating_sub(1) / size;
+    let number = wanted.min(last);
+    let start = number * size;
+    Page {
+        number,
+        last,
+        start,
+        end: (start + size).min(total),
+        total,
+    }
+}
+
+/// The page size remembered on this device, if it's one offered; otherwise 100.
+pub(super) fn page_size_from(saved: Option<&str>) -> usize {
+    saved
+        .and_then(|text| text.parse().ok())
+        .filter(|size| PAGE_SIZES.contains(size))
+        .unwrap_or(PAGE_SIZE)
+}
+
+/// The page holding `date`'s records (`2026-11-02`): the first record on or before it (the
+/// list is newest first). Before every record, the last page.
+pub(super) fn page_for_date(entries: &[Entry], size: usize, date: &str) -> usize {
+    let index = entries
+        .iter()
+        .position(|entry| !entry.draft && entry.date.as_str() <= date)
+        .unwrap_or_else(|| entries.len().saturating_sub(1));
+    index / size.max(1)
+}
+
+/// A count with its thousands grouped: 1342 → "1,342".
+pub(super) fn grouped(count: usize) -> String {
+    let digits = count.to_string();
+    let mut out = String::new();
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(digit);
+    }
+    out
 }
 
 /// A meter's short unit name.
@@ -256,6 +374,21 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
     // The Fuel tab says how each fuel-up counted for economy (#085).
     let economy = super::fuel_view::use_fuel_if(view.id, only == Some(Shown::FuelUps));
     let mut filter = use_signal(|| None::<EventKind>);
+    // Paging (phase-6.md 1g): the page shown, and the size remembered on this device.
+    let mut page_number = use_signal(|| 0_usize);
+    let mut page_size = use_signal(|| PAGE_SIZE);
+    use_effect(move || {
+        spawn(async move {
+            let saved = crate::ui::device_memory::recall(PAGE_SIZE_KEY).await;
+            page_size.set(page_size_from(saved.as_deref()));
+        });
+    });
+    // Another vehicle, or another tab's list, starts at its newest page.
+    let asset = view.id;
+    use_effect(use_reactive!(|asset, only| {
+        let _ = (asset, only);
+        page_number.set(0);
+    }));
     let Some(answer) = loaded() else {
         return rsx! { p { class: "auth-loading", {tr(messages::LOADING)} } };
     };
@@ -265,7 +398,24 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
     };
     // The Fuel tab and Jobs always show their own (the same component as the Timeline tab, so
     // its own filter may still hold the Timeline's choice).
-    let months = arrange(&data.events, only.unwrap_or(Shown::Kind(filter())));
+    let shown = only.unwrap_or(Shown::Kind(filter()));
+    let list = entries(&data.events, shown);
+    let page = page_at(list.len(), page_size(), page_number());
+    let months = by_month(list.get(page.start..page.end).unwrap_or_default());
+    // The bar shows once there's more than the smallest page, so its size menu stays in reach.
+    let paged = list.len() > PAGE_SIZES[0];
+    let on_size = move |size: usize| {
+        crate::ui::device_memory::remember(PAGE_SIZE_KEY, &size.to_string());
+        page_size.set(size);
+        page_number.set(0);
+    };
+    let on_jump = move |date: String| {
+        let Some(Ok(data)) = loaded() else {
+            return;
+        };
+        let list = entries(&data.events, shown);
+        page_number.set(page_for_date(&list, page_size(), &date));
+    };
     let choices: Vec<Option<EventKind>> = if only.is_some() {
         Vec::new()
     } else {
@@ -285,11 +435,17 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
                             r#type: "button",
                             class: if filter() == choice { "choice-chip chosen" } else { "choice-chip" },
                             "aria-pressed": if filter() == choice { "true" } else { "false" },
-                            onclick: move |_| filter.set(choice),
+                            onclick: move |_| {
+                                filter.set(choice);
+                                page_number.set(0);
+                            },
                             {tr(filter_label(choice))}
                         }
                     }
                 }
+            }
+            if paged {
+                PageBar { page, size: page_size(), top: true, on_page: move |number| page_number.set(number), on_size, on_jump }
             }
             if months.is_empty() {
                 p { class: "placeholder",
@@ -307,6 +463,99 @@ pub(super) fn Timeline(view: AssetView, only: Option<Shown>) -> Element {
                             meters: view.meters.clone(),
                             units: data.units,
                         }
+                    }
+                }
+            }
+            if paged {
+                PageBar { page, size: page_size(), top: false, on_page: move |number| page_number.set(number), on_size, on_jump }
+            }
+        }
+    }
+}
+
+/// The paging bar (phase-6.md 1g; part 6 of `docs/ui-sketches/p6m1-settings-options.svg`):
+/// "Records 101–200 of 1,342", ‹ Newer and Older ›, and above the list, the page size and
+/// Jump to. The bar below the list scrolls back up to the top one.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn PageBar(
+    page: Page,
+    size: usize,
+    top: bool,
+    on_page: EventHandler<usize>,
+    on_size: EventHandler<usize>,
+    on_jump: EventHandler<String>,
+) -> Element {
+    let go = move |number: usize| {
+        on_page.call(number);
+        if !top {
+            let _ = document::eval(
+                "document.getElementById('timeline-top')?.scrollIntoView({ block: 'start' });",
+            );
+        }
+    };
+    let range = tr_with(
+        messages::TIMELINE_RANGE,
+        &[
+            (
+                "first",
+                MessageArg::from(grouped((page.start + 1).min(page.total)).as_str()),
+            ),
+            ("last", MessageArg::from(grouped(page.end).as_str())),
+            ("total", MessageArg::from(grouped(page.total).as_str())),
+        ],
+    );
+    rsx! {
+        nav {
+            class: "page-bar",
+            id: if top { "timeline-top" } else { "" },
+            "aria-label": tr(messages::TIMELINE_PAGES),
+            span { class: "page-range", role: "status", {range} }
+            button {
+                class: "choice-chip",
+                r#type: "button",
+                disabled: !page.has_newer(),
+                onclick: move |_| go(page.number.saturating_sub(1)),
+                {tr(messages::TIMELINE_NEWER)}
+            }
+            button {
+                class: "choice-chip",
+                r#type: "button",
+                disabled: !page.has_older(),
+                onclick: move |_| go(page.number + 1),
+                {tr(messages::TIMELINE_OLDER)}
+            }
+            if top {
+                label { class: "page-control",
+                    span { {tr(messages::TIMELINE_PER_PAGE)} }
+                    select {
+                        class: "role-select",
+                        onchange: move |event| {
+                            if let Ok(chosen) = event.value().parse::<usize>()
+                                && PAGE_SIZES.contains(&chosen)
+                            {
+                                on_size.call(chosen);
+                            }
+                        },
+                        for choice in PAGE_SIZES {
+                            option { key: "{choice}", value: "{choice}", selected: choice == size, "{choice}" }
+                        }
+                    }
+                }
+                label { class: "page-control",
+                    span { {tr(messages::TIMELINE_JUMP)} }
+                    input {
+                        class: "field-input",
+                        r#type: "date",
+                        onchange: move |event| {
+                            let date = event.value();
+                            if !date.is_empty() {
+                                on_jump.call(date);
+                            }
+                        },
                     }
                 }
             }
@@ -662,6 +911,11 @@ mod tests {
         vec![november, correction, original, reading]
     }
 
+    /// The whole list `shown`, grouped by month, as one page.
+    fn arrange(events: &[EventView], shown: Shown) -> Vec<(String, Vec<Row>)> {
+        by_month(&entries(events, shown))
+    }
+
     fn ids(months: &[(String, Vec<Row>)]) -> Vec<(String, Vec<(u32, bool)>)> {
         let number = |id: EventId| (10..20).find(|n| test_id::<Event>(*n) == id).unwrap_or(0);
         months
@@ -709,6 +963,81 @@ mod tests {
                 ("November 2026".to_owned(), vec![(15, false)]),
             ]
         );
+    }
+
+    #[test]
+    fn a_correction_and_its_original_are_one_record_with_its_date() {
+        let list = entries(&events(), Shown::Kind(None));
+        let shape: Vec<(usize, &str)> = list
+            .iter()
+            .map(|entry| (entry.rows.len(), entry.date.as_str()))
+            .collect();
+        assert_eq!(
+            shape,
+            vec![(1, "2026-11-02"), (2, "2026-10-28"), (1, "2026-10-20")]
+        );
+        // A page of the records, grouped, is the same as the whole list grouped.
+        assert_eq!(
+            ids(&by_month(&list)),
+            ids(&arrange(&events(), Shown::Kind(None)))
+        );
+        // The second record starts a page: its month heading shows again there.
+        assert_eq!(
+            ids(&by_month(&list[1..])),
+            vec![(
+                "October 2026".to_owned(),
+                vec![(11, false), (12, true), (13, false)]
+            )]
+        );
+    }
+
+    #[test]
+    fn pages_hold_their_share_and_stay_in_range() {
+        let first = page_at(1342, 100, 0);
+        assert_eq!((first.start, first.end, first.last), (0, 100, 13));
+        assert!(!first.has_newer() && first.has_older());
+        let second = page_at(1342, 100, 1);
+        assert_eq!((second.start + 1, second.end), (101, 200));
+        // Past the end: the last page, which holds what's left.
+        let last = page_at(1342, 100, 99);
+        assert_eq!((last.number, last.start, last.end), (13, 1300, 1342));
+        assert!(last.has_newer() && !last.has_older());
+        // Nothing to page, and a zero size, are still one page.
+        let empty = page_at(0, 100, 3);
+        assert_eq!((empty.number, empty.start, empty.end), (0, 0, 0));
+        assert!(!empty.has_newer() && !empty.has_older());
+        assert_eq!(page_at(5, 0, 2).end, 3);
+    }
+
+    #[test]
+    fn only_an_offered_page_size_is_remembered() {
+        assert_eq!(page_size_from(Some("250")), 250);
+        assert_eq!(page_size_from(Some("50")), 50);
+        assert_eq!(page_size_from(Some("75")), PAGE_SIZE);
+        assert_eq!(page_size_from(Some("lots")), PAGE_SIZE);
+        assert_eq!(page_size_from(None), PAGE_SIZE);
+    }
+
+    #[test]
+    fn jump_to_opens_the_page_with_that_dates_records() {
+        let list = entries(&events(), Shown::Kind(None));
+        // One record a page: 2 Nov is page 0, 28 Oct page 1, 20 Oct page 2.
+        assert_eq!(page_for_date(&list, 1, "2026-12-25"), 0);
+        assert_eq!(page_for_date(&list, 1, "2026-11-02"), 0);
+        assert_eq!(page_for_date(&list, 1, "2026-11-01"), 1);
+        assert_eq!(page_for_date(&list, 1, "2026-10-21"), 2);
+        // Before every record: the last page.
+        assert_eq!(page_for_date(&list, 1, "2020-01-01"), 2);
+        assert_eq!(page_for_date(&list, 2, "2026-10-20"), 1);
+        assert_eq!(page_for_date(&[], 100, "2026-10-20"), 0);
+    }
+
+    #[test]
+    fn counts_are_grouped_in_thousands() {
+        assert_eq!(grouped(0), "0");
+        assert_eq!(grouped(999), "999");
+        assert_eq!(grouped(1342), "1,342");
+        assert_eq!(grouped(1_234_567), "1,234,567");
     }
 
     #[test]

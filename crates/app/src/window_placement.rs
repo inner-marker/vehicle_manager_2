@@ -11,9 +11,11 @@ use serde::{Deserialize, Serialize};
 /// screen, so leaving those returns to it), and whether it was maximized or full screen.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct WindowPlacement {
-    /// The window's left edge (its outer frame), in logical pixels.
+    /// The window's left edge, in logical pixels: where the window is placed when it opens
+    /// (on macOS, its content's; on Windows and Linux, its outer frame's).
     pub x: f64,
-    /// The window's top edge (its outer frame), in logical pixels.
+    /// The window's top edge, in logical pixels: where the window is placed when it opens
+    /// (on macOS, its content's, under the title bar; on Windows and Linux, its outer frame's).
     pub y: f64,
     /// The width of the window's content, in logical pixels.
     pub width: f64,
@@ -68,6 +70,24 @@ impl WindowPlacement {
             && self.width > 0.0
             && self.height > 0.0
     }
+}
+
+/// The size of a window's content, from its outer frame: the frame's size, less how far the
+/// content's top-left corner sits inside the frame's (the title bar). For macOS, where tao's
+/// `inner_size` keeps reporting the size the window opened at (tao #889; phase-6.md 1e) and a
+/// macOS window has no border on its other sides. In logical pixels, as (width, height).
+#[must_use]
+pub fn content_size(
+    frame_size: (f64, f64),
+    frame_top_left: (f64, f64),
+    content_top_left: (f64, f64),
+) -> (f64, f64) {
+    let inset_x = (content_top_left.0 - frame_top_left.0).max(0.0);
+    let inset_y = (content_top_left.1 - frame_top_left.1).max(0.0);
+    (
+        (frame_size.0 - inset_x).max(0.0),
+        (frame_size.1 - inset_y).max(0.0),
+    )
 }
 
 /// Whether the window at `placement` can be seen and dragged: enough of its top strip lies
@@ -153,6 +173,27 @@ mod tests {
         let grown = tiny.at_least((400.0, 600.0));
         assert!((grown.width - 400.0).abs() < f64::EPSILON);
         assert!((grown.height - 900.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn content_size_is_the_frame_less_its_title_bar() {
+        // A 900 × 650 window as macOS reports it: a 682-high frame at y 168, content at y 200.
+        let size = content_size((900.0, 682.0), (300.0, 168.0), (300.0, 200.0));
+        assert_eq!(size, (900.0, 650.0));
+        // Without a title bar, the content is the whole frame.
+        assert_eq!(
+            content_size((800.0, 600.0), (10.0, 20.0), (10.0, 20.0)),
+            (800.0, 600.0)
+        );
+        // Odd readings never make the content bigger than the frame, or negative.
+        assert_eq!(
+            content_size((800.0, 600.0), (10.0, 40.0), (10.0, 20.0)),
+            (800.0, 600.0)
+        );
+        assert_eq!(
+            content_size((800.0, 20.0), (0.0, 0.0), (0.0, 32.0)),
+            (800.0, 0.0)
+        );
     }
 
     #[test]

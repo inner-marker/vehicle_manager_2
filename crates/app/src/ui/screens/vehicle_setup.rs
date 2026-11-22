@@ -34,7 +34,7 @@ use super::vehicles::status_label;
 use crate::api;
 use crate::ui::icons::IconView;
 use crate::ui::routes::Route;
-use crate::ui::screens::{Field, FormError, problem_from_error};
+use crate::ui::screens::{Field, FormError, TypeToConfirm, problem_from_error};
 use crate::ui::vehicles::{VehiclesContext, group_icon, refresh_garage, use_vehicles};
 use crate::ui::{tr, tr_with};
 
@@ -1621,12 +1621,7 @@ fn DeleteDialog(view: AssetView, on_close: EventHandler<()>) -> Element {
             div { class: "dialog", role: "alertdialog", "aria-modal": "true",
                 h2 { class: "dialog-title", {tr_with(messages::DELETE_TITLE, &[("name", MessageArg::from(shown.clone()))])} }
                 p { class: "dialog-text", {tr(messages::DELETE_TEXT)} }
-                Field {
-                    label: messages::DELETE_TYPE,
-                    label_text: tr_with(messages::DELETE_TYPE, &[("name", MessageArg::from(shown))]),
-                    value: typed,
-                    autofocus: true,
-                }
+                TypeToConfirm { expected: shown, value: typed, autofocus: true }
                 FormError { message: error() }
                 div { class: "form-buttons",
                     button { class: "secondary-button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }

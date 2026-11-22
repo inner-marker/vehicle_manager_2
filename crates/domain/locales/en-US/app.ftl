@@ -318,10 +318,18 @@ settings-you-help = Follow the household default, or choose your own. Changes sa
 settings-household-help = For everyone who hasn't chosen their own.
 settings-household-admin-only = Switch to Admin mode to change the household defaults.
 settings-use-household = Use household default
-settings-this-device = THIS DEVICE
+settings-this-device = This device
 settings-theme = Theme
 settings-keep-on-top = Keep window on top
 settings-keep-on-top-note = Above other windows, on this computer
+settings-section-units = Units and formats
+settings-section-vehicles = Vehicles and messages
+settings-section-photos = Photos
+settings-section-appearance = Appearance
+settings-section-lock = Lock and PIN
+settings-section-household = Defaults for everyone
+settings-back = ← Settings
+confirm-type = To confirm, type:
 pin-not-digits = Use digits only.
 pin-too-short = Use at least 6 digits.
 pin-too-long = Use 12 digits or fewer.
@@ -356,6 +364,8 @@ lock-use-pin = Use your PIN instead
 lock-sign-out = Sign out of this computer
 lock-signed-out = Signed out of this computer after too many wrong tries. Sign in to use it again.
 settings-lock-after = Lock after
+lock-now = Lock now
+lock-now-note = Locks at once, as Lock after does.
 settings-pin = PIN
 pin-change = Change PIN
 pin-change-current = Current PIN
@@ -484,7 +494,6 @@ rebuild-what-devices = Other computers pair again; people's own settings and sav
 rebuild-what-photos = Photos this computer never opened are left out
 rebuild-code = The server's setup code (from its log)
 rebuild-password = Your password (from now on)
-rebuild-type = Type REBUILD to confirm
 rebuild-button = Rebuild
 rebuild-busy = Rebuilding…
 rebuild-next = Next
@@ -752,7 +761,7 @@ language-english-us = English (US)
 
 ## Idle sign-out and Admin timeout (decision #049)
 
-settings-sign-in = SIGN-IN
+settings-sign-in = Sign-in
 setting-idle-sign-out = Sign out when idle
 idle-sign-out-one-hour = After 1 hour
 idle-sign-out-four-hours = After 4 hours
@@ -1080,7 +1089,6 @@ move-no-other-group = There's no other group yet. The household's Admin adds gro
 delete-title = Delete { $name }?
 delete-text = Only for a vehicle added by mistake: its records go with it. To keep its history, set its status to Retired or Disposed instead.
 # $name (text): the vehicle's name.
-delete-type = Type { $name } to confirm.
 delete-delete = Delete
 delete-deleting = Deleting…
 
@@ -1580,6 +1588,13 @@ timeline-all = All
 timeline-fuel-ups = Fuel-ups
 timeline-readings = Readings
 timeline-empty = Nothing logged yet. Use + Log to add a fuel-up or reading.
+# $first, $last, $total (text, thousands already grouped): "Records 101–200 of 1,342".
+timeline-range = Records { $first }–{ $last } of { $total }
+timeline-newer = ‹ Newer
+timeline-older = Older ›
+timeline-per-page = Per page
+timeline-jump = Jump to
+timeline-pages = Pages
 timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.

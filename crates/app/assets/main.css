@@ -599,6 +599,24 @@ html {
     letter-spacing: 0.05em;
 }
 
+/* Type-to-confirm: the exact text to type, in a highlighted chip (phase-6.md 1c). */
+.confirm-text {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 3px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--warn) 14%, transparent);
+    color: var(--text);
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
 .form-error {
     margin: 0;
     padding: 8px 12px;
@@ -1235,7 +1253,82 @@ body:has(.dialog-scrim) {
     user-select: all;
 }
 
-/* ---------- Settings (p2m2-settings-options.svg, option B; decision #048) ---------- */
+/* ---------- Settings (p2m2-settings-options.svg, option B; decision #048; sections: p6m1-settings-options.svg, option 1) ---------- */
+
+/* A column of sections down the left, and the open section beside it. */
+.settings-split {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 760px);
+    align-items: start;
+    gap: 24px;
+}
+
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+/* Each section's button, with its group's heading above the first. */
+.settings-nav-entry {
+    display: contents;
+}
+
+.settings-group {
+    margin: 10px 8px 4px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.settings-nav-entry:first-child .settings-group {
+    margin-top: 2px;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 40px;
+    padding: 0 12px;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.settings-nav-item:hover {
+    background: var(--surface-raised);
+}
+
+.settings-nav-item.on {
+    border-left-color: var(--accent);
+    background: var(--surface-raised);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* The chevron and ← Settings are for the narrow list only. */
+.settings-nav-chevron,
+.settings-back {
+    display: none;
+}
+
+.settings-title {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
 
 .settings {
     display: flex;
@@ -2630,6 +2723,52 @@ textarea.field-input {
         flex-basis: 100%;
     }
 
+    /* Settings: the list of sections, or the open one with ← Settings. */
+    .settings-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .settings-split .settings,
+    .settings-split.section-open .settings-nav {
+        display: none;
+    }
+
+    .settings-split.section-open .settings {
+        display: flex;
+    }
+
+    .settings-nav {
+        padding: 0;
+        border: none;
+        background: transparent;
+    }
+
+    .settings-nav-item {
+        min-height: 48px;
+        margin-bottom: 4px;
+        border-left: none;
+        background: var(--surface);
+    }
+
+    .settings-nav-item.on {
+        background: var(--surface);
+        color: var(--text);
+        font-weight: 400;
+    }
+
+    .settings-nav-chevron,
+    .settings-back {
+        display: inline-flex;
+    }
+
+    .settings-nav-chevron {
+        color: var(--text-muted);
+    }
+
+    .settings-back {
+        align-self: flex-start;
+    }
+
     .switch {
         margin-left: 0;
     }
@@ -3093,6 +3232,34 @@ body:has(.log-form) .fab {
     max-width: 760px;
     /* Room below the last row for the floating + Log button on phones. */
     padding-bottom: 80px;
+}
+
+.page-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.page-range {
+    margin-right: auto;
+    color: var(--text-muted);
+}
+
+.page-bar .choice-chip:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.page-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.page-control .field-input {
+    width: auto;
 }
 
 .timeline-month {

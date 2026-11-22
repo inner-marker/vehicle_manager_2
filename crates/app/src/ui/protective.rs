@@ -284,6 +284,9 @@ mod desktop {
         }
     }
 
+    /// What's typed to confirm a rebuild.
+    const REBUILD_WORD: &str = "REBUILD";
+
     /// The rebuild, step by step (3B): the checks, what happens, then the code, the password,
     /// and REBUILD typed; then the temporary passwords to give out.
     #[expect(
@@ -298,7 +301,7 @@ mod desktop {
         let mut nothing_waiting = use_signal(|| false);
         let mut code = use_signal(String::new);
         let mut password = use_signal(String::new);
-        let mut typed = use_signal(String::new);
+        let typed = use_signal(String::new);
         let mut busy = use_signal(|| false);
         let mut problem = use_signal(|| None::<String>);
         let mut done = use_signal(|| None::<Rebuilt>);
@@ -414,10 +417,7 @@ mod desktop {
                                     span { class: "field-label", {tr(messages::REBUILD_PASSWORD)} }
                                     input { r#type: "password", autocomplete: "current-password", value: "{password}", oninput: move |event| password.set(event.value()) }
                                 }
-                                label { class: "field",
-                                    span { class: "field-label", {tr(messages::REBUILD_TYPE)} }
-                                    input { r#type: "text", autocomplete: "off", value: "{typed}", oninput: move |event| typed.set(event.value()) }
-                                }
+                                crate::ui::screens::TypeToConfirm { expected: REBUILD_WORD.to_owned(), value: typed }
                                 if let Some(problem) = problem() {
                                     p { class: "form-error", role: "alert", {problem} }
                                 }
@@ -435,7 +435,7 @@ mod desktop {
                                 button {
                                     class: "danger-button",
                                     r#type: "button",
-                                    disabled: busy() || typed() != "REBUILD" || code().is_empty() || password().is_empty(),
+                                    disabled: busy() || typed() != REBUILD_WORD || code().is_empty() || password().is_empty(),
                                     onclick: rebuild,
                                     if busy() { {tr(messages::REBUILD_BUSY)} } else { {tr(messages::REBUILD_BUTTON)} }
                                 }

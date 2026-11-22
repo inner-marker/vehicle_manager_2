@@ -20,6 +20,8 @@ use domain::log_area;
 
 use crate::settings;
 use crate::ui::tr;
+#[cfg(target_os = "macos")]
+use crate::window_placement::content_size;
 use crate::window_placement::{ScreenArea, WindowPlacement, is_on_screen};
 
 /// The least time between two writes of the window's place while it's being moved.
@@ -42,13 +44,32 @@ fn current_placement(previous: Option<WindowPlacement>) -> Option<WindowPlacemen
         });
     }
     let scale = window.scale_factor();
-    let position = window.outer_position().ok()?.to_logical::<f64>(scale);
-    let size = window.inner_size().to_logical::<f64>(scale);
+    let outer = window.outer_position().ok()?.to_logical::<f64>(scale);
+    // macOS: the window opens with its content's corner at the saved place, and tao's
+    // `inner_size` is stale there (tao #889), so the size comes from the frame (phase-6.md 1e).
+    #[cfg(target_os = "macos")]
+    let (position, (width, height)) = {
+        let inner = window.inner_position().ok()?.to_logical::<f64>(scale);
+        let frame = window.outer_size().to_logical::<f64>(scale);
+        (
+            inner,
+            content_size(
+                (frame.width, frame.height),
+                (outer.x, outer.y),
+                (inner.x, inner.y),
+            ),
+        )
+    };
+    #[cfg(not(target_os = "macos"))]
+    let (position, (width, height)) = {
+        let size = window.inner_size().to_logical::<f64>(scale);
+        (outer, (size.width, size.height))
+    };
     Some(WindowPlacement {
         x: position.x,
         y: position.y,
-        width: size.width,
-        height: size.height,
+        width,
+        height,
         maximized,
         fullscreen,
     })

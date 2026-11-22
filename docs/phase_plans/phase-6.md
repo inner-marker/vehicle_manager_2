@@ -33,7 +33,7 @@
 
 | # | Milestone | Status | What it delivers | You can check |
 |---|---|---|---|---|
-| 1 | **Fixes and Settings** | ⬜ | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
+| 1 | **Fixes and Settings** | 🔨 | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
 | 2 | **Faster logging** | ⬜ | **Photos and documents added before the first save.** **Multi-page document capture** on the web (pages joined into one PDF). **Pinch to zoom** in the photo viewer on a phone. **Save a new place while logging** (#26). **Labor rates:** one for the household, overridden by a shop's own; typed labor time fills in its cost, which can still be changed (#089). **A main photo for each vehicle** (#24), on the Garage and the Overview | A fuel-up with its receipt photo in one go; a dealer job's cost from its rate |
 | 3 | **Vehicles and schedules** | ⬜ | **Documents needed by kind of vehicle, and custom vehicle types** (idea 23). **Pinned vehicles** at the top of the Garage (idea 15). **A catalogue of ready-made fields and sets** (idea 16). **Chained intervals**, e.g. first at 100,000 mi, then every 50,000 mi (idea 21) | A "Track car" type needing no registration; a timing belt's chained rule |
 | 4 | **People and security** | ⬜ | **Change a person's display name and username** (#44). **Custom roles** (#27), from their own sub-plan, written first (#071). **Optional email:** SMTP setup and password reset by email (idea 13, sub-plan 03, once confirmed); email notifications come later. Sub-plan 04's **Phase 6 items:** password or PIN to enter Admin mode, rate limits across the API, growing sign-in delays kept in the database, the fail2ban log format, and the guide for running on the internet (#29's code items) | A "Chauffeur" role; repeated wrong sign-ins slowed; a reset email |
@@ -80,3 +80,79 @@
 ## Step details
 
 *Each milestone's steps are planned here when it starts.*
+
+### Milestone 1: Fixes and Settings
+
+*Planned 2026-11-21 · Branch `milestone/p6-m1-fixes-settings` · Sketch: `docs/ui-sketches/p6m1-settings-options.svg`*
+
+**Reviewed against:** no new issues since the phase plan; the ideas and sub-plans have no effect on this milestone.
+
+**What the code shows:**
+- **Settings** is one page under three tabs (You, Devices, Household in Admin mode). You has 12 rows in one list, then This device (theme, keep on top, lock and PIN).
+- **Type-to-confirm** is in two places: deleting a vehicle (`delete-type`) and **REBUILD**. The text to type is inside the sentence, in plain type.
+- **The lock:** `lock_now()` exists (the idle watcher calls it), but no menu offers it.
+- **The window's size:** saved as the inner size and restored with `with_inner_size`, which looks right. The bug was seen only under `dx serve`, which may restore its own window state while developing; a bundled build is checked first.
+- **The wait:** the desktop waits up to `SESSION_WAIT` (8 s) for the session check before opening its copy.
+- **The timeline** loads all of a vehicle's events (the Overview and Fuel tab need them too) and draws every row. Paging only draws a page at a time; no server or API change.
+
+**The human's choices (2026-11-21):**
+- **Settings: option 1,** a column of sections down the left; on a narrow window, a list that opens each section, with ‹ Settings to go back. Sections: **You** (Units and formats; Vehicles and messages; Photos; Sign-in), **This device** (Appearance and window; Lock and PIN), **Devices**, and **Household** (Defaults for everyone, Admin mode only).
+- **Timeline page size:** a 50 / 100 / 250 menu on the timeline, remembered on the device (100 by default). No migration or API change.
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 1a | ☑️ | `docs: Phase 6 milestone 1 plan (fixes and Settings)` | This plan and the sketch | none |
+| 1b | ☑️ | `feat(app): Settings in sections` | Option 1, with the groups above; each row moves unchanged; Household's defaults in Admin mode only; the last section remembered on the device; web, desktop, and a narrow window | none |
+| 1c | ☑️ | `feat(app): the text to type stands out` | Deleting a vehicle and REBUILD: "To confirm, type:" and the text in a monospace, highlighted chip; one component for both | none |
+| 1d | ☑️ | `feat(app): Lock now` | In the account menu and in **Lock and PIN**, on a desktop with a PIN | none |
+| 1e | ☑️ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
+| 1f | ☑️ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
+| 1g | ☑️ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
+| 1h | ☑️ | `docs: milestone 1 section of the Phase 6 test plan` | `docs/test-plans/p6-phase.md` begins, with the second-monitor check (`p3m1-groundwork.md` step 10) | none |
+
+**Risks:** 1f's answer differs by operating system (so it can be left off per platform); 1e may be a `dx serve` quirk.
+
+**Written so far**
+- **1a:** this plan; the sketch `p6m1-settings-options.svg` (three options; option 1 chosen; also the confirm chip, Lock now in the account menu, and the paging bar).
+- **1b:** Settings is a column of sections (`settings.rs`, option 1):
+  - **You:** Units and formats (distance, volume, economy, pressure, date format, currency, language); Vehicles and messages (the squawk word, due warnings, when due messages start); Photos (keeping originals, in a Maintainer's mode or above); Sign-in (sign out when idle).
+  - **This device:** Appearance (theme, and keep on top on a desktop); Lock and PIN (only on a desktop with a PIN, `lock::has_lock`); Devices.
+  - **Household:** Defaults for everyone, for the household Admin in Admin mode, with every household row under the same four headings.
+  - Each row is unchanged and saves as before. Which sections show, and which opens, are pure and tested (`Offered`): a section remembered but not offered now (Household after leaving Admin mode) opens Units instead.
+  - **The last section** is remembered on the device (`ui/device_memory.rs`, local storage, as the + Log chooser keeps its last vehicle; only the section's name, nothing secret, #071). The timeline's page size (1g) will use it too.
+  - **Narrow windows** (under 640 px): the column becomes a list of sections with ›; a section opens on its own with **← Settings** above it.
+  - **Messages:** seven new (the section names and ← Settings); "THIS DEVICE" and "SIGN-IN" are now "This device" and "Sign-in" (the column's headings are uppercased by the stylesheet).
+- **1c:** one component, `TypeToConfirm` (`screens/account.rs`), for both places that ask for typed confirmation: **deleting a vehicle** and **REBUILD**.
+  - It shows **"To confirm, type:"**, then the exact text in a monospace chip, outlined and tinted in the warning colour (spaces shown as they are; a long name wraps; a tap selects all of it), then a monospace box to type in. The chip sits inside the box's label, so a screen reader reads it with the box.
+  - The checks are unchanged: a vehicle's name ignores case and spaces at either end (`confirms_name`); REBUILD is exact (now the constant `REBUILD_WORD`).
+  - **Messages:** `delete-type` and `rebuild-type` are replaced by one, `confirm-type`.
+  - Any later typed confirmation uses the same component.
+- **1d:** **🔒 Lock now** locks a desktop with a PIN at once, the same way "Lock after" does when it sits idle (`lock::lock_now`: the key, the token, and the copy's key leave memory, and the lock shows).
+  - **The account menu:** between Change password and Sign out. Whether it shows (`lock::has_lock`) is checked as the menu opens, since it reads the keychain.
+  - **Settings → Lock and PIN:** a row between Lock after and Change PIN, with "Locks at once, as Lock after does."
+  - Not on the web, or on a desktop without a PIN.
+  - **Messages:** two new, `lock-now` and `lock-now-note`.
+- **1e:** the window's size wasn't saved on macOS, in any build (not a `dx serve` quirk; Dioxus's own window restore steps aside when the app sets a size).
+  - **The cause:** tao's `inner_size` on macOS keeps reporting the size the window opened at (tao #889, which Dioxus works around too), so every resize saved the old size. Found by running the app with a scratch home folder and a temporary hook that resized it: the window was 1000 × 700, and the saved size stayed 900 × 650.
+  - **Also:** on macOS a window opens with its *content's* corner at the saved place, but the frame's corner was saved, so after each move it reopened a title bar (32 px) higher.
+  - **The fix (macOS only):** the size comes from the frame, less the title bar (`window_placement::content_size`, pure and tested), and the place saved is the content's corner. Windows and Linux are unchanged: their `inner_size` is right, and their windows open with the frame's corner at the saved place.
+  - **Checked:** the app resized itself to 1000 × 700 and moved, quit, and reopened at exactly that size and place. An older `settings.json` opens once a title bar higher, then stays put.
+  - Dragging by hand and the second monitor are in the test plan (1h).
+- **1f:** with no network at all, a desktop opens its copy at once instead of after the 8 s wait (`network_route.rs`, asked at the start of `local_copy::check_session`).
+  - **Asking sends nothing:** a UDP socket "connects" to an address, which only asks the system for a route (standard library only).
+  - **Changed from the plan:** a route to the server alone isn't enough, because Tailscale's tunnel keeps its routes with Wi-Fi off. So "no network" is: **no route to the internet** (a public IPv4 or IPv6 address), **and** the server can't be reached without it (its name can't be looked up within 1 s, it has no route, or its only addresses are Tailscale ones: 100.64.0.0/10, `fd7a:115c:a1e0::/48`).
+  - **Waits as before:** Wi-Fi on but the server down or Tailscale off; Tailscale with an exit node; a server on a home network with no internet.
+  - **Tests:** reading the server address (ports, IPv6, bad ones), Tailscale addresses, the verdict in each case, and a route to loopback. Only the asking itself is desktop-only, so CI's Build job now also runs `cargo test -p app --lib network_route` on macOS, Windows, and Linux (`main-gate.yml`). Turning Wi-Fi off is in the test plan (1h).
+- **1g:** the Timeline, the Fuel tab, and the Maintenance tab's Jobs page (`timeline.rs`); no server or API change.
+  - **A record** is an event that counts, with the originals it corrected beneath it, so a correction is never split across pages. A month's heading shows again at the top of a page that starts partway through it.
+  - **The bar**, above and below the list once there are more than 50 records: "Records 101–200 of 1,342", ‹ Newer and Older › (greyed out at either end). Above the list it also has **Per page** (50 / 100 / 250; 100 by default, remembered on the device with `device_memory`, key `timelinePageSize`) and **Jump to** a date, which opens the page with the first record on or before it (before every record: the last page). The bar below the list scrolls back up to the top one.
+  - **Starts at the newest page** when the filter, the page size, the vehicle, or the tab changes.
+  - **Pure and tested:** the records (`entries`) and their months (`by_month`), the page (`page_at`, kept in range), the remembered size (`page_size_from`, only an offered one), Jump to (`page_for_date`), and grouping thousands.
+  - **Messages:** six new (`timeline-range`, `-newer`, `-older`, `-per-page`, `-jump`, `-pages`).
+- **1h:** `docs/test-plans/p6-phase.md` begins (#081: run at the end of the phase, on the test server): its setup, and milestone 1's section, steps 1.1–1.25:
+  - **Settings** on the web (wide), on the phone (the list and ← Settings), and on the desktop (Lock and PIN); Photos in Maintainer mode; Household in Admin mode only; the section remembered.
+  - **Type to confirm** by deleting a throwaway vehicle; REBUILD can't be caused on purpose, so it's noted, not stepped.
+  - **Lock now** from the menu and from Settings, and not on the web.
+  - **The window:** smaller, larger, maximized, and the **second monitor** (plugged in, then unplugged; `p3m1-groundwork.md` step 10); the one-time title-bar shift from an older saved place.
+  - **No network:** Wi-Fi off opens the copy at once; Tailscale off still waits.
+  - **Paging:** checks the truck has more than 50 records first (or adds readings), then the bar, the page size, Jump to, the filters, and the size remembered per device.

@@ -697,8 +697,6 @@ define_messages! {
     REBUILD_CODE => "rebuild-code",
     /// 3B field.
     REBUILD_PASSWORD => "rebuild-password",
-    /// 3B field.
-    REBUILD_TYPE => "rebuild-type",
     /// 3B's button.
     REBUILD_BUTTON => "rebuild-button",
     /// 3B busy.
@@ -1415,8 +1413,6 @@ define_messages! {
     DELETE_TITLE => "delete-title",
     /// Delete dialog: when to delete.
     DELETE_TEXT => "delete-text",
-    /// Delete dialog: type the name; takes `name` (text).
-    DELETE_TYPE => "delete-type",
     /// Button: delete the vehicle.
     DELETE_DELETE => "delete-delete",
     /// Button while deleting.
@@ -3588,4 +3584,36 @@ define_messages! {
     SCHEDULE_HIDDEN => "schedule-hidden",
     /// Work log: a task for a recall or bulletin.
     WORK_FROM_RECALL => "work-from-recall",
+    /// Settings: the units, formats, and language section.
+    SETTINGS_SECTION_UNITS => "settings-section-units",
+    /// Settings: the squawk word, due warnings, and due messages section.
+    SETTINGS_SECTION_VEHICLES => "settings-section-vehicles",
+    /// Settings: the photos section (keeping originals).
+    SETTINGS_SECTION_PHOTOS => "settings-section-photos",
+    /// Settings: the theme and window section.
+    SETTINGS_SECTION_APPEARANCE => "settings-section-appearance",
+    /// Settings: the lock and PIN section (a desktop with a PIN).
+    SETTINGS_SECTION_LOCK => "settings-section-lock",
+    /// Settings: the household defaults section (Admin mode).
+    SETTINGS_SECTION_HOUSEHOLD => "settings-section-household",
+    /// Settings, on a narrow window: back to the list of sections.
+    SETTINGS_BACK => "settings-back",
+    /// Type-to-confirm: above the text to type (deleting a vehicle, REBUILD).
+    CONFIRM_TYPE => "confirm-type",
+    /// The account menu and Settings → Lock and PIN: lock this desktop at once.
+    LOCK_NOW => "lock-now",
+    /// Settings → Lock and PIN, beside Lock now.
+    LOCK_NOW_NOTE => "lock-now-note",
+    /// The timeline's paging bar: which records this page shows. $first, $last, $total (text).
+    TIMELINE_RANGE => "timeline-range",
+    /// The paging bar: the newer page.
+    TIMELINE_NEWER => "timeline-newer",
+    /// The paging bar: the older page.
+    TIMELINE_OLDER => "timeline-older",
+    /// The paging bar: the page size menu's label.
+    TIMELINE_PER_PAGE => "timeline-per-page",
+    /// The paging bar: the date to jump to.
+    TIMELINE_JUMP => "timeline-jump",
+    /// The paging bar, for screen readers.
+    TIMELINE_PAGES => "timeline-pages",
 }

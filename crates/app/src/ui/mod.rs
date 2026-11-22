@@ -20,6 +20,7 @@ mod account;
 pub(crate) mod auth;
 #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
 pub(crate) mod desktop_window;
+mod device_memory;
 mod icons;
 pub(crate) mod idle;
 pub(crate) mod inbox;

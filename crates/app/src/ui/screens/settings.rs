@@ -1,11 +1,13 @@
-//! Settings: display preferences (decisions #029, #048) and this device's theme.
+//! Settings: display preferences (decisions #029, #048), this device's own settings, and the
+//! devices signed in.
 //!
-//! Option B of `docs/ui-sketches/p2m2-settings-options.svg`: two tabs, **You** and
-//! **Household** (Admin mode only); each setting is a row of buttons, and on the You tab a
-//! **"Use household default"** switch. Changes save at once; the server answers with the
-//! preferences now in effect. Under **Sign-in**, when the app signs out by itself (#049).
-//! What squawks are called (#064) is the household's alone: buttons on the Household tab, the
-//! word itself on the You tab.
+//! Option 1 of `docs/ui-sketches/p6m1-settings-options.svg` (phase-6.md 1b): a column of
+//! sections down the left, under **You**, **This device**, and **Household** (the household
+//! Admin, in Admin mode only, #069). On a narrow window the column is a list that opens each
+//! section, with ← Settings to go back. The last section open is remembered on the device.
+//! Each preference is a row of buttons (option B of `p2m2-settings-options.svg`); changes save at
+//! once, and the server answers with the preferences now in effect. What squawks are called
+//! (#064) is the household's alone: buttons in its defaults, the word itself in yours.
 
 use dioxus::prelude::*;
 use domain::access::ActiveMode;
@@ -186,14 +188,152 @@ impl ButtonSetting {
     }
 }
 
-/// Which tab is showing.
+/// A section of Settings: option 1 of `docs/ui-sketches/p6m1-settings-options.svg`, a column of
+/// sections down the left (a list that opens each one on a narrow window).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Tab {
-    You,
-    /// Where you're signed in (phase-3.md 2e; sketch option 2B).
+enum Section {
+    /// Distance, volume, economy, pressure, date format, currency, language.
+    Units,
+    /// What squawks are called, the due warnings, when due messages start.
+    Vehicles,
+    /// Keeping originals (a Maintainer's, #036).
+    Photos,
+    /// When the app signs out by itself (#049).
+    SignIn,
+    /// Theme, and keep the window on top (a desktop's).
+    Appearance,
+    /// Lock after and Change PIN (a desktop with a PIN).
+    Lock,
+    /// Where you're signed in (phase-3.md 2e).
     Devices,
+    /// The household's defaults, for the household Admin in Admin mode (#069).
     Household,
 }
+
+/// The headings in the column.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Group {
+    You,
+    ThisDevice,
+    Household,
+}
+
+impl Group {
+    const fn label(self) -> MessageId {
+        match self {
+            Self::You => messages::SETTINGS_TAB_YOU,
+            Self::ThisDevice => messages::SETTINGS_THIS_DEVICE,
+            Self::Household => messages::SETTINGS_TAB_HOUSEHOLD,
+        }
+    }
+}
+
+impl Section {
+    const ALL: [Self; 8] = [
+        Self::Units,
+        Self::Vehicles,
+        Self::Photos,
+        Self::SignIn,
+        Self::Appearance,
+        Self::Lock,
+        Self::Devices,
+        Self::Household,
+    ];
+
+    const fn label(self) -> MessageId {
+        match self {
+            Self::Units => messages::SETTINGS_SECTION_UNITS,
+            Self::Vehicles => messages::SETTINGS_SECTION_VEHICLES,
+            Self::Photos => messages::SETTINGS_SECTION_PHOTOS,
+            Self::SignIn => messages::SETTINGS_SIGN_IN,
+            Self::Appearance => messages::SETTINGS_SECTION_APPEARANCE,
+            Self::Lock => messages::SETTINGS_SECTION_LOCK,
+            Self::Devices => messages::SETTINGS_TAB_DEVICES,
+            Self::Household => messages::SETTINGS_SECTION_HOUSEHOLD,
+        }
+    }
+
+    const fn group(self) -> Group {
+        match self {
+            Self::Units | Self::Vehicles | Self::Photos | Self::SignIn => Group::You,
+            Self::Appearance | Self::Lock | Self::Devices => Group::ThisDevice,
+            Self::Household => Group::Household,
+        }
+    }
+
+    /// Its name on this device's memory.
+    const fn key(self) -> &'static str {
+        match self {
+            Self::Units => "units",
+            Self::Vehicles => "vehicles",
+            Self::Photos => "photos",
+            Self::SignIn => "sign-in",
+            Self::Appearance => "appearance",
+            Self::Lock => "lock",
+            Self::Devices => "devices",
+            Self::Household => "household",
+        }
+    }
+
+    fn from_key(key: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|section| section.key() == key)
+    }
+}
+
+/// Which sections this person sees, here and now.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Offered {
+    /// In a mode that may keep originals (#036, #069).
+    photos: bool,
+    /// On a desktop with a PIN.
+    lock: bool,
+    /// The household Admin, in Admin mode (#069).
+    household: bool,
+}
+
+impl Offered {
+    const fn includes(self, section: Section) -> bool {
+        match section {
+            Section::Photos => self.photos,
+            Section::Lock => self.lock,
+            Section::Household => self.household,
+            Section::Units
+            | Section::Vehicles
+            | Section::SignIn
+            | Section::Appearance
+            | Section::Devices => true,
+        }
+    }
+
+    /// The sections shown, in the column's order.
+    fn sections(self) -> impl Iterator<Item = Section> {
+        Section::ALL
+            .into_iter()
+            .filter(move |section| self.includes(*section))
+    }
+
+    /// The sections shown, each with whether it starts its group (its heading goes above it).
+    fn with_headings(self) -> Vec<(Section, bool)> {
+        let mut previous = None;
+        self.sections()
+            .map(|section| {
+                let first = previous != Some(section.group());
+                previous = Some(section.group());
+                (section, first)
+            })
+            .collect()
+    }
+
+    /// The section to show: the chosen one if it's offered, otherwise the first.
+    fn showing(self, chosen: Option<Section>) -> Section {
+        chosen
+            .filter(|section| self.includes(*section))
+            .unwrap_or(Section::Units)
+    }
+}
+
+/// The device memory's key for the section last open.
+const SECTION_KEY: &str = "settingsSection";
 
 /// The Settings screen.
 // rsx! expands event handlers to fully qualified `dioxus_elements::events::on*` calls,
@@ -206,11 +346,11 @@ enum Tab {
 #[component]
 pub(crate) fn Settings() -> Element {
     let auth = use_auth();
-    let in_admin_mode =
-        matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
-    // Keeping originals is a Maintainer's (#036), so its row shows only in a mode that may (#069).
-    let may_keep_originals =
-        matches!(auth(), AuthState::SignedIn(session) if session.mode >= ActiveMode::Maintainer);
+    let offered = Offered {
+        photos: matches!(auth(), AuthState::SignedIn(session) if session.mode >= ActiveMode::Maintainer),
+        lock: crate::ui::lock::has_lock(),
+        household: matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin),
+    };
     // Test timers (#054) show each sign-out choice's real length.
     let timers = match auth() {
         AuthState::SignedIn(session) => session.timers,
@@ -219,7 +359,9 @@ pub(crate) fn Settings() -> Element {
         | AuthState::SignedOut
         | AuthState::Unreachable(_) => Timers::NORMAL,
     };
-    let mut tab = use_signal(|| Tab::You);
+    let mut chosen = use_signal(|| None::<Section>);
+    // On a narrow window, whether a section is open (otherwise the list is).
+    let mut opened = use_signal(|| false);
     let view = use_signal(|| None::<PreferencesView>);
     let error = use_signal(|| None::<String>);
     let idle = use_idle();
@@ -230,16 +372,21 @@ pub(crate) fn Settings() -> Element {
             apply(data::get_preferences().await, view, error, idle);
         });
     });
+    use_effect(move || {
+        spawn(async move {
+            if let Some(section) = crate::ui::device_memory::recall(SECTION_KEY)
+                .await
+                .as_deref()
+                .and_then(Section::from_key)
+            {
+                chosen.set(Some(section));
+            }
+        });
+    });
 
-    // The Household tab is the household Admin's, in Admin mode only (#069): everyone else,
-    // and the Admin in another mode, sees just their own settings, with no picker.
-    let shown = if in_admin_mode || tab() != Tab::Household {
-        tab()
-    } else {
-        Tab::You
-    };
+    let shown = offered.showing(chosen());
     let save = move |patch: PreferencesPatch| {
-        let household = in_admin_mode && tab() == Tab::Household;
+        let household = offered.household && shown == Section::Household;
         spawn(async move {
             let result = if household {
                 api::set_household_preferences(patch).await
@@ -249,67 +396,109 @@ pub(crate) fn Settings() -> Element {
             apply(result, view, error, idle);
         });
     };
+    let mut open = move |section: Section| {
+        chosen.set(Some(section));
+        opened.set(true);
+        crate::ui::device_memory::remember(SECTION_KEY, section.key());
+    };
 
     rsx! {
-        div { class: "settings",
-            div { class: "segmented", role: "tablist",
-                button {
-                    class: if shown == Tab::You { "segment on" } else { "segment" },
-                    role: "tab",
-                    "aria-selected": shown == Tab::You,
-                    onclick: move |_| tab.set(Tab::You),
-                    {tr(messages::SETTINGS_TAB_YOU)}
-                }
-                button {
-                    class: if shown == Tab::Devices { "segment on" } else { "segment" },
-                    role: "tab",
-                    "aria-selected": shown == Tab::Devices,
-                    onclick: move |_| tab.set(Tab::Devices),
-                    {tr(messages::SETTINGS_TAB_DEVICES)}
-                }
-                if in_admin_mode {
+        div { class: if opened() { "settings-split section-open" } else { "settings-split" },
+            nav { class: "settings-nav", "aria-label": tr(messages::NAV_SETTINGS),
+                for (section, first_of_group) in offered.with_headings() {
+                    div { key: "{section.key()}", class: "settings-nav-entry",
+                    if first_of_group {
+                        p { class: "settings-group", {tr(section.group().label())} }
+                    }
                     button {
-                        class: if shown == Tab::Household { "segment on" } else { "segment" },
-                        role: "tab",
-                        "aria-selected": shown == Tab::Household,
-                        onclick: move |_| tab.set(Tab::Household),
-                        {tr(messages::SETTINGS_TAB_HOUSEHOLD)}
+                        class: if section == shown { "settings-nav-item on" } else { "settings-nav-item" },
+                        "aria-current": if section == shown { "page" } else { "false" },
+                        onclick: move |_| open(section),
+                        span { {tr(section.label())} }
+                        span { class: "settings-nav-chevron", "aria-hidden": "true", "›" }
+                    }
                     }
                 }
             }
-            if shown == Tab::Devices {
-                super::devices::DevicesTab {}
-            } else {
-            if let Some(message) = error() {
-                p { class: "form-error", role: "alert", {message} }
+            div { class: "settings",
+                button {
+                    class: "link-button settings-back",
+                    onclick: move |_| opened.set(false),
+                    {tr(messages::SETTINGS_BACK)}
+                }
+                h2 { class: "settings-title", {tr(shown.label())} }
+                SectionBody { section: shown, view: view(), error: error(), timers, on_save: save }
             }
-            if let Some(current) = view() {
-                p { class: "muted-note",
-                    if shown == Tab::You { {tr(messages::SETTINGS_YOU_HELP)} } else { {tr(messages::SETTINGS_HOUSEHOLD_HELP)} }
-                }
-                for setting in ButtonSetting::ALL {
-                    SettingButtons { key: "{setting:?}", setting, view: current, household_tab: shown == Tab::Household, on_save: save }
-                }
-                CurrencyRow { view: current, household_tab: shown == Tab::Household, on_save: save }
-                LanguageRow {}
-                SquawkWordRow { view: current, household_tab: shown == Tab::Household, on_save: save }
-                DueWarningsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
-                DueMessagesRow { view: current, household_tab: shown == Tab::Household, on_save: save }
-                if may_keep_originals {
-                    OriginalsRow { view: current, household_tab: shown == Tab::Household, on_save: save }
-                }
-                h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
-                IdleSignOutRow { view: current, household_tab: shown == Tab::Household, timers, on_save: save }
-            }
-            h3 { class: "section-heading", {tr(messages::SETTINGS_THIS_DEVICE)} }
+        }
+    }
+}
+
+/// One section's rows. The preference rows wait for the server's answer; the device's own
+/// rows (theme, window, lock) and Devices don't.
+#[component]
+fn SectionBody(
+    section: Section,
+    view: Option<PreferencesView>,
+    error: Option<String>,
+    timers: Timers,
+    on_save: EventHandler<PreferencesPatch>,
+) -> Element {
+    // Admin mode is above Maintainer, so the household's rows include keeping originals.
+    let household_tab = section == Section::Household;
+    match section {
+        Section::Appearance => rsx! {
             div { class: "setting-row",
                 span { class: "setting-label", {tr(messages::SETTINGS_THEME)} }
                 ThemeToggle {}
             }
             KeepOnTop {}
-            crate::ui::lock::LockSettings {}
+        },
+        Section::Lock => rsx! { crate::ui::lock::LockSettings {} },
+        Section::Devices => rsx! { super::devices::DevicesTab {} },
+        Section::Units
+        | Section::Vehicles
+        | Section::Photos
+        | Section::SignIn
+        | Section::Household => rsx! {
+            if let Some(message) = error {
+                p { class: "form-error", role: "alert", {message} }
             }
-        }
+            if let Some(current) = view {
+                p { class: "muted-note",
+                    if household_tab { {tr(messages::SETTINGS_HOUSEHOLD_HELP)} } else { {tr(messages::SETTINGS_YOU_HELP)} }
+                }
+                if household_tab {
+                    h3 { class: "section-heading", {tr(messages::SETTINGS_SECTION_UNITS)} }
+                }
+                if household_tab || section == Section::Units {
+                    for setting in ButtonSetting::ALL {
+                        SettingButtons { key: "{setting:?}", setting, view: current, household_tab, on_save }
+                    }
+                    CurrencyRow { view: current, household_tab, on_save }
+                    LanguageRow {}
+                }
+                if household_tab {
+                    h3 { class: "section-heading", {tr(messages::SETTINGS_SECTION_VEHICLES)} }
+                }
+                if household_tab || section == Section::Vehicles {
+                    SquawkWordRow { view: current, household_tab, on_save }
+                    DueWarningsRow { view: current, household_tab, on_save }
+                    DueMessagesRow { view: current, household_tab, on_save }
+                }
+                if household_tab {
+                    h3 { class: "section-heading", {tr(messages::SETTINGS_SECTION_PHOTOS)} }
+                }
+                if household_tab || section == Section::Photos {
+                    OriginalsRow { view: current, household_tab, on_save }
+                }
+                if household_tab {
+                    h3 { class: "section-heading", {tr(messages::SETTINGS_SIGN_IN)} }
+                }
+                if household_tab || section == Section::SignIn {
+                    IdleSignOutRow { view: current, household_tab, timers, on_save }
+                }
+            }
+        },
     }
 }
 
@@ -771,6 +960,76 @@ mod tests {
     use domain::command::Patch;
 
     use super::*;
+
+    const EVERYTHING: Offered = Offered {
+        photos: true,
+        lock: true,
+        household: true,
+    };
+    const DRIVER_ON_THE_WEB: Offered = Offered {
+        photos: false,
+        lock: false,
+        household: false,
+    };
+
+    #[test]
+    fn each_section_has_its_own_key_and_comes_back_from_it() {
+        for section in Section::ALL {
+            assert_eq!(Section::from_key(section.key()), Some(section));
+        }
+        assert_eq!(Section::from_key("nonsense"), None);
+    }
+
+    #[test]
+    fn each_group_heading_shows_once_since_its_sections_are_together() {
+        let groups: Vec<Group> = Section::ALL.iter().map(|section| section.group()).collect();
+        let mut changes = groups.windows(2).filter(|pair| pair[0] != pair[1]).count();
+        changes += 1;
+        assert_eq!(changes, 3);
+    }
+
+    #[test]
+    fn a_driver_on_the_web_sees_no_photos_lock_or_household() {
+        let shown: Vec<Section> = DRIVER_ON_THE_WEB.sections().collect();
+        assert_eq!(
+            shown,
+            [
+                Section::Units,
+                Section::Vehicles,
+                Section::SignIn,
+                Section::Appearance,
+                Section::Devices
+            ]
+        );
+        assert_eq!(EVERYTHING.sections().count(), Section::ALL.len());
+        let headings: Vec<Section> = DRIVER_ON_THE_WEB
+            .with_headings()
+            .into_iter()
+            .filter_map(|(section, first)| first.then_some(section))
+            .collect();
+        assert_eq!(headings, [Section::Units, Section::Appearance]);
+    }
+
+    #[test]
+    fn the_remembered_section_opens_only_while_it_is_offered() {
+        assert_eq!(EVERYTHING.showing(None), Section::Units);
+        assert_eq!(
+            EVERYTHING.showing(Some(Section::Household)),
+            Section::Household
+        );
+        assert_eq!(
+            DRIVER_ON_THE_WEB.showing(Some(Section::Household)),
+            Section::Units
+        );
+        assert_eq!(
+            DRIVER_ON_THE_WEB.showing(Some(Section::Lock)),
+            Section::Units
+        );
+        assert_eq!(
+            DRIVER_ON_THE_WEB.showing(Some(Section::Devices)),
+            Section::Devices
+        );
+    }
 
     #[test]
     fn every_button_sets_the_value_it_shows() {

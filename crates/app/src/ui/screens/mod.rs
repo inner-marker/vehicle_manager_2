@@ -43,7 +43,7 @@ mod work_log;
 #[cfg(all(feature = "desktop", not(target_arch = "wasm32")))]
 pub(crate) use account::too_many_attempts;
 pub(crate) use account::{
-    ChangePasswordForm, Field, ForcedPasswordChange, FormError, Setup, SignIn,
+    ChangePasswordForm, Field, ForcedPasswordChange, FormError, Setup, SignIn, TypeToConfirm,
 };
 pub(crate) use connection::{ConnectionPanel, problem_from_error};
 pub(crate) use diagnostics::Diagnostics;

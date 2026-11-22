@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="2200" font-family="-apple-system, Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#f5f6f8"/>
+<text x="24" y="40" font-size="22" fill="#1b1f24" font-weight="700" text-anchor="start">Phase 6 · milestone 1 · Fixes and Settings: layout options</text>
+<text x="24" y="64" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">Dark theme. Settings today is one long page under three tabs (You, Devices, Household). Later milestones add more settings</text>
+<text x="24" y="82" font-size="12" fill="#5b6470" font-weight="400" text-anchor="start">(labor rates, Admin re-auth, email, document needs), so it gets a layout that grows. Groups below are the same in every option.</text>
+<text x="24" y="110" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">1 · A column of sections down the left (Recommended)</text>
+<text x="24" y="130" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Like the app&#x27;s own sidebar, one level in. Each section is short; Household&#x27;s defaults appear only in Admin mode. The column remembers the last section.</text>
+<rect x="24" y="150" width="952" height="430" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<text x="44" y="180" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<rect x="44" y="198" width="210" height="362" rx="8" fill="#101318" stroke="#333a45" stroke-width="1"/>
+<text x="58" y="222" font-size="10" fill="#9aa1ab" font-weight="700" text-anchor="start">YOU</text>
+<rect x="50" y="228" width="198" height="26" rx="6" fill="#203047"/>
+<rect x="50" y="228" width="3" height="26" fill="#4a8fe7"/>
+<text x="64" y="245" font-size="12.5" fill="#79b8ff" font-weight="600" text-anchor="start">Units and formats</text>
+<text x="64" y="275" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles and messages</text>
+<text x="64" y="305" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Photos</text>
+<text x="64" y="335" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Sign-in</text>
+<text x="58" y="364" font-size="10" fill="#9aa1ab" font-weight="700" text-anchor="start">THIS DEVICE</text>
+<text x="64" y="387" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Appearance and window</text>
+<text x="64" y="417" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Lock and PIN</text>
+<text x="64" y="447" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Devices</text>
+<text x="58" y="476" font-size="10" fill="#9aa1ab" font-weight="700" text-anchor="start">HOUSEHOLD · Admin mode</text>
+<text x="64" y="499" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Defaults for everyone</text>
+<text x="274" y="224" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Units and formats</text>
+<text x="274" y="244" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Yours. Anything you don&#x27;t choose follows the household&#x27;s default.</text>
+<text x="274" y="283" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Distance</text>
+<rect x="444" y="266" width="120" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="504.0" y="283" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household (mi)</text>
+<rect x="568" y="266" width="57" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="596.5" y="283" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Miles</text>
+<rect x="629" y="266" width="92" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="675.0" y="283" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Kilometres</text>
+<text x="274" y="327" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Volume</text>
+<rect x="444" y="310" width="127" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="507.5" y="327" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Household (gal)</text>
+<rect x="575" y="310" width="71" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="610.5" y="327" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Gallons</text>
+<rect x="650" y="310" width="64" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="682.0" y="327" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Litres</text>
+<text x="274" y="371" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Fuel economy</text>
+<rect x="444" y="354" width="85" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="486.5" y="371" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household</text>
+<rect x="533" y="354" width="43" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="554.5" y="371" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">mpg</text>
+<rect x="580" y="354" width="78" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="619.0" y="371" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">L/100 km</text>
+<rect x="662" y="354" width="50" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="687.0" y="371" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">km/L</text>
+<text x="274" y="415" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Pressure</text>
+<rect x="444" y="398" width="85" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="486.5" y="415" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household</text>
+<rect x="533" y="398" width="43" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="554.5" y="415" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">psi</text>
+<rect x="580" y="398" width="43" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="601.5" y="415" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">kPa</text>
+<rect x="627" y="398" width="43" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="648.5" y="415" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">bar</text>
+<text x="274" y="459" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Date format</text>
+<rect x="444" y="442" width="85" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="486.5" y="459" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household</text>
+<rect x="533" y="442" width="92" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="579.0" y="459" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">2026-11-20</text>
+<rect x="629" y="442" width="92" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="675.0" y="459" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">11/20/2026</text>
+<rect x="725" y="442" width="92" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="771.0" y="459" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">20/11/2026</text>
+<text x="274" y="503" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Currency</text>
+<rect x="444" y="486" width="127" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="507.5" y="503" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household (USD)</text>
+<rect x="575" y="486" width="71" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="610.5" y="503" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Choose…</text>
+<text x="274" y="547" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Language</text>
+<rect x="444" y="530" width="106" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="497.0" y="547" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">English (US)</text>
+<text x="44" y="610" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">On a phone (narrow window): the column is a list; tapping a section opens it, with ‹ Settings to go back.</text>
+<rect x="44" y="624" width="200" height="250" rx="18" fill="#14171c" stroke="#444c58" stroke-width="1"/>
+<text x="58" y="652" font-size="11" fill="#79b8ff" font-weight="400" text-anchor="start"></text>
+<text x="144" y="652" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Settings</text>
+<text x="58" y="680" font-size="9.5" fill="#9aa1ab" font-weight="700" text-anchor="start">YOU</text>
+<rect x="54" y="682" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="698" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Units and formats</text>
+<text x="224" y="698" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<rect x="54" y="710" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="726" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Vehicles and messages</text>
+<text x="224" y="726" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<rect x="54" y="738" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="754" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Photos</text>
+<text x="224" y="754" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<rect x="54" y="766" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="782" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Sign-in</text>
+<text x="224" y="782" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<text x="58" y="810" font-size="9.5" fill="#9aa1ab" font-weight="700" text-anchor="start">THIS DEVICE</text>
+<rect x="54" y="812" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="828" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Appearance and window</text>
+<text x="224" y="828" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<rect x="54" y="840" width="180" height="24" rx="5" fill="#1d2128"/>
+<text x="62" y="856" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Lock and PIN</text>
+<text x="224" y="856" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="end">›</text>
+<rect x="260" y="624" width="200" height="250" rx="18" fill="#14171c" stroke="#444c58" stroke-width="1"/>
+<text x="274" y="652" font-size="11" fill="#79b8ff" font-weight="400" text-anchor="start">‹ Settings</text>
+<text x="360" y="674" font-size="13" fill="#e8eaed" font-weight="700" text-anchor="middle">Units and formats</text>
+<text x="274" y="702" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">Distance</text>
+<text x="274" y="722" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">[Household] Miles  Km</text>
+<text x="274" y="742" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">Volume</text>
+<text x="274" y="762" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">Household [Gallons] Litres</text>
+<text x="274" y="782" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">Fuel economy</text>
+<text x="274" y="802" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="start">[Household] mpg  L/100 km</text>
+<text x="480" y="660" font-size="12" fill="#1b1f24" font-weight="700" text-anchor="start">Groups (every option):</text>
+<text x="480" y="682" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Units and formats: distance, volume, economy, pressure, date, currency, language</text>
+<text x="480" y="701" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Vehicles and messages: the squawk word, due warnings, when due messages start</text>
+<text x="480" y="720" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Photos: keep originals (Maintainers)</text>
+<text x="480" y="739" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Sign-in: sign out when idle</text>
+<text x="480" y="758" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Appearance and window: theme, keep on top (desktop)</text>
+<text x="480" y="777" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Lock and PIN: lock after, change PIN, Lock now (desktop)</text>
+<text x="480" y="796" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Devices: today&#x27;s Devices tab</text>
+<text x="480" y="815" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Defaults for everyone: the Household tab&#x27;s rows, Admin mode only;</text>
+<text x="480" y="834" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">   later milestones add labor rates, Admin re-auth, email, …</text>
+<text x="24" y="910" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">2 · One page, grouped cards, with a jump bar</text>
+<text x="24" y="930" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Everything on one scrolling page, as today, but in titled cards. Chips at the top jump to a card. Household stays a tab (Admin mode).</text>
+<rect x="24" y="950" width="952" height="400" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<text x="44" y="980" font-size="16" fill="#e8eaed" font-weight="700" text-anchor="start">Settings</text>
+<rect x="44" y="996" width="43" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="65.5" y="1013" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">You</text>
+<rect x="91" y="996" width="85" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="133.5" y="1013" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Household</text>
+<rect x="44" y="1040" width="132.2" height="24" rx="12" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="110.1" y="1056" font-size="11" fill="#79b8ff" font-weight="400" text-anchor="middle">Units and formats</text>
+<rect x="182.2" y="1040" width="158.6" height="24" rx="12" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="261.5" y="1056" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="middle">Vehicles and messages</text>
+<rect x="346.79999999999995" y="1040" width="59.599999999999994" height="24" rx="12" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="376.59999999999997" y="1056" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="middle">Photos</text>
+<rect x="412.4" y="1040" width="66.19999999999999" height="24" rx="12" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="445.5" y="1056" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="middle">Sign-in</text>
+<rect x="484.59999999999997" y="1040" width="92.6" height="24" rx="12" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="530.9" y="1056" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="middle">This device</text>
+<rect x="583.1999999999999" y="1040" width="66.19999999999999" height="24" rx="12" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="616.3" y="1056" font-size="11" fill="#e8eaed" font-weight="400" text-anchor="middle">Devices</text>
+<rect x="44" y="1078" width="912" height="150" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1"/>
+<text x="60" y="1102" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Units and formats</text>
+<text x="60" y="1133" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Distance</text>
+<rect x="230" y="1116" width="120" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="290.0" y="1133" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household (mi)</text>
+<rect x="354" y="1116" width="57" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="382.5" y="1133" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Miles</text>
+<rect x="415" y="1116" width="92" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="461.0" y="1133" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Kilometres</text>
+<text x="60" y="1173" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Volume</text>
+<rect x="230" y="1156" width="127" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="293.5" y="1173" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Household (gal)</text>
+<rect x="361" y="1156" width="71" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="396.5" y="1173" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Gallons</text>
+<rect x="436" y="1156" width="64" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="468.0" y="1173" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Litres</text>
+<text x="60" y="1212" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">… economy, pressure, date format, currency, language</text>
+<rect x="44" y="1240" width="912" height="94" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1"/>
+<text x="60" y="1264" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Vehicles and messages</text>
+<text x="60" y="1295" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Squawk word</text>
+<rect x="230" y="1278" width="141" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="300.5" y="1295" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Household (Issue)</text>
+<rect x="375" y="1278" width="57" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="403.5" y="1295" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Issue</text>
+<rect x="436" y="1278" width="64" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="468.0" y="1295" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Squawk</text>
+<text x="60" y="1326" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">… due warnings, when due messages start</text>
+<text x="44" y="1370" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">Simplest change; but the page keeps growing, and the jump bar wraps on a phone.</text>
+<text x="24" y="1400" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">3 · Sections with icons and a search box</text>
+<text x="24" y="1420" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start">Option 1 with a search: typing &quot;pin&quot; or &quot;units&quot; filters the column to matching settings. Closest to macOS System Settings.</text>
+<rect x="24" y="1440" width="952" height="250" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<rect x="44" y="1460" width="230" height="212" rx="8" fill="#101318" stroke="#333a45" stroke-width="1"/>
+<rect x="54" y="1470" width="210" height="28" rx="6" fill="#1d2128" stroke="#444c58" stroke-width="1"/>
+<text x="66" y="1489" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">⌕  pin</text>
+<text x="58" y="1520" font-size="10" fill="#9aa1ab" font-weight="700" text-anchor="start">MATCHES</text>
+<rect x="50" y="1530" width="218" height="26" rx="6" fill="#203047"/>
+<text x="64" y="1547" font-size="12.5" fill="#79b8ff" font-weight="600" text-anchor="start">🔒  Lock and PIN</text>
+<text x="64" y="1576" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   · Change PIN</text>
+<text x="64" y="1596" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   · Lock now</text>
+<text x="64" y="1616" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">   · Lock after</text>
+<text x="298" y="1488" font-size="15" fill="#e8eaed" font-weight="700" text-anchor="start">Lock and PIN</text>
+<text x="298" y="1521" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Lock after</text>
+<rect x="468" y="1504" width="57" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="496.5" y="1521" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">5 min</text>
+<rect x="529" y="1504" width="64" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="561.0" y="1521" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">15 min</text>
+<rect x="597" y="1504" width="64" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="629.0" y="1521" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">1 hour</text>
+<rect x="665" y="1504" width="57" height="26" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="693.5" y="1521" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Never</text>
+<text x="298" y="1565" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">PIN</text>
+<rect x="468" y="1548" width="99" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="517.5" y="1565" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Change PIN…</text>
+<text x="298" y="1609" font-size="12.5" fill="#e8eaed" font-weight="400" text-anchor="start">Lock now</text>
+<rect x="468" y="1592" width="78" height="26" rx="6" fill="#203047" stroke="#4a8fe7" stroke-width="1"/>
+<text x="507.0" y="1609" font-size="11.5" fill="#79b8ff" font-weight="600" text-anchor="middle">Lock now</text>
+<text x="468" y="1634" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Also in the account menu (below).</text>
+<text x="44" y="1710" font-size="11.5" fill="#5b6470" font-weight="400" text-anchor="start">More to build (a search over every setting&#x27;s name); worth it once there are many more settings.</text>
+<text x="24" y="1740" font-size="17" fill="#1b1f24" font-weight="700" text-anchor="start">The other fixes (one layout each)</text>
+<text x="24" y="1760" font-size="12.5" fill="#5b6470" font-weight="400" text-anchor="start"></text>
+<rect x="24" y="1760" width="466" height="230" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<text x="44" y="1790" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">4 · Type-to-confirm text stands out</text>
+<rect x="44" y="1806" width="426" height="166" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1"/>
+<text x="60" y="1832" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">Delete Van Test?</text>
+<text x="60" y="1854" font-size="12" fill="#9aa1ab" font-weight="400" text-anchor="start">This can&#x27;t be undone. To confirm, type:</text>
+<rect x="60" y="1866" width="104" height="26" rx="5" fill="#3a2e12" stroke="#d4a72c" stroke-width="1"/>
+<text x="70" y="1884" font-size="13" fill="#f2cc60" font-weight="600" text-anchor="start" font-family="SF Mono, Menlo, Consolas, monospace">Van Test</text>
+<rect x="60" y="1904" width="394" height="30" rx="6" fill="#101318" stroke="#444c58" stroke-width="1"/>
+<text x="72" y="1924" font-size="13" fill="#e8eaed" font-weight="400" text-anchor="start" font-family="SF Mono, Menlo, Consolas, monospace">Van Te</text>
+<rect x="326" y="1944" width="128" height="22" rx="6" fill="#5a1e1e" stroke="#e5534b" stroke-width="1"/>
+<text x="390" y="1959" font-size="11.5" fill="#ffb3ad" font-weight="600" text-anchor="middle">Delete</text>
+<text x="60" y="1960" font-size="10.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Same for REBUILD.</text>
+<rect x="510" y="1760" width="466" height="230" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<text x="530" y="1790" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">5 · Lock now in the account menu (desktop with a PIN)</text>
+<rect x="740" y="1806" width="216" height="160" rx="10" fill="#1d2128" stroke="#333a45" stroke-width="1"/>
+<text x="756" y="1830" font-size="12.5" fill="#e8eaed" font-weight="700" text-anchor="start">Sam Driver</text>
+<text x="756" y="1848" font-size="11" fill="#9aa1ab" font-weight="400" text-anchor="start">sam</text>
+<line x1="750" y1="1860" x2="946" y2="1860" stroke="#333a45"/>
+<text x="756" y="1882" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Mode: Driver ▾</text>
+<rect x="748" y="1892" width="200" height="26" rx="6" fill="#203047"/>
+<text x="756" y="1910" font-size="12" fill="#79b8ff" font-weight="600" text-anchor="start">🔒  Lock now</text>
+<text x="756" y="1938" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Sign out</text>
+<text x="530" y="1830" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Locks at once, as Lock after does</text>
+<text x="530" y="1848" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">when its time runs out. Shown only</text>
+<text x="530" y="1866" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">on a desktop with a PIN set.</text>
+<rect x="24" y="2010" width="952" height="170" rx="12" fill="#14171c" stroke="#14171c" stroke-width="1"/>
+<text x="44" y="2040" font-size="14" fill="#e8eaed" font-weight="700" text-anchor="start">6 · Timeline paging: 100 records a page</text>
+<text x="44" y="2060" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Drawn a page at a time (the records are already loaded). Newest first; months stay grouped.</text>
+<rect x="44" y="2074" width="912" height="40" rx="8" fill="#1d2128" stroke="#333a45" stroke-width="1"/>
+<text x="60" y="2099" font-size="12" fill="#e8eaed" font-weight="400" text-anchor="start">Records 101–200 of 1,342</text>
+<rect x="420" y="2082" width="96" height="24" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="468" y="2099" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">‹ Newer</text>
+<rect x="522" y="2082" width="96" height="24" rx="6" fill="#262b33" stroke="#333a45" stroke-width="1"/>
+<text x="570" y="2099" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="middle">Older ›</text>
+<rect x="700" y="2082" width="240" height="24" rx="6" fill="#101318" stroke="#444c58" stroke-width="1"/>
+<text x="712" y="2099" font-size="11.5" fill="#e8eaed" font-weight="400" text-anchor="start">Jump to  2025-06-01  📅</text>
+<text x="60" y="2140" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">Above and below the list. Jump to opens the page with that date&#x27;s records; the filters (All, Fuel-ups, Readings) page the same way.</text>
+<text x="60" y="2160" font-size="11.5" fill="#9aa1ab" font-weight="400" text-anchor="start">The page size: 100, or the person&#x27;s choice in Settings (50 / 100 / 250).</text>
+</svg>
