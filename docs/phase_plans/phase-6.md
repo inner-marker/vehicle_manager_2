@@ -33,8 +33,8 @@
 
 | # | Milestone | Status | What it delivers | You can check |
 |---|---|---|---|---|
-| 1 | **Fixes and Settings** | 🔨 | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
-| 2 | **Faster logging** | ⬜ | **Photos and documents added before the first save.** **Multi-page document capture** on the web (pages joined into one PDF). **Pinch to zoom** in the photo viewer on a phone. **Save a new place while logging** (#26). **Labor rates:** one for the household, overridden by a shop's own; typed labor time fills in its cost, which can still be changed (#089). **A main photo for each vehicle** (#24), on the Garage and the Overview | A fuel-up with its receipt photo in one go; a dealer job's cost from its rate |
+| 1 | **Fixes and Settings** | ✅ | **Settings reorganized** (tabs down the left side, or another layout from the sketches), since later milestones add settings. The text to type in **type-to-confirm** dialogs stands out. **Lock now** in the account menu on a desktop with a PIN. The desktop **window's size** restored, and tested with a **second monitor**. **No 8 s wait** when the computer has no network at all. **Timeline paging** (100 at a time, Previous and Next, Jump to date) | Settings' new layout; a long timeline pages; the window reopens at its size |
+| 2 | **Faster logging** | 🔨 | **Photos and documents added before the first save.** **Multi-page document capture** on the web (pages joined into one PDF). **Pinch to zoom** in the photo viewer on a phone. **Save a new place while logging** (#26). **Labor rates:** one for the household, overridden by a shop's own; typed labor time fills in its cost, which can still be changed (#089). **A main photo for each vehicle** (#24), on the Garage and the Overview | A fuel-up with its receipt photo in one go; a dealer job's cost from its rate |
 | 3 | **Vehicles and schedules** | ⬜ | **Documents needed by kind of vehicle, and custom vehicle types** (idea 23). **Pinned vehicles** at the top of the Garage (idea 15). **A catalogue of ready-made fields and sets** (idea 16). **Chained intervals**, e.g. first at 100,000 mi, then every 50,000 mi (idea 21) | A "Track car" type needing no registration; a timing belt's chained rule |
 | 4 | **People and security** | ⬜ | **Change a person's display name and username** (#44). **Custom roles** (#27), from their own sub-plan, written first (#071). **Optional email:** SMTP setup and password reset by email (idea 13, sub-plan 03, once confirmed); email notifications come later. Sub-plan 04's **Phase 6 items:** password or PIN to enter Admin mode, rate limits across the API, growing sign-in delays kept in the database, the fail2ban log format, and the guide for running on the internet (#29's code items) | A "Chauffeur" role; repeated wrong sign-ins slowed; a reset email |
 | 5 | **Reports** | ⬜ | **Cost per vehicle per year**, **cost per mile**, **fuel trends**, and a **printable service history** (a page or a PDF) (#089) | A truck's 2026 costs; its history printed |
@@ -156,3 +156,44 @@
   - **The window:** smaller, larger, maximized, and the **second monitor** (plugged in, then unplugged; `p3m1-groundwork.md` step 10); the one-time title-bar shift from an older saved place.
   - **No network:** Wi-Fi off opens the copy at once; Tailscale off still waits.
   - **Paging:** checks the truck has more than 50 records first (or adds readings), then the bar, the page size, Jump to, the filters, and the size remembered per device.
+
+### Milestone 2: Faster logging
+
+*Planned 2026-11-22 · Branch `milestone/p6-m2-faster-logging` · Sketch: `docs/ui-sketches/p6m2-faster-logging-options.svg`*
+
+**Reviewed against:** no new issues since the phase plan; #24 and #26 are in this milestone. Decision #089 (labor rates). Sub-plans: none affect it.
+
+**What the code shows:**
+- **Attachments** upload in two steps: the file first (`data::upload`, tied to nothing), then `add_attachment` ties it to an owner. A new record's form has no strip: photos are added once it's saved (`log_form.rs`, `Mode::Edit` only). Offline, the desktop keeps the upload and the add in its outbox, and sends the file first.
+- **PDFs:** viewed with pdf.js; nothing makes one. The server has `lopdf` (for page counts) and `image`. A document can already hold many files.
+- **The photo viewer** (`attachments.rs`, `Viewer`) shows a plain image: no zoom, no gestures.
+- **Places** are personal (#059) and already work offline (`AddPlace`); only the Places screen adds one.
+- **Labor:** each task has a labor time and a labor cost, typed separately. "Done by" is someone in the household or a free-text name and contact (`Performer::Named`). No rate anywhere.
+- **Vehicles** can already own photos (the Overview's strip, with the right to manage the vehicle); nothing marks one as the main photo.
+- Migrations reach **0027**; the API is version **2**.
+
+**The human's choices (2026-11-22):**
+- **Shops:** a **household list of shops** (name, contact, labor rate per hour), kept by Maintainers and Admins. "Done by" suggests them; choosing one fills its rate.
+- **Where rates are set:** a new Settings section, **HOUSEHOLD → Labor rates**, in Maintainer mode and above: the household's rate, then the shops.
+- **Scanned pages** are joined into one PDF by the **server** (the desktop's own copy, offline), with `lopdf`: each JPEG goes in as it is. No new dependency.
+- **Main photo:** chosen from the vehicle's own photos in the viewer: a **hollow ☆** on each (tooltip "Make Main Photo"), a **gold ★** on the main one; clicking toggles (clicking the gold one leaves no main photo).
+- **The Garage card's photo:** option **A**, a square thumbnail at the card's left (sketch part 5), so the card keeps its height. The Overview's header shows it beside the name.
+
+| Step | Status | Commit title | Contents | New dependencies |
+|---|---|---|---|---|
+| 2a | ☑️ | `docs: Phase 6 milestone 2 plan (faster logging)` | This plan and the sketch; milestone 1 marked done | none |
+| 2b | ⬜ | `feat(app): photos and documents before the first save` | A new fuel-up, reading, maintenance, or repair gets the strip (sketch part 1). Files upload as they're added and are tied to the record when it's saved; ✕ or Cancel drops them. Offline on the desktop, they go into the outbox after the record. The pure part (which files to tie, in order) tested | none |
+| 2c | ⬜ | `feat: scan pages into one document` | **+ Add → Scan pages** on the web (sketch part 2): each shot a page, ‹ › to move one, ✕ to drop it, **Make PDF**. A new operation joins uploaded photos into one PDF (server, and the desktop's copy offline); API version 3. Tests: the PDF has the pages in order, its page count, size limits, and refusing a file that isn't a photo | none (`lopdf` already used) |
+| 2d | ⬜ | `feat(app): pinch to zoom a photo` | The viewer's own gestures (sketch part 6): pinch and pan, double-tap; on a computer, the trackpad's pinch, Ctrl + scroll, double-click. ‹ › and swiping only when not zoomed; zoom resets on the next photo. The zoom's limits and panning bounds pure and tested | none |
+| 2e | ⬜ | `feat(app): save a place while logging` (#26) | **☆ Save as a place…** under Where on every log form (sketch part 3): name (from the place found), radius, then added to your places, online or offline. Hidden once the record matches a saved place | none |
+| 2f | ⬜ | `feat: shops and labor rates` | Migration 0028: the household's labor rate and a **shops** table (name, contact, rate per hour, in the household's currency). Adding, changing, and removing them, for Maintainers and Admins; offline on the desktop, and synced. Tests: who may change them, the checks (a rate isn't negative, a name is unique), sync | none |
+| 2g | ⬜ | `feat(app): labor cost from the rate` | **Settings → HOUSEHOLD → Labor rates** (sketch part 4). On a job's task, "Done by" suggests shops (choosing one fills its name and contact); typed labor time fills the cost from the shop's rate, or the household's, with the sum shown; a typed cost stays, with **↺ Use the rate**. A job keeps the cost it was saved with. The cost and its rounding pure and tested | none |
+| 2h | ⬜ | `feat: a vehicle's main photo` (#24) | Migration 0029: a vehicle's main photo (one of its own photos, or none; cleared if that photo is removed). The viewer's ☆ / ★ toggle; the photo on the Garage card (a thumbnail at the left) and the Overview's header; a vehicle with none shows its kind's icon. Offline on the desktop, and synced | none |
+| 2i | ⬜ | `docs: milestone 2 section of the Phase 6 test plan` | Milestone 2's steps in `docs/test-plans/p6-phase.md`: each feature on the web and the desktop, and each new kind of change offline, then synced | none |
+
+**API version:** 3, from step 2c (new operations: joining pages, the shops and the rate, the main photo). The server keeps accepting version 2 (#072).
+
+**Risks:** pinch gestures differ between iOS Safari and other browsers (checked on the phone in the test plan); a scanned PDF can reach the 50 MB limit with many large pages (the pages use the photo size chosen, Standard by default).
+
+**Written so far**
+- **2a:** this plan; the sketch `p6m2-faster-logging-options.svg` (photos before the first save, scanning pages, saving a place, labor rates and the job's cost, the main photo with two Garage card options (A chosen), and pinch to zoom); milestone 1 marked done.
