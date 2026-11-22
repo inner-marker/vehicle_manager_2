@@ -108,7 +108,7 @@
 | 1e | ☑️ | `fix(app): the window's size` | The cause, found in a bundled build, fixed with a test of the pure part; or, if it's only `dx serve`, why, noted here | none |
 | 1f | ☑️ | `feat(app): no wait without a network` | Before the session check, ask the system for a route to the server (a UDP "connect", which sends nothing). "Network unreachable" opens the copy at once. With Tailscale off but Wi-Fi on, the wait stays. Checked on macOS, and on Windows and Linux in CI; left off on a platform where it isn't reliable | none (standard library) |
 | 1g | ☑️ | `feat(app): timeline paging` | 100 a page (50 / 100 / 250, remembered on the device), ‹ Newer / Older ›, "Records 101–200 of 1,342", **Jump to** a date; the filters page the same way; the page chosen by a pure, tested function | none |
-| 1h | ⬜ | `docs: milestone 1 section of the Phase 6 test plan` | `docs/test-plans/p6-phase.md` begins, with the second-monitor check (`p3m1-groundwork.md` step 10) | none |
+| 1h | ☑️ | `docs: milestone 1 section of the Phase 6 test plan` | `docs/test-plans/p6-phase.md` begins, with the second-monitor check (`p3m1-groundwork.md` step 10) | none |
 
 **Risks:** 1f's answer differs by operating system (so it can be left off per platform); 1e may be a `dx serve` quirk.
 
@@ -149,3 +149,10 @@
   - **Starts at the newest page** when the filter, the page size, the vehicle, or the tab changes.
   - **Pure and tested:** the records (`entries`) and their months (`by_month`), the page (`page_at`, kept in range), the remembered size (`page_size_from`, only an offered one), Jump to (`page_for_date`), and grouping thousands.
   - **Messages:** six new (`timeline-range`, `-newer`, `-older`, `-per-page`, `-jump`, `-pages`).
+- **1h:** `docs/test-plans/p6-phase.md` begins (#081: run at the end of the phase, on the test server): its setup, and milestone 1's section, steps 1.1–1.25:
+  - **Settings** on the web (wide), on the phone (the list and ← Settings), and on the desktop (Lock and PIN); Photos in Maintainer mode; Household in Admin mode only; the section remembered.
+  - **Type to confirm** by deleting a throwaway vehicle; REBUILD can't be caused on purpose, so it's noted, not stepped.
+  - **Lock now** from the menu and from Settings, and not on the web.
+  - **The window:** smaller, larger, maximized, and the **second monitor** (plugged in, then unplugged; `p3m1-groundwork.md` step 10); the one-time title-bar shift from an older saved place.
+  - **No network:** Wi-Fi off opens the copy at once; Tailscale off still waits.
+  - **Paging:** checks the truck has more than 50 records first (or adds readings), then the bar, the page size, Jump to, the filters, and the size remembered per device.
