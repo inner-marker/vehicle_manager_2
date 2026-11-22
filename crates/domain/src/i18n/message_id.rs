@@ -3618,4 +3618,32 @@ define_messages! {
     TIMELINE_PAGES => "timeline-pages",
     /// Under the photos added to a record that isn't saved yet.
     ATTACHMENT_ADDED_ON_SAVE => "attachment-added-on-save",
+    /// A scan with more than 100 pages.
+    ATTACHMENT_TOO_MANY_PAGES => "attachment-too-many-pages",
+    /// + Add: scan a document's pages into one PDF.
+    SCAN_CHOICE => "scan-choice",
+    /// Under Scan pages in + Add.
+    SCAN_CHOICE_HINT => "scan-choice-hint",
+    /// The scan sheet's title.
+    SCAN_TITLE => "scan-title",
+    /// How many pages so far. $count (number).
+    SCAN_COUNT => "scan-count",
+    /// A page's description for screen readers. $number (number).
+    SCAN_PAGE => "scan-page",
+    /// Drop a page (for screen readers).
+    SCAN_REMOVE_PAGE => "scan-remove-page",
+    /// Move a page one place earlier (for screen readers).
+    SCAN_EARLIER => "scan-earlier",
+    /// Move a page one place later (for screen readers).
+    SCAN_LATER => "scan-later",
+    /// Take the first page.
+    SCAN_FIRST_PAGE => "scan-first-page",
+    /// Take another page.
+    SCAN_NEXT_PAGE => "scan-next-page",
+    /// Under taking a page.
+    SCAN_PAGE_HINT => "scan-page-hint",
+    /// While pages are read or the PDF is made.
+    SCAN_WORKING => "scan-working",
+    /// Join the pages. $count (number).
+    SCAN_MAKE_PDF => "scan-make-pdf",
 }

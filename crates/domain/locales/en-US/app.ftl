@@ -1596,6 +1596,30 @@ timeline-per-page = Per page
 timeline-jump = Jump to
 timeline-pages = Pages
 attachment-added-on-save = Added when you save. ✕ removes one first.
+attachment-too-many-pages = A scan can have up to 100 pages.
+scan-choice = Scan pages
+scan-choice-hint = photos of each page, made into one PDF
+scan-title = Scan pages
+# $count (number): pages taken so far.
+scan-count = { $count ->
+    [0] No pages yet. Take the first one.
+    [one] 1 page
+   *[other] { $count } pages
+}
+# $number (number): the page's place in the document.
+scan-page = Page { $number }
+scan-remove-page = Remove this page
+scan-earlier = Move earlier
+scan-later = Move later
+scan-first-page = 📷 First page
+scan-next-page = 📷 Next page
+scan-page-hint = or choose photos of the pages
+scan-working = Working…
+# $count (number): how many pages the PDF will have.
+scan-make-pdf = { $count ->
+    [one] Make PDF (1 page)
+   *[other] Make PDF ({ $count } pages)
+}
 timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.

@@ -892,6 +892,12 @@ pub enum UploadPurpose {
     Document,
     /// A PDF's first page as a JPEG, which the app draws.
     DocumentThumbnail,
+    /// Photos of a document's pages, packed together ([`crate::attachment::pack_pages`]), which
+    /// the server prepares like photos at `size` and joins into one PDF (phase-6.md 2c).
+    ScannedPages {
+        /// The size picked for the pages.
+        size: crate::attachment::PhotoSize,
+    },
     /// A file a rebuilt server's records name, stored exactly as sent (phase-3.md 7b, #078):
     /// only the household Admin, only right after a rebuild.
     Restore,
@@ -902,14 +908,10 @@ impl UploadPurpose {
     #[must_use]
     pub fn to_query(self) -> String {
         match self {
-            Self::Photo { size } => format!(
-                "for=photo&size={}",
-                match size {
-                    crate::attachment::PhotoSize::Small => "small",
-                    crate::attachment::PhotoSize::Medium => "medium",
-                    crate::attachment::PhotoSize::Large => "large",
-                }
-            ),
+            Self::Photo { size } => format!("for=photo&size={}", size_query(size)),
+            Self::ScannedPages { size } => {
+                format!("for=scanned-pages&size={}", size_query(size))
+            }
             Self::Original => "for=original".to_owned(),
             Self::PhotoMetadata => "for=photo-metadata".to_owned(),
             Self::Document => "for=document".to_owned(),
@@ -928,15 +930,15 @@ impl UploadPurpose {
                 .find(|(name, _)| *name == key)
                 .map(|(_, value)| value)
         };
+        let size = || match value("size")? {
+            "small" => Some(crate::attachment::PhotoSize::Small),
+            "medium" => Some(crate::attachment::PhotoSize::Medium),
+            "large" => Some(crate::attachment::PhotoSize::Large),
+            _ => None,
+        };
         match value("for")? {
-            "photo" => Some(Self::Photo {
-                size: match value("size")? {
-                    "small" => crate::attachment::PhotoSize::Small,
-                    "medium" => crate::attachment::PhotoSize::Medium,
-                    "large" => crate::attachment::PhotoSize::Large,
-                    _ => return None,
-                },
-            }),
+            "photo" => Some(Self::Photo { size: size()? }),
+            "scanned-pages" => Some(Self::ScannedPages { size: size()? }),
             "original" => Some(Self::Original),
             "photo-metadata" => Some(Self::PhotoMetadata),
             "document" => Some(Self::Document),
@@ -944,6 +946,15 @@ impl UploadPurpose {
             "restore" => Some(Self::Restore),
             _ => None,
         }
+    }
+}
+
+/// A photo size as an upload's query names it.
+const fn size_query(size: crate::attachment::PhotoSize) -> &'static str {
+    match size {
+        crate::attachment::PhotoSize::Small => "small",
+        crate::attachment::PhotoSize::Medium => "medium",
+        crate::attachment::PhotoSize::Large => "large",
     }
 }
 
@@ -1804,6 +1815,9 @@ mod tests {
             UploadPurpose::PhotoMetadata,
             UploadPurpose::Document,
             UploadPurpose::DocumentThumbnail,
+            UploadPurpose::ScannedPages {
+                size: PhotoSize::Medium,
+            },
         ] {
             assert_eq!(
                 UploadPurpose::from_query(&purpose.to_query()),
@@ -1815,6 +1829,7 @@ mod tests {
             None,
             "a photo needs a size"
         );
+        assert_eq!(UploadPurpose::from_query("for=scanned-pages"), None);
         assert_eq!(UploadPurpose::from_query("for=video"), None);
         assert_eq!(
             AttachmentPart::parse("thumbnail"),

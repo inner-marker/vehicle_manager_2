@@ -183,7 +183,7 @@
 |---|---|---|---|---|
 | 2a | ☑️ | `docs: Phase 6 milestone 2 plan (faster logging)` | This plan and the sketch; milestone 1 marked done | none |
 | 2b | ☑️ | `feat(app): photos and documents before the first save` | A new fuel-up, reading, maintenance, or repair gets the strip (sketch part 1). Files upload as they're added and are tied to the record when it's saved; ✕ or Cancel drops them. Offline on the desktop, they go into the outbox after the record. The pure part (which files to tie, in order) tested | none |
-| 2c | ⬜ | `feat: scan pages into one document` | **+ Add → Scan pages** on the web (sketch part 2): each shot a page, ‹ › to move one, ✕ to drop it, **Make PDF**. A new operation joins uploaded photos into one PDF (server, and the desktop's copy offline); API version 3. Tests: the PDF has the pages in order, its page count, size limits, and refusing a file that isn't a photo | none (`lopdf` already used) |
+| 2c | ☑️ | `feat: scan pages into one document` | **+ Add → Scan pages** on the web (sketch part 2): each shot a page, ‹ › to move one, ✕ to drop it, **Make PDF**. A new operation joins uploaded photos into one PDF (server, and the desktop's copy offline); API version 3. Tests: the PDF has the pages in order, its page count, size limits, and refusing a file that isn't a photo | none (`lopdf` already used) |
 | 2d | ⬜ | `feat(app): pinch to zoom a photo` | The viewer's own gestures (sketch part 6): pinch and pan, double-tap; on a computer, the trackpad's pinch, Ctrl + scroll, double-click. ‹ › and swiping only when not zoomed; zoom resets on the next photo. The zoom's limits and panning bounds pure and tested | none |
 | 2e | ⬜ | `feat(app): save a place while logging` (#26) | **☆ Save as a place…** under Where on every log form (sketch part 3): name (from the place found), radius, then added to your places, online or offline. Hidden once the record matches a saved place | none |
 | 2f | ⬜ | `feat: shops and labor rates` | Migration 0028: the household's labor rate and a **shops** table (name, contact, rate per hour, in the household's currency). Adding, changing, and removing them, for Maintainers and Admins; offline on the desktop, and synced. Tests: who may change them, the checks (a rate isn't negative, a name is unique), sync | none |
@@ -193,7 +193,7 @@
 
 **API version:** 3, from step 2c (new operations: joining pages, the shops and the rate, the main photo). The server keeps accepting version 2 (#072).
 
-**Risks:** pinch gestures differ between iOS Safari and other browsers (checked on the phone in the test plan); a scanned PDF can reach the 50 MB limit with many large pages (the pages use the photo size chosen, Standard by default).
+**Risks:** pinch gestures differ between iOS Safari and other browsers (checked on the phone in the test plan); a scanned PDF can reach the 50 MB limit with many large pages (the pages use the photo size chosen in + Add).
 
 **Written so far**
 - **2a:** this plan; the sketch `p6m2-faster-logging-options.svg` (photos before the first save, scanning pages, saving a place, labor rates and the job's cost, the main photo with two Garage card options (A chosen), and pinch to zoom); milestone 1 marked done.
@@ -204,3 +204,9 @@
   - Corrections still add photos after saving, as before.
   - **Tested:** the held files become the record's attachments in order (`held_inputs`).
   - **Messages:** one new, `attachment-added-on-save`.
+- **2c:** **+ Add → Scan pages** (`ScanPages`, `attachments.rs`; sketch part 2): **📷 First page**, then **📷 Next page** (the camera, or photos chosen); each page shrunk to the size chosen in + Add; ‹ › move a page, ✕ drops it; **Make PDF (n pages)**. The PDF is named "Scan 2026-11-22.pdf" (today), and is added like any PDF, before or after the first save. Everywhere + Add is: on the desktop, the camera choice opens the file picker.
+  - **One upload:** the pages are packed together (`domain::attachment::pack_pages`: `VMPAGES1`, then each page's length and bytes) and sent with a new purpose, `for=scanned-pages&size=…`. Up to 100 pages (`SCAN_PAGES_MAX`; "A scan can have up to 100 pages.").
+  - **Joined by the server** (`server::attachments::join_pages`), or by the desktop's copy offline, which sends the pages the same way once it's back online: each page is prepared like any photo (upright, shrunk, a JPEG), then embedded in one PDF as it is, one page each, its long edge 11 inches; the thumbnail is page 1's. Over 50 MB is refused.
+  - **Changed from the plan:** the pages are prepared like photos, so they're re-encoded once (as every photo upload is), not embedded exactly as sent: that turns them upright and reads a PNG too. And the **API version stays at 2**: a new upload purpose isn't a sync operation, as in Phase 5 (2f decides whether its new operations need version 3).
+  - **Tested:** packing and unpacking (order, damage, an empty page, none, 100 and 101 pages); the upload purpose's query; joining (page order and sizes, landscape and portrait, a PNG page, the thumbnail, a page that isn't a photo); the upload stores a PDF of the right page count; moving a page.
+  - **Messages:** fourteen new (`attachment-too-many-pages`, `scan-*`).

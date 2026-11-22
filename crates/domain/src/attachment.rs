@@ -50,6 +50,60 @@ pub const PHOTO_MAX_BYTES: u64 = 25 * 1024 * 1024;
 /// The most bytes a PDF may have: 50 MB (#037).
 pub const PDF_MAX_BYTES: u64 = 50 * 1024 * 1024;
 
+/// The most pages a scanned document may have (phase-6.md 2c).
+pub const SCAN_PAGES_MAX: usize = 100;
+
+/// What starts a scan's packed pages ([`pack_pages`]).
+const PAGES_MAGIC: &[u8; 8] = b"VMPAGES1";
+
+/// Packs the photos of a scan's pages into one upload: `VMPAGES1`, then each page as its
+/// length (4 bytes, little-endian) and its bytes, in order.
+#[must_use]
+pub fn pack_pages(pages: &[Vec<u8>]) -> Vec<u8> {
+    let total: usize = pages.iter().map(|page| page.len() + 4).sum();
+    let mut packed = Vec::with_capacity(PAGES_MAGIC.len() + total);
+    packed.extend_from_slice(PAGES_MAGIC);
+    for page in pages {
+        let length = u32::try_from(page.len()).unwrap_or(u32::MAX);
+        packed.extend_from_slice(&length.to_le_bytes());
+        packed.extend_from_slice(page);
+    }
+    packed
+}
+
+/// The pages packed by [`pack_pages`], in order.
+///
+/// # Errors
+///
+/// [`AttachmentProblem::Unreadable`] if they aren't packed that way, [`AttachmentProblem::NoPages`]
+/// if there are none, or [`AttachmentProblem::TooManyPages`].
+pub fn unpack_pages(packed: &[u8]) -> Result<Vec<&[u8]>, AttachmentProblem> {
+    let mut rest = packed
+        .strip_prefix(PAGES_MAGIC.as_slice())
+        .ok_or(AttachmentProblem::Unreadable)?;
+    let mut pages = Vec::new();
+    while !rest.is_empty() {
+        if pages.len() == SCAN_PAGES_MAX {
+            return Err(AttachmentProblem::TooManyPages);
+        }
+        let (length, after) = rest
+            .split_first_chunk::<4>()
+            .ok_or(AttachmentProblem::Unreadable)?;
+        let length = usize::try_from(u32::from_le_bytes(*length))
+            .map_err(|_| AttachmentProblem::Unreadable)?;
+        if length == 0 || length > after.len() {
+            return Err(AttachmentProblem::Unreadable);
+        }
+        let (page, after) = after.split_at(length);
+        pages.push(page);
+        rest = after;
+    }
+    if pages.is_empty() {
+        return Err(AttachmentProblem::NoPages);
+    }
+    Ok(pages)
+}
+
 /// A thumbnail's long edge, in pixels (#036).
 pub const THUMBNAIL_LONG_EDGE: u32 = 400;
 
@@ -797,6 +851,8 @@ pub enum AttachmentProblem {
     EventFinished,
     /// A reference document's attachment on a vehicle, or anything else on none.
     WrongVehicle,
+    /// A scan with more than [`SCAN_PAGES_MAX`] pages.
+    TooManyPages,
 }
 
 impl AttachmentProblem {
@@ -823,6 +879,7 @@ impl AttachmentProblem {
             Self::OriginalsOff => messages::ATTACHMENT_ORIGINALS_OFF,
             Self::EventFinished => messages::ATTACHMENT_EVENT_FINISHED,
             Self::WrongVehicle => messages::SOMETHING_WENT_WRONG,
+            Self::TooManyPages => messages::ATTACHMENT_TOO_MANY_PAGES,
         }
     }
 }
@@ -830,6 +887,45 @@ impl AttachmentProblem {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scanned_pages_pack_and_unpack_in_order() {
+        let pages = vec![vec![1_u8, 2, 3], vec![4], vec![5_u8; 300]];
+        let packed = pack_pages(&pages);
+        let unpacked = unpack_pages(&packed).unwrap();
+        assert_eq!(
+            unpacked,
+            vec![&[1_u8, 2, 3][..], &[4][..], &[5_u8; 300][..]]
+        );
+        // Not packed, cut short, an empty page, or nothing at all.
+        assert_eq!(
+            unpack_pages(b"%PDF-1.7"),
+            Err(AttachmentProblem::Unreadable)
+        );
+        assert_eq!(
+            unpack_pages(&packed[..packed.len() - 1]),
+            Err(AttachmentProblem::Unreadable)
+        );
+        assert_eq!(
+            unpack_pages(&pack_pages(&[vec![]])),
+            Err(AttachmentProblem::Unreadable)
+        );
+        assert_eq!(
+            unpack_pages(&pack_pages(&[])),
+            Err(AttachmentProblem::NoPages)
+        );
+        // Up to 100 pages.
+        let most = vec![vec![7_u8]; SCAN_PAGES_MAX];
+        assert_eq!(
+            unpack_pages(&pack_pages(&most)).unwrap().len(),
+            SCAN_PAGES_MAX
+        );
+        let too_many = vec![vec![7_u8]; SCAN_PAGES_MAX + 1];
+        assert_eq!(
+            unpack_pages(&pack_pages(&too_many)),
+            Err(AttachmentProblem::TooManyPages)
+        );
+    }
     use crate::command::Patch;
     use crate::test_support::test_id;
 

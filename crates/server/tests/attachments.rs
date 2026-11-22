@@ -16,8 +16,8 @@ mod attachments {
     use domain::asset::AssetId;
     use domain::asset_form::AssetForm;
     use domain::attachment::{
-        AttachmentId, AttachmentOwner, AttachmentProblem, Content, FileName, Original,
-        PhotoMetadata, PhotoSize,
+        AttachmentId, AttachmentOwner, AttachmentProblem, Content, FileName, FileType, Original,
+        PhotoMetadata, PhotoSize, pack_pages,
     };
     use domain::dates::EventDates;
     use domain::event::{
@@ -34,7 +34,8 @@ mod attachments {
     use lopdf::{Document, Object, dictionary};
     use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
     use server::attachments::{
-        UploadContext, count_pages, download, list, move_to, process_photo, remove, upload,
+        UploadContext, count_pages, download, join_pages, list, move_to, process_photo, remove,
+        upload,
     };
     use server::events::{add as add_event, correct, edit, finish};
     use server::groups::ensure_default_group;
@@ -381,6 +382,55 @@ mod attachments {
         );
     }
 
+    /// A plain JPEG `width` × `height`.
+    fn jpeg(width: u32, height: u32) -> Vec<u8> {
+        let image = ImageBuffer::from_fn(width, height, |_, _| image::Rgb([240_u8, 240, 230]));
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image
+            .write_to(&mut bytes, image::ImageFormat::Jpeg)
+            .unwrap();
+        bytes.into_inner()
+    }
+
+    /// Each page's size in points, in order.
+    fn page_sizes(pdf: &[u8]) -> Vec<(f32, f32)> {
+        let document = Document::load_mem(pdf).unwrap();
+        document
+            .get_pages()
+            .values()
+            .map(|id| {
+                let page = document.get_dictionary(*id).unwrap();
+                let size = page.get(b"MediaBox").unwrap().as_array().unwrap();
+                (size[2].as_float().unwrap(), size[3].as_float().unwrap())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_scans_pages_are_joined_into_one_pdf_in_order() {
+        // A landscape page, a portrait one, and a PNG (prepared like any photo).
+        let packed = pack_pages(&[jpeg(640, 480), jpeg(480, 640), png()]);
+        let joined = join_pages(&packed, PhotoSize::Small).unwrap();
+        assert_eq!(joined.pages, 3);
+        assert_eq!(count_pages(&joined.pdf), Ok(3));
+        let sizes = page_sizes(&joined.pdf);
+        assert_eq!(sizes[0], (792.0, 594.0), "the first page, landscape");
+        assert_eq!(sizes[1], (594.0, 792.0), "the second, portrait");
+        assert_eq!(sizes[2], (792.0, 594.0), "the PNG, 4:3");
+        // The thumbnail is the first page's.
+        let thumbnail = image::load_from_memory(&joined.thumbnail).unwrap();
+        assert_eq!((thumbnail.width(), thumbnail.height()), (400, 300));
+        // A page that isn't a photo, or a body that isn't packed pages.
+        assert_eq!(
+            join_pages(&pack_pages(&[jpeg(64, 64), pdf(1)]), PhotoSize::Small),
+            Err(AttachmentProblem::NotAPhoto)
+        );
+        assert_eq!(
+            join_pages(&jpeg(64, 64), PhotoSize::Small),
+            Err(AttachmentProblem::Unreadable)
+        );
+    }
+
     #[tokio::test]
     async fn uploads_need_a_driver_and_a_file_of_the_right_kind() {
         let (temp, database, jordan, sam) = setup().await;
@@ -402,6 +452,20 @@ mod attachments {
         let pdf_upload =
             uploaded(&database, &store, &jordan, UploadPurpose::Document, pdf(2)).await;
         assert_eq!(pdf_upload.pages, Some(2));
+
+        let scan = uploaded(
+            &database,
+            &store,
+            &jordan,
+            UploadPurpose::ScannedPages {
+                size: PhotoSize::Small,
+            },
+            pack_pages(&[jpeg(640, 480), jpeg(480, 640)]),
+        )
+        .await;
+        assert_eq!((scan.pages, scan.file_type), (Some(2), Some(FileType::Pdf)));
+        assert_eq!(count_pages(&store.get(&scan.file.hash).unwrap()), Ok(2));
+        assert!(store.get(&scan.thumbnail.unwrap().hash).is_ok());
 
         let refuse = async |user: &SignedIn, purpose, bytes| {
             let files = Files::Folder(store.clone());

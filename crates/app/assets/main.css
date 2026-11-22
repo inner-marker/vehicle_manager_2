@@ -4233,6 +4233,44 @@ a.squawk-history-job {
     cursor: pointer;
 }
 
+/* Phase 6 2c: a scan's pages, in order, each with ✕ and ‹ n ›. */
+.scan-pages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.scan-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.scan-page img {
+    width: 84px;
+    height: 108px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.scan-page-order {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Scan pages is a button, not a file input: it looks like the rows beside it. */
+button.sheet-choice {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
 /* The vehicle's photos panel shows only when the strip does (an Admin, or photos to see). */
 .vehicle-photos:not(:has(.attachment-strip)) {
     display: none;

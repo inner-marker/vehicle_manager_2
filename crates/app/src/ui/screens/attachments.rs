@@ -6,6 +6,8 @@
 //! - **+ Add** opens a sheet: **Take photo** or **Choose photos**, the **size** (Small, Medium,
 //!   or Large; the default follows the kind of event, #036), and **Keep the original** for
 //!   Maintainers and Admins when the household allows it.
+//! - **Scan pages** ([`ScanPages`], phase-6.md 2c): photos of a document's pages, joined into
+//!   one PDF by the server (or the desktop's copy).
 //! - **On a record not saved yet** ([`HeldStrip`], phase-6.md 2b), files upload as they're
 //!   added and are tied to the record when it's saved.
 //! - **Tapping one opens it** full screen ([`Viewer`]): its details (when, where, camera, size,
@@ -21,6 +23,7 @@ use domain::api::{
 use domain::asset::AssetId;
 use domain::attachment::{
     AttachmentId, AttachmentOwner, Content, FileName, FileType, Original, PDF_MAX_BYTES, PhotoSize,
+    SCAN_PAGES_MAX, pack_pages,
 };
 
 /// [`ZOOMS`]'s "fit the width" step.
@@ -528,6 +531,211 @@ async fn prepare_pdf(file: dioxus::html::FileData) -> Result<Held, MessageId> {
     })
 }
 
+/// One page of a scan: the photo as it will be sent (shrunk to the size chosen), and a
+/// `data:` URL to show it by.
+#[derive(Debug, Clone, PartialEq)]
+struct ScanPage {
+    photo: Vec<u8>,
+    preview: String,
+}
+
+/// Moves the page at `index` one place earlier (or `later`), if there's a place to move to.
+fn move_page<T>(pages: &mut [T], index: usize, later: bool) {
+    let other = if later {
+        index.checked_add(1)
+    } else {
+        index.checked_sub(1)
+    };
+    if let Some(other) = other
+        && index < pages.len()
+        && other < pages.len()
+    {
+        pages.swap(index, other);
+    }
+}
+
+/// A scan's name: "Scan 2026-11-22.pdf", today's date on this device.
+async fn scan_name() -> Result<FileName, MessageId> {
+    let today = document::eval("return new Date().toLocaleDateString('sv');")
+        .join::<String>()
+        .await
+        .unwrap_or_default();
+    let name = if today.is_empty() {
+        "Scan.pdf".to_owned()
+    } else {
+        format!("Scan {today}.pdf")
+    };
+    FileName::from_upload(&name).map_err(domain::attachment::AttachmentProblem::message)
+}
+
+/// Everything about preparing a scan (phase-6.md 2c): its pages, packed, go up as one upload,
+/// which the server (or the desktop's copy) joins into a PDF with a thumbnail of page 1.
+async fn prepare_scan(pages: Vec<ScanPage>, size: PhotoSize) -> Result<Held, MessageId> {
+    let preview = pages.first().map(|page| page.preview.clone());
+    let photos: Vec<Vec<u8>> = pages.into_iter().map(|page| page.photo).collect();
+    let uploaded = send(UploadPurpose::ScannedPages { size }, pack_pages(&photos)).await?;
+    Ok(Held {
+        name: scan_name().await?,
+        file: uploaded.file,
+        thumbnail: uploaded.thumbnail,
+        content: Content::Document {
+            pages: uploaded.pages.unwrap_or(1),
+        },
+        preview,
+    })
+}
+
+/// Reads and shrinks a page just taken or chosen; one the webview can't read goes as it is
+/// (the server reads it, or refuses it).
+async fn scan_page(file: dioxus::html::FileData, size: PhotoSize) -> Result<ScanPage, MessageId> {
+    let bytes = file
+        .read_bytes()
+        .await
+        .map_err(|_| messages::ATTACHMENT_UNREADABLE)?
+        .to_vec();
+    let mime = file
+        .content_type()
+        .unwrap_or_else(|| "image/jpeg".to_owned());
+    let (photo, mime) = match shrink(&bytes, &mime, size.long_edge(), None).await.jpeg {
+        Some(jpeg) => (jpeg, "image/jpeg".to_owned()),
+        None => (bytes, mime),
+    };
+    Ok(ScanPage {
+        preview: files::data_url(&mime, &photo),
+        photo,
+    })
+}
+
+/// **Scan pages** (sketch part 2): each shot is a page; ‹ › move one, ✕ drops it; **Make PDF**
+/// joins them. `on_done` gets the PDF, uploaded.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ScanPages(size: PhotoSize, on_done: EventHandler<Held>, on_cancel: EventHandler<()>) -> Element {
+    let mut pages = use_signal(Vec::<ScanPage>::new);
+    let mut busy = use_signal(|| false);
+    let mut problem = use_signal(|| None::<MessageId>);
+    let mut add = move |files: Vec<dioxus::html::FileData>| {
+        problem.set(None);
+        busy.set(true);
+        spawn(async move {
+            for file in files {
+                if pages.read().len() >= SCAN_PAGES_MAX {
+                    problem.set(Some(messages::ATTACHMENT_TOO_MANY_PAGES));
+                    break;
+                }
+                match scan_page(file, size).await {
+                    Ok(page) => pages.write().push(page),
+                    Err(refused) => problem.set(Some(refused)),
+                }
+            }
+            busy.set(false);
+        });
+    };
+    let make = move |_| {
+        let taken = pages();
+        if taken.is_empty() {
+            return;
+        }
+        problem.set(None);
+        busy.set(true);
+        spawn(async move {
+            match prepare_scan(taken, size).await {
+                Ok(held) => on_done.call(held),
+                Err(refused) => problem.set(Some(refused)),
+            }
+            busy.set(false);
+        });
+    };
+    let count = pages.read().len();
+    let tiles: Vec<(usize, String)> = pages
+        .read()
+        .iter()
+        .enumerate()
+        .map(|(index, page)| (index, page.preview.clone()))
+        .collect();
+    let count_arg = || MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX));
+    rsx! {
+        h2 { class: "dialog-title", {tr(messages::SCAN_TITLE)} }
+        p { class: "muted-note", {tr_with(messages::SCAN_COUNT, &[("count", count_arg())])} }
+        div { class: "scan-pages",
+            for (index, preview) in tiles {
+                div { key: "{index}-{preview.len()}", class: "scan-page",
+                    img { src: "{preview}", alt: tr_with(messages::SCAN_PAGE, &[("number", MessageArg::from(i64::try_from(index + 1).unwrap_or(i64::MAX)))]) }
+                    button {
+                        class: "attachment-held-remove",
+                        r#type: "button",
+                        disabled: busy(),
+                        "aria-label": tr(messages::SCAN_REMOVE_PAGE),
+                        onclick: move |_| {
+                            let mut list = pages.write();
+                            if index < list.len() {
+                                list.remove(index);
+                            }
+                        },
+                        "✕"
+                    }
+                    div { class: "scan-page-order",
+                        button {
+                            class: "link-button",
+                            r#type: "button",
+                            disabled: busy() || index == 0,
+                            "aria-label": tr(messages::SCAN_EARLIER),
+                            onclick: move |_| move_page(&mut pages.write(), index, false),
+                            "‹"
+                        }
+                        span { "{index + 1}" }
+                        button {
+                            class: "link-button",
+                            r#type: "button",
+                            disabled: busy() || index + 1 == count,
+                            "aria-label": tr(messages::SCAN_LATER),
+                            onclick: move |_| move_page(&mut pages.write(), index, true),
+                            "›"
+                        }
+                    }
+                }
+            }
+        }
+        label { class: "sheet-choice",
+            input {
+                r#type: "file",
+                accept: "image/*",
+                capture: "environment",
+                multiple: true,
+                disabled: busy(),
+                onchange: move |event| add(event.files()),
+            }
+            span { class: "sheet-choice-label", {tr(if count == 0 { messages::SCAN_FIRST_PAGE } else { messages::SCAN_NEXT_PAGE })} }
+            span { class: "sheet-choice-hint", {tr(messages::SCAN_PAGE_HINT)} }
+        }
+        if let Some(refused) = problem() {
+            p { class: "form-error", role: "alert", {tr(refused)} }
+        }
+        if busy() {
+            p { class: "muted-note", role: "status", {tr(messages::SCAN_WORKING)} }
+        }
+        div { class: "form-buttons",
+            button {
+                class: "secondary-button",
+                r#type: "button",
+                disabled: busy(),
+                onclick: move |_| on_cancel.call(()),
+                {tr(messages::ACTION_CANCEL)}
+            }
+            button {
+                class: "primary-button",
+                r#type: "button",
+                disabled: busy() || count == 0,
+                onclick: make,
+                {tr_with(messages::SCAN_MAKE_PDF, &[("count", count_arg())])}
+            }
+        }
+    }
+}
+
 /// How big each size is, for the picker.
 const fn size_hint(size: PhotoSize) -> MessageId {
     match size {
@@ -561,7 +769,26 @@ fn AddSheet(
     // the camera, so the size can still change, or it can be cancelled). `true` for a PDF.
     let mut picked = use_signal(Vec::<(dioxus::html::FileData, bool)>::new);
     let mut added_any = use_signal(|| false);
+    // Scan pages (phase-6.md 2c): the sheet shows the scan's pages instead.
+    let mut scanning = use_signal(|| false);
     let busy = progress().is_some();
+    let scanned = move |held: Held| {
+        scanning.set(false);
+        match hold {
+            Some(mut hold) => {
+                hold.write().push(held);
+                on_close.call(true);
+            }
+            None => {
+                spawn(async move {
+                    match attach(held.input(asset, owner)).await {
+                        Ok(()) => on_close.call(true),
+                        Err(problem) => problems.set(vec![tr(problem)]),
+                    }
+                });
+            }
+        }
+    };
     let mut chosen = move |files: Vec<dioxus::html::FileData>, pdf: bool| {
         problems.set(Vec::new());
         picked
@@ -636,6 +863,9 @@ fn AddSheet(
                 role: "dialog",
                 "aria-modal": "true",
                 onclick: move |event| event.stop_propagation(),
+                if scanning() {
+                    ScanPages { size: size(), on_done: scanned, on_cancel: move |()| scanning.set(false) }
+                } else {
                 h2 { class: "dialog-title", {tr(messages::ATTACHMENT_ADD_PHOTO)} }
                 label { class: "sheet-choice",
                     input {
@@ -669,6 +899,17 @@ fn AddSheet(
                     }
                     span { class: "sheet-choice-label", {tr(messages::ATTACHMENT_CHOOSE_PDF)} }
                     span { class: "sheet-choice-hint", {tr(messages::ATTACHMENT_CHOOSE_PDF_HINT)} }
+                }
+                button {
+                    class: "sheet-choice",
+                    r#type: "button",
+                    disabled: busy,
+                    onclick: move |_| {
+                        problems.set(Vec::new());
+                        scanning.set(true);
+                    },
+                    span { class: "sheet-choice-label", {tr(messages::SCAN_CHOICE)} }
+                    span { class: "sheet-choice-hint", {tr(messages::SCAN_CHOICE_HINT)} }
                 }
                 h3 { class: "section-heading", {tr(messages::ATTACHMENT_SIZE).to_uppercase()} }
                 div { class: "photo-sizes", role: "radiogroup",
@@ -747,6 +988,7 @@ fn AddSheet(
                         onclick: add,
                         {tr_with(messages::ATTACHMENT_ADD_COUNT, &[("count", MessageArg::from(i64::try_from(count).unwrap_or(i64::MAX)))])}
                     }
+                }
                 }
             }
         }
@@ -1142,5 +1384,19 @@ mod tests {
         );
         assert_eq!(inputs[1].content, Content::Document { pages: 3 });
         assert!(held_inputs(asset, owner, Vec::new()).is_empty());
+    }
+
+    #[test]
+    fn a_scans_pages_move_one_place_and_stay_in_range() {
+        let mut pages = vec!['a', 'b', 'c'];
+        move_page(&mut pages, 2, false);
+        assert_eq!(pages, vec!['a', 'c', 'b']);
+        move_page(&mut pages, 0, true);
+        assert_eq!(pages, vec!['c', 'a', 'b']);
+        // The first can't go earlier, the last can't go later, and past the end is nothing.
+        move_page(&mut pages, 0, false);
+        move_page(&mut pages, 2, true);
+        move_page(&mut pages, 7, true);
+        assert_eq!(pages, vec!['c', 'a', 'b']);
     }
 }

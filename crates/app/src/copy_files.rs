@@ -272,7 +272,7 @@ const fn kept_once_sent(purpose: UploadPurpose, thumbnail: bool) -> Option<Local
     }
     match purpose {
         UploadPurpose::Photo { .. } => Some(LocalKind::Photo),
-        UploadPurpose::Document => Some(LocalKind::Pdf),
+        UploadPurpose::Document | UploadPurpose::ScannedPages { .. } => Some(LocalKind::Pdf),
         UploadPurpose::DocumentThumbnail => Some(LocalKind::Thumbnail),
         UploadPurpose::Original | UploadPurpose::PhotoMetadata | UploadPurpose::Restore => None,
     }
