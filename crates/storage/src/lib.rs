@@ -30,6 +30,7 @@ pub mod preferences;
 pub mod rebuild;
 pub mod references;
 pub mod requirements;
+pub mod shops;
 pub mod snapshot;
 pub mod specs;
 pub mod squawks;

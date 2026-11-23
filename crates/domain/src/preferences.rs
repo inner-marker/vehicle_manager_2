@@ -346,6 +346,10 @@ pub struct Preferences {
     /// #083): Coming up, Due soon (the default), or Due very soon. Overdue always sends one.
     #[serde(default = "default_due_messages_from")]
     pub due_messages_from: DueStep,
+    /// The household's labor rate (its choice only, set by Maintainers and Admins; #089), or
+    /// none: then a job's labor cost isn't filled from a rate unless its shop has one.
+    #[serde(default)]
+    pub labor_rate: Option<crate::shop::LaborRate>,
 }
 
 const fn default_due_messages_from() -> DueStep {
@@ -368,6 +372,7 @@ impl Default for Preferences {
             originals: Originals::default(),
             due_warnings: DueDefaults::default(),
             due_messages_from: default_due_messages_from(),
+            labor_rate: None,
         }
     }
 }
@@ -405,6 +410,9 @@ pub struct PreferenceChoices {
     /// ignored).
     #[serde(default)]
     pub due_messages_from: Option<DueStep>,
+    /// The labor rate: the household's record only (a person's is ignored).
+    #[serde(default)]
+    pub labor_rate: Option<crate::shop::LaborRate>,
 }
 
 impl Preferences {
@@ -454,6 +462,7 @@ impl Preferences {
             due_messages_from: household
                 .due_messages_from
                 .unwrap_or(defaults.due_messages_from),
+            labor_rate: household.labor_rate,
         }
     }
 }
@@ -529,6 +538,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::due_messages_from`] (the household's record only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub due_messages_from: Option<Choice<DueStep>>,
+    /// See [`Preferences::labor_rate`] (the household's record only; `Default` clears it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labor_rate: Option<Choice<crate::shop::LaborRate>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -547,6 +559,7 @@ impl Patch for PreferencesPatch {
             ("originals", self.originals.is_some()),
             ("due_warnings", self.due_warnings.is_some()),
             ("due_messages_from", self.due_messages_from.is_some()),
+            ("labor_rate", self.labor_rate.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -593,6 +606,9 @@ impl Patch for PreferencesPatch {
         }
         if !keep("due_messages_from") {
             self.due_messages_from = None;
+        }
+        if !keep("labor_rate") {
+            self.labor_rate = None;
         }
     }
 }
@@ -743,6 +759,34 @@ mod tests {
         stored.as_object_mut().unwrap().remove("due_messages_from");
         let older: Preferences = serde_json::from_value(stored).unwrap();
         assert_eq!(older.due_messages_from, DueStep::DueSoon);
+    }
+
+    #[test]
+    fn only_the_household_has_a_labor_rate() {
+        let rate = crate::shop::LaborRate::new(9_500).unwrap();
+        assert_eq!(Preferences::default().labor_rate, None);
+        let mine = PreferenceChoices {
+            labor_rate: Some(crate::shop::LaborRate::new(1).unwrap()),
+            ..PreferenceChoices::default()
+        };
+        let household = PreferenceChoices {
+            labor_rate: Some(rate),
+            ..PreferenceChoices::default()
+        };
+        assert_eq!(
+            Preferences::resolve(&mine, &household).labor_rate,
+            Some(rate)
+        );
+        assert_eq!(
+            Preferences::resolve(&mine, &PreferenceChoices::default()).labor_rate,
+            None,
+            "a person's own is ignored"
+        );
+        // Older stored preferences, without it, read as none.
+        let mut stored = serde_json::to_value(Preferences::default()).unwrap();
+        stored.as_object_mut().unwrap().remove("labor_rate");
+        let older: Preferences = serde_json::from_value(stored).unwrap();
+        assert_eq!(older.labor_rate, None);
     }
 
     #[test]

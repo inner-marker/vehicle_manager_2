@@ -3652,4 +3652,10 @@ define_messages! {
     PLACE_SAVE_HERE_TITLE => "place-save-here-title",
     /// Where the new place is. $where (text): the point, and the town found there.
     PLACE_SAVE_HERE_AT => "place-save-here-at",
+    /// A shop's name another shop has.
+    SHOP_NAME_TAKEN => "shop-name-taken",
+    /// A shop's contact that's empty or too long.
+    SHOP_BAD_CONTACT => "shop-bad-contact",
+    /// A labor rate that's negative or far too high.
+    SHOP_BAD_RATE => "shop-bad-rate",
 }

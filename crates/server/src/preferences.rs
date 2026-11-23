@@ -73,8 +73,8 @@ pub async fn view(context: &PreferencesContext<'_>) -> PreferencesOutcome {
 }
 
 /// Changes the signed-in user's own preferences (never what squawks are called, whether
-/// originals may be kept, when things come due, or when due messages start: the household's
-/// alone).
+/// originals may be kept, when things come due, when due messages start, or the labor rate:
+/// the household's alone).
 pub async fn set_mine(
     context: &PreferencesContext<'_>,
     patch: PreferencesPatch,
@@ -83,6 +83,7 @@ pub async fn set_mine(
         || patch.originals.is_some()
         || patch.due_warnings.is_some()
         || patch.due_messages_from.is_some()
+        || patch.labor_rate.is_some()
     {
         tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: a household-only setting");
         return PreferencesOutcome::NotAllowed;

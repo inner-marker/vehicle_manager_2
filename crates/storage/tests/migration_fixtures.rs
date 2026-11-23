@@ -73,6 +73,7 @@ async fn every_release_fixture_migrates_to_the_latest_schema() {
         erased_files_come_through(&database, &fixture).await;
         meters_come_through(&database, &fixture, before).await;
         phase_five_comes_through(&database, &fixture).await;
+        phase_six_starts_empty(&database, &fixture).await;
         let integrity: String = sqlx::query_scalar("PRAGMA integrity_check")
             .fetch_one(database.pool())
             .await
@@ -275,6 +276,25 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
         "{}",
         fixture.display()
     );
+}
+
+/// Migration 0028 reads as empty in every fixture (all made before Phase 6): no shops, and no
+/// household labor rate.
+#[cfg(test)]
+async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
+    let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
+    assert_eq!(
+        (
+            count("SELECT count(*) FROM shops").await.unwrap(),
+            count("SELECT count(*) FROM preferences WHERE labor_rate IS NOT NULL")
+                .await
+                .unwrap()
+        ),
+        (0, 0),
+        "{}",
+        fixture.display()
+    );
+    assert!(database.shops().await.unwrap().is_empty());
 }
 
 /// From `v0.5.0`: every meter has its stored key; Oil life counts down and resets to 100%,

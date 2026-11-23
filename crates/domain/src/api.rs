@@ -1539,6 +1539,48 @@ pub enum ScheduleOutcome {
     Unavailable,
 }
 
+/// Settings → Labor rates (phase-6.md 2f, #089): the household's rate and its shops.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShopsView {
+    /// The household's labor rate, if it has one.
+    pub household_rate: Option<crate::shop::LaborRate>,
+    /// The household's currency, which every rate is in.
+    pub currency: crate::preferences::CurrencyCode,
+    /// The household's shops, by name.
+    pub shops: Vec<(crate::shop::ShopId, crate::shop::Shop)>,
+    /// The person may change them (a Maintainer or higher, in that mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a shops or labor rate request (phase-6.md 2f).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum ShopsOutcome {
+    /// The rate and the shops.
+    Shops {
+        /// They.
+        view: ShopsView,
+    },
+    /// A shop was added or changed.
+    Saved {
+        /// Its ID.
+        id: crate::shop::ShopId,
+    },
+    /// Done (a shop removed, or the household's rate set).
+    Done,
+    /// There's no such shop.
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused.
+    Invalid {
+        /// Why.
+        problem: crate::shop::ShopProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
 /// A household template as listed (#084).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TemplateSummary {

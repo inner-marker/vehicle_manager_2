@@ -168,6 +168,7 @@ mod preferences {
                 originals: None,
                 due_warnings: None,
                 due_messages_from: None,
+                labor_rate: None,
             };
             let view = unwrap_view(set_mine(&ctx, patch).await);
             assert_eq!(
