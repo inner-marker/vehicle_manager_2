@@ -3616,4 +3616,100 @@ define_messages! {
     TIMELINE_JUMP => "timeline-jump",
     /// The paging bar, for screen readers.
     TIMELINE_PAGES => "timeline-pages",
+    /// Under the photos added to a record that isn't saved yet.
+    ATTACHMENT_ADDED_ON_SAVE => "attachment-added-on-save",
+    /// A scan with more than 100 pages.
+    ATTACHMENT_TOO_MANY_PAGES => "attachment-too-many-pages",
+    /// + Add: scan a document's pages into one PDF.
+    SCAN_CHOICE => "scan-choice",
+    /// Under Scan pages in + Add.
+    SCAN_CHOICE_HINT => "scan-choice-hint",
+    /// The scan sheet's title.
+    SCAN_TITLE => "scan-title",
+    /// How many pages so far. $count (number).
+    SCAN_COUNT => "scan-count",
+    /// A page's description for screen readers. $number (number).
+    SCAN_PAGE => "scan-page",
+    /// Drop a page (for screen readers).
+    SCAN_REMOVE_PAGE => "scan-remove-page",
+    /// Move a page one place earlier (for screen readers).
+    SCAN_EARLIER => "scan-earlier",
+    /// Move a page one place later (for screen readers).
+    SCAN_LATER => "scan-later",
+    /// Take the first page.
+    SCAN_FIRST_PAGE => "scan-first-page",
+    /// Take another page.
+    SCAN_NEXT_PAGE => "scan-next-page",
+    /// Under taking a page.
+    SCAN_PAGE_HINT => "scan-page-hint",
+    /// While pages are read or the PDF is made.
+    SCAN_WORKING => "scan-working",
+    /// Join the pages. $count (number).
+    SCAN_MAKE_PDF => "scan-make-pdf",
+    /// Under Where on a log form: save the point as one of your places (#26).
+    LOG_SAVE_PLACE => "log-save-place",
+    /// The Save as a place dialog's title.
+    PLACE_SAVE_HERE_TITLE => "place-save-here-title",
+    /// Where the new place is. $where (text): the point, and the town found there.
+    PLACE_SAVE_HERE_AT => "place-save-here-at",
+    /// A shop's name another shop has.
+    SHOP_NAME_TAKEN => "shop-name-taken",
+    /// A shop's contact that's empty or too long.
+    SHOP_BAD_CONTACT => "shop-bad-contact",
+    /// A labor rate that's negative or far too high.
+    SHOP_BAD_RATE => "shop-bad-rate",
+    /// Settings: the Labor rates section.
+    SETTINGS_SECTION_LABOR_RATES => "settings-section-labor-rates",
+    /// Above the labor rates. $currency (text): the household's currency code.
+    SHOP_RATES_INTRO => "shop-rates-intro",
+    /// The household's labor rate's label.
+    SHOP_HOUSEHOLD_RATE => "shop-household-rate",
+    /// Under the household's rate.
+    SHOP_HOUSEHOLD_RATE_HELP => "shop-household-rate-help",
+    /// After a rate's box.
+    SHOP_PER_HOUR => "shop-per-hour",
+    /// No household rate (seen without the right to change it).
+    SHOP_RATE_NONE => "shop-rate-none",
+    /// A shop without its own rate, or a job priced at the household's rate.
+    SHOP_RATE_HOUSEHOLD => "shop-rate-household",
+    /// A rate. $amount (text): the amount, with its currency's symbol.
+    SHOP_RATE_PER_HOUR => "shop-rate-per-hour",
+    /// The shops' heading in Labor rates.
+    SHOPS_HEADING => "shops-heading",
+    /// No shops yet.
+    SHOPS_EMPTY => "shops-empty",
+    /// Adds a shop.
+    SHOP_ADD => "shop-add",
+    /// The add-a-shop dialog's title.
+    SHOP_ADD_TITLE => "shop-add-title",
+    /// The change-a-shop dialog's title.
+    SHOP_EDIT_TITLE => "shop-edit-title",
+    /// A shop's name's label.
+    SHOP_NAME => "shop-name",
+    /// A shop's contact's label.
+    SHOP_CONTACT => "shop-contact",
+    /// A shop's own rate's label.
+    SHOP_OWN_RATE => "shop-own-rate",
+    /// Under a shop's own rate.
+    SHOP_OWN_RATE_HELP => "shop-own-rate-help",
+    /// Asks before removing a shop. $name (text): its name.
+    SHOP_REMOVE_TITLE => "shop-remove-title",
+    /// What removing a shop does.
+    SHOP_REMOVE_TEXT => "shop-remove-text",
+    /// A shop that's gone.
+    SHOP_NOT_FOUND => "shop-not-found",
+    /// The shops suggested under Done by (for screen readers).
+    SHOP_SUGGESTIONS => "shop-suggestions",
+    /// Fills a task's labor cost from the rate again.
+    WORK_USE_RATE => "work-use-rate",
+    /// Under labor while the rate fills its cost. $time (text): the labor time; $rate (text): the rate; $source (text): the shop, or the household rate; $cost (text): the cost.
+    WORK_RATE_FILLS => "work-rate-fills",
+    /// Under labor when a typed cost differs from the rate. As work-rate-fills.
+    WORK_RATE_WOULD_BE => "work-rate-would-be",
+    /// The viewer's hollow star on a vehicle's own photo (#24).
+    MAIN_PHOTO_MAKE => "main-photo-make",
+    /// The viewer's gold star on the vehicle's main photo, for whoever may change it.
+    MAIN_PHOTO_CLEAR => "main-photo-clear",
+    /// The gold star on the main photo, for someone who can't change it.
+    MAIN_PHOTO_IS => "main-photo-is",
 }

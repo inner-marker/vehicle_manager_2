@@ -78,6 +78,19 @@ pub(crate) const fn group_icon(icon: GroupIcon) -> Icon {
     }
 }
 
+/// A vehicle kind's icon, shown where it has no main photo (#24): the built-in kinds' own, and a
+/// wrench for other equipment (and any kind added later).
+pub(crate) fn kind_icon(kind: &domain::asset::AssetKind) -> Icon {
+    match kind.as_str() {
+        "car" => Icon::Vehicles,
+        "truck" => Icon::Truck,
+        "motorcycle" => Icon::Motorcycle,
+        "trailer" => Icon::Trailer,
+        "generator" => Icon::Generator,
+        _ => Icon::Templates,
+    }
+}
+
 /// A group's name, for the top bar on its page.
 pub(crate) fn group_name(context: VehiclesContext, group_id: &str) -> Option<String> {
     let id: GroupId = group_id.parse().ok()?;
@@ -170,5 +183,30 @@ fn SidebarEntry(
             IconView { icon }
             span { class: "sidebar-label", {label} }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_built_in_kind_has_its_own_icon_and_equipment_a_wrench() {
+        let icons: Vec<Icon> = domain::profile::profiles()
+            .unwrap()
+            .iter()
+            .map(|profile| kind_icon(&profile.id))
+            .collect();
+        assert_eq!(
+            icons,
+            [
+                Icon::Vehicles,
+                Icon::Truck,
+                Icon::Motorcycle,
+                Icon::Trailer,
+                Icon::Generator,
+                Icon::Templates
+            ]
+        );
     }
 }

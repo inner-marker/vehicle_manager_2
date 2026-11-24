@@ -156,6 +156,7 @@ impl AssetForm {
             parent: None,
             status: self.status,
             identifiers,
+            main_photo: None,
         })
     }
 

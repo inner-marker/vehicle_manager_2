@@ -34,8 +34,9 @@ use domain::api::{
 use domain::asset::AssetId;
 use domain::attachment::{
     Attachment, AttachmentId, AttachmentKind, AttachmentOwner, AttachmentPatch, AttachmentProblem,
-    Content, FileName, FileType, JPEG_QUALITY, PhotoSize, StoredFile, check as check_attachment,
-    check_original, check_upload, for_correction, thumbnail_size,
+    Content, FileName, FileType, JPEG_QUALITY, PDF_MAX_BYTES, PhotoSize, StoredFile,
+    check as check_attachment, check_original, check_upload, for_correction, thumbnail_size,
+    unpack_pages,
 };
 use domain::command::Change;
 use domain::event::{EventId, EventStatus};
@@ -171,6 +172,144 @@ pub fn count_pages(bytes: &[u8]) -> Result<u32, AttachmentProblem> {
     }
 }
 
+/// A scan's pages joined into one PDF (phase-6.md 2c).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JoinedPages {
+    /// The PDF.
+    pub pdf: Vec<u8>,
+    /// How many pages it has.
+    pub pages: u32,
+    /// The first page as a thumbnail (a JPEG).
+    pub thumbnail: Vec<u8>,
+}
+
+/// A page's long edge in the PDF, in points: 11 inches, a Letter page's height.
+const PAGE_LONG_EDGE_POINTS: f32 = 792.0;
+
+/// Joins `pages` (photos of a document's pages, packed by `domain::attachment::pack_pages`)
+/// into one PDF: each prepared like a photo at `size` (turned upright, shrunk, saved as a JPEG),
+/// then one page each, in order, its long edge 11 inches.
+///
+/// # Errors
+///
+/// The packing's problem ([`unpack_pages`]); a page that isn't a photo, or is too large
+/// ([`check_upload`]); [`AttachmentProblem::Unreadable`] if one can't be decoded; or
+/// [`AttachmentProblem::PdfTooLarge`] if the PDF comes to more than 50 MB.
+pub fn join_pages(packed: &[u8], size: PhotoSize) -> Result<JoinedPages, AttachmentProblem> {
+    let pages = unpack_pages(packed)?;
+    let mut prepared = Vec::with_capacity(pages.len());
+    for page in &pages {
+        check_upload(AttachmentKind::Photo, FileType::sniff(page), length(page))?;
+        prepared.push(process_photo(page, size)?);
+    }
+    let thumbnail = prepared
+        .first()
+        .map(|first| first.thumbnail.clone())
+        .ok_or(AttachmentProblem::NoPages)?;
+    let pdf = pdf_of(&prepared).map_err(|_| AttachmentProblem::Unreadable)?;
+    if length(&pdf) > PDF_MAX_BYTES {
+        return Err(AttachmentProblem::PdfTooLarge);
+    }
+    Ok(JoinedPages {
+        pdf,
+        pages: u32::try_from(prepared.len()).map_err(|_| AttachmentProblem::TooManyPages)?,
+        thumbnail,
+    })
+}
+
+/// A page's size in points for a photo of `width` × `height` pixels: its long edge
+/// [`PAGE_LONG_EDGE_POINTS`], keeping its shape.
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "a photo's pixel count is far below f32's exact range"
+)]
+fn page_points(width: u32, height: u32) -> (f32, f32) {
+    let (width, height) = (width.max(1) as f32, height.max(1) as f32);
+    if width >= height {
+        (
+            PAGE_LONG_EDGE_POINTS,
+            PAGE_LONG_EDGE_POINTS * height / width,
+        )
+    } else {
+        (
+            PAGE_LONG_EDGE_POINTS * width / height,
+            PAGE_LONG_EDGE_POINTS,
+        )
+    }
+}
+
+/// A PDF with one page per photo, each JPEG embedded as it is (no re-compression).
+fn pdf_of(photos: &[ProcessedPhoto]) -> lopdf::Result<Vec<u8>> {
+    use lopdf::content::{Content as PageContent, Operation};
+    use lopdf::{Document, Object, Stream, dictionary};
+
+    let mut document = Document::with_version("1.5");
+    let tree_id = document.new_object_id();
+    let mut kids = Vec::with_capacity(photos.len());
+    for photo in photos {
+        let (width, height) = photo.pixels;
+        let image = Stream::new(
+            dictionary! {
+                "Type" => "XObject",
+                "Subtype" => "Image",
+                "Width" => i64::from(width),
+                "Height" => i64::from(height),
+                "ColorSpace" => "DeviceRGB",
+                "BitsPerComponent" => 8,
+                "Filter" => "DCTDecode",
+            },
+            photo.jpeg.clone(),
+        )
+        .with_compression(false);
+        let image_id = document.add_object(image);
+        let (page_width, page_height) = page_points(width, height);
+        let content = PageContent {
+            operations: vec![
+                Operation::new("q", vec![]),
+                Operation::new(
+                    "cm",
+                    vec![
+                        page_width.into(),
+                        0.into(),
+                        0.into(),
+                        page_height.into(),
+                        0.into(),
+                        0.into(),
+                    ],
+                ),
+                Operation::new("Do", vec!["Page".into()]),
+                Operation::new("Q", vec![]),
+            ],
+        };
+        let content_id = document.add_object(Stream::new(dictionary! {}, content.encode()?));
+        let page_id = document.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => tree_id,
+            "MediaBox" => vec![0.into(), 0.into(), page_width.into(), page_height.into()],
+            "Contents" => content_id,
+            "Resources" => dictionary! { "XObject" => dictionary! { "Page" => image_id } },
+        });
+        kids.push(Object::Reference(page_id));
+    }
+    let count = i64::try_from(kids.len()).unwrap_or(i64::MAX);
+    document.objects.insert(
+        tree_id,
+        Object::Dictionary(dictionary! {
+            "Type" => "Pages",
+            "Kids" => kids,
+            "Count" => count,
+        }),
+    );
+    let catalog_id = document.add_object(dictionary! {
+        "Type" => "Catalog",
+        "Pages" => tree_id,
+    });
+    document.trailer.set("Root", catalog_id);
+    let mut pdf = Vec::new();
+    document.save_to(&mut pdf)?;
+    Ok(pdf)
+}
+
 /// A stored photo's width and height, from its header.
 fn pixels_of(bytes: &[u8]) -> Result<(u32, u32), AttachmentProblem> {
     ImageReader::new(Cursor::new(bytes))
@@ -234,6 +373,31 @@ async fn store_bytes(
             .await
             .map_err(|error| upload_failed("store", &error)),
     }
+}
+
+/// Joins a scan's packed pages into one PDF and stores it, with its first page's thumbnail
+/// (phase-6.md 2c).
+async fn upload_scan(
+    context: &UploadContext<'_>,
+    bytes: Vec<u8>,
+    size: PhotoSize,
+) -> Result<UploadedFile, UploadOutcome> {
+    let invalid = |problem| UploadOutcome::Invalid { problem };
+    // Refused before decoding a body that can't make a PDF under the limit.
+    if length(&bytes) > PDF_MAX_BYTES {
+        return Err(invalid(AttachmentProblem::PdfTooLarge));
+    }
+    let joined = blocking(move || join_pages(&bytes, size))
+        .await
+        .map_err(|error| upload_failed("scan", &error))?
+        .map_err(invalid)?;
+    Ok(UploadedFile {
+        file: store_bytes(context, joined.pdf).await?,
+        file_type: Some(FileType::Pdf),
+        thumbnail: Some(store_bytes(context, joined.thumbnail).await?),
+        pixels: None,
+        pages: Some(joined.pages),
+    })
 }
 
 /// Logs a failure and answers "unavailable".
@@ -327,6 +491,9 @@ async fn upload_checked(
             })
         }
         UploadPurpose::Restore => restore(context, bytes, file_type).await,
+        UploadPurpose::ScannedPages { size: page_size } => {
+            upload_scan(context, bytes, page_size).await
+        }
         UploadPurpose::DocumentThumbnail => {
             check_upload(AttachmentKind::Photo, file_type, size).map_err(invalid)?;
             let thumbnail = blocking(move || process_thumbnail(&bytes))

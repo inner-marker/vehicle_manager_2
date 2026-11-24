@@ -68,6 +68,10 @@ pub struct Asset {
     pub status: LifecycleStatus,
     /// VIN, plate, serial number, and so on.
     pub identifiers: Vec<Identifier>,
+    /// Its main photo (#24): one of its own photos, shown on the Garage card and the Overview.
+    /// Ignored once that photo is removed (see [`crate::attachment::is_main_photo_of`]).
+    #[serde(default)]
+    pub main_photo: Option<crate::attachment::AttachmentId>,
 }
 
 /// An asset kind: the ID of its profile, e.g. `car` (lowercase letters, digits, `-`).
@@ -372,6 +376,9 @@ pub struct AssetPatch {
     /// See [`Asset::identifiers`] (the whole list is replaced).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifiers: Option<Vec<Identifier>>,
+    /// See [`Asset::main_photo`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub main_photo: Option<Clearable<crate::attachment::AttachmentId>>,
 }
 
 impl AssetPatch {
@@ -390,12 +397,13 @@ impl AssetPatch {
             parent: Some(Clearable::from_option(asset.parent)),
             status: Some(asset.status),
             identifiers: Some(asset.identifiers),
+            main_photo: Some(Clearable::from_option(asset.main_photo)),
         }
     }
 }
 
 /// Every field name, in a fixed order (as stored in the field clocks).
-const ASSET_FIELDS: [&str; 11] = [
+const ASSET_FIELDS: [&str; 12] = [
     "kind",
     "name",
     "make",
@@ -407,6 +415,7 @@ const ASSET_FIELDS: [&str; 11] = [
     "parent",
     "status",
     "identifiers",
+    "main_photo",
 ];
 
 impl Patch for AssetPatch {
@@ -423,6 +432,7 @@ impl Patch for AssetPatch {
             self.parent.is_some(),
             self.status.is_some(),
             self.identifiers.is_some(),
+            self.main_photo.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
         ASSET_FIELDS
@@ -467,6 +477,9 @@ impl Patch for AssetPatch {
         if !keep("identifiers") {
             self.identifiers = None;
         }
+        if !keep("main_photo") {
+            self.main_photo = None;
+        }
     }
 }
 
@@ -495,6 +508,7 @@ mod tests {
             identifiers: vec![
                 Identifier::new(IdentifierKind::parse("plate").unwrap(), "ABC 123").unwrap(),
             ],
+            main_photo: None,
         }
     }
 

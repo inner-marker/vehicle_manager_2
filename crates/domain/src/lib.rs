@@ -50,6 +50,7 @@ pub mod reference;
 pub mod requirement;
 pub mod secret;
 pub mod server_address;
+pub mod shop;
 pub mod spec;
 pub mod squawk;
 pub mod sync;

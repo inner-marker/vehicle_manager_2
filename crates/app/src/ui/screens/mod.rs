@@ -14,6 +14,7 @@ mod formula_view;
 mod fuel_view;
 mod groups;
 mod job_page;
+mod labor_rates;
 mod life_input;
 mod life_part;
 mod log_chooser;

@@ -922,6 +922,17 @@ pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOut
     read!(reader => ::server::templates::list(&reader.assets()).await, api::list_templates())
 }
 
+/// Settings → Labor rates (`api::list_shops`, phase-6.md 2f): read from the copy on a desktop
+/// that has one, offline too, so a job logged offline is priced from the rates. Changing them
+/// needs the server.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn list_shops() -> ServerFnResult<domain::api::ShopsOutcome> {
+    read!(reader => ::server::shops::list(&reader.assets()).await, api::list_shops())
+}
+
 /// One vehicle's page (`api::vehicle_page`).
 ///
 /// # Errors

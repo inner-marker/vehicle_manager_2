@@ -730,6 +730,23 @@ pub(crate) async fn edit_vehicle(
     )
 }
 
+/// Makes one of a vehicle's own photos its main photo, or leaves it with none (#24,
+/// phase-6.md 2h). Server only, as the vehicle's setup is.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/main-photo")]
+pub(crate) async fn set_main_photo(
+    id: domain::asset::AssetId,
+    photo: Option<domain::attachment::AttachmentId>,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::set_main_photo(&context, id, photo).await
+    })
+    .await)
+}
+
 /// Who gains, loses, or changes access if a vehicle moves to another group.
 ///
 /// # Errors
@@ -1792,6 +1809,71 @@ pub(crate) async fn delete_template(
     )
 }
 
+/// Settings → Labor rates: the household's rate and shops (phase-6.md 2f).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/shops")]
+pub(crate) async fn list_shops() -> ServerFnResult<domain::api::ShopsOutcome> {
+    Ok(server_side::with_shops(async |context| ::server::shops::list(&context).await).await)
+}
+
+/// Adds a shop (a Maintainer or higher, in that mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `ShopsOutcome` values.
+#[post("/api/v1/shops/add")]
+pub(crate) async fn add_shop(
+    shop: domain::shop::Shop,
+) -> ServerFnResult<domain::api::ShopsOutcome> {
+    Ok(server_side::with_shops(async |context| ::server::shops::add(&context, shop).await).await)
+}
+
+/// Changes a shop (a Maintainer or higher, in that mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `ShopsOutcome` values.
+#[post("/api/v1/shops/edit")]
+pub(crate) async fn edit_shop(
+    id: domain::shop::ShopId,
+    shop: domain::shop::Shop,
+) -> ServerFnResult<domain::api::ShopsOutcome> {
+    Ok(
+        server_side::with_shops(async |context| ::server::shops::edit(&context, id, shop).await)
+            .await,
+    )
+}
+
+/// Removes a shop (a Maintainer or higher, in that mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `ShopsOutcome` values.
+#[post("/api/v1/shops/delete")]
+pub(crate) async fn delete_shop(
+    id: domain::shop::ShopId,
+) -> ServerFnResult<domain::api::ShopsOutcome> {
+    Ok(server_side::with_shops(async |context| ::server::shops::delete(&context, id).await).await)
+}
+
+/// Sets the household's labor rate, or clears it (a Maintainer or higher, in that mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `ShopsOutcome` values.
+#[post("/api/v1/shops/rate")]
+pub(crate) async fn set_labor_rate(
+    rate: Option<domain::shop::LaborRate>,
+) -> ServerFnResult<domain::api::ShopsOutcome> {
+    Ok(server_side::with_shops(async |context| {
+        ::server::shops::set_household_rate(&context, rate).await
+    })
+    .await)
+}
+
 /// Everyone, for the Users screen (Admin mode only).
 ///
 /// # Errors
@@ -2440,6 +2522,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::TemplatesOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a shops or labor rate
+    /// request, or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_shops(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::ShopsOutcome,
+    ) -> domain::api::ShopsOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::ShopsOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

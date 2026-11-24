@@ -1595,6 +1595,65 @@ timeline-older = Older ›
 timeline-per-page = Per page
 timeline-jump = Jump to
 timeline-pages = Pages
+attachment-added-on-save = Added when you save. ✕ removes one first.
+attachment-too-many-pages = A scan can have up to 100 pages.
+scan-choice = Scan pages
+scan-choice-hint = photos of each page, made into one PDF
+scan-title = Scan pages
+# $count (number): pages taken so far.
+scan-count = { $count ->
+    [0] No pages yet. Take the first one.
+    [one] 1 page
+   *[other] { $count } pages
+}
+# $number (number): the page's place in the document.
+scan-page = Page { $number }
+scan-remove-page = Remove this page
+scan-earlier = Move earlier
+scan-later = Move later
+scan-first-page = 📷 First page
+scan-next-page = 📷 Next page
+scan-page-hint = or choose photos of the pages
+scan-working = Working…
+log-save-place = ☆ Save as a place…
+place-save-here-title = Save as a place
+# $where (text): "44.0462, -123.0220 · Springfield, OR".
+place-save-here-at = Here: { $where }
+shop-name-taken = There's already a shop with that name.
+shop-bad-contact = A contact can have up to 100 characters.
+shop-bad-rate = A labor rate can't be below zero or above 100,000 an hour.
+settings-section-labor-rates = Labor rates
+shop-rates-intro = For everyone in the household, in { $currency }. A job keeps the labor cost it was saved with.
+shop-household-rate = Household rate
+shop-household-rate-help = For work done by someone in the household, or by a shop without its own rate. Empty for none.
+shop-per-hour = / hour
+shop-rate-none = None set
+shop-rate-household = household rate
+shop-rate-per-hour = { $amount } / h
+shops-heading = Shops
+shops-empty = No shops yet. Add the places that work on your vehicles, each with its own rate if it differs.
+shop-add = + Shop
+shop-add-title = Add a shop
+shop-edit-title = Change a shop
+shop-name = Name
+shop-contact = Contact (phone or email)
+shop-own-rate = Its own labor rate
+shop-own-rate-help = Empty: the household's rate.
+shop-remove-title = Remove { $name }?
+shop-remove-text = Jobs it did keep its name, contact, and costs.
+shop-not-found = That shop isn't there any more.
+shop-suggestions = Shops
+work-use-rate = ↺ Use the rate
+work-rate-fills = { $time } × { $rate } ({ $source }). Change it for a discount or a fixed price; then it stays as typed.
+work-rate-would-be = At the rate: { $time } × { $rate } ({ $source }) is { $cost }.
+main-photo-make = Make Main Photo
+main-photo-clear = Main Photo: click for none
+main-photo-is = Main Photo
+# $count (number): how many pages the PDF will have.
+scan-make-pdf = { $count ->
+    [one] Make PDF (1 page)
+   *[other] Make PDF ({ $count } pages)
+}
 timeline-corrected = Corrected
 timeline-draft = Draft
 panel-fuel-none = No fuel-ups yet.

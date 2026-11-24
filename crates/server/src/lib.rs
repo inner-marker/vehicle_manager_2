@@ -36,6 +36,7 @@ pub mod references;
 pub mod schedule;
 pub mod sessions;
 pub mod setup;
+pub mod shops;
 pub mod squawks;
 pub mod startup;
 pub mod sync;

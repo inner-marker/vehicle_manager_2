@@ -14,7 +14,7 @@ use domain::log_area;
 
 use crate::api;
 use crate::data;
-use crate::ui::location::{PlacePart, WherePart, place_text, use_picker};
+use crate::ui::location::{Picker, PlacePart, WherePart, place_text, use_picker};
 use crate::ui::screens::{Field, FormError, problem_from_error};
 use crate::ui::{tr, tr_with};
 
@@ -52,6 +52,104 @@ fn failure(result: &Result<PlacesOutcome, ServerFnError>) -> Option<String> {
             Some(tr(messages::SOMETHING_WENT_WRONG))
         }
         Err(error) => Some(tr(problem_from_error(error).message())),
+    }
+}
+
+/// The saved place for where a record is (#26, phase-6.md 2e): its coordinates as the Places
+/// dialog writes them, and the place found there.
+fn form_here(
+    name: String,
+    at: domain::location::Coordinates,
+    radius_m: u32,
+    (city, region, country): (String, String, String),
+) -> SavedPlaceForm {
+    SavedPlaceForm {
+        name,
+        latitude: format!("{:.7}", at.latitude()),
+        longitude: format!("{:.7}", at.longitude()),
+        radius_m,
+        city,
+        region,
+        country,
+    }
+}
+
+/// Whether a log form offers **☆ Save as a place…**: once it has a point that isn't within one
+/// of the person's saved places.
+pub(super) const fn offers_saving(has_point: bool, in_saved_place: bool) -> bool {
+    has_point && !in_saved_place
+}
+
+/// **Save as a place** while logging (#26, phase-6.md 2e; sketch part 3): a name (the town
+/// found there to start with) and a radius, for the point the record has. Added to the person's
+/// places, online or offline; then the record shows it as where it is.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(super) fn SaveHere(picker: Picker, on_close: EventHandler<()>) -> Element {
+    let name = use_signal(|| (picker.city)());
+    let mut radius = use_signal(|| DEFAULT_RADIUS_M);
+    let mut error = use_signal(|| None::<String>);
+    let mut busy = use_signal(|| false);
+    let Some(at) = (picker.coordinates)() else {
+        return rsx! {};
+    };
+    let place = (picker.located)()
+        .and_then(|located| located.suggestion)
+        .map(|suggestion| place_text(&suggestion.place));
+    let point = format!("{:.4}, {:.4}", at.latitude(), at.longitude());
+    let here = place.map_or_else(|| point.clone(), |place| format!("{point} · {place}"));
+    let submit = move |event: FormEvent| {
+        event.prevent_default();
+        let form = form_here(
+            name(),
+            at,
+            radius(),
+            ((picker.city)(), (picker.region)(), (picker.country)()),
+        );
+        busy.set(true);
+        spawn(async move {
+            let result = data::add_place(form).await;
+            busy.set(false);
+            error.set(failure(&result));
+            if error().is_none() {
+                // Looked up again, so the record shows the new place as where it is.
+                picker.locate(at, (picker.fix)(), error);
+                on_close.call(());
+            }
+        });
+    };
+    rsx! {
+        div { class: "dialog-scrim",
+            form { class: "dialog place-dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
+                h2 { class: "dialog-title", {tr(messages::PLACE_SAVE_HERE_TITLE)} }
+                p { class: "muted-note",
+                    {tr_with(messages::PLACE_SAVE_HERE_AT, &[("where", MessageArg::from(here.as_str()))])}
+                }
+                div { class: "field-row",
+                    Field { label: messages::PLACE_NAME, value: name }
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::PLACE_RADIUS)} }
+                        select {
+                            class: "field-input",
+                            onchange: move |event| radius.set(event.value().parse().unwrap_or(DEFAULT_RADIUS_M)),
+                            for meters in RADII {
+                                option { key: "{meters}", value: "{meters}", selected: radius() == meters, {distance_text(meters)} }
+                            }
+                        }
+                    }
+                }
+                FormError { message: error() }
+                div { class: "form-buttons",
+                    button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
+                    button { class: "primary-button", r#type: "submit", disabled: busy(),
+                        if busy() { {tr(messages::ACTION_SAVING)} } else { {tr(messages::ACTION_SAVE)} }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -306,6 +404,31 @@ fn ConfirmRemove(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_place_saved_while_logging_is_where_the_record_is() {
+        let at = domain::location::Coordinates::from_e7(440_462_000, -1_230_220_000).unwrap();
+        let form = form_here(
+            "Joe's Auto".to_owned(),
+            at,
+            DEFAULT_RADIUS_M,
+            ("Springfield".to_owned(), "OR".to_owned(), "US".to_owned()),
+        );
+        assert_eq!(form.name, "Joe's Auto");
+        assert_eq!(
+            (form.latitude.as_str(), form.longitude.as_str()),
+            ("44.0462000", "-123.0220000")
+        );
+        assert_eq!(form.radius_m, DEFAULT_RADIUS_M);
+        assert_eq!(
+            (form.city.as_str(), form.country.as_str()),
+            ("Springfield", "US")
+        );
+        // Offered once there's a point that isn't in a saved place already.
+        assert!(offers_saving(true, false));
+        assert!(!offers_saving(true, true));
+        assert!(!offers_saving(false, false));
+    }
 
     #[test]
     fn distances_read_in_meters_or_kilometers() {

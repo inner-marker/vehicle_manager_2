@@ -43,6 +43,14 @@ pub(crate) enum Icon {
     Places,
     /// The Templates screen (#084).
     Templates,
+    /// A truck, where it has no main photo (#24); a car is [`Self::Vehicles`].
+    Truck,
+    /// A motorcycle, likewise.
+    Motorcycle,
+    /// A trailer, likewise.
+    Trailer,
+    /// A generator, likewise.
+    Generator,
 }
 
 impl Icon {
@@ -79,6 +87,10 @@ impl Icon {
             Self::Down => include_str!("../../assets/icons/chevron-down.svg"),
             Self::Groups => include_str!("../../assets/icons/layers.svg"),
             Self::Places => include_str!("../../assets/icons/map-pin.svg"),
+            Self::Truck => include_str!("../../assets/icons/truck.svg"),
+            Self::Motorcycle => include_str!("../../assets/icons/motorbike.svg"),
+            Self::Trailer => include_str!("../../assets/icons/caravan.svg"),
+            Self::Generator => include_str!("../../assets/icons/zap.svg"),
         }
     }
 }

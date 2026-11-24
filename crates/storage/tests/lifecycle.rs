@@ -7,7 +7,7 @@ mod lifecycle {
     use std::collections::BTreeMap;
     use std::str::FromStr;
 
-    use domain::asset::{Asset, AssetKind, AssetName, AssetPatch, LifecycleStatus};
+    use domain::asset::Asset;
     use domain::attachment::{Attachment, AttachmentOwner, AttachmentPatch, Content, FileName};
     use domain::command::{Clearable, Patch};
     use domain::dates::{CalendarDate, EventDates};
@@ -34,7 +34,7 @@ mod lifecycle {
     use domain::user::{User, UserPatch, Username};
     use sqlx::sqlite::SqliteConnectOptions;
     use sqlx::{Connection, Row, SqliteConnection};
-    use storage::assets::{AssetWriter, GroupWriter};
+    use storage::assets::GroupWriter;
     use storage::attachments::AttachmentWriter;
     use storage::commands::RecordWriter;
     use storage::database::MIGRATOR;
@@ -86,23 +86,18 @@ mod lifecycle {
             .create(connection, test_id(GARAGE), &GroupPatch::all(group), 2)
             .await
             .unwrap();
-        let asset = Asset {
-            kind: AssetKind::parse("truck").unwrap(),
-            name: AssetName::parse("Truck").unwrap(),
-            make: None,
-            model: None,
-            year: None,
-            colour: None,
-            description: Notes::default(),
-            group: test_id(GARAGE),
-            parent: None,
-            status: LifecycleStatus::InService,
-            identifiers: vec![],
-        };
-        AssetWriter
-            .create(connection, test_id(TRUCK), &AssetPatch::all(asset), 3)
-            .await
-            .unwrap();
+        // Written in SQL, not by `AssetWriter`: the 0015 tests fill a database from before
+        // migration 0029 added the vehicle's main photo.
+        sqlx::query(
+            "INSERT INTO assets (id, kind, name, description, group_id, status, identifiers,
+                                 sequence)
+             VALUES (?, 'truck', 'Truck', '', ?, 'in-service', '[]', 3)",
+        )
+        .bind(storage::convert::id_to_sql(test_id::<Asset>(TRUCK)))
+        .bind(storage::convert::id_to_sql(test_id::<Group>(GARAGE)))
+        .execute(&mut *connection)
+        .await
+        .unwrap();
         // Written in SQL, not by `MeterWriter`: the 0015 tests fill a database from before
         // migration 0022 added the meter's direction and reset value.
         sqlx::query(

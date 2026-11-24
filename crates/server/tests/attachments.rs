@@ -16,8 +16,8 @@ mod attachments {
     use domain::asset::AssetId;
     use domain::asset_form::AssetForm;
     use domain::attachment::{
-        AttachmentId, AttachmentOwner, AttachmentProblem, Content, FileName, Original,
-        PhotoMetadata, PhotoSize,
+        AttachmentId, AttachmentOwner, AttachmentProblem, Content, FileName, FileType, Original,
+        PhotoMetadata, PhotoSize, pack_pages,
     };
     use domain::dates::EventDates;
     use domain::event::{
@@ -32,9 +32,12 @@ mod attachments {
     use domain::test_support::{ManualClock, test_id};
     use image::{ImageBuffer, Rgba};
     use lopdf::{Document, Object, dictionary};
-    use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
+    use server::assets::{
+        AssetsContext, add as add_vehicle, garage, set_main_photo, view as vehicle_page,
+    };
     use server::attachments::{
-        UploadContext, count_pages, download, list, move_to, process_photo, remove, upload,
+        UploadContext, count_pages, download, join_pages, list, move_to, process_photo, remove,
+        upload,
     };
     use server::events::{add as add_event, correct, edit, finish};
     use server::groups::ensure_default_group;
@@ -381,6 +384,55 @@ mod attachments {
         );
     }
 
+    /// A plain JPEG `width` × `height`.
+    fn jpeg(width: u32, height: u32) -> Vec<u8> {
+        let image = ImageBuffer::from_fn(width, height, |_, _| image::Rgb([240_u8, 240, 230]));
+        let mut bytes = std::io::Cursor::new(Vec::new());
+        image
+            .write_to(&mut bytes, image::ImageFormat::Jpeg)
+            .unwrap();
+        bytes.into_inner()
+    }
+
+    /// Each page's size in points, in order.
+    fn page_sizes(pdf: &[u8]) -> Vec<(f32, f32)> {
+        let document = Document::load_mem(pdf).unwrap();
+        document
+            .get_pages()
+            .values()
+            .map(|id| {
+                let page = document.get_dictionary(*id).unwrap();
+                let size = page.get(b"MediaBox").unwrap().as_array().unwrap();
+                (size[2].as_float().unwrap(), size[3].as_float().unwrap())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_scans_pages_are_joined_into_one_pdf_in_order() {
+        // A landscape page, a portrait one, and a PNG (prepared like any photo).
+        let packed = pack_pages(&[jpeg(640, 480), jpeg(480, 640), png()]);
+        let joined = join_pages(&packed, PhotoSize::Small).unwrap();
+        assert_eq!(joined.pages, 3);
+        assert_eq!(count_pages(&joined.pdf), Ok(3));
+        let sizes = page_sizes(&joined.pdf);
+        assert_eq!(sizes[0], (792.0, 594.0), "the first page, landscape");
+        assert_eq!(sizes[1], (594.0, 792.0), "the second, portrait");
+        assert_eq!(sizes[2], (792.0, 594.0), "the PNG, 4:3");
+        // The thumbnail is the first page's.
+        let thumbnail = image::load_from_memory(&joined.thumbnail).unwrap();
+        assert_eq!((thumbnail.width(), thumbnail.height()), (400, 300));
+        // A page that isn't a photo, or a body that isn't packed pages.
+        assert_eq!(
+            join_pages(&pack_pages(&[jpeg(64, 64), pdf(1)]), PhotoSize::Small),
+            Err(AttachmentProblem::NotAPhoto)
+        );
+        assert_eq!(
+            join_pages(&jpeg(64, 64), PhotoSize::Small),
+            Err(AttachmentProblem::Unreadable)
+        );
+    }
+
     #[tokio::test]
     async fn uploads_need_a_driver_and_a_file_of_the_right_kind() {
         let (temp, database, jordan, sam) = setup().await;
@@ -402,6 +454,20 @@ mod attachments {
         let pdf_upload =
             uploaded(&database, &store, &jordan, UploadPurpose::Document, pdf(2)).await;
         assert_eq!(pdf_upload.pages, Some(2));
+
+        let scan = uploaded(
+            &database,
+            &store,
+            &jordan,
+            UploadPurpose::ScannedPages {
+                size: PhotoSize::Small,
+            },
+            pack_pages(&[jpeg(640, 480), jpeg(480, 640)]),
+        )
+        .await;
+        assert_eq!((scan.pages, scan.file_type), (Some(2), Some(FileType::Pdf)));
+        assert_eq!(count_pages(&store.get(&scan.file.hash).unwrap()), Ok(2));
+        assert!(store.get(&scan.thumbnail.unwrap().hash).is_ok());
 
         let refuse = async |user: &SignedIn, purpose, bytes| {
             let files = Files::Folder(store.clone());
@@ -512,6 +578,104 @@ mod attachments {
         assert_eq!(
             download(&driver, &store, id, AttachmentPart::File).await,
             Err(AttachmentsOutcome::NotFound)
+        );
+    }
+
+    /// The vehicle's main photo, as its page and the Garage show it.
+    async fn main_photo_seen(
+        admin: &AssetsContext<'_>,
+        driver: &AssetsContext<'_>,
+        truck: AssetId,
+    ) -> (Option<AttachmentId>, Option<AttachmentId>) {
+        let AssetsOutcome::Asset { view } = vehicle_page(admin, truck).await else {
+            panic!("no truck page");
+        };
+        let AssetsOutcome::Garage { view: seen } =
+            garage(driver, &TimeZone::parse("UTC").unwrap()).await
+        else {
+            panic!("no Garage");
+        };
+        (view.asset.main_photo, seen.assets[0].asset.main_photo)
+    }
+
+    #[tokio::test]
+    async fn a_vehicles_main_photo_is_one_of_its_own_photos() {
+        let (temp, database, jordan, sam) = setup().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let clock = ManualClock::new(NOW);
+        let (truck, _) = new_truck(&database, &jordan, &clock).await;
+        let jordan_admin = in_mode(&jordan, ActiveMode::Admin);
+        let admin = context(&database, &jordan_admin, &clock);
+        let driver = context(&database, &sam, &clock);
+        let photo = small_photo(&database, &store, &jordan_admin).await;
+        let own = saved(
+            &add(
+                &admin,
+                &store,
+                photo_input(truck, AttachmentOwner::Vehicle, &photo),
+            )
+            .await,
+        );
+        let squawk = AttachmentOwner::Squawk {
+            squawk: open_squawk(&driver, truck).await,
+        };
+        let on_squawk = saved(&add(&driver, &store, photo_input(truck, squawk, &photo)).await);
+        let pdf = receipt(
+            &database,
+            &store,
+            &jordan_admin,
+            truck,
+            AttachmentOwner::Vehicle,
+        )
+        .await;
+        let pdf = saved(&add(&admin, &store, pdf).await);
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+
+        // Only someone who may change the vehicle's own photos; only one of them, and a photo.
+        assert_eq!(
+            set_main_photo(&driver, truck, Some(own)).await,
+            AssetsOutcome::NotAllowed
+        );
+        let jordan_maintaining = in_mode(&jordan, ActiveMode::Maintainer);
+        assert_eq!(
+            set_main_photo(
+                &context(&database, &jordan_maintaining, &clock),
+                truck,
+                Some(own)
+            )
+            .await,
+            AssetsOutcome::NotAllowed,
+            "the mode counts"
+        );
+        for other in [on_squawk, pdf, test_id(77)] {
+            assert_eq!(
+                set_main_photo(&admin, truck, Some(other)).await,
+                AssetsOutcome::NotFound
+            );
+        }
+
+        // Chosen: the page and everyone's Garage show it; chosen again, it's none.
+        assert_eq!(
+            set_main_photo(&admin, truck, Some(own)).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            main_photo_seen(&admin, &driver, truck).await,
+            (Some(own), Some(own))
+        );
+        assert_eq!(
+            set_main_photo(&admin, truck, None).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+
+        // Its photo removed: none, though the vehicle still names it.
+        set_main_photo(&admin, truck, Some(own)).await;
+        assert_eq!(remove(&admin, own).await, AttachmentsOutcome::Done);
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+        assert_eq!(
+            database.asset(truck).await.unwrap().unwrap().main_photo,
+            Some(own)
         );
     }
 

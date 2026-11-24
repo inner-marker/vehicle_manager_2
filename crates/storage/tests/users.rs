@@ -185,6 +185,7 @@ mod users {
             parent: None,
             status: LifecycleStatus::InService,
             identifiers: vec![],
+            main_photo: None,
         };
         AssetWriter
             .create(&mut connection, test_id(n), &AssetPatch::all(truck), 1)

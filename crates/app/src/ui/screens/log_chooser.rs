@@ -352,6 +352,7 @@ mod tests {
                 parent: None,
                 status: LifecycleStatus::InService,
                 identifiers: vec![],
+                main_photo: None,
             },
             role,
             plate: None,
