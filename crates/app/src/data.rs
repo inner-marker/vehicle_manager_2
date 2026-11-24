@@ -929,10 +929,6 @@ pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOut
 /// # Errors
 ///
 /// As the server function.
-#[expect(
-    dead_code,
-    reason = "Settings → Labor rates and the job form use it from step 2g"
-)]
 pub(crate) async fn list_shops() -> ServerFnResult<domain::api::ShopsOutcome> {
     read!(reader => ::server::shops::list(&reader.assets()).await, api::list_shops())
 }

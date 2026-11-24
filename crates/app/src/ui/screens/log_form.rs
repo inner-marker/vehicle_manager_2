@@ -20,8 +20,8 @@
 use dioxus::prelude::*;
 use domain::api::{
     AssetSummary, AssetView, AssetsOutcome, AttachmentsOutcome, EventsOutcome, LatestReading,
-    PlacesOutcome, PreferencesOutcome, RequirementView, ScheduleOutcome, SquawkView,
-    SquawksOutcome,
+    PlacesOutcome, PreferencesOutcome, RequirementView, ScheduleOutcome, ShopsOutcome, ShopsView,
+    SquawkView, SquawksOutcome,
 };
 use domain::asset::AssetId;
 use domain::attachment::AttachmentOwner;
@@ -53,7 +53,9 @@ use super::log_chooser::use_log_chooser;
 use super::log_input::{Context, Target, Typed, build, required_items, typed_from, zone};
 use super::squawks::use_vehicle_squawks;
 use super::vehicle_setup::event_from_value;
-use super::work_input::{Action, FinishCheck, TypedDisposition, TypedWork, total_minor};
+use super::work_input::{
+    Action, FinishCheck, JobRate, TypedDisposition, TypedWork, fill_costs, job_rate, total_minor,
+};
 use super::work_log::{WorkLog, job_squawk_ids, job_squawks, service_work};
 use super::{FormError, problem_from_error};
 use crate::api;
@@ -445,6 +447,8 @@ struct Inputs {
     work: Signal<TypedWork>,
     /// The currency its amounts are in (`None`: the person's).
     currency: Signal<Option<CurrencyCode>>,
+    /// The household's shops and labor rate, for a job (#089; loaded once the form shows).
+    shops: Signal<Option<ShopsView>>,
     /// A lifecycle event's own section.
     life: Signal<TypedLife>,
     /// The problem shown, and where.
@@ -547,9 +551,44 @@ fn use_inputs(start: &Typed) -> Inputs {
         original_start: use_signal(|| start.original_start),
         picker,
         work: use_signal(|| start.work.clone()),
+        shops: use_signal(|| None),
         life: use_signal(|| start.life.clone()),
         problem: use_signal(|| None),
     }
+}
+
+/// A job's labor rate (#089): the household's shops and rate are loaded once (from the desktop's
+/// copy offline), and each task's labor cost that isn't kept follows its time at the rate for
+/// whoever did it.
+fn use_job_rate(inputs: &Inputs, job: bool, home: CurrencyCode) -> Option<JobRate> {
+    let inputs = *inputs;
+    let mut shops = inputs.shops;
+    use_effect(move || {
+        if job {
+            spawn(async move {
+                match data::list_shops().await {
+                    Ok(ShopsOutcome::Shops { view }) => shops.set(Some(view)),
+                    Ok(_) => {}
+                    Err(error) => {
+                        tracing::debug!(target: log_area::UI, %error, "no labor rates for the job");
+                    }
+                }
+            });
+        }
+    });
+    let rate = use_memo(move || {
+        let currency = (inputs.currency)().unwrap_or(home);
+        job_rate(shops().as_ref(), (inputs.someone)().as_ref(), currency)
+    });
+    use_effect(move || {
+        let currency = (inputs.currency)().unwrap_or(home);
+        let mut work = inputs.work;
+        let mut typed = work();
+        if job && fill_costs(&mut typed, rate().map(|priced| priced.rate), currency) {
+            work.set(typed);
+        }
+    });
+    rate()
 }
 
 /// The text typed for `key` in a list of typed values.
@@ -720,6 +759,7 @@ fn FormBody(
     let job = !kind.finalizes_by_itself();
     let all_squawks = use_vehicle_squawks(asset);
     let mut finishing = use_signal(|| false);
+    let rate = use_job_rate(&inputs, job, units.currency);
     // Photos and documents added before the first save (phase-6.md 2b), tied to it once saved.
     let mut held = use_signal(Vec::<Held>::new);
     // A disposal asks first (#067).
@@ -1000,6 +1040,7 @@ fn FormBody(
                     held: (mode == Mode::New).then_some(held),
                     saved_tasks: start.work.tasks.len(),
                     start_readings: (inputs.readings)(),
+                    rate,
                 }
             }
             WhenWherePart { inputs, places: data.places.clone(), countries: data.countries, zone: zone_now.clone() }
@@ -2244,6 +2285,61 @@ fn MoreFold(
     }
 }
 
+/// The household's shops a "Done by" name could be (#089): choosing one fills its name and
+/// contact (the contact typed stays if the shop has none).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn ShopSuggestions(inputs: Inputs, typed: String) -> Element {
+    let mut someone = inputs.someone;
+    let Some(view) = (inputs.shops)() else {
+        return rsx! {};
+    };
+    let shops: Vec<(String, Option<String>, String)> = domain::shop::suggested(&typed, &view.shops)
+        .into_iter()
+        .map(|shop| {
+            let rate = shop.labor_rate.map_or_else(
+                || tr(messages::SHOP_RATE_HOUSEHOLD),
+                |rate| per_hour(rate, view.currency),
+            );
+            (shop.name.as_str().to_owned(), shop.contact.clone(), rate)
+        })
+        .collect();
+    if shops.is_empty() {
+        return rsx! {};
+    }
+    rsx! {
+        div { class: "shop-suggestions", role: "group", "aria-label": tr(messages::SHOP_SUGGESTIONS),
+            for (name, contact, rate) in shops {
+                button {
+                    key: "{name}",
+                    r#type: "button",
+                    class: "shop-suggestion",
+                    onclick: move |_| {
+                        let kept = (someone)().map(|(_, contact)| contact).unwrap_or_default();
+                        someone.set(Some((name.clone(), contact.clone().unwrap_or(kept))));
+                    },
+                    span { class: "shop-suggestion-name", {name.clone()} }
+                    span { class: "muted-note", {format!(" · {rate}")} }
+                }
+            }
+        }
+    }
+}
+
+/// A labor rate as "$120.00 / h".
+pub(super) fn per_hour(rate: domain::shop::LaborRate, currency: CurrencyCode) -> String {
+    tr_with(
+        messages::SHOP_RATE_PER_HOUR,
+        &[(
+            "amount",
+            MessageArg::from(crate::ui::money(rate.minor_per_hour(), currency).as_str()),
+        )],
+    )
+}
+
 /// Who did it, and notes.
 #[expect(
     unused_qualifications,
@@ -2289,6 +2385,7 @@ fn WhoFold(inputs: Inputs) -> Element {
                         }
                     }
                 }
+                ShopSuggestions { inputs, typed: name.clone() }
             }
             label { class: "field",
                 span { class: "field-label", {tr(messages::LOG_NOTES)} }

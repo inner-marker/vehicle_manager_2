@@ -30,7 +30,7 @@ use super::attachments::{AttachmentStrip, Held, HeldStrip, photo_size_for};
 use super::log_form::MoneyInput;
 use super::squawks::{SeverityChip, use_squawk_sheet};
 use super::work_input::{
-    Action, TypedDisposition, TypedPart, TypedTask, TypedWork, prefilled_part, total_minor,
+    Action, JobRate, TypedDisposition, TypedPart, TypedTask, TypedWork, prefilled_part, total_minor,
 };
 use crate::ui::{tr, tr_with};
 use domain::spec::{Spec, SpecAmount, SpecId, task_specs};
@@ -238,6 +238,8 @@ pub(super) fn WorkLog(
     held: Option<Signal<Vec<Held>>>,
     saved_tasks: usize,
     start_readings: Vec<(MeterId, String)>,
+    /// The rate its labor is priced at, if any (#089).
+    rate: Option<JobRate>,
 ) -> Element {
     let photo_size = photo_size_for(&vehicle.asset.kind, kind);
     // A new issue from the job: whoever may open one, and not once the vehicle's disposal is
@@ -314,6 +316,7 @@ pub(super) fn WorkLog(
                         meters: card_meters.clone(),
                         specs: specs.clone(),
                         currency,
+                        rate: rate.clone(),
                         on_collapse: move |()| open.set(None),
                         photos: task_photos(editing, &typed, saved_tasks, index),
                         asset: vehicle.id,
@@ -529,6 +532,44 @@ fn EndReading(
     }
 }
 
+/// Under a task's labor: "2:30 × $120.00 / h (Joe's Auto)" while the rate fills its cost, or
+/// what the rate would make it while a typed cost differs (with ↺ Use the rate). Nothing without
+/// a rate, a time, or when they agree.
+fn rate_note(task: &TypedTask, rate: Option<&JobRate>, currency: CurrencyCode) -> Option<String> {
+    let rate = rate?;
+    let seconds = domain::quantity::parse_duration(task.labor_time.trim()).ok()?;
+    let minor = domain::shop::labor_cost(seconds, rate.rate);
+    if task.cost_kept
+        && domain::quantity::parse_money(task.labor_cost.trim(), currency).ok() == Some(minor)
+    {
+        return None;
+    }
+    let source = rate
+        .shop
+        .clone()
+        .unwrap_or_else(|| tr(messages::SHOP_RATE_HOUSEHOLD));
+    let args = [
+        ("time", MessageArg::from(task.labor_time.trim())),
+        (
+            "rate",
+            MessageArg::from(super::log_form::per_hour(rate.rate, currency).as_str()),
+        ),
+        ("source", MessageArg::from(source.as_str())),
+        (
+            "cost",
+            MessageArg::from(crate::ui::money(minor, currency).as_str()),
+        ),
+    ];
+    Some(tr_with(
+        if task.cost_kept {
+            messages::WORK_RATE_WOULD_BE
+        } else {
+            messages::WORK_RATE_FILLS
+        },
+        &args,
+    ))
+}
+
 /// Sets meter `id`'s end reading to `text`.
 fn set_end_reading(work: &mut TypedWork, id: MeterId, text: String) {
     match work.end_readings.iter_mut().find(|(have, _)| *have == id) {
@@ -554,6 +595,7 @@ fn TaskCard(
     /// The vehicle's specs, for the reminders a task shows (#084).
     specs: Vec<(SpecId, Spec)>,
     currency: CurrencyCode,
+    rate: Option<JobRate>,
     on_collapse: EventHandler<()>,
     photos: Option<AttachmentOwner>,
     asset: AssetId,
@@ -659,7 +701,25 @@ fn TaskCard(
                     MoneyInput {
                         currency,
                         value: task.labor_cost.clone(),
-                        on_input: move |text: String| edit(&|task: &mut TypedTask| task.labor_cost.clone_from(&text)),
+                        on_input: move |text: String| edit(&|task: &mut TypedTask| {
+                            task.labor_cost.clone_from(&text);
+                            // A cost typed stays; emptied, the rate fills it again.
+                            task.cost_kept = !text.trim().is_empty();
+                        }),
+                    }
+                }
+            }
+            if let Some(note) = rate_note(&task, rate.as_ref(), currency) {
+                p { class: "muted-note labor-rate-note",
+                    {note}
+                    if task.cost_kept {
+                        " "
+                        button {
+                            class: "link-button",
+                            r#type: "button",
+                            onclick: move |_| edit(&|task: &mut TypedTask| task.cost_kept = false),
+                            {tr(messages::WORK_USE_RATE)}
+                        }
                     }
                 }
             }

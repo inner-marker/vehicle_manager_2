@@ -206,6 +206,8 @@ enum Section {
     Lock,
     /// Where you're signed in (phase-3.md 2e).
     Devices,
+    /// The household's labor rate and shops (#089), for Maintainers and Admins in that mode.
+    LaborRates,
     /// The household's defaults, for the household Admin in Admin mode (#069).
     Household,
 }
@@ -229,7 +231,7 @@ impl Group {
 }
 
 impl Section {
-    const ALL: [Self; 8] = [
+    const ALL: [Self; 9] = [
         Self::Units,
         Self::Vehicles,
         Self::Photos,
@@ -237,6 +239,7 @@ impl Section {
         Self::Appearance,
         Self::Lock,
         Self::Devices,
+        Self::LaborRates,
         Self::Household,
     ];
 
@@ -249,6 +252,7 @@ impl Section {
             Self::Appearance => messages::SETTINGS_SECTION_APPEARANCE,
             Self::Lock => messages::SETTINGS_SECTION_LOCK,
             Self::Devices => messages::SETTINGS_TAB_DEVICES,
+            Self::LaborRates => messages::SETTINGS_SECTION_LABOR_RATES,
             Self::Household => messages::SETTINGS_SECTION_HOUSEHOLD,
         }
     }
@@ -257,7 +261,7 @@ impl Section {
         match self {
             Self::Units | Self::Vehicles | Self::Photos | Self::SignIn => Group::You,
             Self::Appearance | Self::Lock | Self::Devices => Group::ThisDevice,
-            Self::Household => Group::Household,
+            Self::LaborRates | Self::Household => Group::Household,
         }
     }
 
@@ -271,6 +275,7 @@ impl Section {
             Self::Appearance => "appearance",
             Self::Lock => "lock",
             Self::Devices => "devices",
+            Self::LaborRates => "labor-rates",
             Self::Household => "household",
         }
     }
@@ -283,8 +288,8 @@ impl Section {
 /// Which sections this person sees, here and now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Offered {
-    /// In a mode that may keep originals (#036, #069).
-    photos: bool,
+    /// In Maintainer mode or above: keeping originals (#036, #069) and the labor rates (#089).
+    maintainer: bool,
     /// On a desktop with a PIN.
     lock: bool,
     /// The household Admin, in Admin mode (#069).
@@ -294,7 +299,7 @@ struct Offered {
 impl Offered {
     const fn includes(self, section: Section) -> bool {
         match section {
-            Section::Photos => self.photos,
+            Section::Photos | Section::LaborRates => self.maintainer,
             Section::Lock => self.lock,
             Section::Household => self.household,
             Section::Units
@@ -347,7 +352,7 @@ const SECTION_KEY: &str = "settingsSection";
 pub(crate) fn Settings() -> Element {
     let auth = use_auth();
     let offered = Offered {
-        photos: matches!(auth(), AuthState::SignedIn(session) if session.mode >= ActiveMode::Maintainer),
+        maintainer: matches!(auth(), AuthState::SignedIn(session) if session.mode >= ActiveMode::Maintainer),
         lock: crate::ui::lock::has_lock(),
         household: matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin),
     };
@@ -455,6 +460,7 @@ fn SectionBody(
         },
         Section::Lock => rsx! { crate::ui::lock::LockSettings {} },
         Section::Devices => rsx! { super::devices::DevicesTab {} },
+        Section::LaborRates => rsx! { super::labor_rates::LaborRates {} },
         Section::Units
         | Section::Vehicles
         | Section::Photos
@@ -962,12 +968,12 @@ mod tests {
     use super::*;
 
     const EVERYTHING: Offered = Offered {
-        photos: true,
+        maintainer: true,
         lock: true,
         household: true,
     };
     const DRIVER_ON_THE_WEB: Offered = Offered {
-        photos: false,
+        maintainer: false,
         lock: false,
         household: false,
     };
@@ -1028,6 +1034,28 @@ mod tests {
         assert_eq!(
             DRIVER_ON_THE_WEB.showing(Some(Section::Devices)),
             Section::Devices
+        );
+    }
+
+    #[test]
+    fn a_maintainer_sees_the_labor_rates_under_household() {
+        let maintainer = Offered {
+            maintainer: true,
+            ..DRIVER_ON_THE_WEB
+        };
+        let headings: Vec<Section> = maintainer
+            .with_headings()
+            .into_iter()
+            .filter_map(|(section, first)| first.then_some(section))
+            .collect();
+        assert_eq!(
+            headings,
+            [Section::Units, Section::Appearance, Section::LaborRates]
+        );
+        assert!(!maintainer.includes(Section::Household));
+        assert_eq!(
+            DRIVER_ON_THE_WEB.showing(Some(Section::LaborRates)),
+            Section::Units
         );
     }
 

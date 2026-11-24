@@ -5869,3 +5869,54 @@ button.spec-row:focus-visible {
 .setup-row-detail.mono {
     font-family: ui-monospace, Menlo, monospace;
 }
+
+/* Labor rates (phase-6.md 2g; #089): the household's rate, and a rate's box with "/ hour". */
+.household-rate {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.rate-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rate-input .money-input {
+    max-width: 160px;
+}
+
+.shop-row .place-row-text {
+    cursor: default;
+}
+
+/* The shops "Done by" could be, under the name. */
+.shop-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: -4px 0 10px;
+}
+
+.shop-suggestion {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.shop-suggestion:hover {
+    border-color: var(--accent);
+}
+
+.shop-suggestion-name {
+    font-weight: 600;
+}
+
+.labor-rate-note {
+    margin-top: -4px;
+}

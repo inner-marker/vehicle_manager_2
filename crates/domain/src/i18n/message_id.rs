@@ -3658,4 +3658,52 @@ define_messages! {
     SHOP_BAD_CONTACT => "shop-bad-contact",
     /// A labor rate that's negative or far too high.
     SHOP_BAD_RATE => "shop-bad-rate",
+    /// Settings: the Labor rates section.
+    SETTINGS_SECTION_LABOR_RATES => "settings-section-labor-rates",
+    /// Above the labor rates. $currency (text): the household's currency code.
+    SHOP_RATES_INTRO => "shop-rates-intro",
+    /// The household's labor rate's label.
+    SHOP_HOUSEHOLD_RATE => "shop-household-rate",
+    /// Under the household's rate.
+    SHOP_HOUSEHOLD_RATE_HELP => "shop-household-rate-help",
+    /// After a rate's box.
+    SHOP_PER_HOUR => "shop-per-hour",
+    /// No household rate (seen without the right to change it).
+    SHOP_RATE_NONE => "shop-rate-none",
+    /// A shop without its own rate, or a job priced at the household's rate.
+    SHOP_RATE_HOUSEHOLD => "shop-rate-household",
+    /// A rate. $amount (text): the amount, with its currency's symbol.
+    SHOP_RATE_PER_HOUR => "shop-rate-per-hour",
+    /// The shops' heading in Labor rates.
+    SHOPS_HEADING => "shops-heading",
+    /// No shops yet.
+    SHOPS_EMPTY => "shops-empty",
+    /// Adds a shop.
+    SHOP_ADD => "shop-add",
+    /// The add-a-shop dialog's title.
+    SHOP_ADD_TITLE => "shop-add-title",
+    /// The change-a-shop dialog's title.
+    SHOP_EDIT_TITLE => "shop-edit-title",
+    /// A shop's name's label.
+    SHOP_NAME => "shop-name",
+    /// A shop's contact's label.
+    SHOP_CONTACT => "shop-contact",
+    /// A shop's own rate's label.
+    SHOP_OWN_RATE => "shop-own-rate",
+    /// Under a shop's own rate.
+    SHOP_OWN_RATE_HELP => "shop-own-rate-help",
+    /// Asks before removing a shop. $name (text): its name.
+    SHOP_REMOVE_TITLE => "shop-remove-title",
+    /// What removing a shop does.
+    SHOP_REMOVE_TEXT => "shop-remove-text",
+    /// A shop that's gone.
+    SHOP_NOT_FOUND => "shop-not-found",
+    /// The shops suggested under Done by (for screen readers).
+    SHOP_SUGGESTIONS => "shop-suggestions",
+    /// Fills a task's labor cost from the rate again.
+    WORK_USE_RATE => "work-use-rate",
+    /// Under labor while the rate fills its cost. $time (text): the labor time; $rate (text): the rate; $source (text): the shop, or the household rate; $cost (text): the cost.
+    WORK_RATE_FILLS => "work-rate-fills",
+    /// Under labor when a typed cost differs from the rate. As work-rate-fills.
+    WORK_RATE_WOULD_BE => "work-rate-would-be",
 }

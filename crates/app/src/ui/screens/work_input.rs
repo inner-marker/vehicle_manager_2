@@ -7,6 +7,7 @@
 //! vehicle's open squawks (each signed off or deferred, or not decided yet: a draft may leave
 //! one undecided, but **Finish** won't), and a repair's complaint and cause.
 
+use domain::api::ShopsView;
 use domain::event::{Part, Reading, ReadingSet, Reason, Task, WorkDetails};
 use domain::i18n::{MessageId, messages};
 use domain::label::Label;
@@ -18,6 +19,7 @@ use domain::quantity::{
     quantity_value, reading_value, show_duration,
 };
 use domain::requirement::RequirementId;
+use domain::shop::{LaborRate, labor_cost, rate_for};
 use domain::squawk::{Disposition, Severity, SquawkDisposition, SquawkId};
 
 use super::log_input::{Problem, Target};
@@ -54,6 +56,9 @@ pub(super) struct TypedTask {
     /// Labor time as typed ("0:30"), and its cost.
     pub labor_time: String,
     pub labor_cost: String,
+    /// The cost was typed (or saved) and stays as it is; otherwise the labor time fills it from
+    /// the rate (#089).
+    pub cost_kept: bool,
     /// It resets its requirement from the end readings (the start ones otherwise).
     pub from_end: bool,
     /// A fixed-date rule's next due date (`2027-11-30`), as typed.
@@ -349,6 +354,8 @@ fn typed_task(task: &Task, currency: CurrencyCode) -> TypedTask {
             .collect(),
         labor_time: task.labor_seconds.map(show_duration).unwrap_or_default(),
         labor_cost: money_text(task.labor_cost_minor),
+        // A job keeps the cost it was saved with (#089).
+        cost_kept: task.labor_cost_minor.is_some(),
         from_end: task.resets_from == ReadingSet::End,
         next_due: task.next_due.clone().unwrap_or_default(),
     }
@@ -475,6 +482,72 @@ impl FinishCheck {
     }
 }
 
+/// The rate a job's labor is priced at (#089), and the shop it's that shop's own rate of.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct JobRate {
+    pub rate: LaborRate,
+    /// The shop's name; `None`: the household's rate.
+    pub shop: Option<String>,
+}
+
+/// The rate for a job done by `someone` (`None`: someone in the household), from the household's
+/// `shops` and rate, if they're in the job's `currency`.
+pub(super) fn job_rate(
+    shops: Option<&ShopsView>,
+    someone: Option<&(String, String)>,
+    currency: CurrencyCode,
+) -> Option<JobRate> {
+    let view = shops.filter(|view| view.currency == currency)?;
+    rate_for(
+        someone.map(|(name, _)| name.as_str()),
+        &view.shops,
+        view.household_rate,
+    )
+    .map(|priced| JobRate {
+        rate: priced.rate,
+        shop: priced.shop.map(|shop| shop.name.as_str().to_owned()),
+    })
+}
+
+/// The labor cost `rate` gives `task` ("300.00"): nothing with no time, and `None` while its
+/// time can't be read.
+pub(super) fn cost_from_rate(
+    task: &TypedTask,
+    rate: LaborRate,
+    currency: CurrencyCode,
+) -> Option<String> {
+    let time = task.labor_time.trim();
+    if time.is_empty() {
+        return Some(String::new());
+    }
+    parse_duration(time)
+        .ok()
+        .map(|seconds| money_value(labor_cost(seconds, rate), currency))
+}
+
+/// Fills the labor cost of each task whose cost isn't kept from its time at `rate` (#089); with
+/// no rate, such a cost is emptied. True if any changed.
+pub(super) fn fill_costs(
+    work: &mut TypedWork,
+    rate: Option<LaborRate>,
+    currency: CurrencyCode,
+) -> bool {
+    let mut changed = false;
+    for task in work.tasks.iter_mut().filter(|task| !task.cost_kept) {
+        let cost = match rate {
+            Some(rate) => cost_from_rate(task, rate, currency),
+            None => Some(String::new()),
+        };
+        if let Some(cost) = cost
+            && cost != task.labor_cost
+        {
+            task.labor_cost = cost;
+            changed = true;
+        }
+    }
+    changed
+}
+
 #[cfg(test)]
 mod tests {
     use domain::label::Label;
@@ -556,6 +629,7 @@ mod tests {
                 ],
                 labor_time: "0:30".into(),
                 labor_cost: "45".into(),
+                cost_kept: true,
                 from_end: true,
                 next_due: String::new(),
             }],
@@ -670,5 +744,94 @@ mod tests {
         );
         assert!(!FinishCheck::Undecided("Rattle".into()).passes());
         assert!(FinishCheck::Place(true).passes());
+    }
+
+    fn shops(currency: CurrencyCode) -> ShopsView {
+        let rate = |minor| LaborRate::new(minor).ok();
+        ShopsView {
+            household_rate: rate(9_500),
+            currency,
+            shops: vec![(
+                test_id(70),
+                domain::shop::Shop {
+                    name: Label::parse("Joe's Auto").unwrap(),
+                    contact: None,
+                    labor_rate: rate(12_000),
+                },
+            )],
+            may_manage: false,
+        }
+    }
+
+    #[test]
+    fn the_shop_done_by_prices_the_labor_or_else_the_household() {
+        let view = shops(CurrencyCode::USD);
+        let joes = ("joe's auto".to_owned(), String::new());
+        let at = |someone| job_rate(Some(&view), someone, CurrencyCode::USD).unwrap();
+        assert_eq!(at(Some(&joes)).rate.minor_per_hour(), 12_000);
+        assert_eq!(at(Some(&joes)).shop.as_deref(), Some("Joe's Auto"));
+        assert_eq!(
+            (at(None).rate.minor_per_hour(), at(None).shop),
+            (9_500, None)
+        );
+        // Rates in another currency than the job's, or not loaded: none.
+        assert_eq!(job_rate(Some(&view), None, CurrencyCode::COMMON[2]), None);
+        assert_eq!(job_rate(None, None, CurrencyCode::USD), None);
+    }
+
+    #[test]
+    fn labor_time_fills_the_cost_unless_it_was_typed() {
+        let rate = LaborRate::new(12_000).ok();
+        let task = |time: &str, cost: &str, kept| TypedTask {
+            labor_time: time.into(),
+            labor_cost: cost.into(),
+            cost_kept: kept,
+            ..TypedTask::default()
+        };
+        let mut work = TypedWork {
+            tasks: vec![
+                task("2:30", "", false),
+                task("1:00", "99.00", true),
+                task("", "45.00", false),
+                task("2:3x", "12.00", false),
+            ],
+            ..TypedWork::default()
+        };
+        assert!(fill_costs(&mut work, rate, CurrencyCode::USD));
+        let costs: Vec<&str> = work
+            .tasks
+            .iter()
+            .map(|task| task.labor_cost.as_str())
+            .collect();
+        // Filled; kept as typed; no time, no cost; a time that can't be read leaves it.
+        assert_eq!(costs, ["300.00", "99.00", "", "12.00"]);
+        assert!(
+            !fill_costs(&mut work, rate, CurrencyCode::USD),
+            "nothing more to do"
+        );
+        // No rate (none set, or "Done by" changed to someone without one): a filled cost goes.
+        assert!(fill_costs(&mut work, None, CurrencyCode::USD));
+        assert_eq!(work.tasks[0].labor_cost, "");
+        assert_eq!(work.tasks[1].labor_cost, "99.00");
+    }
+
+    #[test]
+    fn a_saved_cost_stays_as_it_was() {
+        let work = work_from(
+            &oil_change(),
+            EventKind::Repair,
+            &meters(),
+            CurrencyCode::USD,
+        )
+        .unwrap();
+        let mut again = typed_work(&work, &meters());
+        assert!(again.tasks[0].cost_kept);
+        let rate = LaborRate::new(12_000).ok();
+        assert!(!fill_costs(&mut again, rate, CurrencyCode::USD));
+        assert_eq!(again.tasks[0].labor_cost, "45.00");
+        // ↺ Use the rate: no longer kept, so it fills (0:30 at 120.00).
+        again.tasks[0].cost_kept = false;
+        assert!(fill_costs(&mut again, rate, CurrencyCode::USD));
+        assert_eq!(again.tasks[0].labor_cost, "60.00");
     }
 }
