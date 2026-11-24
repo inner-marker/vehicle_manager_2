@@ -189,7 +189,7 @@
 | 2f | ☑️ | `feat: shops and labor rates` | Migration 0028: the household's labor rate and a **shops** table (name, contact, rate per hour, in the household's currency). Adding, changing, and removing them, for Maintainers and Admins; offline on the desktop, and synced. Tests: who may change them, the checks (a rate isn't negative, a name is unique), sync | none |
 | 2g | ☑️ | `feat(app): labor cost from the rate` | **Settings → HOUSEHOLD → Labor rates** (sketch part 4). On a job's task, "Done by" suggests shops (choosing one fills its name and contact); typed labor time fills the cost from the shop's rate, or the household's, with the sum shown; a typed cost stays, with **↺ Use the rate**. A job keeps the cost it was saved with. The cost and its rounding pure and tested | none |
 | 2h | ☑️ | `feat: a vehicle's main photo` (#24) | Migration 0029: a vehicle's main photo (one of its own photos, or none; cleared if that photo is removed). The viewer's ☆ / ★ toggle; the photo on the Garage card (a thumbnail at the left) and the Overview's header; a vehicle with none shows its kind's icon. Offline on the desktop, and synced | none |
-| 2i | ⬜ | `docs: milestone 2 section of the Phase 6 test plan` | Milestone 2's steps in `docs/test-plans/p6-phase.md`: each feature on the web and the desktop, and each new kind of change offline, then synced | none |
+| 2i | ☑️ | `docs: milestone 2 section of the Phase 6 test plan` | Milestone 2's steps in `docs/test-plans/p6-phase.md`: each feature on the web and the desktop, and each new kind of change offline, then synced | none |
 
 **API version:** stays at **2** (the human's choice, 2026-11-22, in 2f): scanned pages are a new upload purpose (2c), and shops and the rate are changed on the server only, as templates are, so the desktop gains no sync operations. An older desktop is stopped by the schema check (migration 0028) and told to update, as in Phase 5.
 
@@ -247,3 +247,11 @@
   - **Shown** on the Garage card, a 64 px square at its left (the card keeps its height), and in the Overview's header, 48 px beside the name. Without one, the vehicle's kind's icon: four new Lucide icons (truck, motorbike, caravan for a trailer, zap for a generator; the car's is already there, and other equipment gets the wrench).
   - **Tested:** only a vehicle's own photo; who may choose it (a Driver can't, nor an Admin in Maintainer mode); choosing, the page and another person's Garage showing it, choosing none, and a removed photo counting as none; no main photo in every older release's fixture; each built-in kind's icon.
   - **Messages:** three new (`main-photo-make`, `main-photo-clear`, `main-photo-is`).
+- **2i:** milestone 2's section of `docs/test-plans/p6-phase.md`, steps 2.1–2.37:
+  - **Photos before the first save** on the phone (added, ✕, saved, Cancel), a job's PDF on the web, and a fuel-up's photo offline on the desktop, then synced.
+  - **Scan pages** on the phone (three pages moved and dropped, the PDF's page order), and offline on the desktop from chosen photos, then synced.
+  - **Pinch to zoom** on the phone (pinch, pan, double-tap, swipe only unzoomed), the desktop (trackpad, Ctrl + scroll, double-click), and the Mac browser.
+  - **Save as a place** on the phone (only Sam's), and offline on the desktop.
+  - **Labor rates:** not in Driver mode; the household rate and two shops (a taken name refused); a repair priced from Joe's Auto, a typed cost kept with ↺ Use the rate, the household's rate for Me; a saved draft keeping its cost after the rate changes; read-only offline on the desktop.
+  - **The main photo:** chosen and cleared in Admin mode; seen by Sam (gold star only) and not chosen in Maintainer mode; the Garage card and the header; a removed photo back to the kind's icon; offline on the desktop.
+  - **Not by hand:** a scan's 100-page and 50 MB limits.

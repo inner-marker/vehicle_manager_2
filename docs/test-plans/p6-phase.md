@@ -74,3 +74,59 @@
 **Milestone 1 also checks, in the automated tests:** which Settings sections show and which opens; the window's size worked out from its frame on macOS; the no-network rule (including Tailscale addresses), and a route check on macOS, Windows, and Linux in CI; the timeline's records, pages, remembered page size, and Jump to.
 
 **Not by hand:** the **REBUILD** dialog uses the same type-to-confirm box as step 1.7, but it shows only when the desktop's copy needs rebuilding, which can't be caused on purpose.
+
+---
+
+## Milestone 2: Faster logging
+
+**Intended behavior:**
+- **Photos and documents before the first save:** a new fuel-up, reading, maintenance, or repair has the photo strip ("Added when you save. ✕ removes one first."). Files upload as they're added and are tied to the record on **Save**; ✕ or **Cancel** drops them. Offline on the desktop they go into the outbox after the record.
+- **Scan pages:** **+ Add → Scan pages**: 📷 First page, 📷 Next page, ‹ › to move a page, ✕ to drop one, **Make PDF (n pages)**: one PDF, "Scan" and today's date, its pages in order. On the desktop, the camera choice opens the file picker. Offline, the desktop's copy makes the PDF.
+- **Pinch to zoom** in the photo viewer: pinch (up to 5×) and pan, double-tap for 2× and back; on a computer, the trackpad's pinch, Ctrl + scroll, and double-click. Swiping changes photos only when not zoomed; the next photo starts at 1×.
+- **☆ Save as a place…** under Where on every log form, while the record's point isn't in one of your saved places: name and radius, then it's yours (offline too).
+- **Labor rates** (Maintainer mode and above): **Settings → HOUSEHOLD → Labor rates**: the household rate, then the shops (name, contact, own rate). On a job, **Done by → Someone else** suggests the shops; a task's labor time fills its cost from the shop's rate, or the household's; a typed cost stays, with **↺ Use the rate**. Changed on the server only; the desktop shows them offline.
+- **A vehicle's main photo:** in the Overview's photo viewer, ☆ "Make Main Photo" / gold ★ (click again for none), for an Admin on the vehicle in Admin mode; shown on the Garage card (at the left) and in the Overview's header; without one, the vehicle kind's icon. Chosen on the server only.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 2.1 | **Phone**, Sam: `Test truck` → **+ Fuel-up** | Under the form, **PHOTOS** with **+ Add** and "Added when you save. ✕ removes one first." |
+| [ ] | 2.2 | **+ Add → Take photo**: a receipt. Add a second photo, then **✕** it | The receipt's tile shows; the second goes. |
+| [ ] | 2.3 | Fill in the fuel-up → **Save**; open it from the Timeline | Saved with the **receipt photo** on it, and only that one. |
+| [ ] | 2.4 | **+ Fuel-up** again; **+ Add** a photo; **Cancel** | Nothing saved; the photo isn't on any record. |
+| [ ] | 2.5 | **Mac browser**, Maintainer mode: **+ Maintenance**; **+ Add** a PDF to the job's photos; finish the job | The job has the PDF. |
+| [ ] | 2.6 | **Desktop, offline** (Tailscale off): **+ Fuel-up** with a photo → **Save** | Saved in the copy with its photo; the tile shows **↑** (waiting to upload). |
+| [ ] | 2.7 | Tailscale on; wait for the sync (or **Sync now**). **Mac browser:** open that fuel-up | It has the photo. |
+| [ ] | 2.8 | **Phone**: `Test truck` → Overview → **Photos & documents** → **+ Add → Scan pages** | **Scan pages**, with **📷 First page**. |
+| [ ] | 2.9 | Shoot three pages (📷 First page, 📷 Next page ×2); **›** on page 1; **✕** on page 2 (as it now is); **📷 Next page** once more | Three pages; the strip's order is what you made it. **Make PDF (3 pages)**. |
+| [ ] | 2.10 | **Make PDF**; open it | One PDF, "Scan" and today's date, **3 pages, in the strip's order**, upright. |
+| [ ] | 2.11 | **Desktop, offline:** a vehicle's **+ Add → Scan pages**; choose two photos as pages → **Make PDF** | The PDF is added (made by the copy), 2 pages. Tailscale on: after the sync, the **Mac browser** shows it with 2 pages. |
+| [ ] | 2.12 | **Phone**: open a photo in a strip; **pinch** to zoom in, drag, **double-tap** | Only the photo zooms (not the page), up to 5×; dragging stops at its edges; double-tap toggles 2× and back to fit. |
+| [ ] | 2.13 | Not zoomed: **swipe** left, then right. Zoom in and swipe | Unzoomed, swiping changes photos (each starts at 1×); zoomed, it pans instead. |
+| [ ] | 2.14 | **Desktop:** open a photo; **pinch** on the trackpad; **Ctrl + scroll**; **double-click** | Each zooms the photo only; ‹ › and the arrow keys still change photos. |
+| [ ] | 2.15 | **Mac browser:** the same as 2.14 (pinch, Ctrl + scroll, double-click) | The same; the page itself doesn't zoom. |
+| [ ] | 2.16 | **Phone**, Sam, somewhere **not** a saved place: **+ Reading** → let it find where you are | Under Where, **☆ Save as a place…** |
+| [ ] | 2.17 | **☆ Save as a place…** | **Save as a place**: "Here: …" with the point and the town; the name (the town); radius 150 m. |
+| [ ] | 2.18 | Name it `Test spot`, **Save**; then save the reading | Where shows 📍 **Test spot**; the link has gone. **Places** lists **Test spot** for Sam only (`admin` doesn't see it). |
+| [ ] | 2.19 | **Desktop, offline:** a log form with a point that isn't a saved place → **☆ Save as a place…** → **Save** | Added in the copy; after the sync, **Places** on the web shows it. Remove **Test spot** and this one afterwards. |
+| [ ] | 2.20 | **Mac browser**, `admin`, **Driver mode**: Settings | No **Labor rates** (and no HOUSEHOLD heading). |
+| [ ] | 2.21 | **Maintainer mode** → Settings | **HOUSEHOLD → Labor rates**: "For everyone in the household, in USD…", **Household rate** (empty), **SHOPS**: "No shops yet…", **+ Shop**. |
+| [ ] | 2.22 | Household rate `95` → **Save** | Saved; it reads 95.00. |
+| [ ] | 2.23 | **+ Shop**: `Joe's Auto`, contact `541-555-0100`, own rate `120` → Save. **+ Shop**: `Tire Barn`, no rate → Save. **+ Shop**: `joe's auto` | Joe's Auto "$120.00 / h"; Tire Barn "household rate". The third is refused: "There's already a shop with that name." |
+| [ ] | 2.24 | **+ Repair** on `Test truck`; **Who and notes → Done by: Someone else** | Under the name, chips: **Joe's Auto · $120.00 / h**, **Tire Barn · household rate**. Type `ti`: only Tire Barn. |
+| [ ] | 2.25 | Choose **Joe's Auto** | Name `Joe's Auto`, contact `541-555-0100`; the chips go. |
+| [ ] | 2.26 | Add a task; labor time `230` (it shows 2:30) | Labor cost **300.00**, and "2:30 × $120.00 / h (Joe's Auto). Change it for a discount or a fixed price…". The total includes it. |
+| [ ] | 2.27 | Type the cost `250` | It stays 250; "At the rate: 2:30 × $120.00 / h (Joe's Auto) is $300.00. **↺ Use the rate**". |
+| [ ] | 2.28 | **↺ Use the rate**; then change Done by to **Me** | 300.00 again; then **237.50** (the household's 95.00), "(household rate)". |
+| [ ] | 2.29 | Save the draft; in Settings make the household rate `100`; open the draft | The task still costs **237.50** (a job keeps the cost it was saved with). |
+| [ ] | 2.30 | **Desktop, offline:** Settings → **Labor rates**; then a new job's Done by | The rates and shops show, with no buttons and "This needs the server…"; the chips and the cost from the rate work offline. Delete the draft afterwards. |
+| [ ] | 2.31 | **Mac browser**, **Admin mode**: `Test truck` → Overview → **Photos & documents**; add a photo if it has none; open it | A hollow **☆** in the viewer's bar; its tooltip **Make Main Photo**. |
+| [ ] | 2.32 | Click **☆** | It turns gold **★**. The header shows the photo beside the name; **Garage**: the truck's card has it at its left, the card no taller than the others. |
+| [ ] | 2.33 | **Phone**, Sam: the Garage; open the truck's photo | The photo on the card; in the viewer, only the gold **★** on that photo (nothing to click). |
+| [ ] | 2.34 | **Mac browser**, `admin` in **Maintainer mode**: the photo viewer | No star to click (only the gold one shows). |
+| [ ] | 2.35 | Back in **Admin mode**: click the gold **★** | No main photo: the header and the card show the truck icon. |
+| [ ] | 2.36 | Make it the main photo again; then **Remove** that photo | The card and the header go back to the truck icon. Other vehicles show their kind's icon (car, trailer, generator…). |
+| [ ] | 2.37 | **Desktop, offline:** the Garage and the truck's Overview; open a photo | The main photo (or icon) shows from the copy; the star is greyed out, its tooltip "This needs the server…". |
+
+**Milestone 2 also checks, in the automated tests:** the held files becoming the record's attachments in order; packing scanned pages and joining them into one PDF (order, page sizes, orientation, the 100-page and 50 MB limits); the place saved while logging; the rate's limits and a shop's checks; who may change shops and rates; the cost at the rate (rounded to the cent) and which rate applies; the suggestions; which costs the rate fills and which stay; the main photo's rules (only a vehicle's own photo, who may choose, a removed photo counting as none); no shops, rate, or main photo in any older release's database.
+
+**Not by hand:** the 100-page and 50 MB limits on a scan (too many photos to take by hand; the tests cover them).
