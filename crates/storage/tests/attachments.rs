@@ -6,9 +6,7 @@
 mod attachments {
     use std::str::FromStr;
 
-    use domain::asset::{
-        Asset, AssetKind, AssetName, AssetPatch, Identifier, IdentifierKind, LifecycleStatus,
-    };
+    use domain::asset::{Asset, AssetKind, AssetName, Identifier, IdentifierKind, LifecycleStatus};
     use domain::attachment::{
         Attachment, AttachmentOwner, AttachmentPatch, Content, FileName, PhotoMetadata, PhotoSize,
     };
@@ -25,10 +23,10 @@ mod attachments {
     use domain::user::{User, UserPatch, Username};
     use sqlx::sqlite::SqliteConnectOptions;
     use sqlx::{Connection, Row, SqliteConnection};
-    use storage::assets::{AssetWriter, GroupWriter};
+    use storage::assets::GroupWriter;
     use storage::attachments::AttachmentWriter;
     use storage::commands::{RecordWriter, insert_tombstone};
-    use storage::convert::id_from_sql;
+    use storage::convert::{id_from_sql, id_to_sql, json_to_sql};
     use storage::database::MIGRATOR;
     use storage::documents::{AssetDocumentWriter, LicensePlateWriter};
     use storage::files::{FileCheck, FileStore, hash_of};
@@ -61,6 +59,7 @@ mod attachments {
             parent: None,
             status: LifecycleStatus::InService,
             identifiers,
+            main_photo: None,
         }
     }
 
@@ -84,15 +83,21 @@ mod attachments {
             .create(connection, test_id(GARAGE), &GroupPatch::all(group), 2)
             .await
             .unwrap();
-        AssetWriter
-            .create(
-                connection,
-                test_id(TRUCK),
-                &AssetPatch::all(truck(identifiers)),
-                3,
-            )
-            .await
-            .unwrap();
+        // Only the columns every schema has had: the plate test writes it before migration 14.
+        let truck = truck(identifiers);
+        sqlx::query(
+            "INSERT INTO assets (id, kind, name, description, group_id, status, identifiers,
+                                 sequence)
+             VALUES (?, ?, ?, '', ?, 'in-service', ?, 3)",
+        )
+        .bind(id_to_sql(test_id::<Asset>(TRUCK)))
+        .bind(truck.kind.as_str())
+        .bind(truck.name.as_str())
+        .bind(id_to_sql(truck.group))
+        .bind(json_to_sql(&truck.identifiers, "identifiers").unwrap())
+        .execute(connection)
+        .await
+        .unwrap();
     }
 
     async fn database() -> (tempfile::TempDir, Database) {

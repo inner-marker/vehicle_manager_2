@@ -18,7 +18,7 @@ use domain::meter::{EventKind, Meter, MeterDimension, MeterDirection};
 use domain::profile::profile;
 use domain::quantity::show_reading;
 
-use super::attachments::AttachmentStrip;
+use super::attachments::{AttachmentStrip, MainPhoto, VehiclePhoto};
 use super::documents::DocumentsTab;
 use super::life_part::LifeBanner;
 use super::maintenance::{MaintenanceTab, MaintenanceView};
@@ -388,8 +388,13 @@ fn Header(view: AssetView) -> Element {
     rsx! {
         header { class: "vehicle-header",
             {back}
-            h2 { class: "vehicle-name", {asset.name.as_str().to_owned()} }
-            p { class: "vehicle-subtitle", {subtitle(asset)} }
+            div { class: "vehicle-title",
+                VehiclePhoto { photo: asset.main_photo, kind: asset.kind.clone(), class: "vehicle-photo-header" }
+                div {
+                    h2 { class: "vehicle-name", {asset.name.as_str().to_owned()} }
+                    p { class: "vehicle-subtitle", {subtitle(asset)} }
+                }
+            }
             div { class: "vehicle-chips",
                 if let Some(plate) = view.plate.clone() {
                     span { class: "vehicle-card-identifier vehicle-plate", {plate} }
@@ -459,6 +464,27 @@ fn Overview(
     on_timeline: EventHandler<()>,
     on_squawks: EventHandler<()>,
 ) -> Element {
+    let page = use_vehicle_page();
+    let vehicles = use_vehicles();
+    let id = view.id;
+    // The main photo (#24): chosen in the viewer by whoever may change the vehicle's own photos;
+    // the page and the Garage show it once saved.
+    let main = MainPhoto {
+        current: view.asset.main_photo,
+        may_choose: view.can_manage,
+        on_choose: EventHandler::new(move |photo| {
+            spawn(async move {
+                match crate::api::set_main_photo(id, photo).await {
+                    Ok(AssetsOutcome::Done) => {}
+                    other => {
+                        tracing::debug!(target: log_area::UI, asset = %id, ?other, "the main photo wasn't saved");
+                    }
+                }
+                page.reload();
+                crate::ui::vehicles::refresh_garage(vehicles).await;
+            });
+        }),
+    };
     rsx! {
         div { class: "vehicle-panels",
             SquawksCard { vehicle: view.clone(), squawks, on_all: on_squawks }
@@ -470,6 +496,7 @@ fn Overview(
                     owner: AttachmentOwner::Vehicle,
                     heading: messages::ATTACHMENT_JOB_PHOTOS,
                     default_size: PhotoSize::Medium,
+                    main,
                 }
             }
             OverviewPanels { view, on_timeline }
@@ -503,6 +530,7 @@ mod tests {
                 Identifier::new(IdentifierKind::parse("plate").unwrap(), "ABC 123").unwrap(),
                 Identifier::new(IdentifierKind::parse("vin").unwrap(), "1FT").unwrap(),
             ],
+            main_photo: None,
         }
     }
 

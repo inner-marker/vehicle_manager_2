@@ -17,6 +17,7 @@ use domain::access::{
 use domain::api::{AssetSummary, AssetView, AssetsOutcome, GarageView, GroupSummary, MoveChange};
 use domain::asset::{Asset, AssetId, AssetPatch};
 use domain::asset_form::{AssetForm, FieldForm, MeterForm, Problem, confirms_name};
+use domain::attachment::{AttachmentId, is_main_photo_of};
 use domain::command::{Change, Clearable, Record};
 use domain::custom_field::{CustomField, CustomFieldId, CustomFieldPatch, FieldKind};
 use domain::garage::{GarageOrderId, GarageOrderPatch, MAX_ORDER_LENGTH};
@@ -242,6 +243,7 @@ async fn fill_in_summaries(
                 .await
                 .map_err(|error| unavailable("readiness", &error))?;
         summary.plate = current_plate(database, summary.id).await?;
+        summary.asset.main_photo = live_main_photo(database, summary.id, &summary.asset).await?;
         summary.standing = crate::lifecycle::standing(database, summary.id, summary.asset.status)
             .await
             .map_err(|error| unavailable("lifecycle", &error))?;
@@ -268,11 +270,12 @@ async fn asset_view(
 ) -> Result<AssetsOutcome, AssetsOutcome> {
     let scope = context.visible(id).await?;
     let database = context.database;
-    let asset = database
+    let mut asset = database
         .asset(id)
         .await
         .map_err(|error| unavailable("asset", &error))?
         .ok_or(AssetsOutcome::NotFound)?;
+    asset.main_photo = live_main_photo(database, id, &asset).await?;
     let meters = database
         .meters_of(id)
         .await
@@ -300,6 +303,65 @@ async fn asset_view(
             standing,
         }),
     })
+}
+
+/// Vehicle `id`'s main photo (#24), if it's still one of its own photos: one removed since it
+/// was chosen counts as none.
+async fn live_main_photo(
+    database: &Database,
+    id: AssetId,
+    asset: &Asset,
+) -> Result<Option<AttachmentId>, AssetsOutcome> {
+    let Some(photo) = asset.main_photo else {
+        return Ok(None);
+    };
+    let found = database
+        .attachment(photo)
+        .await
+        .map_err(|error| unavailable("main photo", &error))?;
+    Ok(found
+        .is_some_and(|attachment| is_main_photo_of(&attachment, id))
+        .then_some(photo))
+}
+
+/// Makes `photo` vehicle `id`'s main photo, or leaves it with none (#24, phase-6.md 2h): whoever
+/// may change the vehicle's own photos. Changed on the server only (the human's choice,
+/// 2026-11-23), as the vehicle's setup is.
+pub async fn set_main_photo(
+    context: &AssetsContext<'_>,
+    id: AssetId,
+    photo: Option<AttachmentId>,
+) -> AssetsOutcome {
+    either(save_main_photo(context, id, photo).await)
+}
+
+async fn save_main_photo(
+    context: &AssetsContext<'_>,
+    id: AssetId,
+    photo: Option<AttachmentId>,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    let current = context.allowed(id, AssetAction::ManageAsset).await?;
+    if let Some(photo) = photo {
+        let found = context
+            .database
+            .attachment(photo)
+            .await
+            .map_err(|error| unavailable("photo", &error))?;
+        if !found.is_some_and(|attachment| is_main_photo_of(&attachment, id)) {
+            return Err(AssetsOutcome::NotFound);
+        }
+    }
+    if current.main_photo != photo {
+        let patch = AssetPatch {
+            main_photo: Some(Clearable::from_option(photo)),
+            ..AssetPatch::default()
+        };
+        context
+            .save(&AssetWriter, Change::Update { id, patch })
+            .await?;
+    }
+    tracing::debug!(target: log_area::APP, user = %context.user.user, asset = %id, chosen = photo.is_some(), "main photo");
+    Ok(AssetsOutcome::Done)
 }
 
 /// A vehicle's current license plate, as shown ("NC · NCX 4471").
@@ -516,6 +578,8 @@ fn changes(current: &Asset, wanted: &Asset) -> AssetPatch {
         parent: None,
         status: differs(&current.status, &wanted.status),
         identifiers: differs(&current.identifiers, &wanted.identifiers),
+        // Chosen in the photo viewer (`set_main_photo`), never by the form.
+        main_photo: None,
     }
 }
 

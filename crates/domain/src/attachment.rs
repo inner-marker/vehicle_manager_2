@@ -573,6 +573,15 @@ impl Content {
     }
 }
 
+/// Whether `attachment` may be vehicle `asset`'s main photo (#24): a photo on the vehicle itself
+/// (not on one of its records, and not a document).
+#[must_use]
+pub fn is_main_photo_of(attachment: &Attachment, asset: AssetId) -> bool {
+    attachment.asset == Some(asset)
+        && attachment.owner == AttachmentOwner::Vehicle
+        && attachment.content.kind() == AttachmentKind::Photo
+}
+
 /// One attachment.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Attachment {
@@ -1134,6 +1143,30 @@ mod tests {
             ..photo(AttachmentOwner::Vehicle)
         };
         assert_eq!(check(&empty_pdf, 0), Err(AttachmentProblem::NoPages));
+    }
+
+    #[test]
+    fn only_a_vehicles_own_photo_may_be_its_main_photo() {
+        let truck = test_id(1);
+        let on_truck = Attachment {
+            asset: Some(truck),
+            ..photo(AttachmentOwner::Vehicle)
+        };
+        assert!(is_main_photo_of(&on_truck, truck));
+        assert!(
+            !is_main_photo_of(&on_truck, test_id(2)),
+            "another vehicle's"
+        );
+        let on_a_job = Attachment {
+            asset: Some(truck),
+            ..photo(on_task(None))
+        };
+        assert!(!is_main_photo_of(&on_a_job, truck), "on one of its records");
+        let pdf = Attachment {
+            content: Content::Document { pages: 2 },
+            ..on_truck
+        };
+        assert!(!is_main_photo_of(&pdf, truck), "a document");
     }
 
     #[test]

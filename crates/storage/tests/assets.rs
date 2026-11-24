@@ -65,6 +65,7 @@ mod assets {
                     .unwrap(),
                 Identifier::new(IdentifierKind::parse("plate").unwrap(), "ABC 123").unwrap(),
             ],
+            main_photo: None,
         }
     }
 

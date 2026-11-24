@@ -278,8 +278,8 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     );
 }
 
-/// Migration 0028 reads as empty in every fixture (all made before Phase 6): no shops, and no
-/// household labor rate.
+/// Migrations 0028 and 0029 read as empty in every fixture (all made before Phase 6): no shops,
+/// no household labor rate, and no main photos.
 #[cfg(test)]
 async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -295,6 +295,17 @@ async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
         fixture.display()
     );
     assert!(database.shops().await.unwrap().is_empty());
+    // No vehicle has a main photo yet (2h).
+    assert!(
+        database
+            .assets()
+            .await
+            .unwrap()
+            .iter()
+            .all(|(_, asset)| asset.main_photo.is_none()),
+        "{}",
+        fixture.display()
+    );
 }
 
 /// From `v0.5.0`: every meter has its stored key; Oil life counts down and resets to 100%,

@@ -1646,6 +1646,9 @@ shop-suggestions = Shops
 work-use-rate = ↺ Use the rate
 work-rate-fills = { $time } × { $rate } ({ $source }). Change it for a discount or a fixed price; then it stays as typed.
 work-rate-would-be = At the rate: { $time } × { $rate } ({ $source }) is { $cost }.
+main-photo-make = Make Main Photo
+main-photo-clear = Main Photo: click for none
+main-photo-is = Main Photo
 # $count (number): how many pages the PDF will have.
 scan-make-pdf = { $count ->
     [one] Make PDF (1 page)

@@ -142,8 +142,8 @@ impl RecordWriter<Asset> for AssetWriter {
         };
         sqlx::query(
             "INSERT INTO assets (id, kind, name, make, model, year, colour, description,
-                                 group_id, parent_id, status, identifiers, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 group_id, parent_id, status, identifiers, main_photo, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(required(values.kind.as_ref(), "kind")?.as_str())
@@ -176,6 +176,12 @@ impl RecordWriter<Asset> for AssetWriter {
             &values.identifiers.clone().unwrap_or_default(),
             "identifiers",
         )?)
+        .bind(
+            values
+                .main_photo
+                .and_then(domain::command::Clearable::into_option)
+                .map(id_to_sql),
+        )
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -195,6 +201,7 @@ impl RecordWriter<Asset> for AssetWriter {
         let year = clearable(patch.year.as_ref(), |year| year);
         let colour = clearable(patch.colour.as_ref(), |text| text);
         let parent = clearable(patch.parent.as_ref(), id_to_sql);
+        let main_photo = clearable(patch.main_photo.as_ref(), id_to_sql);
         let identifiers = patch
             .identifiers
             .as_ref()
@@ -213,6 +220,7 @@ impl RecordWriter<Asset> for AssetWriter {
                  parent_id = CASE WHEN ? THEN ? ELSE parent_id END,
                  status = coalesce(?, status),
                  identifiers = coalesce(?, identifiers),
+                 main_photo = CASE WHEN ? THEN ? ELSE main_photo END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -237,6 +245,8 @@ impl RecordWriter<Asset> for AssetWriter {
         .bind(parent.1)
         .bind(optional_name(patch.status.as_ref(), "status")?)
         .bind(identifiers)
+        .bind(main_photo.0)
+        .bind(main_photo.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -286,6 +296,10 @@ fn asset_from_row(row: &SqliteRow) -> Result<(AssetId, Asset), StorageError> {
                 .transpose()?,
             status: required_name::<LifecycleStatus>(row.try_get("status")?, "assets.status")?,
             identifiers: json_from_sql::<Vec<Identifier>>(&identifiers, "assets.identifiers")?,
+            main_photo: row
+                .try_get::<Option<&[u8]>, _>("main_photo")?
+                .map(|bytes| id_from_sql(bytes, "assets.main_photo"))
+                .transpose()?,
         },
     ))
 }
@@ -712,7 +726,7 @@ impl Database {
     pub async fn assets(&self) -> Result<Vec<(AssetId, Asset)>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers
+                    status, identifiers, main_photo
              FROM assets WHERE deleted = 0 ORDER BY name",
         )
         .fetch_all(self.pool())
@@ -730,7 +744,7 @@ impl Database {
     pub async fn asset(&self, id: AssetId) -> Result<Option<Asset>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers
+                    status, identifiers, main_photo
              FROM assets WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

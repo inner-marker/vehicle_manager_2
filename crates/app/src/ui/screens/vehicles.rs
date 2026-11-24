@@ -394,6 +394,8 @@ fn VehicleCard(
     rsx! {
         div { class: if archived { "vehicle-card archived" } else { "vehicle-card" },
             Link { class: "vehicle-card-link", to: Route::VehicleDetail { asset_id: id.to_string() },
+                // Its main photo at the left, or its kind's icon (option A, #24).
+                super::attachments::VehiclePhoto { photo: asset.main_photo, kind: asset.kind.clone(), class: "vehicle-photo-card" }
                 span { class: "vehicle-card-name", {asset.name.as_str().to_owned()} }
                 span { class: "vehicle-card-subtitle", {subtitle} }
                 if let Some(value) = identifier {
@@ -656,6 +658,7 @@ mod tests {
                 parent: None,
                 status,
                 identifiers: vec![],
+                main_photo: None,
             },
             role: Role::Driver,
             plate: None,

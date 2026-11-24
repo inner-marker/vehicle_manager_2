@@ -32,7 +32,9 @@ mod attachments {
     use domain::test_support::{ManualClock, test_id};
     use image::{ImageBuffer, Rgba};
     use lopdf::{Document, Object, dictionary};
-    use server::assets::{AssetsContext, add as add_vehicle, view as vehicle_page};
+    use server::assets::{
+        AssetsContext, add as add_vehicle, garage, set_main_photo, view as vehicle_page,
+    };
     use server::attachments::{
         UploadContext, count_pages, download, join_pages, list, move_to, process_photo, remove,
         upload,
@@ -576,6 +578,104 @@ mod attachments {
         assert_eq!(
             download(&driver, &store, id, AttachmentPart::File).await,
             Err(AttachmentsOutcome::NotFound)
+        );
+    }
+
+    /// The vehicle's main photo, as its page and the Garage show it.
+    async fn main_photo_seen(
+        admin: &AssetsContext<'_>,
+        driver: &AssetsContext<'_>,
+        truck: AssetId,
+    ) -> (Option<AttachmentId>, Option<AttachmentId>) {
+        let AssetsOutcome::Asset { view } = vehicle_page(admin, truck).await else {
+            panic!("no truck page");
+        };
+        let AssetsOutcome::Garage { view: seen } =
+            garage(driver, &TimeZone::parse("UTC").unwrap()).await
+        else {
+            panic!("no Garage");
+        };
+        (view.asset.main_photo, seen.assets[0].asset.main_photo)
+    }
+
+    #[tokio::test]
+    async fn a_vehicles_main_photo_is_one_of_its_own_photos() {
+        let (temp, database, jordan, sam) = setup().await;
+        let store = FileStore::open(temp.path()).unwrap();
+        let clock = ManualClock::new(NOW);
+        let (truck, _) = new_truck(&database, &jordan, &clock).await;
+        let jordan_admin = in_mode(&jordan, ActiveMode::Admin);
+        let admin = context(&database, &jordan_admin, &clock);
+        let driver = context(&database, &sam, &clock);
+        let photo = small_photo(&database, &store, &jordan_admin).await;
+        let own = saved(
+            &add(
+                &admin,
+                &store,
+                photo_input(truck, AttachmentOwner::Vehicle, &photo),
+            )
+            .await,
+        );
+        let squawk = AttachmentOwner::Squawk {
+            squawk: open_squawk(&driver, truck).await,
+        };
+        let on_squawk = saved(&add(&driver, &store, photo_input(truck, squawk, &photo)).await);
+        let pdf = receipt(
+            &database,
+            &store,
+            &jordan_admin,
+            truck,
+            AttachmentOwner::Vehicle,
+        )
+        .await;
+        let pdf = saved(&add(&admin, &store, pdf).await);
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+
+        // Only someone who may change the vehicle's own photos; only one of them, and a photo.
+        assert_eq!(
+            set_main_photo(&driver, truck, Some(own)).await,
+            AssetsOutcome::NotAllowed
+        );
+        let jordan_maintaining = in_mode(&jordan, ActiveMode::Maintainer);
+        assert_eq!(
+            set_main_photo(
+                &context(&database, &jordan_maintaining, &clock),
+                truck,
+                Some(own)
+            )
+            .await,
+            AssetsOutcome::NotAllowed,
+            "the mode counts"
+        );
+        for other in [on_squawk, pdf, test_id(77)] {
+            assert_eq!(
+                set_main_photo(&admin, truck, Some(other)).await,
+                AssetsOutcome::NotFound
+            );
+        }
+
+        // Chosen: the page and everyone's Garage show it; chosen again, it's none.
+        assert_eq!(
+            set_main_photo(&admin, truck, Some(own)).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            main_photo_seen(&admin, &driver, truck).await,
+            (Some(own), Some(own))
+        );
+        assert_eq!(
+            set_main_photo(&admin, truck, None).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+
+        // Its photo removed: none, though the vehicle still names it.
+        set_main_photo(&admin, truck, Some(own)).await;
+        assert_eq!(remove(&admin, own).await, AttachmentsOutcome::Done);
+        assert_eq!(main_photo_seen(&admin, &driver, truck).await, (None, None));
+        assert_eq!(
+            database.asset(truck).await.unwrap().unwrap().main_photo,
+            Some(own)
         );
     }
 

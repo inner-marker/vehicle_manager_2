@@ -3706,4 +3706,10 @@ define_messages! {
     WORK_RATE_FILLS => "work-rate-fills",
     /// Under labor when a typed cost differs from the rate. As work-rate-fills.
     WORK_RATE_WOULD_BE => "work-rate-would-be",
+    /// The viewer's hollow star on a vehicle's own photo (#24).
+    MAIN_PHOTO_MAKE => "main-photo-make",
+    /// The viewer's gold star on the vehicle's main photo, for whoever may change it.
+    MAIN_PHOTO_CLEAR => "main-photo-clear",
+    /// The gold star on the main photo, for someone who can't change it.
+    MAIN_PHOTO_IS => "main-photo-is",
 }

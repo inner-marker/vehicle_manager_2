@@ -5920,3 +5920,82 @@ button.spec-row:focus-visible {
 .labor-rate-note {
     margin-top: -4px;
 }
+
+/* A vehicle's main photo (#24, phase-6.md 2h): a square thumbnail, or its kind's icon. */
+.vehicle-photo {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-raised);
+    color: var(--text-muted);
+}
+
+.vehicle-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* On the Garage card: at the left, beside the text, so the card keeps its height. */
+.vehicle-card-link {
+    position: relative;
+    padding-left: 92px;
+}
+
+.vehicle-photo-card {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 64px;
+    height: 64px;
+}
+
+.vehicle-photo-card .icon {
+    width: 30px;
+    height: 30px;
+}
+
+/* In the Overview's header: beside the name. */
+.vehicle-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vehicle-photo-header {
+    width: 48px;
+    height: 48px;
+}
+
+.vehicle-photo-header .icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* The viewer's star: hollow ☆ ("Make Main Photo"), gold ★ on the main photo. */
+.main-star {
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.main-star.on {
+    color: #f2b632;
+}
+
+button.main-star:hover:not(:disabled) {
+    color: #f2b632;
+}
+
+button.main-star:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

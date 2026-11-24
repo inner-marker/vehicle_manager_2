@@ -37,6 +37,7 @@ use super::squawks::use_device_zone;
 use crate::api;
 use crate::data;
 use crate::files;
+use crate::ui::icons::IconView;
 use crate::ui::location::place_text;
 use crate::ui::pdfs::{PdfPages, PdfState, ZOOMS, first_page_thumbnail};
 use crate::ui::photos::{read_metadata, shrink};
@@ -119,6 +120,9 @@ pub(crate) fn AttachmentStrip(
     owner: AttachmentOwner,
     heading: MessageId,
     default_size: PhotoSize,
+    /// The vehicle's main photo, for its own photos' strip (#24).
+    #[props(default)]
+    main: Option<MainPhoto>,
 ) -> Element {
     let mut changes = use_signal(|| 0_u32);
     let mut loaded = use_signal(|| None::<Result<Loaded, MessageId>>);
@@ -177,6 +181,7 @@ pub(crate) fn AttachmentStrip(
                 attachments,
                 index,
                 may_keep_originals,
+                main,
                 on_index: move |next: usize| viewing.set(Some(next)),
                 on_close: move |removed: bool| {
                     viewing.set(None);
@@ -1044,6 +1049,81 @@ async fn save_download(name: &str, mime: &str, bytes: &[u8]) -> Option<String> {
     }
 }
 
+/// A vehicle's main photo, for the viewer of its own photos (#24, phase-6.md 2h).
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct MainPhoto {
+    /// The photo that's its main one, if any.
+    pub current: Option<AttachmentId>,
+    /// They may choose it (whoever may change the vehicle's own photos).
+    pub may_choose: bool,
+    /// Called with the new main photo (or none).
+    pub on_choose: EventHandler<Option<AttachmentId>>,
+}
+
+/// The viewer's star (sketch part 5): gold ★ on the main photo, hollow ☆ on the others
+/// ("Make Main Photo"); clicking toggles. Needs the server (2h). Without the right to choose,
+/// only the main photo's gold star shows.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn MainStar(main: MainPhoto, photo: AttachmentId) -> Element {
+    let is_main = main.current == Some(photo);
+    if !main.may_choose {
+        return if is_main {
+            rsx! { span { class: "main-star on", title: tr(messages::MAIN_PHOTO_IS), "aria-label": tr(messages::MAIN_PHOTO_IS), "★" } }
+        } else {
+            rsx! {}
+        };
+    }
+    let offline = crate::ui::offline::needs_server_note();
+    let label = tr(if is_main {
+        messages::MAIN_PHOTO_CLEAR
+    } else {
+        messages::MAIN_PHOTO_MAKE
+    });
+    rsx! {
+        button {
+            class: if is_main { "main-star on" } else { "main-star" },
+            r#type: "button",
+            title: offline.clone().unwrap_or_else(|| label.clone()),
+            "aria-label": label,
+            "aria-pressed": if is_main { "true" } else { "false" },
+            disabled: offline.is_some(),
+            onclick: move |_| main.on_choose.call((!is_main).then_some(photo)),
+            if is_main { "★" } else { "☆" }
+        }
+    }
+}
+
+/// A vehicle's main photo as a square thumbnail (#24, phase-6.md 2h): on its Garage card and the
+/// Overview's header. Its kind's icon while it has none (or the photo can't be fetched).
+#[component]
+pub(crate) fn VehiclePhoto(
+    photo: Option<AttachmentId>,
+    kind: domain::asset::AssetKind,
+    class: &'static str,
+) -> Element {
+    let mut url = use_signal(|| None::<String>);
+    use_effect(use_reactive!(|photo| {
+        url.set(None);
+        if let Some(id) = photo {
+            spawn(async move {
+                url.set(fetched(id, AttachmentPart::Thumbnail, FileType::Jpeg.mime()).await);
+            });
+        }
+    }));
+    rsx! {
+        span { class: "vehicle-photo {class}", "aria-hidden": "true",
+            match url() {
+                Some(src) => rsx! { img { src: "{src}", alt: "" } },
+                None => rsx! { IconView { icon: crate::ui::vehicles::kind_icon(&kind) } },
+            }
+        }
+    }
+}
+
 /// The full-screen view of one attachment, with ‹ › to the others.
 #[expect(
     unused_qualifications,
@@ -1054,6 +1134,7 @@ fn Viewer(
     attachments: Vec<AttachmentView>,
     index: usize,
     may_keep_originals: bool,
+    main: Option<MainPhoto>,
     on_index: EventHandler<usize>,
     on_close: EventHandler<bool>,
 ) -> Element {
@@ -1212,6 +1293,9 @@ fn Viewer(
                             }
                         }
                     }
+                }
+                if let Some(main) = main.filter(|_| !is_pdf) {
+                    MainStar { main, photo: id }
                 }
                 if count > 1 {
                     span { class: "muted-note",

@@ -730,6 +730,23 @@ pub(crate) async fn edit_vehicle(
     )
 }
 
+/// Makes one of a vehicle's own photos its main photo, or leaves it with none (#24,
+/// phase-6.md 2h). Server only, as the vehicle's setup is.
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/assets/main-photo")]
+pub(crate) async fn set_main_photo(
+    id: domain::asset::AssetId,
+    photo: Option<domain::attachment::AttachmentId>,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::set_main_photo(&context, id, photo).await
+    })
+    .await)
+}
+
 /// Who gains, loses, or changes access if a vehicle moves to another group.
 ///
 /// # Errors
