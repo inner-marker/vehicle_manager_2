@@ -198,23 +198,23 @@ async fn garage_view(
         })
         .filter(|summary| summary.vehicles > 0 || can_manage_groups)
         .collect();
-    let order = database
+    let garage_order = database
         .garage_order(context.user.user.cast())
         .await
         .map_err(|error| unavailable("garage order", &error))?
-        .unwrap_or_default()
-        .order;
+        .unwrap_or_default();
     tracing::debug!(target: log_area::APP, user = %context.user.user, vehicles = assets.len(), groups = groups.len(), "garage");
     Ok(AssetsOutcome::Garage {
-        view: GarageView {
+        view: Box::new(GarageView {
             groups,
             assets,
             can_add: context.may(AdminAction::AddAsset),
             can_manage_groups,
             sort: person_preferences(context).await?.garage_sort,
-            order,
+            order: garage_order.order,
+            pinned: garage_order.pinned,
             fleet,
-        },
+        }),
     })
 }
 
@@ -390,15 +390,62 @@ async fn save_order(
         .await
         .map_err(|error| unavailable("garage order", &error))?
         .is_some();
-    let patch = GarageOrderPatch { order: Some(order) };
+    let patch = GarageOrderPatch {
+        order: Some(order),
+        pinned: None,
+    };
+    save_garage_order(context, id, exists, patch).await?;
+    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage order saved");
+    Ok(AssetsOutcome::Done)
+}
+
+/// Saves the vehicles the person has pinned in the Garage (#090): their own, so anyone
+/// signed in may. Kept with their Garage order; a vehicle listed twice is listed once.
+pub async fn set_pins(context: &AssetsContext<'_>, pinned: Vec<AssetId>) -> AssetsOutcome {
+    either(save_pins(context, pinned).await)
+}
+
+async fn save_pins(
+    context: &AssetsContext<'_>,
+    pinned: Vec<AssetId>,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    let mut unique: Vec<AssetId> = Vec::with_capacity(pinned.len());
+    for id in pinned {
+        if !unique.contains(&id) {
+            unique.push(id);
+        }
+    }
+    unique.truncate(MAX_ORDER_LENGTH);
+    let id: GarageOrderId = context.user.user.cast();
+    let exists = context
+        .database
+        .garage_order(id)
+        .await
+        .map_err(|error| unavailable("garage order", &error))?
+        .is_some();
+    let patch = GarageOrderPatch {
+        order: None,
+        pinned: Some(unique),
+    };
+    save_garage_order(context, id, exists, patch).await?;
+    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage pins saved");
+    Ok(AssetsOutcome::Done)
+}
+
+/// Saves a change to the person's garage order record, making it if it isn't there yet.
+async fn save_garage_order(
+    context: &AssetsContext<'_>,
+    id: GarageOrderId,
+    exists: bool,
+    patch: GarageOrderPatch,
+) -> Result<(), AssetsOutcome> {
     let change = if exists {
         Change::Update { id, patch }
     } else {
         Change::Create { id, values: patch }
     };
     context.save(&GarageOrderWriter, change).await?;
-    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage order saved");
-    Ok(AssetsOutcome::Done)
+    Ok(())
 }
 
 // --- Adding, editing, archiving, deleting ------------------------------------------------

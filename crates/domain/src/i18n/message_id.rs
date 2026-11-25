@@ -797,6 +797,8 @@ define_messages! {
     CHANGE_PLACE_DELETE => "change-place-delete",
     /// A change: the Garage order.
     CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// A change: the pinned vehicles.
+    CHANGE_GARAGE_PINS => "change-garage-pins",
     /// A change: a photo or document added.
     CHANGE_ATTACHMENT_ADD => "change-attachment-add",
     /// A change: a photo or document moved between tasks.
@@ -1145,6 +1147,16 @@ define_messages! {
     VEHICLES_ARRANGE => "vehicles-arrange",
     /// Button: finish arranging.
     VEHICLES_ARRANGE_DONE => "vehicles-arrange-done",
+    /// A Garage card's ⋯ menu (`$name`, the vehicle's).
+    VEHICLES_CARD_MENU => "vehicles-card-menu",
+    /// A Garage card's menu item: open the vehicle.
+    VEHICLES_OPEN => "vehicles-open",
+    /// A Garage card's menu item, and Arrange mode's button: pin the vehicle (#090).
+    VEHICLES_PIN => "vehicles-pin",
+    /// A Garage card's menu item, and Arrange mode's button: unpin the vehicle.
+    VEHICLES_UNPIN => "vehicles-unpin",
+    /// Said for the 📌 before a pinned vehicle's name.
+    VEHICLES_PINNED => "vehicles-pinned",
     /// Button: show archived vehicles (`$count`).
     VEHICLES_SHOW_ARCHIVED => "vehicles-show-archived",
     /// Button: hide archived vehicles.

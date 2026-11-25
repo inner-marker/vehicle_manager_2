@@ -338,6 +338,9 @@ pub async fn run_operation(context: &PushContext<'_>, operation: &Operation) -> 
         OperationChange::SetGarageOrder { order } => {
             ran_assets(assets::set_order(&assets(), order.clone()).await)
         }
+        OperationChange::SetGaragePins { pinned } => {
+            ran_assets(assets::set_pins(&assets(), pinned.clone()).await)
+        }
         OperationChange::SetMyPreferences { patch } => {
             let preferences = PreferencesContext {
                 database: context.database,
@@ -411,6 +414,7 @@ async fn run_place(context: &PushContext<'_>, operation: &Operation) -> Ran {
         | OperationChange::DeleteSquawk { .. }
         | OperationChange::SetMyPreferences { .. }
         | OperationChange::SetGarageOrder { .. }
+        | OperationChange::SetGaragePins { .. }
         | OperationChange::AddAttachment { .. }
         | OperationChange::MoveAttachment { .. }
         | OperationChange::RemoveAttachment { .. } => return Ran::Unavailable,

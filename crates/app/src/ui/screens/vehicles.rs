@@ -4,12 +4,16 @@
 //! menu (Newest activity, Name, Custom with Arrange: ▲▼ on each card until Done); Show
 //! archived; **+ Add vehicle** (the household's Admin, in Admin mode) as a two-step dialog,
 //! kind then details. On phones, a menu at the top picks All vehicles or a group.
+//!
+//! **Pinned vehicles** (#090; `docs/ui-sketches/p6m3-vehicles-schedules-options.svg` part 1A):
+//! each person's own, first in their group whatever the sort, with 📌 before the name. Pin and
+//! Unpin are in each card's ⋯ menu, and on the card in Arrange mode.
 
 use dioxus::prelude::*;
 use domain::api::{AssetSummary, AssetsOutcome, GroupSummary};
 use domain::asset::{AssetId, LifecycleStatus};
 use domain::asset_form::AssetForm;
-use domain::garage::{Direction, move_within, sort_assets};
+use domain::garage::{Direction, move_within, pinned_first, sort_assets, with_pin};
 use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::preferences::{Choice, GarageSort, PreferencesPatch};
@@ -72,13 +76,16 @@ pub(crate) fn GroupVehicles(group_id: String) -> Element {
     }
 }
 
-/// The groups to show, each with its vehicles in the person's sort.
+/// How the person sorts the Garage: their sort, custom order, and pinned vehicles.
+type Sorting<'a> = (GarageSort, &'a [AssetId], &'a [AssetId]);
+
+/// The groups to show, each with its vehicles in the person's sort, pinned ones first.
 fn sections(
     groups: &[GroupSummary],
     assets: &[AssetSummary],
     only: Option<GroupId>,
     show_archived: bool,
-    (sort, order): (GarageSort, &[AssetId]),
+    (sort, order, pinned): Sorting<'_>,
 ) -> Vec<(GroupSummary, Vec<AssetSummary>)> {
     groups
         .iter()
@@ -92,6 +99,7 @@ fn sections(
                 .cloned()
                 .collect();
             sort_assets(&mut in_group, sort, order);
+            pinned_first(&mut in_group, pinned);
             (summary.clone(), in_group)
         })
         .collect()
@@ -124,16 +132,32 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
         &view.assets,
         group,
         show_archived(),
-        (view.sort, &view.order),
+        (view.sort, &view.order, &view.pinned),
     );
     let on_move = move |(asset, direction): (AssetId, Direction)| {
-        // Every shown vehicle in display order (the custom order a move starts from), and
-        // the ones in the moved vehicle's group.
+        // Every shown vehicle in custom order (the order a move starts from, pins aside), and
+        // the ones beside it as shown: in its group, pinned or not as it is.
         let everything = display_order(context, group, show_archived());
         let shown_here = shown_group_of(context, asset, show_archived());
         spawn(async move {
             let order = move_within(&everything, &shown_here, asset, direction);
             error.set(match crate::data::set_garage_order(order).await {
+                Ok(AssetsOutcome::Done) => refresh_garage(context).await,
+                Ok(_) => Some(messages::SOMETHING_WENT_WRONG),
+                Err(failure) => Some(problem_from_error(&failure).message()),
+            });
+        });
+    };
+    let on_pin = move |(asset, pin): (AssetId, bool)| {
+        let now = context
+            .garage
+            .read()
+            .as_ref()
+            .map(|view| view.pinned.clone())
+            .unwrap_or_default();
+        let pinned = with_pin(&now, asset, pin);
+        spawn(async move {
+            error.set(match crate::data::set_garage_pins(pinned).await {
                 Ok(AssetsOutcome::Done) => refresh_garage(context).await,
                 Ok(_) => Some(messages::SOMETHING_WENT_WRONG),
                 Err(failure) => Some(problem_from_error(&failure).message()),
@@ -184,9 +208,11 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
                     key: "{summary.id}",
                     summary,
                     items,
+                    pinned: view.pinned.clone(),
                     heading: group.is_none(),
                     arranging: custom && arranging(),
                     on_move,
+                    on_pin,
                 }
             }
         }
@@ -200,7 +226,8 @@ fn VehiclesScreen(group: Option<GroupId>) -> Element {
     }
 }
 
-/// The ids of every shown vehicle (one group's, or all), in display order.
+/// The ids of every shown vehicle (one group's, or all), in display order without the pins
+/// (so a ▲▼ move changes the custom order alone, and unpinning puts a vehicle back in place).
 fn display_order(
     context: VehiclesContext,
     only: Option<GroupId>,
@@ -214,24 +241,29 @@ fn display_order(
         &view.assets,
         only,
         show_archived,
-        (view.sort, &view.order),
+        (view.sort, &view.order, &[]),
     )
     .into_iter()
     .flat_map(|(_, items)| items.into_iter().map(|item| item.id))
     .collect()
 }
 
-/// The ids of the shown vehicles in `asset`'s group, in display order (for a ▲▼ move).
+/// The ids of the shown vehicles beside `asset` (for a ▲▼ move): in its group, and pinned if
+/// it is (or unpinned if it isn't), in display order.
 fn shown_group_of(context: VehiclesContext, asset: AssetId, show_archived: bool) -> Vec<AssetId> {
-    let group = context.garage.read().as_ref().and_then(|view| {
+    let Some((group, pinned)) = context.garage.read().as_ref().and_then(|view| {
         view.assets
             .iter()
             .find(|item| item.id == asset)
-            .map(|item| item.asset.group)
-    });
-    group.map_or_else(Vec::new, |group| {
-        display_order(context, Some(group), show_archived)
-    })
+            .map(|item| (item.asset.group, view.pinned.clone()))
+    }) else {
+        return Vec::new();
+    };
+    let is_pinned = pinned.contains(&asset);
+    display_order(context, Some(group), show_archived)
+        .into_iter()
+        .filter(|id| pinned.contains(id) == is_pinned)
+        .collect()
 }
 
 /// The Sort menu: changing it saves the person's preference and reloads.
@@ -327,9 +359,11 @@ fn GroupMenu(groups: Vec<GroupSummary>, current: Option<GroupId>) -> Element {
 fn GroupSection(
     summary: GroupSummary,
     items: Vec<AssetSummary>,
+    pinned: Vec<AssetId>,
     heading: bool,
     arranging: bool,
     on_move: EventHandler<(AssetId, Direction)>,
+    on_pin: EventHandler<(AssetId, bool)>,
 ) -> Element {
     // What's shown (archived vehicles count only while they're shown).
     let count = i64::try_from(items.len()).unwrap_or(i64::MAX);
@@ -347,14 +381,22 @@ fn GroupSection(
             }
             div { class: "vehicle-cards",
                 for item in items {
-                    VehicleCard { key: "{item.id}", item, arranging, on_move }
+                    VehicleCard {
+                        key: "{item.id}",
+                        pinned: pinned.contains(&item.id),
+                        item,
+                        arranging,
+                        on_move,
+                        on_pin,
+                    }
                 }
             }
         }
     }
 }
 
-/// One vehicle's card: name, kind and model, an identifier; ▲▼ while arranging.
+/// One vehicle's card: name (📌 first when pinned), kind and model, an identifier; its ⋯ menu;
+/// ▲▼ and Pin while arranging.
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -362,11 +404,14 @@ fn GroupSection(
 #[component]
 fn VehicleCard(
     item: AssetSummary,
+    pinned: bool,
     arranging: bool,
     on_move: EventHandler<(AssetId, Direction)>,
+    on_pin: EventHandler<(AssetId, bool)>,
 ) -> Element {
     let asset = &item.asset;
     let id = item.id;
+    let name = asset.name.as_str().to_owned();
     // "Truck · 2021 Ford F-150": the kind, then whichever of year, make, model there are.
     let model: Vec<String> = [
         asset.year.map(|year| year.to_string()),
@@ -396,7 +441,12 @@ fn VehicleCard(
             Link { class: "vehicle-card-link", to: Route::VehicleDetail { asset_id: id.to_string() },
                 // Its main photo at the left, or its kind's icon (option A, #24).
                 super::attachments::VehiclePhoto { photo: asset.main_photo, kind: asset.kind.clone(), class: "vehicle-photo-card" }
-                span { class: "vehicle-card-name", {asset.name.as_str().to_owned()} }
+                span { class: "vehicle-card-name",
+                    if pinned {
+                        span { class: "vehicle-card-pin", role: "img", "aria-label": tr(messages::VEHICLES_PINNED), title: tr(messages::VEHICLES_PINNED), "📌" }
+                    }
+                    {name.clone()}
+                }
                 span { class: "vehicle-card-subtitle", {subtitle} }
                 if let Some(value) = identifier {
                     span { class: "vehicle-card-identifier", {value} }
@@ -422,6 +472,69 @@ fn VehicleCard(
                     }
                     button { class: "icon-button", "aria-label": tr(messages::VEHICLES_MOVE_DOWN), onclick: move |_| on_move.call((id, Direction::Down)),
                         IconView { icon: Icon::Down }
+                    }
+                    button {
+                        class: if pinned { "icon-button pin-button on" } else { "icon-button pin-button" },
+                        "aria-label": tr(if pinned { messages::VEHICLES_UNPIN } else { messages::VEHICLES_PIN }),
+                        "aria-pressed": pinned,
+                        title: tr(if pinned { messages::VEHICLES_UNPIN } else { messages::VEHICLES_PIN }),
+                        onclick: move |_| on_pin.call((id, !pinned)),
+                        "📌"
+                    }
+                }
+            } else {
+                CardMenu { id, name, pinned, on_pin }
+            }
+        }
+    }
+}
+
+/// A Garage card's ⋯ menu: Open, and Pin or Unpin (#090).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn CardMenu(
+    id: AssetId,
+    name: String,
+    pinned: bool,
+    on_pin: EventHandler<(AssetId, bool)>,
+) -> Element {
+    let mut open = use_signal(|| false);
+    let navigator = use_navigator();
+    rsx! {
+        div { class: "chip-anchor vehicle-card-more",
+            button {
+                class: "vehicle-card-more-button",
+                "aria-label": tr_with(messages::VEHICLES_CARD_MENU, &[("name", MessageArg::from(name.as_str()))]),
+                "aria-haspopup": "menu",
+                "aria-expanded": open(),
+                onclick: move |_| open.toggle(),
+                "⋯"
+            }
+            if open() {
+                div { class: "menu-scrim", onclick: move |_| open.set(false) }
+                div { class: "chip-menu", role: "menu",
+                    button {
+                        class: "menu-item",
+                        role: "menuitem",
+                        onclick: move |_| {
+                            open.set(false);
+                            navigator.push(Route::VehicleDetail { asset_id: id.to_string() });
+                        },
+                        span { class: "menu-check" }
+                        span { {tr(messages::VEHICLES_OPEN)} }
+                    }
+                    button {
+                        class: "menu-item",
+                        role: "menuitem",
+                        onclick: move |_| {
+                            open.set(false);
+                            on_pin.call((id, !pinned));
+                        },
+                        span { class: "menu-check", "📌" }
+                        span { {tr(if pinned { messages::VEHICLES_UNPIN } else { messages::VEHICLES_PIN })} }
                     }
                 }
             }
@@ -685,14 +798,14 @@ mod tests {
                 })
                 .collect()
         };
-        let all = sections(&groups, &assets, None, false, (GarageSort::Name, &[]));
+        let all = sections(&groups, &assets, None, false, (GarageSort::Name, &[], &[]));
         assert_eq!(names(&all), vec![vec!["Civic", "Truck"], vec!["Cub"]]);
         let garage_only = sections(
             &groups,
             &assets,
             Some(test_id(50)),
             true,
-            (GarageSort::Name, &[]),
+            (GarageSort::Name, &[], &[]),
         );
         assert_eq!(names(&garage_only), vec![vec!["Civic", "Old", "Truck"]]);
     }

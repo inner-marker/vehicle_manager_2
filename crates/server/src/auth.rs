@@ -397,8 +397,13 @@ mod tests {
         (status, String::from_utf8(body.to_vec()).unwrap())
     }
 
-    /// The current API version header value (`API_VERSION` is 1).
-    const CURRENT: Option<&str> = Some("1");
+    /// The current API version header value.
+    const CURRENT: Option<&str> = Some("3");
+
+    #[test]
+    fn current_is_this_builds_version() {
+        assert_eq!(CURRENT, Some(API_VERSION.to_string().as_str()));
+    }
 
     /// The reason code a refusal carried.
     fn reason(body: &str) -> ApiError {

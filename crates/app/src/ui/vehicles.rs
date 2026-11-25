@@ -43,7 +43,7 @@ pub(crate) fn apply(
     match result {
         Ok(AssetsOutcome::Garage { view }) => {
             tracing::debug!(target: log_area::UI, vehicles = view.assets.len(), groups = view.groups.len(), "garage loaded");
-            context.garage.set(Some(view));
+            context.garage.set(Some(*view));
             None
         }
         Ok(AssetsOutcome::Invalid { problem }) => Some(problem.message()),

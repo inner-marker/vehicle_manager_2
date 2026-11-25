@@ -19,7 +19,7 @@ mod assets {
     use domain::test_support::{ManualClock, test_id};
     use server::assets::{
         AssetsContext, add, add_field, add_meter, delete, delete_field, edit, edit_field,
-        edit_meter, garage, move_to, preview_move, set_order, view,
+        edit_meter, garage, move_to, preview_move, set_order, set_pins, view,
     };
     use server::commands::issue;
     use server::groups::{add_group, delete_group, ensure_default_group};
@@ -55,7 +55,7 @@ mod assets {
         let AssetsOutcome::Garage { view } = outcome else {
             panic!("expected the garage, got {outcome:?}");
         };
-        view
+        *view
     }
 
     fn the_asset(outcome: AssetsOutcome) -> AssetView {
@@ -277,6 +277,47 @@ mod assets {
                 .is_empty(),
             "Jordan's own: none yet"
         );
+    }
+
+    #[tokio::test]
+    async fn each_person_pins_their_own_and_the_order_stays() {
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let garage_id = default_group(&database, &clock).await;
+        let admin = in_admin(&jordan);
+        let ctx = context(&database, &admin, &clock);
+        let truck_id = added(&add(&ctx, &truck(garage_id)).await);
+        let car = AssetForm {
+            name: "Civic".into(),
+            ..AssetForm::new("car", garage_id)
+        };
+        let car_id = added(&add(&ctx, &car).await);
+        let utc = domain::location::TimeZone::parse("UTC").unwrap();
+
+        // Sam (a Driver) pins before ever ordering: the record is made.
+        let sams = context(&database, &sam, &clock);
+        assert_eq!(
+            set_pins(&sams, vec![car_id, car_id]).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(the_garage(garage(&sams, &utc).await).pinned, vec![car_id]);
+        // Ordering keeps the pins, and pinning keeps the order.
+        assert_eq!(
+            set_order(&sams, vec![truck_id, car_id]).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            set_pins(&sams, vec![car_id, truck_id]).await,
+            AssetsOutcome::Done
+        );
+        let view = the_garage(garage(&sams, &utc).await);
+        assert_eq!(view.order, vec![truck_id, car_id]);
+        assert_eq!(view.pinned, vec![car_id, truck_id]);
+        // Unpinned: none.
+        assert_eq!(set_pins(&sams, vec![]).await, AssetsOutcome::Done);
+        assert!(the_garage(garage(&sams, &utc).await).pinned.is_empty());
+        // Jordan's are their own.
+        assert!(the_garage(garage(&ctx, &utc).await).pinned.is_empty());
     }
 
     #[tokio::test]

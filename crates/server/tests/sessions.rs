@@ -572,7 +572,9 @@ mod sessions {
         path: &str,
         header: Option<(&str, String)>,
     ) -> (StatusCode, String) {
-        let mut request = Request::builder().uri(path).header("x-api-version", "1");
+        let mut request = Request::builder()
+            .uri(path)
+            .header("x-api-version", domain::api::API_VERSION.to_string());
         if let Some((name, value)) = header {
             request = request.header(name, value);
         }

@@ -699,6 +699,23 @@ pub(crate) async fn set_garage_order(
     )
 }
 
+/// Saves the vehicles the signed-in person has pinned in the Garage (#090).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[post("/api/v1/assets/pins")]
+pub(crate) async fn set_garage_pins(
+    pinned: Vec<domain::asset::AssetId>,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(
+        server_side::with_assets(async |context| {
+            ::server::assets::set_pins(&context, pinned).await
+        })
+        .await,
+    )
+}
+
 /// Adds a vehicle, with copies of its profile's meters and fields (the household's Admin).
 ///
 /// # Errors

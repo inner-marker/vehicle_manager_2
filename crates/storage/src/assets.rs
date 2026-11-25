@@ -650,15 +650,21 @@ impl RecordWriter<GarageOrder> for GarageOrderWriter {
         values: &GarageOrderPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
-        sqlx::query("INSERT INTO garage_orders (id, vehicles, sequence) VALUES (?, ?, ?)")
-            .bind(id_to_sql(id))
-            .bind(json_to_sql(
-                &values.order.clone().unwrap_or_default(),
-                "vehicles",
-            )?)
-            .bind(sequence)
-            .execute(connection)
-            .await?;
+        sqlx::query(
+            "INSERT INTO garage_orders (id, vehicles, pinned, sequence) VALUES (?, ?, ?, ?)",
+        )
+        .bind(id_to_sql(id))
+        .bind(json_to_sql(
+            &values.order.clone().unwrap_or_default(),
+            "vehicles",
+        )?)
+        .bind(json_to_sql(
+            &values.pinned.clone().unwrap_or_default(),
+            "pinned",
+        )?)
+        .bind(sequence)
+        .execute(connection)
+        .await?;
         Ok(())
     }
 
@@ -674,10 +680,17 @@ impl RecordWriter<GarageOrder> for GarageOrderWriter {
             .as_ref()
             .map(|order| json_to_sql(order, "vehicles"))
             .transpose()?;
+        let pinned = patch
+            .pinned
+            .as_ref()
+            .map(|pinned| json_to_sql(pinned, "pinned"))
+            .transpose()?;
         sqlx::query(
-            "UPDATE garage_orders SET vehicles = coalesce(?, vehicles), sequence = ? WHERE id = ?",
+            "UPDATE garage_orders SET vehicles = coalesce(?, vehicles), \
+             pinned = coalesce(?, pinned), sequence = ? WHERE id = ?",
         )
         .bind(vehicles)
+        .bind(pinned)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -788,7 +801,7 @@ impl Database {
         )
     }
 
-    /// A person's custom Garage order, if they've made one.
+    /// A person's custom Garage order and pinned vehicles, if they've made either.
     ///
     /// # Errors
     ///
@@ -797,14 +810,17 @@ impl Database {
         &self,
         id: GarageOrderId,
     ) -> Result<Option<GarageOrder>, StorageError> {
-        let row = sqlx::query("SELECT vehicles FROM garage_orders WHERE id = ? AND deleted = 0")
-            .bind(id_to_sql(id))
-            .fetch_optional(self.pool())
-            .await?;
+        let row =
+            sqlx::query("SELECT vehicles, pinned FROM garage_orders WHERE id = ? AND deleted = 0")
+                .bind(id_to_sql(id))
+                .fetch_optional(self.pool())
+                .await?;
         row.map(|row| -> Result<GarageOrder, StorageError> {
             let vehicles: String = row.try_get("vehicles")?;
+            let pinned: String = row.try_get("pinned")?;
             Ok(GarageOrder {
                 order: json_from_sql(&vehicles, "garage_orders.vehicles")?,
+                pinned: json_from_sql(&pinned, "garage_orders.pinned")?,
             })
         })
         .transpose()

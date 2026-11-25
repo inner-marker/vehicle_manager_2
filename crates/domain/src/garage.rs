@@ -4,6 +4,9 @@
 //! name, or their own **custom order** ([`GarageOrder`], one list per person, changed with
 //! ▲▼ while arranging). Groups themselves stay in name order.
 //!
+//! **Pinned** vehicles (decision #090) are each person's own, kept with their order: they come
+//! first in their own group whatever the sort, and among themselves follow it ([`pinned_first`]).
+//!
 //! "Newest activity" means newest added until vehicles have events (milestone 6): an asset's
 //! ID is a `UUIDv7`, so it carries its creation time.
 //!
@@ -28,11 +31,16 @@ use crate::command::{Patch, Record};
 use crate::id::Id;
 use crate::preferences::GarageSort;
 
-/// One person's custom order of vehicles; its ID is the person's user ID.
+/// One person's custom order of vehicles, and the ones they've pinned; its ID is the person's
+/// user ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GarageOrder {
     /// Vehicles in order. Ones not listed (e.g. added later) come after, newest first.
     pub order: Vec<AssetId>,
+    /// The vehicles they've pinned (#090), in no particular order; a vehicle that's gone, or
+    /// they no longer see, is ignored.
+    #[serde(default)]
+    pub pinned: Vec<AssetId>,
 }
 
 /// The ID of a garage order record (the person's user ID, cast).
@@ -47,20 +55,29 @@ pub struct GarageOrderPatch {
     /// See [`GarageOrder::order`] (the whole list is replaced).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub order: Option<Vec<AssetId>>,
+    /// See [`GarageOrder::pinned`] (the whole list is replaced).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned: Option<Vec<AssetId>>,
 }
 
 impl Patch for GarageOrderPatch {
     fn changed_fields(&self) -> Vec<&'static str> {
+        let mut fields = Vec::new();
         if self.order.is_some() {
-            vec!["order"]
-        } else {
-            Vec::new()
+            fields.push("order");
         }
+        if self.pinned.is_some() {
+            fields.push("pinned");
+        }
+        fields
     }
 
     fn keep_only(&mut self, fields: &[&str]) {
         if !fields.contains(&"order") {
             self.order = None;
+        }
+        if !fields.contains(&"pinned") {
+            self.pinned = None;
         }
     }
 }
@@ -107,6 +124,23 @@ pub fn sort_assets(assets: &mut [AssetSummary], sort: GarageSort, order: &[Asset
             }
         }),
     }
+}
+
+/// Moves the pinned vehicles in `assets` (one group's, already sorted) to the front, keeping
+/// the sort among the pinned ones and among the rest (#090).
+pub fn pinned_first(assets: &mut [AssetSummary], pinned: &[AssetId]) {
+    // A stable sort, so each part keeps the order it had.
+    assets.sort_by_key(|item| !pinned.contains(&item.id));
+}
+
+/// `pinned` with `asset` pinned (`pin`) or not, each vehicle listed once.
+#[must_use]
+pub fn with_pin(pinned: &[AssetId], asset: AssetId, pin: bool) -> Vec<AssetId> {
+    let mut result: Vec<AssetId> = pinned.iter().copied().filter(|id| *id != asset).collect();
+    if pin {
+        result.push(asset);
+    }
+    result
 }
 
 /// Which way a ▲▼ button moves a vehicle.
@@ -253,12 +287,67 @@ mod tests {
     }
 
     #[test]
-    fn an_order_patch_lists_its_one_field() {
+    fn an_order_patch_lists_its_fields() {
         let mut patch = GarageOrderPatch {
             order: Some(vec![test_id(1)]),
+            pinned: None,
         };
         assert_eq!(patch.changed_fields(), vec!["order"]);
         patch.keep_only(&[]);
         assert!(patch.changed_fields().is_empty());
+        let mut pins = GarageOrderPatch {
+            order: Some(vec![]),
+            pinned: Some(vec![test_id(2)]),
+        };
+        assert_eq!(pins.changed_fields(), vec!["order", "pinned"]);
+        pins.keep_only(&["pinned"]);
+        assert_eq!(pins.changed_fields(), vec!["pinned"]);
+    }
+
+    #[test]
+    fn pinned_vehicles_come_first_in_every_sort() {
+        let truck = test_id(2);
+        let generator = test_id(3);
+        for sort in [
+            GarageSort::Name,
+            GarageSort::NewestActivity,
+            GarageSort::MostUrgent,
+            GarageSort::Custom,
+        ] {
+            let mut assets = three();
+            sort_assets(&mut assets, sort, &[test_id(1), test_id(2), test_id(3)]);
+            let before = names(&assets).join(",");
+            pinned_first(&mut assets, &[truck]);
+            assert_eq!(names(&assets)[0], "Truck", "{sort:?}");
+            // The others keep the sort's order.
+            let rest: Vec<&str> = before.split(',').filter(|n| *n != "Truck").collect();
+            assert_eq!(names(&assets)[1..], rest[..], "{sort:?}");
+        }
+        // Two pinned keep the sort among themselves: by name, Generator then Truck.
+        let mut assets = three();
+        sort_assets(&mut assets, GarageSort::Name, &[]);
+        pinned_first(&mut assets, &[truck, generator]);
+        assert_eq!(names(&assets), vec!["Generator", "Truck", "civic"]);
+    }
+
+    #[test]
+    fn a_pin_that_is_gone_or_elsewhere_changes_nothing() {
+        let mut assets = three();
+        sort_assets(&mut assets, GarageSort::Name, &[]);
+        // A vehicle removed, or in another group, is pinned: this group stays as sorted.
+        pinned_first(&mut assets, &[test_id(77)]);
+        assert_eq!(names(&assets), vec!["civic", "Generator", "Truck"]);
+        let mut none: Vec<AssetSummary> = Vec::new();
+        pinned_first(&mut none, &[test_id(1)]);
+        assert!(none.is_empty());
+    }
+
+    #[test]
+    fn pinning_lists_each_vehicle_once() {
+        let [a, b] = [test_id(1), test_id(2)];
+        assert_eq!(with_pin(&[], a, true), vec![a]);
+        assert_eq!(with_pin(&[a], a, true), vec![a]);
+        assert_eq!(with_pin(&[a, b], a, false), vec![b]);
+        assert_eq!(with_pin(&[b], a, false), vec![b]);
     }
 }

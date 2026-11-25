@@ -5999,3 +5999,46 @@ button.main-star:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
+
+/* Pinned vehicles (#090; sketch p6m3 part 1A): 📌 before the name, and each card's ⋯ menu at its
+   top right, over the card's link. */
+.vehicle-card-pin {
+    margin-right: 6px;
+}
+
+.vehicle-card .vehicle-card-link {
+    padding-right: 52px;
+}
+
+.vehicle-card-more {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+}
+
+.vehicle-card-more-button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.vehicle-card-more-button:hover {
+    background: var(--surface-raised);
+    color: var(--text);
+}
+
+.vehicle-card-more .chip-menu {
+    min-width: 180px;
+}
+
+.pin-button.on {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+}

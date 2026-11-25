@@ -21,12 +21,13 @@ use serde::{Deserialize, Serialize};
 use crate::i18n::{MessageId, messages};
 
 /// The API version this build speaks. 2 (phase-3.md 2c, #073): a desktop pairs at sign-in
-/// and signs its requests.
-pub const API_VERSION: u32 = 2;
+/// and signs its requests. 3 (phase-6.md 3b, #090): a desktop sends pinned vehicles
+/// (`SetGaragePins`) with its offline changes.
+pub const API_VERSION: u32 = 3;
 
 /// The oldest client API version this build's server still accepts: the one before (#072).
-/// Version-1 desktop apps (`v0.2.0`) sign in without a key, as "Desktop app (older version)".
-pub const MIN_SUPPORTED_API_VERSION: u32 = 1;
+/// Version-2 desktop apps never send pins, so their Garage works as before.
+pub const MIN_SUPPORTED_API_VERSION: u32 = 2;
 
 /// Header carrying the client's API version (a plain integer, e.g. `1`).
 pub const API_VERSION_HEADER: &str = "x-api-version";
@@ -505,6 +506,9 @@ pub struct GarageView {
     pub sort: crate::preferences::GarageSort,
     /// Their custom order, for the Custom sort.
     pub order: Vec<crate::asset::AssetId>,
+    /// The vehicles they've pinned (#090): first in their own group, whatever the sort.
+    #[serde(default)]
+    pub pinned: Vec<crate::asset::AssetId>,
     /// The fleet strip's counts, over the vehicles the Garage shows (#083).
     #[serde(default)]
     pub fleet: crate::due::FleetCounts,
@@ -637,8 +641,8 @@ pub enum PlacesOutcome {
 pub enum AssetsOutcome {
     /// The Garage.
     Garage {
-        /// What the person can see.
-        view: GarageView,
+        /// What the person can see (boxed: it's far the largest outcome).
+        view: Box<GarageView>,
     },
     /// One vehicle.
     Asset {

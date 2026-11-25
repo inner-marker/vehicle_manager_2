@@ -433,6 +433,7 @@ change-place = Saved place “{ $name }”
 change-place-edit = A change to a saved place
 change-place-delete = Removing a saved place
 change-garage-order = The Garage order
+change-garage-pins = Pinned vehicles
 change-attachment-add = A photo or document on { $vehicle }
 change-attachment-move = Moving a photo or document
 change-attachment-remove = Removing a photo or document
@@ -954,6 +955,12 @@ sort-name = Sort: Name (A–Z)
 sort-custom = Sort: Custom
 vehicles-arrange = Arrange
 vehicles-arrange-done = Done
+# $name (string): the vehicle's name.
+vehicles-card-menu = More for { $name }
+vehicles-open = Open
+vehicles-pin = Pin
+vehicles-unpin = Unpin
+vehicles-pinned = Pinned
 # $count (number): archived vehicles not shown.
 vehicles-show-archived = Show archived ({ $count })
 vehicles-hide-archived = Hide archived

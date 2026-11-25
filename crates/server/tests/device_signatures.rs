@@ -109,7 +109,7 @@ async fn send(
 ) -> (StatusCode, String) {
     let mut request = Request::builder()
         .uri(path)
-        .header("x-api-version", "1")
+        .header("x-api-version", domain::api::API_VERSION.to_string())
         .header("authorization", format!("Bearer {token}"));
     if let Some(signature) = signature {
         request = request.header(HEADER, signature);

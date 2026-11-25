@@ -149,6 +149,7 @@ pub(crate) fn describe(change: &OperationChange, vehicle: &dyn Fn(AssetId) -> St
         C::EditPlace { .. } => tr(messages::CHANGE_PLACE_EDIT),
         C::DeletePlace { .. } => tr(messages::CHANGE_PLACE_DELETE),
         C::SetGarageOrder { .. } => tr(messages::CHANGE_GARAGE_ORDER),
+        C::SetGaragePins { .. } => tr(messages::CHANGE_GARAGE_PINS),
         C::AddAttachment { input } => tr_with(
             messages::CHANGE_ATTACHMENT_ADD,
             &[("vehicle", MessageArg::from(vehicle(input.asset).as_str()))],
@@ -178,6 +179,7 @@ pub(crate) fn vehicle_of(change: &OperationChange) -> Option<AssetId> {
         | OperationChange::EditPlace { .. }
         | OperationChange::DeletePlace { .. }
         | OperationChange::SetGarageOrder { .. }
+        | OperationChange::SetGaragePins { .. }
         | OperationChange::MoveAttachment { .. }
         | OperationChange::RemoveAttachment { .. } => None,
     }

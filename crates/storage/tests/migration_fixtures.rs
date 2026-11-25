@@ -278,8 +278,8 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     );
 }
 
-/// Migrations 0028 and 0029 read as empty in every fixture (all made before Phase 6): no shops,
-/// no household labor rate, and no main photos.
+/// Migrations 0028 to 0030 read as empty in every fixture (all made before Phase 6): no shops,
+/// no household labor rate, no main photos, and no pinned vehicles (each Garage order kept).
 #[cfg(test)]
 async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -306,6 +306,23 @@ async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
         "{}",
         fixture.display()
     );
+    // No pins yet (3b); every Garage order reads, with its vehicles as they were.
+    assert_eq!(
+        count("SELECT count(*) FROM garage_orders WHERE pinned <> '[]'")
+            .await
+            .unwrap(),
+        0,
+        "{}",
+        fixture.display()
+    );
+    for user in database.users().await.unwrap() {
+        let order = database.garage_order(user.id.cast()).await.unwrap();
+        assert!(
+            order.is_none_or(|order| order.pinned.is_empty()),
+            "{}",
+            fixture.display()
+        );
+    }
 }
 
 /// From `v0.5.0`: every meter has its stored key; Oil life counts down and resets to 100%,

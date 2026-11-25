@@ -733,6 +733,21 @@ pub(crate) async fn set_garage_order(order: Vec<AssetId>) -> ServerFnResult<Asse
     )
 }
 
+/// Saves the vehicles the person has pinned in the Garage (`api::set_garage_pins`; #090).
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn set_garage_pins(pinned: Vec<AssetId>) -> ServerFnResult<AssetsOutcome> {
+    write!(
+        reader,
+        domain::operation::OperationChange::SetGaragePins { pinned: pinned.clone() },
+        context => assets_from,
+        ::server::assets::set_pins(&context, pinned.clone()),
+        api::set_garage_pins(pinned)
+    )
+}
+
 /// Uploads a photo, PDF, original, or metadata for `purpose` (`files::upload`): on a desktop
 /// with a complete copy, processed here by the server's own code and sent later (6d).
 ///
