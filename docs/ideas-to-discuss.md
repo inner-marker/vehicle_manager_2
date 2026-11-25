@@ -126,13 +126,17 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **"Voice drafts" on the dashboard:** which screen (Garage, the vehicle's Overview, Messages, or + Log), and its relation to the forgotten-job reminder (milestone 7).
   - Its own open questions (§14): push-to-talk, model size, keeping audio clips, squawk severity, and more.
 
-### 15. Pin vehicles to the top of the Garage 🟡
+### 15. Pin vehicles to the top of the Garage ✅
+*Decided 2026-11-24: `docs/decisions.md` #090 (each person's own, first in their own group; 📌 on the card, Pin in its ⋯ menu). Built in Phase 6 milestone 3.*
+
 *Raised by the human, 2026-11-01, choosing the Garage layout (#056) · Suggested phase: undecided (not now) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - Pinned vehicles stay at the top of their group whatever the sort (Newest activity, Name, Custom).
 - **To discuss:** per person or for everyone; pinning across groups (a "Pinned" section at the top) or within each group; how it shows on the card.
 
-### 16. A catalogue of ready-made fields and sets 🟡
+### 16. A catalogue of ready-made fields and sets ✅
+*Decided 2026-11-24: `docs/decisions.md` #090 (copied onto the vehicle, then editable; a set added again gets " B"; four sets first, Tires laid out by axle). Built in Phase 6 milestone 3.*
+
 *Raised by the human, 2026-11-01 (e.g. the F-150 PowerBoost's trip computer: trip miles, time, EV miles, MPG) · Suggested phase: Phase 5, with calculated fields (#057) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** built-in field definitions in data (RON, like the profiles), each with a fixed key, type, and unit, offered from **+ Add field** with one tap: trip distance, trip time, trip EV distance, trip fuel economy, average speed, trip fuel used, EV share, idle time, and so on. **Sets** add several at once (e.g. "Trip computer (hybrid)"). Profiles would pick their defaults from the catalogue.
@@ -158,7 +162,9 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
 ### 20. A separate test server and deployed server ✅
 *Decided 2026-11-03: `docs/decisions.md` #062 (a test server beside the main server on the NAS; main runs `:dev` without test timers; separate session cookies; migrations freeze in `dev`).*
 
-### 21. Chained meter intervals: a first interval, then a different one 🟡
+### 21. Chained meter intervals: a first interval, then a different one ✅
+*Decided 2026-11-24: `docs/decisions.md` #090 (meter rules from zero, calendar rules from the vehicle's In service since date, else Acquired). Built in Phase 6 milestone 3.*
+
 *Raised by the human, 2026-11-03, after milestone 7's checkpoint test · Suggested phase: Phase 5 (what's due), with the interval rules (milestone 7, choice 4) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** a meter rule with a first interval and a different one after it, e.g. "Replace after the first 100,000 miles, then every 50,000 miles thereafter" (timing belts, some transmission fluids, a new engine's first oil change).
@@ -178,7 +184,9 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Which topics** after formulas: due soon and the warnings, fuel economy's stretches, readiness, roles.
 
 
-### 23. Documents needed by kind of vehicle, and custom vehicle types 🟡
+### 23. Documents needed by kind of vehicle, and custom vehicle types ✅
+*Decided 2026-11-24: `docs/decisions.md` #090 (household types built on a kind, for new vehicles, optionally naming a template). Built in Phase 6 milestone 3.*
+
 *Raised by the human, 2026-11-19, in the Phase 5 test run · Suggested phase: Phase 6 (polish) · **Placed:** Phase 6 milestone 3 (#089)*
 
 - **Idea:** an Admin chooses which document types each kind of vehicle needs (a track-only car needs no registration or insurance). Going further: **custom vehicle types**, made by the Admin, each saying which of the app's rules apply to it.
