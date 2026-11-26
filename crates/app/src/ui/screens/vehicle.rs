@@ -531,6 +531,7 @@ mod tests {
                 Identifier::new(IdentifierKind::parse("vin").unwrap(), "1FT").unwrap(),
             ],
             main_photo: None,
+            in_service: None,
         }
     }
 

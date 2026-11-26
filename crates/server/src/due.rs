@@ -133,6 +133,7 @@ pub(crate) async fn vehicle_due_in_full(
     let mut done = database.done_tasks_of(asset).await?;
     domain::calculated::add_derived_to_done(&mut done, &meters, &readings);
     let added = database.requirements_added(asset).await?;
+    let start = vehicle_start(database, asset, &zone).await?;
     let context = DueContext {
         now,
         zone: &zone,
@@ -140,6 +141,7 @@ pub(crate) async fn vehicle_due_in_full(
         readings: &readings,
         done: &done,
         defaults,
+        start: start.as_deref(),
     };
     let mut entries = Vec::new();
     let mut snooze_meters = Vec::new();
@@ -187,6 +189,26 @@ pub(crate) async fn vehicle_due_in_full(
         meters,
         snooze_meters,
     })
+}
+
+/// When vehicle `asset` started, for a chained calendar rule (#090): its In service since date,
+/// else the day (in `zone`) of its acquisition, if either is known.
+async fn vehicle_start(
+    database: &Database,
+    asset: AssetId,
+    zone: &TimeZone,
+) -> Result<Option<String>, StorageError> {
+    if let Some(since) = database
+        .asset(asset)
+        .await?
+        .and_then(|found| found.in_service)
+    {
+        return Ok(Some(since.on.as_str().to_owned()));
+    }
+    let records = crate::lifecycle::records(database, asset, &[]).await?;
+    Ok(domain::lifecycle::acquisition(&records)
+        .and_then(|record| utc_to_local(record.at, zone).ok())
+        .map(|(date, _)| date))
 }
 
 /// Each of `meters`' latest value among `readings` (a reset counts after others at its moment).

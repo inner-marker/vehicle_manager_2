@@ -124,6 +124,7 @@ fn due(
         readings,
         done,
         defaults: &defaults,
+        start: None,
     };
     requirement_due(
         test_id(OIL_CHANGE),
@@ -137,6 +138,7 @@ fn every_miles(miles: i64) -> IntervalRule {
     IntervalRule::Meter {
         meter: test_id(ODOMETER),
         every: miles * MILE,
+        first: None,
     }
 }
 
@@ -202,6 +204,7 @@ fn whichever_rule_comes_first_sets_the_step_and_the_date() {
             every: 12,
             unit: CalendarUnit::Months,
             end_of_month: false,
+            first: None,
         },
     ]);
     let done = [done_on("2026-01-15", 50_000)];
@@ -274,6 +277,7 @@ fn a_calendar_rule_never_done_counts_from_the_day_it_was_added() {
         every: 6,
         unit: CalendarUnit::Months,
         end_of_month: true,
+        first: None,
     }]);
     // Added 2026-01-01 (see `due`): due 2026-07-31 with the month's end.
     let due = due(&requirement, "2026-07-20", &[], &[]).unwrap();
@@ -570,6 +574,7 @@ fn a_snooze_counts_on_a_meter_that_counts_up() {
         every: 12,
         unit: CalendarUnit::Months,
         end_of_month: false,
+        first: None,
     };
     assert_eq!(
         snooze_meter(
@@ -633,4 +638,135 @@ proptest! {
         let (less, more) = if a <= b { (a, b) } else { (b, a) };
         prop_assert!(steps.step(less, interval) >= steps.step(more, interval));
     }
+}
+
+/// `requirement`'s due on `today`, with the vehicle's start (`start`) and no tasks done.
+fn due_from_start(
+    requirement: &Requirement,
+    today: &str,
+    readings: &[PastReading],
+    done: &[DoneTask],
+    start: Option<&str>,
+) -> Option<Due> {
+    let (meters, zone, defaults) = (meters(), utc(), DueDefaults::default());
+    let context = DueContext {
+        now: on(today),
+        zone: &zone,
+        meters: &meters,
+        readings,
+        done,
+        defaults: &defaults,
+        start,
+    };
+    requirement_due(
+        test_id(OIL_CHANGE),
+        requirement,
+        &context,
+        Some("2026-01-01"),
+    )
+}
+
+/// A timing belt: first at 100,000 mi, then every 50,000 mi (#090).
+fn timing_belt() -> Requirement {
+    oil_change(vec![IntervalRule::Meter {
+        meter: test_id(ODOMETER),
+        every: 50_000 * MILE,
+        first: Some(100_000 * MILE),
+    }])
+}
+
+/// Its due date, when it's a date rule's.
+fn due_date(due: &Due) -> Option<String> {
+    due.rules.iter().find_map(|rule| match &rule.left {
+        Left::Date { due } => Some(due.clone()),
+        Left::Meter { .. } => None,
+    })
+}
+
+#[test]
+fn a_first_interval_counts_from_the_meters_zero_until_done() {
+    let belt = timing_belt();
+    // First reading at 20,000 mi (bought at 20,000): due at 100,000, not 120,000.
+    let readings = [
+        read(ODOMETER, "2026-01-01", 20_000 * MILE),
+        read(ODOMETER, "2026-11-01", 95_000 * MILE),
+    ];
+    let due = due_from_start(&belt, "2026-11-02", &readings, &[], None).unwrap();
+    assert_eq!(left_on(&due, ODOMETER).unwrap().0, 5_000 * MILE);
+    assert_eq!(due.step, DueStep::DueVerySoon, "5% of the first 100,000");
+    assert!(due.not_done_yet);
+    // Done at 101,000: then every 50,000 from there.
+    let done = [done_on("2026-11-05", 101_000)];
+    let readings = [
+        read(ODOMETER, "2026-11-05", 101_000 * MILE),
+        read(ODOMETER, "2026-11-20", 120_000 * MILE),
+    ];
+    let after = due_from_start(&belt, "2026-11-21", &readings, &done, None).unwrap();
+    assert_eq!(left_on(&after, ODOMETER).unwrap().0, 31_000 * MILE);
+    assert!(!after.not_done_yet);
+}
+
+#[test]
+fn a_used_vehicle_past_its_first_interval_is_overdue_until_told_otherwise() {
+    let mut belt = timing_belt();
+    // Bought at 130,000 mi: past the first 100,000, so overdue by 30,000.
+    let readings = [read(ODOMETER, "2026-03-01", 130_000 * MILE)];
+    let due = due_from_start(&belt, "2026-03-02", &readings, &[], None).unwrap();
+    assert_eq!(due.step, DueStep::Overdue);
+    assert_eq!(left_on(&due, ODOMETER).unwrap().0, -30_000 * MILE);
+    // "Last done before these records" at 110,000: every 50,000 from there.
+    belt.before_records = Some(LastDoneBefore {
+        on: "2025-06-01".into(),
+        readings: vec![Reading {
+            meter: test_id(ODOMETER),
+            value: 110_000 * MILE,
+            reset: false,
+        }],
+    });
+    let told = due_from_start(&belt, "2026-03-02", &readings, &[], None).unwrap();
+    assert_eq!(left_on(&told, ODOMETER).unwrap().0, 30_000 * MILE);
+    assert_eq!(told.step, DueStep::Ok);
+}
+
+#[test]
+fn a_first_calendar_interval_counts_from_the_vehicles_start() {
+    // First at 3 years, then every 2 years.
+    let inspection = oil_change(vec![IntervalRule::Calendar {
+        every: 2,
+        unit: CalendarUnit::Years,
+        end_of_month: false,
+        first: Some(3),
+    }]);
+    // A used vehicle, its start backdated to an estimated build date.
+    let from_build = due_from_start(&inspection, "2026-11-25", &[], &[], Some("2024-06-12"));
+    assert_eq!(
+        due_date(&from_build.unwrap()).as_deref(),
+        Some("2027-06-12")
+    );
+    // Built long ago: overdue.
+    let old = due_from_start(&inspection, "2026-11-25", &[], &[], Some("2019-06-12")).unwrap();
+    assert_eq!(due_date(&old).as_deref(), Some("2022-06-12"));
+    assert_eq!(old.step, DueStep::Overdue);
+    // No start known: from the day the requirement was added (2026-01-01).
+    let unknown = due_from_start(&inspection, "2026-11-25", &[], &[], None).unwrap();
+    assert_eq!(due_date(&unknown).as_deref(), Some("2029-01-01"));
+    // Once done, every 2 years from then, whatever the start.
+    let mut done = done_on("2026-02-01", 0);
+    done.readings.clear();
+    let after = due_from_start(&inspection, "2026-11-25", &[], &[done], Some("2019-06-12"));
+    assert_eq!(due_date(&after.unwrap()).as_deref(), Some("2028-02-01"));
+}
+
+#[test]
+fn without_a_first_interval_the_start_changes_nothing() {
+    let yearly = oil_change(vec![IntervalRule::Calendar {
+        every: 1,
+        unit: CalendarUnit::Years,
+        end_of_month: false,
+        first: None,
+    }]);
+    let with = due_from_start(&yearly, "2026-11-25", &[], &[], Some("2019-06-12")).unwrap();
+    let without = due_from_start(&yearly, "2026-11-25", &[], &[], None).unwrap();
+    assert_eq!(due_date(&with), due_date(&without));
+    assert_eq!(due_date(&with).as_deref(), Some("2027-01-01"));
 }

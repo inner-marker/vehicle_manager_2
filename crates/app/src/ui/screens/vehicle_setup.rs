@@ -228,7 +228,20 @@ pub(super) fn SectionHeading(title: MessageId, children: Element) -> Element {
 
 // --- Details -----------------------------------------------------------------------------
 
-/// Details: make, model, year, colour, identifiers, and description.
+/// "12 Jun 2019" or "12 Jun 2019 (est.)": when a vehicle went into service (#090).
+fn in_service_text(since: &domain::asset::InService, units: &Preferences) -> String {
+    let date = super::documents::date_text(&since.on, units);
+    if since.estimated {
+        tr_with(
+            messages::SETUP_IN_SERVICE_ESTIMATED,
+            &[("date", MessageArg::from(date))],
+        )
+    } else {
+        date
+    }
+}
+
+/// Details: make, model, year, colour, In service since, identifiers, and description.
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -236,6 +249,7 @@ pub(super) fn SectionHeading(title: MessageId, children: Element) -> Element {
 #[component]
 fn DetailsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| false);
+    let units = crate::ui::units::use_units();
     let asset = &view.asset;
     let facts: Vec<(MessageId, String)> = [
         (messages::FIELD_MAKE, asset.make.clone()),
@@ -245,6 +259,13 @@ fn DetailsSection(view: AssetView) -> Element {
             asset.year.map(|year| year.to_string()),
         ),
         (messages::FIELD_COLOUR, asset.colour.clone()),
+        (
+            messages::FIELD_IN_SERVICE,
+            asset
+                .in_service
+                .as_ref()
+                .map(|since| in_service_text(since, &units())),
+        ),
     ]
     .into_iter()
     .filter_map(|(label, value)| value.map(|value| (label, value)))
@@ -318,6 +339,8 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
     let model = use_signal(|| start.model.clone());
     let year = use_signal(|| start.year.map(|year| year.to_string()).unwrap_or_default());
     let colour = use_signal(|| start.colour.clone());
+    let mut in_service = use_signal(|| start.in_service.clone());
+    let mut in_service_estimated = use_signal(|| start.in_service_estimated);
     let mut description = use_signal(|| start.description.clone());
     let kinds = identifier_kinds(&asset);
     let mut identifiers = use_signal(|| {
@@ -357,6 +380,8 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
             colour: colour(),
             description: description(),
             identifiers: form_kinds.iter().cloned().zip(identifiers()).collect(),
+            in_service: in_service(),
+            in_service_estimated: in_service_estimated() && !in_service().trim().is_empty(),
             ..start.clone()
         };
         busy.set(true);
@@ -383,6 +408,27 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
                     Field { label: messages::FIELD_YEAR, value: year }
                     Field { label: messages::FIELD_COLOUR, value: colour }
                 }
+                div { class: "field-row in-service-row",
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::FIELD_IN_SERVICE_OPTIONAL)} }
+                        input {
+                            class: "field-input",
+                            r#type: "date",
+                            value: in_service(),
+                            oninput: move |event| in_service.set(event.value()),
+                        }
+                    }
+                    label { class: "check",
+                        input {
+                            r#type: "checkbox",
+                            checked: in_service_estimated(),
+                            disabled: in_service().trim().is_empty(),
+                            onchange: move |event| in_service_estimated.set(event.checked()),
+                        }
+                        span { {tr(messages::FIELD_IN_SERVICE_ESTIMATED)} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::FIELD_IN_SERVICE_NOTE)} }
                 div { class: "field-row",
                     for (index, kind) in kinds.iter().enumerate() {
                         label { key: "{kind}", class: "field",

@@ -772,6 +772,7 @@ mod tests {
                 status,
                 identifiers: vec![],
                 main_photo: None,
+                in_service: None,
             },
             role: Role::Driver,
             plate: None,

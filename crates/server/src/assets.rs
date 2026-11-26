@@ -462,7 +462,9 @@ async fn add_asset(
     if !context.may(AdminAction::AddAsset) {
         return Err(AssetsOutcome::NotAllowed);
     }
-    let asset = form.parse().map_err(invalid)?;
+    let asset = form
+        .parse_on(latest_today(context).as_deref())
+        .map_err(invalid)?;
     let kind_profile = profile(&asset.kind).ok_or_else(|| invalid(Problem::UnknownKind))?;
     if !context.group_exists(asset.group).await? {
         return Err(invalid(Problem::UnknownGroup));
@@ -587,7 +589,7 @@ async fn edit_asset(
         group: current.group,
         ..form.clone()
     }
-    .parse()
+    .parse_on(latest_today(context).as_deref())
     .map_err(invalid)?;
     let patch = changes(&current, &wanted);
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
@@ -597,6 +599,13 @@ async fn edit_asset(
     }
     tracing::debug!(target: log_area::APP, user = %context.user.user, asset = %id, "vehicle edited");
     Ok(AssetsOutcome::Done)
+}
+
+/// Today's date where it's latest on Earth (UTC+14), so a vehicle's In service since may be
+/// today wherever the household is (#090).
+fn latest_today(context: &AssetsContext<'_>) -> Option<String> {
+    let zone = TimeZone::parse("Pacific/Kiritimati").ok()?;
+    domain::dates::today(context.clock.now(), &zone).ok()
 }
 
 /// Only the fields that differ, so a change never overwrites someone else's newer change to
@@ -627,6 +636,7 @@ fn changes(current: &Asset, wanted: &Asset) -> AssetPatch {
         identifiers: differs(&current.identifiers, &wanted.identifiers),
         // Chosen in the photo viewer (`set_main_photo`), never by the form.
         main_photo: None,
+        in_service: clears(current.in_service.as_ref(), wanted.in_service.as_ref()),
     }
 }
 

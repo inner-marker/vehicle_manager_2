@@ -210,6 +210,7 @@ mod tests {
                 status: LifecycleStatus::InService,
                 identifiers: vec![],
                 main_photo: None,
+                in_service: None,
             },
             role: Role::Driver,
             plate: None,

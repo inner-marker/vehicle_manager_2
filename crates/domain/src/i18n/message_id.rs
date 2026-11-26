@@ -1007,6 +1007,28 @@ define_messages! {
     ASSET_IDENTIFIER_EMPTY => "asset-identifier-empty",
     /// More identifiers than allowed.
     ASSET_TOO_MANY_IDENTIFIERS => "asset-too-many-identifiers",
+    /// Error: In service since isn't a date, or is after today (#090).
+    ASSET_BAD_IN_SERVICE => "asset-bad-in-service",
+    /// Label: when the vehicle went into service (#090).
+    FIELD_IN_SERVICE => "field-in-service",
+    /// Label: the same, on the form.
+    FIELD_IN_SERVICE_OPTIONAL => "field-in-service-optional",
+    /// Checkbox: the in-service date is an estimate.
+    FIELD_IN_SERVICE_ESTIMATED => "field-in-service-estimated",
+    /// What In service since is for.
+    FIELD_IN_SERVICE_NOTE => "field-in-service-note",
+    /// An estimated in-service date (`$date`).
+    SETUP_IN_SERVICE_ESTIMATED => "setup-in-service-estimated",
+    /// A chained rule (`$first`, `$every`), e.g. "First at 100,000 mi, then every 50,000 mi".
+    SCHEDULE_FIRST_THEN => "schedule-first-then",
+    /// Checkbox: a rule's different first interval.
+    SCHEDULE_FIRST_DIFFERENT => "schedule-first-different",
+    /// Label before a first interval's box.
+    SCHEDULE_FIRST_AT_LABEL => "schedule-first-at-label",
+    /// After a meter rule's first interval (`$unit`).
+    SCHEDULE_FIRST_FROM_ZERO => "schedule-first-from-zero",
+    /// After a calendar rule's first interval (`$unit`).
+    SCHEDULE_FIRST_FROM_START => "schedule-first-from-start",
     /// Event kind: a fuel-up.
     EVENT_KIND_FUEL => "event-kind-fuel",
     /// Event kind: a reading.

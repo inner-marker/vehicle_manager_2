@@ -854,6 +854,21 @@ asset-text-too-long = That's too long: at most 64 characters.
 asset-year-out-of-range = That year doesn't look right.
 asset-identifier-empty = Enter the identifier, or remove it.
 asset-too-many-identifiers = A vehicle can have at most 10 identifiers.
+asset-bad-in-service = In service since must be a date, no later than today.
+field-in-service = In service since
+field-in-service-optional = In service since (optional)
+field-in-service-estimated = Estimated
+field-in-service-note = Built, or first registered. For a used vehicle, backdate it, estimated if need be. A schedule's "first at 3 years" counts from it; without it, from the day the vehicle was acquired.
+# $date (string): the date, already formatted.
+setup-in-service-estimated = { $date } (est.)
+# $first, $every (string): the first interval and the repeating one, e.g. "100,000 mi".
+schedule-first-then = First at { $first }, then every { $every }
+schedule-first-different = A different first interval
+schedule-first-at-label = First at
+# $unit (string): the meter's unit, e.g. "mi".
+schedule-first-from-zero = { $unit } on the meter (from zero)
+# $unit (string): days, months, or years.
+schedule-first-from-start = { $unit } from In service since (else Acquired)
 
 ## Profiles, meters, and custom fields (decision #030). Profile names, identifiers, documents,
 ## meters, and fields below are keys used by crates/domain/profiles/*.ron.

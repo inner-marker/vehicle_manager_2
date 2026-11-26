@@ -310,6 +310,7 @@ mod formulas {
             rules: vec![IntervalRule::Meter {
                 meter: service,
                 every: miles(1_000.0),
+                first: None,
             }],
             reference: None,
             mode: ComplianceMode::Recurring,

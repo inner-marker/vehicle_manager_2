@@ -60,6 +60,7 @@ mod attachments {
             status: LifecycleStatus::InService,
             identifiers,
             main_photo: None,
+            in_service: None,
         }
     }
 

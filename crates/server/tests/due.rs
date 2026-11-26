@@ -143,6 +143,7 @@ mod due {
             rules: vec![IntervalRule::Meter {
                 meter: odometer,
                 every: 7_500 * MILE,
+                first: None,
             }],
             reference: None,
             mode: ComplianceMode::Recurring,
@@ -231,6 +232,121 @@ mod due {
             server::due::list(&sams, test_id(777), &utc()).await,
             DueOutcome::NotFound
         );
+    }
+
+    /// An inspection: first at 3 years, then every 2 years (#090).
+    fn inspection(asset: AssetId) -> Requirement {
+        Requirement {
+            asset,
+            name: Label::parse("Inspection").unwrap(),
+            notes: Notes::default(),
+            enabled: true,
+            rules: vec![IntervalRule::Calendar {
+                every: 2,
+                unit: domain::requirement::CalendarUnit::Years,
+                end_of_month: false,
+                first: Some(3),
+            }],
+            reference: None,
+            mode: ComplianceMode::Recurring,
+            applicability: Applicability::Applies,
+            before_records: None,
+            warnings: None,
+            specs: vec![],
+            usages: None,
+        }
+    }
+
+    /// The inspection's due date on the truck's list.
+    async fn inspection_due(context: &AssetsContext<'_>, truck: AssetId) -> (String, DueStep) {
+        let DueOutcome::Due { entries } = server::due::list(context, truck, &utc()).await else {
+            panic!("nothing due");
+        };
+        let due = &entries[0].due;
+        (due.date.clone().unwrap().on, due.step)
+    }
+
+    #[tokio::test]
+    async fn a_first_interval_counts_from_in_service_since_else_acquired() {
+        let (_temp, database, jordan, _sam) = setup().await;
+        let clock = ManualClock::new(NOW); // 14 November 2023
+        let (truck, _) = truck(&database, &jordan, &clock).await;
+        let admin = in_mode(&jordan, ActiveMode::Admin);
+        let admins = context(&database, &admin, &clock);
+        let maintainer = in_mode(&jordan, ActiveMode::Maintainer);
+        let shop = context(&database, &maintainer, &clock);
+        let added = server::schedule::add_requirement(&shop, inspection(truck)).await;
+        assert!(
+            matches!(added, ScheduleOutcome::SavedRequirement { .. }),
+            "{added:?}"
+        );
+        // Nothing known: from the day it was added.
+        assert_eq!(
+            inspection_due(&shop, truck).await,
+            ("2026-11-14".to_owned(), DueStep::Ok)
+        );
+
+        // Acquired on 1 March 2023: from then.
+        let mut acquired = reading_at(
+            truck,
+            test_id(1),
+            0,
+            UnixMillis::from_millis(NOW.as_millis() - 258 * 24 * 60 * 60 * 1_000),
+        );
+        acquired.kind = EventKind::Acquired;
+        acquired.readings.clear();
+        acquired.lifecycle = Some(domain::lifecycle::LifecycleDetails::Acquired(
+            domain::lifecycle::Acquisition {
+                from: None,
+                price: None,
+            },
+        ));
+        let saved = server::events::add(&admins, acquired).await;
+        assert!(matches!(saved, EventsOutcome::Saved { .. }), "{saved:?}");
+        assert_eq!(inspection_due(&shop, truck).await.0, "2026-03-01");
+
+        // A used truck, backdated to an estimated build date: overdue.
+        let AssetsOutcome::Asset { view } = vehicle_page(&admins, truck).await else {
+            panic!("no truck page");
+        };
+        let mut form = AssetForm::from_asset(&view.asset);
+        form.in_service = "2019-06-12".into();
+        form.in_service_estimated = true;
+        assert_eq!(
+            server::assets::edit(&admins, truck, &form).await,
+            AssetsOutcome::Done
+        );
+        let saved = database.asset(truck).await.unwrap().unwrap().in_service;
+        assert_eq!(
+            saved.as_ref().map(|since| since.on.as_str()),
+            Some("2019-06-12")
+        );
+        assert!(saved.is_some_and(|since| since.estimated));
+        assert_eq!(
+            inspection_due(&shop, truck).await,
+            ("2022-06-12".to_owned(), DueStep::Overdue)
+        );
+
+        // Later than today anywhere on Earth is refused; cleared, Acquired counts again.
+        form.in_service = "2023-11-16".into();
+        assert_eq!(
+            server::assets::edit(&admins, truck, &form).await,
+            AssetsOutcome::Invalid {
+                problem: domain::asset_form::Problem::Asset(
+                    domain::asset::AssetError::BadInService
+                )
+            }
+        );
+        form.in_service = String::new();
+        assert_eq!(
+            server::assets::edit(&admins, truck, &form).await,
+            AssetsOutcome::Done
+        );
+        assert_eq!(
+            database.asset(truck).await.unwrap().unwrap().in_service,
+            None
+        );
+        assert_eq!(inspection_due(&shop, truck).await.0, "2026-03-01");
     }
 
     #[tokio::test]

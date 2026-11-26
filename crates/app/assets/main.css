@@ -6042,3 +6042,25 @@ button.main-star:disabled {
     border-color: var(--accent);
     background: var(--surface-raised);
 }
+
+/* A rule's different first interval (#090; sketch p6m3 part 2), under its row. */
+.rule-row:has(.rule-first) {
+    flex-wrap: wrap;
+}
+
+/* After the row's inputs and ✕, on a line of its own. */
+.rule-first {
+    order: 2;
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rule-first-inputs {
+    padding-left: 26px;
+}
+
+.in-service-row {
+    align-items: flex-end;
+}

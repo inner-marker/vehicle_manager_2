@@ -101,6 +101,7 @@ mod specs {
             rules: vec![IntervalRule::Meter {
                 meter: odometer,
                 every: 5_000 * MILE,
+                first: None,
             }],
             reference: None,
             mode: ComplianceMode::Recurring,

@@ -81,6 +81,7 @@ mod events {
                 status: LifecycleStatus::InService,
                 identifiers: vec![],
                 main_photo: None,
+                in_service: None,
             };
             AssetWriter
                 .create(&mut connection, test_id(n), &AssetPatch::all(asset), 3)

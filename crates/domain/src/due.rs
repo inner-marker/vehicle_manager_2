@@ -18,7 +18,9 @@
 //! - **Counted from** when it was last done (the latest finished task), or else from when it
 //!   was **last done before these records** ([`LastDoneBefore`]), or else from the vehicle's
 //!   first reading of the meter (or the day the requirement was added): then it's **not done
-//!   yet**.
+//!   yet**. A rule with a **different first interval** (#090) counts that one instead, from the
+//!   meter's zero (or, for a meter counting down, its first reading), or for a calendar rule
+//!   from the vehicle's start ([`DueContext::start`]: In service since, else Acquired).
 //! - **Projected dates** come from the meter's use over its last 90 days of readings (at least
 //!   two, 7 or more days apart), then over all of them, then none ([`usage`]).
 //!
@@ -307,6 +309,10 @@ pub struct DueContext<'a> {
     pub done: &'a [DoneTask],
     /// The household's defaults.
     pub defaults: &'a DueDefaults,
+    /// When the vehicle started (`2019-06-12`), for a calendar rule's first interval (#090):
+    /// its In service since date, else the day it was acquired. `None`: the day the requirement
+    /// was added, as for any rule.
+    pub start: Option<&'a str>,
 }
 
 impl DueContext<'_> {
@@ -498,22 +504,11 @@ fn rule_due(
     context: &DueContext<'_>,
 ) -> Option<RuleDue> {
     match rule {
-        IntervalRule::Meter { meter, every } => {
-            let direction = direction_of(*meter, context)?;
-            let base = base_reading(*meter, last, before, context)?;
-            let now = context.latest(*meter)?.value;
-            let due_at = match direction {
-                MeterDirection::Up => base + every,
-                MeterDirection::Down => base - every,
-            };
-            let left_at = |value: i64| match direction {
-                MeterDirection::Up => due_at - value,
-                MeterDirection::Down => value - due_at,
-            };
-            Some(meter_left(
-                *meter, left_at, now, *every, direction, steps, context,
-            ))
-        }
+        IntervalRule::Meter {
+            meter,
+            every,
+            first,
+        } => every_on_meter(*meter, *every, *first, last, before, steps, context),
         IntervalRule::Reaches { meter, at } => {
             let direction = direction_of(*meter, context)?;
             let now = context.latest(*meter)?.value;
@@ -538,10 +533,18 @@ fn rule_due(
             every,
             unit,
             end_of_month,
+            first,
         } => {
-            let from = base_date(last, before, added_on, context)?;
+            // Never done: a first interval counts from the vehicle's start.
+            let (from, every) = match first.filter(|_| last.is_none() && before.is_none()) {
+                Some(first) => (
+                    base_date(None, None, context.start.or(added_on), context)?,
+                    first,
+                ),
+                None => (base_date(last, before, added_on, context)?, *every),
+            };
             let due: jiff::civil::Date =
-                calendar_due(&from.to_string(), *every, *unit, *end_of_month)
+                calendar_due(&from.to_string(), every, *unit, *end_of_month)
                     .ok()?
                     .parse()
                     .ok()?;
@@ -572,6 +575,38 @@ fn rule_due(
             })
         }
     }
+}
+
+/// An every-N meter rule's due: from where it was last done, or (never done, with a first
+/// interval) from the meter's zero (#090).
+fn every_on_meter(
+    meter: MeterId,
+    every: i64,
+    first: Option<i64>,
+    last: Option<&DoneTask>,
+    before: Option<&LastDoneBefore>,
+    steps: &DueDefaults,
+    context: &DueContext<'_>,
+) -> Option<RuleDue> {
+    let direction = direction_of(meter, context)?;
+    let now = context.latest(meter)?.value;
+    // Never done: a first interval counts from zero on a meter counting up.
+    let (base, every) = match first.filter(|_| last.is_none() && before.is_none()) {
+        Some(first) if direction == MeterDirection::Up => (0, first),
+        Some(first) => (base_reading(meter, last, before, context)?, first),
+        None => (base_reading(meter, last, before, context)?, every),
+    };
+    let due_at = match direction {
+        MeterDirection::Up => base + every,
+        MeterDirection::Down => base - every,
+    };
+    let left_at = |value: i64| match direction {
+        MeterDirection::Up => due_at - value,
+        MeterDirection::Down => value - due_at,
+    };
+    Some(meter_left(
+        meter, left_at, now, every, direction, steps, context,
+    ))
 }
 
 fn direction_of(meter: MeterId, context: &DueContext<'_>) -> Option<MeterDirection> {

@@ -106,6 +106,12 @@ pub struct AssetForm {
     pub status: LifecycleStatus,
     /// Identifiers as `(kind, value)`; an empty value is left out.
     pub identifiers: Vec<(String, String)>,
+    /// In service since, as `<input type="date">` gives it (empty: not known; #090).
+    #[serde(default)]
+    pub in_service: String,
+    /// In service since is an estimate.
+    #[serde(default)]
+    pub in_service_estimated: bool,
 }
 
 impl AssetForm {
@@ -123,15 +129,42 @@ impl AssetForm {
             group,
             status: LifecycleStatus::InService,
             identifiers: Vec::new(),
+            in_service: String::new(),
+            in_service_estimated: false,
         }
     }
 
-    /// The form as an asset (with no parent: components are post-MVP).
+    /// The form as an asset (with no parent: components are post-MVP). In service since may
+    /// be any date up to `today` (`2026-11-25`, the household's), when given.
+    ///
+    /// # Errors
+    ///
+    /// The first [`Problem`] found.
+    pub fn parse_on(&self, today: Option<&str>) -> Result<Asset, Problem> {
+        let asset = self.parse()?;
+        if let (Some(since), Some(today)) = (&asset.in_service, today)
+            && since.on.as_str() > today
+        {
+            return Err(Problem::Asset(AssetError::BadInService));
+        }
+        Ok(asset)
+    }
+
+    /// The form as an asset (with no parent: components are post-MVP), without checking In
+    /// service since against today (see [`Self::parse_on`]).
     ///
     /// # Errors
     ///
     /// The first [`Problem`] found.
     pub fn parse(&self) -> Result<Asset, Problem> {
+        let in_service = match self.in_service.trim() {
+            "" => None,
+            typed => Some(crate::asset::InService {
+                on: crate::dates::CalendarDate::parse(typed)
+                    .map_err(|_| Problem::Asset(AssetError::BadInService))?,
+                estimated: self.in_service_estimated,
+            }),
+        };
         let identifiers = self
             .identifiers
             .iter()
@@ -157,6 +190,7 @@ impl AssetForm {
             status: self.status,
             identifiers,
             main_photo: None,
+            in_service,
         })
     }
 
@@ -183,6 +217,15 @@ impl AssetForm {
                     )
                 })
                 .collect(),
+            in_service: asset
+                .in_service
+                .as_ref()
+                .map(|since| since.on.as_str().to_owned())
+                .unwrap_or_default(),
+            in_service_estimated: asset
+                .in_service
+                .as_ref()
+                .is_some_and(|since| since.estimated),
         }
     }
 }
@@ -501,5 +544,37 @@ mod tests {
             let json = serde_json::to_string(&problem).unwrap();
             assert_eq!(serde_json::from_str::<Problem>(&json).unwrap(), problem);
         }
+    }
+
+    #[test]
+    fn in_service_since_is_a_date_up_to_today() {
+        let form = AssetForm {
+            in_service: "2019-06-12".into(),
+            in_service_estimated: true,
+            ..truck_form()
+        };
+        let asset = form.parse_on(Some("2026-11-25")).unwrap();
+        let since = asset.in_service.clone().unwrap();
+        assert_eq!(since.on.as_str(), "2019-06-12");
+        assert!(since.estimated);
+        // Back to the form and again: the same.
+        assert_eq!(AssetForm::from_asset(&asset).parse().unwrap(), asset);
+        // Today is fine; tomorrow isn't.
+        assert!(form.parse_on(Some("2019-06-12")).is_ok());
+        assert_eq!(
+            form.parse_on(Some("2019-06-11")),
+            Err(Problem::Asset(AssetError::BadInService))
+        );
+        let bad = AssetForm {
+            in_service: "12/06/2019".into(),
+            ..truck_form()
+        };
+        assert_eq!(bad.parse(), Err(Problem::Asset(AssetError::BadInService)));
+        // Empty: not known (an estimate flag alone means nothing).
+        let empty = AssetForm {
+            in_service_estimated: true,
+            ..truck_form()
+        };
+        assert_eq!(empty.parse().unwrap().in_service, None);
     }
 }
