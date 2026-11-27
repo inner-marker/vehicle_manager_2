@@ -199,7 +199,7 @@ pub(super) fn Setup(view: AssetView) -> Element {
             // The mode hint only for someone a mode change would help (#069).
             if !may_change {
                 p { class: "muted-note",
-                    {tr(if view.role >= domain::access::Role::Maintainer { messages::SETUP_VIEW_ONLY } else { messages::SETUP_VIEW_ONLY_ROLE })}
+                    {tr(if view.allowed().contains(domain::access::AssetAction::ConfigureMaintenance) { messages::SETUP_VIEW_ONLY } else { messages::SETUP_VIEW_ONLY_ROLE })}
                 }
             }
             DetailsSection { view: view.clone() }

@@ -99,34 +99,33 @@ pub(crate) fn use_log_chooser() -> LogChooser {
 }
 
 /// The kinds of events the person may log on `vehicle` in `mode`: its kind's everyday ones
-/// (#030), then the lifecycle ones that fit now (#067), limited by their role there and the mode
+/// (#030), then the lifecycle ones that fit now (#067), limited by their permissions there and the mode
 /// (plan §6). None once its disposal is finalized.
 pub(crate) fn loggable_kinds(vehicle: &AssetSummary, mode: ActiveMode) -> Vec<EventKind> {
-    kinds_for(&vehicle.asset, vehicle.role, &vehicle.standing, mode)
+    kinds_for(&vehicle.asset, vehicle.allowed(), &vehicle.standing, mode)
 }
 
 /// What [`loggable_kinds`] gives, from a vehicle's parts (its page has them too).
 pub(super) fn kinds_for(
     asset: &domain::asset::Asset,
-    role: domain::access::Role,
+    allowed: domain::access::Permissions,
     standing: &domain::lifecycle::Standing,
     mode: ActiveMode,
 ) -> Vec<EventKind> {
-    let allowed = role.min(mode.cap());
     if !standing.takes_new_records {
         return Vec::new();
     }
     event_kinds(&asset.kind)
         .into_iter()
         .chain(standing.lifecycle_kinds())
-        .filter(|kind| allowed >= AssetAction::to_log(*kind).required_role())
+        .filter(|kind| allowed.allows(mode, AssetAction::to_log(*kind)))
         .collect()
 }
 
 /// Whether + Log has anything for `vehicle` in `mode`: a kind of event, or an issue.
 pub(crate) fn may_log_for(vehicle: &AssetSummary, mode: ActiveMode) -> bool {
     !loggable_kinds(vehicle, mode).is_empty()
-        || (vehicle.standing.takes_new_records && may_open_squawks(vehicle.role, mode))
+        || (vehicle.standing.takes_new_records && may_open_squawks(vehicle.allowed(), mode))
 }
 
 /// What a kind's tile says under its name.
@@ -218,7 +217,7 @@ fn ChooserBody(start: Option<AssetId>, on_done: EventHandler<()>) -> Element {
         .into_iter()
         .partition(|kind| kind.is_lifecycle());
     let squawkable = chosen_vehicle.filter(|vehicle| {
-        vehicle.standing.takes_new_records && may_open_squawks(vehicle.role, mode)
+        vehicle.standing.takes_new_records && may_open_squawks(vehicle.allowed(), mode)
     });
     rsx! {
         label { class: "field",
@@ -396,6 +395,26 @@ mod tests {
         assert_eq!(
             loggable_kinds(&vehicle("truck", Role::Maintainer), ActiveMode::Driver),
             both,
+        );
+    }
+
+    #[test]
+    fn a_custom_role_logs_only_what_it_allows() {
+        use domain::access::{AssetAction, Permissions};
+        let with = |actions: &[AssetAction]| AssetSummary {
+            permissions: Permissions::of(actions),
+            ..vehicle("truck", Role::Viewer)
+        };
+        let chauffeur = with(&[AssetAction::View, AssetAction::LogFuel]);
+        for mode in [ActiveMode::Driver, ActiveMode::Maintainer] {
+            assert_eq!(loggable_kinds(&chauffeur, mode), vec![EventKind::Fuel]);
+            assert!(may_log_for(&chauffeur, mode));
+        }
+        let apprentice = with(&[AssetAction::View, AssetAction::LogMaintenance]);
+        assert!(!may_log_for(&apprentice, ActiveMode::Driver));
+        assert_eq!(
+            loggable_kinds(&apprentice, ActiveMode::Maintainer),
+            vec![EventKind::Maintenance, EventKind::Repair]
         );
     }
 

@@ -246,7 +246,10 @@ pub(super) fn WorkLog(
     // finalized (#067, #069).
     let auth = crate::ui::auth::use_auth();
     let may_open = vehicle.standing.takes_new_records
-        && super::squawks::may_open_squawks(vehicle.role, super::squawks::current_mode(auth()));
+        && super::squawks::may_open_squawks(
+            vehicle.allowed(),
+            super::squawks::current_mode(auth()),
+        );
     let mut work = work;
     let mut open = use_signal(|| Some(0_usize));
     let sheet = use_squawk_sheet();

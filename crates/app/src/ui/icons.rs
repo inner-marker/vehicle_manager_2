@@ -58,6 +58,8 @@ pub(crate) enum Icon {
     Flag,
     /// The Vehicle types screen (#090).
     VehicleTypes,
+    /// The Roles screen (#091).
+    Roles,
 }
 
 impl Icon {
@@ -102,6 +104,7 @@ impl Icon {
             Self::Van => include_str!("../../assets/icons/van.svg"),
             Self::Bicycle => include_str!("../../assets/icons/bike.svg"),
             Self::Flag | Self::VehicleTypes => include_str!("../../assets/icons/flag.svg"),
+            Self::Roles => include_str!("../../assets/icons/shield.svg"),
         }
     }
 }

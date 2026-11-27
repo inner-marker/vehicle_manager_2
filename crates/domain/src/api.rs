@@ -306,6 +306,10 @@ pub struct UserSummary {
     /// Every role they have: on all vehicles, a group, or one vehicle (#058), the highest
     /// for each, in that order.
     pub roles: Vec<(crate::access::GrantTarget, crate::access::Role)>,
+    /// Where they hold one of the household's custom roles (#091), and which; there `roles`
+    /// says Viewer.
+    #[serde(default)]
+    pub custom_roles: Vec<(crate::access::GrantTarget, crate::custom_role::CustomRoleId)>,
     /// This is the signed-in Admin.
     pub is_you: bool,
     /// They're the last enabled Admin: they can't be disabled or lose the Admin role.
@@ -522,6 +526,48 @@ pub struct GarageView {
     /// The fleet strip's counts, over the vehicles the Garage shows (#083).
     #[serde(default)]
     pub fleet: crate::due::FleetCounts,
+}
+
+/// What a person may do on a vehicle, from what the server sent: its `permissions`, or, from a
+/// server older than custom roles (which sends none), everything their built-in `role` allows.
+#[must_use]
+pub fn vehicle_permissions(
+    permissions: crate::access::Permissions,
+    role: crate::access::Role,
+) -> crate::access::Permissions {
+    if permissions == crate::access::Permissions::NONE {
+        crate::access::Permissions::of_role(role)
+    } else {
+        permissions
+    }
+}
+
+impl AssetSummary {
+    /// What the person may do on it, whatever the mode.
+    #[must_use]
+    pub fn allowed(&self) -> crate::access::Permissions {
+        vehicle_permissions(self.permissions, self.role)
+    }
+
+    /// Whether the person may do `action` on it in `mode` (#069, #091).
+    #[must_use]
+    pub fn may(&self, mode: crate::access::ActiveMode, action: crate::access::AssetAction) -> bool {
+        self.allowed().allows(mode, action)
+    }
+}
+
+impl AssetView {
+    /// What the person may do on it, whatever the mode.
+    #[must_use]
+    pub fn allowed(&self) -> crate::access::Permissions {
+        vehicle_permissions(self.permissions, self.role)
+    }
+
+    /// Whether the person may do `action` on it in `mode` (#069, #091).
+    #[must_use]
+    pub fn may(&self, mode: crate::access::ActiveMode, action: crate::access::AssetAction) -> bool {
+        self.allowed().allows(mode, action)
+    }
 }
 
 /// One vehicle's page.

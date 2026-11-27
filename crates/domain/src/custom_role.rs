@@ -96,7 +96,7 @@ impl RoleProblem {
         match self {
             Self::NameTaken => messages::ROLE_NAME_TAKEN,
             Self::NoPermissions => messages::ROLE_NO_PERMISSIONS,
-            Self::AdminOnly => messages::SOMETHING_WENT_WRONG,
+            Self::AdminOnly => messages::HOUSEHOLD_ROLES_ADMIN_ONLY,
         }
     }
 }

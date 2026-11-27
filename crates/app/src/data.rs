@@ -237,6 +237,16 @@ mod local {
             })
         }
 
+        /// Reading the household's roles (changing them needs the server).
+        pub(super) fn admin(&self) -> ::server::user_admin::AdminContext<'_> {
+            ::server::user_admin::AdminContext {
+                database: &self.database,
+                admin: &self.user,
+                health: Health::Healthy,
+                clock: &SystemClock,
+            }
+        }
+
         pub(super) fn assets(&self) -> AssetsContext<'_> {
             self.assets_from(Origin::Online)
         }
@@ -946,6 +956,17 @@ pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOut
 /// As the server function.
 pub(crate) async fn list_vehicle_types() -> ServerFnResult<domain::api::TypesOutcome> {
     read!(reader => ::server::vehicle_types::list(&reader.assets()).await, api::list_vehicle_types())
+}
+
+/// Manage → Roles (`api::list_custom_roles`, phase-6.md 4d): read from the copy on a desktop
+/// that has one, offline too, as everyone's permissions are checked there. Changing them needs
+/// the server.
+///
+/// # Errors
+///
+/// As the server function.
+pub(crate) async fn list_custom_roles() -> ServerFnResult<domain::api::RolesOutcome> {
+    read!(reader => ::server::custom_roles::list(&reader.admin()).await, api::list_custom_roles())
 }
 
 /// Settings → Labor rates (`api::list_shops`, phase-6.md 2f): read from the copy on a desktop

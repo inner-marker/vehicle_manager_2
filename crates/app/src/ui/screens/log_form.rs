@@ -347,7 +347,7 @@ fn LogScreen(
                 let may = matches!(mode, Mode::Edit(_) | Mode::Correct(_))
                     || super::log_chooser::kinds_for(
                         &view.asset,
-                        view.role,
+                        view.allowed(),
                         &view.standing,
                         person_mode,
                     )

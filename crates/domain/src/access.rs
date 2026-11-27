@@ -142,6 +142,14 @@ impl Permissions {
             .collect()
     }
 
+    /// Whether it lets its holder do `action` in `mode`: it holds the action, and the action's
+    /// level is within the mode (viewing whatever the mode).
+    #[must_use]
+    pub fn allows(self, mode: ActiveMode, action: AssetAction) -> bool {
+        let level_ok = action == AssetAction::View || action.required_role() <= mode.cap();
+        level_ok && self.contains(action)
+    }
+
     /// The highest level among its actions (viewing aside): what modes its holder needs.
     #[must_use]
     pub fn highest_level(self) -> Option<Role> {
@@ -360,8 +368,7 @@ impl RoleGrant {
     /// isn't limited by mode; every other action needs a mode at or above its level.
     #[must_use]
     pub fn allows(&self, mode: ActiveMode, action: AssetAction) -> bool {
-        let level_ok = action == AssetAction::View || action.required_role() <= mode.cap();
-        level_ok && self.permissions().contains(action)
+        self.permissions().allows(mode, action)
     }
 }
 

@@ -8,12 +8,15 @@
 
 use dioxus::prelude::*;
 use domain::access::{ActiveMode, GrantTarget, Role};
-use domain::api::{AssetSummary, AssetsOutcome, GroupSummary, UserAdminOutcome, UserSummary};
+use domain::api::{
+    AssetSummary, AssetsOutcome, GroupSummary, RoleSummary, RolesOutcome, UserAdminOutcome,
+    UserSummary,
+};
 use domain::asset_form::GroupForm;
 use domain::group::{GroupIcon, GroupId};
 use domain::i18n::{MessageArg, MessageId, messages};
 
-use super::users::role_label;
+use super::roles::held_name;
 use crate::api;
 use crate::ui::auth::{AuthState, use_auth};
 use crate::ui::icons::IconView;
@@ -49,25 +52,31 @@ fn failure(result: &Result<AssetsOutcome, ServerFnError>) -> Option<String> {
 
 /// One person's access to a group, in words, or `None` for no access: each role that
 /// reaches it ("Viewer · all vehicles, Driver · Truck only").
-fn access_to(user: &UserSummary, group: GroupId, vehicles: &[AssetSummary]) -> Option<String> {
-    let role = |role: Role| MessageArg::from(tr(role_label(role)));
+fn access_to(
+    user: &UserSummary,
+    group: GroupId,
+    vehicles: &[AssetSummary],
+    custom: &[RoleSummary],
+) -> Option<String> {
+    let role =
+        |target: GrantTarget, role: Role| MessageArg::from(held_name(user, target, role, custom));
     let parts: Vec<String> = user
         .roles
         .iter()
         .filter_map(|(target, granted)| match target {
             GrantTarget::AllAssets => Some(tr_with(
                 messages::GROUPS_FROM_ALL,
-                &[("role", role(*granted))],
+                &[("role", role(*target, *granted))],
             )),
             GrantTarget::Group(id) if *id == group => Some(tr_with(
                 messages::GROUPS_FROM_GROUP,
-                &[("role", role(*granted))],
+                &[("role", role(*target, *granted))],
             )),
             GrantTarget::Asset(id) => vehicles.iter().find(|item| item.id == *id).map(|item| {
                 tr_with(
                     messages::GROUPS_FROM_VEHICLE,
                     &[
-                        ("role", role(*granted)),
+                        ("role", role(*target, *granted)),
                         ("vehicle", MessageArg::from(item.asset.name.as_str())),
                     ],
                 )
@@ -92,6 +101,7 @@ pub(crate) fn Groups() -> Element {
     let mut selected = use_signal(|| None::<GroupId>);
     let mut adding = use_signal(|| false);
     let mut users = use_signal(Vec::<UserSummary>::new);
+    let mut custom = use_signal(Vec::<RoleSummary>::new);
 
     // Everyone's roles, for "who sees it" (after mounting, and when the mode changes).
     use_effect(move || {
@@ -101,6 +111,9 @@ pub(crate) fn Groups() -> Element {
             spawn(async move {
                 if let Ok(UserAdminOutcome::Users { users: list }) = api::list_users().await {
                     users.set(list);
+                }
+                if let Ok(RolesOutcome::Roles { view }) = api::list_custom_roles().await {
+                    custom.set(view.roles);
                 }
             });
         }
@@ -140,6 +153,7 @@ pub(crate) fn Groups() -> Element {
                         key: "{summary.id}",
                         vehicles: view.assets.iter().filter(|item| item.asset.group == summary.id).cloned().collect::<Vec<_>>(),
                         users: users(),
+                        custom: custom(),
                         last,
                         on_back: move |()| selected.set(None),
                         summary,
@@ -209,6 +223,7 @@ fn GroupDetail(
     summary: GroupSummary,
     vehicles: Vec<AssetSummary>,
     users: Vec<UserSummary>,
+    custom: Vec<RoleSummary>,
     last: bool,
     on_back: EventHandler<()>,
 ) -> Element {
@@ -259,7 +274,7 @@ fn GroupDetail(
         for user in users.iter() {
             div { key: "{user.id}", class: "group-line",
                 span { {user.display_name.clone()} }
-                match access_to(user, id, &vehicles) {
+                match access_to(user, id, &vehicles, &custom) {
                     Some(access) => rsx! { span { class: "group-access", {access} } },
                     None => rsx! { span { class: "group-access none", {tr(messages::GROUPS_NO_ACCESS)} } },
                 }
@@ -441,6 +456,7 @@ mod tests {
 
     fn person(roles: Vec<(GrantTarget, Role)>) -> UserSummary {
         UserSummary {
+            custom_roles: vec![],
             id: test_id(2),
             username: Username::parse("alex").unwrap(),
             display_name: "Alex".into(),
@@ -457,7 +473,7 @@ mod tests {
     fn who_sees_a_group_says_where_each_role_comes_from() {
         let hangar = test_id(50);
         let vehicles = [cub()];
-        let access = |roles| access_to(&person(roles), hangar, &vehicles);
+        let access = |roles| access_to(&person(roles), hangar, &vehicles, &[]);
         assert_eq!(access(vec![]), None);
         assert_eq!(
             access(vec![(GrantTarget::Group(test_id(51)), Role::Admin)]),

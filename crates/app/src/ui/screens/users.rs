@@ -7,7 +7,7 @@
 
 use dioxus::prelude::*;
 use domain::access::{ActiveMode, Role};
-use domain::api::{AccountStatus, UserAdminOutcome, UserSummary};
+use domain::api::{AccountStatus, RoleSummary, RolesOutcome, UserAdminOutcome, UserSummary};
 use domain::i18n::{MessageArg, MessageId, messages};
 use domain::log_area;
 use domain::user::UserId;
@@ -100,6 +100,7 @@ pub(crate) fn Users() -> Element {
     let in_admin_mode =
         matches!(auth(), AuthState::SignedIn(session) if session.mode == ActiveMode::Admin);
     let mut users = use_signal(Vec::<UserSummary>::new);
+    let mut custom = use_signal(Vec::<RoleSummary>::new);
     let mut selected = use_signal(|| None::<UserId>);
     let mut error = use_signal(|| None::<String>);
     let mut dialog = use_signal(|| None::<Dialog>);
@@ -122,6 +123,10 @@ pub(crate) fn Users() -> Element {
                 }
                 Ok(other) => error.set(outcome_message(&other)),
                 Err(failure) => error.set(Some(failure_message(&failure))),
+            }
+            // The household's own roles, for the role menus (#091).
+            if let Ok(RolesOutcome::Roles { view }) = api::list_custom_roles().await {
+                custom.set(view.roles);
             }
         });
     });
@@ -150,6 +155,7 @@ pub(crate) fn Users() -> Element {
                         selected: selected() == Some(user.id),
                         on_select: move |id| selected.set(Some(id)),
                         user,
+                        custom: custom(),
                     }
                 }
             }
@@ -160,6 +166,7 @@ pub(crate) fn Users() -> Element {
                 if let Some(user) = chosen {
                     UserDetail {
                         user,
+                        custom: custom(),
                         on_back: move |()| selected.set(None),
                         on_changed: move |()| reloads += 1,
                         on_error: move |message| error.set(Some(message)),
@@ -187,9 +194,14 @@ pub(crate) fn Users() -> Element {
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn UserRow(user: UserSummary, selected: bool, on_select: EventHandler<UserId>) -> Element {
+fn UserRow(
+    user: UserSummary,
+    custom: Vec<RoleSummary>,
+    selected: bool,
+    on_select: EventHandler<UserId>,
+) -> Element {
     let context = use_vehicles();
-    let role = roles_summary(&user, context.garage.read().as_ref());
+    let role = roles_summary(&user, context.garage.read().as_ref(), &custom);
     let class = match (selected, user.status == AccountStatus::Disabled) {
         (true, _) => "user-row selected",
         (false, true) => "user-row disabled",
@@ -230,6 +242,7 @@ fn StatusBadge(user: UserSummary) -> Element {
 #[component]
 fn UserDetail(
     user: UserSummary,
+    custom: Vec<RoleSummary>,
     on_back: EventHandler<()>,
     on_changed: EventHandler<()>,
     on_error: EventHandler<String>,
@@ -256,7 +269,7 @@ fn UserDetail(
         h2 { class: "user-name", {user.display_name.clone()} }
         p { class: "user-username", {user.username.as_str().to_owned()} }
 
-        RolesSection { user: user.clone(), on_changed, on_error }
+        RolesSection { user: user.clone(), custom, on_changed, on_error }
 
         h3 { class: "section-heading", {tr(messages::USERS_ACCOUNT_HEADING)} }
         div { class: "account-actions",

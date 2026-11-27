@@ -110,6 +110,7 @@ pub(crate) fn Shell() -> Element {
         | Route::Places {}
         | Route::Templates {}
         | Route::VehicleTypes {}
+        | Route::Roles {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => tr(route.title()),
@@ -138,6 +139,7 @@ pub(crate) fn Shell() -> Element {
         | Route::Places {}
         | Route::Templates {}
         | Route::VehicleTypes {}
+        | Route::Roles {}
         | Route::Settings {}
         | Route::Diagnostics {}
         | Route::NotFound { .. } => None,

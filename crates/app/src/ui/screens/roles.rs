@@ -2,13 +2,15 @@
 //! `docs/ui-sketches/p2m4-groups-roles-options.svg`).
 //!
 //! A list of the roles they have, on **all vehicles**, **a group**, or **one vehicle**, each
-//! with its role menu and ✕; **+ Add role** picks what it's on and the role. Roles add up:
-//! on each vehicle, the highest applies. The server makes every decision (the last Admin, a
-//! group or vehicle that's gone).
+//! with its role menu and ✕; **+ Add role** picks what it's on and the role. The menus list the
+//! built-in roles, then the household's own (#091). Roles add up: on each vehicle, everything
+//! they allow applies. The server makes every decision (the last Admin, a group or vehicle
+//! that's gone).
 
 use dioxus::prelude::*;
 use domain::access::{GrantTarget, Role};
-use domain::api::{GarageView, UserAdminOutcome, UserSummary};
+use domain::api::{GarageView, RoleSummary, UserAdminOutcome, UserSummary};
+use domain::custom_role::CustomRoleId;
 use domain::i18n::{MessageArg, messages};
 
 use super::users::{
@@ -59,6 +61,71 @@ fn target_name(target: GrantTarget, garage: Option<&GarageView>) -> String {
     .unwrap_or_else(|| tr(messages::ROLES_REMOVED))
 }
 
+/// A role to give: a built-in one, or one of the household's (#091).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RoleChoice {
+    /// Viewer, Driver, Maintainer, or Admin.
+    BuiltIn(Role),
+    /// The household's own.
+    Custom(CustomRoleId),
+}
+
+impl RoleChoice {
+    /// Its `<option>` value: a built-in role's name, or `custom:` and the ID.
+    fn value(self) -> String {
+        match self {
+            Self::BuiltIn(role) => role_value(Some(role)).to_owned(),
+            Self::Custom(id) => format!("custom:{id}"),
+        }
+    }
+
+    fn from_value(value: &str) -> Option<Self> {
+        match value.strip_prefix("custom:") {
+            Some(id) => id.parse().ok().map(Self::Custom),
+            None => role_from_value(value).map(Self::BuiltIn),
+        }
+    }
+}
+
+/// What `user` holds on `target`: the household's role there, if they hold one, or `role`.
+fn held(user: &UserSummary, target: GrantTarget, role: Role) -> RoleChoice {
+    user.custom_roles
+        .iter()
+        .find(|(on, _)| *on == target)
+        .map_or(RoleChoice::BuiltIn(role), |(_, id)| RoleChoice::Custom(*id))
+}
+
+/// A role's name: a built-in one's, or the household's (from `custom`; "Custom role" if it
+/// isn't known).
+pub(crate) fn choice_name(choice: RoleChoice, custom: &[RoleSummary]) -> String {
+    match choice {
+        RoleChoice::BuiltIn(role) => tr(role_label(role)),
+        RoleChoice::Custom(id) => custom.iter().find(|summary| summary.id == id).map_or_else(
+            || tr(messages::ROLE_CUSTOM),
+            |summary| summary.role.name.as_str().to_owned(),
+        ),
+    }
+}
+
+/// The name of what `user` holds on `target` (`role` there, unless it's a custom role).
+pub(crate) fn held_name(
+    user: &UserSummary,
+    target: GrantTarget,
+    role: Role,
+    custom: &[RoleSummary],
+) -> String {
+    choice_name(held(user, target, role), custom)
+}
+
+/// Every role the menus offer: the built-in ones, then the household's.
+fn choices(custom: &[RoleSummary]) -> Vec<RoleChoice> {
+    ROLES
+        .into_iter()
+        .map(RoleChoice::BuiltIn)
+        .chain(custom.iter().map(|summary| RoleChoice::Custom(summary.id)))
+        .collect()
+}
+
 /// A role's icon: all vehicles, the group's own, or a vehicle.
 fn target_icon(target: GrantTarget, garage: Option<&GarageView>) -> Icon {
     match target {
@@ -71,17 +138,27 @@ fn target_icon(target: GrantTarget, garage: Option<&GarageView>) -> Icon {
 }
 
 /// The list's one-line summary: "Admin · all vehicles", "Maintainer · Hangar", "3 roles".
-pub(crate) fn roles_summary(user: &UserSummary, garage: Option<&GarageView>) -> String {
+pub(crate) fn roles_summary(
+    user: &UserSummary,
+    garage: Option<&GarageView>,
+    custom: &[RoleSummary],
+) -> String {
     match user.roles.as_slice() {
         [] => tr(messages::ROLE_NONE),
         [(GrantTarget::AllAssets, role)] => tr_with(
             messages::USERS_ROLE_SUMMARY,
-            &[("role", MessageArg::from(tr(role_label(*role))))],
+            &[(
+                "role",
+                MessageArg::from(held_name(user, GrantTarget::AllAssets, *role, custom)),
+            )],
         ),
         [(target, role)] => tr_with(
             messages::USERS_ROLE_ON,
             &[
-                ("role", MessageArg::from(tr(role_label(*role)))),
+                (
+                    "role",
+                    MessageArg::from(held_name(user, *target, *role, custom)),
+                ),
                 ("target", MessageArg::from(target_name(*target, garage))),
             ],
         ),
@@ -120,12 +197,19 @@ fn target_from_value(value: &str) -> Option<GrantTarget> {
 fn save(
     user: domain::user::UserId,
     target: GrantTarget,
-    role: Option<Role>,
+    role: Option<RoleChoice>,
     on_done: EventHandler<()>,
     on_error: EventHandler<String>,
 ) {
     spawn(async move {
-        match api::set_user_role(user, target, role).await {
+        let answer = match role {
+            Some(RoleChoice::Custom(custom)) => {
+                api::set_user_custom_role(user, target, custom).await
+            }
+            Some(RoleChoice::BuiltIn(role)) => api::set_user_role(user, target, Some(role)).await,
+            None => api::set_user_role(user, target, None).await,
+        };
+        match answer {
             Ok(UserAdminOutcome::Done) => on_done.call(()),
             Ok(other) => on_error.call(outcome_message(&other).unwrap_or_default()),
             Err(failure) => on_error.call(failure_message(&failure)),
@@ -141,6 +225,7 @@ fn save(
 #[component]
 pub(crate) fn RolesSection(
     user: UserSummary,
+    custom: Vec<RoleSummary>,
     on_changed: EventHandler<()>,
     on_error: EventHandler<String>,
 ) -> Element {
@@ -165,17 +250,18 @@ pub(crate) fn RolesSection(
                 // The last Admin keeps the Admin role on all vehicles (the server refuses too).
                 {
                     let locked = user.is_last_admin && target == GrantTarget::AllAssets;
+                    let now = held(&user, target, role);
                     rsx! {
                         select {
                             class: "role-select",
                             disabled: locked,
                             onchange: move |event| {
-                                if let Some(chosen) = role_from_value(&event.value()) {
+                                if let Some(chosen) = RoleChoice::from_value(&event.value()) {
                                     save(id, target, Some(chosen), on_changed, on_error);
                                 }
                             },
-                            for each in ROLES {
-                                option { key: "{each:?}", value: role_value(Some(each)), selected: role == each, {tr(role_label(each))} }
+                            for each in choices(&custom) {
+                                option { key: "{each.value()}", value: each.value(), selected: now == each, {choice_name(each, &custom)} }
                             }
                         }
                         button {
@@ -192,7 +278,7 @@ pub(crate) fn RolesSection(
         }
         p { class: "muted-note", {tr(messages::ROLES_NOTE)} }
         if adding() {
-            AddRoleDialog { user, garage, on_close: move |()| adding.set(false), on_changed }
+            AddRoleDialog { user, garage, custom, on_close: move |()| adding.set(false), on_changed }
         }
     }
 }
@@ -206,11 +292,12 @@ pub(crate) fn RolesSection(
 fn AddRoleDialog(
     user: UserSummary,
     garage: Option<GarageView>,
+    custom: Vec<RoleSummary>,
     on_close: EventHandler<()>,
     on_changed: EventHandler<()>,
 ) -> Element {
     let mut target = use_signal(|| GrantTarget::AllAssets);
-    let mut role = use_signal(|| Role::Driver);
+    let mut role = use_signal(|| RoleChoice::BuiltIn(Role::Driver));
     let mut error = use_signal(|| None::<String>);
     let id = user.id;
     let (groups, assets) = garage
@@ -270,12 +357,12 @@ fn AddRoleDialog(
                     select {
                         class: "field-input",
                         onchange: move |event| {
-                            if let Some(chosen) = role_from_value(&event.value()) {
+                            if let Some(chosen) = RoleChoice::from_value(&event.value()) {
                                 role.set(chosen);
                             }
                         },
-                        for each in ROLES {
-                            option { key: "{each:?}", value: role_value(Some(each)), selected: role() == each, {tr(role_label(each))} }
+                        for each in choices(&custom) {
+                            option { key: "{each.value()}", value: each.value(), selected: role() == each, {choice_name(each, &custom)} }
                         }
                     }
                 }
@@ -351,6 +438,7 @@ mod tests {
 
     fn user(roles: Vec<(GrantTarget, Role)>) -> UserSummary {
         UserSummary {
+            custom_roles: vec![],
             id: test_id(2),
             username: Username::parse("alex").unwrap(),
             display_name: "Alex".into(),
@@ -379,25 +467,60 @@ mod tests {
             "(removed) · vehicle"
         );
 
-        assert_eq!(roles_summary(&user(vec![]), Some(&view)), "No role");
+        assert_eq!(roles_summary(&user(vec![]), Some(&view), &[]), "No role");
         assert_eq!(
             roles_summary(
                 &user(vec![(GrantTarget::AllAssets, Role::Admin)]),
-                Some(&view)
+                Some(&view),
+                &[]
             ),
             "Admin · all vehicles"
         );
         assert_eq!(
-            roles_summary(&user(vec![(hangar, Role::Maintainer)]), Some(&view)),
+            roles_summary(&user(vec![(hangar, Role::Maintainer)]), Some(&view), &[]),
             "Maintainer · Hangar"
         );
         assert_eq!(
             roles_summary(
                 &user(vec![(hangar, Role::Maintainer), (truck, Role::Driver)]),
-                Some(&view)
+                Some(&view),
+                &[]
             ),
             "2 roles"
         );
+    }
+
+    #[test]
+    fn a_custom_role_shows_by_its_name_and_round_trips_through_the_menu() {
+        use domain::access::{AssetAction, Permissions};
+        use domain::custom_role::CustomRole;
+        let chauffeur = RoleSummary {
+            id: test_id(60),
+            role: CustomRole {
+                name: domain::label::Label::parse("Chauffeur").unwrap(),
+                permissions: Permissions::of(&[AssetAction::LogFuel]),
+            },
+            holders: 1,
+        };
+        let mut sam = user(vec![(GrantTarget::AllAssets, Role::Viewer)]);
+        sam.custom_roles = vec![(GrantTarget::AllAssets, chauffeur.id)];
+        let view = garage();
+        assert_eq!(
+            roles_summary(&sam, Some(&view), std::slice::from_ref(&chauffeur)),
+            "Chauffeur · all vehicles"
+        );
+        assert_eq!(
+            roles_summary(&sam, Some(&view), &[]),
+            "Custom role · all vehicles",
+            "a role not (yet) known"
+        );
+        let offered = choices(std::slice::from_ref(&chauffeur));
+        assert_eq!(offered.len(), 5);
+        assert_eq!(offered[4], RoleChoice::Custom(chauffeur.id));
+        for each in offered {
+            assert_eq!(RoleChoice::from_value(&each.value()), Some(each));
+        }
+        assert_eq!(RoleChoice::from_value("custom:nope"), None);
     }
 
     #[test]

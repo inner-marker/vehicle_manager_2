@@ -13,7 +13,7 @@
 //! Every word for squawks comes from the household's choice (#064, through `tr`).
 
 use dioxus::prelude::*;
-use domain::access::{ActiveMode, AssetAction, Role};
+use domain::access::{ActiveMode, AssetAction, Permissions};
 use domain::api::{
     AssetView, AssetsOutcome, EventsOutcome, SquawkInput, SquawkView, SquawksOutcome,
 };
@@ -143,16 +143,16 @@ pub(crate) fn use_squawk_sheet() -> SquawkSheet {
     use_context::<SquawkSheet>()
 }
 
-/// Whether someone with `role` on a vehicle may open squawks on it in `mode` (a Driver or
-/// higher).
-pub(crate) fn may_open_squawks(role: Role, mode: ActiveMode) -> bool {
-    role.min(mode.cap()) >= AssetAction::OpenSquawk.required_role()
+/// Whether someone `allowed` these on a vehicle may open squawks on it in `mode` (a Driver or
+/// higher, or a custom role with it; #091).
+pub(crate) fn may_open_squawks(allowed: Permissions, mode: ActiveMode) -> bool {
+    allowed.allows(mode, AssetAction::OpenSquawk)
 }
 
-/// Whether someone with `role` on a vehicle may log maintenance and repairs on it in `mode` (a
-/// Maintainer or higher, in that mode): **Repair this**.
-fn may_log_jobs(role: Role, mode: ActiveMode) -> bool {
-    role.min(mode.cap()) >= AssetAction::LogMaintenance.required_role()
+/// Whether someone `allowed` these on a vehicle may log maintenance and repairs on it in `mode`
+/// (a Maintainer or higher, in that mode, or a custom role with it): **Repair this**.
+fn may_log_jobs(allowed: Permissions, mode: ActiveMode) -> bool {
+    allowed.allows(mode, AssetAction::LogMaintenance)
 }
 
 /// The person's mode (Driver until signed in).
@@ -841,7 +841,7 @@ fn SquawkBody(view: SquawkView, vehicle: AssetView, on_removed: EventHandler<()>
     // the vehicle's disposal is finalized (#067).
     let may_repair = view.status.is_outstanding()
         && vehicle.standing.takes_new_records
-        && may_log_jobs(vehicle.role, current_mode(auth()));
+        && may_log_jobs(vehicle.allowed(), current_mode(auth()));
     let asset = vehicle.asset;
     rsx! {
         div { class: "squawk-body",
@@ -1049,7 +1049,8 @@ fn SquawkScreen(id: SquawkId) -> Element {
 pub(crate) fn ReportSquawk(vehicle: AssetView, event: EventId) -> Element {
     let sheet = use_squawk_sheet();
     let auth = use_auth();
-    if !vehicle.standing.takes_new_records || !may_open_squawks(vehicle.role, current_mode(auth()))
+    if !vehicle.standing.takes_new_records
+        || !may_open_squawks(vehicle.allowed(), current_mode(auth()))
     {
         return rsx! {};
     }
@@ -1065,6 +1066,7 @@ pub(crate) fn ReportSquawk(vehicle: AssetView, event: EventId) -> Element {
 
 #[cfg(test)]
 mod tests {
+    use domain::access::Role;
     use domain::squawk::{CountedDisposition, SquawkDisposition};
     use domain::test_support::test_id;
 
@@ -1156,9 +1158,15 @@ mod tests {
 
     #[test]
     fn drivers_and_up_may_open_squawks() {
-        assert!(may_open_squawks(Role::Driver, ActiveMode::Driver));
-        assert!(may_open_squawks(Role::Admin, ActiveMode::Driver));
-        assert!(!may_open_squawks(Role::Viewer, ActiveMode::Admin));
+        let of = Permissions::of_role;
+        assert!(may_open_squawks(of(Role::Driver), ActiveMode::Driver));
+        assert!(may_open_squawks(of(Role::Admin), ActiveMode::Driver));
+        assert!(!may_open_squawks(of(Role::Viewer), ActiveMode::Admin));
+        let chauffeur = Permissions::of(&[AssetAction::View, AssetAction::LogFuel]);
+        assert!(!may_open_squawks(chauffeur, ActiveMode::Maintainer));
+        let apprentice = Permissions::of(&[AssetAction::View, AssetAction::LogMaintenance]);
+        assert!(!may_log_jobs(apprentice, ActiveMode::Driver));
+        assert!(may_log_jobs(apprentice, ActiveMode::Maintainer));
     }
 
     #[test]

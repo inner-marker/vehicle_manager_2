@@ -142,6 +142,11 @@ fn summary(
         }
     }
     roles.sort_by_key(|(target, _)| target_order(*target));
+    let custom_roles = grants
+        .iter()
+        .filter(|(_, grant)| grant.user == stored.id)
+        .filter_map(|(_, grant)| grant.custom.map(|custom| (grant.target, custom.role)))
+        .collect();
     // The last Admin: without this user, no enabled household Admin would remain.
     let others: Vec<RoleGrant> = grants
         .iter()
@@ -163,6 +168,7 @@ fn summary(
         },
         role_on_all,
         roles,
+        custom_roles,
         is_you: stored.id == you,
         is_last_admin,
         devices: 0,

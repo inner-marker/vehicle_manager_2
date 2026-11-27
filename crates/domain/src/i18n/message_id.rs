@@ -3966,4 +3966,74 @@ define_messages! {
     MAIN_PHOTO_CLEAR => "main-photo-clear",
     /// The gold star on the main photo, for someone who can't change it.
     MAIN_PHOTO_IS => "main-photo-is",
+    /// A household role whose name isn't known yet.
+    ROLE_CUSTOM => "role-custom",
+    /// Nav and title: Manage → Roles (#091).
+    NAV_ROLES => "nav-roles",
+    /// Roles: what they are.
+    HOUSEHOLD_ROLES_INTRO => "household-roles-intro",
+    /// Roles: a built-in role's line in the list.
+    HOUSEHOLD_ROLES_BUILT_IN => "household-roles-built-in",
+    /// Roles: the Admin's line in the list.
+    HOUSEHOLD_ROLES_EVERYTHING => "household-roles-everything",
+    /// Roles: how many people hold a role. $count (number).
+    HOUSEHOLD_ROLES_HOLDERS => "household-roles-holders",
+    /// Roles: the add button.
+    HOUSEHOLD_ROLES_ADD => "household-roles-add",
+    /// Roles: a new role's starting name.
+    HOUSEHOLD_ROLES_NEW => "household-roles-new",
+    /// Roles: under the list.
+    HOUSEHOLD_ROLES_NOTE => "household-roles-note",
+    /// Roles: nothing chosen.
+    HOUSEHOLD_ROLES_SELECT_HINT => "household-roles-select-hint",
+    /// Roles: back to the list on a phone.
+    HOUSEHOLD_ROLES_BACK => "household-roles-back",
+    /// Roles: the Driver-level permissions' heading.
+    HOUSEHOLD_ROLES_DRIVER_LEVEL => "household-roles-driver-level",
+    /// Roles: the Maintainer-level permissions' heading.
+    HOUSEHOLD_ROLES_MAINTAINER_LEVEL => "household-roles-maintainer-level",
+    /// Roles: the Admin role's detail.
+    HOUSEHOLD_ROLES_ADMIN_ALL => "household-roles-admin-all",
+    /// Roles: under a built-in role.
+    HOUSEHOLD_ROLES_FIXED => "household-roles-fixed",
+    /// Roles: under a household role, for someone who can't change it.
+    HOUSEHOLD_ROLES_READ_ONLY => "household-roles-read-only",
+    /// Roles: the modes a role's holders can pick. $modes (text): e.g. "Driver and Maintainer".
+    HOUSEHOLD_ROLES_MODES => "household-roles-modes",
+    /// Roles: who holds it. $people (text): e.g. "2 people".
+    HOUSEHOLD_ROLES_HELD_BY => "household-roles-held-by",
+    /// Roles: saved.
+    HOUSEHOLD_ROLES_SAVED => "household-roles-saved",
+    /// Roles: the delete button.
+    HOUSEHOLD_ROLES_DELETE => "household-roles-delete",
+    /// Roles: confirming a delete. $name (text).
+    HOUSEHOLD_ROLES_DELETE_TITLE => "household-roles-delete-title",
+    /// Roles: what deleting does.
+    HOUSEHOLD_ROLES_DELETE_NOTE => "household-roles-delete-note",
+    /// Roles: the role is gone.
+    HOUSEHOLD_ROLES_NOT_FOUND => "household-roles-not-found",
+    /// Roles: a role was refused for holding an Admin permission.
+    HOUSEHOLD_ROLES_ADMIN_ONLY => "household-roles-admin-only",
+    /// A permission: viewing.
+    PERMISSION_VIEW => "permission-view",
+    /// A permission.
+    PERMISSION_LOG_FUEL => "permission-log-fuel",
+    /// A permission.
+    PERMISSION_LOG_READING => "permission-log-reading",
+    /// A permission.
+    PERMISSION_OPEN_SQUAWK => "permission-open-squawk",
+    /// A permission.
+    PERMISSION_LOG_MAINTENANCE => "permission-log-maintenance",
+    /// A permission.
+    PERMISSION_DISPOSITION_SQUAWK => "permission-disposition-squawk",
+    /// A permission.
+    PERMISSION_CONFIGURE => "permission-configure",
+    /// A permission.
+    PERMISSION_MANAGE_EVENTS => "permission-manage-events",
+    /// A permission.
+    PERMISSION_KEEP_ORIGINALS => "permission-keep-originals",
+    /// A permission.
+    PERMISSION_MANAGE_DOCUMENTS => "permission-manage-documents",
+    /// A permission.
+    PERMISSION_SEND_OUT => "permission-send-out",
 }

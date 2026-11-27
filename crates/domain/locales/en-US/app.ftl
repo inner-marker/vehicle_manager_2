@@ -1155,7 +1155,7 @@ roles-vehicles = Vehicles
 roles-removed = (removed)
 roles-remove = Remove this role
 roles-none = No roles: they can't see any vehicles yet.
-roles-note = Roles add up: on each vehicle, the highest one applies. Adding a role where they already have one replaces it.
+roles-note = Roles add up: on each vehicle, everything they allow applies. Adding a role where they already have one replaces it.
 groups-add = + Add group
 groups-add-title = Add a group
 groups-icon = Icon
@@ -2369,3 +2369,41 @@ schedule-hidden = { $count ->
    *[other] { $count } more are done, not applicable, or turned off: All shows them.
 }
 work-from-recall = + From a recall or bulletin…
+role-custom = Custom role
+nav-roles = Roles
+household-roles-intro = A role says what a person may do on the vehicles it's given on. The built-in roles stay as they are; your household can add its own.
+household-roles-built-in = Built in
+household-roles-everything = Built in · everything
+household-roles-holders = { $count ->
+    [one] 1 person
+   *[other] { $count } people
+}
+household-roles-add = + Add role
+household-roles-new = New role
+household-roles-note = The built-in roles stay as they are; Admin always has everything.
+household-roles-select-hint = Choose a role to see what it allows, or add one.
+household-roles-back = ‹ Roles
+household-roles-driver-level = Driver level (in Driver mode and up)
+household-roles-maintainer-level = Maintainer level (in Maintainer mode)
+household-roles-admin-all = The Admin may do everything: besides every permission here, the vehicles' own details, archiving and deleting them, their purchase and sale, and the household's people, groups, types, templates, and settings.
+household-roles-fixed = Built-in roles can't be changed.
+household-roles-read-only = Only the household's Admin, in Admin mode, changes roles.
+household-roles-modes = Its holders pick { $modes } mode.
+household-roles-held-by = Held by { $people }.
+household-roles-saved = Saved. Everyone holding it has the change now.
+household-roles-delete = Delete role
+household-roles-delete-title = Delete the role { $name }?
+household-roles-delete-note = Everyone holding it loses what it gave them, on every vehicle; Users shows who has no role left.
+household-roles-not-found = That role has been removed.
+household-roles-admin-only = A role can't hold the Admin's permissions.
+permission-view = See the vehicle and its history (always)
+permission-log-fuel = Log fuel-ups
+permission-log-reading = Log readings
+permission-open-squawk = Open { $squawks }
+permission-log-maintenance = Log maintenance and repairs
+permission-disposition-squawk = Sign off or defer { $squawks }
+permission-configure = Change the schedule and setup (also shops and rates)
+permission-manage-events = Change others' records
+permission-keep-originals = Keep a photo's original
+permission-manage-documents = Documents and plates
+permission-send-out = Send out for service
