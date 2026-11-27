@@ -43,7 +43,7 @@ pub(crate) fn apply(
     match result {
         Ok(AssetsOutcome::Garage { view }) => {
             tracing::debug!(target: log_area::UI, vehicles = view.assets.len(), groups = view.groups.len(), "garage loaded");
-            context.garage.set(Some(view));
+            context.garage.set(Some(*view));
             None
         }
         Ok(AssetsOutcome::Invalid { problem }) => Some(problem.message()),
@@ -89,6 +89,34 @@ pub(crate) fn kind_icon(kind: &domain::asset::AssetKind) -> Icon {
         "generator" => Icon::Generator,
         _ => Icon::Templates,
     }
+}
+
+/// A vehicle type's icon (#090).
+pub(crate) const fn type_icon(icon: domain::vehicle_type::TypeIcon) -> Icon {
+    use domain::vehicle_type::TypeIcon;
+    match icon {
+        TypeIcon::Car => Icon::Vehicles,
+        TypeIcon::Truck => Icon::Truck,
+        TypeIcon::Motorcycle => Icon::Motorcycle,
+        TypeIcon::Trailer => Icon::Trailer,
+        TypeIcon::Generator => Icon::Generator,
+        TypeIcon::Tractor => Icon::Farm,
+        TypeIcon::Boat => Icon::Boathouse,
+        TypeIcon::Aircraft => Icon::Hangar,
+        TypeIcon::Bus => Icon::Bus,
+        TypeIcon::Van => Icon::Van,
+        TypeIcon::Bicycle => Icon::Bicycle,
+        TypeIcon::Flag => Icon::Flag,
+        TypeIcon::Tool => Icon::Templates,
+    }
+}
+
+/// A vehicle's icon where it has no main photo: its type's, else its kind's.
+pub(crate) fn vehicle_icon(
+    kind: &domain::asset::AssetKind,
+    vehicle_type: Option<&domain::vehicle_type::TypeLabel>,
+) -> Icon {
+    vehicle_type.map_or_else(|| kind_icon(kind), |label| type_icon(label.icon))
 }
 
 /// A group's name, for the top bar on its page.

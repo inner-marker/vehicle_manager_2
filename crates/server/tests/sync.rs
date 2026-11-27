@@ -148,7 +148,7 @@ mod sync {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, &admin, clock), &form).await
         else {
             panic!("the truck wasn't added");
@@ -596,6 +596,59 @@ mod sync {
         );
         assert_eq!(count(&scene.server, "events").await, 1);
         assert_eq!(count(&scene.server, "applied_operations").await, 1);
+    }
+
+    #[tokio::test]
+    async fn pins_made_on_the_copy_reach_the_server_and_keep_the_order() {
+        let scene = scene().await;
+        let sams = context(&scene.server, &scene.sam, &scene.clock);
+        assert_eq!(
+            server::assets::set_order(&sams, vec![scene.truck]).await,
+            AssetsOutcome::Done
+        );
+        // Pinned offline on the laptop (the truck twice: kept once), then pushed.
+        let pinned = operation(
+            1,
+            1,
+            OperationChange::SetGaragePins {
+                pinned: vec![scene.truck, scene.truck],
+            },
+        );
+        assert_eq!(
+            run_operation(
+                &push_context(&scene.copy, &scene.laptop, &scene.clock),
+                &pinned
+            )
+            .await,
+            Ran::Applied
+        );
+        let pushed = push(
+            &push_context(&scene.server, &scene.laptop, &scene.clock),
+            schema_version(),
+            std::slice::from_ref(&pinned),
+        )
+        .await;
+        assert_eq!(
+            answers(pushed),
+            vec![OperationAnswer::Applied { id: pinned.id }]
+        );
+        let order = scene
+            .server
+            .garage_order(scene.sam.user.cast())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(order.pinned, vec![scene.truck]);
+        assert_eq!(order.order, vec![scene.truck], "the order stays");
+        // Jordan's own Garage has no pins.
+        assert!(
+            scene
+                .server
+                .garage_order(scene.jordan.user.cast())
+                .await
+                .unwrap()
+                .is_none_or(|order| order.pinned.is_empty())
+        );
     }
 
     #[tokio::test]

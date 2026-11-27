@@ -233,6 +233,42 @@ async fn apply_to(
     Ok(from_schedule(outcome))
 }
 
+/// Copies template `id` onto `to`, a vehicle just added as a type that names it (#090): its
+/// meter rules without a matching meter are left out, and answered. A template removed since
+/// copies nothing.
+///
+/// # Errors
+///
+/// The vehicles answer to give if it can't be read or saved.
+pub(crate) async fn copy_onto_new(
+    context: &AssetsContext<'_>,
+    id: TemplateId,
+    to: AssetId,
+) -> Result<Vec<(Label, Label)>, domain::api::AssetsOutcome> {
+    let fail = |what: &str, error: &dyn std::fmt::Display| unavailable(what, error);
+    let Some(template) = context
+        .database
+        .template(id)
+        .await
+        .map_err(|error| fail("template", &error))?
+    else {
+        return Ok(Vec::new());
+    };
+    let meters = context
+        .database
+        .meters_of(to)
+        .await
+        .map_err(|error| fail("meters", &error))?;
+    let copied = template.apply(&meters, to);
+    match crate::schedule::write_copied(context, copied, &template.usages).await {
+        Ok(ScheduleOutcome::Copied { left_out, .. }) => {
+            tracing::debug!(target: log_area::APP, template = %id, %to, "template copied onto a new vehicle");
+            Ok(left_out)
+        }
+        _ => Err(domain::api::AssetsOutcome::Unavailable),
+    }
+}
+
 /// Renames template `id` (the household's Admin).
 pub async fn rename(context: &AssetsContext<'_>, id: TemplateId, name: Label) -> TemplatesOutcome {
     either(rename_template(context, id, name).await)

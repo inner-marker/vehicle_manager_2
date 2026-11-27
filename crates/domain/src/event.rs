@@ -226,6 +226,10 @@ pub enum FieldData {
     Volume(i64),
     /// Meters per liter.
     FuelEconomy(i64),
+    /// Pascals.
+    Pressure(i64),
+    /// Micrometers.
+    TreadDepth(i64),
 }
 
 /// One custom field's value on an event.

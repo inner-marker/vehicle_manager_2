@@ -338,9 +338,11 @@ mod tests {
 
     fn vehicle(kind: &str, role: Role) -> AssetSummary {
         AssetSummary {
+            vehicle_type: None,
             standing: domain::lifecycle::Standing::default(),
             id: test_id(1),
             asset: Asset {
+                vehicle_type: None,
                 kind: AssetKind::parse(kind).unwrap(),
                 name: AssetName::parse("Thing").unwrap(),
                 make: None,
@@ -353,6 +355,7 @@ mod tests {
                 status: LifecycleStatus::InService,
                 identifiers: vec![],
                 main_photo: None,
+                in_service: None,
             },
             role,
             plate: None,

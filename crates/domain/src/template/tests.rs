@@ -54,15 +54,18 @@ fn oil_change() -> Requirement {
             IntervalRule::Meter {
                 meter: test_id(10),
                 every: 8_046_720,
+                first: None,
             },
             IntervalRule::Meter {
                 meter: test_id(11),
                 every: 900_000,
+                first: None,
             },
             IntervalRule::Calendar {
                 every: 12,
                 unit: CalendarUnit::Months,
                 end_of_month: false,
+                first: None,
             },
         ],
         reference: Some(test_id(40)),
@@ -147,11 +150,13 @@ fn applying_a_template_copies_it_onto_the_vehicle() {
             IntervalRule::Meter {
                 meter: test_id(50),
                 every: 8_046_720,
+                first: None,
             },
             IntervalRule::Calendar {
                 every: 12,
                 unit: CalendarUnit::Months,
                 end_of_month: false,
+                first: None,
             },
         ]
     );

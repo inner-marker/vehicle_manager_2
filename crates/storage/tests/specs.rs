@@ -49,6 +49,7 @@ mod specs {
             .await
             .unwrap();
         let truck = Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,
@@ -61,6 +62,7 @@ mod specs {
             status: LifecycleStatus::InService,
             identifiers: vec![],
             main_photo: None,
+            in_service: None,
         };
         AssetWriter
             .create(&mut connection, test_id(TRUCK), &AssetPatch::all(truck), 2)

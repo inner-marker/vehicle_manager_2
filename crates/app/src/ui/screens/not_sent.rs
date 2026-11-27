@@ -228,6 +228,7 @@ mod desktop {
                 navigator.push(Route::Places {});
             }
             OperationChange::SetGarageOrder { .. }
+            | OperationChange::SetGaragePins { .. }
             | OperationChange::MoveAttachment { .. }
             | OperationChange::RemoveAttachment { .. } => {
                 navigator.push(Route::AllVehicles {});
@@ -291,6 +292,7 @@ mod desktop {
             | OperationChange::EditPlace { .. }
             | OperationChange::DeletePlace { .. }
             | OperationChange::SetGarageOrder { .. }
+            | OperationChange::SetGaragePins { .. }
             | OperationChange::AddAttachment { .. }
             | OperationChange::MoveAttachment { .. }
             | OperationChange::RemoveAttachment { .. } => return false,

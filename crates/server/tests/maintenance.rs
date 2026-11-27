@@ -89,7 +89,7 @@ mod maintenance {
             name: name.into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, &admin, clock), &form).await
         else {
             panic!("the truck wasn't added");
@@ -236,11 +236,13 @@ mod maintenance {
                 IntervalRule::Meter {
                     meter: odometer,
                     every: 5_000 * MILE,
+                    first: None,
                 },
                 IntervalRule::Calendar {
                     every: 6,
                     unit: domain::requirement::CalendarUnit::Months,
                     end_of_month: false,
+                    first: None,
                 },
             ],
             reference: None,
@@ -456,6 +458,7 @@ mod maintenance {
         elsewhere.rules = vec![IntervalRule::Meter {
             meter: test_id(7777),
             every: MILE,
+            first: None,
         }];
         assert_eq!(
             schedule::add_requirement(&shop, elsewhere).await,

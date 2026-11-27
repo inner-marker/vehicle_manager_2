@@ -21,12 +21,13 @@ use serde::{Deserialize, Serialize};
 use crate::i18n::{MessageId, messages};
 
 /// The API version this build speaks. 2 (phase-3.md 2c, #073): a desktop pairs at sign-in
-/// and signs its requests.
-pub const API_VERSION: u32 = 2;
+/// and signs its requests. 3 (phase-6.md 3b, #090): a desktop sends pinned vehicles
+/// (`SetGaragePins`) with its offline changes.
+pub const API_VERSION: u32 = 3;
 
 /// The oldest client API version this build's server still accepts: the one before (#072).
-/// Version-1 desktop apps (`v0.2.0`) sign in without a key, as "Desktop app (older version)".
-pub const MIN_SUPPORTED_API_VERSION: u32 = 1;
+/// Version-2 desktop apps never send pins, so their Garage works as before.
+pub const MIN_SUPPORTED_API_VERSION: u32 = 2;
 
 /// Header carrying the client's API version (a plain integer, e.g. `1`).
 pub const API_VERSION_HEADER: &str = "x-api-version";
@@ -487,6 +488,10 @@ pub struct AssetSummary {
     /// Its default usage's readiness: the usage's name and the answer (#086).
     #[serde(default)]
     pub ready: Option<(crate::label::Label, crate::readiness::Mark)>,
+    /// Its household vehicle type's name and icon, unless it has none or it's been removed
+    /// (#090).
+    #[serde(default)]
+    pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -505,6 +510,9 @@ pub struct GarageView {
     pub sort: crate::preferences::GarageSort,
     /// Their custom order, for the Custom sort.
     pub order: Vec<crate::asset::AssetId>,
+    /// The vehicles they've pinned (#090): first in their own group, whatever the sort.
+    #[serde(default)]
+    pub pinned: Vec<crate::asset::AssetId>,
     /// The fleet strip's counts, over the vehicles the Garage shows (#083).
     #[serde(default)]
     pub fleet: crate::due::FleetCounts,
@@ -539,6 +547,9 @@ pub struct AssetView {
     /// What its lifecycle events say about it now (milestone 9, #067).
     #[serde(default)]
     pub standing: crate::lifecycle::Standing,
+    /// Its household vehicle type's name and icon (#090), as on [`AssetSummary`].
+    #[serde(default)]
+    pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
 }
 
 /// How one person's access changes in a move, for the preview.
@@ -637,8 +648,8 @@ pub enum PlacesOutcome {
 pub enum AssetsOutcome {
     /// The Garage.
     Garage {
-        /// What the person can see.
-        view: GarageView,
+        /// What the person can see (boxed: it's far the largest outcome).
+        view: Box<GarageView>,
     },
     /// One vehicle.
     Asset {
@@ -649,6 +660,10 @@ pub enum AssetsOutcome {
     Added {
         /// Its ID.
         id: crate::asset::AssetId,
+        /// Its type's template's meter rules left out, as "requirement: meter" (no matching
+        /// meter; #090).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        left_out: Vec<(crate::label::Label, crate::label::Label)>,
     },
     /// Who gains, loses, or changes access if the vehicle moves.
     MovePreview {
@@ -1576,6 +1591,50 @@ pub enum ShopsOutcome {
     Invalid {
         /// Why.
         problem: crate::shop::ShopProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// Manage → Vehicle types (phase-6.md 3e, #090): the household's types, and what the editor
+/// offers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypesView {
+    /// The household's types, by name.
+    pub types: Vec<(
+        crate::vehicle_type::VehicleTypeId,
+        crate::vehicle_type::VehicleType,
+    )>,
+    /// The household's templates, by name, for a type to name one.
+    pub templates: Vec<(crate::template::TemplateId, crate::label::Label)>,
+    /// The person may change them (the household's Admin, in Admin mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a vehicle types request (phase-6.md 3e).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum TypesOutcome {
+    /// The types.
+    Types {
+        /// They.
+        view: TypesView,
+    },
+    /// A type was added or changed.
+    Saved {
+        /// Its ID.
+        id: crate::vehicle_type::VehicleTypeId,
+    },
+    /// Done (a type removed).
+    Done,
+    /// There's no such type.
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused.
+    Invalid {
+        /// Why.
+        problem: crate::vehicle_type::TypeProblem,
     },
     /// The server couldn't do it right now.
     Unavailable,

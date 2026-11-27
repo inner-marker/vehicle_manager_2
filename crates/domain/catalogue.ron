@@ -1,0 +1,32 @@
+// The catalogue of ready-made fields and sets (decision #090, idea 16), read by
+// `domain::catalogue`. Fields are copied onto a vehicle, then edited like any field.
+// Labels and names are message keys in `crates/domain/locales/en-US/app.ftl`. Keys are
+// stable (#057): never change one that has shipped. A calculated field's formula uses the
+// keys of fields in its own sets, so a set added again with " B" rewrites them.
+(
+    fields: [
+        (key: "trip-distance", label: "field-trip-distance", shown_on: [fuel], kind: {"type": "distance"}),
+        (key: "trip-time", label: "field-trip-time", shown_on: [fuel], kind: {"type": "duration"}),
+        (key: "trip-average-speed", label: "field-trip-average-speed", shown_on: [fuel], kind: {"type": "calculated", "formula": "trip-distance ÷ trip-time", "shows": {"type": "speed"}}),
+        (key: "trip-fuel-economy", label: "field-trip-fuel-economy", shown_on: [fuel], kind: {"type": "fuel-economy"}),
+        (key: "trip-fuel-used", label: "field-trip-fuel-used", shown_on: [fuel], kind: {"type": "volume"}),
+        (key: "trip-ev-distance", label: "field-trip-ev-distance", shown_on: [fuel], kind: {"type": "distance"}),
+        (key: "trip-ev-share", label: "field-trip-ev-share", shown_on: [fuel], kind: {"type": "calculated", "formula": "trip-ev-distance ÷ trip-distance", "shows": {"type": "percent", "decimals": 0}}),
+        (key: "trip-ev-time", label: "field-trip-ev-time", shown_on: [fuel], kind: {"type": "duration"}),
+        (key: "idle-time", label: "field-idle-time", shown_on: [fuel, reading], kind: {"type": "duration"}),
+        (key: "engine-run-time", label: "field-engine-run-time", shown_on: [fuel, reading], kind: {"type": "duration"}),
+        (key: "oil-life", label: "field-oil-life", shown_on: [fuel, reading], kind: {"type": "number", "decimals": 0}, range: Some((min: Some(0), max: Some(100)))),
+        (key: "def-level", label: "field-def-level", shown_on: [fuel, reading], kind: {"type": "number", "decimals": 0}, range: Some((min: Some(0), max: Some(100)))),
+    ],
+    sets: [
+        (id: "trip-computer", name: "catalogue-set-trip-computer", fields: ["trip-distance", "trip-time", "trip-average-speed", "trip-fuel-economy", "trip-fuel-used"]),
+        (id: "trip-computer-hybrid", name: "catalogue-set-trip-computer-hybrid", fields: ["trip-distance", "trip-time", "trip-average-speed", "trip-fuel-economy", "trip-fuel-used", "trip-ev-distance", "trip-ev-share", "trip-ev-time"]),
+        (id: "engine-idle", name: "catalogue-set-engine-idle", fields: ["idle-time", "engine-run-time", "oil-life", "def-level"]),
+    ],
+    // The Tires set: these two for each tire, by axle. The key gets the tire's position
+    // (`tire-pressure-2l-outer`); the label message takes it as `tire` ("Tire pressure 2L outer").
+    tire_fields: [
+        (key: "tire-pressure", label: "field-tire-pressure", shown_on: [reading, maintenance], kind: {"type": "pressure"}),
+        (key: "tread-depth", label: "field-tread-depth", shown_on: [reading, maintenance], kind: {"type": "tread-depth"}),
+    ],
+)

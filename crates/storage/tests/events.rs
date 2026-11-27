@@ -69,6 +69,7 @@ mod events {
             .unwrap();
         for (n, name) in [(TRUCK, "Truck"), (TRAILER, "Trailer")] {
             let asset = Asset {
+                vehicle_type: None,
                 kind: AssetKind::parse("truck").unwrap(),
                 name: AssetName::parse(name).unwrap(),
                 make: None,
@@ -81,6 +82,7 @@ mod events {
                 status: LifecycleStatus::InService,
                 identifiers: vec![],
                 main_photo: None,
+                in_service: None,
             };
             AssetWriter
                 .create(&mut connection, test_id(n), &AssetPatch::all(asset), 3)

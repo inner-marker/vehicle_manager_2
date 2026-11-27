@@ -315,9 +315,11 @@ mod tests {
                 vehicles: 1,
             }],
             assets: vec![AssetSummary {
+                vehicle_type: None,
                 standing: domain::lifecycle::Standing::default(),
                 id: test_id(1),
                 asset: Asset {
+                    vehicle_type: None,
                     kind: AssetKind::parse("truck").unwrap(),
                     name: AssetName::parse("Truck").unwrap(),
                     make: None,
@@ -330,6 +332,7 @@ mod tests {
                     status: LifecycleStatus::InService,
                     identifiers: vec![],
                     main_photo: None,
+                    in_service: None,
                 },
                 role: Role::Admin,
                 plate: None,
@@ -340,6 +343,7 @@ mod tests {
             can_manage_groups: true,
             sort: GarageSort::NewestActivity,
             order: vec![],
+            pinned: vec![],
             fleet: domain::due::FleetCounts::default(),
         }
     }

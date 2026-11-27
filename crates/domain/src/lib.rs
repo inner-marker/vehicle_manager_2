@@ -12,6 +12,7 @@ pub mod asset_form;
 pub mod attachment;
 pub mod build_info;
 pub mod calculated;
+pub mod catalogue;
 pub mod command;
 pub mod custom_field;
 pub mod dates;
@@ -60,6 +61,7 @@ pub mod time_utils;
 pub mod timers;
 pub mod usage;
 pub mod user;
+pub mod vehicle_type;
 
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support;

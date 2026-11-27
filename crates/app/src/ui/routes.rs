@@ -6,7 +6,7 @@ use domain::i18n::{MessageId, messages};
 use super::screens::{
     AllVehicles, CorrectEvent, Diagnostics, Due, DueList, EditEvent, EventDetail, GroupVehicles,
     Groups, LogEvent, LogForm, LogService, Messages, NotFound, Places, RepairSquawk, Reports,
-    Settings, SquawkDetail, Templates, Timeline, Users, VehicleDetail, VehicleTab,
+    Settings, SquawkDetail, Templates, Timeline, Users, VehicleDetail, VehicleTab, VehicleTypes,
 };
 use super::shell::Shell;
 
@@ -70,6 +70,9 @@ pub(crate) enum Route {
         // The household's schedule templates (#084).
         #[route("/templates")]
         Templates {},
+        // The household's vehicle types (#090).
+        #[route("/vehicle-types")]
+        VehicleTypes {},
         #[route("/settings")]
         Settings {},
         #[route("/diagnostics")]
@@ -103,6 +106,7 @@ impl Route {
             Self::Groups {} => messages::NAV_GROUPS,
             Self::Places {} => messages::NAV_PLACES,
             Self::Templates {} => messages::NAV_TEMPLATES,
+            Self::VehicleTypes {} => messages::NAV_VEHICLE_TYPES,
             Self::Settings {} => messages::NAV_SETTINGS,
             Self::Diagnostics {} => messages::NAV_DIAGNOSTICS,
             Self::NotFound { .. } => messages::SCREEN_NOT_FOUND,
@@ -163,6 +167,7 @@ mod tests {
             Route::Groups {},
             Route::Places {},
             Route::Templates {},
+            Route::VehicleTypes {},
             Route::Settings {},
             Route::Diagnostics {},
         ]

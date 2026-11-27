@@ -797,6 +797,8 @@ define_messages! {
     CHANGE_PLACE_DELETE => "change-place-delete",
     /// A change: the Garage order.
     CHANGE_GARAGE_ORDER => "change-garage-order",
+    /// A change: the pinned vehicles.
+    CHANGE_GARAGE_PINS => "change-garage-pins",
     /// A change: a photo or document added.
     CHANGE_ATTACHMENT_ADD => "change-attachment-add",
     /// A change: a photo or document moved between tasks.
@@ -1005,6 +1007,28 @@ define_messages! {
     ASSET_IDENTIFIER_EMPTY => "asset-identifier-empty",
     /// More identifiers than allowed.
     ASSET_TOO_MANY_IDENTIFIERS => "asset-too-many-identifiers",
+    /// Error: In service since isn't a date, or is after today (#090).
+    ASSET_BAD_IN_SERVICE => "asset-bad-in-service",
+    /// Label: when the vehicle went into service (#090).
+    FIELD_IN_SERVICE => "field-in-service",
+    /// Label: the same, on the form.
+    FIELD_IN_SERVICE_OPTIONAL => "field-in-service-optional",
+    /// Checkbox: the in-service date is an estimate.
+    FIELD_IN_SERVICE_ESTIMATED => "field-in-service-estimated",
+    /// What In service since is for.
+    FIELD_IN_SERVICE_NOTE => "field-in-service-note",
+    /// An estimated in-service date (`$date`).
+    SETUP_IN_SERVICE_ESTIMATED => "setup-in-service-estimated",
+    /// A chained rule (`$first`, `$every`), e.g. "First at 100,000 mi, then every 50,000 mi".
+    SCHEDULE_FIRST_THEN => "schedule-first-then",
+    /// Checkbox: a rule's different first interval.
+    SCHEDULE_FIRST_DIFFERENT => "schedule-first-different",
+    /// Label before a first interval's box.
+    SCHEDULE_FIRST_AT_LABEL => "schedule-first-at-label",
+    /// After a meter rule's first interval (`$unit`).
+    SCHEDULE_FIRST_FROM_ZERO => "schedule-first-from-zero",
+    /// After a calendar rule's first interval (`$unit`).
+    SCHEDULE_FIRST_FROM_START => "schedule-first-from-start",
     /// Event kind: a fuel-up.
     EVENT_KIND_FUEL => "event-kind-fuel",
     /// Event kind: a reading.
@@ -1145,6 +1169,16 @@ define_messages! {
     VEHICLES_ARRANGE => "vehicles-arrange",
     /// Button: finish arranging.
     VEHICLES_ARRANGE_DONE => "vehicles-arrange-done",
+    /// A Garage card's ⋯ menu (`$name`, the vehicle's).
+    VEHICLES_CARD_MENU => "vehicles-card-menu",
+    /// A Garage card's menu item: open the vehicle.
+    VEHICLES_OPEN => "vehicles-open",
+    /// A Garage card's menu item, and Arrange mode's button: pin the vehicle (#090).
+    VEHICLES_PIN => "vehicles-pin",
+    /// A Garage card's menu item, and Arrange mode's button: unpin the vehicle.
+    VEHICLES_UNPIN => "vehicles-unpin",
+    /// Said for the 📌 before a pinned vehicle's name.
+    VEHICLES_PINNED => "vehicles-pinned",
     /// Button: show archived vehicles (`$count`).
     VEHICLES_SHOW_ARCHIVED => "vehicles-show-archived",
     /// Button: hide archived vehicles.
@@ -1229,6 +1263,36 @@ define_messages! {
     FIELD_TRIP_TIME => "field-trip-time",
     /// A profile's custom field: trip EV distance. Used by profile files (data), so code rarely names it.
     FIELD_TRIP_EV_DISTANCE => "field-trip-ev-distance",
+    /// The catalogue's data (#090): "Trip distance". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_DISTANCE => "field-trip-distance",
+    /// The catalogue's data (#090): "Trip average speed". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_AVERAGE_SPEED => "field-trip-average-speed",
+    /// The catalogue's data (#090): "Trip fuel economy". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_FUEL_ECONOMY => "field-trip-fuel-economy",
+    /// The catalogue's data (#090): "Trip fuel used". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_FUEL_USED => "field-trip-fuel-used",
+    /// The catalogue's data (#090): "Trip EV share". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_EV_SHARE => "field-trip-ev-share",
+    /// The catalogue's data (#090): "Trip EV time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_EV_TIME => "field-trip-ev-time",
+    /// The catalogue's data (#090): "Idle time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_IDLE_TIME => "field-idle-time",
+    /// The catalogue's data (#090): "Engine run time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_ENGINE_RUN_TIME => "field-engine-run-time",
+    /// The catalogue's data (#090): "Oil life %". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_OIL_LIFE => "field-oil-life",
+    /// The catalogue's data (#090): "DEF level %". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_DEF_LEVEL => "field-def-level",
+    /// The catalogue's data (#090): "Tire pressure". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TIRE_PRESSURE => "field-tire-pressure",
+    /// The catalogue's data (#090): "Tread depth". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TREAD_DEPTH => "field-tread-depth",
+    /// The catalogue's data (#090): "Trip computer". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_TRIP_COMPUTER => "catalogue-set-trip-computer",
+    /// The catalogue's data (#090): "Trip computer (hybrid)". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_TRIP_COMPUTER_HYBRID => "catalogue-set-trip-computer-hybrid",
+    /// The catalogue's data (#090): "Engine and idle". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_ENGINE_IDLE => "catalogue-set-engine-idle",
     /// Vehicle page: no such vehicle, or not visible.
     VEHICLE_NOT_FOUND => "vehicle-not-found",
     /// Vehicle page: back to All vehicles.
@@ -1391,6 +1455,10 @@ define_messages! {
     KIND_FUEL_ECONOMY => "kind-fuel-economy",
     /// Custom field kind: worked out from a formula (#087).
     KIND_CALCULATED => "kind-calculated",
+    /// Custom field type: pressure (e.g. a tire's).
+    KIND_PRESSURE => "kind-pressure",
+    /// Custom field type: a tire's tread depth.
+    KIND_TREAD_DEPTH => "kind-tread-depth",
     /// Dialog title: move a vehicle; takes `name` (text).
     MOVE_TITLE => "move-title",
     /// Form field: the group to move to.
@@ -1765,6 +1833,8 @@ define_messages! {
     UNIT_ABBR_IN => "unit-abbr-in",
     /// Units: millimeters.
     UNIT_ABBR_MM => "unit-abbr-mm",
+    /// Unit: 32nds of an inch, after the number ("7/32 in").
+    UNIT_ABBR_32NDS => "unit-abbr-32nds",
     /// Specs: a volume.
     SPEC_KIND_VOLUME => "spec-kind-volume",
     /// Specs: a torque.
@@ -2013,6 +2083,170 @@ define_messages! {
     FORMULA_DERIVED_FROM => "formula-derived-from",
     /// Setup: add a calculated field.
     SETUP_ADD_CALCULATED => "setup-add-calculated",
+    /// A tire's side, after its axle number: left.
+    TIRE_LEFT => "tire-left",
+    /// A tire's side, after its axle number: right.
+    TIRE_RIGHT => "tire-right",
+    /// A dual axle's outer tire.
+    TIRE_OUTER => "tire-outer",
+    /// A dual axle's inner tire.
+    TIRE_INNER => "tire-inner",
+    /// Error: a catalogue field already on the vehicle.
+    CATALOGUE_ALREADY_THERE => "catalogue-already-there",
+    /// Error: catalogue fields for kinds of events the vehicle lacks.
+    CATALOGUE_NOT_FOR_THIS_KIND => "catalogue-not-for-this-kind",
+    /// Error: the Tires set's axles.
+    CATALOGUE_BAD_AXLES => "catalogue-bad-axles",
+    /// Setup button: add fields from the catalogue.
+    SETUP_ADD_FROM_CATALOGUE => "setup-add-from-catalogue",
+    /// Dialog title: the catalogue; takes `name` (text).
+    CATALOGUE_TITLE => "catalogue-title",
+    /// Catalogue note.
+    CATALOGUE_INTRO => "catalogue-intro",
+    /// Catalogue heading: sets.
+    CATALOGUE_SETS => "catalogue-sets",
+    /// Catalogue heading: single fields.
+    CATALOGUE_FIELDS => "catalogue-fields",
+    /// A set's fields; takes `count` (number) and `fields` (text).
+    CATALOGUE_SET_SUMMARY => "catalogue-set-summary",
+    /// Catalogue set: tires.
+    CATALOGUE_SET_TIRES => "catalogue-set-tires",
+    /// The Tires set's summary.
+    CATALOGUE_SET_TIRES_NOTE => "catalogue-set-tires-note",
+    /// A catalogue field the vehicle has.
+    CATALOGUE_ON_VEHICLE => "catalogue-on-vehicle",
+    /// A catalogue field for events the vehicle lacks.
+    CATALOGUE_NOT_FOR_VEHICLE => "catalogue-not-for-vehicle",
+    /// Button: add from the catalogue.
+    CATALOGUE_ADD => "catalogue-add",
+    /// Dialog title: the Tires set.
+    TIRES_TITLE => "tires-title",
+    /// Form field: how many axles.
+    TIRES_AXLES => "tires-axles",
+    /// Form heading: tires on each axle.
+    TIRES_ON_EACH => "tires-on-each",
+    /// An axle, from 1 at the front; takes `number` (number).
+    TIRES_AXLE => "tires-axle",
+    /// Tires on an axle: two.
+    TIRES_SINGLE => "tires-single",
+    /// Tires on an axle: four (duals).
+    TIRES_DUAL => "tires-dual",
+    /// What the Tires set adds; takes `tires`, `fields` (numbers), `names` (text).
+    TIRES_SUMMARY => "tires-summary",
+    /// Tires form note.
+    TIRES_UNITS_NOTE => "tires-units-note",
+    /// Button: add the Tires set; takes `fields` (number).
+    TIRES_ADD => "tires-add",
+    /// Error: a vehicle type's name is taken.
+    TYPE_NAME_TAKEN => "type-name-taken",
+    /// Error: a type's catalogue fields.
+    TYPE_BAD_CATALOGUE => "type-bad-catalogue",
+    /// Error: a type's template is gone.
+    TYPE_TEMPLATE_GONE => "type-template-gone",
+    /// Error: a vehicle's type on another kind.
+    TYPE_WRONG_KIND => "type-wrong-kind",
+    /// Nav and title: Manage → Vehicle types (#090).
+    NAV_VEHICLE_TYPES => "nav-vehicle-types",
+    /// Vehicle types: what they are.
+    TYPES_INTRO => "types-intro",
+    /// Vehicle types: the kinds don't change.
+    TYPES_KINDS_NOTE => "types-kinds-note",
+    /// Button: add a vehicle type.
+    TYPES_ADD => "types-add",
+    /// Vehicle types: none.
+    TYPES_NONE => "types-none",
+    /// Vehicle types: nothing chosen.
+    TYPES_SELECT_HINT => "types-select-hint",
+    /// Link back to the list (phone).
+    TYPES_BACK => "types-back",
+    /// Heading: a type being added.
+    TYPES_NEW => "types-new",
+    /// Form field: the kind a type is built on.
+    TYPES_BUILT_ON => "types-built-on",
+    /// Note under Built on.
+    TYPES_KEEPS => "types-keeps",
+    /// Heading; takes `usage` (text).
+    TYPES_DOCUMENTS => "types-documents",
+    /// Note: no documents ticked.
+    TYPES_NO_DOCUMENTS => "types-no-documents",
+    /// Heading: what a type's vehicles start with.
+    TYPES_STARTS_WITH => "types-starts-with",
+    /// Its kind's meters; takes `list` (text).
+    TYPES_METERS => "types-meters",
+    /// Heading: the kind's fields.
+    TYPES_KIND_FIELDS => "types-kind-fields",
+    /// Heading: catalogue additions.
+    TYPES_FROM_CATALOGUE => "types-from-catalogue",
+    /// Note: no catalogue additions.
+    TYPES_CATALOGUE_NONE => "types-catalogue-none",
+    /// Select placeholder: add from the catalogue.
+    TYPES_CATALOGUE_PICK => "types-catalogue-pick",
+    /// A Tires choice; takes `axles` and `tires` (numbers).
+    TYPES_TIRES => "types-tires",
+    /// Form field: a type's template.
+    TYPES_TEMPLATE => "types-template",
+    /// Template choice: none.
+    TYPES_TEMPLATE_NONE => "types-template-none",
+    /// Note under Template.
+    TYPES_TEMPLATE_NOTE => "types-template-note",
+    /// Status: a type saved.
+    TYPES_SAVED => "types-saved",
+    /// Button: delete a type.
+    TYPES_DELETE => "types-delete",
+    /// Note under Delete type.
+    TYPES_DELETE_NOTE => "types-delete-note",
+    /// Dialog title; takes `name` (text).
+    TYPES_DELETE_TITLE => "types-delete-title",
+    /// Note: read only.
+    TYPES_READ_ONLY => "types-read-only",
+    /// Error: no such type.
+    TYPES_NOT_FOUND => "types-not-found",
+    /// Type icon.
+    TYPE_ICON_CAR => "type-icon-car",
+    /// Type icon.
+    TYPE_ICON_TRUCK => "type-icon-truck",
+    /// Type icon.
+    TYPE_ICON_MOTORCYCLE => "type-icon-motorcycle",
+    /// Type icon.
+    TYPE_ICON_TRAILER => "type-icon-trailer",
+    /// Type icon.
+    TYPE_ICON_GENERATOR => "type-icon-generator",
+    /// Type icon.
+    TYPE_ICON_TRACTOR => "type-icon-tractor",
+    /// Type icon.
+    TYPE_ICON_BOAT => "type-icon-boat",
+    /// Type icon.
+    TYPE_ICON_AIRCRAFT => "type-icon-aircraft",
+    /// Type icon.
+    TYPE_ICON_BUS => "type-icon-bus",
+    /// Type icon.
+    TYPE_ICON_VAN => "type-icon-van",
+    /// Type icon.
+    TYPE_ICON_BICYCLE => "type-icon-bicycle",
+    /// Type icon: a flag.
+    TYPE_ICON_FLAG => "type-icon-flag",
+    /// Type icon.
+    TYPE_ICON_TOOL => "type-icon-tool",
+    /// What a type starts with; takes `documents`, `template` (text), `meters`, `fields` (numbers).
+    TYPE_SUMMARY => "type-summary",
+    /// In the type summary: no documents.
+    TYPE_NEEDS_NOTHING => "type-needs-nothing",
+    /// In the type summary: no template.
+    TYPE_NO_TEMPLATE => "type-no-template",
+    /// In the type summary; takes `name` (text).
+    TYPE_WITH_TEMPLATE => "type-with-template",
+    /// Header: a vehicle's type and kind; takes `type` and `kind` (text).
+    TYPE_OF_KIND => "type-of-kind",
+    /// Add vehicle: heading over the types.
+    ADD_VEHICLE_YOUR_TYPES => "add-vehicle-your-types",
+    /// Add vehicle: rules left out; takes `list` (text).
+    ADD_VEHICLE_LEFT_OUT => "add-vehicle-left-out",
+    /// Form field: a vehicle's household type.
+    SETUP_TYPE => "setup-type",
+    /// Type choice: none.
+    SETUP_TYPE_NONE => "setup-type-none",
+    /// Note under Type.
+    SETUP_TYPE_NOTE => "setup-type-note",
     /// Setup: add a derived meter.
     SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).

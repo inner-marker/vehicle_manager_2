@@ -289,7 +289,7 @@ mod user_admin {
             name: "Truck".into(),
             ..domain::asset_form::AssetForm::new("truck", garage)
         };
-        let domain::api::AssetsOutcome::Added { id: truck } =
+        let domain::api::AssetsOutcome::Added { id: truck, .. } =
             server::assets::add(&assets, &form).await
         else {
             panic!("the truck wasn't added");

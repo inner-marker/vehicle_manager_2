@@ -163,6 +163,12 @@ pub enum OperationChange {
         /// The vehicles, in order.
         order: Vec<AssetId>,
     },
+    /// Saves the vehicles the person has pinned in the Garage (the whole list; #090, API
+    /// version 3).
+    SetGaragePins {
+        /// The pinned vehicles.
+        pinned: Vec<AssetId>,
+    },
     /// Adds a photo or document (milestone 6, #077). Its files are the server's: a desktop
     /// uploads any added offline just before it sends this, and puts the server's files here.
     AddAttachment {

@@ -43,3 +43,4 @@ pub mod sync;
 pub mod templates;
 pub mod usages;
 pub mod user_admin;
+pub mod vehicle_types;

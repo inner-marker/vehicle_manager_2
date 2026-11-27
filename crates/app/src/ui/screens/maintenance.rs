@@ -243,50 +243,61 @@ const fn calendar_unit_label(unit: CalendarUnit) -> MessageId {
     }
 }
 
+/// "First at 100,000 mi, then every 50,000 mi" (#090).
+fn first_then(first: String, every: String) -> String {
+    tr_with(
+        messages::SCHEDULE_FIRST_THEN,
+        &[
+            ("first", MessageArg::from(first)),
+            ("every", MessageArg::from(every)),
+        ],
+    )
+}
+
 /// "Every 5,000 mi or 6 months", "When needed", "On a fixed date · next 30 Nov 2026": a
 /// requirement's rules, whichever comes first. `next` is a fixed date's next due date, if
-/// known.
+/// known. Until it's `started` (done once, or "last done before these records" typed), a rule
+/// with a different first interval reads "first at 100,000 mi, then every 50,000 mi" (#090).
 fn rules_text(
     rules: &[IntervalRule],
     meters: &[(MeterId, Meter)],
     next: Option<&str>,
+    started: bool,
     units: &Preferences,
 ) -> String {
     let mut periodic: Vec<String> = Vec::new();
+    let mut chained: Vec<String> = Vec::new();
     let mut fixed: Option<String> = None;
     for rule in rules {
         match rule {
-            IntervalRule::Meter { meter, every } => {
+            IntervalRule::Meter {
+                meter,
+                every,
+                first,
+            } => {
                 if let Some((_, meter)) = meters.iter().find(|(id, _)| id == meter) {
-                    periodic.push(format!(
-                        "{} {}",
-                        show_reading(*every, meter.unit, meter.precision),
-                        unit_abbr(meter.unit)
-                    ));
+                    let shown = |value: i64| meter_amount(value, meter);
+                    match first.filter(|_| !started) {
+                        Some(first) => chained.push(first_then(shown(first), shown(*every))),
+                        None => periodic.push(shown(*every)),
+                    }
                 }
             }
             IntervalRule::Calendar {
                 every,
                 unit,
                 end_of_month,
+                first,
             } => {
-                let count = tr_with(
-                    calendar_count(*unit),
-                    &[("count", MessageArg::from(u32::from(*every)))],
-                );
-                periodic.push(if *end_of_month && *unit != CalendarUnit::Days {
-                    format!("{count}, {}", tr(messages::SCHEDULE_END_OF_MONTH))
-                } else {
-                    count
-                });
+                let shown = |count: u16| calendar_amount(count, *unit, *end_of_month);
+                match first.filter(|_| !started) {
+                    Some(first) => chained.push(first_then(shown(first), shown(*every))),
+                    None => periodic.push(shown(*every)),
+                }
             }
             IntervalRule::Reaches { meter, at } => {
                 if let Some((_, meter)) = meters.iter().find(|(id, _)| id == meter) {
-                    let value = format!(
-                        "{} {}",
-                        show_reading(*at, meter.unit, meter.precision),
-                        unit_abbr(meter.unit)
-                    );
+                    let value = meter_amount(*at, meter);
                     periodic.push(tr_with(
                         messages::SCHEDULE_REACHES,
                         &[
@@ -316,18 +327,52 @@ fn rules_text(
             )],
         )
     });
-    match (every, fixed) {
-        (Some(every), Some(fixed)) => {
-            // "…, or on a fixed date": the fixed date's text, lower-cased at the start only.
-            let mut letters = fixed.chars();
-            let fixed = letters.next().map_or_else(String::new, |first| {
-                first.to_lowercase().chain(letters).collect()
-            });
-            format!("{every}, {} {fixed}", tr(messages::SCHEDULE_OR))
-        }
-        (Some(text), None) | (None, Some(text)) => text,
-        (None, None) => tr(messages::SCHEDULE_WHEN_NEEDED),
+    or_joined(every.into_iter().chain(chained).chain(fixed).collect())
+}
+
+/// "5,000 mi": a value on `meter`, in its unit.
+fn meter_amount(value: i64, meter: &Meter) -> String {
+    format!(
+        "{} {}",
+        show_reading(value, meter.unit, meter.precision),
+        unit_abbr(meter.unit)
+    )
+}
+
+/// "6 months", or "2 years, by the month's end".
+fn calendar_amount(count: u16, unit: CalendarUnit, end_of_month: bool) -> String {
+    let count = tr_with(
+        calendar_count(unit),
+        &[("count", MessageArg::from(u32::from(count)))],
+    );
+    if end_of_month && unit != CalendarUnit::Days {
+        format!("{count}, {}", tr(messages::SCHEDULE_END_OF_MONTH))
+    } else {
+        count
     }
+}
+
+/// "…, or first at …, or on a fixed date": each part after the first lower-cased at its start;
+/// "When needed" for none.
+fn or_joined(parts: Vec<String>) -> String {
+    if parts.is_empty() {
+        return tr(messages::SCHEDULE_WHEN_NEEDED);
+    }
+    let or = format!(", {} ", tr(messages::SCHEDULE_OR));
+    parts
+        .into_iter()
+        .enumerate()
+        .map(|(index, part)| {
+            if index == 0 {
+                return part;
+            }
+            let mut letters = part.chars();
+            letters.next().map_or_else(String::new, |first| {
+                first.to_lowercase().chain(letters).collect()
+            })
+        })
+        .collect::<Vec<_>>()
+        .join(&or)
 }
 
 /// "3 Nov 2026 · 52,644 mi": when a requirement was last done, with the reading it resets
@@ -529,6 +574,7 @@ fn detail_line(
             view.last_done
                 .as_ref()
                 .and_then(|done| done.next_due.as_deref()),
+            view.last_done.is_some() || requirement.before_records.is_some(),
             units,
         ));
     }
@@ -774,14 +820,17 @@ fn SetUpView(vehicle: AssetView, schedule: Schedule, reloads: Signal<u32>) -> El
 /// One rule as typed.
 #[derive(Debug, Clone, PartialEq)]
 enum TypedRule {
+    /// `first`: a different first interval, as typed (#090); `None`: the same every time.
     Meter {
         meter: MeterId,
         every: String,
+        first: Option<String>,
     },
     Calendar {
         every: String,
         unit: CalendarUnit,
         end_of_month: bool,
+        first: Option<String>,
     },
     FixedDate {
         first: String,
@@ -797,22 +846,34 @@ impl TypedRule {
     /// A stored rule as typed again.
     fn from_rule(rule: &IntervalRule, meters: &[(MeterId, Meter)]) -> Self {
         match rule {
-            IntervalRule::Meter { meter, every } => Self::Meter {
-                meter: *meter,
-                every: meters
-                    .iter()
-                    .find(|(id, _)| id == meter)
-                    .map(|(_, found)| reading_value(*every, found.unit, found.precision))
-                    .unwrap_or_default(),
-            },
+            IntervalRule::Meter {
+                meter,
+                every,
+                first,
+            } => {
+                let typed = |value: i64| {
+                    meters
+                        .iter()
+                        .find(|(id, _)| id == meter)
+                        .map(|(_, found)| reading_value(value, found.unit, found.precision))
+                        .unwrap_or_default()
+                };
+                Self::Meter {
+                    meter: *meter,
+                    every: typed(*every),
+                    first: first.map(typed),
+                }
+            }
             IntervalRule::Calendar {
                 every,
                 unit,
                 end_of_month,
+                first,
             } => Self::Calendar {
                 every: every.to_string(),
                 unit: *unit,
                 end_of_month: *end_of_month,
+                first: first.map(|first| first.to_string()),
             },
             IntervalRule::FixedDate { first } => Self::FixedDate {
                 first: first.clone().unwrap_or_default(),
@@ -829,6 +890,46 @@ impl TypedRule {
     }
 }
 
+/// "☐ A different first interval", and once ticked, "First at [ ] mi on the meter (from
+/// zero)" (#090; sketch p6m3 part 2). `first` is `None` while unticked.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn FirstInterval(
+    first: Option<String>,
+    inputmode: &'static str,
+    note: String,
+    on_change: EventHandler<Option<String>>,
+) -> Element {
+    let ticked = first.is_some();
+    rsx! {
+        div { class: "rule-first",
+            label { class: "check",
+                input {
+                    r#type: "checkbox",
+                    checked: ticked,
+                    onchange: move |event| on_change.call(event.checked().then(String::new)),
+                }
+                span { {tr(messages::SCHEDULE_FIRST_DIFFERENT)} }
+            }
+            if let Some(value) = first {
+                div { class: "rule-inputs rule-first-inputs",
+                    span { {tr(messages::SCHEDULE_FIRST_AT_LABEL)} }
+                    input {
+                        class: "field-input rule-number",
+                        inputmode,
+                        value,
+                        oninput: move |event| on_change.call(Some(event.value())),
+                    }
+                    span { class: "muted-note", {note} }
+                }
+            }
+        }
+    }
+}
+
 /// The rules as typed, checked against the vehicle's meters.
 fn rules_from(
     typed: &[TypedRule],
@@ -837,31 +938,45 @@ fn rules_from(
     let rules = typed
         .iter()
         .map(|rule| match rule {
-            TypedRule::Meter { meter, every } => {
+            TypedRule::Meter {
+                meter,
+                every,
+                first,
+            } => {
                 let (_, found) = meters
                     .iter()
                     .find(|(id, _)| id == meter)
                     .ok_or(messages::SOMETHING_WENT_WRONG)?;
-                let every = parse_reading(every, found.unit, found.precision)
-                    .map_err(domain::quantity::QuantityError::message)?;
+                let parse = |typed: &str| {
+                    parse_reading(typed, found.unit, found.precision)
+                        .map_err(domain::quantity::QuantityError::message)
+                };
                 Ok(IntervalRule::Meter {
                     meter: *meter,
-                    every,
+                    every: parse(every)?,
+                    first: first.as_deref().map(parse).transpose()?,
                 })
             }
             TypedRule::Calendar {
                 every,
                 unit,
                 end_of_month,
-            } => Ok(IntervalRule::Calendar {
-                every: every
-                    .trim()
-                    .parse()
-                    .map_err(|_| messages::REQUIREMENT_BAD_CALENDAR)?,
-                unit: *unit,
-                // The month's end is for months and years.
-                end_of_month: *end_of_month && *unit != CalendarUnit::Days,
-            }),
+                first,
+            } => {
+                let parse = |typed: &str| {
+                    typed
+                        .trim()
+                        .parse()
+                        .map_err(|_| messages::REQUIREMENT_BAD_CALENDAR)
+                };
+                Ok(IntervalRule::Calendar {
+                    every: parse(every)?,
+                    unit: *unit,
+                    // The month's end is for months and years.
+                    end_of_month: *end_of_month && *unit != CalendarUnit::Days,
+                    first: first.as_deref().map(parse).transpose()?,
+                })
+            }
             TypedRule::FixedDate { first } => Ok(IntervalRule::FixedDate {
                 first: Some(first.trim().to_owned()).filter(|date| !date.is_empty()),
             }),
@@ -1182,13 +1297,13 @@ fn RequirementDialog(
                 div { class: "check-row",
                     if let Some(meter) = free_meter {
                         button { class: "secondary-button", r#type: "button",
-                            onclick: move |_| typed.write().rules.push(TypedRule::Meter { meter, every: String::new() }),
+                            onclick: move |_| typed.write().rules.push(TypedRule::Meter { meter, every: String::new(), first: None }),
                             {tr(messages::SCHEDULE_ADD_METER_RULE)}
                         }
                     }
                     if !has_calendar {
                         button { class: "secondary-button", r#type: "button",
-                            onclick: move |_| typed.write().rules.push(TypedRule::Calendar { every: "12".into(), unit: CalendarUnit::Months, end_of_month: false }),
+                            onclick: move |_| typed.write().rules.push(TypedRule::Calendar { every: "12".into(), unit: CalendarUnit::Months, end_of_month: false, first: None }),
                             {tr(messages::SCHEDULE_ADD_CALENDAR_RULE)}
                         }
                     }
@@ -1239,20 +1354,29 @@ fn RuleInputs(
         }
     };
     match rule {
-        TypedRule::Meter { meter, every } => {
+        TypedRule::Meter {
+            meter,
+            every,
+            first,
+        } => {
             let unit = meters
                 .iter()
                 .find(|(id, _)| *id == meter)
                 .map(|(_, found)| unit_abbr(found.unit))
                 .unwrap_or_default();
-            let every_now = every.clone();
+            let (every_meter, every_first) = (every.clone(), every.clone());
+            let (first_meter, first_every) = (first.clone(), first.clone());
+            let first_note = tr_with(
+                messages::SCHEDULE_FIRST_FROM_ZERO,
+                &[("unit", MessageArg::from(unit.clone()))],
+            );
             rsx! {
                 div { class: "rule-inputs",
                     select {
                         class: "field-input",
                         onchange: move |event| {
                             if let Ok(chosen) = event.value().parse() {
-                                set(TypedRule::Meter { meter: chosen, every: every_now.clone() });
+                                set(TypedRule::Meter { meter: chosen, every: every_meter.clone(), first: first_meter.clone() });
                             }
                         },
                         for (id, found) in meters {
@@ -1264,9 +1388,15 @@ fn RuleInputs(
                         class: "field-input rule-number",
                         inputmode: "decimal",
                         value: every,
-                        oninput: move |event| set(TypedRule::Meter { meter, every: event.value() }),
+                        oninput: move |event| set(TypedRule::Meter { meter, every: event.value(), first: first_every.clone() }),
                     }
                     span { {unit} }
+                }
+                FirstInterval {
+                    first,
+                    inputmode: "decimal",
+                    note: first_note,
+                    on_change: move |first: Option<String>| set(TypedRule::Meter { meter, every: every_first.clone(), first }),
                 }
             }
         }
@@ -1274,8 +1404,16 @@ fn RuleInputs(
             every,
             unit,
             end_of_month,
+            first,
         } => {
-            let (every_unit, every_month) = (every.clone(), every.clone());
+            let (every_unit, every_month, every_first) =
+                (every.clone(), every.clone(), every.clone());
+            let (first_unit, first_month, first_every) =
+                (first.clone(), first.clone(), first.clone());
+            let first_note = tr_with(
+                messages::SCHEDULE_FIRST_FROM_START,
+                &[("unit", MessageArg::from(tr(calendar_unit_label(unit))))],
+            );
             rsx! {
                 div { class: "rule-inputs",
                     span { class: "rule-kind", {tr(messages::SCHEDULE_CALENDAR)} }
@@ -1284,14 +1422,14 @@ fn RuleInputs(
                         class: "field-input rule-number",
                         inputmode: "numeric",
                         value: every,
-                        oninput: move |event| set(TypedRule::Calendar { every: event.value(), unit, end_of_month }),
+                        oninput: move |event| set(TypedRule::Calendar { every: event.value(), unit, end_of_month, first: first_every.clone() }),
                     }
                     select {
                         class: "field-input",
                         "aria-label": tr(messages::SCHEDULE_CALENDAR_UNIT),
                         onchange: move |event| {
                             let picked = CalendarUnit::ALL.into_iter().find(|each| format!("{each:?}") == event.value()).unwrap_or(unit);
-                            set(TypedRule::Calendar { every: every_unit.clone(), unit: picked, end_of_month });
+                            set(TypedRule::Calendar { every: every_unit.clone(), unit: picked, end_of_month, first: first_unit.clone() });
                         },
                         for each in CalendarUnit::ALL {
                             option { key: "{each:?}", value: "{each:?}", selected: each == unit, {tr(calendar_unit_label(each))} }
@@ -1302,11 +1440,17 @@ fn RuleInputs(
                             input {
                                 r#type: "checkbox",
                                 checked: end_of_month,
-                                onchange: move |event| set(TypedRule::Calendar { every: every_month.clone(), unit, end_of_month: event.checked() }),
+                                onchange: move |event| set(TypedRule::Calendar { every: every_month.clone(), unit, end_of_month: event.checked(), first: first_month.clone() }),
                             }
                             span { {tr(messages::SCHEDULE_END_OF_MONTH)} }
                         }
                     }
+                }
+                FirstInterval {
+                    first,
+                    inputmode: "numeric",
+                    note: first_note,
+                    on_change: move |first: Option<String>| set(TypedRule::Calendar { every: every_first.clone(), unit, end_of_month, first }),
                 }
             }
         }
@@ -1734,15 +1878,17 @@ mod tests {
             IntervalRule::Meter {
                 meter: test_id(20),
                 every: 5_000 * MILE / 1000,
+                first: None,
             },
             IntervalRule::Calendar {
                 every: 6,
                 unit: CalendarUnit::Months,
                 end_of_month: false,
+                first: None,
             },
         ];
         assert_eq!(
-            rules_text(&oil, &meters(), None, &units),
+            rules_text(&oil, &meters(), None, false, &units),
             "Every 5,000 mi or 6 months"
         );
         let calendar = |every, unit, end_of_month| {
@@ -1751,9 +1897,11 @@ mod tests {
                     every,
                     unit,
                     end_of_month,
+                    first: None,
                 }],
                 &meters(),
                 None,
+                false,
                 &units,
             )
         };
@@ -1763,16 +1911,19 @@ mod tests {
             calendar(2, CalendarUnit::Years, true),
             "Every 2 years, by the month's end"
         );
-        assert_eq!(rules_text(&[], &meters(), None, &units), "When needed");
+        assert_eq!(
+            rules_text(&[], &meters(), None, false, &units),
+            "When needed"
+        );
         let inspection = [IntervalRule::FixedDate {
             first: Some("2026-11-30".into()),
         }];
         assert_eq!(
-            rules_text(&inspection, &meters(), None, &units),
+            rules_text(&inspection, &meters(), None, false, &units),
             "On a fixed date · next 30 Nov 2026"
         );
         assert_eq!(
-            rules_text(&inspection, &meters(), Some("2027-11-30"), &units),
+            rules_text(&inspection, &meters(), Some("2027-11-30"), false, &units),
             "On a fixed date · next 30 Nov 2027",
             "the last job's next due date wins"
         );
@@ -1780,10 +1931,52 @@ mod tests {
             every: 1,
             unit: CalendarUnit::Months,
             end_of_month: true,
+            first: None,
         }];
         assert_eq!(
-            rules_text(&yearly, &meters(), None, &units),
+            rules_text(&yearly, &meters(), None, false, &units),
             "Every month, by the month's end"
+        );
+    }
+
+    #[test]
+    fn a_chained_rule_reads_first_then_every_until_started() {
+        let units = Preferences::default();
+        let belt = [
+            IntervalRule::Meter {
+                meter: test_id(20),
+                every: 50_000 * MILE / 1000,
+                first: Some(100_000 * MILE / 1000),
+            },
+            IntervalRule::Calendar {
+                every: 2,
+                unit: CalendarUnit::Years,
+                end_of_month: false,
+                first: Some(3),
+            },
+        ];
+        assert_eq!(
+            rules_text(&belt, &meters(), None, false, &units),
+            "First at 100,000 mi, then every 50,000 mi, or first at 3 years, then every 2 years"
+        );
+        // Once done (or last done before these records), only the repeating part.
+        assert_eq!(
+            rules_text(&belt, &meters(), None, true, &units),
+            "Every 50,000 mi or 2 years"
+        );
+        // Beside an ordinary rule, the ordinary one first.
+        let mixed = [
+            IntervalRule::Calendar {
+                every: 6,
+                unit: CalendarUnit::Months,
+                end_of_month: false,
+                first: None,
+            },
+            belt[0].clone(),
+        ];
+        assert_eq!(
+            rules_text(&mixed, &meters(), None, false, &units),
+            "Every 6 months, or first at 100,000 mi, then every 50,000 mi"
         );
     }
 
@@ -1797,6 +1990,7 @@ mod tests {
             rules: vec![IntervalRule::Meter {
                 meter: test_id(21),
                 every: 360_000,
+                first: None,
             }],
             reference: None,
             mode: ComplianceMode::Recurring,
@@ -1842,11 +2036,13 @@ mod tests {
             TypedRule::Meter {
                 meter: test_id(20),
                 every: "5000".into(),
+                first: None,
             },
             TypedRule::Calendar {
                 every: " 6 ".into(),
                 unit: CalendarUnit::Months,
                 end_of_month: true,
+                first: None,
             },
             TypedRule::FixedDate {
                 first: String::new(),
@@ -1858,11 +2054,13 @@ mod tests {
                 IntervalRule::Meter {
                     meter: test_id(20),
                     every: parse_reading("5000", MeterUnit::Miles, 0).unwrap(),
+                    first: None,
                 },
                 IntervalRule::Calendar {
                     every: 6,
                     unit: CalendarUnit::Months,
                     end_of_month: true,
+                    first: None,
                 },
                 IntervalRule::FixedDate { first: None },
             ])
@@ -1870,6 +2068,7 @@ mod tests {
         let zero = [TypedRule::Meter {
             meter: test_id(20),
             every: "0".into(),
+            first: None,
         }];
         assert_eq!(
             rules_from(&zero, &meters()),
@@ -1879,6 +2078,7 @@ mod tests {
             every: "lots".into(),
             unit: CalendarUnit::Months,
             end_of_month: false,
+            first: None,
         }];
         assert_eq!(
             rules_from(&months, &meters()),
@@ -1888,28 +2088,66 @@ mod tests {
             every: "90".into(),
             unit: CalendarUnit::Days,
             end_of_month: true,
+            first: None,
         }];
         assert_eq!(
             rules_from(&days, &meters()),
             Ok(vec![IntervalRule::Calendar {
                 every: 90,
                 unit: CalendarUnit::Days,
-                end_of_month: false
+                end_of_month: false,
+                first: None,
             }]),
             "the month's end is dropped for days"
         );
+    }
+
+    #[test]
+    fn a_stored_rule_types_back_with_its_first_interval() {
         // A stored rule types back into the same text.
         let rule = IntervalRule::Meter {
             meter: test_id(21),
             every: 360_000,
+            first: None,
         };
         assert_eq!(
             TypedRule::from_rule(&rule, &meters()),
             TypedRule::Meter {
                 meter: test_id(21),
-                every: "100.0".into()
+                every: "100.0".into(),
+                first: None,
             }
         );
+        // A chained one too, and back again (#090).
+        let belt = IntervalRule::Meter {
+            meter: test_id(20),
+            every: parse_reading("50000", MeterUnit::Miles, 0).unwrap(),
+            first: Some(parse_reading("100000", MeterUnit::Miles, 0).unwrap()),
+        };
+        let typed = TypedRule::from_rule(&belt, &meters());
+        assert_eq!(
+            typed,
+            TypedRule::Meter {
+                meter: test_id(20),
+                every: "50000".into(),
+                first: Some("100000".into()),
+            }
+        );
+        assert_eq!(rules_from(&[typed], &meters()), Ok(vec![belt]));
+        // Ticked but left empty, or zero: refused.
+        for first in ["", "0"] {
+            let typed = TypedRule::Calendar {
+                every: "2".into(),
+                unit: CalendarUnit::Years,
+                end_of_month: false,
+                first: Some(first.into()),
+            };
+            assert_eq!(
+                rules_from(&[typed], &meters()),
+                Err(messages::REQUIREMENT_BAD_CALENDAR),
+                "{first:?}"
+            );
+        }
     }
 
     #[test]

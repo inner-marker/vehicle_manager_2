@@ -85,6 +85,7 @@ mod maintenance {
             .await
             .unwrap();
         let asset = Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,
@@ -97,6 +98,7 @@ mod maintenance {
             status: LifecycleStatus::InService,
             identifiers: vec![],
             main_photo: None,
+            in_service: None,
         };
         AssetWriter
             .create(&mut connection, test_id(TRUCK), &AssetPatch::all(asset), 3)
@@ -135,11 +137,13 @@ mod maintenance {
                     IntervalRule::Meter {
                         meter: test_id(ODOMETER),
                         every: 8_046_720,
+                        first: None,
                     },
                     IntervalRule::Calendar {
                         every: 12,
                         unit: domain::requirement::CalendarUnit::Months,
                         end_of_month: false,
+                        first: None,
                     },
                 ],
             ),

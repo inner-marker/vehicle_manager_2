@@ -2,10 +2,11 @@
 //! writers for the command pipeline, and the queries the server needs.
 
 use domain::access::AssetScope;
-use domain::asset::{Asset, AssetId, AssetPatch, Identifier, LifecycleStatus};
+use domain::asset::{Asset, AssetId, AssetPatch, Identifier, InService, LifecycleStatus};
 use domain::custom_field::{
     CustomField, CustomFieldId, CustomFieldPatch, FieldKey, FieldKind, FieldRange,
 };
+use domain::dates::CalendarDate;
 use domain::formula::Formula;
 use domain::garage::{GarageOrder, GarageOrderId, GarageOrderPatch};
 use domain::group::{Group, GroupId, GroupPatch};
@@ -140,10 +141,15 @@ impl RecordWriter<Asset> for AssetWriter {
                 .clone()
                 .and_then(domain::command::Clearable::into_option)
         };
+        let in_service = values
+            .in_service
+            .clone()
+            .and_then(domain::command::Clearable::into_option);
         sqlx::query(
             "INSERT INTO assets (id, kind, name, make, model, year, colour, description,
-                                 group_id, parent_id, status, identifiers, main_photo, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 group_id, parent_id, status, identifiers, main_photo,
+                                 in_service_since, in_service_estimated, vehicle_type, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(required(values.kind.as_ref(), "kind")?.as_str())
@@ -182,6 +188,18 @@ impl RecordWriter<Asset> for AssetWriter {
                 .and_then(domain::command::Clearable::into_option)
                 .map(id_to_sql),
         )
+        .bind(
+            in_service
+                .as_ref()
+                .map(|since| since.on.as_str().to_owned()),
+        )
+        .bind(in_service.as_ref().is_some_and(|since| since.estimated))
+        .bind(
+            values
+                .vehicle_type
+                .and_then(domain::command::Clearable::into_option)
+                .map(id_to_sql),
+        )
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -202,6 +220,12 @@ impl RecordWriter<Asset> for AssetWriter {
         let colour = clearable(patch.colour.as_ref(), |text| text);
         let parent = clearable(patch.parent.as_ref(), id_to_sql);
         let main_photo = clearable(patch.main_photo.as_ref(), id_to_sql);
+        // Its two columns change together.
+        let in_service_on = clearable(patch.in_service.as_ref(), |since| {
+            since.on.as_str().to_owned()
+        });
+        let in_service_estimated = clearable(patch.in_service.as_ref(), |since| since.estimated);
+        let vehicle_type = clearable(patch.vehicle_type.as_ref(), id_to_sql);
         let identifiers = patch
             .identifiers
             .as_ref()
@@ -221,6 +245,9 @@ impl RecordWriter<Asset> for AssetWriter {
                  status = coalesce(?, status),
                  identifiers = coalesce(?, identifiers),
                  main_photo = CASE WHEN ? THEN ? ELSE main_photo END,
+                 in_service_since = CASE WHEN ? THEN ? ELSE in_service_since END,
+                 in_service_estimated = CASE WHEN ? THEN coalesce(?, 0) ELSE in_service_estimated END,
+                 vehicle_type = CASE WHEN ? THEN ? ELSE vehicle_type END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -247,6 +274,12 @@ impl RecordWriter<Asset> for AssetWriter {
         .bind(identifiers)
         .bind(main_photo.0)
         .bind(main_photo.1)
+        .bind(in_service_on.0)
+        .bind(in_service_on.1)
+        .bind(in_service_estimated.0)
+        .bind(in_service_estimated.1)
+        .bind(vehicle_type.0)
+        .bind(vehicle_type.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -299,6 +332,19 @@ fn asset_from_row(row: &SqliteRow) -> Result<(AssetId, Asset), StorageError> {
             main_photo: row
                 .try_get::<Option<&[u8]>, _>("main_photo")?
                 .map(|bytes| id_from_sql(bytes, "assets.main_photo"))
+                .transpose()?,
+            in_service: row
+                .try_get::<Option<String>, _>("in_service_since")?
+                .map(|on| -> Result<InService, StorageError> {
+                    Ok(InService {
+                        on: CalendarDate::parse(&on).map_err(invalid("assets.in_service_since"))?,
+                        estimated: row.try_get("in_service_estimated")?,
+                    })
+                })
+                .transpose()?,
+            vehicle_type: row
+                .try_get::<Option<&[u8]>, _>("vehicle_type")?
+                .map(|bytes| id_from_sql(bytes, "assets.vehicle_type"))
                 .transpose()?,
         },
     ))
@@ -650,15 +696,21 @@ impl RecordWriter<GarageOrder> for GarageOrderWriter {
         values: &GarageOrderPatch,
         sequence: i64,
     ) -> Result<(), StorageError> {
-        sqlx::query("INSERT INTO garage_orders (id, vehicles, sequence) VALUES (?, ?, ?)")
-            .bind(id_to_sql(id))
-            .bind(json_to_sql(
-                &values.order.clone().unwrap_or_default(),
-                "vehicles",
-            )?)
-            .bind(sequence)
-            .execute(connection)
-            .await?;
+        sqlx::query(
+            "INSERT INTO garage_orders (id, vehicles, pinned, sequence) VALUES (?, ?, ?, ?)",
+        )
+        .bind(id_to_sql(id))
+        .bind(json_to_sql(
+            &values.order.clone().unwrap_or_default(),
+            "vehicles",
+        )?)
+        .bind(json_to_sql(
+            &values.pinned.clone().unwrap_or_default(),
+            "pinned",
+        )?)
+        .bind(sequence)
+        .execute(connection)
+        .await?;
         Ok(())
     }
 
@@ -674,10 +726,17 @@ impl RecordWriter<GarageOrder> for GarageOrderWriter {
             .as_ref()
             .map(|order| json_to_sql(order, "vehicles"))
             .transpose()?;
+        let pinned = patch
+            .pinned
+            .as_ref()
+            .map(|pinned| json_to_sql(pinned, "pinned"))
+            .transpose()?;
         sqlx::query(
-            "UPDATE garage_orders SET vehicles = coalesce(?, vehicles), sequence = ? WHERE id = ?",
+            "UPDATE garage_orders SET vehicles = coalesce(?, vehicles), \
+             pinned = coalesce(?, pinned), sequence = ? WHERE id = ?",
         )
         .bind(vehicles)
+        .bind(pinned)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -726,7 +785,8 @@ impl Database {
     pub async fn assets(&self) -> Result<Vec<(AssetId, Asset)>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers, main_photo
+                    status, identifiers, main_photo, in_service_since, in_service_estimated,
+                    vehicle_type
              FROM assets WHERE deleted = 0 ORDER BY name",
         )
         .fetch_all(self.pool())
@@ -744,7 +804,8 @@ impl Database {
     pub async fn asset(&self, id: AssetId) -> Result<Option<Asset>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers, main_photo
+                    status, identifiers, main_photo, in_service_since, in_service_estimated,
+                    vehicle_type
              FROM assets WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))
@@ -788,7 +849,7 @@ impl Database {
         )
     }
 
-    /// A person's custom Garage order, if they've made one.
+    /// A person's custom Garage order and pinned vehicles, if they've made either.
     ///
     /// # Errors
     ///
@@ -797,14 +858,17 @@ impl Database {
         &self,
         id: GarageOrderId,
     ) -> Result<Option<GarageOrder>, StorageError> {
-        let row = sqlx::query("SELECT vehicles FROM garage_orders WHERE id = ? AND deleted = 0")
-            .bind(id_to_sql(id))
-            .fetch_optional(self.pool())
-            .await?;
+        let row =
+            sqlx::query("SELECT vehicles, pinned FROM garage_orders WHERE id = ? AND deleted = 0")
+                .bind(id_to_sql(id))
+                .fetch_optional(self.pool())
+                .await?;
         row.map(|row| -> Result<GarageOrder, StorageError> {
             let vehicles: String = row.try_get("vehicles")?;
+            let pinned: String = row.try_get("pinned")?;
             Ok(GarageOrder {
                 order: json_from_sql(&vehicles, "garage_orders.vehicles")?,
+                pinned: json_from_sql(&pinned, "garage_orders.pinned")?,
             })
         })
         .transpose()

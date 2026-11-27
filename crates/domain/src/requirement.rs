@@ -9,6 +9,12 @@
 //! - **a fixed next date** (a registration renewal, an inspection), which each sign-off replaces
 //!   with the next one from the paperwork (or none).
 //!
+//! An every-N meter or calendar rule can have a **different first interval** (#090), e.g. "first
+//! at 100,000 mi, then every 50,000 mi" (a timing belt) or "first at 3 years, then every 2
+//! years". Until the requirement is first done (or "last done before these records" is typed),
+//! the first counts from the meter's zero, or from the vehicle's In service since date
+//! ([`crate::asset::InService`]); after that, only the repeating part.
+//!
 //! A **service bundle** groups requirements done together, e.g. "10,000-mile service", whose
 //! tasks may each have their own intervals. Both belong to one vehicle; **copying a schedule**
 //! from another vehicle copies them, never links them (#031).
@@ -100,6 +106,9 @@ pub enum IntervalRule {
         meter: MeterId,
         /// How far apart, more than zero.
         every: i64,
+        /// A different first interval, more than zero, from the meter's zero (#090).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        first: Option<i64>,
     },
     /// Every `every` days, months, or years; with `end_of_month` (months and years), due on
     /// the last day of that month.
@@ -113,6 +122,10 @@ pub enum IntervalRule {
         unit: CalendarUnit,
         /// Rounded to the end of the calendar month (ignored for days).
         end_of_month: bool,
+        /// A different first interval, in the same unit, from the vehicle's In service since
+        /// date (#090).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        first: Option<u16>,
     },
     /// On a date from the paperwork. `first` is the first one; each sign-off then gives the
     /// next (or none).
@@ -135,9 +148,10 @@ impl IntervalRule {
     #[must_use]
     pub fn on_meter(&self, meter: MeterId) -> Self {
         match self {
-            Self::Meter { every, .. } => Self::Meter {
+            Self::Meter { every, first, .. } => Self::Meter {
                 meter,
                 every: *every,
+                first: *first,
             },
             Self::Reaches { at, .. } => Self::Reaches { meter, at: *at },
             other @ (Self::Calendar { .. } | Self::FixedDate { .. }) => other.clone(),
@@ -495,16 +509,23 @@ pub fn check_rules(
             return Err(RequirementProblem::RepeatedRule);
         }
         match rule {
-            IntervalRule::Meter { meter, every } => {
+            IntervalRule::Meter {
+                meter,
+                every,
+                first,
+            } => {
                 if !meters.iter().any(|(id, _)| id == meter) {
                     return Err(RequirementProblem::UnknownMeter);
                 }
-                if *every <= 0 {
+                if *every <= 0 || first.is_some_and(|first| first <= 0) {
                     return Err(RequirementProblem::BadInterval);
                 }
             }
-            IntervalRule::Calendar { every, unit, .. } => {
-                if !(1..=unit.max()).contains(every) {
+            IntervalRule::Calendar {
+                every, unit, first, ..
+            } => {
+                let range = 1..=unit.max();
+                if !range.contains(every) || first.is_some_and(|first| !range.contains(&first)) {
                     return Err(RequirementProblem::BadCalendar);
                 }
             }
@@ -849,15 +870,18 @@ mod tests {
                 IntervalRule::Meter {
                     meter: test_id(ODOMETER),
                     every: 12_070_080,
+                    first: None,
                 },
                 IntervalRule::Meter {
                     meter: test_id(HOURS),
                     every: 900_000,
+                    first: None,
                 },
                 IntervalRule::Calendar {
                     every: 12,
                     unit: CalendarUnit::Months,
                     end_of_month: false,
+                    first: None,
                 },
             ],
             reference: None,
@@ -945,6 +969,7 @@ mod tests {
         let every = IntervalRule::Meter {
             meter: test_id(HOURS),
             every: 900_000,
+            first: None,
         };
         assert_eq!(
             check_rules(&[every.clone(), reaches(HOURS, 10)], &meters),
@@ -958,9 +983,29 @@ mod tests {
             every.on_meter(test_id(ODOMETER)),
             IntervalRule::Meter {
                 meter: test_id(ODOMETER),
-                every: 900_000
+                every: 900_000,
+                first: None,
             }
         );
+    }
+
+    /// Every `every` on meter `meter`, the same each time.
+    fn every_on(meter: u32, every: i64) -> IntervalRule {
+        IntervalRule::Meter {
+            meter: test_id(meter),
+            every,
+            first: None,
+        }
+    }
+
+    /// Every `every` `unit`, the same each time.
+    fn every_calendar(every: u16, unit: CalendarUnit, end_of_month: bool) -> IntervalRule {
+        IntervalRule::Calendar {
+            every,
+            unit,
+            end_of_month,
+            first: None,
+        }
     }
 
     #[test]
@@ -969,18 +1014,9 @@ mod tests {
         assert_eq!(check_rules(&oil().rules, &meters), Ok(()));
         assert_eq!(check_rules(&[], &meters), Ok(()), "done when needed");
         let rule = |r: IntervalRule| check_rules(&[r], &meters);
+        assert_eq!(rule(every_on(99, 1)), Err(RequirementProblem::UnknownMeter));
         assert_eq!(
-            rule(IntervalRule::Meter {
-                meter: test_id(99),
-                every: 1
-            }),
-            Err(RequirementProblem::UnknownMeter)
-        );
-        assert_eq!(
-            rule(IntervalRule::Meter {
-                meter: test_id(ODOMETER),
-                every: 0
-            }),
+            rule(every_on(ODOMETER, 0)),
             Err(RequirementProblem::BadInterval)
         );
         for (every, unit) in [
@@ -990,22 +1026,11 @@ mod tests {
             (51, CalendarUnit::Years),
         ] {
             assert_eq!(
-                rule(IntervalRule::Calendar {
-                    every,
-                    unit,
-                    end_of_month: true
-                }),
+                rule(every_calendar(every, unit, true)),
                 Err(RequirementProblem::BadCalendar)
             );
         }
-        assert_eq!(
-            rule(IntervalRule::Calendar {
-                every: 90,
-                unit: CalendarUnit::Days,
-                end_of_month: false
-            }),
-            Ok(())
-        );
+        assert_eq!(rule(every_calendar(90, CalendarUnit::Days, false)), Ok(()));
         assert_eq!(
             rule(IntervalRule::FixedDate {
                 first: Some("2026-02-30".into())
@@ -1014,31 +1039,14 @@ mod tests {
         );
         assert_eq!(rule(IntervalRule::FixedDate { first: None }), Ok(()));
         let twice = [
-            IntervalRule::Calendar {
-                every: 6,
-                unit: CalendarUnit::Months,
-                end_of_month: false,
-            },
-            IntervalRule::Calendar {
-                every: 12,
-                unit: CalendarUnit::Months,
-                end_of_month: false,
-            },
+            every_calendar(6, CalendarUnit::Months, false),
+            every_calendar(12, CalendarUnit::Months, false),
         ];
         assert_eq!(
             check_rules(&twice, &meters),
             Err(RequirementProblem::RepeatedRule)
         );
-        let same_meter = [
-            IntervalRule::Meter {
-                meter: test_id(ODOMETER),
-                every: 1,
-            },
-            IntervalRule::Meter {
-                meter: test_id(ODOMETER),
-                every: 2,
-            },
-        ];
+        let same_meter = [every_on(ODOMETER, 1), every_on(ODOMETER, 2)];
         assert_eq!(
             check_rules(&same_meter, &meters),
             Err(RequirementProblem::RepeatedRule)
@@ -1093,7 +1101,8 @@ mod tests {
             IntervalRule::Calendar {
                 every: 6,
                 unit: CalendarUnit::Months,
-                end_of_month: false
+                end_of_month: false,
+                first: None,
             }
         );
     }
@@ -1215,12 +1224,14 @@ mod tests {
             vec![
                 IntervalRule::Meter {
                     meter: test_id(50),
-                    every: 12_070_080
+                    every: 12_070_080,
+                    first: None,
                 },
                 IntervalRule::Calendar {
                     every: 12,
                     unit: CalendarUnit::Months,
-                    end_of_month: false
+                    end_of_month: false,
+                    first: None,
                 },
             ]
         );
@@ -1384,6 +1395,72 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&ruled_out).unwrap(),
             r#"{"applies":"not-applicable","reason":"No sunroof"}"#
+        );
+    }
+
+    #[test]
+    fn a_first_interval_is_checked_like_the_rest() {
+        let meters = meters();
+        let belt = |every: i64, first: Option<i64>| IntervalRule::Meter {
+            meter: test_id(ODOMETER),
+            every,
+            first,
+        };
+        assert_eq!(check_rules(&[belt(50, Some(100))], &meters), Ok(()));
+        for first in [0, -5] {
+            assert_eq!(
+                check_rules(&[belt(50, Some(first))], &meters),
+                Err(RequirementProblem::BadInterval)
+            );
+        }
+        let calendar = |first: u16| IntervalRule::Calendar {
+            every: 2,
+            unit: CalendarUnit::Years,
+            end_of_month: false,
+            first: Some(first),
+        };
+        assert_eq!(check_rules(&[calendar(3)], &meters), Ok(()));
+        assert_eq!(
+            check_rules(&[calendar(0)], &meters),
+            Err(RequirementProblem::BadCalendar)
+        );
+        assert_eq!(
+            check_rules(&[calendar(51)], &meters),
+            Err(RequirementProblem::BadCalendar),
+            "50 years at most"
+        );
+        // Kept when moved to another meter (copying a schedule, templates).
+        assert_eq!(
+            belt(50, Some(100)).on_meter(test_id(HOURS)),
+            IntervalRule::Meter {
+                meter: test_id(HOURS),
+                every: 50,
+                first: Some(100)
+            }
+        );
+    }
+
+    #[test]
+    fn a_rule_without_a_first_interval_is_stored_as_before() {
+        let plain = IntervalRule::Meter {
+            meter: test_id(ODOMETER),
+            every: 5,
+            first: None,
+        };
+        let text = serde_json::to_string(&plain).unwrap();
+        assert!(!text.contains("first"), "{text}");
+        // A rule stored before chained intervals reads with none.
+        assert_eq!(serde_json::from_str::<IntervalRule>(&text).unwrap(), plain);
+        let chained = IntervalRule::Calendar {
+            every: 2,
+            unit: CalendarUnit::Years,
+            end_of_month: false,
+            first: Some(3),
+        };
+        let text = serde_json::to_string(&chained).unwrap();
+        assert_eq!(
+            serde_json::from_str::<IntervalRule>(&text).unwrap(),
+            chained
         );
     }
 }

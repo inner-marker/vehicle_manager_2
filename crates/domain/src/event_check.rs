@@ -409,7 +409,9 @@ fn matching_number(kind: &FieldKind, value: &FieldValue) -> Result<Option<i64>, 
         | (FieldKind::Distance, FieldData::Distance(n))
         | (FieldKind::Duration, FieldData::Duration(n))
         | (FieldKind::Volume, FieldData::Volume(n))
-        | (FieldKind::FuelEconomy, FieldData::FuelEconomy(n)) => Ok(Some(*n)),
+        | (FieldKind::FuelEconomy, FieldData::FuelEconomy(n))
+        | (FieldKind::Pressure, FieldData::Pressure(n))
+        | (FieldKind::TreadDepth, FieldData::TreadDepth(n)) => Ok(Some(*n)),
         (FieldKind::Text, FieldData::Text(text)) => {
             if text.trim().is_empty() || text.chars().count() > crate::notes::NOTES_MAX_CHARS {
                 wrong

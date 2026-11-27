@@ -79,7 +79,7 @@ mod formulas {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, &admin, clock), &form).await
         else {
             panic!("no truck");
@@ -310,6 +310,7 @@ mod formulas {
             rules: vec![IntervalRule::Meter {
                 meter: service,
                 every: miles(1_000.0),
+                first: None,
             }],
             reference: None,
             mode: ComplianceMode::Recurring,

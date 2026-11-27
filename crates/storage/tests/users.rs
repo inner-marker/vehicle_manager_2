@@ -174,6 +174,7 @@ mod users {
             .await
             .unwrap();
         let truck = Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,
@@ -186,6 +187,7 @@ mod users {
             status: LifecycleStatus::InService,
             identifiers: vec![],
             main_photo: None,
+            in_service: None,
         };
         AssetWriter
             .create(&mut connection, test_id(n), &AssetPatch::all(truck), 1)

@@ -30,6 +30,7 @@ use domain::meter::{Meter, MeterError, MeterId, MeterPatch};
 use domain::preferences::{Preferences, PreferencesId};
 use domain::profile::profile;
 use domain::time::Clock;
+use domain::vehicle_type::TypeProblem;
 use storage::Database;
 use storage::assets::{AssetWriter, CustomFieldWriter, GarageOrderWriter, MeterWriter};
 use storage::commands::RecordWriter;
@@ -164,6 +165,10 @@ async fn garage_view(
         .await
         .map_err(|error| unavailable("assets", &error))?;
     let grants = &context.user.grants;
+    let types = database
+        .vehicle_types()
+        .await
+        .map_err(|error| unavailable("vehicle types", &error))?;
     // Each vehicle the person's grants cover, with their role on it.
     let mut assets: Vec<AssetSummary> = all
         .into_iter()
@@ -174,6 +179,7 @@ async fn garage_view(
             };
             role_on(grants, scope).map(|role| AssetSummary {
                 id,
+                vehicle_type: domain::vehicle_type::label_of(asset.vehicle_type, &types),
                 standing: domain::lifecycle::Standing::default(),
                 asset,
                 role,
@@ -198,23 +204,23 @@ async fn garage_view(
         })
         .filter(|summary| summary.vehicles > 0 || can_manage_groups)
         .collect();
-    let order = database
+    let garage_order = database
         .garage_order(context.user.user.cast())
         .await
         .map_err(|error| unavailable("garage order", &error))?
-        .unwrap_or_default()
-        .order;
+        .unwrap_or_default();
     tracing::debug!(target: log_area::APP, user = %context.user.user, vehicles = assets.len(), groups = groups.len(), "garage");
     Ok(AssetsOutcome::Garage {
-        view: GarageView {
+        view: Box::new(GarageView {
             groups,
             assets,
             can_add: context.may(AdminAction::AddAsset),
             can_manage_groups,
             sort: person_preferences(context).await?.garage_sort,
-            order,
+            order: garage_order.order,
+            pinned: garage_order.pinned,
             fleet,
-        },
+        }),
     })
 }
 
@@ -289,9 +295,21 @@ async fn asset_view(
     let standing = crate::lifecycle::standing(database, id, asset.status)
         .await
         .map_err(|error| unavailable("lifecycle", &error))?;
+    let vehicle_type = match asset.vehicle_type {
+        Some(type_id) => database
+            .vehicle_type(type_id)
+            .await
+            .map_err(|error| unavailable("vehicle type", &error))?
+            .map(|kept| domain::vehicle_type::TypeLabel {
+                name: kept.name,
+                icon: kept.icon,
+            }),
+        None => None,
+    };
     Ok(AssetsOutcome::Asset {
         view: Box::new(AssetView {
             id,
+            vehicle_type,
             asset,
             role: role_on(grants, scope).ok_or(AssetsOutcome::NotFound)?,
             can_manage: permits_on_asset(grants, mode, AssetAction::ManageAsset, scope),
@@ -390,15 +408,62 @@ async fn save_order(
         .await
         .map_err(|error| unavailable("garage order", &error))?
         .is_some();
-    let patch = GarageOrderPatch { order: Some(order) };
+    let patch = GarageOrderPatch {
+        order: Some(order),
+        pinned: None,
+    };
+    save_garage_order(context, id, exists, patch).await?;
+    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage order saved");
+    Ok(AssetsOutcome::Done)
+}
+
+/// Saves the vehicles the person has pinned in the Garage (#090): their own, so anyone
+/// signed in may. Kept with their Garage order; a vehicle listed twice is listed once.
+pub async fn set_pins(context: &AssetsContext<'_>, pinned: Vec<AssetId>) -> AssetsOutcome {
+    either(save_pins(context, pinned).await)
+}
+
+async fn save_pins(
+    context: &AssetsContext<'_>,
+    pinned: Vec<AssetId>,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    let mut unique: Vec<AssetId> = Vec::with_capacity(pinned.len());
+    for id in pinned {
+        if !unique.contains(&id) {
+            unique.push(id);
+        }
+    }
+    unique.truncate(MAX_ORDER_LENGTH);
+    let id: GarageOrderId = context.user.user.cast();
+    let exists = context
+        .database
+        .garage_order(id)
+        .await
+        .map_err(|error| unavailable("garage order", &error))?
+        .is_some();
+    let patch = GarageOrderPatch {
+        order: None,
+        pinned: Some(unique),
+    };
+    save_garage_order(context, id, exists, patch).await?;
+    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage pins saved");
+    Ok(AssetsOutcome::Done)
+}
+
+/// Saves a change to the person's garage order record, making it if it isn't there yet.
+async fn save_garage_order(
+    context: &AssetsContext<'_>,
+    id: GarageOrderId,
+    exists: bool,
+    patch: GarageOrderPatch,
+) -> Result<(), AssetsOutcome> {
     let change = if exists {
         Change::Update { id, patch }
     } else {
         Change::Create { id, values: patch }
     };
     context.save(&GarageOrderWriter, change).await?;
-    tracing::debug!(target: log_area::APP, user = %context.user.user, "garage order saved");
-    Ok(AssetsOutcome::Done)
+    Ok(())
 }
 
 // --- Adding, editing, archiving, deleting ------------------------------------------------
@@ -415,7 +480,17 @@ async fn add_asset(
     if !context.may(AdminAction::AddAsset) {
         return Err(AssetsOutcome::NotAllowed);
     }
-    let asset = form.parse().map_err(invalid)?;
+    let mut asset = form
+        .parse_on(latest_today(context).as_deref())
+        .map_err(invalid)?;
+    // A vehicle type (#090) gives its kind, fields, documents, and template.
+    let vehicle_type = match form.vehicle_type {
+        Some(type_id) => Some(kept_type(context, type_id).await?),
+        None => None,
+    };
+    if let Some(kept) = &vehicle_type {
+        asset.kind = kept.kind.clone();
+    }
     let kind_profile = profile(&asset.kind).ok_or_else(|| invalid(Problem::UnknownKind))?;
     if !context.group_exists(asset.group).await? {
         return Err(invalid(Problem::UnknownGroup));
@@ -432,7 +507,14 @@ async fn add_asset(
         .await?;
     let distance = person_preferences(context).await?.distance;
     let english = Translator::english();
-    for meter in kind_profile.new_meters(id, distance, english) {
+    let meters = kind_profile.new_meters(id, distance, english);
+    let fields = match &vehicle_type {
+        Some(kept) => kept
+            .new_fields(id, &meters, english)
+            .map_err(|_| invalid(Problem::Type(TypeProblem::BadCatalogue)))?,
+        None => kind_profile.new_fields(id, english),
+    };
+    for meter in meters {
         let meter_id: MeterId = context.new_id()?;
         let values = MeterPatch::all(meter);
         context
@@ -445,7 +527,7 @@ async fn add_asset(
             )
             .await?;
     }
-    for field in kind_profile.new_fields(id, english) {
+    for field in fields {
         let field_id: CustomFieldId = context.new_id()?;
         let values = CustomFieldPatch::all(field);
         context
@@ -458,9 +540,30 @@ async fn add_asset(
             )
             .await?;
     }
-    crate::usages::make_default(context, id, &kind_profile.id).await?;
-    tracing::info!(target: log_area::APP, user = %context.user.user, asset = %id, kind = kind_profile.id.as_str(), "vehicle added");
-    Ok(AssetsOutcome::Added { id })
+    let mut left_out = Vec::new();
+    if let Some(kept) = &vehicle_type {
+        crate::usages::save_default(context, kept.default_usage(id)).await?;
+        if let Some(template) = kept.template {
+            left_out = crate::templates::copy_onto_new(context, template, id).await?;
+        }
+    } else {
+        crate::usages::make_default(context, id, &kind_profile.id).await?;
+    }
+    tracing::info!(target: log_area::APP, user = %context.user.user, asset = %id, kind = kind_profile.id.as_str(), typed = vehicle_type.is_some(), "vehicle added");
+    Ok(AssetsOutcome::Added { id, left_out })
+}
+
+/// Vehicle type `id`, unless it's been removed (#090).
+async fn kept_type(
+    context: &AssetsContext<'_>,
+    id: domain::vehicle_type::VehicleTypeId,
+) -> Result<domain::vehicle_type::VehicleType, AssetsOutcome> {
+    context
+        .database
+        .vehicle_type(id)
+        .await
+        .map_err(|error| unavailable("vehicle type", &error))?
+        .ok_or_else(|| invalid(Problem::Type(TypeProblem::UnknownType)))
 }
 
 /// The preferences in effect for the person (for a new odometer's unit).
@@ -540,8 +643,17 @@ async fn edit_asset(
         group: current.group,
         ..form.clone()
     }
-    .parse()
+    .parse_on(latest_today(context).as_deref())
     .map_err(invalid)?;
+    // A new type must be one built on its kind (only its name and icon change, #090).
+    if wanted.vehicle_type != current.vehicle_type
+        && let Some(type_id) = wanted.vehicle_type
+    {
+        let kept = kept_type(context, type_id).await?;
+        if kept.kind != current.kind {
+            return Err(invalid(Problem::Type(TypeProblem::WrongKind)));
+        }
+    }
     let patch = changes(&current, &wanted);
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
         context
@@ -550,6 +662,13 @@ async fn edit_asset(
     }
     tracing::debug!(target: log_area::APP, user = %context.user.user, asset = %id, "vehicle edited");
     Ok(AssetsOutcome::Done)
+}
+
+/// Today's date where it's latest on Earth (UTC+14), so a vehicle's In service since may be
+/// today wherever the household is (#090).
+fn latest_today(context: &AssetsContext<'_>) -> Option<String> {
+    let zone = TimeZone::parse("Pacific/Kiritimati").ok()?;
+    domain::dates::today(context.clock.now(), &zone).ok()
 }
 
 /// Only the fields that differ, so a change never overwrites someone else's newer change to
@@ -580,6 +699,8 @@ fn changes(current: &Asset, wanted: &Asset) -> AssetPatch {
         identifiers: differs(&current.identifiers, &wanted.identifiers),
         // Chosen in the photo viewer (`set_main_photo`), never by the form.
         main_photo: None,
+        in_service: clears(current.in_service.as_ref(), wanted.in_service.as_ref()),
+        vehicle_type: clears(current.vehicle_type.as_ref(), wanted.vehicle_type.as_ref()),
     }
 }
 
@@ -929,6 +1050,82 @@ async fn add_field_to(
         )
         .await?;
     tracing::debug!(target: log_area::APP, asset = %asset, field = %id, "custom field added");
+    Ok(AssetsOutcome::Done)
+}
+
+/// Adds a field, a set, or the Tires set from the catalogue (#090): copies of its fields, and
+/// the set's fields the vehicle already has turned on.
+pub async fn add_from_catalogue(
+    context: &AssetsContext<'_>,
+    asset: AssetId,
+    choice: &domain::catalogue::CatalogueChoice,
+) -> AssetsOutcome {
+    either(add_catalogue_fields(context, asset, choice).await)
+}
+
+async fn add_catalogue_fields(
+    context: &AssetsContext<'_>,
+    asset: AssetId,
+    choice: &domain::catalogue::CatalogueChoice,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    let vehicle = context
+        .allowed(asset, AssetAction::ConfigureMaintenance)
+        .await?;
+    let (meters, fields) = context.setup_of(asset).await?;
+    // A field's key is never reused, even once it's removed.
+    let mut taken = context
+        .database
+        .field_keys_of(asset)
+        .await
+        .map_err(|error| unavailable("field keys", &error))?;
+    taken.extend(meters.iter().map(|(_, meter)| meter.key.clone()));
+    let current: Vec<CustomField> = fields.iter().map(|(_, field)| field.clone()).collect();
+    let addition = domain::catalogue::fields_to_add(
+        choice,
+        asset,
+        &domain::profile::event_kinds(&vehicle.kind),
+        &current,
+        &taken,
+        Translator::english(),
+    )
+    .map_err(|error| invalid(Problem::Catalogue(error)))?;
+    // Every formula checked against the vehicle's fields as they'll be (the new ones added,
+    // the set's turned on), before saving any.
+    let mut all = fields.clone();
+    for (_, field) in &mut all {
+        field.enabled |= addition.turn_on.contains(&field.key);
+    }
+    for field in &addition.new {
+        all.push((context.new_id()?, field.clone()));
+    }
+    for (_, field) in all.iter().skip(fields.len()) {
+        domain::calculated::check_calculated(field, &all, &meters)
+            .map_err(|problem| AssetsOutcome::InvalidFormula { problem })?;
+    }
+    for (id, field) in fields {
+        if addition.turn_on.contains(&field.key) {
+            let patch = CustomFieldPatch {
+                enabled: Some(true),
+                ..CustomFieldPatch::default()
+            };
+            context
+                .save(&CustomFieldWriter, Change::Update { id, patch })
+                .await?;
+        }
+    }
+    let count = addition.new.len();
+    for (id, field) in all.into_iter().skip(current.len()) {
+        context
+            .save(
+                &CustomFieldWriter,
+                Change::Create {
+                    id,
+                    values: CustomFieldPatch::all(field),
+                },
+            )
+            .await?;
+    }
+    tracing::debug!(target: log_area::APP, asset = %asset, count, "catalogue fields added");
     Ok(AssetsOutcome::Done)
 }
 

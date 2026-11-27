@@ -1651,7 +1651,7 @@ fn FieldInput(
                                 oninput: move |event: FormEvent| set_text(inputs.fields, &id, duration_as_typed(&event.value())),
                             }
                         },
-                        FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Volume | FieldKind::FuelEconomy => rsx! {
+                        FieldKind::Number { .. } | FieldKind::Distance | FieldKind::Volume | FieldKind::FuelEconomy | FieldKind::Pressure | FieldKind::TreadDepth => rsx! {
                             input { class: "field-input", inputmode: "decimal", autocomplete: "off", value, oninput: set }
                         },
                         // Worked out, never typed (#087); the form leaves these out.

@@ -50,6 +50,7 @@ mod assets {
 
     fn truck() -> Asset {
         Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: Some("Ford".into()),
@@ -66,6 +67,7 @@ mod assets {
                 Identifier::new(IdentifierKind::parse("plate").unwrap(), "ABC 123").unwrap(),
             ],
             main_photo: None,
+            in_service: None,
         }
     }
 

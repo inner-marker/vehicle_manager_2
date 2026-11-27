@@ -201,7 +201,7 @@ mod make_fixture {
             name: "Fixture truck".into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, admin, clock), &form).await
         else {
             panic!("the truck wasn't added");
@@ -225,11 +225,13 @@ mod make_fixture {
                 IntervalRule::Meter {
                     meter: odometer,
                     every: 5_000 * MILE,
+                    first: None,
                 },
                 IntervalRule::Calendar {
                     every: 6,
                     unit: CalendarUnit::Months,
                     end_of_month: false,
+                    first: None,
                 },
             ],
             reference: None,
@@ -755,6 +757,7 @@ mod make_fixture {
                 IntervalRule::Meter {
                     meter: odometer,
                     every: 7_500 * MILE,
+                    first: None,
                 },
             ],
             warnings: Some(DueDefaults {
@@ -790,6 +793,7 @@ mod make_fixture {
                 every: 12,
                 unit: CalendarUnit::Months,
                 end_of_month: false,
+                first: None,
             }],
             usages: Some(vec![towing]),
             ..oil_change(truck, odometer)

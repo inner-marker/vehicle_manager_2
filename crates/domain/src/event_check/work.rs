@@ -229,6 +229,7 @@ mod tests {
                         every: 12,
                         unit: crate::requirement::CalendarUnit::Months,
                         end_of_month: false,
+                        first: None,
                     }],
                 ),
             ),

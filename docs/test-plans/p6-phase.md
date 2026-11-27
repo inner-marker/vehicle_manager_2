@@ -1,6 +1,6 @@
 # Test plan: Phase 6, polish
 
-*`docs/phase_plans/phase-6.md` · decisions #081, #089 · built up milestone by milestone, run at the end of the phase*
+*`docs/phase_plans/phase-6.md` · decisions #081, #089, #090 · built up milestone by milestone, run at the end of the phase*
 
 **How this plan works (#081):** each milestone adds its section here as its last step. Nothing is run until the end of Phase 6. Then the human runs the whole plan on the **test server**, before the `v0.6.0` release, as its regression pass. Its last part, **Earlier releases and the exit criteria**, is added with the release. A failure is fixed on `dev`, and its section is run again.
 
@@ -130,3 +130,50 @@
 **Milestone 2 also checks, in the automated tests:** the held files becoming the record's attachments in order; packing scanned pages and joining them into one PDF (order, page sizes, orientation, the 100-page and 50 MB limits); the place saved while logging; the rate's limits and a shop's checks; who may change shops and rates; the cost at the rate (rounded to the cent) and which rate applies; the suggestions; which costs the rate fills and which stay; the main photo's rules (only a vehicle's own photo, who may choose, a removed photo counting as none); no shops, rate, or main photo in any older release's database.
 
 **Not by hand:** the 100-page and 50 MB limits on a scan (too many photos to take by hand; the tests cover them).
+
+---
+
+## Milestone 3: Vehicles and schedules
+
+**Intended behavior:**
+- **Pinned vehicles** (each person's own): **Pin** in a card's **⋯** menu (and in Arrange mode) puts 📌 before its name, and it comes first in its own group whatever the sort; among the pinned, the sort holds. **Unpin** undoes it. Works offline on the desktop.
+- **Chained intervals:** a meter or calendar rule's **A different first interval** ("First at 100,000 mi, then every 50,000 mi"). Until it's done once, or "last done before these records" is typed, the first interval counts from the meter's zero, or from the vehicle's **In service since** (else Acquired, else the day it was added); then only the repeating part.
+- **In service since** on Setup → Edit details: a date (not after today) and **Estimated**; shown "12 Jun 2019 (est.)".
+- **The catalogue:** Setup → Custom fields → **+ From the catalogue**: the sets (Trip computer, Trip computer (hybrid), Engine and idle, **Tires**), then single fields; one already on the vehicle is greyed out. A set added again gets " B". **Tires** asks for the axles and the tires on each, and adds a **pressure** (in your pressure unit) and a **tread depth** (32nds of an inch with miles, mm with kilometers) for each tire.
+- **Vehicle types** (Manage → **Vehicle types**; the Admin, in Admin mode, changes them): each built on a kind, with an icon, its default usage's documents, its kind's fields on or off, fields from the catalogue, and a template. **+ Add vehicle** lists them after the kinds; a vehicle of a type shows its icon (with no main photo) and name. A change reaches only vehicles added afterwards; a deleted type's vehicles show their kind.
+
+| Done | # | Step | Expected result |
+|---|---|---|---|
+| [ ] | 3.1 | **Phone**, Sam: the Garage; `Test truck`'s **⋯** | **Open**, **Pin 📌** (no Move to group: Sam isn't the Admin). |
+| [ ] | 3.2 | **Pin**; then try each sort (most urgent, newest activity, name, custom) | 📌 before its name; it stays first in its group in every sort. |
+| [ ] | 3.3 | **Mac browser**, `admin`: the Garage | `Test truck` isn't pinned for `admin` (pins are each person's own). |
+| [ ] | 3.4 | **Desktop, offline**, as Sam: **Arrange** → **Unpin** on the truck; Tailscale on, sync | Unpinned in the copy at once; after the sync, unpinned on the phone too. |
+| [ ] | 3.5 | **Mac browser**, `admin`, **Admin mode**: **+ Add vehicle** → Car: `Used car`, year 2015. Setup → **Edit details**: In service since **2018-06-01**, **Estimated** → Save | The details show **In service since 1 Jun 2018 (est.)**. |
+| [ ] | 3.6 | Edit details again: In service since **tomorrow** | Refused: the date can't be after today. Put back 2018-06-01. |
+| [ ] | 3.7 | **Maintainer mode**: `Used car` → Schedule → **+ Requirement** `Coolant`: **Every 2 years**, tick **A different first interval**: **First at 5 years** → Save | The Schedule reads **First at 5 years, then every 2 years**; **overdue** (since 1 Jun 2023, five years after In service since). |
+| [ ] | 3.8 | Edit `Coolant`: **Last done before these records** `2025-09-01` → Save | **Every 2 years**; due **1 Sep 2027** (two years after it), no longer the first interval. |
+| [ ] | 3.9 | `Test truck` → Schedule → **+ Requirement** `Timing belt`: **Every 50,000 mi** on the odometer, **First at 100,000 mi** → Save | **First at 100,000 mi, then every 50,000 mi**; due at **100,000 mi** (from the meter's zero), not at the odometer now + 50,000. |
+| [ ] | 3.10 | **Log this service** for `Timing belt`, at today's odometer reading | Now **Every 50,000 mi**, due 50,000 mi after that reading. |
+| [ ] | 3.11 | **Copy schedule** from `Test truck` to `Used car` (or save it as a template and apply it) | The timing belt's first interval comes too (Used car shows "First at 100,000 mi…"; its own odometer is used). |
+| [ ] | 3.12 | `Test truck` → **Setup** → Custom fields → **+ From the catalogue** | **From the catalogue · Test truck**: SETS (Trip computer, Trip computer (hybrid), Engine and idle, Tires), FIELDS; **Trip time** greyed "Duration · already on this vehicle". |
+| [ ] | 3.13 | **Trip computer (hybrid) → Add** | Six new fields (trip distance, average speed, fuel economy, fuel used, EV share, EV time); **Trip time** kept; **Trip EV distance** turned **on**. Average speed and EV share show **fx** and their formulas. |
+| [ ] | 3.14 | **+ From the catalogue** → **Trip computer (hybrid)** again | Eight more, labelled **… B** (e.g. **Trip distance B**, key `trip-distance-b`); **Trip EV share B**'s formula is `trip-ev-distance-b ÷ trip-distance-b`. Remove the B fields afterwards. |
+| [ ] | 3.15 | **+ From the catalogue → Tires → Add**: **2** axles; Axle 1 **2**, Axle 2 **4 (dual)** | "6 tires · 12 fields: … (1L, 1R, 2L outer, 2L inner, 2R inner, 2R outer)"; the button reads **Add 12 fields**. |
+| [ ] | 3.16 | **Add 12 fields**; then **+ Reading** on the truck | The reading form has **Tire pressure 1L (psi)** … and **Tread depth 1L (/32 in)** …, by tire. |
+| [ ] | 3.17 | Type pressure `35` and tread `7` on 1L → Save; open the reading | **35 psi** and **7/32 in**. |
+| [ ] | 3.18 | Settings → pressure **kPa**, distance **kilometers**; open the reading again | **241 kPa** and **5.6 mm**. Put your units back. |
+| [ ] | 3.19 | **Phone**, Sam: Manage → **Vehicle types** | The list (none yet); no **+ Add type** (Sam can't change types). |
+| [ ] | 3.20 | **Mac browser**, `admin`, **Admin mode**: Manage → **Vehicle types** → **+ Add type**: name `Track car`, icon **Race** (flag), Built on **Car**; documents: only **Insurance**; Trip time **off**; from the catalogue: **Tires: 2 axles, 4 tires**; template: one you have (or none) → **Save** | Saved; the list shows 🏁 **Track car · 0 vehicles**; the summary reads "Needs Insurance · 1 meters · 10 fields · …". |
+| [ ] | 3.21 | Add a second type with the same name in other capitals (`TRACK CAR`) | Refused: "Another vehicle type has that name." |
+| [ ] | 3.22 | Make a type built on **Trailer** with **Trip computer** from the catalogue | Refused: something from the catalogue doesn't fit (a trailer has no fuel-ups). |
+| [ ] | 3.23 | **+ Add vehicle** | The kinds, then **Your household's types**: 🏁 **Track car**. |
+| [ ] | 3.24 | **Track car** → name `Miata` → **Add** | Added. If the template had meter rules with no matching meter, they're listed before the dialog closes. |
+| [ ] | 3.25 | The Garage, and `Miata`'s Overview | The card: the **flag** icon, **Track car**; the header: **Track car (Car)**. Its readiness needs only **Insurance**. Setup: Trip time off; four tires' pressure and tread depth fields; the template's schedule (if one was chosen). |
+| [ ] | 3.26 | Change `Track car`'s documents (add Registration) → Save; open `Miata` | `Miata` is unchanged (still Insurance only): a change reaches only vehicles added afterwards. |
+| [ ] | 3.27 | `Used car` → Setup → **Edit details** → **Type** | Lists **Track car** (built on Car) and "None: shows as its kind". Choose **Track car** → Save: only its label and icon change (its fields are as they were). Set it back to None. |
+| [ ] | 3.28 | **Desktop, offline:** Manage → **Vehicle types**; **+ Add vehicle** | The types show from the copy (read only); adding a vehicle needs the server. |
+| [ ] | 3.29 | **Mac browser**, Admin mode: **Track car → Delete type** → confirm | Gone from the list; `Miata` shows as a **Car** (the car icon, "Car"), with everything it had. Remove `Miata` and `Used car` afterwards. |
+
+**Milestone 3 also checks, in the automated tests:** the Garage's sort with pins in every sort, and a pin for a vehicle that's gone or in another group; the pin operation offline and synced (API version 3, version 2 still accepted); a first interval from each base (zero, In service since, Acquired, the day added), when done, and with "last done before"; its checks and stored form; copying it; the catalogue's data (unique keys, labels, every formula checking); a set again with " B" and " C", a kind's own fields used and turned on, a removed field's key never reused, the vehicle's kinds of events; the tires' names for 1–4 axles; pressure and tread depth both ways in every unit; a vehicle type's checks, who may change it, a vehicle added as one (kind, fields, documents, template, rules left out), a type's change and removal leaving its vehicles be, and a vehicle's type only one of its kind; no pins, In service since, or types in any older release's database.
+
+**Not by hand:** an older desktop against the new server (API versions; the tests cover it).

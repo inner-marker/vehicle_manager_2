@@ -22,8 +22,8 @@ use domain::preferences::Preferences;
 use domain::profile::profile;
 use domain::quantity::{
     QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
-    parse_duration, parse_economy, parse_reading, parse_volume, reading_value, show_duration,
-    volume_value,
+    parse_duration, parse_economy, parse_pressure, parse_reading, parse_tread, parse_volume,
+    pressure_value, reading_value, show_duration, tread_value, volume_value,
 };
 
 use super::users::role_label;
@@ -75,7 +75,7 @@ fn event_kinds(asset: &Asset) -> Vec<EventKind> {
 }
 
 /// A custom field type's name.
-const fn kind_label(kind: &FieldKind) -> MessageId {
+pub(super) const fn kind_label(kind: &FieldKind) -> MessageId {
     match kind {
         FieldKind::Text => messages::KIND_TEXT,
         FieldKind::Number { .. } => messages::KIND_NUMBER,
@@ -86,12 +86,14 @@ const fn kind_label(kind: &FieldKind) -> MessageId {
         FieldKind::Duration => messages::KIND_DURATION,
         FieldKind::Volume => messages::KIND_VOLUME,
         FieldKind::FuelEconomy => messages::KIND_FUEL_ECONOMY,
+        FieldKind::Pressure => messages::KIND_PRESSURE,
+        FieldKind::TreadDepth => messages::KIND_TREAD_DEPTH,
         FieldKind::Calculated { .. } => messages::KIND_CALCULATED,
     }
 }
 
 /// The field types offered when adding a field, with their `<option>` values.
-const KINDS: [(&str, MessageId); 9] = [
+const KINDS: [(&str, MessageId); 11] = [
     ("text", messages::KIND_TEXT),
     ("number", messages::KIND_NUMBER),
     ("date", messages::KIND_DATE),
@@ -101,6 +103,8 @@ const KINDS: [(&str, MessageId); 9] = [
     ("duration", messages::KIND_DURATION),
     ("volume", messages::KIND_VOLUME),
     ("fuel-economy", messages::KIND_FUEL_ECONOMY),
+    ("pressure", messages::KIND_PRESSURE),
+    ("tread-depth", messages::KIND_TREAD_DEPTH),
 ];
 
 /// An event kind's `<option>` value, and back.
@@ -228,7 +232,20 @@ pub(super) fn SectionHeading(title: MessageId, children: Element) -> Element {
 
 // --- Details -----------------------------------------------------------------------------
 
-/// Details: make, model, year, colour, identifiers, and description.
+/// "12 Jun 2019" or "12 Jun 2019 (est.)": when a vehicle went into service (#090).
+fn in_service_text(since: &domain::asset::InService, units: &Preferences) -> String {
+    let date = super::documents::date_text(&since.on, units);
+    if since.estimated {
+        tr_with(
+            messages::SETUP_IN_SERVICE_ESTIMATED,
+            &[("date", MessageArg::from(date))],
+        )
+    } else {
+        date
+    }
+}
+
+/// Details: make, model, year, colour, In service since, identifiers, and description.
 #[expect(
     unused_qualifications,
     reason = "false positive in rsx! event-handler expansion"
@@ -236,6 +253,7 @@ pub(super) fn SectionHeading(title: MessageId, children: Element) -> Element {
 #[component]
 fn DetailsSection(view: AssetView) -> Element {
     let mut editing = use_signal(|| false);
+    let units = crate::ui::units::use_units();
     let asset = &view.asset;
     let facts: Vec<(MessageId, String)> = [
         (messages::FIELD_MAKE, asset.make.clone()),
@@ -245,6 +263,13 @@ fn DetailsSection(view: AssetView) -> Element {
             asset.year.map(|year| year.to_string()),
         ),
         (messages::FIELD_COLOUR, asset.colour.clone()),
+        (
+            messages::FIELD_IN_SERVICE,
+            asset
+                .in_service
+                .as_ref()
+                .map(|since| in_service_text(since, &units())),
+        ),
     ]
     .into_iter()
     .filter_map(|(label, value)| value.map(|value| (label, value)))
@@ -318,7 +343,28 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
     let model = use_signal(|| start.model.clone());
     let year = use_signal(|| start.year.map(|year| year.to_string()).unwrap_or_default());
     let colour = use_signal(|| start.colour.clone());
+    let mut in_service = use_signal(|| start.in_service.clone());
+    let mut in_service_estimated = use_signal(|| start.in_service_estimated);
     let mut description = use_signal(|| start.description.clone());
+    let mut vehicle_type = use_signal(|| start.vehicle_type);
+    // The household's types built on its kind (#090): only its label and icon change.
+    let own_kind = asset.kind.clone();
+    let types = use_resource(move || {
+        let own_kind = own_kind.clone();
+        async move {
+            match crate::data::list_vehicle_types().await {
+                Ok(domain::api::TypesOutcome::Types { view }) => view
+                    .types
+                    .into_iter()
+                    .filter(|(_, kept)| kept.kind == own_kind)
+                    .map(|(id, kept)| (id, kept.name.as_str().to_owned()))
+                    .collect(),
+                _ => Vec::new(),
+            }
+        }
+    });
+    let types: Vec<(domain::vehicle_type::VehicleTypeId, String)> =
+        types.read().clone().unwrap_or_default();
     let kinds = identifier_kinds(&asset);
     let mut identifiers = use_signal(|| {
         kinds
@@ -357,6 +403,9 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
             colour: colour(),
             description: description(),
             identifiers: form_kinds.iter().cloned().zip(identifiers()).collect(),
+            in_service: in_service(),
+            in_service_estimated: in_service_estimated() && !in_service().trim().is_empty(),
+            vehicle_type: vehicle_type(),
             ..start.clone()
         };
         busy.set(true);
@@ -382,6 +431,41 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
                 div { class: "field-row",
                     Field { label: messages::FIELD_YEAR, value: year }
                     Field { label: messages::FIELD_COLOUR, value: colour }
+                }
+                div { class: "field-row in-service-row",
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::FIELD_IN_SERVICE_OPTIONAL)} }
+                        input {
+                            class: "field-input",
+                            r#type: "date",
+                            value: in_service(),
+                            oninput: move |event| in_service.set(event.value()),
+                        }
+                    }
+                    label { class: "check",
+                        input {
+                            r#type: "checkbox",
+                            checked: in_service_estimated(),
+                            disabled: in_service().trim().is_empty(),
+                            onchange: move |event| in_service_estimated.set(event.checked()),
+                        }
+                        span { {tr(messages::FIELD_IN_SERVICE_ESTIMATED)} }
+                    }
+                }
+                p { class: "muted-note", {tr(messages::FIELD_IN_SERVICE_NOTE)} }
+                if !types.is_empty() || vehicle_type().is_some() {
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::SETUP_TYPE)} }
+                        select {
+                            class: "field-input",
+                            onchange: move |event: FormEvent| vehicle_type.set(event.value().parse().ok()),
+                            option { value: "", selected: vehicle_type().is_none(), {tr(messages::SETUP_TYPE_NONE)} }
+                            for (type_id, type_name) in types {
+                                option { key: "{type_id}", value: "{type_id}", selected: vehicle_type() == Some(type_id), {type_name} }
+                            }
+                        }
+                        span { class: "muted-note", {tr(messages::SETUP_TYPE_NOTE)} }
+                    }
                 }
                 div { class: "field-row",
                     for (index, kind) in kinds.iter().enumerate() {
@@ -954,6 +1038,9 @@ fn FieldsSection(view: AssetView) -> Element {
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     let calculated_kinds = kinds.clone();
+    let catalogue_kinds = kinds.clone();
+    // The catalogue's dialog (#090).
+    let mut from_catalogue = use_signal(|| false);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::SETUP_FIELDS,
@@ -961,6 +1048,7 @@ fn FieldsSection(view: AssetView) -> Element {
                     div { class: "setup-row-buttons",
                         button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
                         button { class: "secondary-button", onclick: move |_| calculating.set(Some(None)), {tr(messages::SETUP_ADD_CALCULATED)} }
+                        button { class: "secondary-button", onclick: move |_| from_catalogue.set(true), {tr(messages::SETUP_ADD_FROM_CATALOGUE)} }
                     }
                 }
             }
@@ -1018,6 +1106,9 @@ fn FieldsSection(view: AssetView) -> Element {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
             },
         }
+        if from_catalogue() {
+            super::catalogue_view::CatalogueDialog { view: view.clone(), kinds: catalogue_kinds, on_close: move |()| from_catalogue.set(false) }
+        }
         if let Some(current) = calculating() {
             super::formula_view::CalculatedFieldDialog { view, kinds: calculated_kinds, current, on_close: move |()| calculating.set(None) }
         }
@@ -1042,6 +1133,8 @@ fn kind_from_form(value: &str, decimals: u8, choices: &str) -> Result<FieldKind,
         "duration" => FieldKind::Duration,
         "volume" => FieldKind::Volume,
         "fuel-economy" => FieldKind::FuelEconomy,
+        "pressure" => FieldKind::Pressure,
+        "tread-depth" => FieldKind::TreadDepth,
         _ => FieldKind::Text,
     })
 }
@@ -1075,6 +1168,8 @@ fn parse_range_end(
         FieldKind::Duration => quantity(parse_duration(text)),
         FieldKind::Volume => quantity(parse_volume(text, units.volume)),
         FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
+        FieldKind::Pressure => quantity(parse_pressure(text, units.pressure)),
+        FieldKind::TreadDepth => quantity(parse_tread(text, units.distance)),
         FieldKind::Text
         | FieldKind::Date
         | FieldKind::YesNo
@@ -1091,6 +1186,8 @@ fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
         FieldKind::Duration => show_duration(value),
         FieldKind::Volume => volume_value(value, units.volume),
         FieldKind::FuelEconomy => economy_value(value, units.economy),
+        FieldKind::Pressure => pressure_value(value, units.pressure),
+        FieldKind::TreadDepth => tread_value(value, units.distance),
         FieldKind::Text
         | FieldKind::Date
         | FieldKind::YesNo
