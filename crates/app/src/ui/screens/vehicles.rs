@@ -18,13 +18,14 @@ use domain::group::GroupId;
 use domain::i18n::{MessageArg, MessageId, Translator, messages};
 use domain::preferences::{Choice, GarageSort, PreferencesPatch};
 use domain::profile::{Profile, profile, profiles};
+use domain::vehicle_type::VehicleTypeId;
 
-use crate::api;
 use crate::ui::icons::{Icon, IconView};
 use crate::ui::routes::Route;
 use crate::ui::screens::{Field, FormError, problem_from_error};
 use crate::ui::vehicles::{VehiclesContext, group_icon, refresh_garage, use_vehicles};
 use crate::ui::{tr, tr_with};
+use crate::{api, data};
 
 /// The sort choices, in menu order, with their labels.
 const SORTS: [(GarageSort, &str, MessageId); 4] = [
@@ -421,10 +422,15 @@ fn VehicleCard(
     .into_iter()
     .flatten()
     .collect();
+    // A vehicle of a type says the type's name instead of its kind's (#090).
+    let kind = item.vehicle_type.as_ref().map_or_else(
+        || kind_name(&asset.kind),
+        |label| label.name.as_str().to_owned(),
+    );
     let subtitle = if model.is_empty() {
-        kind_name(&asset.kind)
+        kind
     } else {
-        format!("{} · {}", kind_name(&asset.kind), model.join(" "))
+        format!("{kind} · {}", model.join(" "))
     };
     // Its current plate if it has one, otherwise its first identifier.
     let identifier = item.plate.clone().or_else(|| {
@@ -440,7 +446,7 @@ fn VehicleCard(
         div { class: if archived { "vehicle-card archived" } else { "vehicle-card" },
             Link { class: "vehicle-card-link", to: Route::VehicleDetail { asset_id: id.to_string() },
                 // Its main photo at the left, or its kind's icon (option A, #24).
-                super::attachments::VehiclePhoto { photo: asset.main_photo, kind: asset.kind.clone(), class: "vehicle-photo-card" }
+                super::attachments::VehiclePhoto { photo: asset.main_photo, icon: crate::ui::vehicles::vehicle_icon(&asset.kind, item.vehicle_type.as_ref()), class: "vehicle-photo-card" }
                 span { class: "vehicle-card-name",
                     if pinned {
                         span { class: "vehicle-card-pin", role: "img", "aria-label": tr(messages::VEHICLES_PINNED), title: tr(messages::VEHICLES_PINNED), "📌" }
@@ -542,14 +548,22 @@ fn CardMenu(
     }
 }
 
-/// + Add vehicle: the kind, then the details.
+/// A household vehicle type picked when adding (#090): its ID, name, and what it starts with.
+#[derive(Debug, Clone, PartialEq)]
+struct PickedType {
+    id: VehicleTypeId,
+    name: String,
+    summary: String,
+}
+
+/// + Add vehicle: the kind (or one of the household's types), then the details.
 #[component]
 fn AddVehicleDialog(
     groups: Vec<GroupSummary>,
     start_group: Option<GroupId>,
     on_close: EventHandler<()>,
 ) -> Element {
-    let mut kind = use_signal(|| None::<&'static Profile>);
+    let mut kind = use_signal(|| None::<(&'static Profile, Option<PickedType>)>);
     rsx! {
         div { class: "dialog-scrim",
             div { class: "dialog add-vehicle", role: "dialog", "aria-modal": "true",
@@ -557,9 +571,10 @@ fn AddVehicleDialog(
                     None => rsx! {
                         KindStep { on_pick: move |picked| kind.set(Some(picked)), on_close }
                     },
-                    Some(picked) => rsx! {
+                    Some((picked, vehicle_type)) => rsx! {
                         DetailsStep {
                             profile: picked,
+                            vehicle_type,
                             groups: groups,
                             start_group,
                             on_back: move |()| kind.set(None),
@@ -578,8 +593,34 @@ fn AddVehicleDialog(
     reason = "false positive in rsx! event-handler expansion"
 )]
 #[component]
-fn KindStep(on_pick: EventHandler<&'static Profile>, on_close: EventHandler<()>) -> Element {
+fn KindStep(
+    on_pick: EventHandler<(&'static Profile, Option<PickedType>)>,
+    on_close: EventHandler<()>,
+) -> Element {
     let kinds = profiles().unwrap_or_default();
+    // The household's types, after the kinds (5A, #090); from the desktop's copy offline.
+    let types = use_resource(|| async {
+        match data::list_vehicle_types().await {
+            Ok(domain::api::TypesOutcome::Types { view }) => view
+                .types
+                .iter()
+                .filter_map(|(id, kept)| {
+                    Some((
+                        profile(&kept.kind)?,
+                        kept.icon,
+                        PickedType {
+                            id: *id,
+                            name: kept.name.as_str().to_owned(),
+                            summary: super::vehicle_types::type_summary(kept, &view.templates),
+                        },
+                    ))
+                })
+                .collect(),
+            _ => Vec::new(),
+        }
+    });
+    let types: Vec<(&'static Profile, domain::vehicle_type::TypeIcon, PickedType)> =
+        types.read().clone().unwrap_or_default();
     rsx! {
         p { class: "setup-step", {tr_with(messages::SETUP_STEP, &[("step", MessageArg::from(1))])} }
         h2 { class: "dialog-title", {tr(messages::ADD_VEHICLE_TITLE)} }
@@ -589,8 +630,22 @@ fn KindStep(on_pick: EventHandler<&'static Profile>, on_close: EventHandler<()>)
                 button {
                     key: "{kind.id.as_str()}",
                     class: "kind-tile",
-                    onclick: move |_| on_pick.call(kind),
+                    onclick: move |_| on_pick.call((kind, None)),
                     {Translator::english().tr_key(&kind.name)}
+                }
+            }
+        }
+        if !types.is_empty() {
+            p { class: "dialog-text", {tr(messages::ADD_VEHICLE_YOUR_TYPES)} }
+            div { class: "kind-tiles",
+                for (kind, icon, picked) in types {
+                    button {
+                        key: "{picked.id}",
+                        class: "kind-tile",
+                        onclick: move |_| on_pick.call((kind, Some(picked.clone()))),
+                        IconView { icon: crate::ui::vehicles::type_icon(icon) }
+                        {picked.name.clone()}
+                    }
                 }
             }
         }
@@ -608,6 +663,7 @@ fn KindStep(on_pick: EventHandler<&'static Profile>, on_close: EventHandler<()>)
 #[component]
 fn DetailsStep(
     profile: &'static Profile,
+    vehicle_type: Option<PickedType>,
     groups: Vec<GroupSummary>,
     start_group: Option<GroupId>,
     on_back: EventHandler<()>,
@@ -623,6 +679,9 @@ fn DetailsStep(
     let mut group = use_signal(|| start_group);
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
+    // Its type's template's rules left out (#090), shown before closing.
+    let mut left_out = use_signal(|| None::<String>);
+    let type_id = vehicle_type.as_ref().map(|picked| picked.id);
 
     let submit = move |event: FormEvent| {
         event.prevent_default();
@@ -650,6 +709,7 @@ fn DetailsStep(
                 .zip(identifiers())
                 .map(|(kind, value)| (kind.kind.as_str().to_owned(), value))
                 .collect(),
+            vehicle_type: type_id,
             ..AssetForm::new(profile.id.as_str(), chosen_group)
         };
         busy.set(true);
@@ -657,9 +717,22 @@ fn DetailsStep(
             let result = api::add_vehicle(form).await;
             busy.set(false);
             match result {
-                Ok(AssetsOutcome::Added { .. }) => {
+                Ok(AssetsOutcome::Added {
+                    left_out: rules, ..
+                }) => {
                     let _ = refresh_garage(context).await;
-                    on_close.call(());
+                    if rules.is_empty() {
+                        on_close.call(());
+                    } else {
+                        let list: Vec<String> = rules
+                            .iter()
+                            .map(|(rule, meter)| format!("{}: {}", rule.as_str(), meter.as_str()))
+                            .collect();
+                        left_out.set(Some(tr_with(
+                            messages::ADD_VEHICLE_LEFT_OUT,
+                            &[("list", MessageArg::from(list.join(", ").as_str()))],
+                        )));
+                    }
                 }
                 Ok(AssetsOutcome::Invalid { problem }) => error.set(Some(tr(problem.message()))),
                 Ok(AssetsOutcome::NotAllowed) => {
@@ -671,10 +744,23 @@ fn DetailsStep(
         });
     };
 
+    if let Some(text) = left_out() {
+        return rsx! {
+            p { class: "form-note", role: "status", {text} }
+            div { class: "form-buttons",
+                button { class: "primary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CLOSE)} }
+            }
+        };
+    }
     rsx! {
         form { class: "auth-form", onsubmit: submit,
             p { class: "setup-step", {tr_with(messages::SETUP_STEP, &[("step", MessageArg::from(2))])} }
-            h2 { class: "dialog-title", {Translator::english().tr_key(&profile.name)} }
+            h2 { class: "dialog-title",
+                {vehicle_type.as_ref().map_or_else(|| Translator::english().tr_key(&profile.name), |picked| picked.name.clone())}
+            }
+            if let Some(picked) = vehicle_type.as_ref() {
+                p { class: "muted-note", {picked.summary.clone()} }
+            }
             Field { label: messages::ADD_VEHICLE_NAME, value: name, autofocus: true }
             div { class: "field-row",
                 Field { label: messages::FIELD_MAKE, value: make }
@@ -752,6 +838,7 @@ mod tests {
 
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
+            vehicle_type: None,
             due: None,
             ready: None,
             standing: domain::lifecycle::Standing {

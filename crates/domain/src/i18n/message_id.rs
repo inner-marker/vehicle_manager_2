@@ -2145,6 +2145,108 @@ define_messages! {
     TYPE_TEMPLATE_GONE => "type-template-gone",
     /// Error: a vehicle's type on another kind.
     TYPE_WRONG_KIND => "type-wrong-kind",
+    /// Nav and title: Manage → Vehicle types (#090).
+    NAV_VEHICLE_TYPES => "nav-vehicle-types",
+    /// Vehicle types: what they are.
+    TYPES_INTRO => "types-intro",
+    /// Vehicle types: the kinds don't change.
+    TYPES_KINDS_NOTE => "types-kinds-note",
+    /// Button: add a vehicle type.
+    TYPES_ADD => "types-add",
+    /// Vehicle types: none.
+    TYPES_NONE => "types-none",
+    /// Vehicle types: nothing chosen.
+    TYPES_SELECT_HINT => "types-select-hint",
+    /// Link back to the list (phone).
+    TYPES_BACK => "types-back",
+    /// Heading: a type being added.
+    TYPES_NEW => "types-new",
+    /// Form field: the kind a type is built on.
+    TYPES_BUILT_ON => "types-built-on",
+    /// Note under Built on.
+    TYPES_KEEPS => "types-keeps",
+    /// Heading; takes `usage` (text).
+    TYPES_DOCUMENTS => "types-documents",
+    /// Note: no documents ticked.
+    TYPES_NO_DOCUMENTS => "types-no-documents",
+    /// Heading: what a type's vehicles start with.
+    TYPES_STARTS_WITH => "types-starts-with",
+    /// Its kind's meters; takes `list` (text).
+    TYPES_METERS => "types-meters",
+    /// Heading: the kind's fields.
+    TYPES_KIND_FIELDS => "types-kind-fields",
+    /// Heading: catalogue additions.
+    TYPES_FROM_CATALOGUE => "types-from-catalogue",
+    /// Note: no catalogue additions.
+    TYPES_CATALOGUE_NONE => "types-catalogue-none",
+    /// Select placeholder: add from the catalogue.
+    TYPES_CATALOGUE_PICK => "types-catalogue-pick",
+    /// A Tires choice; takes `axles` and `tires` (numbers).
+    TYPES_TIRES => "types-tires",
+    /// Form field: a type's template.
+    TYPES_TEMPLATE => "types-template",
+    /// Template choice: none.
+    TYPES_TEMPLATE_NONE => "types-template-none",
+    /// Note under Template.
+    TYPES_TEMPLATE_NOTE => "types-template-note",
+    /// Status: a type saved.
+    TYPES_SAVED => "types-saved",
+    /// Button: delete a type.
+    TYPES_DELETE => "types-delete",
+    /// Note under Delete type.
+    TYPES_DELETE_NOTE => "types-delete-note",
+    /// Dialog title; takes `name` (text).
+    TYPES_DELETE_TITLE => "types-delete-title",
+    /// Note: read only.
+    TYPES_READ_ONLY => "types-read-only",
+    /// Error: no such type.
+    TYPES_NOT_FOUND => "types-not-found",
+    /// Type icon.
+    TYPE_ICON_CAR => "type-icon-car",
+    /// Type icon.
+    TYPE_ICON_TRUCK => "type-icon-truck",
+    /// Type icon.
+    TYPE_ICON_MOTORCYCLE => "type-icon-motorcycle",
+    /// Type icon.
+    TYPE_ICON_TRAILER => "type-icon-trailer",
+    /// Type icon.
+    TYPE_ICON_GENERATOR => "type-icon-generator",
+    /// Type icon.
+    TYPE_ICON_TRACTOR => "type-icon-tractor",
+    /// Type icon.
+    TYPE_ICON_BOAT => "type-icon-boat",
+    /// Type icon.
+    TYPE_ICON_AIRCRAFT => "type-icon-aircraft",
+    /// Type icon.
+    TYPE_ICON_BUS => "type-icon-bus",
+    /// Type icon.
+    TYPE_ICON_VAN => "type-icon-van",
+    /// Type icon.
+    TYPE_ICON_BICYCLE => "type-icon-bicycle",
+    /// Type icon: a flag.
+    TYPE_ICON_FLAG => "type-icon-flag",
+    /// Type icon.
+    TYPE_ICON_TOOL => "type-icon-tool",
+    /// What a type starts with; takes `documents`, `template` (text), `meters`, `fields` (numbers).
+    TYPE_SUMMARY => "type-summary",
+    /// In the type summary: no documents.
+    TYPE_NEEDS_NOTHING => "type-needs-nothing",
+    /// In the type summary: no template.
+    TYPE_NO_TEMPLATE => "type-no-template",
+    /// In the type summary; takes `name` (text).
+    TYPE_WITH_TEMPLATE => "type-with-template",
+    /// Header: a vehicle's type and kind; takes `type` and `kind` (text).
+    TYPE_OF_KIND => "type-of-kind",
+    /// Add vehicle: heading over the types.
+    ADD_VEHICLE_YOUR_TYPES => "add-vehicle-your-types",
+    /// Add vehicle: rules left out; takes `list` (text).
+    ADD_VEHICLE_LEFT_OUT => "add-vehicle-left-out",
+    /// Form field: a vehicle's household type.
+    SETUP_TYPE => "setup-type",
+    /// Type choice: none.
+    SETUP_TYPE_NONE => "setup-type-none",
+    /// Note under Type.
+    SETUP_TYPE_NOTE => "setup-type-note",
     /// Setup: add a derived meter.
     SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).

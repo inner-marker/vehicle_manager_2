@@ -944,10 +944,6 @@ pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOut
 /// # Errors
 ///
 /// As the server function.
-#[expect(
-    dead_code,
-    reason = "Manage → Vehicle types and Add vehicle use it (3f)"
-)]
 pub(crate) async fn list_vehicle_types() -> ServerFnResult<domain::api::TypesOutcome> {
     read!(reader => ::server::vehicle_types::list(&reader.assets()).await, api::list_vehicle_types())
 }

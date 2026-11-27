@@ -90,6 +90,11 @@ pub(crate) fn nav_items() -> Vec<NavItem> {
             messages::NAV_TEMPLATES,
             Icon::Templates,
         ),
+        manage(
+            Route::VehicleTypes {},
+            messages::NAV_VEHICLE_TYPES,
+            Icon::VehicleTypes,
+        ),
         manage(Route::Settings {}, messages::NAV_SETTINGS, Icon::Settings),
         manage(
             Route::Diagnostics {},
@@ -106,7 +111,7 @@ mod tests {
     #[test]
     fn every_nav_item_has_a_route_message_and_icon() {
         let items = nav_items();
-        assert_eq!(items.len(), 11);
+        assert_eq!(items.len(), 12);
         // The nav label and the top-bar title come from the same message, except the phone's
         // Vehicles tab, whose screen is titled "All vehicles".
         for item in items

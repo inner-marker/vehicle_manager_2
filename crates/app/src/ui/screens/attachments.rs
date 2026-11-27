@@ -1098,11 +1098,12 @@ fn MainStar(main: MainPhoto, photo: AttachmentId) -> Element {
 }
 
 /// A vehicle's main photo as a square thumbnail (#24, phase-6.md 2h): on its Garage card and the
-/// Overview's header. Its kind's icon while it has none (or the photo can't be fetched).
+/// Overview's header. Its type's or kind's icon while it has none (or the photo can't be
+/// fetched).
 #[component]
 pub(crate) fn VehiclePhoto(
     photo: Option<AttachmentId>,
-    kind: domain::asset::AssetKind,
+    icon: crate::ui::icons::Icon,
     class: &'static str,
 ) -> Element {
     let mut url = use_signal(|| None::<String>);
@@ -1118,7 +1119,7 @@ pub(crate) fn VehiclePhoto(
         span { class: "vehicle-photo {class}", "aria-hidden": "true",
             match url() {
                 Some(src) => rsx! { img { src: "{src}", alt: "" } },
-                None => rsx! { IconView { icon: crate::ui::vehicles::kind_icon(&kind) } },
+                None => rsx! { IconView { icon } },
             }
         }
     }

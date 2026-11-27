@@ -165,6 +165,10 @@ async fn garage_view(
         .await
         .map_err(|error| unavailable("assets", &error))?;
     let grants = &context.user.grants;
+    let types = database
+        .vehicle_types()
+        .await
+        .map_err(|error| unavailable("vehicle types", &error))?;
     // Each vehicle the person's grants cover, with their role on it.
     let mut assets: Vec<AssetSummary> = all
         .into_iter()
@@ -175,6 +179,7 @@ async fn garage_view(
             };
             role_on(grants, scope).map(|role| AssetSummary {
                 id,
+                vehicle_type: domain::vehicle_type::label_of(asset.vehicle_type, &types),
                 standing: domain::lifecycle::Standing::default(),
                 asset,
                 role,
@@ -290,9 +295,21 @@ async fn asset_view(
     let standing = crate::lifecycle::standing(database, id, asset.status)
         .await
         .map_err(|error| unavailable("lifecycle", &error))?;
+    let vehicle_type = match asset.vehicle_type {
+        Some(type_id) => database
+            .vehicle_type(type_id)
+            .await
+            .map_err(|error| unavailable("vehicle type", &error))?
+            .map(|kept| domain::vehicle_type::TypeLabel {
+                name: kept.name,
+                icon: kept.icon,
+            }),
+        None => None,
+    };
     Ok(AssetsOutcome::Asset {
         view: Box::new(AssetView {
             id,
+            vehicle_type,
             asset,
             role: role_on(grants, scope).ok_or(AssetsOutcome::NotFound)?,
             can_manage: permits_on_asset(grants, mode, AssetAction::ManageAsset, scope),

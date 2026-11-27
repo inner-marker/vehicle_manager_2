@@ -315,6 +315,7 @@ mod tests {
                 vehicles: 1,
             }],
             assets: vec![AssetSummary {
+                vehicle_type: None,
                 standing: domain::lifecycle::Standing::default(),
                 id: test_id(1),
                 asset: Asset {

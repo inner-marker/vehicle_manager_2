@@ -141,8 +141,12 @@ fn tabs(asset: &Asset) -> Vec<Tab> {
     .collect()
 }
 
-/// "Truck · 2021 Ford F-150 · Blue": the kind, then the year, make, and model, then the colour.
-pub(super) fn subtitle(asset: &Asset) -> String {
+/// "Truck · 2021 Ford F-150 · Blue": the kind (or the vehicle's type, #090), then the year,
+/// make, and model, then the colour.
+pub(super) fn subtitle(
+    asset: &Asset,
+    vehicle_type: Option<&domain::vehicle_type::TypeLabel>,
+) -> String {
     let model: Vec<String> = [
         asset.year.map(|year| year.to_string()),
         asset.make.clone(),
@@ -151,7 +155,19 @@ pub(super) fn subtitle(asset: &Asset) -> String {
     .into_iter()
     .flatten()
     .collect();
-    let mut parts = vec![kind_name(&asset.kind)];
+    // "Track car (Car)" for a vehicle of a type (#090).
+    let mut parts = vec![vehicle_type.map_or_else(
+        || kind_name(&asset.kind),
+        |label| {
+            tr_with(
+                messages::TYPE_OF_KIND,
+                &[
+                    ("type", MessageArg::from(label.name.as_str())),
+                    ("kind", MessageArg::from(kind_name(&asset.kind).as_str())),
+                ],
+            )
+        },
+    )];
     if !model.is_empty() {
         parts.push(model.join(" "));
     }
@@ -389,10 +405,10 @@ fn Header(view: AssetView) -> Element {
         header { class: "vehicle-header",
             {back}
             div { class: "vehicle-title",
-                VehiclePhoto { photo: asset.main_photo, kind: asset.kind.clone(), class: "vehicle-photo-header" }
+                VehiclePhoto { photo: asset.main_photo, icon: crate::ui::vehicles::vehicle_icon(&asset.kind, view.vehicle_type.as_ref()), class: "vehicle-photo-header" }
                 div {
                     h2 { class: "vehicle-name", {asset.name.as_str().to_owned()} }
-                    p { class: "vehicle-subtitle", {subtitle(asset)} }
+                    p { class: "vehicle-subtitle", {subtitle(asset, view.vehicle_type.as_ref())} }
                 }
             }
             div { class: "vehicle-chips",
@@ -539,7 +555,15 @@ mod tests {
     #[test]
     fn the_header_reads_like_the_sketch() {
         let truck = asset("truck");
-        assert_eq!(subtitle(&truck), "Truck · 2021 Ford F-150 · Blue");
+        assert_eq!(subtitle(&truck, None), "Truck · 2021 Ford F-150 · Blue");
+        let work = domain::vehicle_type::TypeLabel {
+            name: Label::parse("Work truck").unwrap(),
+            icon: domain::vehicle_type::TypeIcon::Truck,
+        };
+        assert_eq!(
+            subtitle(&truck, Some(&work)),
+            "Work truck (Truck) · 2021 Ford F-150 · Blue"
+        );
         assert_eq!(identifier_text(&truck, &truck.identifiers[0]), "ABC 123");
         assert_eq!(identifier_text(&truck, &truck.identifiers[1]), "VIN 1FT");
     }

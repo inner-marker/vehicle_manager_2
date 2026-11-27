@@ -488,6 +488,10 @@ pub struct AssetSummary {
     /// Its default usage's readiness: the usage's name and the answer (#086).
     #[serde(default)]
     pub ready: Option<(crate::label::Label, crate::readiness::Mark)>,
+    /// Its household vehicle type's name and icon, unless it has none or it's been removed
+    /// (#090).
+    #[serde(default)]
+    pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -543,6 +547,9 @@ pub struct AssetView {
     /// What its lifecycle events say about it now (milestone 9, #067).
     #[serde(default)]
     pub standing: crate::lifecycle::Standing,
+    /// Its household vehicle type's name and icon (#090), as on [`AssetSummary`].
+    #[serde(default)]
+    pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
 }
 
 /// How one person's access changes in a move, for the preview.

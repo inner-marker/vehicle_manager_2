@@ -113,6 +113,32 @@ pub struct VehicleType {
 /// The ID of a vehicle type.
 pub type VehicleTypeId = Id<VehicleType>;
 
+/// What a vehicle of a type shows of it: its name and icon (#090).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypeLabel {
+    /// The type's name.
+    pub name: Label,
+    /// Its icon.
+    pub icon: TypeIcon,
+}
+
+/// The label of `id` among `types`, if it's one of them (a removed type's vehicles show their
+/// kind).
+#[must_use]
+pub fn label_of(
+    id: Option<VehicleTypeId>,
+    types: &[(VehicleTypeId, VehicleType)],
+) -> Option<TypeLabel> {
+    let id = id?;
+    types
+        .iter()
+        .find(|(each, _)| *each == id)
+        .map(|(_, kept)| TypeLabel {
+            name: kept.name.clone(),
+            icon: kept.icon,
+        })
+}
+
 record_patch! {
     /// The changeable fields of a [`VehicleType`]; `Some` means "set to this".
     VehicleTypePatch

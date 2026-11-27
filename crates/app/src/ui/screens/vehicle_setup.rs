@@ -346,6 +346,25 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
     let mut in_service = use_signal(|| start.in_service.clone());
     let mut in_service_estimated = use_signal(|| start.in_service_estimated);
     let mut description = use_signal(|| start.description.clone());
+    let mut vehicle_type = use_signal(|| start.vehicle_type);
+    // The household's types built on its kind (#090): only its label and icon change.
+    let own_kind = asset.kind.clone();
+    let types = use_resource(move || {
+        let own_kind = own_kind.clone();
+        async move {
+            match crate::data::list_vehicle_types().await {
+                Ok(domain::api::TypesOutcome::Types { view }) => view
+                    .types
+                    .into_iter()
+                    .filter(|(_, kept)| kept.kind == own_kind)
+                    .map(|(id, kept)| (id, kept.name.as_str().to_owned()))
+                    .collect(),
+                _ => Vec::new(),
+            }
+        }
+    });
+    let types: Vec<(domain::vehicle_type::VehicleTypeId, String)> =
+        types.read().clone().unwrap_or_default();
     let kinds = identifier_kinds(&asset);
     let mut identifiers = use_signal(|| {
         kinds
@@ -386,6 +405,7 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
             identifiers: form_kinds.iter().cloned().zip(identifiers()).collect(),
             in_service: in_service(),
             in_service_estimated: in_service_estimated() && !in_service().trim().is_empty(),
+            vehicle_type: vehicle_type(),
             ..start.clone()
         };
         busy.set(true);
@@ -433,6 +453,20 @@ fn EditDetailsDialog(id: AssetId, asset: Asset, on_close: EventHandler<()>) -> E
                     }
                 }
                 p { class: "muted-note", {tr(messages::FIELD_IN_SERVICE_NOTE)} }
+                if !types.is_empty() || vehicle_type().is_some() {
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::SETUP_TYPE)} }
+                        select {
+                            class: "field-input",
+                            onchange: move |event: FormEvent| vehicle_type.set(event.value().parse().ok()),
+                            option { value: "", selected: vehicle_type().is_none(), {tr(messages::SETUP_TYPE_NONE)} }
+                            for (type_id, type_name) in types {
+                                option { key: "{type_id}", value: "{type_id}", selected: vehicle_type() == Some(type_id), {type_name} }
+                            }
+                        }
+                        span { class: "muted-note", {tr(messages::SETUP_TYPE_NOTE)} }
+                    }
+                }
                 div { class: "field-row",
                     for (index, kind) in kinds.iter().enumerate() {
                         label { key: "{kind}", class: "field",

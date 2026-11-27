@@ -51,6 +51,13 @@ pub(crate) enum Icon {
     Trailer,
     /// A generator, likewise.
     Generator,
+    /// Vehicle type icons (#090), besides the kinds' and the groups'.
+    Bus,
+    Van,
+    Bicycle,
+    Flag,
+    /// The Vehicle types screen (#090).
+    VehicleTypes,
 }
 
 impl Icon {
@@ -91,6 +98,10 @@ impl Icon {
             Self::Motorcycle => include_str!("../../assets/icons/motorbike.svg"),
             Self::Trailer => include_str!("../../assets/icons/caravan.svg"),
             Self::Generator => include_str!("../../assets/icons/zap.svg"),
+            Self::Bus => include_str!("../../assets/icons/bus.svg"),
+            Self::Van => include_str!("../../assets/icons/van.svg"),
+            Self::Bicycle => include_str!("../../assets/icons/bike.svg"),
+            Self::Flag | Self::VehicleTypes => include_str!("../../assets/icons/flag.svg"),
         }
     }
 }
