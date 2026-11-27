@@ -16,7 +16,8 @@ mod user_admin {
     use server::passwords::hash_password;
     use server::sessions::{SignInError, SignedIn, sign_in, switch_mode, token_hash};
     use server::user_admin::{
-        AdminContext, add_user, list_users, reset_password, set_disabled, set_role, set_role_on_all,
+        AdminContext, add_user, list_users, rename, rename_me, reset_password, set_disabled,
+        set_role, set_role_on_all,
     };
     use storage::users::{RoleGrantWriter, UserWriter};
     use storage::{Database, NewDatabaseIds};
@@ -429,6 +430,127 @@ mod user_admin {
         assert_eq!(
             reset_password(&context, test_id(999)).await,
             UserAdminOutcome::NotFound
+        );
+    }
+
+    #[tokio::test]
+    async fn the_admin_changes_a_name_and_the_new_username_signs_in() {
+        let (_temp, database, admin) = admin_session().await;
+        let clock = ManualClock::new(NOW);
+        let context = context(&database, &admin, &clock);
+        let (sam, password) = add(&context, "sam", Role::Driver).await;
+        add(&context, "alex", Role::Driver).await;
+        let (token, _) = sign_in(
+            &database,
+            &LoginLimiter::new(),
+            "sam",
+            password.clone(),
+            "b",
+            NOW,
+        )
+        .await
+        .unwrap();
+
+        // The Admin: a taken username refused (in any case), then a new one.
+        assert_eq!(
+            rename(&context, sam, "ALEX", "Sam").await,
+            UserAdminOutcome::UsernameTaken
+        );
+        assert!(matches!(
+            rename(&context, sam, "x", "Sam").await,
+            UserAdminOutcome::InvalidUsername { .. }
+        ));
+        assert_eq!(
+            rename(&context, sam, "samantha", "Samantha").await,
+            UserAdminOutcome::Done
+        );
+        assert_eq!(
+            rename(&context, sam, "samantha", "Samantha").await,
+            UserAdminOutcome::Done,
+            "nothing to change"
+        );
+        // Sam's session goes on; the old username no longer signs in, the new one does.
+        let still = resolve(&database, token_hash(token.as_str()).unwrap(), NOW)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(still.display_name, "Samantha");
+        assert!(matches!(
+            sign_in(
+                &database,
+                &LoginLimiter::new(),
+                "sam",
+                password.clone(),
+                "c",
+                NOW
+            )
+            .await,
+            Err(SignInError::InvalidCredentials)
+        ));
+        let (_, samantha) = sign_in(
+            &database,
+            &LoginLimiter::new(),
+            "samantha",
+            password,
+            "d",
+            NOW,
+        )
+        .await
+        .unwrap();
+        assert_eq!(samantha.user, sam);
+    }
+
+    #[tokio::test]
+    async fn a_person_changes_their_own_name_only_when_the_household_allows() {
+        let (_temp, database, admin) = admin_session().await;
+        let clock = ManualClock::new(NOW);
+        let (sam, password) = add(&context(&database, &admin, &clock), "sam", Role::Driver).await;
+        let (_, samantha) = sign_in(&database, &LoginLimiter::new(), "sam", password, "b", NOW)
+            .await
+            .unwrap();
+        // Refused until the household allows it.
+        // Anyone signed in acts through the same context.
+        let own = AdminContext {
+            database: &database,
+            admin: &samantha,
+            health: Health::Healthy,
+            clock: &clock,
+        };
+        let household: domain::preferences::PreferencesId = test_id(900);
+        assert_eq!(
+            rename_me(&own, household, "sammy", "Sammy").await,
+            UserAdminOutcome::NotAllowed
+        );
+        issue(
+            &database,
+            &storage::preferences::PreferencesWriter,
+            Change::Create {
+                id: household,
+                values: domain::preferences::PreferencesPatch {
+                    own_names: Some(domain::preferences::Choice::Set(true)),
+                    ..domain::preferences::PreferencesPatch::default()
+                },
+            },
+            test_id(901),
+            None,
+            Health::Healthy,
+            &clock,
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            rename_me(&own, household, "sammy", "Sammy").await,
+            UserAdminOutcome::Done
+        );
+        let stored = database.user(sam).await.unwrap().unwrap().user;
+        assert_eq!(
+            (stored.username.as_str(), stored.display_name.as_str()),
+            ("sammy", "Sammy")
+        );
+        assert_eq!(
+            rename(&own, sam, "sam", "Sam").await,
+            UserAdminOutcome::NotAllowed,
+            "only the Admin renames others' (or through Users)"
         );
     }
 }

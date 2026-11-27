@@ -155,6 +155,7 @@ mod preferences {
         ];
         for (distance, volume, economy, pressure, date_format) in rows {
             let patch = PreferencesPatch {
+                own_names: None,
                 distance: Some(Choice::Set(distance)),
                 volume: Some(Choice::Set(volume)),
                 economy: Some(Choice::Set(economy)),

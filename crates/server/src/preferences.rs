@@ -84,6 +84,7 @@ pub async fn set_mine(
         || patch.due_warnings.is_some()
         || patch.due_messages_from.is_some()
         || patch.labor_rate.is_some()
+        || patch.own_names.is_some()
     {
         tracing::debug!(target: log_area::APP, user = %context.user.user, "refused: a household-only setting");
         return PreferencesOutcome::NotAllowed;

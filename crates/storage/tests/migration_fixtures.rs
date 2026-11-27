@@ -278,16 +278,16 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     );
 }
 
-/// Migrations 0028 to 0032 read as empty in every fixture (all made before Phase 6): no shops,
+/// Migrations 0028 to 0033 read as empty in every fixture (all made before Phase 6): no shops,
 /// no household labor rate, no main photos, no pinned vehicles (each Garage order kept), no
-/// In service since dates, and no vehicle types.
+/// In service since dates, no vehicle types, and no choice about changing one's own name.
 #[cfg(test)]
 async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
     assert_eq!(
         (
             count("SELECT count(*) FROM shops").await.unwrap(),
-            count("SELECT count(*) FROM preferences WHERE labor_rate IS NOT NULL")
+            count("SELECT count(*) FROM preferences WHERE labor_rate IS NOT NULL OR own_names IS NOT NULL")
                 .await
                 .unwrap()
         ),

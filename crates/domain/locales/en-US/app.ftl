@@ -1938,6 +1938,14 @@ add-vehicle-left-out = Added. Its template's meter rules without a matching mete
 setup-type = Type
 setup-type-none = None: shows as its kind
 setup-type-note = Changes only its label and icon, never its records or fields.
+users-rename = Change name…
+rename-title = Name and username
+rename-note = A new username works from the next sign-in; devices already signed in stay signed in.
+account-rename = Your name and username…
+setting-own-names = Names
+setting-own-names-on = Each person
+setting-own-names-off = Only the Admin
+setting-own-names-note = Whether each person may change their own display name and username (from their account menu). The Admin can always change anyone's on Users.
 setup-add-derived = + Derived meter
 # $key (string): the key typed.
 formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.

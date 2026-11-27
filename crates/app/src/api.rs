@@ -2046,6 +2046,44 @@ pub(crate) async fn reset_user_password(
     .await)
 }
 
+/// Changes a person's username and display name (the household's Admin, in Admin mode; #44).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/rename")]
+pub(crate) async fn rename_user(
+    user: domain::user::UserId,
+    username: String,
+    display_name: String,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::rename(&context, user, &username, &display_name).await
+    })
+    .await)
+}
+
+/// Changes the signed-in person's own username and display name, when the household lets
+/// people change their own (#091).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/me/rename")]
+pub(crate) async fn rename_me(
+    username: String,
+    display_name: String,
+) -> ServerFnResult<UserAdminOutcome> {
+    let Some(database_id) = ::server::startup::database_id() else {
+        return Ok(UserAdminOutcome::Unavailable);
+    };
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::rename_me(&context, database_id.cast(), &username, &display_name)
+            .await
+    })
+    .await)
+}
+
 // --- Devices (phase-3.md 2e, #073) ------------------------------------------------------
 
 /// Your signed-in devices and browsers, this one marked.

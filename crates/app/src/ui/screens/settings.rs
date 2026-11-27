@@ -503,6 +503,9 @@ fn SectionBody(
                 if household_tab || section == Section::SignIn {
                     IdleSignOutRow { view: current, household_tab, timers, on_save }
                 }
+                if household_tab {
+                    OwnNamesRow { view: current, on_save }
+                }
             }
         },
     }
@@ -938,6 +941,36 @@ fn OriginalsRow(
                 span { class: "setting-value", {name(current)} }
                 p { class: "muted-note", {tr(messages::SETTING_SQUAWK_WORD_HOUSEHOLD)} }
             }
+        }
+    }
+}
+
+/// Household: whether each person may change their own name and username (#091).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn OwnNamesRow(view: PreferencesView, on_save: EventHandler<PreferencesPatch>) -> Element {
+    let current = view.effective.own_names;
+    rsx! {
+        div { class: "setting-row",
+            span { class: "setting-label", {tr(messages::SETTING_OWN_NAMES)} }
+            div { class: "choice-buttons",
+                for (choice, label) in [(false, messages::SETTING_OWN_NAMES_OFF), (true, messages::SETTING_OWN_NAMES_ON)] {
+                    button {
+                        key: "{choice}",
+                        class: if choice == current { "choice on" } else { "choice" },
+                        "aria-pressed": choice == current,
+                        onclick: move |_| on_save.call(PreferencesPatch {
+                            own_names: Some(Choice::Set(choice)),
+                            ..PreferencesPatch::default()
+                        }),
+                        {tr(label)}
+                    }
+                }
+            }
+            p { class: "muted-note", {tr(messages::SETTING_OWN_NAMES_NOTE)} }
         }
     }
 }

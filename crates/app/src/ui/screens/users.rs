@@ -78,6 +78,8 @@ enum Dialog {
     ConfirmReset(UserSummary),
     /// A person's devices (phase-3.md 2e; sketch option 3A).
     Devices(UserSummary),
+    /// A person's name and username (#44).
+    Rename(UserSummary),
     TemporaryPassword {
         name: String,
         password: domain::secret::Secret,
@@ -247,6 +249,7 @@ fn UserDetail(
     let for_disable = user.clone();
     let for_reset = user.clone();
     let for_devices = user.clone();
+    let for_rename = user.clone();
 
     rsx! {
         button { class: "link-button users-back", onclick: move |_| on_back.call(()), {tr(messages::USERS_BACK)} }
@@ -257,6 +260,9 @@ fn UserDetail(
 
         h3 { class: "section-heading", {tr(messages::USERS_ACCOUNT_HEADING)} }
         div { class: "account-actions",
+            button { class: "secondary-button", onclick: move |_| on_dialog.call(Dialog::Rename(for_rename.clone())),
+                {tr(messages::USERS_RENAME)}
+            }
             button { class: "secondary-button", onclick: move |_| on_dialog.call(Dialog::ConfirmReset(for_reset.clone())),
                 {tr(messages::USERS_RESET_PASSWORD)}
             }
@@ -298,6 +304,18 @@ fn UsersDialog(
                     Dialog::ConfirmDisable(user) => rsx! { ConfirmDisable { user, on_close, on_changed } },
                     Dialog::ConfirmReset(user) => rsx! { ConfirmReset { user, on_close, on_next, on_changed } },
                     Dialog::Devices(user) => rsx! { super::devices::UserDevices { user, on_close, on_changed } },
+                    Dialog::Rename(user) => rsx! {
+                        RenameForm {
+                            user: Some(user.id),
+                            username: user.username.as_str().to_owned(),
+                            display_name: user.display_name.clone(),
+                            on_close,
+                            on_done: move |()| {
+                                on_changed.call(());
+                                on_close.call(());
+                            },
+                        }
+                    },
                     Dialog::TemporaryPassword { name, password } => rsx! { TemporaryPassword { name, password: password.into_exposed(), on_close } },
                 }
             }
@@ -382,6 +400,66 @@ fn AddUserForm(
             div { class: "form-buttons",
                 button { class: "secondary-button", r#type: "button", onclick: move |_| close.call(()), {tr(messages::ACTION_CANCEL)} }
                 button { class: "primary-button", r#type: "submit", disabled: busy(), {tr(messages::USERS_ADD_BUTTON)} }
+            }
+        }
+    }
+}
+
+/// A name and username to change: someone's (`user`, by the Admin) or the person's own
+/// (`None`, when the household allows it; #44, #091).
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+pub(crate) fn RenameForm(
+    user: Option<UserId>,
+    username: String,
+    display_name: String,
+    on_close: EventHandler<()>,
+    on_done: EventHandler<()>,
+) -> Element {
+    let mut username = use_signal(|| username);
+    let mut name = use_signal(|| display_name);
+    let mut error = use_signal(|| None::<String>);
+    let mut busy = use_signal(|| false);
+    let submit = move |event: FormEvent| {
+        event.prevent_default();
+        if busy() {
+            return;
+        }
+        busy.set(true);
+        spawn(async move {
+            let result = match user {
+                Some(id) => api::rename_user(id, username(), name()).await,
+                None => api::rename_me(username(), name()).await,
+            };
+            busy.set(false);
+            match result {
+                Ok(UserAdminOutcome::Done) => on_done.call(()),
+                Ok(other) => error.set(outcome_message(&other)),
+                Err(failure) => error.set(Some(failure_message(&failure))),
+            }
+        });
+    };
+    rsx! {
+        form { class: "auth-form", onsubmit: submit,
+            h2 { class: "dialog-title", {tr(messages::RENAME_TITLE)} }
+            label { class: "field",
+                span { class: "field-label", {tr(messages::FIELD_THEIR_NAME)} }
+                input { class: "field-input", autocomplete: "off", autofocus: true, value: name(), oninput: move |event| name.set(event.value()) }
+            }
+            label { class: "field",
+                span { class: "field-label", {tr(messages::FIELD_USERNAME)} }
+                input { class: "field-input", autocomplete: "off", spellcheck: "false", value: username(), oninput: move |event| username.set(event.value()) }
+            }
+            p { class: "dialog-text", {tr(messages::RENAME_NOTE)} }
+            if let Some(message) = error() {
+                p { class: "form-error", role: "alert", {message} }
+            }
+            div { class: "form-buttons",
+                button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CANCEL)} }
+                button { class: "primary-button", r#type: "submit", disabled: busy(), {tr(messages::ACTION_SAVE)} }
             }
         }
     }

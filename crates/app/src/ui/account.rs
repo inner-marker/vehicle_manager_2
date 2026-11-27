@@ -223,6 +223,9 @@ pub(crate) fn AccountChip() -> Element {
     // Lock now shows on a desktop with a PIN; checked as the menu opens (it reads the keychain).
     let mut can_lock = use_signal(|| false);
     let mut password_dialog = use_signal(|| false);
+    // Whether the household lets people change their own names (#091), read as the menu opens.
+    let mut own_names = use_signal(|| false);
+    let mut rename_dialog = use_signal(|| false);
     // Changes on this computer not yet sent: signing out asks first (phase-3.md 5e, 3B).
     let mut unsent_check = use_signal(|| false);
     let AuthState::SignedIn(session) = state() else {
@@ -249,6 +252,13 @@ pub(crate) fn AccountChip() -> Element {
                 onclick: move |_| {
                     if !menu_open() {
                         can_lock.set(super::lock::has_lock());
+                        spawn(async move {
+                            if let Ok(domain::api::PreferencesOutcome::Preferences { view }) =
+                                crate::data::get_preferences().await
+                            {
+                                own_names.set(view.effective.own_names);
+                            }
+                        });
                     }
                     menu_open.toggle();
                 },
@@ -269,6 +279,18 @@ pub(crate) fn AccountChip() -> Element {
                         },
                         span { class: "menu-check" }
                         span { {tr(messages::ACCOUNT_CHANGE_PASSWORD)} }
+                    }
+                    if own_names() {
+                        button {
+                            class: "menu-item",
+                            role: "menuitem",
+                            onclick: move |_| {
+                                menu_open.set(false);
+                                rename_dialog.set(true);
+                            },
+                            span { class: "menu-check" }
+                            span { {tr(messages::ACCOUNT_RENAME)} }
+                        }
                     }
                     if can_lock() {
                         button {
@@ -299,6 +321,23 @@ pub(crate) fn AccountChip() -> Element {
                                 spawn(refresh(state));
                             },
                             on_cancel: move |()| password_dialog.set(false),
+                        }
+                    }
+                }
+            }
+            if rename_dialog() {
+                div { class: "dialog-scrim",
+                    // Names are the server's: off while offline.
+                    div { class: "dialog needs-server-zone", role: "dialog", "aria-modal": "true",
+                        crate::ui::screens::RenameForm {
+                            user: None,
+                            username: session.username.as_str().to_owned(),
+                            display_name: session.display_name.clone(),
+                            on_close: move |()| rename_dialog.set(false),
+                            on_done: move |()| {
+                                rename_dialog.set(false);
+                                spawn(refresh(state));
+                            },
                         }
                     }
                 }

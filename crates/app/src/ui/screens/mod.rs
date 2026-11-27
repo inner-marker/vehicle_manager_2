@@ -64,6 +64,7 @@ pub(crate) use squawks::device_zone;
 pub(crate) use squawks::use_device_zone;
 pub(crate) use squawks::{SquawkDetail, SquawkSheetDialog, provide_squawk_sheet};
 pub(crate) use templates::Templates;
+pub(crate) use users::RenameForm;
 pub(crate) use users::Users;
 pub(crate) use vehicle::{VehicleDetail, VehicleTab};
 pub(crate) use vehicle_setup::event_from_value;

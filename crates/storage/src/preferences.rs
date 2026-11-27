@@ -55,7 +55,7 @@ impl ColumnChange {
 }
 
 /// Every setting's change, in column order.
-fn changes(patch: &PreferencesPatch) -> [ColumnChange; 14] {
+fn changes(patch: &PreferencesPatch) -> [ColumnChange; 15] {
     [
         ColumnChange::of(patch.distance),
         ColumnChange::of(patch.volume),
@@ -71,6 +71,7 @@ fn changes(patch: &PreferencesPatch) -> [ColumnChange; 14] {
         ColumnChange::json(patch.due_warnings),
         ColumnChange::of(patch.due_messages_from),
         ColumnChange::json(patch.labor_rate),
+        ColumnChange::json(patch.own_names),
     ]
 }
 
@@ -101,13 +102,14 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
             due_warnings,
             due_messages_from,
             labor_rate,
+            own_names,
         ] = changes(values);
         sqlx::query(
             "INSERT INTO preferences
                  (id, distance, volume, economy, pressure, date_format, currency, language,
                   idle_sign_out, garage_sort, squawk_word, originals, due_warnings,
-                  due_messages_from, labor_rate, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  due_messages_from, labor_rate, own_names, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(distance.value())
@@ -124,6 +126,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
         .bind(due_warnings.value())
         .bind(due_messages_from.value())
         .bind(labor_rate.value())
+        .bind(own_names.value())
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -155,6 +158,7 @@ impl RecordWriter<PreferencesRecord> for PreferencesWriter {
                  due_warnings = CASE WHEN ? THEN ? ELSE due_warnings END,
                  due_messages_from = CASE WHEN ? THEN ? ELSE due_messages_from END,
                  labor_rate = CASE WHEN ? THEN ? ELSE labor_rate END,
+                 own_names = CASE WHEN ? THEN ? ELSE own_names END,
                  sequence = ?
              WHERE id = ?",
         );
@@ -205,6 +209,9 @@ fn choices_from_row(row: &SqliteRow) -> Result<PreferenceChoices, StorageError> 
         labor_rate: row
             .try_get::<Option<String>, _>("labor_rate")?
             .and_then(|text| serde_json::from_str(&text).ok()),
+        own_names: row
+            .try_get::<Option<String>, _>("own_names")?
+            .and_then(|text| serde_json::from_str(&text).ok()),
     })
 }
 
@@ -221,7 +228,7 @@ impl Database {
         sqlx::query(
             "SELECT distance, volume, economy, pressure, date_format, currency, language,
                     idle_sign_out, garage_sort, squawk_word, originals, due_warnings,
-                    due_messages_from, labor_rate
+                    due_messages_from, labor_rate, own_names
              FROM preferences WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

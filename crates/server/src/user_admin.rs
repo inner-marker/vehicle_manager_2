@@ -266,6 +266,79 @@ pub async fn add_user(
     UserAdminOutcome::TemporaryPassword { password }
 }
 
+/// Changes `user`'s username and display name (the household's Admin, in Admin mode; #44).
+/// A new username works from their next sign-in; their sessions and paired desktops keep
+/// working, and records keep pointing at them.
+pub async fn rename(
+    context: &AdminContext<'_>,
+    user: UserId,
+    username: &str,
+    display_name: &str,
+) -> UserAdminOutcome {
+    if !context.allowed() {
+        return UserAdminOutcome::NotAllowed;
+    }
+    rename_user(context, user, username, display_name).await
+}
+
+/// Changes the signed-in person's own username and display name, if the household lets
+/// people change their own (`household`'s `own_names`, #091; off unless the Admin turns it on).
+pub async fn rename_me(
+    context: &AdminContext<'_>,
+    household: domain::preferences::PreferencesId,
+    username: &str,
+    display_name: &str,
+) -> UserAdminOutcome {
+    let allowed = match context.database.preference_choices(household).await {
+        Ok(choices) => choices.own_names.unwrap_or(false),
+        Err(error) => return unavailable("rename", &error),
+    };
+    if !allowed {
+        return UserAdminOutcome::NotAllowed;
+    }
+    rename_user(context, context.admin.user, username, display_name).await
+}
+
+/// Checks and saves a new username and display name for `user` (only what changed).
+async fn rename_user(
+    context: &AdminContext<'_>,
+    user: UserId,
+    username: &str,
+    display_name: &str,
+) -> UserAdminOutcome {
+    let username = match Username::parse(username) {
+        Ok(username) => username,
+        Err(reason) => return UserAdminOutcome::InvalidUsername { reason },
+    };
+    let display_name = match check_display_name(display_name) {
+        Ok(name) => name,
+        Err(reason) => return UserAdminOutcome::InvalidDisplayName { reason },
+    };
+    let current = match context.database.user(user).await {
+        Ok(Some(stored)) => stored.user,
+        Ok(None) => return UserAdminOutcome::NotFound,
+        Err(error) => return unavailable("rename", &error),
+    };
+    match context.database.user_by_username(&username).await {
+        Ok(Some(other)) if other.id != user => return UserAdminOutcome::UsernameTaken,
+        Ok(_) => {}
+        Err(error) => return unavailable("rename", &error),
+    }
+    let patch = UserPatch {
+        username: (username != current.username).then_some(username),
+        display_name: (display_name != current.display_name).then_some(display_name),
+        ..UserPatch::default()
+    };
+    if domain::command::Patch::changed_fields(&patch).is_empty() {
+        return UserAdminOutcome::Done;
+    }
+    if let Err(error) = context.issue_user(Change::Update { id: user, patch }).await {
+        return unavailable("rename", &error);
+    }
+    tracing::info!(target: log_area::AUTH, %user, by = %context.admin.user, "username or display name changed");
+    UserAdminOutcome::Done
+}
+
 /// Sets `user`'s role on all assets (`None` removes it). Refused if it would leave no Admin.
 pub async fn set_role_on_all(
     context: &AdminContext<'_>,

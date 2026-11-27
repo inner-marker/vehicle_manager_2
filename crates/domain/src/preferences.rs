@@ -350,6 +350,10 @@ pub struct Preferences {
     /// none: then a job's labor cost isn't filled from a rate unless its shop has one.
     #[serde(default)]
     pub labor_rate: Option<crate::shop::LaborRate>,
+    /// Each person may change their own display name and username (the household's choice
+    /// only, #091; off unless the Admin turns it on). The Admin can always change anyone's.
+    #[serde(default)]
+    pub own_names: bool,
 }
 
 const fn default_due_messages_from() -> DueStep {
@@ -373,6 +377,7 @@ impl Default for Preferences {
             due_warnings: DueDefaults::default(),
             due_messages_from: default_due_messages_from(),
             labor_rate: None,
+            own_names: false,
         }
     }
 }
@@ -413,6 +418,9 @@ pub struct PreferenceChoices {
     /// The labor rate: the household's record only (a person's is ignored).
     #[serde(default)]
     pub labor_rate: Option<crate::shop::LaborRate>,
+    /// People may change their own names: the household's record only.
+    #[serde(default)]
+    pub own_names: Option<bool>,
 }
 
 impl Preferences {
@@ -463,6 +471,7 @@ impl Preferences {
                 .due_messages_from
                 .unwrap_or(defaults.due_messages_from),
             labor_rate: household.labor_rate,
+            own_names: household.own_names.unwrap_or(defaults.own_names),
         }
     }
 }
@@ -541,6 +550,9 @@ pub struct PreferencesPatch {
     /// See [`Preferences::labor_rate`] (the household's record only; `Default` clears it).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub labor_rate: Option<Choice<crate::shop::LaborRate>>,
+    /// See [`Preferences::own_names`] (the household's record only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub own_names: Option<Choice<bool>>,
 }
 
 impl Patch for PreferencesPatch {
@@ -560,6 +572,7 @@ impl Patch for PreferencesPatch {
             ("due_warnings", self.due_warnings.is_some()),
             ("due_messages_from", self.due_messages_from.is_some()),
             ("labor_rate", self.labor_rate.is_some()),
+            ("own_names", self.own_names.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -609,6 +622,9 @@ impl Patch for PreferencesPatch {
         }
         if !keep("labor_rate") {
             self.labor_rate = None;
+        }
+        if !keep("own_names") {
+            self.own_names = None;
         }
     }
 }
@@ -759,6 +775,28 @@ mod tests {
         stored.as_object_mut().unwrap().remove("due_messages_from");
         let older: Preferences = serde_json::from_value(stored).unwrap();
         assert_eq!(older.due_messages_from, DueStep::DueSoon);
+    }
+
+    #[test]
+    fn only_the_household_lets_people_change_their_own_names_and_its_off_at_first() {
+        assert!(!Preferences::default().own_names);
+        let mine = PreferenceChoices {
+            own_names: Some(true),
+            ..PreferenceChoices::default()
+        };
+        assert!(
+            !Preferences::resolve(&mine, &PreferenceChoices::default()).own_names,
+            "a person's own is ignored"
+        );
+        let household = PreferenceChoices {
+            own_names: Some(true),
+            ..PreferenceChoices::default()
+        };
+        assert!(Preferences::resolve(&PreferenceChoices::default(), &household).own_names);
+        let mut stored = serde_json::to_value(Preferences::default()).unwrap();
+        stored.as_object_mut().unwrap().remove("own_names");
+        let older: Preferences = serde_json::from_value(stored).unwrap();
+        assert!(!older.own_names, "older stored preferences read as off");
     }
 
     #[test]

@@ -2247,6 +2247,22 @@ define_messages! {
     SETUP_TYPE_NONE => "setup-type-none",
     /// Note under Type.
     SETUP_TYPE_NOTE => "setup-type-note",
+    /// Users: change a person's name and username.
+    USERS_RENAME => "users-rename",
+    /// Dialog title: change a name and username.
+    RENAME_TITLE => "rename-title",
+    /// Rename dialog note.
+    RENAME_NOTE => "rename-note",
+    /// Account menu: change your own name and username.
+    ACCOUNT_RENAME => "account-rename",
+    /// Household setting: who changes names.
+    SETTING_OWN_NAMES => "setting-own-names",
+    /// Choice: each person changes their own name.
+    SETTING_OWN_NAMES_ON => "setting-own-names-on",
+    /// Choice: only the Admin changes names.
+    SETTING_OWN_NAMES_OFF => "setting-own-names-off",
+    /// Household setting note.
+    SETTING_OWN_NAMES_NOTE => "setting-own-names-note",
     /// Setup: add a derived meter.
     SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).
