@@ -38,6 +38,7 @@ pub mod sync;
 pub mod templates;
 pub mod usages;
 pub mod users;
+pub mod vehicle_types;
 
 pub use database::{Database, NewDatabaseIds, OpenReport};
 pub use error::StorageError;

@@ -61,6 +61,7 @@ pub mod time_utils;
 pub mod timers;
 pub mod usage;
 pub mod user;
+pub mod vehicle_type;
 
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support;

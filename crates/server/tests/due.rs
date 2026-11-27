@@ -77,7 +77,7 @@ mod due {
             name: "Truck".into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, &admin, clock), &form).await
         else {
             panic!("the truck wasn't added");
@@ -579,7 +579,7 @@ mod due {
             status: domain::asset::LifecycleStatus::Retired,
             ..AssetForm::new("car", group)
         };
-        let AssetsOutcome::Added { id: car } =
+        let AssetsOutcome::Added { id: car, .. } =
             add_vehicle(&context(&database, &admin, &clock), &form).await
         else {
             panic!("the car wasn't added");

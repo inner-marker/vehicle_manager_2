@@ -51,6 +51,8 @@ pub enum Problem {
     Field(CustomFieldError),
     /// Something from the catalogue of fields (#090).
     Catalogue(crate::catalogue::CatalogueError),
+    /// A vehicle type (#090).
+    Type(crate::vehicle_type::TypeProblem),
     /// The description.
     Notes(NotesError),
     /// There's no profile for that kind.
@@ -76,6 +78,7 @@ impl Problem {
             Self::Meter(error) => error.message(),
             Self::Field(error) => error.message(),
             Self::Catalogue(error) => error.message(),
+            Self::Type(problem) => problem.message(),
             Self::Notes(error) => error.message(),
             Self::UnknownKind | Self::UnknownGroup => messages::SOMETHING_WENT_WRONG,
             Self::GroupNotEmpty => messages::GROUP_NOT_EMPTY,
@@ -115,6 +118,10 @@ pub struct AssetForm {
     /// In service since is an estimate.
     #[serde(default)]
     pub in_service_estimated: bool,
+    /// The household vehicle type (#090): when adding, the vehicle starts as the type says
+    /// (and takes its kind); when editing, only one built on the vehicle's kind.
+    #[serde(default)]
+    pub vehicle_type: Option<crate::vehicle_type::VehicleTypeId>,
 }
 
 impl AssetForm {
@@ -134,6 +141,7 @@ impl AssetForm {
             identifiers: Vec::new(),
             in_service: String::new(),
             in_service_estimated: false,
+            vehicle_type: None,
         }
     }
 
@@ -194,6 +202,7 @@ impl AssetForm {
             identifiers,
             main_photo: None,
             in_service,
+            vehicle_type: self.vehicle_type,
         })
     }
 
@@ -229,6 +238,7 @@ impl AssetForm {
                 .in_service
                 .as_ref()
                 .is_some_and(|since| since.estimated),
+            vehicle_type: asset.vehicle_type,
         }
     }
 }

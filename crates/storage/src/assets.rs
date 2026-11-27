@@ -148,8 +148,8 @@ impl RecordWriter<Asset> for AssetWriter {
         sqlx::query(
             "INSERT INTO assets (id, kind, name, make, model, year, colour, description,
                                  group_id, parent_id, status, identifiers, main_photo,
-                                 in_service_since, in_service_estimated, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                 in_service_since, in_service_estimated, vehicle_type, sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(required(values.kind.as_ref(), "kind")?.as_str())
@@ -194,6 +194,12 @@ impl RecordWriter<Asset> for AssetWriter {
                 .map(|since| since.on.as_str().to_owned()),
         )
         .bind(in_service.as_ref().is_some_and(|since| since.estimated))
+        .bind(
+            values
+                .vehicle_type
+                .and_then(domain::command::Clearable::into_option)
+                .map(id_to_sql),
+        )
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -219,6 +225,7 @@ impl RecordWriter<Asset> for AssetWriter {
             since.on.as_str().to_owned()
         });
         let in_service_estimated = clearable(patch.in_service.as_ref(), |since| since.estimated);
+        let vehicle_type = clearable(patch.vehicle_type.as_ref(), id_to_sql);
         let identifiers = patch
             .identifiers
             .as_ref()
@@ -240,6 +247,7 @@ impl RecordWriter<Asset> for AssetWriter {
                  main_photo = CASE WHEN ? THEN ? ELSE main_photo END,
                  in_service_since = CASE WHEN ? THEN ? ELSE in_service_since END,
                  in_service_estimated = CASE WHEN ? THEN coalesce(?, 0) ELSE in_service_estimated END,
+                 vehicle_type = CASE WHEN ? THEN ? ELSE vehicle_type END,
                  sequence = ?
              WHERE id = ?",
         )
@@ -270,6 +278,8 @@ impl RecordWriter<Asset> for AssetWriter {
         .bind(in_service_on.1)
         .bind(in_service_estimated.0)
         .bind(in_service_estimated.1)
+        .bind(vehicle_type.0)
+        .bind(vehicle_type.1)
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -331,6 +341,10 @@ fn asset_from_row(row: &SqliteRow) -> Result<(AssetId, Asset), StorageError> {
                         estimated: row.try_get("in_service_estimated")?,
                     })
                 })
+                .transpose()?,
+            vehicle_type: row
+                .try_get::<Option<&[u8]>, _>("vehicle_type")?
+                .map(|bytes| id_from_sql(bytes, "assets.vehicle_type"))
                 .transpose()?,
         },
     ))
@@ -771,7 +785,8 @@ impl Database {
     pub async fn assets(&self) -> Result<Vec<(AssetId, Asset)>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers, main_photo, in_service_since, in_service_estimated
+                    status, identifiers, main_photo, in_service_since, in_service_estimated,
+                    vehicle_type
              FROM assets WHERE deleted = 0 ORDER BY name",
         )
         .fetch_all(self.pool())
@@ -789,7 +804,8 @@ impl Database {
     pub async fn asset(&self, id: AssetId) -> Result<Option<Asset>, StorageError> {
         sqlx::query(
             "SELECT id, kind, name, make, model, year, colour, description, group_id, parent_id,
-                    status, identifiers, main_photo, in_service_since, in_service_estimated
+                    status, identifiers, main_photo, in_service_since, in_service_estimated,
+                    vehicle_type
              FROM assets WHERE id = ? AND deleted = 0",
         )
         .bind(id_to_sql(id))

@@ -82,7 +82,7 @@ mod assets {
     }
 
     fn added(outcome: &AssetsOutcome) -> AssetId {
-        let AssetsOutcome::Added { id } = outcome else {
+        let AssetsOutcome::Added { id, .. } = outcome else {
             panic!("expected a new vehicle, got {outcome:?}");
         };
         *id

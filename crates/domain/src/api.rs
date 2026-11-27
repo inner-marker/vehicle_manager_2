@@ -653,6 +653,10 @@ pub enum AssetsOutcome {
     Added {
         /// Its ID.
         id: crate::asset::AssetId,
+        /// Its type's template's meter rules left out, as "requirement: meter" (no matching
+        /// meter; #090).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        left_out: Vec<(crate::label::Label, crate::label::Label)>,
     },
     /// Who gains, loses, or changes access if the vehicle moves.
     MovePreview {
@@ -1580,6 +1584,50 @@ pub enum ShopsOutcome {
     Invalid {
         /// Why.
         problem: crate::shop::ShopProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// Manage → Vehicle types (phase-6.md 3e, #090): the household's types, and what the editor
+/// offers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TypesView {
+    /// The household's types, by name.
+    pub types: Vec<(
+        crate::vehicle_type::VehicleTypeId,
+        crate::vehicle_type::VehicleType,
+    )>,
+    /// The household's templates, by name, for a type to name one.
+    pub templates: Vec<(crate::template::TemplateId, crate::label::Label)>,
+    /// The person may change them (the household's Admin, in Admin mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a vehicle types request (phase-6.md 3e).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum TypesOutcome {
+    /// The types.
+    Types {
+        /// They.
+        view: TypesView,
+    },
+    /// A type was added or changed.
+    Saved {
+        /// Its ID.
+        id: crate::vehicle_type::VehicleTypeId,
+    },
+    /// Done (a type removed).
+    Done,
+    /// There's no such type.
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused.
+    Invalid {
+        /// Why.
+        problem: crate::vehicle_type::TypeProblem,
     },
     /// The server couldn't do it right now.
     Unavailable,

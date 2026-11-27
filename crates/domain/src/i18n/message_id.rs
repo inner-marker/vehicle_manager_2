@@ -2137,6 +2137,14 @@ define_messages! {
     TIRES_UNITS_NOTE => "tires-units-note",
     /// Button: add the Tires set; takes `fields` (number).
     TIRES_ADD => "tires-add",
+    /// Error: a vehicle type's name is taken.
+    TYPE_NAME_TAKEN => "type-name-taken",
+    /// Error: a type's catalogue fields.
+    TYPE_BAD_CATALOGUE => "type-bad-catalogue",
+    /// Error: a type's template is gone.
+    TYPE_TEMPLATE_GONE => "type-template-gone",
+    /// Error: a vehicle's type on another kind.
+    TYPE_WRONG_KIND => "type-wrong-kind",
     /// Setup: add a derived meter.
     SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).

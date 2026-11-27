@@ -1842,6 +1842,67 @@ pub(crate) async fn delete_template(
     )
 }
 
+/// Manage → Vehicle types: the household's types and templates (phase-6.md 3e, #090).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/vehicle-types")]
+pub(crate) async fn list_vehicle_types() -> ServerFnResult<domain::api::TypesOutcome> {
+    Ok(
+        server_side::with_types(async |context| ::server::vehicle_types::list(&context).await)
+            .await,
+    )
+}
+
+/// Adds a vehicle type (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `TypesOutcome` values.
+#[post("/api/v1/vehicle-types/add")]
+pub(crate) async fn add_vehicle_type(
+    kept: domain::vehicle_type::VehicleType,
+) -> ServerFnResult<domain::api::TypesOutcome> {
+    Ok(
+        server_side::with_types(async |context| ::server::vehicle_types::add(&context, kept).await)
+            .await,
+    )
+}
+
+/// Changes a vehicle type (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `TypesOutcome` values.
+#[post("/api/v1/vehicle-types/edit")]
+pub(crate) async fn edit_vehicle_type(
+    id: domain::vehicle_type::VehicleTypeId,
+    kept: domain::vehicle_type::VehicleType,
+) -> ServerFnResult<domain::api::TypesOutcome> {
+    Ok(server_side::with_types(async |context| {
+        ::server::vehicle_types::edit(&context, id, kept).await
+    })
+    .await)
+}
+
+/// Removes a vehicle type (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `TypesOutcome` values.
+#[post("/api/v1/vehicle-types/delete")]
+pub(crate) async fn delete_vehicle_type(
+    id: domain::vehicle_type::VehicleTypeId,
+) -> ServerFnResult<domain::api::TypesOutcome> {
+    Ok(
+        server_side::with_types(async |context| {
+            ::server::vehicle_types::delete(&context, id).await
+        })
+        .await,
+    )
+}
+
 /// Settings → Labor rates: the household's rate and shops (phase-6.md 2f).
 ///
 /// # Errors
@@ -2570,6 +2631,21 @@ mod server_side {
             signed_in(),
         ) else {
             return domain::api::ShopsOutcome::Unavailable;
+        };
+        action(assets_context(database, database_id, &user)).await
+    }
+
+    /// Runs `action` with the signed-in person's vehicles context for a vehicle types request,
+    /// or answers that it's unavailable (no database, or nobody signed in).
+    pub(super) async fn with_types(
+        action: impl AsyncFnOnce(server::assets::AssetsContext<'_>) -> domain::api::TypesOutcome,
+    ) -> domain::api::TypesOutcome {
+        let (Some(database), Some(database_id), Some(user)) = (
+            server::startup::database(),
+            server::startup::database_id(),
+            signed_in(),
+        ) else {
+            return domain::api::TypesOutcome::Unavailable;
         };
         action(assets_context(database, database_id, &user)).await
     }

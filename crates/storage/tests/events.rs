@@ -69,6 +69,7 @@ mod events {
             .unwrap();
         for (n, name) in [(TRUCK, "Truck"), (TRAILER, "Trailer")] {
             let asset = Asset {
+                vehicle_type: None,
                 kind: AssetKind::parse("truck").unwrap(),
                 name: AssetName::parse(name).unwrap(),
                 make: None,

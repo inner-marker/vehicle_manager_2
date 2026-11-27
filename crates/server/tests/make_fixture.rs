@@ -201,7 +201,7 @@ mod make_fixture {
             name: "Fixture truck".into(),
             ..AssetForm::new("truck", group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, admin, clock), &form).await
         else {
             panic!("the truck wasn't added");

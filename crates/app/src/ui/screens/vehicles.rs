@@ -760,6 +760,7 @@ mod tests {
             },
             id: test_id(n),
             asset: Asset {
+                vehicle_type: None,
                 kind: AssetKind::parse("car").unwrap(),
                 name: AssetName::parse(name).unwrap(),
                 make: None,

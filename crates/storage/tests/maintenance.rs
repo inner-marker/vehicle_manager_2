@@ -85,6 +85,7 @@ mod maintenance {
             .await
             .unwrap();
         let asset = Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,

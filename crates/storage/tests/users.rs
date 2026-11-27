@@ -174,6 +174,7 @@ mod users {
             .await
             .unwrap();
         let truck = Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,

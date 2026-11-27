@@ -937,6 +937,21 @@ pub(crate) async fn list_templates() -> ServerFnResult<domain::api::TemplatesOut
     read!(reader => ::server::templates::list(&reader.assets()).await, api::list_templates())
 }
 
+/// Manage → Vehicle types (`api::list_vehicle_types`, phase-6.md 3e): read from the copy on a
+/// desktop that has one, offline too, so adding a vehicle offers them. Changing them needs the
+/// server.
+///
+/// # Errors
+///
+/// As the server function.
+#[expect(
+    dead_code,
+    reason = "Manage → Vehicle types and Add vehicle use it (3f)"
+)]
+pub(crate) async fn list_vehicle_types() -> ServerFnResult<domain::api::TypesOutcome> {
+    read!(reader => ::server::vehicle_types::list(&reader.assets()).await, api::list_vehicle_types())
+}
+
 /// Settings → Labor rates (`api::list_shops`, phase-6.md 2f): read from the copy on a desktop
 /// that has one, offline too, so a job logged offline is priced from the rates. Changing them
 /// needs the server.

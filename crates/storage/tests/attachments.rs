@@ -48,6 +48,7 @@ mod attachments {
 
     fn truck(identifiers: Vec<Identifier>) -> Asset {
         Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: None,

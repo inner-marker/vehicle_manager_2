@@ -65,7 +65,7 @@ mod fuel {
             name: name.into(),
             ..AssetForm::new(kind, group)
         };
-        let AssetsOutcome::Added { id } =
+        let AssetsOutcome::Added { id, .. } =
             add_vehicle(&context(database, &admin, clock), &form).await
         else {
             panic!("{name} wasn't added");

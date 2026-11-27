@@ -341,6 +341,7 @@ mod tests {
             standing: domain::lifecycle::Standing::default(),
             id: test_id(1),
             asset: Asset {
+                vehicle_type: None,
                 kind: AssetKind::parse(kind).unwrap(),
                 name: AssetName::parse("Thing").unwrap(),
                 make: None,

@@ -1883,6 +1883,10 @@ tires-dual = 4 (dual)
 tires-summary = { $tires } tires · { $fields } fields: a tire pressure and a tread depth for each ({ $names })
 tires-units-note = Pressure in your pressure unit; tread depth in 32nds of an inch (miles) or mm (kilometers).
 tires-add = Add { $fields } fields
+type-name-taken = Another vehicle type has that name.
+type-bad-catalogue = Something from the catalogue doesn't fit this kind, or there's too much (20 at most).
+type-template-gone = That template has been removed. Choose another, or none.
+type-wrong-kind = A vehicle's type must be built on its kind.
 setup-add-derived = + Derived meter
 # $key (string): the key typed.
 formula-not-an-input = "{ $key }" can't be used here: a derived meter is worked out from typed meters that aren't reset.

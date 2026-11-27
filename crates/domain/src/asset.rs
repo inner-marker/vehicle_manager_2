@@ -76,6 +76,10 @@ pub struct Asset {
     /// backdated, perhaps estimated. A chained calendar rule's first interval counts from it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub in_service: Option<InService>,
+    /// The household vehicle type it was added as (#090), if any: its name and icon are
+    /// shown. Its kind is still [`Self::kind`]; a removed type's vehicles show their kind.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicle_type: Option<crate::vehicle_type::VehicleTypeId>,
 }
 
 /// When a vehicle went into service (#090), and whether that's an estimate.
@@ -398,6 +402,9 @@ pub struct AssetPatch {
     /// See [`Asset::in_service`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub in_service: Option<Clearable<InService>>,
+    /// See [`Asset::vehicle_type`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicle_type: Option<Clearable<crate::vehicle_type::VehicleTypeId>>,
 }
 
 impl AssetPatch {
@@ -418,12 +425,13 @@ impl AssetPatch {
             identifiers: Some(asset.identifiers),
             main_photo: Some(Clearable::from_option(asset.main_photo)),
             in_service: Some(Clearable::from_option(asset.in_service)),
+            vehicle_type: Some(Clearable::from_option(asset.vehicle_type)),
         }
     }
 }
 
 /// Every field name, in a fixed order (as stored in the field clocks).
-const ASSET_FIELDS: [&str; 13] = [
+const ASSET_FIELDS: [&str; 14] = [
     "kind",
     "name",
     "make",
@@ -437,6 +445,7 @@ const ASSET_FIELDS: [&str; 13] = [
     "identifiers",
     "main_photo",
     "in_service",
+    "vehicle_type",
 ];
 
 impl Patch for AssetPatch {
@@ -455,6 +464,7 @@ impl Patch for AssetPatch {
             self.identifiers.is_some(),
             self.main_photo.is_some(),
             self.in_service.is_some(),
+            self.vehicle_type.is_some(),
         ];
         // Each field name paired with whether this patch sets it, keeping the set ones.
         ASSET_FIELDS
@@ -505,6 +515,9 @@ impl Patch for AssetPatch {
         if !keep("in_service") {
             self.in_service = None;
         }
+        if !keep("vehicle_type") {
+            self.vehicle_type = None;
+        }
     }
 }
 
@@ -520,6 +533,7 @@ mod tests {
 
     fn truck() -> Asset {
         Asset {
+            vehicle_type: None,
             kind: AssetKind::parse("truck").unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: Some("Ford".into()),

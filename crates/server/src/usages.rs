@@ -82,7 +82,19 @@ pub(crate) async fn make_default(
     asset: AssetId,
     kind: &AssetKind,
 ) -> Result<(), domain::api::AssetsOutcome> {
-    let Some(usage) = default_usage(asset, kind) else {
+    save_default(context, default_usage(asset, kind)).await
+}
+
+/// Saves a new vehicle's default usage, if it has one (a vehicle type's, #090).
+///
+/// # Errors
+///
+/// The vehicles answer to give if it can't be saved.
+pub(crate) async fn save_default(
+    context: &AssetsContext<'_>,
+    usage: Option<Usage>,
+) -> Result<(), domain::api::AssetsOutcome> {
+    let Some(usage) = usage else {
         return Ok(());
     };
     let id: UsageId = context.new_id()?;

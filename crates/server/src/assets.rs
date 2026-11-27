@@ -30,6 +30,7 @@ use domain::meter::{Meter, MeterError, MeterId, MeterPatch};
 use domain::preferences::{Preferences, PreferencesId};
 use domain::profile::profile;
 use domain::time::Clock;
+use domain::vehicle_type::TypeProblem;
 use storage::Database;
 use storage::assets::{AssetWriter, CustomFieldWriter, GarageOrderWriter, MeterWriter};
 use storage::commands::RecordWriter;
@@ -462,9 +463,17 @@ async fn add_asset(
     if !context.may(AdminAction::AddAsset) {
         return Err(AssetsOutcome::NotAllowed);
     }
-    let asset = form
+    let mut asset = form
         .parse_on(latest_today(context).as_deref())
         .map_err(invalid)?;
+    // A vehicle type (#090) gives its kind, fields, documents, and template.
+    let vehicle_type = match form.vehicle_type {
+        Some(type_id) => Some(kept_type(context, type_id).await?),
+        None => None,
+    };
+    if let Some(kept) = &vehicle_type {
+        asset.kind = kept.kind.clone();
+    }
     let kind_profile = profile(&asset.kind).ok_or_else(|| invalid(Problem::UnknownKind))?;
     if !context.group_exists(asset.group).await? {
         return Err(invalid(Problem::UnknownGroup));
@@ -481,7 +490,14 @@ async fn add_asset(
         .await?;
     let distance = person_preferences(context).await?.distance;
     let english = Translator::english();
-    for meter in kind_profile.new_meters(id, distance, english) {
+    let meters = kind_profile.new_meters(id, distance, english);
+    let fields = match &vehicle_type {
+        Some(kept) => kept
+            .new_fields(id, &meters, english)
+            .map_err(|_| invalid(Problem::Type(TypeProblem::BadCatalogue)))?,
+        None => kind_profile.new_fields(id, english),
+    };
+    for meter in meters {
         let meter_id: MeterId = context.new_id()?;
         let values = MeterPatch::all(meter);
         context
@@ -494,7 +510,7 @@ async fn add_asset(
             )
             .await?;
     }
-    for field in kind_profile.new_fields(id, english) {
+    for field in fields {
         let field_id: CustomFieldId = context.new_id()?;
         let values = CustomFieldPatch::all(field);
         context
@@ -507,9 +523,30 @@ async fn add_asset(
             )
             .await?;
     }
-    crate::usages::make_default(context, id, &kind_profile.id).await?;
-    tracing::info!(target: log_area::APP, user = %context.user.user, asset = %id, kind = kind_profile.id.as_str(), "vehicle added");
-    Ok(AssetsOutcome::Added { id })
+    let mut left_out = Vec::new();
+    if let Some(kept) = &vehicle_type {
+        crate::usages::save_default(context, kept.default_usage(id)).await?;
+        if let Some(template) = kept.template {
+            left_out = crate::templates::copy_onto_new(context, template, id).await?;
+        }
+    } else {
+        crate::usages::make_default(context, id, &kind_profile.id).await?;
+    }
+    tracing::info!(target: log_area::APP, user = %context.user.user, asset = %id, kind = kind_profile.id.as_str(), typed = vehicle_type.is_some(), "vehicle added");
+    Ok(AssetsOutcome::Added { id, left_out })
+}
+
+/// Vehicle type `id`, unless it's been removed (#090).
+async fn kept_type(
+    context: &AssetsContext<'_>,
+    id: domain::vehicle_type::VehicleTypeId,
+) -> Result<domain::vehicle_type::VehicleType, AssetsOutcome> {
+    context
+        .database
+        .vehicle_type(id)
+        .await
+        .map_err(|error| unavailable("vehicle type", &error))?
+        .ok_or_else(|| invalid(Problem::Type(TypeProblem::UnknownType)))
 }
 
 /// The preferences in effect for the person (for a new odometer's unit).
@@ -591,6 +628,15 @@ async fn edit_asset(
     }
     .parse_on(latest_today(context).as_deref())
     .map_err(invalid)?;
+    // A new type must be one built on its kind (only its name and icon change, #090).
+    if wanted.vehicle_type != current.vehicle_type
+        && let Some(type_id) = wanted.vehicle_type
+    {
+        let kept = kept_type(context, type_id).await?;
+        if kept.kind != current.kind {
+            return Err(invalid(Problem::Type(TypeProblem::WrongKind)));
+        }
+    }
     let patch = changes(&current, &wanted);
     if !domain::command::Patch::changed_fields(&patch).is_empty() {
         context
@@ -637,6 +683,7 @@ fn changes(current: &Asset, wanted: &Asset) -> AssetPatch {
         // Chosen in the photo viewer (`set_main_photo`), never by the form.
         main_photo: None,
         in_service: clears(current.in_service.as_ref(), wanted.in_service.as_ref()),
+        vehicle_type: clears(current.vehicle_type.as_ref(), wanted.vehicle_type.as_ref()),
     }
 }
 

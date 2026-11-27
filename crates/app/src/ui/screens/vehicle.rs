@@ -516,6 +516,7 @@ mod tests {
 
     fn asset(kind: &str) -> Asset {
         Asset {
+            vehicle_type: None,
             kind: AssetKind::parse(kind).unwrap(),
             name: AssetName::parse("Truck").unwrap(),
             make: Some("Ford".into()),
