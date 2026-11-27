@@ -66,6 +66,7 @@ mod sessions {
             must_change_password: false,
         };
         let grant = RoleGrant {
+            custom: None,
             user: test_id(n),
             target: GrantTarget::AllAssets,
             role,

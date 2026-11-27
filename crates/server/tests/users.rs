@@ -42,6 +42,16 @@ mod pipeline {
         (temp, database)
     }
 
+    /// User 1 as the household's Admin.
+    fn admin_grant() -> RoleGrant {
+        RoleGrant {
+            custom: None,
+            user: test_id(1),
+            target: GrantTarget::AllAssets,
+            role: Role::Admin,
+        }
+    }
+
     #[tokio::test]
     async fn a_user_and_their_grant_are_created_and_edited_through_commands() {
         let (_temp, database) = database().await;
@@ -52,11 +62,7 @@ mod pipeline {
             disabled: false,
             must_change_password: true,
         };
-        let grant = RoleGrant {
-            user: test_id(1),
-            target: GrantTarget::AllAssets,
-            role: Role::Admin,
-        };
+        let grant = admin_grant();
         let rename = UserPatch {
             display_name: Some("Stu".into()),
             ..UserPatch::default()

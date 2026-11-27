@@ -233,6 +233,7 @@ pub async fn add_user(
         must_change_password: true,
     };
     let grant = RoleGrant {
+        custom: None,
         user: user_id,
         target: GrantTarget::AllAssets,
         role,
@@ -373,6 +374,39 @@ pub async fn set_role(
     target: GrantTarget,
     role: Option<Role>,
 ) -> UserAdminOutcome {
+    replace_grant(context, user, target, role.map(|role| (role, None))).await
+}
+
+/// Gives `user` the household's custom role `custom` on `target` (#091), in place of what
+/// they had there.
+pub async fn set_custom_role(
+    context: &AdminContext<'_>,
+    user: UserId,
+    target: GrantTarget,
+    custom: domain::custom_role::CustomRoleId,
+) -> UserAdminOutcome {
+    if !context.allowed() {
+        return UserAdminOutcome::NotAllowed;
+    }
+    let permissions = match context.database.custom_role(custom).await {
+        Ok(Some(kept)) => kept.permissions,
+        Ok(None) => return UserAdminOutcome::NotFound,
+        Err(error) => return unavailable("role", &error),
+    };
+    let grant = domain::access::CustomGrant {
+        role: custom,
+        permissions,
+    };
+    replace_grant(context, user, target, Some((Role::Viewer, Some(grant)))).await
+}
+
+/// Replaces `user`'s grant on `target` with `role` (and a custom role), or removes it.
+async fn replace_grant(
+    context: &AdminContext<'_>,
+    user: UserId,
+    target: GrantTarget,
+    role: Option<(Role, Option<domain::access::CustomGrant>)>,
+) -> UserAdminOutcome {
     if !context.allowed() {
         return UserAdminOutcome::NotAllowed;
     }
@@ -394,10 +428,14 @@ pub async fn set_role(
     let (theirs, others): (Vec<_>, Vec<_>) = grants
         .into_iter()
         .partition(|(_, grant)| grant.user == user && grant.target == target);
+    let new_grant = role.map(|(role, custom)| RoleGrant {
+        user,
+        target,
+        role,
+        custom,
+    });
     let mut after: Vec<RoleGrant> = others.iter().map(|(_, grant)| *grant).collect();
-    if let Some(role) = role {
-        after.push(RoleGrant { user, target, role });
-    }
+    after.extend(new_grant);
     if !leaves_an_admin(&after, |id| is_enabled(&users, id)) {
         return UserAdminOutcome::LastAdmin;
     }
@@ -407,11 +445,10 @@ pub async fn set_role(
             return unavailable("role", &error);
         }
     }
-    if let Some(role) = role {
+    if let Some(grant) = new_grant {
         let Ok(id) = new_id(context.clock.now()) else {
             return unavailable("role", &"no random bytes for an ID");
         };
-        let grant = RoleGrant { user, target, role };
         if let Err(error) = context
             .issue_grant(Change::Create {
                 id,
@@ -422,7 +459,7 @@ pub async fn set_role(
             return unavailable("role", &error);
         }
     }
-    tracing::info!(target: log_area::AUTH, %user, ?target, ?role, by = %context.admin.user, "role changed");
+    tracing::info!(target: log_area::AUTH, %user, ?target, role = ?new_grant.map(|grant| grant.role), custom = ?new_grant.and_then(|grant| grant.custom).map(|custom| custom.role), by = %context.admin.user, "role changed");
     UserAdminOutcome::Done
 }
 

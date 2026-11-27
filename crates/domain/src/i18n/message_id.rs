@@ -335,6 +335,10 @@ define_messages! {
     ROLE_MAINTAINER => "role-maintainer",
     /// Role: Admin.
     ROLE_ADMIN => "role-admin",
+    /// Error: a custom role's name is taken.
+    ROLE_NAME_TAKEN => "role-name-taken",
+    /// Error: a custom role allows nothing.
+    ROLE_NO_PERMISSIONS => "role-no-permissions",
     /// No role on all vehicles.
     ROLE_NONE => "role-none",
     /// Users: button to add a user.

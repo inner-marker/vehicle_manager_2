@@ -2084,6 +2084,80 @@ pub(crate) async fn rename_me(
     .await)
 }
 
+/// Gives a person the household's custom role on all vehicles, a group, or one vehicle, in
+/// place of what they had there (#091).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`UserAdminOutcome`] values.
+#[post("/api/v1/users/custom-role")]
+pub(crate) async fn set_user_custom_role(
+    user: domain::user::UserId,
+    target: domain::access::GrantTarget,
+    custom: domain::custom_role::CustomRoleId,
+) -> ServerFnResult<UserAdminOutcome> {
+    Ok(server_side::with_admin(async |context| {
+        ::server::user_admin::set_custom_role(&context, user, target, custom).await
+    })
+    .await)
+}
+
+/// Manage → Roles: the household's custom roles (phase-6.md 4c, #091).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/roles")]
+pub(crate) async fn list_custom_roles() -> ServerFnResult<domain::api::RolesOutcome> {
+    Ok(server_side::with_roles(async |context| ::server::custom_roles::list(&context).await).await)
+}
+
+/// Adds a custom role (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `RolesOutcome` values.
+#[post("/api/v1/roles/add")]
+pub(crate) async fn add_custom_role(
+    role: domain::custom_role::CustomRole,
+) -> ServerFnResult<domain::api::RolesOutcome> {
+    Ok(
+        server_side::with_roles(async |context| ::server::custom_roles::add(&context, role).await)
+            .await,
+    )
+}
+
+/// Changes a custom role (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `RolesOutcome` values.
+#[post("/api/v1/roles/edit")]
+pub(crate) async fn edit_custom_role(
+    id: domain::custom_role::CustomRoleId,
+    role: domain::custom_role::CustomRole,
+) -> ServerFnResult<domain::api::RolesOutcome> {
+    Ok(server_side::with_roles(async |context| {
+        ::server::custom_roles::edit(&context, id, role).await
+    })
+    .await)
+}
+
+/// Removes a custom role and its grants (the household's Admin, in Admin mode).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `RolesOutcome` values.
+#[post("/api/v1/roles/delete")]
+pub(crate) async fn delete_custom_role(
+    id: domain::custom_role::CustomRoleId,
+) -> ServerFnResult<domain::api::RolesOutcome> {
+    Ok(
+        server_side::with_roles(async |context| ::server::custom_roles::delete(&context, id).await)
+            .await,
+    )
+}
+
 // --- Devices (phase-3.md 2e, #073) ------------------------------------------------------
 
 /// Your signed-in devices and browsers, this one marked.
@@ -2328,6 +2402,23 @@ mod server_side {
         let context = server::user_admin::AdminContext {
             database,
             admin: &admin,
+            health: server::health::current(),
+            clock: &SystemClock,
+        };
+        action(context).await
+    }
+
+    /// Runs `action` as the signed-in user for a custom roles request, or answers that it's
+    /// unavailable (no database, or nobody signed in).
+    pub(super) async fn with_roles(
+        action: impl AsyncFnOnce(server::user_admin::AdminContext<'_>) -> domain::api::RolesOutcome,
+    ) -> domain::api::RolesOutcome {
+        let (Some(database), Some(person)) = (server::startup::database(), signed_in()) else {
+            return domain::api::RolesOutcome::Unavailable;
+        };
+        let context = server::user_admin::AdminContext {
+            database,
+            admin: &person,
             health: server::health::current(),
             clock: &SystemClock,
         };

@@ -398,7 +398,7 @@ mod tests {
     }
 
     /// The current API version header value.
-    const CURRENT: Option<&str> = Some("3");
+    const CURRENT: Option<&str> = Some("4");
 
     #[test]
     fn current_is_this_builds_version() {

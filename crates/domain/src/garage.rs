@@ -195,6 +195,7 @@ mod tests {
 
     fn summary(n: u32, name: &str) -> AssetSummary {
         AssetSummary {
+            permissions: crate::access::Permissions::NONE,
             vehicle_type: None,
             standing: crate::lifecycle::Standing::default(),
             id: test_id(n),

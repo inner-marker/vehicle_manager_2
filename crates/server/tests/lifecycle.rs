@@ -409,6 +409,7 @@ mod lifecycle {
         let van = vehicle(&database, &jordan, &clock, "Van").await;
         // Pat maintains the truck and only views the van.
         let grant = |asset, role| RoleGrant {
+            custom: None,
             user: sam.user,
             target: GrantTarget::Asset(asset),
             role,

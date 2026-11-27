@@ -155,6 +155,7 @@ pub async fn create_first_admin(
         must_change_password: false,
     };
     let grant = RoleGrant {
+        custom: None,
         user: user_id,
         target: GrantTarget::AllAssets,
         role: Role::Admin,

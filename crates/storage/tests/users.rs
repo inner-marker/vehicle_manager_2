@@ -201,11 +201,13 @@ mod users {
         create_user(&database, 1, jordan()).await;
         create_truck(&database, 50).await;
         let everywhere = RoleGrant {
+            custom: None,
             user: test_id(1),
             target: GrantTarget::AllAssets,
             role: Role::Admin,
         };
         let truck = RoleGrant {
+            custom: None,
             user: test_id(1),
             target: GrantTarget::Asset(test_id(50)),
             role: Role::Maintainer,
@@ -246,6 +248,7 @@ mod users {
     async fn a_grant_for_a_missing_user_is_refused() {
         let (_temp, database) = database().await;
         let orphan = RoleGrant {
+            custom: None,
             user: test_id(77),
             target: GrantTarget::AllAssets,
             role: Role::Viewer,

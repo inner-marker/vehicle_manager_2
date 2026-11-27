@@ -13,7 +13,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Row, SqliteConnection};
 
 use crate::commands::RecordWriter;
-use crate::convert::{id_from_sql, id_to_sql, required};
+use crate::convert::{id_from_sql, id_to_sql, json_from_sql, required};
 use crate::{Database, StorageError};
 
 // --- Column forms of domain enums --------------------------------------------------------
@@ -322,8 +322,9 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
         let target = target_to_sql(required(values.target, "target")?);
         sqlx::query(
             "INSERT INTO role_grants
-                 (id, user_id, target_kind, target_asset, target_group, role, sequence)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+                 (id, user_id, target_kind, target_asset, target_group, role, custom_role,
+                  sequence)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(id_to_sql(id))
         .bind(id_to_sql(required(values.user, "user")?))
@@ -331,6 +332,7 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
         .bind(target.asset)
         .bind(target.group)
         .bind(role_to_sql(required(values.role, "role")?))
+        .bind(values.custom_role.map(id_to_sql))
         .bind(sequence)
         .execute(connection)
         .await?;
@@ -354,6 +356,7 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
                  target_asset = CASE WHEN ? THEN ? ELSE target_asset END,
                  target_group = CASE WHEN ? THEN ? ELSE target_group END,
                  role = coalesce(?, role),
+                 custom_role = coalesce(?, custom_role),
                  sequence = ?
              WHERE id = ?",
         )
@@ -364,6 +367,7 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
         .bind(target.is_some())
         .bind(target.and_then(|target| target.group))
         .bind(patch.role.map(role_to_sql))
+        .bind(patch.custom_role.map(id_to_sql))
         .bind(sequence)
         .bind(id_to_sql(id))
         .execute(connection)
@@ -386,14 +390,28 @@ impl RecordWriter<RoleGrant> for RoleGrantWriter {
     }
 }
 
+/// A grant, read with its custom role's permissions as they are now (#091; none if that role
+/// has been removed). Each query writes out the same join (sqlx takes only literal SQL).
 fn grant_from_row(row: &SqliteRow) -> Result<(RoleGrantId, RoleGrant), StorageError> {
     let role: String = row.try_get("role")?;
+    let custom = match row.try_get::<Option<&[u8]>, _>("custom_role")? {
+        Some(bytes) => Some(domain::access::CustomGrant {
+            role: id_from_sql(bytes, "role_grants.custom_role")?,
+            permissions: row
+                .try_get::<Option<String>, _>("custom_permissions")?
+                .map(|text| json_from_sql(&text, "custom_roles.permissions"))
+                .transpose()?
+                .unwrap_or_default(),
+        }),
+        None => None,
+    };
     Ok((
         id_from_sql(row.try_get::<&[u8], _>("id")?, "role_grants.id")?,
         RoleGrant {
             user: id_from_sql(row.try_get::<&[u8], _>("user_id")?, "role_grants.user_id")?,
             target: target_from_row(row)?,
             role: role_from_sql(&role)?,
+            custom,
         },
     ))
 }
@@ -409,8 +427,11 @@ impl Database {
         user: UserId,
     ) -> Result<Vec<(RoleGrantId, RoleGrant)>, StorageError> {
         sqlx::query(
-            "SELECT id, user_id, target_kind, target_asset, target_group, role
-             FROM role_grants WHERE user_id = ? AND deleted = 0",
+            "SELECT g.id, g.user_id, g.target_kind, g.target_asset, g.target_group, g.role,
+                    g.custom_role, c.permissions AS custom_permissions
+             FROM role_grants g
+             LEFT JOIN custom_roles c ON c.id = g.custom_role AND c.deleted = 0
+             WHERE g.user_id = ? AND g.deleted = 0",
         )
         .bind(id_to_sql(user))
         .fetch_all(self.pool())
@@ -427,8 +448,11 @@ impl Database {
     /// [`StorageError`] if the query fails or a stored value is invalid.
     pub async fn all_grants(&self) -> Result<Vec<(RoleGrantId, RoleGrant)>, StorageError> {
         sqlx::query(
-            "SELECT id, user_id, target_kind, target_asset, target_group, role
-             FROM role_grants WHERE deleted = 0",
+            "SELECT g.id, g.user_id, g.target_kind, g.target_asset, g.target_group, g.role,
+                    g.custom_role, c.permissions AS custom_permissions
+             FROM role_grants g
+             LEFT JOIN custom_roles c ON c.id = g.custom_role AND c.deleted = 0
+             WHERE g.deleted = 0",
         )
         .fetch_all(self.pool())
         .await?

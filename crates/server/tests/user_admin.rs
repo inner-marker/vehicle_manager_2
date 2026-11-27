@@ -50,6 +50,7 @@ mod user_admin {
             must_change_password: false,
         };
         let grant = RoleGrant {
+            custom: None,
             user: test_id(1),
             target: GrantTarget::AllAssets,
             role: Role::Admin,

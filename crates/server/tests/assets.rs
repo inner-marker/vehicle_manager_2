@@ -365,6 +365,7 @@ mod assets {
 
         // Sam: only the Garage group (their all-vehicles grant is replaced for this test).
         let garage_only = RoleGrant {
+            custom: None,
             user: sam.user,
             target: GrantTarget::Group(garage_id),
             role: Role::Driver,

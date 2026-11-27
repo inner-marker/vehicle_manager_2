@@ -15,6 +15,7 @@ pub mod calculated;
 pub mod catalogue;
 pub mod command;
 pub mod custom_field;
+pub mod custom_role;
 pub mod dates;
 pub mod device;
 pub mod device_signature;

@@ -9,7 +9,7 @@
 //! Changes go to the server only, as templates' do: on the desktop they're read from its copy,
 //! and changing them needs the server.
 
-use domain::access::{Role, highest_role};
+use domain::access::{AssetAction, permits_anywhere};
 use domain::api::{ShopsOutcome, ShopsView};
 use domain::command::Change;
 use domain::log_area;
@@ -24,9 +24,8 @@ use crate::sessions::SignedIn;
 /// Whether `user` may change the shops and the rate: a Maintainer or higher, in that mode.
 #[must_use]
 pub fn may_manage(user: &SignedIn) -> bool {
-    highest_role(&user.grants)
-        .map(|role| role.min(user.mode.cap()))
-        .is_some_and(|role| role >= Role::Maintainer)
+    // Shops and rates go with changing vehicles' setups (#091).
+    permits_anywhere(&user.grants, user.mode, AssetAction::ConfigureMaintenance)
 }
 
 /// Logs a failure and answers "unavailable".

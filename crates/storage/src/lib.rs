@@ -11,6 +11,7 @@ pub mod assets;
 pub mod attachments;
 pub mod commands;
 pub mod convert;
+pub mod custom_roles;
 pub mod database;
 pub mod devices;
 pub mod documents;

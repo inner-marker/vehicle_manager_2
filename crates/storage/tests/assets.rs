@@ -420,6 +420,7 @@ mod assets {
             (62, GrantTarget::AllAssets),
         ] {
             let grant = RoleGrant {
+                custom: None,
                 user: test_id(2),
                 target,
                 role: Role::Driver,
@@ -446,6 +447,7 @@ mod assets {
         let (_temp, database) = database().await;
         let mut connection = database.pool().acquire().await.unwrap();
         let grant = RoleGrant {
+            custom: None,
             user: test_id(2),
             target: GrantTarget::Group(test_id(HANGAR)),
             role: Role::Driver,

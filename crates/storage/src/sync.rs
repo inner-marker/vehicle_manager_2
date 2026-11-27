@@ -29,7 +29,7 @@ use crate::convert::{id_from_sql, id_to_sql};
 use crate::database::{Database, latest_schema_version};
 
 /// The tables of records, each with its own `sequence` and `deleted`.
-pub const RECORD_TABLES: [&str; 23] = [
+pub const RECORD_TABLES: [&str; 24] = [
     "users",
     "role_grants",
     "preferences",
@@ -53,6 +53,7 @@ pub const RECORD_TABLES: [&str; 23] = [
     "reference_documents",
     "shops",
     "vehicle_types",
+    "custom_roles",
 ];
 
 /// An event's parts, keyed by `event_id` and rewritten whole when the event changes.

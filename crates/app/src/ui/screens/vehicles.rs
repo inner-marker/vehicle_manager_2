@@ -838,6 +838,7 @@ mod tests {
 
     fn vehicle(n: u32, name: &str, group: u32, status: LifecycleStatus) -> AssetSummary {
         AssetSummary {
+            permissions: domain::access::Permissions::NONE,
             vehicle_type: None,
             due: None,
             ready: None,

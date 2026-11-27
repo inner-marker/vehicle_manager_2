@@ -537,6 +537,7 @@ mod tests {
 
     fn grant(asset: u32, role: Role) -> RoleGrant {
         RoleGrant {
+            custom: None,
             user: test_id(5),
             target: GrantTarget::Asset(test_id(asset)),
             role,
@@ -565,6 +566,7 @@ mod tests {
     #[test]
     fn the_household_admin_may_change_any_in_admin_mode() {
         let admin = [RoleGrant {
+            custom: None,
             user: test_id(5),
             target: GrantTarget::AllAssets,
             role: Role::Admin,

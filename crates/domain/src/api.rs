@@ -22,12 +22,14 @@ use crate::i18n::{MessageId, messages};
 
 /// The API version this build speaks. 2 (phase-3.md 2c, #073): a desktop pairs at sign-in
 /// and signs its requests. 3 (phase-6.md 3b, #090): a desktop sends pinned vehicles
-/// (`SetGaragePins`) with its offline changes.
-pub const API_VERSION: u32 = 3;
+/// (`SetGaragePins`) with its offline changes. 4 (phase-6.md 4c, #091): grants may name a
+/// household's custom role, whose permissions a desktop checks offline.
+pub const API_VERSION: u32 = 4;
 
 /// The oldest client API version this build's server still accepts: the one before (#072).
-/// Version-2 desktop apps never send pins, so their Garage works as before.
-pub const MIN_SUPPORTED_API_VERSION: u32 = 2;
+/// A version-3 desktop sends nothing new; it's stopped by the schema check (migration 0034)
+/// before it could misread a custom role's grant.
+pub const MIN_SUPPORTED_API_VERSION: u32 = 3;
 
 /// Header carrying the client's API version (a plain integer, e.g. `1`).
 pub const API_VERSION_HEADER: &str = "x-api-version";
@@ -492,6 +494,10 @@ pub struct AssetSummary {
     /// (#090).
     #[serde(default)]
     pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
+    /// What the person's grants allow on it, whatever the mode (built-in and custom roles,
+    /// #091); screens show what the mode allows of it.
+    #[serde(default)]
+    pub permissions: crate::access::Permissions,
 }
 
 /// The Garage: the groups and vehicles the person can see, and what they may do.
@@ -550,6 +556,9 @@ pub struct AssetView {
     /// Its household vehicle type's name and icon (#090), as on [`AssetSummary`].
     #[serde(default)]
     pub vehicle_type: Option<crate::vehicle_type::TypeLabel>,
+    /// What the person's grants allow on it, as on [`AssetSummary`] (#091).
+    #[serde(default)]
+    pub permissions: crate::access::Permissions,
 }
 
 /// How one person's access changes in a move, for the preview.
@@ -1591,6 +1600,55 @@ pub enum ShopsOutcome {
     Invalid {
         /// Why.
         problem: crate::shop::ShopProblem,
+    },
+    /// The server couldn't do it right now.
+    Unavailable,
+}
+
+/// One custom role as listed (#091): the role, and how many people hold it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoleSummary {
+    /// Its ID.
+    pub id: crate::custom_role::CustomRoleId,
+    /// The role.
+    pub role: crate::custom_role::CustomRole,
+    /// How many people hold it, anywhere.
+    pub holders: usize,
+}
+
+/// Manage → Roles (phase-6.md 4d, #091): the household's custom roles.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RolesView {
+    /// The custom roles, by name.
+    pub roles: Vec<RoleSummary>,
+    /// The person may change them (the household's Admin, in Admin mode).
+    pub may_manage: bool,
+}
+
+/// The answer to a custom roles request (phase-6.md 4c).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum RolesOutcome {
+    /// The roles.
+    Roles {
+        /// They.
+        view: RolesView,
+    },
+    /// A role was added or changed.
+    Saved {
+        /// Its ID.
+        id: crate::custom_role::CustomRoleId,
+    },
+    /// Done (a role removed, with its grants).
+    Done,
+    /// There's no such role.
+    NotFound,
+    /// The person's roles or mode don't allow it.
+    NotAllowed,
+    /// Refused.
+    Invalid {
+        /// Why.
+        problem: crate::custom_role::RoleProblem,
     },
     /// The server couldn't do it right now.
     Unavailable,

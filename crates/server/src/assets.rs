@@ -179,6 +179,7 @@ async fn garage_view(
             };
             role_on(grants, scope).map(|role| AssetSummary {
                 id,
+                permissions: domain::access::permissions_on(grants, scope),
                 vehicle_type: domain::vehicle_type::label_of(asset.vehicle_type, &types),
                 standing: domain::lifecycle::Standing::default(),
                 asset,
@@ -310,6 +311,7 @@ async fn asset_view(
         view: Box::new(AssetView {
             id,
             vehicle_type,
+            permissions: domain::access::permissions_on(grants, scope),
             asset,
             role: role_on(grants, scope).ok_or(AssetsOutcome::NotFound)?,
             can_manage: permits_on_asset(grants, mode, AssetAction::ManageAsset, scope),

@@ -29,7 +29,7 @@
 //!     id: Id::generate(at, [2; 10]).unwrap(),
 //!     group: Id::generate(at, [3; 10]).unwrap(),
 //! };
-//! let grants = [RoleGrant { user, target: GrantTarget::AllAssets, role: Role::Maintainer }];
+//! let grants = [RoleGrant { user, target: GrantTarget::AllAssets, role: Role::Maintainer, custom: None }];
 //!
 //! // A Maintainer can log maintenance, but only once they switch to Maintainer mode.
 //! assert!(!permits_on_asset(&grants, ActiveMode::Driver, AssetAction::LogMaintenance, truck));
@@ -94,6 +94,87 @@ impl GrantTarget {
     }
 }
 
+/// A set of vehicle actions: a custom role's permissions (#091). Stored and sent as a list
+/// of the actions' names.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(from = "Vec<AssetAction>", into = "Vec<AssetAction>")]
+pub struct Permissions(u16);
+
+impl Permissions {
+    /// No actions.
+    pub const NONE: Self = Self(0);
+
+    /// The set of `actions`.
+    #[must_use]
+    pub fn of(actions: &[AssetAction]) -> Self {
+        Self(actions.iter().fold(0, |bits, action| bits | action.bit()))
+    }
+
+    /// Every action a built-in `role` allows (each at or below it).
+    #[must_use]
+    pub fn of_role(role: Role) -> Self {
+        Self::of(
+            &AssetAction::ALL
+                .into_iter()
+                .filter(|action| action.required_role() <= role)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    /// Whether it holds `action`.
+    #[must_use]
+    pub const fn contains(self, action: AssetAction) -> bool {
+        self.0 & action.bit() != 0
+    }
+
+    /// Both sets together.
+    #[must_use]
+    pub const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
+    }
+
+    /// Its actions, in [`AssetAction::ALL`]'s order.
+    #[must_use]
+    pub fn actions(self) -> Vec<AssetAction> {
+        AssetAction::ALL
+            .into_iter()
+            .filter(|action| self.contains(*action))
+            .collect()
+    }
+
+    /// The highest level among its actions (viewing aside): what modes its holder needs.
+    #[must_use]
+    pub fn highest_level(self) -> Option<Role> {
+        self.actions()
+            .into_iter()
+            .filter(|action| *action != AssetAction::View)
+            .map(AssetAction::required_role)
+            .max()
+    }
+}
+
+impl From<Vec<AssetAction>> for Permissions {
+    fn from(actions: Vec<AssetAction>) -> Self {
+        Self::of(&actions)
+    }
+}
+
+impl From<Permissions> for Vec<AssetAction> {
+    fn from(permissions: Permissions) -> Self {
+        permissions.actions()
+    }
+}
+
+/// A grant of a household's custom role (#091): which role, and what it allows, read with
+/// the grant (the role's permissions as they are now).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct CustomGrant {
+    /// The custom role.
+    pub role: crate::custom_role::CustomRoleId,
+    /// What it allows now.
+    pub permissions: Permissions,
+}
+
 /// One role for one user on one target. A user can have several; they add up.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RoleGrant {
@@ -101,8 +182,11 @@ pub struct RoleGrant {
     pub user: UserId,
     /// On what.
     pub target: GrantTarget,
-    /// Which role.
+    /// Which role: a built-in one, or [`Role::Viewer`] with a custom role in [`Self::custom`].
     pub role: Role,
+    /// A household's custom role (#091), in place of a built-in one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<CustomGrant>,
 }
 
 /// The mode a user is working in. It caps their permissions: least privilege by default.
@@ -130,7 +214,8 @@ impl ActiveMode {
 }
 
 /// Something done to one asset.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum AssetAction {
     /// See the asset and its history.
     View,
@@ -165,6 +250,44 @@ pub enum AssetAction {
 }
 
 impl AssetAction {
+    /// Every action, in a fixed order (each one's bit in [`Permissions`] is its place here, so
+    /// never reorder; add new ones at the end).
+    pub const ALL: [Self; 14] = [
+        Self::View,
+        Self::LogFuel,
+        Self::LogReading,
+        Self::OpenSquawk,
+        Self::LogMaintenance,
+        Self::DispositionSquawk,
+        Self::ConfigureMaintenance,
+        Self::ManageEvents,
+        Self::OverrideReadings,
+        Self::ManageAsset,
+        Self::KeepOriginals,
+        Self::ManageDocuments,
+        Self::SendOut,
+        Self::RecordOwnership,
+    ];
+
+    /// Its bit in [`Permissions`].
+    const fn bit(self) -> u16 {
+        let mut index = 0;
+        while index < Self::ALL.len() {
+            if Self::ALL[index] as u8 == self as u8 {
+                break;
+            }
+            index += 1;
+        }
+        1 << index
+    }
+
+    /// Whether a custom role may hold it (#091): the Driver- and Maintainer-level ones, not the
+    /// Admin's.
+    #[must_use]
+    pub const fn customisable(self) -> bool {
+        !matches!(self.required_role(), Role::Admin)
+    }
+
     /// The lowest role that may do this.
     #[must_use]
     pub const fn required_role(self) -> Role {
@@ -220,6 +343,47 @@ pub struct Actor {
     pub mode: ActiveMode,
 }
 
+impl RoleGrant {
+    /// What this grant allows, whatever the mode: a built-in role's actions, or a custom
+    /// role's (always with viewing).
+    #[must_use]
+    pub fn permissions(&self) -> Permissions {
+        match self.custom {
+            Some(custom) => custom
+                .permissions
+                .union(Permissions::of(&[AssetAction::View])),
+            None => Permissions::of_role(self.role),
+        }
+    }
+
+    /// Whether this grant lets its holder do `action` in `mode` (on what it covers). Viewing
+    /// isn't limited by mode; every other action needs a mode at or above its level.
+    #[must_use]
+    pub fn allows(&self, mode: ActiveMode, action: AssetAction) -> bool {
+        let level_ok = action == AssetAction::View || action.required_role() <= mode.cap();
+        level_ok && self.permissions().contains(action)
+    }
+}
+
+/// Everything the user's grants allow on `asset`, whatever the mode (screens then hide what
+/// the mode doesn't allow; #069, #091).
+#[must_use]
+pub fn permissions_on(grants: &[RoleGrant], asset: AssetScope) -> Permissions {
+    grants
+        .iter()
+        .filter(|grant| grant.target.covers(asset))
+        .fold(Permissions::NONE, |all, grant| {
+            all.union(grant.permissions())
+        })
+}
+
+/// Whether the user, in `mode`, may do `action` on at least one vehicle (for household-wide
+/// things tied to a vehicle permission, e.g. shops and rates with changing setups; #091).
+#[must_use]
+pub fn permits_anywhere(grants: &[RoleGrant], mode: ActiveMode, action: AssetAction) -> bool {
+    grants.iter().any(|grant| grant.allows(mode, action))
+}
+
 /// The user's role on `asset`: the highest of the grants that cover it, or `None`.
 /// `grants` are this user's own grants.
 #[must_use]
@@ -250,7 +414,15 @@ pub fn is_household_admin(grants: &[RoleGrant]) -> bool {
 /// Viewer-only user, who works read-only.
 #[must_use]
 pub fn available_modes(grants: &[RoleGrant]) -> Vec<ActiveMode> {
-    let highest = highest_role(grants);
+    // The highest level any grant reaches: a built-in role's own, a custom role's highest
+    // permission (#091).
+    let highest = grants
+        .iter()
+        .filter_map(|grant| match grant.custom {
+            Some(custom) => custom.permissions.highest_level(),
+            None => Some(grant.role),
+        })
+        .max();
     [
         (ActiveMode::Driver, highest >= Some(Role::Driver)),
         (ActiveMode::Maintainer, highest >= Some(Role::Maintainer)),
@@ -270,17 +442,10 @@ pub fn permits_on_asset(
     action: AssetAction,
     asset: AssetScope,
 ) -> bool {
-    let Some(role) = role_on(grants, asset) else {
-        return false;
-    };
-    let required = action.required_role();
-    // Viewing isn't limited by mode: every mode can see what the user's grants cover.
-    let allowed = if required == Role::Viewer {
-        role
-    } else {
-        role.min(mode.cap())
-    };
-    allowed >= required
+    grants
+        .iter()
+        .filter(|grant| grant.target.covers(asset))
+        .any(|grant| grant.allows(mode, action))
 }
 
 /// Whether the user, in `mode`, may do a household-wide `action`.
@@ -367,16 +532,20 @@ pub struct RoleGrantPatch {
     /// See [`RoleGrant::role`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<Role>,
+    /// See [`RoleGrant::custom`]: the custom role's ID (its permissions are read with it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_role: Option<crate::custom_role::CustomRoleId>,
 }
 
 impl RoleGrantPatch {
     /// Every field of `grant`, for creating it.
     #[must_use]
-    pub const fn all(grant: RoleGrant) -> Self {
+    pub fn all(grant: RoleGrant) -> Self {
         Self {
             user: Some(grant.user),
             target: Some(grant.target),
             role: Some(grant.role),
+            custom_role: grant.custom.map(|custom| custom.role),
         }
     }
 }
@@ -387,6 +556,7 @@ impl Patch for RoleGrantPatch {
             ("user", self.user.is_some()),
             ("target", self.target.is_some()),
             ("role", self.role.is_some()),
+            ("custom_role", self.custom_role.is_some()),
         ]
         .into_iter()
         .filter_map(|(field, set)| set.then_some(field))
@@ -402,6 +572,9 @@ impl Patch for RoleGrantPatch {
         }
         if !fields.contains(&"role") {
             self.role = None;
+        }
+        if !fields.contains(&"custom_role") {
+            self.custom_role = None;
         }
     }
 }
@@ -436,6 +609,7 @@ mod tests {
 
     fn grant(target: GrantTarget, role: Role) -> RoleGrant {
         RoleGrant {
+            custom: None,
             user: test_id(1),
             target,
             role,
@@ -631,11 +805,13 @@ mod tests {
         let admin_id = test_id(1);
         let other = test_id(2);
         let admin = RoleGrant {
+            custom: None,
             user: admin_id,
             target: GrantTarget::AllAssets,
             role: Role::Admin,
         };
         let maintainer = RoleGrant {
+            custom: None,
             user: other,
             target: GrantTarget::AllAssets,
             role: Role::Maintainer,
@@ -683,29 +859,34 @@ mod tests {
         let grants = [
             // Jordan: Admin everywhere, unchanged by any move.
             RoleGrant {
+                custom: None,
                 user: jordan,
                 target: GrantTarget::AllAssets,
                 role: Role::Admin,
             },
             // Sam: Driver in the Garage only, so loses the truck.
             RoleGrant {
+                custom: None,
                 user: sam,
                 target: GrantTarget::Group(test_id(GARAGE)),
                 role: Role::Driver,
             },
             // Alex: Maintainer in the Hangar, so gains it.
             RoleGrant {
+                custom: None,
                 user: alex,
                 target: GrantTarget::Group(test_id(HANGAR)),
                 role: Role::Maintainer,
             },
             // Pat: Viewer everywhere, Maintainer on the truck itself: unchanged.
             RoleGrant {
+                custom: None,
                 user: pat,
                 target: GrantTarget::AllAssets,
                 role: Role::Viewer,
             },
             RoleGrant {
+                custom: None,
                 user: pat,
                 target: GrantTarget::Asset(test_id(TRUCK)),
                 role: Role::Maintainer,

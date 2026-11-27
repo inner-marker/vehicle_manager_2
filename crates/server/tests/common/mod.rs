@@ -35,6 +35,7 @@ pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn)
             must_change_password: false,
         };
         let grant = RoleGrant {
+            custom: None,
             user: test_id(n),
             target: GrantTarget::AllAssets,
             role,
@@ -77,25 +78,21 @@ pub(crate) async fn setup() -> (tempfile::TempDir, Database, SignedIn, SignedIn)
             .unwrap();
     }
     let limiter = LoginLimiter::new();
-    let (_, jordan) = sign_in(
-        &database,
-        &limiter,
-        "jordan",
-        "a long password".into(),
-        "a",
-        NOW,
-    )
-    .await
-    .unwrap();
-    let (_, sam) = sign_in(
-        &database,
-        &limiter,
-        "sam",
-        "a long password".into(),
-        "b",
-        NOW,
-    )
-    .await
-    .unwrap();
+    let mut signed_in = Vec::new();
+    for (name, client) in [("jordan", "a"), ("sam", "b")] {
+        let (_, person) = sign_in(
+            &database,
+            &limiter,
+            name,
+            "a long password".into(),
+            client,
+            NOW,
+        )
+        .await
+        .unwrap();
+        signed_in.push(person);
+    }
+    let sam = signed_in.pop().unwrap();
+    let jordan = signed_in.pop().unwrap();
     (temp, database, jordan, sam)
 }

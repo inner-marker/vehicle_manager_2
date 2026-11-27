@@ -26,7 +26,7 @@
 
 use std::io::Cursor;
 
-use domain::access::{AssetAction, AssetScope, highest_role, permits_on_asset};
+use domain::access::{AssetAction, AssetScope, permits_anywhere, permits_on_asset};
 use domain::api::{
     AssetsOutcome, AttachmentInput, AttachmentPart, AttachmentView, AttachmentsOutcome,
     UploadOutcome, UploadPurpose, UploadedFile,
@@ -416,8 +416,13 @@ pub async fn upload(
     if !context.health.is_healthy() {
         return UploadOutcome::Unavailable;
     }
-    let role = highest_role(&context.user.grants).map(|role| role.min(context.user.mode.cap()));
-    if role.is_none_or(|role| role < domain::access::Role::Driver) {
+    // Anyone who may log or report something in this mode (a Driver or higher, or a custom
+    // role with such a permission, #091).
+    let may_add = AssetAction::ALL.into_iter().any(|action| {
+        action != AssetAction::View
+            && permits_anywhere(&context.user.grants, context.user.mode, action)
+    });
+    if !may_add {
         return UploadOutcome::NotAllowed;
     }
     match upload_checked(context, purpose, bytes).await {
