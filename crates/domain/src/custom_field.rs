@@ -6,7 +6,7 @@
 //!
 //! **Values are whole numbers in a fixed storage unit**, like every quantity (plan §3):
 //! meters for distance, seconds for duration, milliliters for volume, meters per liter for
-//! fuel economy, and for a plain number, the number times 10^decimals. An optional
+//! fuel economy, pascals for pressure, micrometers for tread depth, and for a plain number, the number times 10^decimals. An optional
 //! **sensible range** in the same units makes forms (and later voice) warn about unlikely
 //! values; it never refuses them.
 //!
@@ -65,6 +65,11 @@ pub enum FieldKind {
     Volume,
     /// Fuel economy (stored in meters per liter, shown in the person's economy unit).
     FuelEconomy,
+    /// A pressure, e.g. a tire's (stored in pascals, shown in the person's pressure unit).
+    Pressure,
+    /// A tire's tread depth (stored in micrometers, shown in 32nds of an inch for someone who
+    /// uses miles, else in millimeters).
+    TreadDepth,
     /// Worked out from a formula when shown, never typed or stored (#087).
     Calculated {
         /// The formula.
@@ -85,6 +90,8 @@ impl FieldKind {
                 | Self::Duration
                 | Self::Volume
                 | Self::FuelEconomy
+                | Self::Pressure
+                | Self::TreadDepth
         )
     }
 }

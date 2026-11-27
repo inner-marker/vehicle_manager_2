@@ -2,6 +2,7 @@
 
 mod account;
 mod attachments;
+mod catalogue_view;
 mod compliance;
 mod connection;
 mod devices;

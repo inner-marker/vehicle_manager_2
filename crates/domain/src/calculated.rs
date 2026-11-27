@@ -113,11 +113,13 @@ const fn meter_dimension(dimension: MeterDimension) -> (Dimension, bool) {
 const fn field_dimension(kind: &FieldKind) -> Option<Dimension> {
     match kind {
         FieldKind::Number { .. } | FieldKind::YesNo => Some(Dimension::NONE),
-        FieldKind::Distance => Some(Dimension::DISTANCE),
+        // A tread depth is a length (in meters, as distances are); formulas have no pressure.
+        FieldKind::Distance | FieldKind::TreadDepth => Some(Dimension::DISTANCE),
         FieldKind::Duration => Some(Dimension::TIME),
         FieldKind::Volume => Some(Dimension::VOLUME),
         FieldKind::FuelEconomy => Some(Dimension::ECONOMY),
-        FieldKind::Text
+        FieldKind::Pressure
+        | FieldKind::Text
         | FieldKind::Date
         | FieldKind::Choice { .. }
         | FieldKind::Calculated { .. } => None,
@@ -160,6 +162,9 @@ fn field_quantity(kind: &FieldKind, data: &FieldData) -> Option<Quantity> {
         }
         (FieldKind::FuelEconomy, FieldData::FuelEconomy(n)) => {
             Quantity::of(float(*n), Dimension::ECONOMY)
+        }
+        (FieldKind::TreadDepth, FieldData::TreadDepth(n)) => {
+            Quantity::of(float(*n) / 1_000_000.0, Dimension::DISTANCE)
         }
         _ => return None,
     })

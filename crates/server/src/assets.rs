@@ -989,6 +989,82 @@ async fn add_field_to(
     Ok(AssetsOutcome::Done)
 }
 
+/// Adds a field, a set, or the Tires set from the catalogue (#090): copies of its fields, and
+/// the set's fields the vehicle already has turned on.
+pub async fn add_from_catalogue(
+    context: &AssetsContext<'_>,
+    asset: AssetId,
+    choice: &domain::catalogue::CatalogueChoice,
+) -> AssetsOutcome {
+    either(add_catalogue_fields(context, asset, choice).await)
+}
+
+async fn add_catalogue_fields(
+    context: &AssetsContext<'_>,
+    asset: AssetId,
+    choice: &domain::catalogue::CatalogueChoice,
+) -> Result<AssetsOutcome, AssetsOutcome> {
+    let vehicle = context
+        .allowed(asset, AssetAction::ConfigureMaintenance)
+        .await?;
+    let (meters, fields) = context.setup_of(asset).await?;
+    // A field's key is never reused, even once it's removed.
+    let mut taken = context
+        .database
+        .field_keys_of(asset)
+        .await
+        .map_err(|error| unavailable("field keys", &error))?;
+    taken.extend(meters.iter().map(|(_, meter)| meter.key.clone()));
+    let current: Vec<CustomField> = fields.iter().map(|(_, field)| field.clone()).collect();
+    let addition = domain::catalogue::fields_to_add(
+        choice,
+        asset,
+        &domain::profile::event_kinds(&vehicle.kind),
+        &current,
+        &taken,
+        Translator::english(),
+    )
+    .map_err(|error| invalid(Problem::Catalogue(error)))?;
+    // Every formula checked against the vehicle's fields as they'll be (the new ones added,
+    // the set's turned on), before saving any.
+    let mut all = fields.clone();
+    for (_, field) in &mut all {
+        field.enabled |= addition.turn_on.contains(&field.key);
+    }
+    for field in &addition.new {
+        all.push((context.new_id()?, field.clone()));
+    }
+    for (_, field) in all.iter().skip(fields.len()) {
+        domain::calculated::check_calculated(field, &all, &meters)
+            .map_err(|problem| AssetsOutcome::InvalidFormula { problem })?;
+    }
+    for (id, field) in fields {
+        if addition.turn_on.contains(&field.key) {
+            let patch = CustomFieldPatch {
+                enabled: Some(true),
+                ..CustomFieldPatch::default()
+            };
+            context
+                .save(&CustomFieldWriter, Change::Update { id, patch })
+                .await?;
+        }
+    }
+    let count = addition.new.len();
+    for (id, field) in all.into_iter().skip(current.len()) {
+        context
+            .save(
+                &CustomFieldWriter,
+                Change::Create {
+                    id,
+                    values: CustomFieldPatch::all(field),
+                },
+            )
+            .await?;
+    }
+    tracing::debug!(target: log_area::APP, asset = %asset, count, "catalogue fields added");
+    Ok(AssetsOutcome::Done)
+}
+
 /// Changes a custom field's label, kinds of events, on/off, required-for, or range (not what it
 /// holds).
 pub async fn edit_field(

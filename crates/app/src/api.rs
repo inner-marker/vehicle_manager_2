@@ -877,6 +877,22 @@ pub(crate) async fn add_vehicle_field(
     .await)
 }
 
+/// Adds a field, a set, or the Tires set from the catalogue (#090; Maintainer work).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are [`AssetsOutcome`] values.
+#[post("/api/v1/fields/catalogue")]
+pub(crate) async fn add_catalogue_fields(
+    asset: domain::asset::AssetId,
+    choice: domain::catalogue::CatalogueChoice,
+) -> ServerFnResult<AssetsOutcome> {
+    Ok(server_side::with_assets(async |context| {
+        ::server::assets::add_from_catalogue(&context, asset, &choice).await
+    })
+    .await)
+}
+
 /// Changes a custom field's label, on/off, or range.
 ///
 /// # Errors

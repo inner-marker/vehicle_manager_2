@@ -418,6 +418,7 @@ fn field_values(
                     | FieldKind::Duration
                     | FieldKind::Volume
                     | FieldKind::FuelEconomy
+                    | FieldKind::TreadDepth
             )
         })
         .map(|(_, field)| field.key.as_str().to_owned())

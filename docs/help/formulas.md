@@ -29,7 +29,7 @@ Values show in your units (miles or kilometers, US or imperial gallons or liters
 
 On an event, a calculated field can use:
 
-- **the event's own fields** (numbers, distances, times, volumes, fuel economy, and yes/no as 1 or 0), but not other calculated fields;
+- **the event's own fields** (numbers, distances, tread depths (as a distance), times, volumes, fuel economy, and yes/no as 1 or 0), but not pressures or other calculated fields;
 - **its meter readings**, derived meters included;
 - **on a fuel-up**, `volume`, `cost`, `highway`, `towing`, and `hauling` (percentages), and `reported-economy`;
 - **since the last event of the same kind**:

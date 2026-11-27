@@ -26,8 +26,8 @@ use crate::i18n::{MessageId, messages};
 use crate::label::Label;
 use crate::preferences::Preferences;
 use crate::quantity::{
-    distance_value, economy_value, parse_distance, parse_duration, parse_economy, parse_volume,
-    show_duration, volume_value,
+    distance_value, economy_value, parse_distance, parse_duration, parse_economy, parse_pressure,
+    parse_tread, parse_volume, pressure_value, show_duration, tread_value, volume_value,
 };
 
 /// What a yes-or-no field's "yes" is typed as (the form's choice value).
@@ -111,6 +111,10 @@ pub fn parse_field(
         FieldKind::FuelEconomy => {
             FieldData::FuelEconomy(quantity(parse_economy(text, units.economy))?)
         }
+        FieldKind::Pressure => FieldData::Pressure(quantity(parse_pressure(text, units.pressure))?),
+        FieldKind::TreadDepth => {
+            FieldData::TreadDepth(quantity(parse_tread(text, units.distance))?)
+        }
         // Worked out, never typed (#087).
         FieldKind::Calculated { .. } => return Err(messages::EVENT_WRONG_VALUE),
     };
@@ -132,6 +136,8 @@ pub fn field_text(kind: &FieldKind, data: &FieldData, units: &Preferences) -> St
         (_, FieldData::Duration(seconds)) => show_duration(*seconds),
         (_, FieldData::Volume(milliliters)) => volume_value(*milliliters, units.volume),
         (_, FieldData::FuelEconomy(value)) => economy_value(*value, units.economy),
+        (_, FieldData::Pressure(pascals)) => pressure_value(*pascals, units.pressure),
+        (_, FieldData::TreadDepth(micrometers)) => tread_value(*micrometers, units.distance),
     }
 }
 
@@ -177,6 +183,8 @@ mod tests {
             (FieldKind::Distance, "12.5", FieldData::Distance(20_117)),
             (FieldKind::Duration, "1:30", FieldData::Duration(5_400)),
             (FieldKind::Volume, "10.000", FieldData::Volume(37_854)),
+            (FieldKind::Pressure, "35", FieldData::Pressure(241_317)),
+            (FieldKind::TreadDepth, "7", FieldData::TreadDepth(5_556)),
         ];
         for (kind, typed, data) in cases {
             let parsed = parse_field(&kind, typed, &units()).unwrap().unwrap();

@@ -49,6 +49,8 @@ pub enum Problem {
     Meter(MeterError),
     /// A custom field's settings.
     Field(CustomFieldError),
+    /// Something from the catalogue of fields (#090).
+    Catalogue(crate::catalogue::CatalogueError),
     /// The description.
     Notes(NotesError),
     /// There's no profile for that kind.
@@ -73,6 +75,7 @@ impl Problem {
             Self::Label(error) => error.message(),
             Self::Meter(error) => error.message(),
             Self::Field(error) => error.message(),
+            Self::Catalogue(error) => error.message(),
             Self::Notes(error) => error.message(),
             Self::UnknownKind | Self::UnknownGroup => messages::SOMETHING_WENT_WRONG,
             Self::GroupNotEmpty => messages::GROUP_NOT_EMPTY,

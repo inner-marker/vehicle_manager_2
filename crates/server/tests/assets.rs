@@ -18,8 +18,8 @@ mod assets {
     use domain::preferences::{Choice, DistanceUnit, PreferencesPatch};
     use domain::test_support::{ManualClock, test_id};
     use server::assets::{
-        AssetsContext, add, add_field, add_meter, delete, delete_field, edit, edit_field,
-        edit_meter, garage, move_to, preview_move, set_order, set_pins, view,
+        AssetsContext, add, add_field, add_from_catalogue, add_meter, delete, delete_field, edit,
+        edit_field, edit_meter, garage, move_to, preview_move, set_order, set_pins, view,
     };
     use server::commands::issue;
     use server::groups::{add_group, delete_group, ensure_default_group};
@@ -584,6 +584,80 @@ mod assets {
         assert_eq!(
             keys(&page.fields),
             vec!["trip-ev-distance", "trip-time", "trip-time-3"]
+        );
+    }
+
+    #[tokio::test]
+    async fn catalogue_sets_and_tires_are_copied_on() {
+        use domain::catalogue::{CatalogueChoice, CatalogueError, TireAxle};
+        let (_temp, database, jordan, sam) = setup().await;
+        let clock = ManualClock::new(NOW);
+        let garage_id = default_group(&database, &clock).await;
+        let admin = in_admin(&jordan);
+        let id = added(&add(&context(&database, &admin, &clock), &truck(garage_id)).await);
+        let ctx = context(&database, &admin, &clock);
+        let hybrid = CatalogueChoice::Set {
+            id: "trip-computer-hybrid".into(),
+        };
+        assert_eq!(
+            add_from_catalogue(&context(&database, &sam, &clock), id, &hybrid).await,
+            AssetsOutcome::NotAllowed,
+            "Driver mode"
+        );
+        assert_eq!(
+            add_from_catalogue(&ctx, id, &hybrid).await,
+            AssetsOutcome::Done
+        );
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(page.fields.len(), 8, "the truck's two, and six new");
+        let ev = page
+            .fields
+            .iter()
+            .find(|(_, field)| field.key.as_str() == "trip-ev-distance")
+            .unwrap();
+        assert!(ev.1.enabled, "the truck's EV distance turned on");
+
+        // Again: " B", with its formulas on the B fields.
+        assert_eq!(
+            add_from_catalogue(&ctx, id, &hybrid).await,
+            AssetsOutcome::Done
+        );
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(page.fields.len(), 16);
+        let share = page
+            .fields
+            .iter()
+            .find(|(_, field)| field.key.as_str() == "trip-ev-share-b")
+            .unwrap();
+        assert_eq!(share.1.label.as_str(), "Trip EV share B");
+        let FieldKind::Calculated { formula, .. } = &share.1.kind else {
+            panic!("EV share is calculated");
+        };
+        assert_eq!(formula.as_str(), "trip-ev-distance-b ÷ trip-distance-b");
+
+        let tires = CatalogueChoice::Tires {
+            axles: vec![TireAxle::Single, TireAxle::Dual],
+        };
+        assert_eq!(
+            add_from_catalogue(&ctx, id, &tires).await,
+            AssetsOutcome::Done
+        );
+        let page = the_asset(view(&ctx, id).await);
+        assert_eq!(page.fields.len(), 28, "6 tires, 2 fields each");
+        assert!(
+            page.fields
+                .iter()
+                .any(|(_, field)| field.key.as_str() == "tread-depth-2r-inner"
+                    && field.kind == FieldKind::TreadDepth)
+        );
+        let trip_time = CatalogueChoice::Field {
+            key: domain::custom_field::FieldKey::parse("trip-time").unwrap(),
+        };
+        assert_eq!(
+            add_from_catalogue(&ctx, id, &trip_time).await,
+            AssetsOutcome::Invalid {
+                problem: Problem::Catalogue(CatalogueError::AlreadyThere)
+            }
         );
     }
 }

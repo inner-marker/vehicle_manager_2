@@ -1364,6 +1364,29 @@ body:has(.dialog-scrim) {
     color: var(--accent-text);
 }
 
+/* A row of small choices, e.g. 1–4 axles (#090). */
+.segmented.compact .segment {
+    min-width: 48px;
+    padding: 0 14px;
+}
+
+/* The catalogue of fields (#090). */
+.catalogue-heading {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.tire-axle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .setting-row {
     display: flex;
     flex-wrap: wrap;

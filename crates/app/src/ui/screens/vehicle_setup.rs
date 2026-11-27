@@ -22,8 +22,8 @@ use domain::preferences::Preferences;
 use domain::profile::profile;
 use domain::quantity::{
     QuantityError, distance_value, economy_is_inverse, economy_value, parse_distance,
-    parse_duration, parse_economy, parse_reading, parse_volume, reading_value, show_duration,
-    volume_value,
+    parse_duration, parse_economy, parse_pressure, parse_reading, parse_tread, parse_volume,
+    pressure_value, reading_value, show_duration, tread_value, volume_value,
 };
 
 use super::users::role_label;
@@ -75,7 +75,7 @@ fn event_kinds(asset: &Asset) -> Vec<EventKind> {
 }
 
 /// A custom field type's name.
-const fn kind_label(kind: &FieldKind) -> MessageId {
+pub(super) const fn kind_label(kind: &FieldKind) -> MessageId {
     match kind {
         FieldKind::Text => messages::KIND_TEXT,
         FieldKind::Number { .. } => messages::KIND_NUMBER,
@@ -86,12 +86,14 @@ const fn kind_label(kind: &FieldKind) -> MessageId {
         FieldKind::Duration => messages::KIND_DURATION,
         FieldKind::Volume => messages::KIND_VOLUME,
         FieldKind::FuelEconomy => messages::KIND_FUEL_ECONOMY,
+        FieldKind::Pressure => messages::KIND_PRESSURE,
+        FieldKind::TreadDepth => messages::KIND_TREAD_DEPTH,
         FieldKind::Calculated { .. } => messages::KIND_CALCULATED,
     }
 }
 
 /// The field types offered when adding a field, with their `<option>` values.
-const KINDS: [(&str, MessageId); 9] = [
+const KINDS: [(&str, MessageId); 11] = [
     ("text", messages::KIND_TEXT),
     ("number", messages::KIND_NUMBER),
     ("date", messages::KIND_DATE),
@@ -101,6 +103,8 @@ const KINDS: [(&str, MessageId); 9] = [
     ("duration", messages::KIND_DURATION),
     ("volume", messages::KIND_VOLUME),
     ("fuel-economy", messages::KIND_FUEL_ECONOMY),
+    ("pressure", messages::KIND_PRESSURE),
+    ("tread-depth", messages::KIND_TREAD_DEPTH),
 ];
 
 /// An event kind's `<option>` value, and back.
@@ -1000,6 +1004,9 @@ fn FieldsSection(view: AssetView) -> Element {
     let can = view.can_configure;
     let kinds = event_kinds(&view.asset);
     let calculated_kinds = kinds.clone();
+    let catalogue_kinds = kinds.clone();
+    // The catalogue's dialog (#090).
+    let mut from_catalogue = use_signal(|| false);
     rsx! {
         section { class: "setup-section",
             SectionHeading { title: messages::SETUP_FIELDS,
@@ -1007,6 +1014,7 @@ fn FieldsSection(view: AssetView) -> Element {
                     div { class: "setup-row-buttons",
                         button { class: "secondary-button", onclick: move |_| editing.set(Some(Editing::Adding)), {tr(messages::SETUP_ADD_FIELD)} }
                         button { class: "secondary-button", onclick: move |_| calculating.set(Some(None)), {tr(messages::SETUP_ADD_CALCULATED)} }
+                        button { class: "secondary-button", onclick: move |_| from_catalogue.set(true), {tr(messages::SETUP_ADD_FROM_CATALOGUE)} }
                     }
                 }
             }
@@ -1064,6 +1072,9 @@ fn FieldsSection(view: AssetView) -> Element {
                 ConfirmRemove { target: Removal::Field(id), name, on_close: move |()| editing.set(None) }
             },
         }
+        if from_catalogue() {
+            super::catalogue_view::CatalogueDialog { view: view.clone(), kinds: catalogue_kinds, on_close: move |()| from_catalogue.set(false) }
+        }
         if let Some(current) = calculating() {
             super::formula_view::CalculatedFieldDialog { view, kinds: calculated_kinds, current, on_close: move |()| calculating.set(None) }
         }
@@ -1088,6 +1099,8 @@ fn kind_from_form(value: &str, decimals: u8, choices: &str) -> Result<FieldKind,
         "duration" => FieldKind::Duration,
         "volume" => FieldKind::Volume,
         "fuel-economy" => FieldKind::FuelEconomy,
+        "pressure" => FieldKind::Pressure,
+        "tread-depth" => FieldKind::TreadDepth,
         _ => FieldKind::Text,
     })
 }
@@ -1121,6 +1134,8 @@ fn parse_range_end(
         FieldKind::Duration => quantity(parse_duration(text)),
         FieldKind::Volume => quantity(parse_volume(text, units.volume)),
         FieldKind::FuelEconomy => quantity(parse_economy(text, units.economy)),
+        FieldKind::Pressure => quantity(parse_pressure(text, units.pressure)),
+        FieldKind::TreadDepth => quantity(parse_tread(text, units.distance)),
         FieldKind::Text
         | FieldKind::Date
         | FieldKind::YesNo
@@ -1137,6 +1152,8 @@ fn range_end_text(kind: &FieldKind, value: i64, units: Preferences) -> String {
         FieldKind::Duration => show_duration(value),
         FieldKind::Volume => volume_value(value, units.volume),
         FieldKind::FuelEconomy => economy_value(value, units.economy),
+        FieldKind::Pressure => pressure_value(value, units.pressure),
+        FieldKind::TreadDepth => tread_value(value, units.distance),
         FieldKind::Text
         | FieldKind::Date
         | FieldKind::YesNo

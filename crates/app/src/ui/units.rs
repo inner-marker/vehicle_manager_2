@@ -59,6 +59,8 @@ pub(crate) fn field_unit(kind: &FieldKind, units: Preferences) -> Option<String>
         FieldKind::Duration => Some("HH:MM".to_owned()),
         FieldKind::Volume => Some(volume_abbr(units.volume)),
         FieldKind::FuelEconomy => Some(economy_abbr(units.economy)),
+        FieldKind::Pressure => Some(tr(domain::quantity::pressure_abbr(units.pressure))),
+        FieldKind::TreadDepth => Some(tr(domain::quantity::tread_abbr(units.distance))),
         FieldKind::Number { .. }
         | FieldKind::Text
         | FieldKind::Date

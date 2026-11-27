@@ -12,6 +12,7 @@ pub mod asset_form;
 pub mod attachment;
 pub mod build_info;
 pub mod calculated;
+pub mod catalogue;
 pub mod command;
 pub mod custom_field;
 pub mod dates;

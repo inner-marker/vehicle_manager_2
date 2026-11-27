@@ -1263,6 +1263,36 @@ define_messages! {
     FIELD_TRIP_TIME => "field-trip-time",
     /// A profile's custom field: trip EV distance. Used by profile files (data), so code rarely names it.
     FIELD_TRIP_EV_DISTANCE => "field-trip-ev-distance",
+    /// The catalogue's data (#090): "Trip distance". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_DISTANCE => "field-trip-distance",
+    /// The catalogue's data (#090): "Trip average speed". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_AVERAGE_SPEED => "field-trip-average-speed",
+    /// The catalogue's data (#090): "Trip fuel economy". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_FUEL_ECONOMY => "field-trip-fuel-economy",
+    /// The catalogue's data (#090): "Trip fuel used". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_FUEL_USED => "field-trip-fuel-used",
+    /// The catalogue's data (#090): "Trip EV share". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_EV_SHARE => "field-trip-ev-share",
+    /// The catalogue's data (#090): "Trip EV time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TRIP_EV_TIME => "field-trip-ev-time",
+    /// The catalogue's data (#090): "Idle time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_IDLE_TIME => "field-idle-time",
+    /// The catalogue's data (#090): "Engine run time". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_ENGINE_RUN_TIME => "field-engine-run-time",
+    /// The catalogue's data (#090): "Oil life %". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_OIL_LIFE => "field-oil-life",
+    /// The catalogue's data (#090): "DEF level %". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_DEF_LEVEL => "field-def-level",
+    /// The catalogue's data (#090): "Tire pressure". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TIRE_PRESSURE => "field-tire-pressure",
+    /// The catalogue's data (#090): "Tread depth". Used by `catalogue.ron`, so code rarely names it.
+    FIELD_TREAD_DEPTH => "field-tread-depth",
+    /// The catalogue's data (#090): "Trip computer". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_TRIP_COMPUTER => "catalogue-set-trip-computer",
+    /// The catalogue's data (#090): "Trip computer (hybrid)". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_TRIP_COMPUTER_HYBRID => "catalogue-set-trip-computer-hybrid",
+    /// The catalogue's data (#090): "Engine and idle". Used by `catalogue.ron`, so code rarely names it.
+    CATALOGUE_SET_ENGINE_IDLE => "catalogue-set-engine-idle",
     /// Vehicle page: no such vehicle, or not visible.
     VEHICLE_NOT_FOUND => "vehicle-not-found",
     /// Vehicle page: back to All vehicles.
@@ -1425,6 +1455,10 @@ define_messages! {
     KIND_FUEL_ECONOMY => "kind-fuel-economy",
     /// Custom field kind: worked out from a formula (#087).
     KIND_CALCULATED => "kind-calculated",
+    /// Custom field type: pressure (e.g. a tire's).
+    KIND_PRESSURE => "kind-pressure",
+    /// Custom field type: a tire's tread depth.
+    KIND_TREAD_DEPTH => "kind-tread-depth",
     /// Dialog title: move a vehicle; takes `name` (text).
     MOVE_TITLE => "move-title",
     /// Form field: the group to move to.
@@ -1799,6 +1833,8 @@ define_messages! {
     UNIT_ABBR_IN => "unit-abbr-in",
     /// Units: millimeters.
     UNIT_ABBR_MM => "unit-abbr-mm",
+    /// Unit: 32nds of an inch, after the number ("7/32 in").
+    UNIT_ABBR_32NDS => "unit-abbr-32nds",
     /// Specs: a volume.
     SPEC_KIND_VOLUME => "spec-kind-volume",
     /// Specs: a torque.
@@ -2047,6 +2083,60 @@ define_messages! {
     FORMULA_DERIVED_FROM => "formula-derived-from",
     /// Setup: add a calculated field.
     SETUP_ADD_CALCULATED => "setup-add-calculated",
+    /// A tire's side, after its axle number: left.
+    TIRE_LEFT => "tire-left",
+    /// A tire's side, after its axle number: right.
+    TIRE_RIGHT => "tire-right",
+    /// A dual axle's outer tire.
+    TIRE_OUTER => "tire-outer",
+    /// A dual axle's inner tire.
+    TIRE_INNER => "tire-inner",
+    /// Error: a catalogue field already on the vehicle.
+    CATALOGUE_ALREADY_THERE => "catalogue-already-there",
+    /// Error: catalogue fields for kinds of events the vehicle lacks.
+    CATALOGUE_NOT_FOR_THIS_KIND => "catalogue-not-for-this-kind",
+    /// Error: the Tires set's axles.
+    CATALOGUE_BAD_AXLES => "catalogue-bad-axles",
+    /// Setup button: add fields from the catalogue.
+    SETUP_ADD_FROM_CATALOGUE => "setup-add-from-catalogue",
+    /// Dialog title: the catalogue; takes `name` (text).
+    CATALOGUE_TITLE => "catalogue-title",
+    /// Catalogue note.
+    CATALOGUE_INTRO => "catalogue-intro",
+    /// Catalogue heading: sets.
+    CATALOGUE_SETS => "catalogue-sets",
+    /// Catalogue heading: single fields.
+    CATALOGUE_FIELDS => "catalogue-fields",
+    /// A set's fields; takes `count` (number) and `fields` (text).
+    CATALOGUE_SET_SUMMARY => "catalogue-set-summary",
+    /// Catalogue set: tires.
+    CATALOGUE_SET_TIRES => "catalogue-set-tires",
+    /// The Tires set's summary.
+    CATALOGUE_SET_TIRES_NOTE => "catalogue-set-tires-note",
+    /// A catalogue field the vehicle has.
+    CATALOGUE_ON_VEHICLE => "catalogue-on-vehicle",
+    /// A catalogue field for events the vehicle lacks.
+    CATALOGUE_NOT_FOR_VEHICLE => "catalogue-not-for-vehicle",
+    /// Button: add from the catalogue.
+    CATALOGUE_ADD => "catalogue-add",
+    /// Dialog title: the Tires set.
+    TIRES_TITLE => "tires-title",
+    /// Form field: how many axles.
+    TIRES_AXLES => "tires-axles",
+    /// Form heading: tires on each axle.
+    TIRES_ON_EACH => "tires-on-each",
+    /// An axle, from 1 at the front; takes `number` (number).
+    TIRES_AXLE => "tires-axle",
+    /// Tires on an axle: two.
+    TIRES_SINGLE => "tires-single",
+    /// Tires on an axle: four (duals).
+    TIRES_DUAL => "tires-dual",
+    /// What the Tires set adds; takes `tires`, `fields` (numbers), `names` (text).
+    TIRES_SUMMARY => "tires-summary",
+    /// Tires form note.
+    TIRES_UNITS_NOTE => "tires-units-note",
+    /// Button: add the Tires set; takes `fields` (number).
+    TIRES_ADD => "tires-add",
     /// Setup: add a derived meter.
     SETUP_ADD_DERIVED => "setup-add-derived",
     /// Formulas refused: not a derived meter's input (`$key`).

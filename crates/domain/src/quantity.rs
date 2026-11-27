@@ -3,6 +3,7 @@
 //!
 //! **Stored** (plan §3; as custom fields already define them): distance in **meters**,
 //! duration in **seconds**, volume in **milliliters**, fuel economy in **meters per liter**,
+//! pressure in **pascals**, tread depth in **micrometers**,
 //! money in the currency's **minor unit** (cents). Conversions go through `uom`, so the factors
 //! (a mile, a US gallon, an imperial gallon) come from one well-tested place.
 //!
@@ -24,14 +25,15 @@
 //! ```
 
 use serde::{Deserialize, Serialize};
-use uom::si::f64::{Length, Time, Volume};
+use uom::si::f64::{Length, Pressure, Time, Volume};
 use uom::si::length::{kilometer, meter, mile};
+use uom::si::pressure::{bar, kilopascal, pascal, pound_force_per_square_inch};
 use uom::si::time::{hour, second};
 use uom::si::volume::{gallon, gallon_imperial, liter, milliliter};
 
 use crate::i18n::{MessageId, Translator, messages};
 use crate::meter::MeterUnit;
-use crate::preferences::{CurrencyCode, DistanceUnit, EconomyUnit, VolumeUnit};
+use crate::preferences::{CurrencyCode, DistanceUnit, EconomyUnit, PressureUnit, VolumeUnit};
 
 /// Why a typed quantity was refused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -274,6 +276,116 @@ pub const fn economy_is_inverse(unit: EconomyUnit) -> bool {
     matches!(unit, EconomyUnit::LitersPer100Km)
 }
 
+// --- Pressure and tread depth ----------------------------------------------------------------
+
+/// A typed pressure in `unit`, as pascals.
+///
+/// # Errors
+///
+/// [`QuantityError`] if it isn't a non-negative number, or is too large.
+pub fn parse_pressure(text: &str, unit: PressureUnit) -> Result<i64, QuantityError> {
+    let (value, _) = number(text)?;
+    let pressure = match unit {
+        PressureUnit::Psi => Pressure::new::<pound_force_per_square_inch>(value),
+        PressureUnit::Kpa => Pressure::new::<kilopascal>(value),
+        PressureUnit::Bar => Pressure::new::<bar>(value),
+    };
+    whole(pressure.get::<pascal>())
+}
+
+/// A pressure in `unit` as a plain number for a form: psi to tenths, kPa whole, bar to
+/// hundredths, without trailing zeros ("35", "35.5", "2.4").
+#[must_use]
+pub fn pressure_value(pascals: i64, unit: PressureUnit) -> String {
+    let pressure = Pressure::new::<pascal>(float(pascals));
+    match unit {
+        PressureUnit::Psi => trimmed(pressure.get::<pound_force_per_square_inch>(), 1),
+        PressureUnit::Kpa => trimmed(pressure.get::<kilopascal>(), 0),
+        PressureUnit::Bar => trimmed(pressure.get::<bar>(), 2),
+    }
+}
+
+/// A pressure in `unit`: "35 psi", "241 kPa", "2.4 bar".
+#[must_use]
+pub fn show_pressure(pascals: i64, unit: PressureUnit) -> String {
+    format!(
+        "{} {}",
+        pressure_value(pascals, unit),
+        Translator::english().tr(pressure_abbr(unit))
+    )
+}
+
+/// The short name of a pressure unit.
+#[must_use]
+pub const fn pressure_abbr(unit: PressureUnit) -> MessageId {
+    match unit {
+        PressureUnit::Psi => messages::UNIT_ABBR_PSI,
+        PressureUnit::Kpa => messages::UNIT_ABBR_KPA,
+        PressureUnit::Bar => messages::UNIT_ABBR_BAR,
+    }
+}
+
+/// A 32nd of an inch, in micrometers (exactly 793.75).
+const THIRTY_SECOND_UM: f64 = 25_400.0 / 32.0;
+
+/// A typed tread depth, as micrometers: in 32nds of an inch for someone who uses miles, else in
+/// millimeters.
+///
+/// # Errors
+///
+/// [`QuantityError`] if it isn't a non-negative number, or is too large.
+pub fn parse_tread(text: &str, unit: DistanceUnit) -> Result<i64, QuantityError> {
+    let (value, _) = number(text)?;
+    whole(match unit {
+        DistanceUnit::Miles => value * THIRTY_SECOND_UM,
+        DistanceUnit::Kilometers => value * 1_000.0,
+    })
+}
+
+/// A tread depth as a plain number for a form, to tenths without trailing zeros: 32nds of an
+/// inch ("7", "6.5") or millimeters ("5.6").
+#[must_use]
+pub fn tread_value(micrometers: i64, unit: DistanceUnit) -> String {
+    let value = float(micrometers);
+    trimmed(
+        match unit {
+            DistanceUnit::Miles => value / THIRTY_SECOND_UM,
+            DistanceUnit::Kilometers => value / 1_000.0,
+        },
+        1,
+    )
+}
+
+/// A tread depth: "7/32 in", "5.6 mm".
+#[must_use]
+pub fn show_tread(micrometers: i64, unit: DistanceUnit) -> String {
+    let value = tread_value(micrometers, unit);
+    let abbr = Translator::english().tr(tread_abbr(unit));
+    match unit {
+        DistanceUnit::Miles => format!("{value}{abbr}"),
+        DistanceUnit::Kilometers => format!("{value} {abbr}"),
+    }
+}
+
+/// The short name of the unit tread depth is typed in: "/32 in" or "mm".
+#[must_use]
+pub const fn tread_abbr(unit: DistanceUnit) -> MessageId {
+    match unit {
+        DistanceUnit::Miles => messages::UNIT_ABBR_32NDS,
+        DistanceUnit::Kilometers => messages::UNIT_ABBR_MM,
+    }
+}
+
+/// `value` with at most `decimals` places, trailing zeros dropped.
+fn trimmed(value: f64, decimals: usize) -> String {
+    let text = fixed(value, decimals);
+    if text.contains('.') {
+        text.trim_end_matches('0').trim_end_matches('.').to_owned()
+    } else {
+        text
+    }
+}
+
 // --- Duration --------------------------------------------------------------------------------
 
 /// A typed duration, "H:MM" or "H:MM:SS", as seconds.
@@ -489,6 +601,38 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
+
+    #[test]
+    fn pressures_and_tread_depths_go_both_ways_in_each_unit() {
+        let psi = parse_pressure("35", PressureUnit::Psi).unwrap();
+        assert_eq!(psi, 241_317);
+        assert_eq!(show_pressure(psi, PressureUnit::Psi), "35 psi");
+        assert_eq!(show_pressure(psi, PressureUnit::Kpa), "241 kPa");
+        assert_eq!(show_pressure(psi, PressureUnit::Bar), "2.41 bar");
+        assert_eq!(
+            pressure_value(
+                parse_pressure("2.4", PressureUnit::Bar).unwrap(),
+                PressureUnit::Bar
+            ),
+            "2.4"
+        );
+        assert_eq!(
+            parse_pressure("-1", PressureUnit::Psi),
+            Err(QuantityError::Negative)
+        );
+        let tread = parse_tread("7", DistanceUnit::Miles).unwrap();
+        assert_eq!(tread, 5_556);
+        assert_eq!(show_tread(tread, DistanceUnit::Miles), "7/32 in");
+        assert_eq!(show_tread(tread, DistanceUnit::Kilometers), "5.6 mm");
+        assert_eq!(
+            tread_value(
+                parse_tread("6.5", DistanceUnit::Miles).unwrap(),
+                DistanceUnit::Miles
+            ),
+            "6.5"
+        );
+        assert_eq!(parse_tread("4", DistanceUnit::Kilometers), Ok(4_000));
+    }
 
     #[test]
     fn a_duration_fills_in_its_colon_as_digits_are_typed() {

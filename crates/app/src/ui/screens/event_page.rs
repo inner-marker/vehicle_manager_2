@@ -454,6 +454,8 @@ fn trip_rows(event: &Event, vehicle: &AssetView, units: &Preferences) -> Vec<(St
             let text = field_text(&field.kind, &value.data, units);
             let text = match (&field.kind, field_unit(&field.kind, *units)) {
                 (FieldKind::Duration, _) | (_, None) => text,
+                // "7/32 in" reads as one.
+                (_, Some(unit)) if unit.starts_with('/') => format!("{text}{unit}"),
                 (_, Some(unit)) => format!("{text} {unit}"),
             };
             Some((field.label.as_str().to_owned(), text))
