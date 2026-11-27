@@ -2407,3 +2407,21 @@ permission-manage-events = Change others' records
 permission-keep-originals = Keep a photo's original
 permission-manage-documents = Documents and plates
 permission-send-out = Send out for service
+admin-pin-invalid = A PIN is 6 to 12 digits.
+wrong-pin = That PIN isn't right.
+field-pin = PIN
+admin-dialog-text-pin =
+    { $minutes ->
+        [one] Type your PIN to confirm. Admin mode ends after { $minutes } minute without activity.
+       *[other] Type your PIN to confirm. Admin mode ends after { $minutes } minutes without activity.
+    }
+account-admin-pin = Admin mode: password or PIN…
+admin-pin-title = How you enter Admin mode
+admin-pin-note = Your password, or a PIN of 6 to 12 digits for this account only. Wrong PINs count toward the sign-in limit, like wrong passwords.
+admin-pin-use-password = My password (the default)
+admin-pin-use-pin = A PIN
+admin-pin-new = New PIN
+admin-pin-repeat = The PIN again
+admin-pin-mismatch = The two PINs differ.
+admin-pin-confirm-password = Your password, to confirm
+admin-pin-saved = Saved.

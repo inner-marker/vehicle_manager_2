@@ -290,6 +290,40 @@ impl Database {
         Ok(())
     }
 
+    /// Sets (or with `None`, clears) the PIN hash a user enters Admin mode with (phase-6.md
+    /// 4e). Only for a user with a password.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails.
+    pub async fn set_admin_pin_hash(
+        &self,
+        user: UserId,
+        pin_hash: Option<&str>,
+    ) -> Result<(), StorageError> {
+        sqlx::query("UPDATE user_passwords SET admin_pin_hash = ? WHERE user_id = ?")
+            .bind(pin_hash)
+            .bind(id_to_sql(user))
+            .execute(self.pool())
+            .await?;
+        Ok(())
+    }
+
+    /// The PIN hash a user enters Admin mode with, if they chose one.
+    ///
+    /// # Errors
+    ///
+    /// [`StorageError`] if the query fails.
+    pub async fn admin_pin_hash(&self, user: UserId) -> Result<Option<String>, StorageError> {
+        Ok(sqlx::query_scalar::<_, Option<String>>(
+            "SELECT admin_pin_hash FROM user_passwords WHERE user_id = ?",
+        )
+        .bind(id_to_sql(user))
+        .fetch_optional(self.pool())
+        .await?
+        .flatten())
+    }
+
     /// A user's password hash, if they have one.
     ///
     /// # Errors

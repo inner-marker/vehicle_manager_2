@@ -4036,4 +4036,32 @@ define_messages! {
     PERMISSION_MANAGE_DOCUMENTS => "permission-manage-documents",
     /// A permission.
     PERMISSION_SEND_OUT => "permission-send-out",
+    /// Error: an Admin-mode PIN isn't 6 to 12 digits.
+    ADMIN_PIN_INVALID => "admin-pin-invalid",
+    /// Error: the Admin-mode PIN was wrong.
+    WRONG_PIN => "wrong-pin",
+    /// Field label: the Admin-mode PIN.
+    FIELD_PIN => "field-pin",
+    /// Admin mode dialog, for someone with a PIN. $minutes (number): Admin mode's idle limit.
+    ADMIN_DIALOG_TEXT_PIN => "admin-dialog-text-pin",
+    /// Account menu: choosing how to enter Admin mode.
+    ACCOUNT_ADMIN_PIN => "account-admin-pin",
+    /// Dialog title: how to enter Admin mode.
+    ADMIN_PIN_TITLE => "admin-pin-title",
+    /// Under the choice.
+    ADMIN_PIN_NOTE => "admin-pin-note",
+    /// Choice: enter Admin mode with the password.
+    ADMIN_PIN_USE_PASSWORD => "admin-pin-use-password",
+    /// Choice: enter Admin mode with a PIN.
+    ADMIN_PIN_USE_PIN => "admin-pin-use-pin",
+    /// Field: the new PIN.
+    ADMIN_PIN_NEW => "admin-pin-new",
+    /// Field: the new PIN again.
+    ADMIN_PIN_REPEAT => "admin-pin-repeat",
+    /// Error: the two PINs differ.
+    ADMIN_PIN_MISMATCH => "admin-pin-mismatch",
+    /// Field: the password, to confirm the change.
+    ADMIN_PIN_CONFIRM_PASSWORD => "admin-pin-confirm-password",
+    /// Done.
+    ADMIN_PIN_SAVED => "admin-pin-saved",
 }

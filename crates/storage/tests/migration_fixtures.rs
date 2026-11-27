@@ -278,10 +278,10 @@ async fn phase_five_starts_empty(database: &Database, fixture: &Path) {
     );
 }
 
-/// Migrations 0028 to 0034 read as empty in every fixture (all made before Phase 6): no shops,
+/// Migrations 0028 to 0035 read as empty in every fixture (all made before Phase 6): no shops,
 /// no household labor rate, no main photos, no pinned vehicles (each Garage order kept), no
-/// In service since dates, no vehicle types, no choice about changing one's own name, and no custom roles (every grant
-/// a built-in role, as before).
+/// In service since dates, no vehicle types, no choice about changing one's own name, no
+/// custom roles (every grant a built-in role, as before), and no Admin-mode PINs.
 #[cfg(test)]
 async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
     let count = |sql: &'static str| sqlx::query_scalar::<_, i64>(sql).fetch_one(database.pool());
@@ -299,6 +299,14 @@ async fn phase_six_starts_empty(database: &Database, fixture: &Path) {
     assert!(database.shops().await.unwrap().is_empty());
     assert!(database.vehicle_types().await.unwrap().is_empty());
     assert!(database.custom_roles().await.unwrap().is_empty());
+    assert_eq!(
+        count("SELECT count(*) FROM user_passwords WHERE admin_pin_hash IS NOT NULL")
+            .await
+            .unwrap(),
+        0,
+        "{}",
+        fixture.display()
+    );
     assert!(
         database
             .all_grants()

@@ -1899,9 +1899,44 @@ pub enum SwitchModeOutcome {
     NotAllowed,
     /// Admin mode needs the password, and it was wrong.
     WrongPassword,
+    /// Admin mode needs the person's PIN (they chose one; phase-6.md 4e), and it was wrong.
+    WrongPin,
+    /// Too many wrong passwords or PINs (they count toward the sign-in limit); try again
+    /// after this many seconds.
+    TooManyAttempts {
+        /// How long to wait.
+        retry_after_seconds: i64,
+    },
     /// Not signed in.
     NotSignedIn,
     /// The server couldn't switch right now.
+    Unavailable,
+}
+
+/// The answer about an Admin's way into Admin mode: their password, or a PIN (sub-plan 04
+/// §4.2; phase-6.md 4e).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "kebab-case")]
+pub enum AdminPinOutcome {
+    /// Whether they enter Admin mode with a PIN.
+    Status {
+        /// They chose a PIN (otherwise their password).
+        has_pin: bool,
+    },
+    /// The PIN was set or cleared.
+    Done,
+    /// Their password, asked to confirm, was wrong.
+    WrongPassword,
+    /// The PIN isn't 6 to 12 digits.
+    Invalid {
+        /// Why.
+        reason: crate::user::PinError,
+    },
+    /// Only someone who can enter Admin mode has a choice.
+    NotAllowed,
+    /// Not signed in.
+    NotSignedIn,
+    /// The server couldn't do it right now.
     Unavailable,
 }
 

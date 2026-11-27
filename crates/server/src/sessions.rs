@@ -476,12 +476,20 @@ pub enum SwitchModeError {
     NotAllowed,
     /// Admin mode needs the password, and it was wrong or missing.
     WrongPassword,
+    /// Admin mode needs the person's PIN (they chose one), and it was wrong or missing.
+    WrongPin,
+    /// Too many wrong passwords or PINs for this person or client (the sign-in limit).
+    RateLimited {
+        /// How long until another try.
+        retry_after_millis: i64,
+    },
     /// The database failed.
     Unavailable,
 }
 
-/// Switches the session to `mode` at `now`. Admin mode needs `password`, checked again.
-/// Switching counts as activity, so Admin mode's 15 idle minutes start now.
+/// Switches the session to `mode` at `now`. Admin mode needs `password` checked again, or,
+/// if the person chose one, their PIN (phase-6.md 4e). Switching counts as activity, so Admin
+/// mode's 15 idle minutes start now. Not limited: [`switch_mode_limited`] is.
 ///
 /// # Errors
 ///
@@ -497,10 +505,20 @@ pub async fn switch_mode(
         return Err(SwitchModeError::NotAllowed);
     }
     if mode == ActiveMode::Admin {
-        let hash = database
-            .password_hash(signed_in.user)
+        let pin_hash = database
+            .admin_pin_hash(signed_in.user)
             .await
             .map_err(|_| SwitchModeError::Unavailable)?;
+        let (hash, wrong) = match pin_hash {
+            Some(pin_hash) => (Some(pin_hash), SwitchModeError::WrongPin),
+            None => (
+                database
+                    .password_hash(signed_in.user)
+                    .await
+                    .map_err(|_| SwitchModeError::Unavailable)?,
+                SwitchModeError::WrongPassword,
+            ),
+        };
         let matches = match (password, hash) {
             (Some(password), Some(hash)) => verify_password(password, hash)
                 .await
@@ -508,8 +526,8 @@ pub async fn switch_mode(
             _ => false,
         };
         if !matches {
-            tracing::debug!(target: log_area::AUTH, user = %signed_in.user, "Admin mode refused: wrong password");
-            return Err(SwitchModeError::WrongPassword);
+            tracing::debug!(target: log_area::AUTH, user = %signed_in.user, ?wrong, "Admin mode refused");
+            return Err(wrong);
         }
     }
     database
@@ -525,6 +543,44 @@ pub async fn switch_mode(
         .map_err(|_| SwitchModeError::Unavailable)?;
     tracing::info!(target: log_area::AUTH, user = %signed_in.user, ?mode, "mode switched");
     Ok(mode)
+}
+
+/// [`switch_mode`], with wrong passwords and PINs for Admin mode counted toward the sign-in
+/// limit (sub-plan 04 §4.2): per person and per `client`, as signing in counts them, so
+/// guessing a PIN locks the person out of signing in too. Entering Admin mode clears the
+/// person's count, as signing in does.
+///
+/// # Errors
+///
+/// As [`switch_mode`], and [`SwitchModeError::RateLimited`] while at the limit.
+pub async fn switch_mode_limited(
+    database: &Database,
+    limiter: &LoginLimiter,
+    signed_in: &SignedIn,
+    mode: ActiveMode,
+    password: Option<Secret>,
+    client: &str,
+    now: UnixMillis,
+) -> Result<ActiveMode, SwitchModeError> {
+    if mode != ActiveMode::Admin {
+        return switch_mode(database, signed_in, mode, password, now).await;
+    }
+    let user_key = format!("user:{}", signed_in.username.as_str());
+    let client_key = format!("client:{client}");
+    let keys = [user_key.as_str(), client_key.as_str()];
+    limiter
+        .check(&keys, now)
+        .map_err(|retry_after_millis| SwitchModeError::RateLimited { retry_after_millis })?;
+    let result = switch_mode(database, signed_in, mode, password, now).await;
+    match result {
+        Err(SwitchModeError::WrongPassword | SwitchModeError::WrongPin) => {
+            limiter.record_failure(&keys, now);
+            tracing::info!(target: log_area::AUTH, client, user = %signed_in.user, "Admin mode refused: wrong password or PIN");
+        }
+        Ok(_) => limiter.clear(&user_key),
+        Err(_) => {}
+    }
+    result
 }
 
 /// Ends the session (sign out).

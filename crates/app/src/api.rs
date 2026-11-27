@@ -437,7 +437,8 @@ pub(crate) async fn sign_out() -> ServerFnResult<()> {
     Ok(())
 }
 
-/// Switches this session's mode. Admin mode needs `password`.
+/// Switches this session's mode. Admin mode needs `password`, or the person's PIN if they
+/// chose one (phase-6.md 4e); wrong ones count toward the sign-in limit.
 ///
 /// # Errors
 ///
@@ -455,11 +456,13 @@ pub(crate) async fn switch_mode(
         return Ok(SwitchModeOutcome::NotSignedIn);
     };
     Ok(
-        match ::server::sessions::switch_mode(
+        match ::server::sessions::switch_mode_limited(
             database,
+            &server_side::LOGIN_LIMITER,
             &signed_in,
             mode,
             password,
+            &server_side::client_key(),
             server_side::now(),
         )
         .await
@@ -467,7 +470,59 @@ pub(crate) async fn switch_mode(
             Ok(mode) => SwitchModeOutcome::Switched { mode },
             Err(SwitchModeError::NotAllowed) => SwitchModeOutcome::NotAllowed,
             Err(SwitchModeError::WrongPassword) => SwitchModeOutcome::WrongPassword,
+            Err(SwitchModeError::WrongPin) => SwitchModeOutcome::WrongPin,
+            Err(SwitchModeError::RateLimited { retry_after_millis }) => {
+                SwitchModeOutcome::TooManyAttempts {
+                    retry_after_seconds: (retry_after_millis + 999) / 1000,
+                }
+            }
             Err(SwitchModeError::Unavailable) => SwitchModeOutcome::Unavailable,
+        },
+    )
+}
+
+/// Whether the signed-in person enters Admin mode with a PIN (phase-6.md 4e).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; otherwise only transport errors.
+#[get("/api/v1/me/admin-pin")]
+pub(crate) async fn admin_pin_status() -> ServerFnResult<domain::api::AdminPinOutcome> {
+    use domain::api::AdminPinOutcome;
+    let (Some(signed_in), Some(database)) =
+        (server_side::signed_in(), ::server::startup::database())
+    else {
+        return Ok(AdminPinOutcome::NotSignedIn);
+    };
+    Ok(
+        match ::server::admin_pin::has_admin_pin(database, &signed_in).await {
+            Ok(has_pin) => AdminPinOutcome::Status { has_pin },
+            Err(error) => server_side::admin_pin_outcome(error),
+        },
+    )
+}
+
+/// Sets the signed-in Admin's PIN for Admin mode, or with `None` goes back to the password,
+/// after checking `password` (phase-6.md 4e).
+///
+/// # Errors
+///
+/// Refused by the auth layer without a session; refusals are `AdminPinOutcome` values.
+#[post("/api/v1/me/admin-pin/set")]
+pub(crate) async fn set_admin_pin(
+    password: Secret,
+    pin: Option<Secret>,
+) -> ServerFnResult<domain::api::AdminPinOutcome> {
+    use domain::api::AdminPinOutcome;
+    let (Some(signed_in), Some(database)) =
+        (server_side::signed_in(), ::server::startup::database())
+    else {
+        return Ok(AdminPinOutcome::NotSignedIn);
+    };
+    Ok(
+        match ::server::admin_pin::set_admin_pin(database, &signed_in, password, pin).await {
+            Ok(()) => AdminPinOutcome::Done,
+            Err(error) => server_side::admin_pin_outcome(error),
         },
     )
 }
@@ -2826,6 +2881,20 @@ mod server_side {
             geocoder: server::places::geocoder(),
         };
         action(context).await
+    }
+
+    /// An Admin-mode PIN refusal as the app sees it.
+    pub(super) const fn admin_pin_outcome(
+        error: server::admin_pin::AdminPinError,
+    ) -> domain::api::AdminPinOutcome {
+        use domain::api::AdminPinOutcome;
+        use server::admin_pin::AdminPinError;
+        match error {
+            AdminPinError::NotAllowed => AdminPinOutcome::NotAllowed,
+            AdminPinError::WrongPassword => AdminPinOutcome::WrongPassword,
+            AdminPinError::Invalid(reason) => AdminPinOutcome::Invalid { reason },
+            AdminPinError::Unavailable => AdminPinOutcome::Unavailable,
+        }
     }
 
     pub(super) fn session_info(signed_in: &SignedIn) -> SessionInfo {

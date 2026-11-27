@@ -167,6 +167,46 @@ pub fn check_new_password(password: &str) -> Result<(), PasswordError> {
     }
 }
 
+/// The fewest digits an Admin-mode PIN may have (sub-plan 04 §4.2).
+pub const ADMIN_PIN_MIN_DIGITS: usize = 6;
+
+/// The most digits an Admin-mode PIN may have.
+pub const ADMIN_PIN_MAX_DIGITS: usize = 12;
+
+/// Why a PIN for Admin mode was refused.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PinError {
+    /// Not 6 to 12 digits.
+    NotSixToTwelveDigits,
+}
+
+impl PinError {
+    /// The message explaining the problem.
+    #[must_use]
+    pub const fn message(self) -> MessageId {
+        match self {
+            Self::NotSixToTwelveDigits => messages::ADMIN_PIN_INVALID,
+        }
+    }
+}
+
+/// Checks a new PIN for entering Admin mode: 6 to 12 digits (0–9), nothing else.
+///
+/// # Errors
+///
+/// [`PinError`] if it isn't.
+pub fn check_admin_pin(pin: &str) -> Result<(), PinError> {
+    let digits = pin.len();
+    if (ADMIN_PIN_MIN_DIGITS..=ADMIN_PIN_MAX_DIGITS).contains(&digits)
+        && pin.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        Ok(())
+    } else {
+        Err(PinError::NotSixToTwelveDigits)
+    }
+}
+
 /// A display name: trimmed, 1–64 characters.
 ///
 /// # Errors
@@ -269,6 +309,19 @@ impl Record for User {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_admin_pin_is_six_to_twelve_digits() {
+        assert_eq!(check_admin_pin("123456"), Ok(()));
+        assert_eq!(check_admin_pin("123456789012"), Ok(()));
+        for refused in ["12345", "1234567890123", "12345a", "١٢٣٤٥٦", " 123456", ""] {
+            assert_eq!(
+                check_admin_pin(refused),
+                Err(PinError::NotSixToTwelveDigits),
+                "{refused:?}"
+            );
+        }
+    }
 
     #[test]
     fn usernames_are_trimmed_and_lowercased() {

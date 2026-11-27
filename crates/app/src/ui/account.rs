@@ -38,6 +38,10 @@ pub(super) async fn switch(mode: ActiveMode, password: Option<String>) -> Option
             None
         }
         Ok(SwitchModeOutcome::WrongPassword) => Some(tr(messages::WRONG_PASSWORD)),
+        Ok(SwitchModeOutcome::WrongPin) => Some(tr(messages::WRONG_PIN)),
+        Ok(SwitchModeOutcome::TooManyAttempts {
+            retry_after_seconds,
+        }) => Some(super::screens::too_many_attempts(retry_after_seconds)),
         Ok(SwitchModeOutcome::NotAllowed | SwitchModeOutcome::Unavailable) => {
             Some(tr(messages::SOMETHING_WENT_WRONG))
         }
@@ -158,6 +162,14 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
     let mut password = use_signal(String::new);
     let mut error = use_signal(|| None::<String>);
     let mut busy = use_signal(|| false);
+    // A PIN instead of the password, if the person chose one (phase-6.md 4e).
+    let has_pin = use_resource(|| async {
+        matches!(
+            api::admin_pin_status().await,
+            Ok(domain::api::AdminPinOutcome::Status { has_pin: true })
+        )
+    });
+    let pin = has_pin.read().unwrap_or(false);
 
     let submit = move |event: FormEvent| {
         event.prevent_default();
@@ -183,13 +195,14 @@ fn AdminDialog(on_close: EventHandler<()>) -> Element {
         div { class: "dialog-scrim",
             form { class: "dialog", role: "dialog", "aria-modal": "true", onsubmit: submit,
                 h2 { class: "dialog-title", {tr(messages::ADMIN_DIALOG_TITLE)} }
-                p { class: "dialog-text", {admin_minutes_text(messages::ADMIN_DIALOG_TEXT, &state())} }
+                p { class: "dialog-text", {admin_minutes_text(if pin { messages::ADMIN_DIALOG_TEXT_PIN } else { messages::ADMIN_DIALOG_TEXT }, &state())} }
                 label { class: "field",
-                    span { class: "field-label", {tr(messages::FIELD_PASSWORD)} }
+                    span { class: "field-label", {tr(if pin { messages::FIELD_PIN } else { messages::FIELD_PASSWORD })} }
                     input {
                         class: "field-input",
                         r#type: "password",
-                        autocomplete: "current-password",
+                        autocomplete: if pin { "off" } else { "current-password" },
+                        inputmode: if pin { "numeric" } else { "text" },
                         autofocus: true,
                         value: password(),
                         oninput: move |event| password.set(event.value()),
@@ -226,6 +239,7 @@ pub(crate) fn AccountChip() -> Element {
     // Whether the household lets people change their own names (#091), read as the menu opens.
     let mut own_names = use_signal(|| false);
     let mut rename_dialog = use_signal(|| false);
+    let mut pin_dialog = use_signal(|| false);
     // Changes on this computer not yet sent: signing out asks first (phase-3.md 5e, 3B).
     let mut unsent_check = use_signal(|| false);
     let AuthState::SignedIn(session) = state() else {
@@ -292,6 +306,18 @@ pub(crate) fn AccountChip() -> Element {
                             span { {tr(messages::ACCOUNT_RENAME)} }
                         }
                     }
+                    if session.available_modes.contains(&ActiveMode::Admin) {
+                        button {
+                            class: "menu-item",
+                            role: "menuitem",
+                            onclick: move |_| {
+                                menu_open.set(false);
+                                pin_dialog.set(true);
+                            },
+                            span { class: "menu-check" }
+                            span { {tr(messages::ACCOUNT_ADMIN_PIN)} }
+                        }
+                    }
                     if can_lock() {
                         button {
                             class: "menu-item",
@@ -342,6 +368,9 @@ pub(crate) fn AccountChip() -> Element {
                     }
                 }
             }
+            if pin_dialog() {
+                AdminPinDialog { on_close: move |()| pin_dialog.set(false) }
+            }
             if unsent_check() {
                 crate::ui::outbox::SignOutCheck {
                     on_cancel: move |()| unsent_check.set(false),
@@ -349,6 +378,104 @@ pub(crate) fn AccountChip() -> Element {
                         unsent_check.set(false);
                         spawn(sign_out(state));
                     },
+                }
+            }
+        }
+    }
+}
+
+/// "How you enter Admin mode": the password (the default) or a PIN of 6 to 12 digits, confirmed
+/// with the password (sub-plan 04 §4.2; phase-6.md 4e). The server's: off while offline.
+#[expect(
+    unused_qualifications,
+    reason = "false positive in rsx! event-handler expansion"
+)]
+#[component]
+fn AdminPinDialog(on_close: EventHandler<()>) -> Element {
+    let mut use_pin = use_signal(|| false);
+    let mut pin = use_signal(String::new);
+    let mut repeat = use_signal(String::new);
+    let mut password = use_signal(String::new);
+    let mut message = use_signal(|| None::<Result<(), String>>);
+    let mut busy = use_signal(|| false);
+    // Starts at the person's current choice.
+    let _current = use_resource(move || async move {
+        if let Ok(domain::api::AdminPinOutcome::Status { has_pin }) = api::admin_pin_status().await
+        {
+            use_pin.set(has_pin);
+        }
+    });
+    let submit = move |event: FormEvent| {
+        event.prevent_default();
+        if busy() {
+            return;
+        }
+        let chosen = if use_pin() { Some(pin()) } else { None };
+        if let Some(chosen) = &chosen
+            && *chosen != repeat()
+        {
+            message.set(Some(Err(tr(messages::ADMIN_PIN_MISMATCH))));
+            return;
+        }
+        busy.set(true);
+        spawn(async move {
+            let answer = api::set_admin_pin(
+                domain::secret::Secret::new(password()),
+                chosen.map(domain::secret::Secret::new),
+            )
+            .await;
+            busy.set(false);
+            password.set(String::new());
+            message.set(Some(match answer {
+                Ok(domain::api::AdminPinOutcome::Done) => {
+                    pin.set(String::new());
+                    repeat.set(String::new());
+                    Ok(())
+                }
+                Ok(domain::api::AdminPinOutcome::WrongPassword) => {
+                    Err(tr(messages::WRONG_PASSWORD))
+                }
+                Ok(domain::api::AdminPinOutcome::Invalid { reason }) => Err(tr(reason.message())),
+                Ok(_) => Err(tr(messages::SOMETHING_WENT_WRONG)),
+                Err(error) => Err(tr(problem_from_error(&error).message())),
+            }));
+        });
+    };
+    rsx! {
+        div { class: "dialog-scrim",
+            form { class: "dialog needs-server-zone", role: "dialog", "aria-modal": "true", onsubmit: submit,
+                h2 { class: "dialog-title", {tr(messages::ADMIN_PIN_TITLE)} }
+                p { class: "dialog-text", {tr(messages::ADMIN_PIN_NOTE)} }
+                label { class: "check",
+                    input { r#type: "radio", name: "admin-way", checked: !use_pin(), onchange: move |_| use_pin.set(false) }
+                    span { {tr(messages::ADMIN_PIN_USE_PASSWORD)} }
+                }
+                label { class: "check",
+                    input { r#type: "radio", name: "admin-way", checked: use_pin(), onchange: move |_| use_pin.set(true) }
+                    span { {tr(messages::ADMIN_PIN_USE_PIN)} }
+                }
+                if use_pin() {
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::ADMIN_PIN_NEW)} }
+                        input { class: "field-input", r#type: "password", inputmode: "numeric", autocomplete: "off", value: pin(), oninput: move |event| pin.set(event.value()) }
+                    }
+                    label { class: "field",
+                        span { class: "field-label", {tr(messages::ADMIN_PIN_REPEAT)} }
+                        input { class: "field-input", r#type: "password", inputmode: "numeric", autocomplete: "off", value: repeat(), oninput: move |event| repeat.set(event.value()) }
+                    }
+                }
+                label { class: "field",
+                    span { class: "field-label", {tr(messages::ADMIN_PIN_CONFIRM_PASSWORD)} }
+                    input { class: "field-input", r#type: "password", autocomplete: "current-password", value: password(), oninput: move |event| password.set(event.value()) }
+                }
+                match message() {
+                    Some(Ok(())) => rsx! { p { class: "muted-note", role: "status", {tr(messages::ADMIN_PIN_SAVED)} } },
+                    Some(Err(text)) => rsx! { p { class: "form-error", role: "alert", {text} } },
+                    None => rsx! {},
+                }
+                div { class: "form-buttons",
+                    button { class: "secondary-button", r#type: "button", onclick: move |_| on_close.call(()), {tr(messages::ACTION_CLOSE)} }
+                    button { class: "primary-button", r#type: "submit", disabled: busy(), {tr(messages::ACTION_SAVE)} }
                 }
             }
         }
