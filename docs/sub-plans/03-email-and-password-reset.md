@@ -1,6 +1,19 @@
 # Email and Password Reset Sub-Plan
 
-Sub-plan for the vehicle maintenance manager (Dioxus/Rust, self-hosted on NAS via Docker). Lives alongside `vehicle-maintenance-plan.md`.
+Sub-plan for the vehicle maintenance manager (Dioxus/Rust, self-hosted on NAS via Docker). Lives alongside `docs/plan.md`.
+
+*Confirmed 2026-11-27 (decision #091), with the choices below; built in Phase 6 milestone 4 (steps 4h and 4i). Email notifications stay later.*
+
+## Confirmed choices (the human, 2026-11-27)
+
+- **Everything in `.env`:** `VEHICLEMANAGER_SMTP_HOST`, `_PORT`, `_SECURITY` (`starttls` or `tls`), `_USERNAME`, `_FROM`, and `VEHICLEMANAGER_BASE_URL`. An empty host means email is off.
+- **The password in a file** named by `VEHICLEMANAGER_SMTP_PASSWORD_FILE` (a Docker secret, or a file beside `.env` with tight permissions): never in `.env`'s values, the container's environment, or the database. Changing any of it means editing `.env` and restarting.
+- **A setup screen in the app** waits until the server's database is encrypted (Phase 7; idea 24).
+- **Links** (reset, new user) point to `VEHICLEMANAGER_BASE_URL`, e.g. the Tailscale https address; without it, email links are off and the test email still works.
+- **The recovery paths stay as built:** the Admin's temporary password (#046) and an Admin's own log code (#047); email adds a third. Reset by **username or email**, so each person gets an **optional email address** (unique), set by the Admin on Users or by the person on Settings → You.
+- **Codes in logs** stay as they are (the test plans say to blank them before sharing).
+- **Standalone desktops** (milestone 7) have no email.
+- **`lettre`** is approved as the new dependency.
 
 ## Goals
 
@@ -62,5 +75,5 @@ Sub-plan for the vehicle maintenance manager (Dioxus/Rust, self-hosted on NAS vi
 
 ## Open Questions
 
-- Base URL handling when accessed via Tailscale vs. local network.
-- Whether host-mode desktop installs get the same SMTP options.
+- ~~Base URL handling when accessed via Tailscale vs. local network.~~ One set address, `VEHICLEMANAGER_BASE_URL` (2026-11-27).
+- ~~Whether host-mode desktop installs get the same SMTP options.~~ No email in standalone mode (2026-11-27).

@@ -98,8 +98,8 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Where S1–S6 go in the roadmap,** the `docs/records-procedures.md` template, and the tests it asks to add to AGENTS.md (§12).
   - Its "Related" line points to `vehicle-maintenance-plan.md`; in this repo that's `docs/plan.md`.
 
-### 13. Optional email and email password reset 🔵
-*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (draft) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing) · **Placed:** Phase 6 milestone 4, the SMTP setup and the reset (#089); the sub-plan is confirmed when that milestone is planned*
+### 13. Optional email and email password reset ✅
+*Raised by the human, 2026-10-31 · Plan: `docs/sub-plans/03-email-and-password-reset.md` (**confirmed 2026-11-27, decision #091**; built in Phase 6 milestone 4) · Suggested phase: "early phases" for the reset and SMTP setup, "approaching MVP" for email notifications (the sub-plan's own phasing) · **Placed:** Phase 6 milestone 4, the SMTP setup and the reset (#089); the sub-plan is confirmed when that milestone is planned*
 
 - **The plan:** email stays **optional** (the app works fully without it), any SMTP provider (Gmail with an app password as the reference), configured by environment variables or Docker secrets; an email reset link (token stored only as a hash, about 30 minutes, one use, the same generic answer for everyone, rate-limited, other sessions ended); a per-person email on/off switch and a "send test email" button; later, email notifications for maintenance due, with per-person preferences.
 - **Rule until it's confirmed:** don't build anything from it until it's reviewed with the human and they confirm it.
@@ -195,3 +195,10 @@ Proposed to keep early phases from blocking later growth. Each is cheap now and 
   - **Household defaults per kind:** a setting that changes what new vehicles of a kind start with, or one that also follows existing vehicles.
   - **Custom types:** built on the data-driven profiles (#030): which meters, fields, documents, and usages a type starts with, and which rules (fuel economy, readiness, documents) apply to it.
   - **How they relate to templates** (#084), which already copy a schedule, specs, and usages.
+
+### 24. An SMTP setup screen once the server's database is encrypted 🟡
+*Raised by the human, 2026-11-27 (planning Phase 6 milestone 4, #091) · Suggested phase: after Phase 7's server encryption*
+
+- **The idea:** set up email (host, port, security, username, password, from address, base URL) in the app, on Settings → Household, instead of in `.env` and a password file.
+- **Why it waits:** until the server's database is encrypted (Phase 7, sub-plan 04 §7.2), a password saved there would sit in plain text, in every snapshot and backup. Milestone 4 keeps everything in `.env`, with the password in a file.
+- **To decide then:** whether `.env` still wins when both are set, how the password is shown (never), and whether the test email runs before saving.
